@@ -1,6 +1,70 @@
 # Neo Service Layer
 
-The Neo Service Layer (NSL) is a secure, scalable, and verifiable serverless platform that leverages Trusted Execution Environments (TEEs) like Intel SGX through Occlum LibOS to provide confidential computing capabilities for executing JavaScript functions with user secrets, event triggers, and GAS accounting.
+The Neo Service Layer (NSL) is a confidential computing platform that enables secure JavaScript execution in Intel SGX enclaves using the Occlum LibOS. It provides a robust and secure runtime environment for executing sensitive code with strong integrity and confidentiality guarantees.
+
+## Project Structure
+
+The project follows a clean architecture approach with the following key components:
+
+### Core Components
+
+- `NeoServiceLayer.Common` - Common models, interfaces, and utilities shared across the solution
+- `NeoServiceLayer.Core` - Domain models, interfaces, and business logic
+- `NeoServiceLayer.Infrastructure` - Implementations of core interfaces, data access, and external services integration
+- `NeoServiceLayer.Api` - API controllers and endpoints
+
+### TEE Components
+
+- `NeoServiceLayer.Tee.Shared` - Shared interfaces and models for TEE integration
+- `NeoServiceLayer.Tee.Host` - Host-side code for TEE interaction
+- `NeoServiceLayer.Tee.Enclave` - Enclave-side code that runs in the trusted environment
+
+## Key Features
+
+- Secure JavaScript execution in SGX enclaves
+- Remote attestation for enclave verification
+- Secure storage with encryption and integrity protection
+- Event-driven trigger system for blockchain events
+- Verifiable random number generation
+- API key-based authentication
+
+## Development Requirements
+
+- .NET 6.0 SDK or higher
+- Docker (for containerized testing)
+- Intel SGX SDK (for production deployment)
+- Occlum SDK (for Occlum LibOS integration)
+
+## Getting Started
+
+1. Clone the repository
+2. Build the solution
+3. Run tests
+4. Start the API
+
+## Documentation
+
+Detailed documentation is available in the `docs` directory:
+
+- Architecture Overview: `docs/architecture/overview.md`
+- API Reference: `docs/api`
+- Developer Guide: `docs/Development.md`
+
+## Recent Changes
+
+### Code Organization
+
+- Broke down large classes into partial classes for better maintainability
+- Moved common functionality to appropriate base classes and interfaces
+- Standardized naming conventions and code style using `.editorconfig` and `Directory.Build.props`
+- Added comprehensive documentation
+
+### Functional Enhancements
+
+- Implemented trigger registration methods for blockchain events
+- Added verifiable random number generation
+- Created secure temporary file utilities
+- Enhanced security features with proper input validation and error handling
 
 ## What is NSL?
 
