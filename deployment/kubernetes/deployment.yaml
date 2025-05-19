@@ -1,0 +1,199 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-service-layer-api
+  namespace: neo-service-layer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neo-service-layer-api
+  template:
+    metadata:
+      labels:
+        app: neo-service-layer-api
+    spec:
+      containers:
+      - name: neo-service-layer-api
+        image: neoservicelayer/api:latest
+        ports:
+        - containerPort: 80
+        - containerPort: 443
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: DB_PASSWORD
+        - name: STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: STORAGE_ACCOUNT_NAME
+        - name: STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: STORAGE_ACCOUNT_KEY
+        - name: NEO_WALLET_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: NEO_WALLET_PASSWORD
+        - name: JWT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: JWT_KEY
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/appsettings.json
+          subPath: appsettings.json
+        resources:
+          limits:
+            cpu: "1"
+            memory: "1Gi"
+          requests:
+            cpu: "0.5"
+            memory: "512Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: neo-service-layer-config
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-service-layer-tee-host
+  namespace: neo-service-layer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neo-service-layer-tee-host
+  template:
+    metadata:
+      labels:
+        app: neo-service-layer-tee-host
+    spec:
+      containers:
+      - name: neo-service-layer-tee-host
+        image: neoservicelayer/tee-host:latest
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: DB_PASSWORD
+        - name: STORAGE_ACCOUNT_NAME
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: STORAGE_ACCOUNT_NAME
+        - name: STORAGE_ACCOUNT_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-layer-secret
+              key: STORAGE_ACCOUNT_KEY
+        volumeMounts:
+        - name: config-volume
+          mountPath: /app/appsettings.json
+          subPath: appsettings.json
+        - name: sgx-device
+          mountPath: /dev/sgx_enclave
+        - name: sgx-provision
+          mountPath: /dev/sgx_provision
+        resources:
+          limits:
+            cpu: "2"
+            memory: "2Gi"
+            sgx.intel.com/epc: "10Mi"
+          requests:
+            cpu: "1"
+            memory: "1Gi"
+            sgx.intel.com/epc: "10Mi"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /health
+            port: 80
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config-volume
+        configMap:
+          name: neo-service-layer-config
+      - name: sgx-device
+        hostPath:
+          path: /dev/sgx_enclave
+      - name: sgx-provision
+        hostPath:
+          path: /dev/sgx_provision
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-service-layer-neo-node
+  namespace: neo-service-layer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: neo-service-layer-neo-node
+  template:
+    metadata:
+      labels:
+        app: neo-service-layer-neo-node
+    spec:
+      containers:
+      - name: neo-service-layer-neo-node
+        image: cityofzion/neo-go:latest
+        command: ["neo-go", "node", "--mainnet"]
+        ports:
+        - containerPort: 10332
+        - containerPort: 10333
+        volumeMounts:
+        - name: neo-node-data
+          mountPath: /root/.neo-go
+        resources:
+          limits:
+            cpu: "2"
+            memory: "4Gi"
+          requests:
+            cpu: "1"
+            memory: "2Gi"
+        livenessProbe:
+          tcpSocket:
+            port: 10332
+          initialDelaySeconds: 60
+          periodSeconds: 20
+        readinessProbe:
+          tcpSocket:
+            port: 10332
+          initialDelaySeconds: 30
+          periodSeconds: 10
+      volumes:
+      - name: neo-node-data
+        persistentVolumeClaim:
+          claimName: neo-service-layer-neo-node-pvc

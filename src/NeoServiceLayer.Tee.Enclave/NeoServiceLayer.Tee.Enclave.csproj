@@ -1,0 +1,51 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <ItemGroup>
+    <ProjectReference Include="..\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
+    <ProjectReference Include="..\NeoServiceLayer.Tee.Shared\NeoServiceLayer.Tee.Shared.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Occlum LibOS is used exclusively for the enclave implementation -->
+    <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="9.0.5" />
+    <PackageReference Include="Microsoft.ClearScript.V8" Version="7.4.5" />
+    <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+  </ItemGroup>
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+  </PropertyGroup>
+
+  <!-- Native C++ Enclave Files -->
+  <ItemGroup>
+    <None Include="Enclave\**\*.cpp" />
+    <None Include="Enclave\**\*.h" />
+    <None Include="Enclave\**\*.edl" />
+    <None Include="Enclave\**\*.conf" />
+  </ItemGroup>
+
+  <!-- Build Events for Enclave Compilation -->
+  <Target Name="BuildEnclave" BeforeTargets="Build">
+    <Message Text="Building Occlum Enclave..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)build_enclave.ps1" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
+  <!-- Clean Events for Enclave -->
+  <Target Name="CleanEnclave" BeforeTargets="Clean">
+    <Message Text="Cleaning Occlum Enclave..." Importance="high" />
+    <Exec Command="powershell -ExecutionPolicy Bypass -File $(ProjectDir)clean_enclave.ps1" WorkingDirectory="$(ProjectDir)" />
+  </Target>
+
+  <!-- Copy Enclave Files to Output Directory -->
+  <Target Name="CopyEnclaveFiles" AfterTargets="Build">
+    <Message Text="Copying Enclave Files to Output Directory..." Importance="high" />
+    <Copy SourceFiles="$(ProjectDir)build\enclave.signed" DestinationFolder="$(OutputPath)" />
+    <Copy SourceFiles="$(ProjectDir)build\enclave.debug" DestinationFolder="$(OutputPath)" />
+  </Target>
+
+</Project>

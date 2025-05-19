@@ -1,0 +1,72 @@
+version: '3.8'
+
+services:
+  # SQL Server for testing
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Password123!" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+
+  # Redis for caching
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  # Integration tests
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Testing
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NeoServiceLayerTest;User Id=sa;Password=Password123!;TrustServerCertificate=True
+      - Redis__ConnectionString=redis:6379
+      - Tee__SimulationMode=true
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft=Warning
+      - Logging__LogLevel__Microsoft.Hosting.Lifetime=Information
+    command: dotnet test tests/NeoServiceLayer.Integration.Tests --logger "console;verbosity=detailed"
+
+  # Simulation mode tests
+  simulation-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+      target: test
+    volumes:
+      - ./TestResults:/app/tests/TestResults
+    environment:
+      - OE_SIMULATION=1
+      - DOTNET_ENVIRONMENT=Testing
+      - ASPNETCORE_ENVIRONMENT=Testing
+      - TEST_CONFIG_PATH=/app/tests/simulation-test-config.json
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NeoServiceLayerTest;User Id=sa;Password=Password123!;TrustServerCertificate=True
+      - Redis__ConnectionString=redis:6379
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    # Use privileged mode to allow SGX simulation
+    privileged: true
+    command: /bin/bash /app/tests/run-simulation-tests.sh

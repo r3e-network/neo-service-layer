@@ -1,0 +1,27 @@
+version: '3.8'
+
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: docker/openenclave/Dockerfile
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+      - OE_SIMULATION=1
+    volumes:
+      - ../../bin:/app/bin
+      - ../../logs:/app/logs
+
+  test:
+    build:
+      context: ../..
+      dockerfile: docker/openenclave/Dockerfile.test
+    environment:
+      - OE_SIMULATION=1
+    volumes:
+      - ../../bin:/app/bin
+      - ../../logs:/app/logs

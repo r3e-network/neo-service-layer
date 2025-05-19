@@ -1,0 +1,48 @@
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+      - TZ=UTC
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Password123!" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - migration-network
+
+  # Database migrations
+  migrations:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: >
+      bash -c "
+        dotnet tool install --global dotnet-ef --version 9.0.0 || true &&
+        export PATH=\"$PATH:$HOME/.dotnet/tools\" &&
+        dotnet ef database update --project src/NeoServiceLayer.Infrastructure/NeoServiceLayer.Infrastructure.csproj --startup-project src/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj --context NeoServiceLayerDbContext
+      "
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NeoServiceLayer;User=sa;Password=Password123!;TrustServerCertificate=True
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+    networks:
+      - migration-network
+
+networks:
+  migration-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:

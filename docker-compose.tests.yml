@@ -1,0 +1,120 @@
+version: '3.8'
+
+services:
+  # Redis for caching
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - test-network
+
+  # SQL Server for database (optional, we'll use in-memory by default)
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+      - TZ=UTC
+    ports:
+      - "1433:1433"
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Password123!" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - test-network
+
+  # TEE Host Service with SGX simulation
+  tee-host:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: dotnet run --project src/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj --urls=http://0.0.0.0:5100
+    ports:
+      - "5100:5100"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Test
+      - ASPNETCORE_URLS=http://0.0.0.0:5100
+      - UseInMemoryDatabase=true
+      - ConnectionStrings__DefaultConnection=InMemory
+      - Tee__SimulationMode=true
+      - SGX_MODE=SIM
+      - SGX_SIMULATION=1
+    networks:
+      - test-network
+
+  # API Service
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: dotnet run --project src/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj --urls=http://0.0.0.0:5000
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Test
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - UseInMemoryDatabase=true
+      - ConnectionStrings__DefaultConnection=InMemory
+      - Redis__ConnectionString=redis:6379
+      - Tee__EnclaveHost=http://tee-host:5100
+      - Tee__SimulationMode=true
+      - SGX_MODE=SIM
+      - SGX_SIMULATION=1
+    depends_on:
+      redis:
+        condition: service_healthy
+      tee-host:
+        condition: service_started
+    networks:
+      - test-network
+
+  # Integration tests
+  integration-tests:
+    build:
+      context: .
+      dockerfile: Dockerfile.test
+    command: dotnet test tests/NeoServiceLayer.Integration.Tests/BasicIntegrationTest.cs --logger "console;verbosity=detailed"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Test
+      - UseInMemoryDatabase=true
+      - ConnectionStrings__DefaultConnection=InMemory
+      - Redis__ConnectionString=redis:6379
+      - Tee__EnclaveHost=http://tee-host:5100
+      - Tee__SimulationMode=true
+      - SGX_MODE=SIM
+      - SGX_SIMULATION=1
+      - API_URL=http://api:5000
+      - DOTNET_ENVIRONMENT=Test
+      - NUGET_PACKAGES=/app/.nuget/packages
+    depends_on:
+      redis:
+        condition: service_healthy
+      api:
+        condition: service_started
+    networks:
+      - test-network
+    volumes:
+      - ./TestResults:/app/TestResults
+
+  # Simple test (for quick verification)
+  simple-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple-test
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Test
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge

@@ -1,0 +1,50 @@
+{
+  "Tee": {
+    "Type": "Occlum",
+    "Enclave": {
+      "Path": "../src/NeoServiceLayer.Tee.Enclave/build/lib/libenclave.so",
+      "SimulationMode": true,
+      "Debug": true,
+      "StackSize": 1048576,
+      "HeapSize": 8388608,
+      "MaxThreads": 4
+    },
+    "Occlum": {
+      "InstanceDir": "../occlum_instance",
+      "LogLevel": "debug",
+      "NodeJsPath": "/bin/node",
+      "TempDir": "/tmp",
+      "EnableDebugMode": true,
+      "MaxMemoryMB": 1024,
+      "MaxThreads": 32,
+      "MaxProcesses": 16,
+      "MaxExecutionTimeSeconds": 60
+    },
+    "JavaScriptEngine": {
+      "MaxMemoryMB": 256,
+      "MaxExecutionTimeMS": 5000,
+      "EnableJIT": true,
+      "EnableDebugger": true
+    },
+    "UserSecrets": {
+      "MaxSecretsPerUser": 50,
+      "MaxSecretSizeBytes": 4096,
+      "EnableEncryption": true
+    },
+    "GasAccounting": {
+      "Enabled": true,
+      "PricePerCPUCycle": 0.00001,
+      "PricePerMemoryByte": 0.000001,
+      "PricePerStorageByte": 0.00001,
+      "MaxGasPerExecution": 1000000
+    }
+  },
+  "Logging": {
+    "LogLevel": {
+      "Default": "Debug",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information",
+      "NeoServiceLayer": "Debug"
+    }
+  }
+}

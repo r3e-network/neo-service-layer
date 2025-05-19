@@ -1,0 +1,93 @@
+# Base image with .NET 9.0 and Occlum
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+
+# Install Occlum dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    cmake \
+    libssl-dev \
+    pkg-config \
+    wget \
+    git \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SGX dependencies
+RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main' | tee /etc/apt/sources.list.d/intel-sgx.list \
+    && wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - \
+    && apt-get update \
+    && apt-get install -y \
+    libsgx-enclave-common \
+    libsgx-quote-ex \
+    libsgx-dcap-ql \
+    libsgx-dcap-ql-dev \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for Occlum
+ENV OCCLUM_SIMULATION=1
+
+# Copy the solution file and restore dependencies
+WORKDIR /app
+COPY *.sln .
+COPY src/ ./src/
+COPY tests/ ./tests/
+COPY docs/ ./docs/
+COPY deployment/ ./deployment/
+
+# Restore dependencies
+RUN dotnet restore
+
+# Build the solution
+RUN dotnet build -c Release --no-restore
+
+# Build the API project
+FROM build-env AS api-build
+RUN dotnet publish src/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj -c Release -o /app/publish/api --no-restore
+
+# Build the TEE Host project
+FROM build-env AS tee-host-build
+RUN dotnet publish src/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj -c Release -o /app/publish/tee-host --no-restore
+
+# Runtime image for API
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS api
+WORKDIR /app
+COPY --from=api-build /app/publish/api .
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Api.dll"]
+
+# Runtime image for TEE Host
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS tee-host
+
+# Install SGX runtime dependencies
+RUN apt-get update && apt-get install -y \
+    libssl1.1 \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install SGX dependencies
+RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main' | tee /etc/apt/sources.list.d/intel-sgx.list \
+    && wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - \
+    && apt-get update \
+    && apt-get install -y \
+    libsgx-enclave-common \
+    libsgx-quote-ex \
+    libsgx-dcap-ql \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js
+RUN apt-get update && apt-get install -y \
+    curl \
+    && curl -fsSL https://deb.nodesource.com/setup_16.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Set environment variables for Occlum
+ENV OCCLUM_SIMULATION=1
+
+WORKDIR /app
+COPY --from=tee-host-build /app/publish/tee-host .
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Tee.Host.dll"]

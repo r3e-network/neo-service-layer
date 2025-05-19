@@ -1,0 +1,129 @@
+version: '3.8'
+
+services:
+  # SQL Server Database
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2019-latest
+    environment:
+      - ACCEPT_EULA=Y
+      - SA_PASSWORD=Password123!
+      - TZ=UTC
+    ports:
+      - "1433:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools/bin/sqlcmd -S localhost -U sa -P "Password123!" -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 3s
+      retries: 10
+      start_period: 10s
+    networks:
+      - nsl-network
+
+  # Redis for caching
+  redis:
+    image: redis:alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+    networks:
+      - nsl-network
+
+  # Mock Neo N3 Node
+  neo-node:
+    image: nginx:alpine
+    volumes:
+      - ./mock-neo-node:/usr/share/nginx/html
+    ports:
+      - "10332:80"
+    networks:
+      - nsl-network
+
+  # TEE Host Service with Open Enclave simulation
+  tee-host:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: dotnet run --project src/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj --urls=http://0.0.0.0:5100
+    ports:
+      - "5100:5100"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5100
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NeoServiceLayer;User=sa;Password=Password123!;TrustServerCertificate=True
+      - Tee__SimulationMode=true
+      - Neo__RpcUrl=http://neo-node:80
+      - Neo__WalletPath=/app/data/neo-wallet.json
+      - Neo__WalletPassword=password
+      - OE_SIMULATION=1
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      neo-node:
+        condition: service_started
+    networks:
+      - nsl-network
+
+  # API Service
+  api:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: dotnet run --project src/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj --urls=http://0.0.0.0:5000
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://0.0.0.0:5000
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=NeoServiceLayer;User=sa;Password=Password123!;TrustServerCertificate=True
+      - Tee__EnclaveHost=http://tee-host:5100
+      - Tee__SimulationMode=true
+      - Neo__RpcUrl=http://neo-node:80
+      - Neo__WalletPath=/app/data/neo-wallet.json
+      - Neo__WalletPassword=password
+      - Jwt__Key=YourSecretKeyHere
+      - Jwt__Issuer=NeoServiceLayer
+      - Jwt__Audience=NeoServiceLayerClients
+      - OE_SIMULATION=1
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      tee-host:
+        condition: service_started
+    networks:
+      - nsl-network
+
+  # Example client
+  example:
+    image: mcr.microsoft.com/dotnet/sdk:9.0
+    volumes:
+      - ./:/app
+    working_dir: /app
+    command: dotnet run --project examples/CompleteWorkflow/CompleteWorkflow.csproj
+    environment:
+      - API_URL=http://api:5000
+      - ASPNETCORE_ENVIRONMENT=Development
+    depends_on:
+      api:
+        condition: service_started
+    networks:
+      - nsl-network
+
+networks:
+  nsl-network:
+    driver: bridge
+
+volumes:
+  sqlserver-data:
+  redis-data:

@@ -1,0 +1,79 @@
+name: Enclave Tests
+
+on:
+  push:
+    branches: [ main ]
+    paths:
+      - 'src/NeoServiceLayer.Tee.Enclave/**'
+      - 'src/NeoServiceLayer.Tee.Host/**'
+      - 'tests/NeoServiceLayer.Tee.Enclave.Tests/**'
+      - 'tests/NeoServiceLayer.Occlum.Tests/**'
+      - 'tests/NeoServiceLayer.IntegrationTests/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'src/NeoServiceLayer.Tee.Enclave/**'
+      - 'src/NeoServiceLayer.Tee.Host/**'
+      - 'tests/NeoServiceLayer.Tee.Enclave.Tests/**'
+      - 'tests/NeoServiceLayer.Occlum.Tests/**'
+      - 'tests/NeoServiceLayer.IntegrationTests/**'
+  workflow_dispatch:
+
+jobs:
+  test-simulation-mode:
+    name: Test Enclave in Simulation Mode
+    runs-on: ubuntu-latest
+    container:
+      image: openenclave/ubuntu-2004:latest
+      options: --privileged
+
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Install OpenEnclave SDK
+      run: |
+        echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu focal main" | tee /etc/apt/sources.list.d/intel-sgx.list
+        wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add -
+        apt-get update
+        apt-get install -y libsgx-enclave-common libsgx-enclave-common-dev libsgx-urts libsgx-uae-service libsgx-dcap-ql
+        
+    - name: Build
+      run: dotnet build --configuration Debug
+    
+    - name: Run Enclave Tests in Simulation Mode
+      run: |
+        export OE_SIMULATION=1
+        export OE_ENCLAVE_PATH="$(pwd)/src/NeoServiceLayer.Tee.Enclave/bin/Debug/net9.0/liboe_enclave.signed.so"
+        dotnet test tests/NeoServiceLayer.Tee.Enclave.Tests/NeoServiceLayer.Tee.Enclave.Tests.csproj --filter "Category=OpenEnclave|Category=Attestation|Category=Performance|Category=ErrorHandling|Category=Security" --logger "console;verbosity=detailed"
+    
+    - name: Run Integration Tests
+      run: |
+        export OE_SIMULATION=1
+        export OE_ENCLAVE_PATH="$(pwd)/src/NeoServiceLayer.Tee.Enclave/bin/Debug/net9.0/liboe_enclave.signed.so"
+        dotnet test tests/NeoServiceLayer.IntegrationTests/NeoServiceLayer.IntegrationTests.csproj --filter "Category=OpenEnclave" --logger "console;verbosity=detailed"
+
+  test-windows-simulation:
+    name: Test Enclave on Windows
+    runs-on: windows-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+    
+    - name: Build
+      run: dotnet build --configuration Debug
+    
+    - name: Run Enclave Tests in Simulation Mode
+      run: |
+        $env:OE_SIMULATION = "1"
+        $env:OE_ENCLAVE_PATH = "$pwd\src\NeoServiceLayer.Tee.Enclave\bin\Debug\net9.0\liboe_enclave.signed.so"
+        dotnet test tests\NeoServiceLayer.Tee.Enclave.Tests\NeoServiceLayer.Tee.Enclave.Tests.csproj --filter "Category=OpenEnclave|Category=Attestation|Category=Performance|Category=ErrorHandling|Category=Security" --logger "console;verbosity=detailed"

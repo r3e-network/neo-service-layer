@@ -1,0 +1,108 @@
+{
+  "Serilog": {
+    "Using": [
+      "Serilog.Sinks.Console",
+      "Serilog.Sinks.File",
+      "Serilog.Sinks.Elasticsearch"
+    ],
+    "MinimumLevel": {
+      "Default": "Information",
+      "Override": {
+        "Microsoft": "Warning",
+        "System": "Warning",
+        "Microsoft.AspNetCore": "Warning"
+      }
+    },
+    "WriteTo": [
+      {
+        "Name": "Console",
+        "Args": {
+          "outputTemplate": "[{Timestamp:HH:mm:ss} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "File",
+        "Args": {
+          "path": "logs/neoservicelayer-.log",
+          "rollingInterval": "Day",
+          "outputTemplate": "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz} {Level:u3}] {Message:lj} {Properties:j}{NewLine}{Exception}"
+        }
+      },
+      {
+        "Name": "Elasticsearch",
+        "Args": {
+          "nodeUris": "http://elasticsearch:9200",
+          "indexFormat": "neoservicelayer-logs-{0:yyyy.MM}",
+          "autoRegisterTemplate": true,
+          "autoRegisterTemplateVersion": "ESv7"
+        }
+      }
+    ],
+    "Enrich": [
+      "FromLogContext",
+      "WithMachineName",
+      "WithThreadId"
+    ],
+    "Properties": {
+      "Application": "NeoServiceLayer",
+      "Environment": "Production"
+    }
+  },
+  "OpenEnclave": {
+    "LogLevel": "Info",
+    "LogFile": "logs/openenclave.log",
+    "SimulationMode": false,
+    "DebugMode": false,
+    "EnclaveMetrics": {
+      "Enabled": true,
+      "CollectionIntervalSeconds": 60,
+      "ExportToPrometheus": true,
+      "PrometheusEndpoint": "http://localhost:9090"
+    },
+    "SecurityAudit": {
+      "Enabled": true,
+      "LogFile": "logs/security-audit.log",
+      "AlertThreshold": "Warning"
+    }
+  },
+  "Prometheus": {
+    "Enabled": true,
+    "Endpoint": "http://+:9090/metrics",
+    "Collectors": [
+      "enclave_memory_usage",
+      "enclave_cpu_usage",
+      "enclave_gas_usage",
+      "enclave_function_executions",
+      "enclave_execution_time",
+      "enclave_errors"
+    ]
+  },
+  "Grafana": {
+    "DashboardUrl": "http://grafana:3000/d/neoservicelayer/neo-service-layer-dashboard",
+    "ApiKey": "eyJrIjoiWW91ckdyYWZhbmFBcGlLZXlIZXJlIiwibiI6Im5lb3NlcnZpY2VsYXllciIsImlkIjoxfQ=="
+  },
+  "AlertManager": {
+    "Enabled": true,
+    "Endpoint": "http://alertmanager:9093/api/v1/alerts",
+    "Rules": [
+      {
+        "Name": "HighGasUsage",
+        "Query": "enclave_gas_usage > 8000000",
+        "Duration": "5m",
+        "Severity": "warning"
+      },
+      {
+        "Name": "EnclaveError",
+        "Query": "rate(enclave_errors[5m]) > 0.1",
+        "Duration": "1m",
+        "Severity": "critical"
+      },
+      {
+        "Name": "HighMemoryUsage",
+        "Query": "enclave_memory_usage > 1073741824",
+        "Duration": "5m",
+        "Severity": "warning"
+      }
+    ]
+  }
+}

@@ -1,0 +1,60 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-service-layer-config
+  namespace: neo-service-layer
+data:
+  appsettings.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft": "Warning",
+          "Microsoft.Hosting.Lifetime": "Information"
+        }
+      },
+      "AllowedHosts": "*",
+      "ConnectionStrings": {
+        "DefaultConnection": "Server=neo-service-layer-db;Database=NeoServiceLayer;User=sa;Password=$(DB_PASSWORD);"
+      },
+      "MessageQueue": {
+        "ConnectionString": "amqp://guest:guest@neo-service-layer-rabbitmq:5672"
+      },
+      "Storage": {
+        "ConnectionString": "DefaultEndpointsProtocol=https;AccountName=$(STORAGE_ACCOUNT_NAME);AccountKey=$(STORAGE_ACCOUNT_KEY);EndpointSuffix=aliyuncs.com"
+      },
+      "Tee": {
+        "EnclaveHost": "neo-service-layer-tee-host",
+        "SimulationMode": false
+      },
+      "Api": {
+        "RateLimit": {
+          "Limit": 100,
+          "Period": 60
+        }
+      },
+      "Cors": {
+        "AllowedOrigins": [
+          "https://neoservices.io"
+        ]
+      },
+      "Telemetry": {
+        "Jaeger": {
+          "AgentHost": "neo-service-layer-jaeger",
+          "AgentPort": 6831
+        },
+        "Prometheus": {
+          "Enabled": true
+        }
+      },
+      "Neo": {
+        "RpcUrl": "http://neo-service-layer-neo-node:10332",
+        "WalletPath": "/app/data/neo-wallet.json",
+        "WalletPassword": "$(NEO_WALLET_PASSWORD)"
+      },
+      "Jwt": {
+        "Key": "$(JWT_KEY)",
+        "Issuer": "NeoServiceLayer",
+        "Audience": "NeoServiceLayerClients"
+      }
+    }
