@@ -550,10 +550,16 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         return Task.FromResult(ServiceHealth.Healthy);
     }
 
-    /// <inheritdoc/>
-    public void Dispose()
+    /// <summary>
+    /// Disposes the automation service resources.
+    /// </summary>
+    /// <param name="disposing">Whether to dispose managed resources.</param>
+    protected override void Dispose(bool disposing)
     {
-        _executionTimer?.Dispose();
-        GC.SuppressFinalize(this);
+        if (disposing)
+        {
+            _executionTimer?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

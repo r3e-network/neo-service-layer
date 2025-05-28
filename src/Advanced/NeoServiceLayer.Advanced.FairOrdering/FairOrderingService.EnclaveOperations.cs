@@ -14,7 +14,7 @@ public partial class FairOrderingService
     /// <param name="pool">The ordering pool.</param>
     /// <param name="transactions">The transactions to order.</param>
     /// <returns>The ordered transactions.</returns>
-    private async Task<List<PendingTransaction>> OrderTransactionsInEnclaveAsync(OrderingPool pool, List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> OrderTransactionsInEnclaveAsync(Models.OrderingPool pool, List<Models.PendingTransaction> transactions)
     {
         // Perform actual transaction ordering within the enclave
         var startTime = DateTime.UtcNow;
@@ -28,11 +28,11 @@ public partial class FairOrderingService
 
         var orderedTransactions = pool.OrderingAlgorithm switch
         {
-            OrderingAlgorithm.FirstComeFirstServed => OrderByFCFS(transactions),
-            OrderingAlgorithm.PriorityBased => OrderByPriority(transactions),
-            OrderingAlgorithm.RandomizedFair => await OrderByRandomizedFairAsync(transactions),
-            OrderingAlgorithm.TimeWeightedFair => OrderByTimeWeighted(transactions),
-            OrderingAlgorithm.GasPriceWeighted => OrderByGasPrice(transactions),
+            Models.OrderingAlgorithm.FirstComeFirstServed => OrderByFCFS(transactions),
+            Models.OrderingAlgorithm.PriorityBased => OrderByPriority(transactions),
+            Models.OrderingAlgorithm.RandomizedFair => await OrderByRandomizedFairAsync(transactions),
+            Models.OrderingAlgorithm.TimeWeightedFair => OrderByTimeWeighted(transactions),
+            Models.OrderingAlgorithm.GasPriceWeighted => OrderByGasPrice(transactions),
             _ => transactions // Default to original order
         };
 
@@ -60,7 +60,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The MEV analysis request.</param>
     /// <returns>The MEV risk analysis.</returns>
-    private async Task<MevRiskAnalysis> AnalyzeMevRiskInEnclaveAsync(MevAnalysisRequest request)
+    private async Task<MevRiskAnalysis> AnalyzeMevRiskInEnclaveAsync(Models.MevAnalysisRequest request)
     {
         // Perform actual MEV risk analysis
 
@@ -157,23 +157,23 @@ public partial class FairOrderingService
     }
 
     // Ordering algorithm implementations
-    private List<PendingTransaction> OrderByFCFS(List<PendingTransaction> transactions)
+    private List<Models.PendingTransaction> OrderByFCFS(List<Models.PendingTransaction> transactions)
     {
         return transactions.OrderBy(t => t.SubmittedAt).ToList();
     }
 
-    private List<PendingTransaction> OrderByPriority(List<PendingTransaction> transactions)
+    private List<Models.PendingTransaction> OrderByPriority(List<Models.PendingTransaction> transactions)
     {
         return transactions.OrderByDescending(t => t.Priority).ThenBy(t => t.SubmittedAt).ToList();
     }
 
-    private async Task<List<PendingTransaction>> OrderByRandomizedFairAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> OrderByRandomizedFairAsync(List<Models.PendingTransaction> transactions)
     {
         // Perform cryptographically secure randomization for fair ordering
 
         // Group by priority and randomize within groups
         var grouped = transactions.GroupBy(t => t.Priority).OrderByDescending(g => g.Key);
-        var result = new List<PendingTransaction>();
+        var result = new List<Models.PendingTransaction>();
 
         foreach (var group in grouped)
         {
@@ -184,7 +184,7 @@ public partial class FairOrderingService
         return result;
     }
 
-    private List<PendingTransaction> OrderByTimeWeighted(List<PendingTransaction> transactions)
+    private List<Models.PendingTransaction> OrderByTimeWeighted(List<Models.PendingTransaction> transactions)
     {
         var now = DateTime.UtcNow;
         return transactions.OrderBy(t =>
@@ -194,17 +194,17 @@ public partial class FairOrderingService
         }).ToList();
     }
 
-    private List<PendingTransaction> OrderByGasPrice(List<PendingTransaction> transactions)
+    private List<Models.PendingTransaction> OrderByGasPrice(List<Models.PendingTransaction> transactions)
     {
         return transactions.OrderByDescending(t => t.GasPrice).ThenBy(t => t.SubmittedAt).ToList();
     }
 
-    private async Task<List<PendingTransaction>> ApplyMevProtectionAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> ApplyMevProtectionAsync(List<Models.PendingTransaction> transactions)
     {
         // Apply actual MEV protection mechanisms
 
         // Real MEV protection implementation
-        var protectedTransactions = new List<PendingTransaction>();
+        var protectedTransactions = new List<Models.PendingTransaction>();
 
         // 1. Detect potential MEV opportunities
         var mevOpportunities = await DetectMevOpportunitiesInBatchAsync(transactions);
@@ -240,15 +240,15 @@ public partial class FairOrderingService
         return protectedTransactions;
     }
 
-    private double CalculateTransactionFairnessScore(PendingTransaction transaction, int originalPosition, int finalPosition, FairnessLevel fairnessLevel)
+    private double CalculateTransactionFairnessScore(Models.PendingTransaction transaction, int originalPosition, int finalPosition, Models.FairnessLevel fairnessLevel)
     {
         // Calculate fairness score based on position change and fairness level
         var positionChange = Math.Abs(finalPosition - originalPosition);
         var maxPositionChange = fairnessLevel switch
         {
-            FairnessLevel.Strict => 1,
-            FairnessLevel.Moderate => 3,
-            FairnessLevel.Relaxed => 5,
+            Models.FairnessLevel.Strict => 1,
+            Models.FairnessLevel.Moderate => 3,
+            Models.FairnessLevel.Relaxed => 5,
             _ => 10
         };
 
@@ -261,7 +261,7 @@ public partial class FairOrderingService
         return Math.Min(1.0, fairnessScore + waitBonus);
     }
 
-    private double CalculateBatchFairnessScore(List<PendingTransaction> orderedTransactions)
+    private double CalculateBatchFairnessScore(List<Models.PendingTransaction> orderedTransactions)
     {
         if (orderedTransactions.Count == 0) return 1.0;
 
@@ -269,7 +269,7 @@ public partial class FairOrderingService
     }
 
     // Metrics calculation methods
-    private TimeSpan CalculateAverageProcessingTime(OrderingPool pool)
+    private TimeSpan CalculateAverageProcessingTime(Models.OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0) return TimeSpan.Zero;
 
@@ -283,30 +283,30 @@ public partial class FairOrderingService
         return totalTransactions > 0 ? TimeSpan.FromMilliseconds(totalTime / totalTransactions) : TimeSpan.Zero;
     }
 
-    private double CalculateFairnessScore(OrderingPool pool)
+    private double CalculateFairnessScore(Models.OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0) return 1.0;
 
         return pool.ProcessedBatches.Average(b => b.FairnessScore);
     }
 
-    private double CalculateMevProtectionEffectiveness(OrderingPool pool)
+    private double CalculateMevProtectionEffectiveness(Models.OrderingPool pool)
     {
         if (!pool.MevProtectionEnabled) return 0.0;
 
         // Calculate actual MEV protection effectiveness based on algorithm and settings
         return pool.OrderingAlgorithm switch
         {
-            OrderingAlgorithm.RandomizedFair => 0.85,
-            OrderingAlgorithm.TimeWeightedFair => 0.75,
-            OrderingAlgorithm.PriorityBased => 0.60,
-            OrderingAlgorithm.FirstComeFirstServed => 0.40,
-            OrderingAlgorithm.GasPriceWeighted => 0.30,
+            Models.OrderingAlgorithm.RandomizedFair => 0.85,
+            Models.OrderingAlgorithm.TimeWeightedFair => 0.75,
+            Models.OrderingAlgorithm.PriorityBased => 0.60,
+            Models.OrderingAlgorithm.FirstComeFirstServed => 0.40,
+            Models.OrderingAlgorithm.GasPriceWeighted => 0.30,
             _ => 0.50
         };
     }
 
-    private double CalculateOrderingEfficiency(OrderingPool pool)
+    private double CalculateOrderingEfficiency(Models.OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0) return 1.0;
 
@@ -317,11 +317,11 @@ public partial class FairOrderingService
         var sizeEfficiency = Math.Min(1.0, avgBatchSize / targetBatchSize);
         var algorithmEfficiency = pool.OrderingAlgorithm switch
         {
-            OrderingAlgorithm.FirstComeFirstServed => 1.0,
-            OrderingAlgorithm.PriorityBased => 0.95,
-            OrderingAlgorithm.GasPriceWeighted => 0.90,
-            OrderingAlgorithm.TimeWeightedFair => 0.85,
-            OrderingAlgorithm.RandomizedFair => 0.80,
+            Models.OrderingAlgorithm.FirstComeFirstServed => 1.0,
+            Models.OrderingAlgorithm.PriorityBased => 0.95,
+            Models.OrderingAlgorithm.GasPriceWeighted => 0.90,
+            Models.OrderingAlgorithm.TimeWeightedFair => 0.85,
+            Models.OrderingAlgorithm.RandomizedFair => 0.80,
             _ => 0.75
         };
 
@@ -339,7 +339,7 @@ public partial class FairOrderingService
             {
                 Name = "StandardFairPool",
                 Description = "Standard fair ordering pool with moderate fairness",
-                OrderingAlgorithm = OrderingAlgorithm.TimeWeightedFair,
+                OrderingAlgorithm = Models.OrderingAlgorithm.TimeWeightedFair,
                 BatchSize = 100,
                 BatchTimeout = TimeSpan.FromSeconds(30),
                 MevProtectionEnabled = true,
@@ -349,7 +349,7 @@ public partial class FairOrderingService
             {
                 Name = "HighThroughputPool",
                 Description = "High throughput pool with relaxed fairness for better performance",
-                OrderingAlgorithm = OrderingAlgorithm.PriorityBased,
+                OrderingAlgorithm = Models.OrderingAlgorithm.PriorityBased,
                 BatchSize = 500,
                 BatchTimeout = TimeSpan.FromSeconds(10),
                 MevProtectionEnabled = false,
@@ -359,7 +359,7 @@ public partial class FairOrderingService
             {
                 Name = "StrictFairPool",
                 Description = "Strict fairness pool with maximum MEV protection",
-                OrderingAlgorithm = OrderingAlgorithm.RandomizedFair,
+                OrderingAlgorithm = Models.OrderingAlgorithm.RandomizedFair,
                 BatchSize = 50,
                 BatchTimeout = TimeSpan.FromMinutes(1),
                 MevProtectionEnabled = true,
@@ -383,7 +383,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Generates cryptographic proof of fair ordering.
     /// </summary>
-    private async Task<string> GenerateOrderingProofAsync(List<PendingTransaction> transactions, OrderingAlgorithm algorithm)
+    private async Task<string> GenerateOrderingProofAsync(List<Models.PendingTransaction> transactions, Models.OrderingAlgorithm algorithm)
     {
         // Generate actual cryptographic proof of fair ordering
 
@@ -413,7 +413,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Validates ordering integrity.
     /// </summary>
-    private async Task ValidateOrderingIntegrityAsync(List<PendingTransaction> transactions, OrderingPool pool)
+    private async Task ValidateOrderingIntegrityAsync(List<Models.PendingTransaction> transactions, Models.OrderingPool pool)
     {
         // Perform actual ordering integrity validation
 
@@ -435,7 +435,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Detects MEV opportunities in a batch of transactions.
     /// </summary>
-    private async Task<List<MevOpportunity>> DetectMevOpportunitiesInBatchAsync(List<PendingTransaction> transactions)
+    private async Task<List<MevOpportunity>> DetectMevOpportunitiesInBatchAsync(List<Models.PendingTransaction> transactions)
     {
         // Perform actual MEV opportunity detection using advanced algorithms
 
@@ -477,7 +477,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Detects MEV opportunities for a single request.
     /// </summary>
-    private async Task<List<MevOpportunity>> DetectMevOpportunitiesAsync(MevAnalysisRequest request)
+    private async Task<List<MevOpportunity>> DetectMevOpportunitiesAsync(Models.MevAnalysisRequest request)
     {
         await Task.Delay(50);
 
@@ -500,7 +500,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Analyzes attack vectors for MEV.
     /// </summary>
-    private async Task<List<string>> AnalyzeAttackVectorsAsync(MevAnalysisRequest request)
+    private async Task<List<string>> AnalyzeAttackVectorsAsync(Models.MevAnalysisRequest request)
     {
         await Task.Delay(30);
 
@@ -530,7 +530,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Calculates MEV extraction potential.
     /// </summary>
-    private decimal CalculateMevExtractionPotential(MevAnalysisRequest request, List<MevOpportunity> opportunities)
+    private decimal CalculateMevExtractionPotential(Models.MevAnalysisRequest request, List<MevOpportunity> opportunities)
     {
         if (opportunities.Count == 0) return 0;
 
@@ -540,7 +540,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Identifies transaction vulnerabilities.
     /// </summary>
-    private List<string> IdentifyTransactionVulnerabilities(MevAnalysisRequest request)
+    private List<string> IdentifyTransactionVulnerabilities(Models.MevAnalysisRequest request)
     {
         var vulnerabilities = new List<string>();
 
@@ -559,7 +559,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Applies sandwich attack protection.
     /// </summary>
-    private async Task<List<PendingTransaction>> ApplySandwichProtectionAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> ApplySandwichProtectionAsync(List<Models.PendingTransaction> transactions)
     {
         await Task.Delay(20);
 
@@ -574,7 +574,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Applies front-running protection.
     /// </summary>
-    private async Task<List<PendingTransaction>> ApplyFrontRunningProtectionAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> ApplyFrontRunningProtectionAsync(List<Models.PendingTransaction> transactions)
     {
         await Task.Delay(20);
 
@@ -585,7 +585,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Applies back-running protection.
     /// </summary>
-    private async Task<List<PendingTransaction>> ApplyBackRunningProtectionAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> ApplyBackRunningProtectionAsync(List<Models.PendingTransaction> transactions)
     {
         await Task.Delay(20);
 
@@ -601,7 +601,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Applies time-based batching.
     /// </summary>
-    private async Task<List<PendingTransaction>> ApplyTimeBatchingAsync(List<PendingTransaction> transactions)
+    private async Task<List<Models.PendingTransaction>> ApplyTimeBatchingAsync(List<Models.PendingTransaction> transactions)
     {
         await Task.Delay(30);
 
@@ -619,7 +619,7 @@ public partial class FairOrderingService
     /// <summary>
     /// Validates MEV protection effectiveness.
     /// </summary>
-    private async Task ValidateMevProtectionAsync(List<PendingTransaction> transactions, List<MevOpportunity> opportunities)
+    private async Task ValidateMevProtectionAsync(List<Models.PendingTransaction> transactions, List<MevOpportunity> opportunities)
     {
         await Task.Delay(20);
 
@@ -639,25 +639,25 @@ public partial class FairOrderingService
     /// <summary>
     /// Helper methods for transaction classification.
     /// </summary>
-    private bool IsSwapTransaction(PendingTransaction transaction)
+    private bool IsSwapTransaction(Models.PendingTransaction transaction)
     {
         return transaction.TransactionType?.ToLower().Contains("swap") == true ||
                transaction.TransactionType?.ToLower().Contains("exchange") == true;
     }
 
-    private bool IsArbitrageTransaction(PendingTransaction transaction)
+    private bool IsArbitrageTransaction(Models.PendingTransaction transaction)
     {
         return transaction.TransactionType?.ToLower().Contains("arbitrage") == true ||
                transaction.TransactionType?.ToLower().Contains("arb") == true;
     }
 
-    private bool IsLiquidationTransaction(PendingTransaction transaction)
+    private bool IsLiquidationTransaction(Models.PendingTransaction transaction)
     {
         return transaction.TransactionType?.ToLower().Contains("liquidation") == true ||
                transaction.TransactionType?.ToLower().Contains("liquidate") == true;
     }
 
-    private bool IsHighRiskMevTransaction(PendingTransaction transaction)
+    private bool IsHighRiskMevTransaction(Models.PendingTransaction transaction)
     {
         return IsSwapTransaction(transaction) ||
                IsArbitrageTransaction(transaction) ||
@@ -665,7 +665,7 @@ public partial class FairOrderingService
                transaction.Value > 5000;
     }
 
-    private string GetTransactionCategory(PendingTransaction transaction)
+    private string GetTransactionCategory(Models.PendingTransaction transaction)
     {
         if (IsSwapTransaction(transaction)) return "swap";
         if (IsArbitrageTransaction(transaction)) return "arbitrage";
@@ -673,7 +673,7 @@ public partial class FairOrderingService
         return "standard";
     }
 
-    private string ComputeTransactionHash(PendingTransaction transaction)
+    private string ComputeTransactionHash(Models.PendingTransaction transaction)
     {
         var data = $"{transaction.TransactionId}:{transaction.SubmittedAt:O}:{transaction.Value}";
         using var sha256 = System.Security.Cryptography.SHA256.Create();
@@ -681,15 +681,15 @@ public partial class FairOrderingService
         return Convert.ToHexString(hash);
     }
 
-    private Dictionary<string, object> GetAlgorithmParameters(OrderingAlgorithm algorithm)
+    private Dictionary<string, object> GetAlgorithmParameters(Models.OrderingAlgorithm algorithm)
     {
         return algorithm switch
         {
-            OrderingAlgorithm.FirstComeFirstServed => new Dictionary<string, object> { ["method"] = "timestamp" },
-            OrderingAlgorithm.PriorityBased => new Dictionary<string, object> { ["method"] = "priority", ["tiebreaker"] = "timestamp" },
-            OrderingAlgorithm.RandomizedFair => new Dictionary<string, object> { ["method"] = "randomized", ["seed"] = Random.Shared.Next() },
-            OrderingAlgorithm.TimeWeightedFair => new Dictionary<string, object> { ["method"] = "time_weighted", ["weight_factor"] = 1.0 },
-            OrderingAlgorithm.GasPriceWeighted => new Dictionary<string, object> { ["method"] = "gas_price", ["tiebreaker"] = "timestamp" },
+            Models.OrderingAlgorithm.FirstComeFirstServed => new Dictionary<string, object> { ["method"] = "timestamp" },
+            Models.OrderingAlgorithm.PriorityBased => new Dictionary<string, object> { ["method"] = "priority", ["tiebreaker"] = "timestamp" },
+            Models.OrderingAlgorithm.RandomizedFair => new Dictionary<string, object> { ["method"] = "randomized", ["seed"] = Random.Shared.Next() },
+            Models.OrderingAlgorithm.TimeWeightedFair => new Dictionary<string, object> { ["method"] = "time_weighted", ["weight_factor"] = 1.0 },
+            Models.OrderingAlgorithm.GasPriceWeighted => new Dictionary<string, object> { ["method"] = "gas_price", ["tiebreaker"] = "timestamp" },
             _ => new Dictionary<string, object> { ["method"] = "default" }
         };
     }

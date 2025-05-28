@@ -112,12 +112,13 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// Disposes the notification service resources.
     /// </summary>
     /// <param name="disposing">Whether to dispose managed resources.</param>
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             _deliveryStatusTimer?.Dispose();
         }
+        base.Dispose(disposing);
     }
 
     /// <summary>

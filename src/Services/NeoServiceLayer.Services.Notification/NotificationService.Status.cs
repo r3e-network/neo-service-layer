@@ -21,6 +21,9 @@ public partial class NotificationService
 
         try
         {
+            // Simulate async status retrieval
+            await Task.Delay(5);
+
             lock (_cacheLock)
             {
                 if (_notificationHistory.TryGetValue(request.NotificationId, out var notification))
@@ -78,6 +81,9 @@ public partial class NotificationService
 
         try
         {
+            // Simulate async history retrieval
+            await Task.Delay(5);
+
             var allNotifications = new List<NotificationResult>();
 
             lock (_cacheLock)

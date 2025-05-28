@@ -1,4 +1,5 @@
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 

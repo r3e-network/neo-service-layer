@@ -42,12 +42,17 @@ public class ZkComputationResult
 {
     public string ComputationId { get; set; } = string.Empty;
     public string CircuitId { get; set; } = string.Empty;
+    public bool Success { get; set; } = true;
+    public object Result { get; set; } = new();
     public object[] Results { get; set; } = Array.Empty<object>();
     public string Proof { get; set; } = string.Empty;
     public string[] PublicSignals { get; set; } = Array.Empty<string>();
+    public DateTime ExecutedAt { get; set; } = DateTime.UtcNow;
     public DateTime ComputedAt { get; set; } = DateTime.UtcNow;
+    public string ComputationType { get; set; } = "proof-generation";
     public int ComputationTimeMs { get; set; }
     public bool IsValid { get; set; } = true;
+    public string? ErrorMessage { get; set; }
 }
 
 // Cryptographic Service Models
@@ -58,6 +63,8 @@ public class CryptoKeyInfo
     public string Algorithm { get; set; } = string.Empty;
     public int KeySize { get; set; }
     public string Purpose { get; set; } = string.Empty;
+    public string PrivateKey { get; set; } = string.Empty;
+    public string PublicKey { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? ExpiresAt { get; set; }
     public bool IsActive { get; set; } = true;

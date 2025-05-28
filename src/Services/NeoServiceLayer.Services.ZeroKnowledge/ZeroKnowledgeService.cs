@@ -24,8 +24,8 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
         Configuration = configuration;
 
         AddCapability<IZeroKnowledgeService>();
-        AddDependency(new ServiceDependency("KeyManagementService", "1.0.0", true));
-        AddDependency(new ServiceDependency("ComputeService", "1.0.0", false));
+        AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("ComputeService", false, "1.0.0"));
     }
 
     /// <summary>
@@ -52,6 +52,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
 
             var circuit = new ZkCircuit
             {
+                Id = circuitId,
                 CircuitId = circuitId,
                 Name = definition.Name,
                 Description = definition.Description,
@@ -231,13 +232,12 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() =>
+        await Task.CompletedTask;
+        
+        lock (_circuitsLock)
         {
-            lock (_circuitsLock)
-            {
-                return _circuits.Values.Where(c => c.IsActive).ToList();
-            }
-        })();
+            return _circuits.Values.Where(c => c.IsActive).ToList();
+        }
     }
 
     /// <inheritdoc/>
@@ -250,7 +250,8 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() => GetCircuit(circuitId))();
+        await Task.CompletedTask;
+        return GetCircuit(circuitId);
     }
 
     /// <inheritdoc/>
@@ -263,7 +264,8 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() => GetProof(proofId))();
+        await Task.CompletedTask;
+        return GetProof(proofId);
     }
 
     /// <inheritdoc/>
@@ -276,21 +278,20 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() =>
+        await Task.CompletedTask;
+        
+        lock (_circuitsLock)
         {
-            lock (_circuitsLock)
+            if (_circuits.TryGetValue(circuitId, out var circuit))
             {
-                if (_circuits.TryGetValue(circuitId, out var circuit))
-                {
-                    circuit.IsActive = false;
-                    Logger.LogInformation("Deleted ZK circuit {CircuitId} on {Blockchain}", circuitId, blockchainType);
-                    return true;
-                }
+                circuit.IsActive = false;
+                Logger.LogInformation("Deleted ZK circuit {CircuitId} on {Blockchain}", circuitId, blockchainType);
+                return true;
             }
+        }
 
-            Logger.LogWarning("Circuit {CircuitId} not found for deletion on {Blockchain}", circuitId, blockchainType);
-            return false;
-        })();
+        Logger.LogWarning("Circuit {CircuitId} not found for deletion on {Blockchain}", circuitId, blockchainType);
+        return false;
     }
 
     /// <summary>
@@ -328,8 +329,6 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
 
         throw new ArgumentException($"Proof {proofId} not found", nameof(proofId));
     }
-
-
 
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
@@ -446,5 +445,48 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             activeCircuitCount, totalProofCount);
 
         return Task.FromResult(ServiceHealth.Healthy);
+    }
+
+    /// <summary>
+    /// Executes computation within the enclave for privacy.
+    /// </summary>
+    /// <param name="request">The computation request.</param>
+    /// <returns>The computation result.</returns>
+    private async Task<object> ExecuteComputationInEnclaveAsync(ZkComputationRequest request)
+    {
+        await Task.Delay(100); // Simulate computation
+        
+        // Simplified computation for demo
+        return new Dictionary<string, object>
+        {
+            ["result"] = "computed_value",
+            ["timestamp"] = DateTime.UtcNow
+        };
+    }
+
+    /// <summary>
+    /// Generates computation proof for privacy verification.
+    /// </summary>
+    /// <param name="request">The computation request.</param>
+    /// <param name="result">The computation result.</param>
+    /// <returns>The proof data.</returns>
+    private async Task<string> GenerateComputationProofAsync(ZkComputationRequest request, object result)
+    {
+        await Task.Delay(50); // Simulate proof generation
+        
+        // Generate a simplified proof
+        var proofData = $"proof_{request.ComputationId}_{DateTime.UtcNow.Ticks}";
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(proofData));
+    }
+
+    /// <summary>
+    /// Initializes the ZK-specific enclave components.
+    /// </summary>
+    /// <returns>A task representing the initialization.</returns>
+    private async Task InitializeZkEnclaveAsync()
+    {
+        await Task.Delay(200); // Simulate enclave initialization
+        
+        Logger.LogDebug("ZK enclave components initialized");
     }
 }

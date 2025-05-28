@@ -8,9 +8,19 @@ namespace NeoServiceLayer.Services.ZeroKnowledge;
 public class ZkCircuitDefinition
 {
     /// <summary>
+    /// Gets or sets the circuit ID.
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the circuit name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the circuit code.
+    /// </summary>
+    public string Code { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the circuit description.
@@ -133,6 +143,11 @@ public class ZkCircuit
     /// <summary>
     /// Gets or sets the circuit ID.
     /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the circuit ID.
+    /// </summary>
     public string CircuitId { get; set; } = string.Empty;
 
     /// <summary>
@@ -149,6 +164,31 @@ public class ZkCircuit
     /// Gets or sets the circuit type.
     /// </summary>
     public ZkCircuitType Type { get; set; }
+
+    /// <summary>
+    /// Gets or sets the compiled circuit code.
+    /// </summary>
+    public byte[] CompiledCode { get; set; } = Array.Empty<byte>();
+
+    /// <summary>
+    /// Gets or sets the input schema.
+    /// </summary>
+    public Dictionary<string, object> InputSchema { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the output schema.
+    /// </summary>
+    public Dictionary<string, object> OutputSchema { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the circuit metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the creation timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Gets or sets the compiled circuit data.

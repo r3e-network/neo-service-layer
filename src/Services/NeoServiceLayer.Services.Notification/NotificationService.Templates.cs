@@ -23,6 +23,9 @@ public partial class NotificationService
         {
             var templateId = Guid.NewGuid().ToString();
 
+            // Simulate async template processing
+            await Task.Delay(10);
+
             var template = new NotificationTemplate
             {
                 TemplateId = templateId,
@@ -139,7 +142,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<SubscriptionResult> SubscribeToNotificationsAsync(SubscribeToNotificationsRequest request, BlockchainType blockchainType)
+    public async Task<Models.SubscriptionResult> SubscribeToNotificationsAsync(SubscribeToNotificationsRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -152,13 +155,16 @@ public partial class NotificationService
         {
             var subscriptionId = Guid.NewGuid().ToString();
 
+            // Simulate async subscription processing  
+            await Task.Delay(10);
+
             var subscription = new NotificationSubscription
             {
                 SubscriptionId = subscriptionId,
                 SubscriberId = request.SubscriberId,
                 EventTypes = request.EventTypes,
                 PreferredChannels = request.PreferredChannels,
-                Preferences = request.Preferences,
+                Preferences = new NotificationPreferences(),
                 Filters = new Dictionary<string, object>(request.Filters),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
@@ -175,7 +181,7 @@ public partial class NotificationService
             Logger.LogInformation("Created subscription {SubscriptionId} for subscriber {SubscriberId} with {EventCount} event types",
                 subscriptionId, request.SubscriberId, request.EventTypes.Length);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 SubscriptionId = subscriptionId,
                 Success = true,
@@ -193,7 +199,7 @@ public partial class NotificationService
         {
             Logger.LogError(ex, "Failed to create subscription for {SubscriberId}", request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 Success = false,
                 ErrorMessage = ex.Message,
@@ -203,7 +209,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<SubscriptionResult> UnsubscribeFromNotificationsAsync(UnsubscribeFromNotificationsRequest request, BlockchainType blockchainType)
+    public async Task<Models.SubscriptionResult> UnsubscribeFromNotificationsAsync(Models.UnsubscribeFromNotificationsRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -215,6 +221,9 @@ public partial class NotificationService
         try
         {
             var removedCount = 0;
+
+            // Simulate async unsubscription processing
+            await Task.Delay(10);
 
             lock (_cacheLock)
             {
@@ -249,7 +258,7 @@ public partial class NotificationService
             Logger.LogInformation("Unsubscribed {RemovedCount} subscriptions for subscriber {SubscriberId}",
                 removedCount, request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 SubscriptionId = string.Empty, // Not applicable for unsubscribe
                 Success = true,
@@ -267,7 +276,7 @@ public partial class NotificationService
         {
             Logger.LogError(ex, "Failed to unsubscribe {SubscriberId}", request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 Success = false,
                 ErrorMessage = ex.Message,

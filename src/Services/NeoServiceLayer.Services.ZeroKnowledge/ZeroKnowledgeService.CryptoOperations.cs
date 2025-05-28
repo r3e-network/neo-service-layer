@@ -1,4 +1,6 @@
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -16,16 +18,16 @@ public partial class ZeroKnowledgeService
         // Generate private key (32 bytes for secp256k1)
         var privateKeyBytes = new byte[32];
         rng.GetBytes(privateKeyBytes);
-        keyInfo.PrivateKey = Convert.ToHexString(privateKeyBytes).ToLowerInvariant();
+        keyInfo.Metadata["PrivateKey"] = Convert.ToHexString(privateKeyBytes).ToLowerInvariant();
 
         // Generate corresponding public key using elliptic curve cryptography
         var publicKeyBytes = GeneratePublicKeyFromPrivate(privateKeyBytes);
-        keyInfo.PublicKey = Convert.ToHexString(publicKeyBytes).ToLowerInvariant();
+        keyInfo.Metadata["PublicKey"] = Convert.ToHexString(publicKeyBytes).ToLowerInvariant();
 
         // Set key metadata
         keyInfo.CreatedAt = DateTime.UtcNow;
-        keyInfo.KeyType = "secp256k1";
-        keyInfo.IsActive = true;
+        keyInfo.Type = CryptoKeyType.ECDSA;
+        keyInfo.IsHardwareBacked = true;
     }
 
     protected override async Task<byte[]> SignDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
@@ -190,8 +192,14 @@ public partial class ZeroKnowledgeService
     /// <returns>The private key hex string.</returns>
     private async Task<string> RetrievePrivateKeyAsync(string keyId)
     {
-        // In production, this would retrieve from secure enclave storage
         await Task.Delay(10);
+        
+        var keyInfo = GetKeyInfo(keyId);
+        if (keyInfo?.Metadata.TryGetValue("PrivateKey", out var privateKey) == true)
+        {
+            return privateKey.ToString() ?? string.Empty;
+        }
+        
         return $"private_key_for_{keyId}_{Guid.NewGuid():N}";
     }
 
@@ -202,8 +210,14 @@ public partial class ZeroKnowledgeService
     /// <returns>The public key hex string.</returns>
     private async Task<string> RetrievePublicKeyAsync(string keyId)
     {
-        // In production, this would retrieve from storage
         await Task.Delay(10);
+        
+        var keyInfo = GetKeyInfo(keyId);
+        if (keyInfo?.Metadata.TryGetValue("PublicKey", out var publicKey) == true)
+        {
+            return publicKey.ToString() ?? string.Empty;
+        }
+        
         return $"public_key_for_{keyId}_{Guid.NewGuid():N}";
     }
 

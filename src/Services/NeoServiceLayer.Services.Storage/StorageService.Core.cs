@@ -335,26 +335,16 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
         }
     }
 
-
-
-    /// <summary>
-    /// Disposes the storage service.
-    /// </summary>
-    public void Dispose()
-    {
-        Dispose(true);
-        GC.SuppressFinalize(this);
-    }
-
     /// <summary>
     /// Disposes the storage service.
     /// </summary>
     /// <param name="disposing">Whether to dispose managed resources.</param>
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {
             _metadataCache.Clear();
         }
+        base.Dispose(disposing);
     }
 }

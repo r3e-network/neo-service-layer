@@ -332,23 +332,17 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
         }
     }
 
-    /// <summary>
-    /// Disposes the health service resources.
-    /// </summary>
-    public void Dispose()
+    public new void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
     }
 
-    /// <summary>
-    /// Disposes the health service resources.
-    /// </summary>
-    /// <param name="disposing">Whether to dispose managed resources.</param>
-    protected virtual void Dispose(bool disposing)
+    protected new void Dispose(bool disposing)
     {
         if (disposing)
         {
+            // Dispose managed resources
             _monitoringTimer?.Dispose();
         }
     }

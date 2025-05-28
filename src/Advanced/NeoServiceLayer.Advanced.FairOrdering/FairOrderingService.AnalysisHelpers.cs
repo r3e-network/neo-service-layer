@@ -21,7 +21,7 @@ public partial class FairOrderingService
             await CreateDefaultFairPoolAsync(defaultPoolId);
         }
 
-        var pendingTransaction = new PendingTransaction
+        var pendingTransaction = new Models.PendingTransaction
         {
             Id = transaction.TransactionId,
             Hash = ComputeTransactionHash(transaction.Data),
@@ -63,7 +63,7 @@ public partial class FairOrderingService
                 MevProtectionEnabled = true,
                 FairnessLevel = FairnessLevel.High
             },
-            PendingTransactions = new List<PendingTransaction>(),
+            PendingTransactions = new List<Models.PendingTransaction>(),
             ProcessedBatches = new List<ProcessedBatch>(),
             Status = PoolStatus.Active,
             OrderingAlgorithm = OrderingAlgorithm.FairQueue,
@@ -424,9 +424,9 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="count">Number of transactions to retrieve.</param>
     /// <returns>List of recent transactions.</returns>
-    private async Task<List<PendingTransaction>> GetRecentTransactionsAsync(int count)
+    private async Task<List<Models.PendingTransaction>> GetRecentTransactionsAsync(int count)
     {
-        var transactions = new List<PendingTransaction>();
+        var transactions = new List<Models.PendingTransaction>();
 
         // Query from all active pools
         foreach (var pool in _orderingPools.Values)

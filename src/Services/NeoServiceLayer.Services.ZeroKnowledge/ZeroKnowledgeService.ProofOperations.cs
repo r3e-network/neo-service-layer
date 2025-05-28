@@ -176,8 +176,8 @@ public partial class ZeroKnowledgeService
         return new ZkProof
         {
             CircuitId = circuit.Id,
-            ProofData = GenerateRandomProofData(),
-            PublicInputs = publicInputs,
+            ProofData = Convert.ToBase64String(GenerateRandomProofData()),
+            PublicInputs = publicInputs.Values.Select(v => v.ToString() ?? string.Empty).ToArray(),
             GeneratedAt = DateTime.UtcNow
         };
     }
@@ -211,7 +211,7 @@ public partial class ZeroKnowledgeService
     private async Task<string> EncodeProofAsync(ZkProof proof)
     {
         await Task.Delay(10);
-        return Convert.ToBase64String(proof.ProofData);
+        return proof.ProofData; // Already base64 encoded
     }
 
     /// <summary>
