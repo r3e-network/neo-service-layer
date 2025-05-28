@@ -1,349 +1,135 @@
 # Neo Service Layer
 
-The Neo Service Layer (NSL) is a confidential computing platform that enables secure JavaScript execution in Intel SGX enclaves using the Occlum LibOS. It provides a robust and secure runtime environment for executing sensitive code with strong integrity and confidentiality guarantees.
+The Neo Service Layer is a comprehensive platform that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains.
 
-## Project Structure
+## Overview
 
-The project follows a clean architecture approach with the following key components:
-
-### Core Components
-
-- `NeoServiceLayer.Common` - Common models, interfaces, and utilities shared across the solution
-- `NeoServiceLayer.Core` - Domain models, interfaces, and business logic
-- `NeoServiceLayer.Infrastructure` - Implementations of core interfaces, data access, and external services integration
-- `NeoServiceLayer.Api` - API controllers and endpoints
-
-### TEE Components
-
-- `NeoServiceLayer.Tee.Shared` - Shared interfaces and models for TEE integration
-- `NeoServiceLayer.Tee.Host` - Host-side code for TEE interaction
-- `NeoServiceLayer.Tee.Enclave` - Enclave-side code that runs in the trusted environment
-
-## Key Features
-
-- Secure JavaScript execution in SGX enclaves
-- Remote attestation for enclave verification
-- Secure storage with encryption and integrity protection
-- Event-driven trigger system for blockchain events
-- Verifiable random number generation
-- API key-based authentication
-
-## Development Requirements
-
-- .NET 6.0 SDK or higher
-- Docker (for containerized testing)
-- Intel SGX SDK (for production deployment)
-- Occlum SDK (for Occlum LibOS integration)
-
-## Getting Started
-
-1. Clone the repository
-2. Build the solution
-3. Run tests
-4. Start the API
-
-## Documentation
-
-Detailed documentation is available in the `docs` directory:
-
-- Architecture Overview: `docs/architecture/overview.md`
-- API Reference: `docs/api`
-- Developer Guide: `docs/Development.md`
-
-## Recent Changes
-
-### Code Organization
-
-- Broke down large classes into partial classes for better maintainability
-- Moved common functionality to appropriate base classes and interfaces
-- Standardized naming conventions and code style using `.editorconfig` and `Directory.Build.props`
-- Added comprehensive documentation
-
-### Functional Enhancements
-
-- Implemented trigger registration methods for blockchain events
-- Added verifiable random number generation
-- Created secure temporary file utilities
-- Enhanced security features with proper input validation and error handling
-
-## What is NSL?
-
-The Neo Service Layer allows developers to run JavaScript functions in a secure and confidential environment using Trusted Execution Environments (TEEs) like Intel SGX through Occlum LibOS. This ensures that sensitive code and data remain protected even if the underlying infrastructure is compromised. The platform provides:
-
-- **Confidentiality**: Your code and data are encrypted in memory
-- **Integrity**: Any tampering with your code or data is detected and prevented
-- **Attestation**: Remote verification of the execution environment's identity and code
-- **Secure Secrets**: Store API keys and other sensitive data securely
-- **Event-Driven Execution**: Trigger functions based on blockchain or external events
-- **Resource Management**: Track and limit resource usage with GAS accounting
+The Neo Service Layer provides oracle services and other critical infrastructure for the Neo blockchain ecosystem. It uses Intel SGX with Occlum LibOS enclaves for critical operations to ensure security and privacy.
 
 ## Core Services
 
-The Neo Service Layer provides seven core services:
+The Neo Service Layer consists of the following core services:
 
-1. **Confidential JavaScript Function Execution**: Executes JavaScript functions securely within a Trusted Execution Environment (TEE)
-2. **User Secrets Management**: Securely stores and manages user-specified secrets
-3. **Event-Triggered Function Execution**: Allows functions to be triggered by registered events
-4. **Randomness Service**: Generates verifiable random numbers for applications
-5. **Attestation Service**: Verifies the integrity of the TEE
-6. **Key Management Service**: Manages cryptographic keys securely
-7. **GAS Accounting Service**: Tracks resource usage for JavaScript function execution
+1. **Randomness Service**: Generates verifiable random numbers for use in smart contracts and applications using Intel SGX with Occlum LibOS enclaves.
+2. **Oracle Service**: Fetches data from external sources and delivers it to smart contracts with cryptographic proofs.
+3. **Data Feeds Service**: Provides decentralized, high-quality price and market data similar to Chainlink Data Feeds.
+4. **Key Management Service**: Securely manages cryptographic keys for various operations within Intel SGX with Occlum LibOS enclaves.
+5. **Compute Service**: Executes JavaScript computations in a secure enclave with access to user secrets.
+6. **Storage Service**: Stores and retrieves data with encryption, compression, and access control.
+7. **Compliance Service**: Verifies compliance with regulatory requirements for transactions, addresses, and contracts.
+8. **Event Subscription Service**: Subscribes to and receives events from the blockchain, enabling automated contract interactions.
+9. **Automation Service**: Provides smart contract automation similar to Chainlink Automation (formerly Keepers).
+10. **Cross-Chain Service**: Enables secure cross-chain interoperability similar to Chainlink CCIP.
+11. **Proof of Reserve Service**: Provides cryptographic verification of asset backing similar to Chainlink Proof of Reserve.
+
+### Advanced Infrastructure Services
+
+12. **Zero-Knowledge Service**: Provides privacy-preserving computation using zk-SNARKs, zk-STARKs, and other zero-knowledge proof systems.
+13. **Prediction Service**: Enables AI-powered prediction and forecasting capabilities for smart contracts.
+14. **Pattern Recognition Service**: Provides AI-powered fraud detection, anomaly detection, and behavioral analysis.
+15. **Fair Ordering Service**: Provides protection against unfair transaction ordering and MEV attacks.
+
+All services are implemented using Intel SGX with Occlum LibOS enclaves for maximum security and privacy.
 
 ## Architecture
 
-The Neo Service Layer follows a layered architecture approach:
+The Neo Service Layer is built on a modular architecture with the following components:
 
-1. **API Layer**: Provides RESTful endpoints for clients to interact with the NSL
-2. **Service Layer**: Contains the business logic and orchestrates the execution of JavaScript functions
-3. **TEE Layer**: Executes JavaScript functions in a secure environment using Occlum LibOS
-4. **Infrastructure Layer**: Provides supporting services such as database, message queue, and monitoring
-5. **Storage Layer**: Provides persistent storage capabilities using Occlum's file system
-6. **Blockchain Layer**: Integrates with the Neo N3 blockchain for event monitoring and triggering functions
-
-## Neo N3 Blockchain Integration
-
-The Neo Service Layer integrates with the Neo N3 blockchain through a workflow where:
-
-1. **Neo N3 Smart Contracts**: Smart contracts on the Neo N3 blockchain emit events to request JavaScript execution in the Neo Service Layer
-   - Smart contracts emit events with function ID, input data, and user ID
-   - Smart contracts include callback methods to receive results from the Neo Service Layer
-
-2. **NeoN3BlockchainService**: Service for interacting with the Neo N3 blockchain
-   - Monitoring blockchain for events
-   - Retrieving transaction details
-   - Sending callback transactions with JavaScript execution results
-
-3. **NeoN3EventListenerService**: Service for listening to Neo N3 blockchain events
-   - Subscribing to contract events
-   - Detecting JavaScript execution requests
-   - Triggering JavaScript functions based on events
-
-4. **JavaScript Functions**: JavaScript functions executed in the secure enclave
-   - Access user secrets securely stored in the enclave
-   - Perform confidential computations
-   - Send callback transactions to the Neo N3 blockchain with results
-
-This architecture provides a powerful combination of blockchain transparency and confidential computing, allowing sensitive operations to be performed securely while still integrating with the public blockchain.
-
-## Project Structure
-
-```
-NeoServiceLayer/
-├── src/
-│   ├── NeoServiceLayer.Api/                # API project
-│   ├── NeoServiceLayer.Core/               # Core domain models and services
-│   ├── NeoServiceLayer.Infrastructure/     # Infrastructure services
-│   ├── NeoServiceLayer.Tee.Host/           # TEE host process
-│   │   ├── Occlum/                         # Occlum integration
-│   │   └── Storage/                        # Storage implementations
-│   ├── NeoServiceLayer.Tee.Enclave/        # TEE enclave code (.NET and C++)
-│   │   └── Enclave/                        # Native enclave code (C++)
-│   └── NeoServiceLayer.Shared/             # Shared components
-├── tests/
-│   ├── NeoServiceLayer.Api.Tests/
-│   ├── NeoServiceLayer.Core.Tests/
-│   ├── NeoServiceLayer.Infrastructure.Tests/
-│   ├── NeoServiceLayer.Tee.Host.Tests/
-│   ├── NeoServiceLayer.Tee.Enclave.Tests/
-│   ├── NeoServiceLayer.Occlum.Tests/       # Occlum-specific tests
-│   └── NeoServiceLayer.Integration.Tests/  # Integration tests
-├── docs/
-│   ├── Architecture.md
-│   ├── API.md
-│   ├── Deployment.md
-│   ├── Development.md
-│   └── persistent-storage.md               # Persistent storage documentation
-├── examples/
-│   ├── SmartContractExecution/
-│   │   ├── ConfidentialToken/
-│   │   └── ConfidentialDataProcessing/
-│   └── JavaScriptFunctions/
-└── deployment/
-    └── docker/                             # Docker configuration files
-```
+- **Service Framework**: Provides the foundation for all services, including service registration, configuration, and lifecycle management.
+- **Enclave Integration**: Integrates with Intel SGX and Occlum LibOS enclaves for secure execution of critical operations.
+- **Blockchain Integration**: Integrates with Neo N3 and NeoX blockchains for transaction submission and event monitoring.
+- **Service Implementations**: Individual service implementations that provide specific functionality.
+- **API Layer**: Provides RESTful API endpoints for interacting with the services.
 
 ## Getting Started
 
 ### Prerequisites
 
-- Windows 10/11 or Ubuntu 20.04+
 - .NET 9.0 SDK
-- Docker Desktop
-- Visual Studio 2022 or Visual Studio Code
+- Visual Studio 2025 or later (optional)
 - Git
-- Intel SGX SDK
-- Occlum LibOS
-- Neo N3 Wallet (for interacting with the Neo N3 blockchain)
-- Neo-CLI or Neo-GUI (for deploying smart contracts)
+- Intel SGX SDK (for enclave development)
+- Occlum LibOS (for enclave development)
 
-### Building the Solution
+### Building the Project
+
+1. Clone the repository:
 
 ```bash
-dotnet restore
+git clone https://github.com/neo-project/neo-service-layer.git
+cd neo-service-layer
+```
+
+2. Build the solution:
+
+```bash
 dotnet build
 ```
 
-### Running Tests
+3. Run the tests:
 
 ```bash
-# Run all tests
-dotnet test
-
-# Run only Occlum-related tests
-dotnet test --filter "Category=Occlum"
-
-# Run only Storage-related tests
-dotnet test --filter "Category=Storage"
-
-# Run tests with simulation mode
-$env:OCCLUM_SIMULATION=1  # Windows PowerShell
-export OCCLUM_SIMULATION=1  # Linux/macOS
 dotnet test
 ```
 
-#### Test Categories
+### Running the Services
 
-The tests are organized into the following categories:
-
-**Occlum Tests** (Category=Occlum):
-- **OcclumTests**: Tests the basic Occlum functionality
-- **OcclumJavaScriptExecutionTests**: Tests JavaScript execution in the Occlum enclave
-- **OcclumUserSecretTests**: Tests secure storage and retrieval of user secrets in the Occlum enclave
-- **OcclumGasAccountingTests**: Tests GAS accounting in the Occlum enclave
-- **OcclumEventTriggerTests**: Tests event trigger processing in the Occlum enclave
-
-**Storage Tests** (Category=Storage):
-- **OcclumFileStorageTests**: Tests the Occlum file storage provider
-- **OcclumIntegrationTests**: Tests the integration between Occlum and the application
-
-**Additional Storage Tests**:
-- **PersistentStorageTests**: Tests the persistent storage functionality
-- **StorageProviderTests**: Tests the storage provider implementations
-- **StorageTransactionTests**: Tests the storage transaction functionality
-
-All tests can run in simulation mode without requiring SGX hardware, making them suitable for CI/CD pipelines.
-
-### Running the API
+1. Run the API:
 
 ```bash
-cd src/NeoServiceLayer.Api
-dotnet run
+dotnet run --project src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj
 ```
 
-### Running with Docker Compose
+2. Access the API at `http://localhost:5000`.
+
+## Development
+
+### Adding a New Service
+
+To add a new service to the Neo Service Layer, follow these steps:
+
+1. Create a new project for the service:
 
 ```bash
-# For standard deployment
-docker-compose up -d
-
-# For Occlum deployment
-docker-compose -f docker/occlum/docker-compose.yml up -d
+dotnet new classlib -n NeoServiceLayer.Services.YourService -o src/Services/NeoServiceLayer.Services.YourService -f net9.0
 ```
 
-This will start all the required services, including:
-- Neo Confidential Serverless Layer API
-- TEE Host with Occlum support
-- Neo N3 Node
-- Database
-- Message Queue
-- Persistent Storage
-- Monitoring (Prometheus, Grafana)
-- Logging (Elasticsearch, Kibana)
-- Tracing (Jaeger)
-
-### Running in Simulation Mode
-
-For development and testing without SGX hardware, you can use the simulation mode:
+2. Add the necessary references:
 
 ```bash
-# Set Occlum simulation mode
-export OCCLUM_SIMULATION=1  # Linux/macOS
-$env:OCCLUM_SIMULATION=1    # Windows PowerShell
-
-# Run the application
-dotnet run --project src/NCSL.Api
-
-# Or with Docker for Occlum
-docker-compose -f docker/occlum/docker-compose.yml -e OCCLUM_SIMULATION=1 up -d
+dotnet add src/Services/NeoServiceLayer.Services.YourService/NeoServiceLayer.Services.YourService.csproj reference src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj
 ```
 
-### Using the Neo Service Layer API
+3. Implement the service interface and implementation.
 
-The Neo Service Layer provides a RESTful API for managing JavaScript functions, user secrets, and event triggers:
+4. Create tests for the service.
 
-```bash
-# Create a JavaScript function
-curl -X POST http://localhost:5000/api/v1/functions \
-  -H "Content-Type: application/json" \
-  -d '{"functionId": "token-swap", "code": "function main(input) { /* function code */ }", "description": "A function that handles token swaps"}'
+5. Create documentation for the service.
 
-# Store a user secret
-curl -X POST http://localhost:5000/api/v1/secrets \
-  -H "Content-Type: application/json" \
-  -d '{"userId": "user123", "name": "api_key", "value": "sk_test_abcdefghijklmnopqrstuvwxyz", "description": "API key for external service"}'
+For detailed instructions, see [Service Framework](docs/architecture/service-framework.md).
 
-# Create an event trigger for a Neo N3 smart contract
-curl -X POST http://localhost:5000/api/v1/triggers \
-  -H "Content-Type: application/json" \
-  -d '{"functionId": "token-swap", "eventType": "ExecuteJavaScript", "filters": {"contractHash": "0x1234567890abcdef", "eventName": "ExecuteJavaScript"}}'
+### Enclave Development
 
-# Get execution results
-curl -X GET http://localhost:5000/api/v1/executions/{executionId} \
-  -H "Content-Type: application/json"
-```
+The Neo Service Layer uses Intel SGX with Occlum LibOS enclaves for critical operations. To develop enclave code:
 
-### Interacting with Neo N3 Smart Contracts
+1. Install the Intel SGX SDK.
+2. Install the Occlum LibOS SDK.
+3. Implement the enclave code in C++.
+4. Build the enclave using the Occlum LibOS SDK.
 
-To trigger JavaScript execution from a Neo N3 smart contract:
-
-```csharp
-// In your Neo N3 smart contract
-[DisplayName("ExecuteJavaScript")]
-public static event Action<string, string, string, string> OnExecuteJavaScript;
-
-public static void RequestExecution(string functionId, string input, string userId)
-{
-    string requestId = $"{Runtime.CallingScriptHash}_{Runtime.Time}";
-    OnExecuteJavaScript(functionId, input, userId, requestId);
-}
-```
-
-The Neo Service Layer will detect this event, execute the JavaScript function in the secure enclave, and send the result back to the blockchain via a callback transaction.
+For detailed instructions, see [Enclave Development](docs/architecture/enclave-development.md).
 
 ## Documentation
 
-- [Architecture](docs/Architecture.md)
-- [API](docs/API.md)
-- [Deployment](docs/Deployment.md)
-- [Development](docs/Development.md)
-- [Persistent Storage](docs/persistent-storage.md)
+- [Architecture](docs/architecture/README.md)
+- [Services](docs/services/README.md)
+- [API](docs/api/README.md)
+- [Workflows](docs/workflows/README.md)
 
 ## Contributing
 
-Please read [Development.md](docs/Development.md) for details on our code of conduct and the process for submitting pull requests.
+Contributions are welcome! Please see [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Acknowledgments
-
-- Neo Foundation
-- Occlum Team
-- Intel SGX Team
-- JavaScript Engine Contributors
-
-## Security Considerations
-
-When deploying the Neo Confidential Serverless Layer in production:
-
-1. **Hardware Requirements**: Use genuine Intel CPUs with SGX support
-2. **Production Mode**: Always use hardware mode (not simulation mode) in production
-3. **Remote Attestation**: Implement remote attestation to verify the Occlum enclave's identity
-4. **Secure Key Management**: Use a hardware security module (HSM) for key management
-5. **Regular Updates**: Keep the Intel SGX SDK, Occlum, and all dependencies up to date
-6. **Security Audits**: Conduct regular security audits of your JavaScript functions
-7. **Input Validation**: Validate all inputs to JavaScript functions to prevent injection attacks
-8. **Resource Limits**: Set appropriate GAS limits to prevent resource exhaustion attacks
-9. **Persistent Storage Security**: Ensure data stored in Occlum's file system is encrypted and protected
-10. **Secure Deletion**: Implement secure data deletion procedures for sensitive data
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.

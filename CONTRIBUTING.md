@@ -1,90 +1,108 @@
 # Contributing to Neo Service Layer
 
-Thank you for your interest in contributing to the Neo Service Layer! We welcome contributions from the community to help make this project better.
+Thank you for your interest in contributing to the Neo Service Layer! This document provides guidelines and instructions for contributing to the project.
 
 ## Code of Conduct
 
-Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md) to maintain a respectful and inclusive environment for everyone.
+Please read and follow our [Code of Conduct](CODE_OF_CONDUCT.md).
 
 ## How to Contribute
 
-There are many ways to contribute to the Neo Service Layer:
+### Reporting Bugs
 
-1. **Reporting Bugs**: If you find a bug, please report it by creating an issue in our GitHub repository.
-2. **Suggesting Enhancements**: If you have an idea for a new feature or an improvement to an existing feature, please create an issue in our GitHub repository.
-3. **Contributing Code**: If you want to contribute code, please follow the guidelines below.
-4. **Improving Documentation**: If you find errors or omissions in the documentation, please submit a pull request with your improvements.
-5. **Reviewing Pull Requests**: Help review pull requests from other contributors.
+If you find a bug, please report it by creating an issue in the GitHub repository. Please include:
 
-## Development Environment Setup
+- A clear and descriptive title
+- A detailed description of the bug
+- Steps to reproduce the bug
+- Expected behavior
+- Actual behavior
+- Screenshots (if applicable)
+- Environment information (OS, .NET version, etc.)
 
-Please refer to the [Development Guide](docs/Development.md) for detailed instructions on setting up your development environment.
+### Suggesting Enhancements
 
-## Pull Request Process
+If you have an idea for an enhancement, please create an issue in the GitHub repository. Please include:
 
-1. **Fork the Repository**: Fork the Neo Service Layer repository to your GitHub account.
-2. **Create a Branch**: Create a branch for your changes from the `main` branch.
-3. **Make Changes**: Make your changes to the codebase.
-4. **Write Tests**: Write tests for your changes to ensure they work as expected.
-5. **Run Tests**: Run all tests to ensure your changes don't break existing functionality.
-6. **Update Documentation**: Update the documentation to reflect your changes.
-7. **Submit a Pull Request**: Submit a pull request from your branch to the `main` branch of the Neo Service Layer repository.
+- A clear and descriptive title
+- A detailed description of the enhancement
+- Why the enhancement would be useful
+- Any relevant examples or mockups
 
-## Pull Request Guidelines
+### Pull Requests
 
-- Follow the coding standards and style guidelines.
-- Keep pull requests focused on a single change or feature.
-- Write clear and concise commit messages.
-- Include tests for your changes.
-- Update documentation as needed.
-- Ensure all tests pass before submitting your pull request.
-- Squash your commits before merging.
+1. Fork the repository
+2. Create a new branch for your changes
+3. Make your changes
+4. Run tests to ensure your changes don't break existing functionality
+5. Submit a pull request
 
-## Coding Standards
+Please ensure your pull request:
 
-Please follow the coding standards and style guidelines for the Neo Service Layer:
+- Has a clear and descriptive title
+- Includes a detailed description of the changes
+- References any related issues
+- Follows the coding style and conventions of the project
+- Includes tests for new functionality
+- Updates documentation as necessary
 
-- **C# Code**: Follow the [Microsoft C# Coding Conventions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions).
-- **C++ Code**: Follow the [Google C++ Style Guide](https://google.github.io/styleguide/cppguide.html).
-- **Documentation**: Write clear and concise documentation.
-- **Tests**: Write comprehensive tests for your code.
+## Development Environment
 
-## Commit Message Guidelines
+### Prerequisites
 
-We follow the [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages:
+- .NET 9.0 SDK
+- Visual Studio 2025 or later (optional)
+- Git
+- Occlum LibOS (for enclave development)
+- SGX SDK (for enclave development)
 
-```
-<type>(<scope>): <subject>
+### Building the Project
 
-<body>
+1. Clone the repository:
 
-<footer>
-```
-
-- **Type**: The type of change (e.g., feat, fix, docs, style, refactor, test, chore).
-- **Scope**: The scope of the change (e.g., api, tee-host, enclave).
-- **Subject**: A short description of the change.
-- **Body**: A more detailed description of the change.
-- **Footer**: Any breaking changes or references to issues.
-
-Examples:
-
-```
-feat(api): add new endpoint for attestation verification
-
-Add a new endpoint to verify attestation proofs from the TEE.
-
-Closes #123
+```bash
+git clone https://github.com/neo-project/neo-service-layer.git
+cd neo-service-layer
 ```
 
-```
-fix(enclave): fix memory leak in key management
+2. Build the solution:
 
-Fix a memory leak in the key management component of the enclave.
-
-Closes #456
+```bash
+dotnet build
 ```
+
+3. Run the tests:
+
+```bash
+dotnet test
+```
+
+## Coding Style
+
+Please follow the coding style and conventions used in the project. We use the following guidelines:
+
+- Use 4 spaces for indentation
+- Use camelCase for private fields with an underscore prefix
+- Use PascalCase for public members
+- Use meaningful names for variables, methods, and classes
+- Write clear and concise comments
+- Write unit tests for new functionality
+
+## Documentation
+
+Please update documentation as necessary when making changes. This includes:
+
+- Code comments
+- README files
+- API documentation
+- Architecture documentation
 
 ## License
 
-By contributing to the Neo Service Layer, you agree that your contributions will be licensed under the project's [MIT License](LICENSE).
+By contributing to the Neo Service Layer, you agree that your contributions will be licensed under the project's MIT License.
+
+## Questions
+
+If you have any questions, please feel free to create an issue in the GitHub repository or contact the project maintainers.
+
+Thank you for your contributions!
