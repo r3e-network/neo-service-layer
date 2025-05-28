@@ -3,6 +3,13 @@ using System.Text;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 
+// Type aliases to resolve ambiguous references
+using LocalOrderingPool = NeoServiceLayer.Advanced.FairOrdering.Models.OrderingPool;
+using LocalPendingTransaction = NeoServiceLayer.Advanced.FairOrdering.Models.PendingTransaction;
+using LocalFairOrderingResult = NeoServiceLayer.Advanced.FairOrdering.Models.FairOrderingResult;
+using LocalOrderingAlgorithm = NeoServiceLayer.Advanced.FairOrdering.Models.OrderingAlgorithm;
+using LocalFairnessLevel = NeoServiceLayer.Advanced.FairOrdering.Models.FairnessLevel;
+
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
 public partial class FairOrderingService
@@ -21,15 +28,15 @@ public partial class FairOrderingService
             await CreateDefaultFairPoolAsync(defaultPoolId);
         }
 
-        var pendingTransaction = new PendingTransaction
+        var pendingTransaction = new LocalPendingTransaction
         {
-            Id = transaction.TransactionId,
-            Hash = ComputeTransactionHash(transaction.Data),
+            TransactionId = transaction.TransactionId,
+            OriginalTransactionHash = ComputeTransactionHash(transaction.Data),
             SubmittedAt = transaction.SubmittedAt,
             Priority = GetPriorityFromProtectionLevel(transaction.ProtectionLevel),
             GasPrice = CalculateGasPrice(transaction.GasLimit),
-            From = transaction.From,
-            Data = transaction.Data,
+            Sender = transaction.From,
+            TransactionData = transaction.Data,
             Status = TransactionStatus.Pending
         };
 
@@ -49,27 +56,20 @@ public partial class FairOrderingService
     /// <param name="poolId">The pool ID.</param>
     private async Task CreateDefaultFairPoolAsync(string poolId)
     {
-        var pool = new OrderingPool
+        var pool = new LocalOrderingPool
         {
-            Id = poolId,
+            PoolId = poolId,
             Name = "Default Fair Pool",
-            Configuration = new OrderingPoolConfig
-            {
-                Name = "Default Fair Pool",
-                Description = "Default pool for fair transaction ordering",
-                OrderingAlgorithm = OrderingAlgorithm.FairQueue,
-                BatchSize = 50,
-                BatchTimeout = TimeSpan.FromSeconds(30),
-                MevProtectionEnabled = true,
-                FairnessLevel = FairnessLevel.High
-            },
-            PendingTransactions = new List<PendingTransaction>(),
-            ProcessedBatches = new List<ProcessedBatch>(),
-            Status = PoolStatus.Active,
-            OrderingAlgorithm = OrderingAlgorithm.FairQueue,
+            Description = "Default pool for fair transaction ordering",
+            OrderingAlgorithm = LocalOrderingAlgorithm.TimeWeightedFair,
             BatchSize = 50,
+            BatchTimeout = TimeSpan.FromSeconds(30),
             MevProtectionEnabled = true,
-            FairnessLevel = FairnessLevel.High
+            FairnessLevel = LocalFairnessLevel.Moderate,
+            PendingTransactions = new List<LocalPendingTransaction>(),
+            ProcessedBatches = new List<ProcessedBatch>(),
+            IsActive = true,
+            CreatedAt = DateTime.UtcNow
         };
 
         // Store pool configuration to persistent storage
@@ -79,7 +79,7 @@ public partial class FairOrderingService
         lock (_poolsLock)
         {
             _orderingPools[poolId] = pool;
-            _orderingHistory[poolId] = new List<FairOrderingResult>();
+            _orderingHistory[poolId] = new List<LocalFairOrderingResult>();
         }
     }
 
@@ -424,9 +424,9 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="count">Number of transactions to retrieve.</param>
     /// <returns>List of recent transactions.</returns>
-    private async Task<List<PendingTransaction>> GetRecentTransactionsAsync(int count)
+    private async Task<List<LocalPendingTransaction>> GetRecentTransactionsAsync(int count)
     {
-        var transactions = new List<PendingTransaction>();
+        var transactions = new List<LocalPendingTransaction>();
 
         // Query from all active pools
         foreach (var pool in _orderingPools.Values)
@@ -498,9 +498,47 @@ public partial class FairOrderingService
     {
         // This would typically involve querying the blockchain for bytecode
         // and analyzing function signatures and patterns
-        await Task.CompletedTask;
-
-        // For now, return unknown - in production this would do actual bytecode analysis
+        await Task.Delay(50); // Simulate analysis time
+        
+        // For now, return unknown for unrecognized contracts
         return "unknown";
     }
+}
+
+/// <summary>
+/// Result of gas pattern analysis.
+/// </summary>
+internal class GasAnalysisResult
+{
+    public double GasPricePercentile { get; set; }
+    public bool IsHighPriority { get; set; }
+    public decimal EstimatedMevExposure { get; set; }
+    public Dictionary<string, object> Details { get; set; } = new Dictionary<string, object>();
+}
+
+/// <summary>
+/// Result of transaction timing analysis.
+/// </summary>
+internal class TimingAnalysisResult
+{
+    public bool IsSuspicious { get; set; }
+    public double TimingScore { get; set; }
+    public List<string> DetectedPatterns { get; set; } = new List<string>();
+    public int RecommendedDelayMs { get; set; }
+}
+
+/// <summary>
+/// Result of contract interaction analysis.
+/// </summary>
+internal class ContractAnalysisResult
+{
+    public string ContractType { get; set; } = string.Empty;
+    public bool IsDexInteraction { get; set; }
+    public bool IsLendingInteraction { get; set; }
+    public bool IsNftInteraction { get; set; }
+    public bool HasMevRisk { get; set; }
+    public string RiskLevel { get; set; } = "Low";
+    public decimal EstimatedMev { get; set; }
+    public List<string> RiskFactors { get; set; } = new List<string>();
+    public List<string> Recommendations { get; set; } = new List<string>();
 }

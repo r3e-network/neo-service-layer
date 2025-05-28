@@ -4,6 +4,16 @@ using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
 
+// Type aliases to resolve ambiguous references
+using LocalOrderingPool = NeoServiceLayer.Advanced.FairOrdering.Models.OrderingPool;
+using LocalPendingTransaction = NeoServiceLayer.Advanced.FairOrdering.Models.PendingTransaction;
+using LocalFairOrderingResult = NeoServiceLayer.Advanced.FairOrdering.Models.FairOrderingResult;
+using LocalMevAnalysisRequest = NeoServiceLayer.Advanced.FairOrdering.Models.MevAnalysisRequest;
+using LocalMevProtectionResult = NeoServiceLayer.Advanced.FairOrdering.Models.MevProtectionResult;
+using LocalFairnessMetrics = NeoServiceLayer.Advanced.FairOrdering.Models.FairnessMetrics;
+using LocalFairnessLevel = NeoServiceLayer.Advanced.FairOrdering.Models.FairnessLevel;
+using LocalOrderingAlgorithm = NeoServiceLayer.Advanced.FairOrdering.Models.OrderingAlgorithm;
+
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
 /// <summary>
@@ -11,8 +21,8 @@ namespace NeoServiceLayer.Advanced.FairOrdering;
 /// </summary>
 public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOrderingService
 {
-    private readonly Dictionary<string, OrderingPool> _orderingPools = new();
-    private readonly Dictionary<string, List<FairOrderingResult>> _orderingHistory = new();
+    private readonly Dictionary<string, LocalOrderingPool> _orderingPools = new();
+    private readonly Dictionary<string, List<LocalFairOrderingResult>> _orderingHistory = new();
     private readonly object _poolsLock = new();
     private readonly Timer _processingTimer;
     private readonly IPersistentStorageProvider _storageProvider;
@@ -33,8 +43,8 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         _processingTimer = new Timer(ProcessOrderingPools, null, TimeSpan.FromSeconds(10), TimeSpan.FromSeconds(10));
 
         AddCapability<IFairOrderingService>();
-        AddDependency(new ServiceDependency("RandomnessService", "1.0.0", true));
-        AddDependency(new ServiceDependency("KeyManagementService", "1.0.0", true));
+        AddDependency(new ServiceDependency("RandomnessService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
     }
 
     /// <summary>
@@ -61,7 +71,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         {
             var poolId = Guid.NewGuid().ToString();
 
-            var pool = new OrderingPool
+            var pool = new LocalOrderingPool
             {
                 PoolId = poolId,
                 Name = config.Name,
@@ -73,14 +83,14 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
                 FairnessLevel = config.FairnessLevel,
                 CreatedAt = DateTime.UtcNow,
                 IsActive = true,
-                PendingTransactions = new List<PendingTransaction>(),
+                PendingTransactions = new List<LocalPendingTransaction>(),
                 ProcessedBatches = new List<ProcessedBatch>()
             };
 
             lock (_poolsLock)
             {
                 _orderingPools[poolId] = pool;
-                _orderingHistory[poolId] = new List<FairOrderingResult>();
+                _orderingHistory[poolId] = new List<LocalFairOrderingResult>();
             }
 
             Logger.LogInformation("Created ordering pool {PoolId} ({Name}) with algorithm {Algorithm} on {Blockchain}",
@@ -276,7 +286,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             var submissionId = Guid.NewGuid().ToString();
             var pool = GetOrderingPool(submission.PoolId);
 
-            var pendingTransaction = new PendingTransaction
+            var pendingTransaction = new LocalPendingTransaction
             {
                 TransactionId = submissionId,
                 OriginalTransactionHash = submission.TransactionHash,
@@ -302,7 +312,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingResult> GetOrderingResultAsync(string transactionId, BlockchainType blockchainType)
+    public async Task<LocalFairOrderingResult> GetOrderingResultAsync(string transactionId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(transactionId);
 
@@ -330,7 +340,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<MevProtectionResult> AnalyzeMevRiskAsync(MevAnalysisRequest request, BlockchainType blockchainType)
+    public async Task<LocalMevProtectionResult> AnalyzeMevRiskAsync(LocalMevAnalysisRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -352,7 +362,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
                 var mevRisk = await AnalyzeMevRiskInEnclaveAsync(request);
                 var protectionStrategies = await GenerateProtectionStrategiesAsync(mevRisk);
 
-                var result = new MevProtectionResult
+                var result = new LocalMevProtectionResult
                 {
                     AnalysisId = analysisId,
                     TransactionHash = request.TransactionHash,
@@ -373,7 +383,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             {
                 Logger.LogError(ex, "Failed to analyze MEV risk {AnalysisId}", analysisId);
 
-                return new MevProtectionResult
+                return new LocalMevProtectionResult
                 {
                     AnalysisId = analysisId,
                     TransactionHash = request.TransactionHash,
@@ -386,7 +396,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType)
+    public async Task<LocalFairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(poolId);
 
@@ -399,7 +409,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         {
             var pool = GetOrderingPool(poolId);
 
-            return new FairnessMetrics
+            return new LocalFairnessMetrics
             {
                 PoolId = poolId,
                 TotalTransactionsProcessed = pool.ProcessedBatches.Sum(b => b.TransactionCount),
@@ -413,7 +423,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType)
+    public async Task<IEnumerable<LocalOrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -472,7 +482,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     {
         try
         {
-            var poolsToProcess = new List<OrderingPool>();
+            var poolsToProcess = new List<LocalOrderingPool>();
 
             lock (_poolsLock)
             {
@@ -497,82 +507,75 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// Processes a batch of transactions for an ordering pool.
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
-    private async Task ProcessPoolBatchAsync(OrderingPool pool)
+    private async Task ProcessPoolBatchAsync(LocalOrderingPool pool)
     {
         try
         {
-            Logger.LogDebug("Processing batch for pool {PoolId} with {TransactionCount} transactions",
-                pool.PoolId, pool.PendingTransactions.Count);
-
-            var batchId = Guid.NewGuid().ToString();
-            var transactionsToProcess = new List<PendingTransaction>();
+            List<LocalPendingTransaction> transactionsToProcess;
 
             lock (_poolsLock)
             {
-                var batchSize = Math.Min(pool.BatchSize, pool.PendingTransactions.Count);
-                transactionsToProcess.AddRange(pool.PendingTransactions.Take(batchSize));
-                pool.PendingTransactions.RemoveRange(0, batchSize);
+                // Get transactions to process
+                transactionsToProcess = pool.PendingTransactions
+                    .Take(pool.BatchSize)
+                    .ToList();
+
+                // Remove from pending list
+                foreach (var tx in transactionsToProcess)
+                {
+                    pool.PendingTransactions.Remove(tx);
+                }
             }
 
-            // Process batch within the enclave
-            var orderedTransactions = await OrderTransactionsInEnclaveAsync(pool, transactionsToProcess);
+            if (transactionsToProcess.Count == 0)
+                return;
+
+            Logger.LogDebug("Processing batch of {Count} transactions for pool {PoolId}",
+                transactionsToProcess.Count, pool.PoolId);
+
+            // Order transactions based on algorithm
+            var orderedTransactions = await OrderTransactionsAsync(transactionsToProcess, pool.OrderingAlgorithm);
 
             // Create processed batch
-            var processedBatch = new ProcessedBatch
+            var batch = new ProcessedBatch
             {
-                BatchId = batchId,
+                BatchId = Guid.NewGuid().ToString(),
                 PoolId = pool.PoolId,
                 TransactionCount = orderedTransactions.Count,
                 ProcessedAt = DateTime.UtcNow,
-                OrderingAlgorithm = pool.OrderingAlgorithm,
-                FairnessScore = CalculateBatchFairnessScore(orderedTransactions)
+                OrderingAlgorithm = pool.OrderingAlgorithm.ToString(),
+                FairnessLevel = pool.FairnessLevel.ToString()
             };
 
-            // Record ordering results
-            foreach (var transaction in orderedTransactions)
+            lock (_poolsLock)
             {
-                var result = new FairOrderingResult
-                {
-                    TransactionId = transaction.TransactionId,
-                    PoolId = pool.PoolId,
-                    BatchId = batchId,
-                    OriginalPosition = transactionsToProcess.FindIndex(t => t.TransactionId == transaction.TransactionId),
-                    FinalPosition = orderedTransactions.FindIndex(t => t.TransactionId == transaction.TransactionId),
-                    OrderingAlgorithm = pool.OrderingAlgorithm,
-                    FairnessScore = transaction.FairnessScore,
-                    ProcessedAt = DateTime.UtcNow,
-                    Success = true
-                };
+                pool.ProcessedBatches.Add(batch);
 
-                lock (_poolsLock)
+                // Add results to history
+                if (_orderingHistory.TryGetValue(pool.PoolId, out var history))
                 {
-                    _orderingHistory[pool.PoolId].Add(result);
-
-                    // Keep only last 10000 results
-                    if (_orderingHistory[pool.PoolId].Count > 10000)
+                    foreach (var tx in orderedTransactions)
                     {
-                        _orderingHistory[pool.PoolId].RemoveAt(0);
+                        history.Add(new LocalFairOrderingResult
+                        {
+                            TransactionId = tx.TransactionId,
+                            PoolId = pool.PoolId,
+                            OriginalPosition = transactionsToProcess.IndexOf(tx),
+                            FinalPosition = orderedTransactions.IndexOf(tx),
+                            OrderingAlgorithm = pool.OrderingAlgorithm.ToString(),
+                            ProcessedAt = DateTime.UtcNow,
+                            Success = true
+                        });
                     }
                 }
             }
 
-            lock (_poolsLock)
-            {
-                pool.ProcessedBatches.Add(processedBatch);
-
-                // Keep only last 1000 batches
-                if (pool.ProcessedBatches.Count > 1000)
-                {
-                    pool.ProcessedBatches.RemoveAt(0);
-                }
-            }
-
-            Logger.LogInformation("Processed batch {BatchId} for pool {PoolId}: {TransactionCount} transactions ordered",
-                batchId, pool.PoolId, orderedTransactions.Count);
+            Logger.LogInformation("Processed batch {BatchId} with {Count} transactions for pool {PoolId}",
+                batch.BatchId, transactionsToProcess.Count, pool.PoolId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to process batch for pool {PoolId}", pool.PoolId);
+            Logger.LogError(ex, "Error processing batch for pool {PoolId}", pool.PoolId);
         }
     }
 
@@ -581,11 +584,11 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// </summary>
     /// <param name="poolId">The pool ID.</param>
     /// <returns>The ordering pool.</returns>
-    private OrderingPool GetOrderingPool(string poolId)
+    private LocalOrderingPool GetOrderingPool(string poolId)
     {
         lock (_poolsLock)
         {
-            if (_orderingPools.TryGetValue(poolId, out var pool) && pool.IsActive)
+            if (_orderingPools.TryGetValue(poolId, out var pool))
             {
                 return pool;
             }
@@ -595,37 +598,41 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <summary>
-    /// Calculates the risk level based on a score.
+    /// Calculates risk level from score.
     /// </summary>
-    /// <param name="score">The risk score (0-1).</param>
+    /// <param name="score">The risk score.</param>
     /// <returns>The risk level.</returns>
     private RiskLevel CalculateRiskLevel(double score)
     {
         return score switch
         {
-            >= 0.8 => RiskLevel.Critical,
-            >= 0.6 => RiskLevel.High,
-            >= 0.4 => RiskLevel.Medium,
-            >= 0.2 => RiskLevel.Low,
-            _ => RiskLevel.Minimal
+            < 0.3 => RiskLevel.Low,
+            < 0.6 => RiskLevel.Medium,
+            < 0.8 => RiskLevel.High,
+            _ => RiskLevel.Critical
         };
     }
 
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
-        Logger.LogInformation("Initializing Fair Ordering Service");
-
-        if (!await base.OnInitializeAsync())
+        try
         {
+            Logger.LogInformation("Initializing Fair Ordering Service");
+
+            // Initialize storage collections
+            await _storageProvider.InitializeCollectionAsync("FairOrderingPools");
+            await _storageProvider.InitializeCollectionAsync("FairTransactions");
+            await _storageProvider.InitializeCollectionAsync("OrderingHistory");
+
+            Logger.LogInformation("Fair Ordering Service initialized successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize Fair Ordering Service");
             return false;
         }
-
-        // Initialize default ordering pools
-        await InitializeDefaultPoolsAsync();
-
-        Logger.LogInformation("Fair Ordering Service initialized successfully");
-        return true;
     }
 
     /// <inheritdoc/>
@@ -633,9 +640,9 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     {
         try
         {
-            Logger.LogInformation("Initializing Fair Ordering Service enclave...");
+            Logger.LogInformation("Initializing Fair Ordering Service enclave");
 
-            // Initialize fair ordering specific enclave components
+            // Initialize enclave-specific components
             await InitializeFairOrderingEnclaveAsync();
 
             Logger.LogInformation("Fair Ordering Service enclave initialized successfully");
@@ -643,7 +650,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing Fair Ordering Service enclave");
+            Logger.LogError(ex, "Failed to initialize Fair Ordering Service enclave");
             return false;
         }
     }
@@ -652,52 +659,38 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     protected override async Task<bool> OnStartAsync()
     {
         Logger.LogInformation("Starting Fair Ordering Service");
-        await Task.CompletedTask;
-        return true;
+        return await Task.FromResult(true);
     }
 
     /// <inheritdoc/>
     protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Stopping Fair Ordering Service");
-
-        // Dispose timer
         _processingTimer?.Dispose();
-
-        await Task.CompletedTask;
-        return true;
+        return await Task.FromResult(true);
     }
 
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
-        var baseHealth = base.OnGetHealthAsync().Result;
-
-        if (baseHealth != ServiceHealth.Healthy)
+        var health = new ServiceHealth
         {
-            return Task.FromResult(baseHealth);
-        }
+            ServiceName = ServiceName,
+            IsHealthy = IsRunning,
+            Status = IsRunning ? "Running" : "Stopped",
+            LastChecked = DateTime.UtcNow
+        };
 
-        // Check fair ordering specific health
-        var activePoolCount = _orderingPools.Values.Count(p => p.IsActive);
-        var totalPendingTransactions = _orderingPools.Values.Sum(p => p.PendingTransactions.Count);
-
-        if (totalPendingTransactions > 10000)
-        {
-            Logger.LogWarning("High number of pending transactions: {PendingCount}", totalPendingTransactions);
-            return Task.FromResult(ServiceHealth.Degraded);
-        }
-
-        Logger.LogDebug("Fair Ordering Service health check: {ActivePools} pools, {PendingTransactions} pending",
-            activePoolCount, totalPendingTransactions);
-
-        return Task.FromResult(ServiceHealth.Healthy);
+        return Task.FromResult(health);
     }
 
     /// <inheritdoc/>
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        _processingTimer?.Dispose();
-        base.Dispose();
+        if (disposing)
+        {
+            _processingTimer?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

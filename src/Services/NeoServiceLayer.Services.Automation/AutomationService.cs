@@ -547,13 +547,24 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
 
         Logger.LogDebug("Automation Service health check: {ActiveJobs} active jobs", activeJobCount);
 
-        return Task.FromResult(ServiceHealth.Healthy);
+        var health = new ServiceHealth
+        {
+            ServiceName = ServiceName,
+            IsHealthy = IsRunning,
+            Status = IsRunning ? "Running" : "Stopped",
+            LastChecked = DateTime.UtcNow
+        };
+
+        return Task.FromResult(health);
     }
 
     /// <inheritdoc/>
-    public void Dispose()
+    protected override void Dispose(bool disposing)
     {
-        _executionTimer?.Dispose();
-        GC.SuppressFinalize(this);
+        if (disposing)
+        {
+            _executionTimer?.Dispose();
+        }
+        base.Dispose(disposing);
     }
 }

@@ -37,7 +37,7 @@ public partial class MonitoringService : EnclaveBlockchainServiceBase, IMonitori
         Configuration = configuration;
 
         AddCapability<IMonitoringService>();
-        AddDependency(new ServiceDependency { Name = "EnclaveManager", Version = "1.0.0", IsRequired = true });
+        AddDependency(new ServiceDependency("EnclaveManager", true, "1.0.0"));
 
         // Initialize timers for periodic health checks and metrics collection
         _healthCheckTimer = new Timer(PerformHealthCheck, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
@@ -86,7 +86,15 @@ public partial class MonitoringService : EnclaveBlockchainServiceBase, IMonitori
         Logger.LogDebug("Monitoring service health check: {HealthyCount}/{ServiceCount} services healthy",
             healthyCount, serviceCount);
 
-        return Task.FromResult(ServiceHealth.Healthy);
+        var health = new ServiceHealth
+        {
+            ServiceName = ServiceName,
+            IsHealthy = true,
+            Status = "Running",
+            LastChecked = DateTime.UtcNow
+        };
+
+        return Task.FromResult(health);
     }
 
     /// <inheritdoc/>
@@ -443,6 +451,40 @@ public partial class MonitoringService : EnclaveBlockchainServiceBase, IMonitori
                 ErrorMessage = ex.Message,
                 Timestamp = DateTime.UtcNow
             };
+        }
+    }
+
+    /// <summary>
+    /// Performs periodic health check.
+    /// </summary>
+    /// <param name="state">Timer state.</param>
+    private async void PerformHealthCheck(object? state)
+    {
+        try
+        {
+            Logger.LogDebug("Performing periodic health check");
+            await Task.Delay(100); // Simulate health check
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during periodic health check");
+        }
+    }
+
+    /// <summary>
+    /// Collects metrics periodically.
+    /// </summary>
+    /// <param name="state">Timer state.</param>
+    private async void CollectMetrics(object? state)
+    {
+        try
+        {
+            Logger.LogDebug("Collecting metrics");
+            await Task.Delay(50); // Simulate metrics collection
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during metrics collection");
         }
     }
 

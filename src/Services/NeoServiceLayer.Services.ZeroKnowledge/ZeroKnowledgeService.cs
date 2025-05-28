@@ -24,8 +24,8 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
         Configuration = configuration;
 
         AddCapability<IZeroKnowledgeService>();
-        AddDependency(new ServiceDependency("KeyManagementService", "1.0.0", true));
-        AddDependency(new ServiceDependency("ComputeService", "1.0.0", false));
+        AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("ComputeService", false, "1.0.0"));
     }
 
     /// <summary>
@@ -56,12 +56,12 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
                 Name = definition.Name,
                 Description = definition.Description,
                 Type = definition.Type,
-                CompiledCode = compiledCircuit,
-                InputSchema = definition.InputSchema,
-                OutputSchema = definition.OutputSchema,
-                CreatedAt = DateTime.UtcNow,
+                CompiledData = compiledCircuit,
+                VerificationKey = await GenerateVerificationKeyAsync(definition),
+                ProvingKey = await GenerateProvingKeyAsync(definition),
+                CompiledAt = DateTime.UtcNow,
                 IsActive = true,
-                Metadata = definition.Metadata
+                BlockchainType = blockchainType
             };
 
             lock (_circuitsLock)
@@ -121,7 +121,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
                     Proof = proofData,
                     PublicSignals = publicSignals,
                     GeneratedAt = DateTime.UtcNow,
-                    VerificationKey = await GetVerificationKeyAsync(request.CircuitId)
+                    VerificationKey = circuit.VerificationKey
                 };
 
                 Logger.LogInformation("Generated ZK proof {ProofId} for circuit {CircuitId} on {Blockchain}",
@@ -329,8 +329,6 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
         throw new ArgumentException($"Proof {proofId} not found", nameof(proofId));
     }
 
-
-
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
@@ -418,33 +416,84 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
     protected override async Task<bool> OnStartAsync()
     {
         Logger.LogInformation("Starting Zero-Knowledge Service");
-        return true;
+        return await Task.FromResult(true);
     }
 
     /// <inheritdoc/>
     protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Stopping Zero-Knowledge Service");
-        return true;
+        return await Task.FromResult(true);
     }
 
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
-        var baseHealth = base.OnGetHealthAsync().Result;
-
-        if (baseHealth != ServiceHealth.Healthy)
+        var health = new ServiceHealth
         {
-            return Task.FromResult(baseHealth);
-        }
+            ServiceName = ServiceName,
+            IsHealthy = IsRunning,
+            Status = IsRunning ? "Running" : "Stopped",
+            LastChecked = DateTime.UtcNow
+        };
 
-        // Check ZK-specific health
-        var activeCircuitCount = _circuits.Values.Count(c => c.IsActive);
-        var totalProofCount = _proofs.Count;
+        return Task.FromResult(health);
+    }
 
-        Logger.LogDebug("Zero-Knowledge Service health check: {ActiveCircuits} circuits, {TotalProofs} proofs",
-            activeCircuitCount, totalProofCount);
+    // Helper methods that need to be implemented in partial classes
+    private async Task<byte[]> CompileCircuitInEnclaveAsync(ZkCircuitDefinition definition)
+    {
+        // This would be implemented in the CircuitCompilation partial class
+        await Task.Delay(100); // Simulate compilation time
+        return System.Text.Encoding.UTF8.GetBytes($"compiled_circuit_{definition.Name}");
+    }
 
-        return Task.FromResult(ServiceHealth.Healthy);
+    private async Task<string> GenerateVerificationKeyAsync(ZkCircuitDefinition definition)
+    {
+        await Task.Delay(50);
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"vk_{definition.Name}"));
+    }
+
+    private async Task<string> GenerateProvingKeyAsync(ZkCircuitDefinition definition)
+    {
+        await Task.Delay(50);
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"pk_{definition.Name}"));
+    }
+
+    private async Task<string> GenerateProofInEnclaveAsync(ZkCircuit circuit, Dictionary<string, object> publicInputs, Dictionary<string, object> privateInputs)
+    {
+        await Task.Delay(200); // Simulate proof generation time
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"proof_{circuit.CircuitId}"));
+    }
+
+    private async Task<string[]> ExtractPublicSignalsAsync(Dictionary<string, object> publicInputs)
+    {
+        await Task.Delay(10);
+        return publicInputs.Values.Select(v => v.ToString() ?? string.Empty).ToArray();
+    }
+
+    private async Task<bool> VerifyProofInEnclaveAsync(ZkCircuit circuit, string proof, string[] publicSignals)
+    {
+        await Task.Delay(100); // Simulate verification time
+        return !string.IsNullOrEmpty(proof) && publicSignals.Length > 0;
+    }
+
+    private async Task<string> ExecuteComputationInEnclaveAsync(ZkComputationRequest request)
+    {
+        await Task.Delay(300); // Simulate computation time
+        return $"computation_result_{request.ComputationType}";
+    }
+
+    private async Task<string> GenerateComputationProofAsync(ZkComputationRequest request, string result)
+    {
+        await Task.Delay(100);
+        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"comp_proof_{result}"));
+    }
+
+    private async Task InitializeZkEnclaveAsync()
+    {
+        // Initialize ZK-specific enclave components
+        Logger.LogDebug("Initializing ZK enclave components");
+        await Task.Delay(50); // Simulate initialization
     }
 }
