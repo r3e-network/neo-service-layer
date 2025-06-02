@@ -1,0 +1,29 @@
+{
+  "name": "Neo Service Layer Development",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "features": {},
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "bash",
+        "dotnet.defaultSolution": "NeoServiceLayer.sln"
+      },
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "ms-vscode.vscode-json",
+        "redhat.vscode-yaml"
+      ]
+    }
+  },
+  "forwardPorts": [5000, 5001, 8080],
+  "postCreateCommand": "dotnet restore && dotnet build",
+  "remoteUser": "vscode",
+  "workspaceFolder": "/workspace",
+  "mounts": [
+    "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+  ]
+}
