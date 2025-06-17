@@ -1,6 +1,7 @@
-/* Neo Service Layer Web Interface CSS */
+/* Neo Service Layer Web Interface CSS - Enhanced */
 
 :root {
+    /* Legacy Bootstrap Colors for Compatibility */
     --primary-color: #007bff;
     --secondary-color: #6c757d;
     --success-color: #28a745;
@@ -9,6 +10,11 @@
     --info-color: #17a2b8;
     --light-color: #f8f9fa;
     --dark-color: #343a40;
+    
+    /* Enhanced Neo Brand Colors */
+    --neo-brand-primary: #00d4aa;
+    --neo-brand-secondary: #0066cc;
+    --neo-brand-accent: #ff6b35;
 }
 
 /* Global Styles */

@@ -9,2291 +9,552 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>@ViewData["Title"] - Interactive Web Interface</title>
-    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <title>@ViewData["Title"] - Enterprise Blockchain Infrastructure</title>
+    
+    <!-- Modern Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Stylesheets -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+    <link href="~/css/modern-theme.css" rel="stylesheet">
     <link href="~/css/site.css" rel="stylesheet">
-    <style>
-        .service-card {
-            transition: all 0.3s ease;
-            border: 1px solid #dee2e6;
-            border-radius: 10px;
-            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
-        }
-        .service-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 10px 25px rgba(0,0,0,0.1);
-            border-color: #007bff;
-        }
-        .feature-icon {
-            font-size: 3rem;
-            margin-bottom: 1rem;
-            color: #007bff;
-        }
-        .nav-pills .nav-link.active {
-            background-color: #007bff;
-        }
-        .result-container {
-            background-color: #f8f9fa;
-            border-radius: 8px;
-            border: 1px solid #dee2e6;
-        }
-        .spinner-border-sm {
-            width: 1rem;
-            height: 1rem;
-        }
-        .response-json {
-            background-color: #2d3748;
-            color: #e2e8f0;
-            border-radius: 8px;
-            font-family: 'Courier New', monospace;
-        }
-        .header-gradient {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-        }
-        .section-title {
-            color: #495057;
-            border-bottom: 2px solid #007bff;
-            padding-bottom: 0.5rem;
-            margin-bottom: 1.5rem;
-        }
-        .nav-header {
-            font-size: 0.75rem;
-            font-weight: 600;
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            border-bottom: 1px solid #dee2e6;
-            padding-bottom: 0.25rem;
-        }
-        .nav-pills .nav-link {
-            font-size: 0.875rem;
-            padding: 0.5rem 0.75rem;
-            margin-bottom: 0.25rem;
-            border-radius: 6px;
-        }
-        .nav-pills .nav-link i {
-            width: 16px;
-            text-align: center;
-        }
-        .feature-icon.small {
-            font-size: 1.5rem;
-        }
-    </style>
+    
+    <!-- Meta Tags -->
+    <meta name="description" content="Enterprise-grade blockchain infrastructure with Intel SGX, AI-powered services, and multi-chain support for Neo N3 and Neo X">
+    <meta name="keywords" content="blockchain, Neo, SGX, TEE, AI, microservices, DeFi, smart contracts">
+    <meta name="author" content="Neo Service Layer Team">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/x-icon" href="/favicon.ico">
 </head>
-<body>
-    <!-- Header -->
-    <div class="header-gradient py-4 mb-4">
+<body class="fade-in">
+    <!-- Modern Navigation -->
+    <nav class="navbar-modern">
         <div class="container">
-            <div class="row align-items-center">
-                <div class="col-md-8">
-                    <h1 class="display-4 mb-0">
-                        <i class="fas fa-cube me-3"></i>Neo Service Layer
-                    </h1>
-                    <p class="lead mb-0">Interactive Web Interface for Blockchain Services</p>
+            <div class="d-flex justify-content-between align-items-center w-100">
+                <a href="/" class="navbar-brand">
+                    <i class="fas fa-cube me-2"></i>Neo Service Layer
+                </a>
+                
+                <div class="d-none d-md-flex align-items-center gap-4">
+                    <a href="#features" class="nav-link-modern">Features</a>
+                    <a href="#services" class="nav-link-modern">Services</a>
+                    <a href="#docs" class="nav-link-modern">Documentation</a>
+                    <a href="/swagger" class="nav-link-modern">API</a>
+                    <button class="btn-neo btn-primary" onclick="window.neoApp.callService('demo', '/api/auth/demo-token')">
+                        <i class="fas fa-rocket"></i>
+                        Get Started
+                    </button>
                 </div>
-                <div class="col-md-4 text-end">
-                    <div class="d-flex align-items-center justify-content-end">
-                        <span id="connection-status" class="badge bg-warning me-3">
-                            <i class="fas fa-circle"></i> Connecting...
-                        </span>
-                        <a href="/services" class="btn btn-success btn-sm me-2">
-                            <i class="fas fa-layer-group"></i> View All Services
-                        </a>
-                        <button id="authBtn" class="btn btn-light btn-sm">
-                            <i class="fas fa-key"></i> Get Demo Token
+                
+                <button class="mobile-toggle d-md-none btn-neo btn-ghost">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="hero-section">
+        <div class="container">
+            <div class="row align-items-center min-vh-100">
+                <div class="col-lg-6">
+                    <div class="hero-content">
+                        <h1 class="hero-title">
+                            Next-Generation
+                            <br>Blockchain Infrastructure
+                        </h1>
+                        <p class="hero-subtitle">
+                            Enterprise-grade blockchain services powered by Intel SGX, AI analytics, 
+                            and multi-chain compatibility for Neo N3 and Neo X ecosystems.
+                        </p>
+                        <div class="d-flex flex-wrap gap-3 mb-4">
+                            <button class="btn-neo btn-primary" onclick="scrollToSection('features')">
+                                <i class="fas fa-play"></i>
+                                Explore Services
+                            </button>
+                            <button class="btn-neo btn-outline" onclick="window.open('/swagger', '_blank')">
+                                <i class="fas fa-code"></i>
+                                View API Documentation
+                            </button>
+                        </div>
+                        <div class="d-flex align-items-center gap-4 text-sm">
+                            <div class="d-flex align-items-center gap-2">
+                                <div class="loading-spinner" style="width: 12px; height: 12px;"></div>
+                                <span id="connection-status">Connecting to services...</span>
+                            </div>
+                            <span class="text-white opacity-75">|</span>
+                            <span class="text-white opacity-75">20+ Microservices</span>
+                            <span class="text-white opacity-75">|</span>
+                            <span class="text-white opacity-75">Enterprise Ready</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-lg-6">
+                    <div class="position-relative">
+                        <!-- System Status Dashboard -->
+                        <div class="glass-card">
+                            <h5 class="text-white mb-4">
+                                <i class="fas fa-chart-bar me-2"></i>
+                                System Overview
+                            </h5>
+                            <div id="system-info" class="text-white">
+                                <div class="row g-3">
+                                    <div class="col-6 text-center">
+                                        <div class="loading-spinner mx-auto mb-2"></div>
+                                        <small>Loading system info...</small>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Stats Section -->
+    <section class="stats-section" id="stats">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center">
+                    <h2 class="mb-4">Powering Enterprise Blockchain Solutions</h2>
+                    <p class="lead mb-5">Trusted by developers and enterprises worldwide</p>
+                </div>
+            </div>
+            <div class="stats-grid">
+                <div class="stat-item">
+                    <span class="stat-number">20+</span>
+                    <span class="stat-label">Microservices</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">99.9%</span>
+                    <span class="stat-label">Uptime SLA</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">80%+</span>
+                    <span class="stat-label">Test Coverage</span>
+                </div>
+                <div class="stat-item">
+                    <span class="stat-number">24/7</span>
+                    <span class="stat-label">Monitoring</span>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="py-5" id="features">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="scroll-reveal">Core Features</h2>
+                    <p class="lead scroll-reveal">Everything you need for enterprise blockchain development</p>
+                </div>
+            </div>
+            <div class="features-grid">
+                <!-- Intel SGX & Security -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h4>Intel SGX Security</h4>
+                    <p>Hardware-based trusted execution environment with remote attestation and secure enclaves for maximum data protection.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Remote Attestation</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Secure Key Management</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Encrypted Storage</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="scrollToSection('services')">
+                        Learn More
+                    </button>
+                </div>
+
+                <!-- AI-Powered Services -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h4>AI Analytics</h4>
+                    <p>Advanced machine learning capabilities for pattern recognition, fraud detection, and predictive analytics.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Pattern Recognition</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Fraud Detection</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Predictive Models</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="scrollToSection('services')">
+                        Learn More
+                    </button>
+                </div>
+
+                <!-- Multi-Chain Support -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-link"></i>
+                    </div>
+                    <h4>Multi-Chain</h4>
+                    <p>Native support for Neo N3 and Neo X (EVM-compatible) with cross-chain interoperability protocols.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Neo N3 Integration</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Neo X (EVM) Support</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Cross-Chain Bridge</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="scrollToSection('services')">
+                        Learn More
+                    </button>
+                </div>
+
+                <!-- Microservices Architecture -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <h4>Microservices</h4>
+                    <p>Scalable microservices architecture with service discovery, load balancing, and fault tolerance.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Horizontal Scaling</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Service Discovery</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Fault Tolerance</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="scrollToSection('services')">
+                        Learn More
+                    </button>
+                </div>
+
+                <!-- Developer Experience -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h4>Developer Tools</h4>
+                    <p>Comprehensive SDK, REST APIs, interactive documentation, and testing tools for rapid development.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>REST APIs</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Interactive Docs</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Testing Suite</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="window.open('/swagger', '_blank')">
+                        View API
+                    </button>
+                </div>
+
+                <!-- Enterprise Support -->
+                <div class="service-card-modern scroll-reveal">
+                    <div class="service-icon">
+                        <i class="fas fa-building"></i>
+                    </div>
+                    <h4>Enterprise Ready</h4>
+                    <p>Production-grade deployment with monitoring, compliance features, and 24/7 enterprise support.</p>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-check text-success me-2"></i>Production Monitoring</li>
+                        <li><i class="fas fa-check text-success me-2"></i>Compliance Tools</li>
+                        <li><i class="fas fa-check text-success me-2"></i>24/7 Support</li>
+                    </ul>
+                    <button class="btn-neo btn-outline mt-auto" onclick="scrollToSection('contact')">
+                        Contact Sales
+                    </button>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Overview -->
+    <section class="py-5 bg-light" id="services">
+        <div class="container">
+            <div class="row">
+                <div class="col-12 text-center mb-5">
+                    <h2 class="scroll-reveal">Service Categories</h2>
+                    <p class="lead scroll-reveal">Comprehensive blockchain infrastructure services</p>
+                </div>
+            </div>
+            <div class="row g-4">
+                <!-- Foundation Services -->
+                <div class="col-lg-4">
+                    <div class="service-card-modern scroll-reveal h-100">
+                        <h5 class="text-primary">
+                            <i class="fas fa-foundation me-2"></i>
+                            Foundation Layer
+                        </h5>
+                        <p class="text-muted mb-3">Core infrastructure services</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-key text-primary me-2"></i>
+                                <strong>Key Management</strong> - Hardware-secured cryptographic operations
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-database text-primary me-2"></i>
+                                <strong>Storage Service</strong> - Encrypted data storage with compression
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-random text-primary me-2"></i>
+                                <strong>Randomness</strong> - Verifiable random number generation
+                            </li>
+                        </ul>
+                        <button class="btn-neo btn-outline mt-auto w-100" onclick="exploreServices('foundation')">
+                            Explore Foundation Services
+                        </button>
+                    </div>
+                </div>
+
+                <!-- AI & Analytics -->
+                <div class="col-lg-4">
+                    <div class="service-card-modern scroll-reveal h-100">
+                        <h5 class="text-success">
+                            <i class="fas fa-brain me-2"></i>
+                            AI & Analytics
+                        </h5>
+                        <p class="text-muted mb-3">Intelligent blockchain services</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-search text-success me-2"></i>
+                                <strong>Pattern Recognition</strong> - AI-powered fraud detection
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-chart-line text-success me-2"></i>
+                                <strong>Prediction Service</strong> - Machine learning forecasting
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-eye text-success me-2"></i>
+                                <strong>Oracle Service</strong> - Secure external data feeds
+                            </li>
+                        </ul>
+                        <button class="btn-neo btn-outline mt-auto w-100" onclick="exploreServices('ai')">
+                            Explore AI Services
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Blockchain Integration -->
+                <div class="col-lg-4">
+                    <div class="service-card-modern scroll-reveal h-100">
+                        <h5 class="text-warning">
+                            <i class="fas fa-link me-2"></i>
+                            Blockchain Layer
+                        </h5>
+                        <p class="text-muted mb-3">Multi-chain blockchain services</p>
+                        <ul class="list-unstyled">
+                            <li class="mb-2">
+                                <i class="fas fa-user-cog text-warning me-2"></i>
+                                <strong>Abstract Accounts</strong> - Account abstraction & gasless transactions
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-vote-yea text-warning me-2"></i>
+                                <strong>Voting Systems</strong> - Secure governance mechanisms
+                            </li>
+                            <li class="mb-2">
+                                <i class="fas fa-certificate text-warning me-2"></i>
+                                <strong>Proof of Reserve</strong> - Asset backing verification
+                            </li>
+                        </ul>
+                        <button class="btn-neo btn-outline mt-auto w-100" onclick="exploreServices('blockchain')">
+                            Explore Blockchain Services
                         </button>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <div class="container-fluid">
-        <div class="row">
-            <!-- Navigation Sidebar -->
-            <div class="col-md-3 col-lg-2">
-                <div class="nav flex-column nav-pills sticky-top" id="v-pills-tab" role="tablist" aria-orientation="vertical">
-                    <button class="nav-link active" id="v-pills-overview-tab" data-bs-toggle="pill" data-bs-target="#v-pills-overview" type="button" role="tab">
-                        <i class="fas fa-home me-2"></i>Overview
-                    </button>
+    <!-- Quick Start Section -->
+    <section class="py-5" id="docs">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-6">
+                    <h2 class="scroll-reveal">Get Started in Minutes</h2>
+                    <p class="lead scroll-reveal">Deploy and integrate Neo Service Layer with your applications</p>
                     
-                    <!-- Foundation Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Foundation Layer</h6>
-                    <button class="nav-link" id="v-pills-keymanagement-tab" data-bs-toggle="pill" data-bs-target="#v-pills-keymanagement" type="button" role="tab">
-                        <i class="fas fa-key me-2"></i>Key Management
-                    </button>
-                    <button class="nav-link" id="v-pills-enclave-tab" data-bs-toggle="pill" data-bs-target="#v-pills-enclave" type="button" role="tab">
-                        <i class="fas fa-shield-alt me-2"></i>SGX Enclave
-                    </button>
-                    <button class="nav-link" id="v-pills-storage-tab" data-bs-toggle="pill" data-bs-target="#v-pills-storage" type="button" role="tab">
-                        <i class="fas fa-database me-2"></i>Storage
-                    </button>
-                    
-                    <!-- Security Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Security Layer</h6>
-                    <button class="nav-link" id="v-pills-compliance-tab" data-bs-toggle="pill" data-bs-target="#v-pills-compliance" type="button" role="tab">
-                        <i class="fas fa-check-circle me-2"></i>Compliance
-                    </button>
-                    <button class="nav-link" id="v-pills-zeroknowledge-tab" data-bs-toggle="pill" data-bs-target="#v-pills-zeroknowledge" type="button" role="tab">
-                        <i class="fas fa-user-secret me-2"></i>Zero Knowledge
-                    </button>
-                    <button class="nav-link" id="v-pills-backup-tab" data-bs-toggle="pill" data-bs-target="#v-pills-backup" type="button" role="tab">
-                        <i class="fas fa-save me-2"></i>Backup
-                    </button>
-                    
-                    <!-- Intelligence Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Intelligence Layer</h6>
-                    <button class="nav-link" id="v-pills-ai-tab" data-bs-toggle="pill" data-bs-target="#v-pills-ai" type="button" role="tab">
-                        <i class="fas fa-brain me-2"></i>AI Services
-                    </button>
-                    <button class="nav-link" id="v-pills-pattern-tab" data-bs-toggle="pill" data-bs-target="#v-pills-pattern" type="button" role="tab">
-                        <i class="fas fa-search me-2"></i>Pattern Recognition
-                    </button>
-                    <button class="nav-link" id="v-pills-oracle-tab" data-bs-toggle="pill" data-bs-target="#v-pills-oracle" type="button" role="tab">
-                        <i class="fas fa-eye me-2"></i>Oracle
-                    </button>
-                    
-                    <!-- Blockchain Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Blockchain Layer</h6>
-                    <button class="nav-link" id="v-pills-abstractaccount-tab" data-bs-toggle="pill" data-bs-target="#v-pills-abstractaccount" type="button" role="tab">
-                        <i class="fas fa-user-cog me-2"></i>Abstract Account
-                    </button>
-                    <button class="nav-link" id="v-pills-voting-tab" data-bs-toggle="pill" data-bs-target="#v-pills-voting" type="button" role="tab">
-                        <i class="fas fa-vote-yea me-2"></i>Voting
-                    </button>
-                    <button class="nav-link" id="v-pills-crosschain-tab" data-bs-toggle="pill" data-bs-target="#v-pills-crosschain" type="button" role="tab">
-                        <i class="fas fa-link me-2"></i>Cross Chain
-                    </button>
-                    <button class="nav-link" id="v-pills-proofofreserve-tab" data-bs-toggle="pill" data-bs-target="#v-pills-proofofreserve" type="button" role="tab">
-                        <i class="fas fa-certificate me-2"></i>Proof of Reserve
-                    </button>
-                    
-                    <!-- Automation Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Automation Layer</h6>
-                    <button class="nav-link" id="v-pills-compute-tab" data-bs-toggle="pill" data-bs-target="#v-pills-compute" type="button" role="tab">
-                        <i class="fas fa-microchip me-2"></i>Compute
-                    </button>
-                    <button class="nav-link" id="v-pills-automation-tab" data-bs-toggle="pill" data-bs-target="#v-pills-automation" type="button" role="tab">
-                        <i class="fas fa-robot me-2"></i>Automation
-                    </button>
-                    <button class="nav-link" id="v-pills-notification-tab" data-bs-toggle="pill" data-bs-target="#v-pills-notification" type="button" role="tab">
-                        <i class="fas fa-bell me-2"></i>Notification
-                    </button>
-                    <button class="nav-link" id="v-pills-randomness-tab" data-bs-toggle="pill" data-bs-target="#v-pills-randomness" type="button" role="tab">
-                        <i class="fas fa-random me-2"></i>Randomness
-                    </button>
-                    
-                    <!-- Infrastructure Layer -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Infrastructure Layer</h6>
-                    <button class="nav-link" id="v-pills-health-tab" data-bs-toggle="pill" data-bs-target="#v-pills-health" type="button" role="tab">
-                        <i class="fas fa-heartbeat me-2"></i>Health
-                    </button>
-                    <button class="nav-link" id="v-pills-monitoring-tab" data-bs-toggle="pill" data-bs-target="#v-pills-monitoring" type="button" role="tab">
-                        <i class="fas fa-chart-line me-2"></i>Monitoring
-                    </button>
-                    <button class="nav-link" id="v-pills-configuration-tab" data-bs-toggle="pill" data-bs-target="#v-pills-configuration" type="button" role="tab">
-                        <i class="fas fa-cog me-2"></i>Configuration
-                    </button>
-                    <button class="nav-link" id="v-pills-events-tab" data-bs-toggle="pill" data-bs-target="#v-pills-events" type="button" role="tab">
-                        <i class="fas fa-calendar-alt me-2"></i>Event Subscription
-                    </button>
-                    
-                    <!-- Developer Tools -->
-                    <h6 class="nav-header text-muted mt-3 mb-2 px-3">Developer Tools</h6>
-                    <button class="nav-link" id="v-pills-tools-tab" data-bs-toggle="pill" data-bs-target="#v-pills-tools" type="button" role="tab">
-                        <i class="fas fa-tools me-2"></i>API Testing
-                    </button>
+                    <div class="scroll-reveal">
+                        <h5 class="mt-4">1. Get Demo Access Token</h5>
+                        <div class="code-block">
+curl -X POST https://neo-service-layer.com/api/auth/demo-token
+                        </div>
+                        
+                        <h5 class="mt-4">2. Call Any Service</h5>
+                        <div class="code-block">
+curl -H "Authorization: Bearer YOUR_TOKEN" \\
+     https://neo-service-layer.com/api/randomness/generate
+                        </div>
+                        
+                        <h5 class="mt-4">3. Integrate with Your App</h5>
+                        <div class="code-block">
+const response = await fetch('/api/keymanagement/generate', {
+  headers: { 'Authorization': 'Bearer ' + token }
+});
+                        </div>
+                    </div>
                 </div>
-            </div>
-
-            <!-- Main Content -->
-            <div class="col-md-9 col-lg-10">
-                <div class="tab-content" id="v-pills-tabContent">
-                    <!-- Overview Tab -->
-                    <div class="tab-pane fade show active" id="v-pills-overview" role="tabpanel">
-                        <h2 class="section-title">Neo Service Layer - Complete Service Overview</h2>
+                <div class="col-lg-6">
+                    <div class="glass-card scroll-reveal">
+                        <h5 class="mb-4">
+                            <i class="fas fa-play-circle me-2"></i>
+                            Try It Now
+                        </h5>
+                        <p>Get immediate access to our demo environment</p>
                         
-                        <!-- Foundation Layer -->
-                        <h3 class="section-title">🔧 Foundation Layer</h3>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-key feature-icon"></i>
-                                        <h5 class="card-title">Key Management</h5>
-                                        <p class="card-text">Generate, store, and manage cryptographic keys for blockchain operations with enclave security.</p>
-                                        <div class="mt-auto">
-                                            <span id="keymanagement-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-shield-alt feature-icon"></i>
-                                        <h5 class="card-title">SGX Enclave</h5>
-                                        <p class="card-text">Secure computation in trusted execution environments with Intel SGX hardware attestation.</p>
-                                        <div class="mt-auto">
-                                            <span id="sgx-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-database feature-icon"></i>
-                                        <h5 class="card-title">Storage</h5>
-                                        <p class="card-text">Secure, encrypted, and compressed data storage with transaction support and metadata management.</p>
-                                        <div class="mt-auto">
-                                            <span id="storage-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
+                        <div class="mb-3">
+                            <button class="btn-neo btn-primary w-100" onclick="getDemoToken()">
+                                <i class="fas fa-rocket me-2"></i>
+                                Get Demo Token
+                            </button>
                         </div>
-
-                        <!-- Security Layer -->
-                        <h3 class="section-title">🔒 Security Layer</h3>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-check-circle feature-icon"></i>
-                                        <h5 class="card-title">Compliance</h5>
-                                        <p class="card-text">Regulatory compliance monitoring, audit trails, and violation detection with automated reporting.</p>
-                                        <div class="mt-auto">
-                                            <span id="compliance-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-user-secret feature-icon"></i>
-                                        <h5 class="card-title">Zero Knowledge</h5>
-                                        <p class="card-text">Privacy-preserving cryptographic proofs and verifications with zk-SNARK support.</p>
-                                        <div class="mt-auto">
-                                            <span id="zeroknowledge-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-save feature-icon"></i>
-                                        <h5 class="card-title">Backup</h5>
-                                        <p class="card-text">Automated backup and restore operations with encryption, compression, and integrity verification.</p>
-                                        <div class="mt-auto">
-                                            <span id="backup-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Intelligence Layer -->
-                        <h3 class="section-title">🧠 Intelligence Layer</h3>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-brain feature-icon"></i>
-                                        <h5 class="card-title">AI Services</h5>
-                                        <p class="card-text">Machine learning predictions, risk assessment, and price forecasting with secure enclave execution.</p>
-                                        <div class="mt-auto">
-                                            <span id="ai-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-search feature-icon"></i>
-                                        <h5 class="card-title">Pattern Recognition</h5>
-                                        <p class="card-text">Advanced pattern analysis, anomaly detection, and fraud detection with AI-powered insights.</p>
-                                        <div class="mt-auto">
-                                            <span id="pattern-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-4">
-                                <div class="card service-card h-100 text-center p-4">
-                                    <div class="card-body">
-                                        <i class="fas fa-eye feature-icon"></i>
-                                        <h5 class="card-title">Oracle</h5>
-                                        <p class="card-text">External data feeds, price oracles, and secure data aggregation from multiple sources.</p>
-                                        <div class="mt-auto">
-                                            <span id="oracle-status" class="badge bg-secondary">Checking...</span>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Blockchain Layer -->
-                        <h3 class="section-title">⛓️ Blockchain Layer</h3>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-user-cog feature-icon"></i>
-                                        <h6 class="card-title">Abstract Account</h6>
-                                        <p class="card-text small">Smart contract wallet management with session keys and multi-signature support.</p>
-                                        <span id="abstractaccount-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-vote-yea feature-icon"></i>
-                                        <h6 class="card-title">Voting</h6>
-                                        <p class="card-text small">Decentralized voting with strategy automation and consensus node management.</p>
-                                        <span id="voting-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-link feature-icon"></i>
-                                        <h6 class="card-title">Cross Chain</h6>
-                                        <p class="card-text small">Inter-blockchain communication and asset bridging with secure validation.</p>
-                                        <span id="crosschain-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-certificate feature-icon"></i>
-                                        <h6 class="card-title">Proof of Reserve</h6>
-                                        <p class="card-text small">Cryptographic proof of asset reserves with periodic attestation and auditing.</p>
-                                        <span id="proofofreserve-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Automation Layer -->
-                        <h3 class="section-title">🤖 Automation Layer</h3>
-                        <div class="row g-4 mb-5">
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-microchip feature-icon"></i>
-                                        <h6 class="card-title">Compute</h6>
-                                        <p class="card-text small">Distributed computation with resource allocation and secure job execution.</p>
-                                        <span id="compute-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-robot feature-icon"></i>
-                                        <h6 class="card-title">Automation</h6>
-                                        <p class="card-text small">Workflow automation and task scheduling with trigger-based execution.</p>
-                                        <span id="automation-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-bell feature-icon"></i>
-                                        <h6 class="card-title">Notification</h6>
-                                        <p class="card-text small">Multi-channel notification system with template support and delivery tracking.</p>
-                                        <span id="notification-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-random feature-icon"></i>
-                                        <h6 class="card-title">Randomness</h6>
-                                        <p class="card-text small">Cryptographically secure random number generation with bias resistance.</p>
-                                        <span id="randomness-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Infrastructure Layer -->
-                        <h3 class="section-title">🏗️ Infrastructure Layer</h3>
-                        <div class="row g-4">
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-heartbeat feature-icon"></i>
-                                        <h6 class="card-title">Health</h6>
-                                        <p class="card-text small">System health monitoring and diagnostic reporting with alerting capabilities.</p>
-                                        <span id="health-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-chart-line feature-icon"></i>
-                                        <h6 class="card-title">Monitoring</h6>
-                                        <p class="card-text small">Performance metrics collection and analysis with real-time dashboards.</p>
-                                        <span id="monitoring-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-cog feature-icon"></i>
-                                        <h6 class="card-title">Configuration</h6>
-                                        <p class="card-text small">Dynamic configuration management with validation and encrypted storage.</p>
-                                        <span id="configuration-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-md-6 col-lg-3">
-                                <div class="card service-card h-100 text-center p-3">
-                                    <div class="card-body">
-                                        <i class="fas fa-calendar-alt feature-icon"></i>
-                                        <h6 class="card-title">Events</h6>
-                                        <p class="card-text small">Event subscription and real-time notification system with filtering support.</p>
-                                        <span id="events-status" class="badge bg-secondary">Checking...</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Services Quick Access -->
-                        <div class="row mt-5">
-                            <div class="col-12">
-                                <div class="card bg-primary text-white">
-                                    <div class="card-body">
-                                        <div class="row align-items-center">
-                                            <div class="col-md-8">
-                                                <h3 class="mb-2">
-                                                    <i class="fas fa-layer-group me-3"></i>Service Management Center
-                                                </h3>
-                                                <p class="mb-0">Access all 21 Neo Service Layer services with interactive interfaces, real-time monitoring, and comprehensive management tools.</p>
-                                            </div>
-                                            <div class="col-md-4 text-end">
-                                                <a href="/services" class="btn btn-light btn-lg">
-                                                    <i class="fas fa-external-link-alt me-2"></i>Browse All Services
-                                                </a>
-                                            </div>
-                                        </div>
-                                        <div class="row mt-3">
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <h4>21</h4>
-                                                    <small>Total Services</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <h4>6</h4>
-                                                    <small>Service Layers</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <h4>100%</h4>
-                                                    <small>SGX Protected</small>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <h4 id="services-online">--</h4>
-                                                    <small>Online Now</small>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-5">
-                            <div class="col-12">
-                                <h3 class="section-title">System Status</h3>
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div id="system-info" class="row">
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <i class="fas fa-server text-primary fa-2x"></i>
-                                                    <h6 class="mt-2">API Status</h6>
-                                                    <span id="api-status" class="badge bg-secondary">Checking...</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <i class="fas fa-heartbeat text-success fa-2x"></i>
-                                                    <h6 class="mt-2">Health Status</h6>
-                                                    <span id="health-status" class="badge bg-secondary">Checking...</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <i class="fas fa-clock text-info fa-2x"></i>
-                                                    <h6 class="mt-2">Uptime</h6>
-                                                    <span id="uptime" class="badge bg-info">--</span>
-                                                </div>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <div class="text-center">
-                                                    <i class="fas fa-code text-warning fa-2x"></i>
-                                                    <h6 class="mt-2">Version</h6>
-                                                    <span id="version" class="badge bg-warning">1.0.0</span>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="row mt-4">
-                            <div class="col-12">
-                                <h3 class="section-title">System Testing</h3>
-                                <div class="card">
-                                    <div class="card-body">
-                                        <div class="row g-3">
-                                            <div class="col-md-3">
-                                                <button class="btn btn-primary w-100" onclick="testAllServices()">
-                                                    <i class="fas fa-play-circle me-2"></i>Test All Services
-                                                </button>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <button class="btn btn-info w-100" onclick="refreshAllStatus()">
-                                                    <i class="fas fa-sync-alt me-2"></i>Refresh Status
-                                                </button>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <button class="btn btn-warning w-100" onclick="downloadLogs()">
-                                                    <i class="fas fa-download me-2"></i>Download Logs
-                                                </button>
-                                            </div>
-                                            <div class="col-md-3">
-                                                <button class="btn btn-secondary w-100" onclick="window.open('/swagger', '_blank')">
-                                                    <i class="fas fa-book me-2"></i>API Documentation
-                                                </button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Key Management Tab -->
-                    <div class="tab-pane fade" id="v-pills-keymanagement" role="tabpanel">
-                        <h2 class="section-title">Key Management</h2>
                         
-                        <!-- Generate Key Section -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-plus-circle me-2"></i>Generate New Key</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="generateKeyForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Key ID <small class="text-muted">(auto-generated if empty)</small></label>
-                                                <div class="d-flex">
-                                                    <input type="text" class="form-control" id="keyId" placeholder="Auto-generated key ID">
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Key Type</label>
-                                                <select class="form-select" id="keyType" required>
-                                                    <option value="Secp256k1">Secp256k1</option>
-                                                    <option value="Ed25519">Ed25519</option>
-                                                    <option value="RSA2048">RSA 2048</option>
-                                                    <option value="AES256">AES 256</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Key Usage</label>
-                                                <select class="form-select" id="keyUsage" required>
-                                                    <option value="Sign,Verify">Sign & Verify</option>
-                                                    <option value="Encrypt,Decrypt">Encrypt & Decrypt</option>
-                                                    <option value="Sign,Verify,Encrypt,Decrypt">All Operations</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="blockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Description</label>
-                                        <input type="text" class="form-control" id="keyDescription" placeholder="Description of this key">
-                                    </div>
-                                    <div class="mb-3 form-check">
-                                        <input type="checkbox" class="form-check-input" id="exportable">
-                                        <label class="form-check-label" for="exportable">Make key exportable</label>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-key me-2"></i>Generate Key
-                                    </button>
-                                </form>
-                            </div>
+                        <div id="demo-result" class="code-block" style="display: none;">
+                            <!-- Demo results will appear here -->
                         </div>
-
-                        <!-- Key Operations Section -->
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-cogs me-2"></i>Key Operations</h5>
-                            </div>
-                            <div class="card-body">
-                                                                                <div class="row">
-                                    <div class="col-md-4">
-                                        <button class="btn btn-outline-primary w-100 mb-2" onclick="listKeys()">
-                                            <i class="fas fa-list me-2"></i>List All Keys
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-outline-info w-100 mb-2" data-bs-toggle="modal" data-bs-target="#signDataModal">
-                                            <i class="fas fa-signature me-2"></i>Sign Data
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-outline-success w-100 mb-2" onclick="testAllKeyOperations()">
-                                            <i class="fas fa-check-double me-2"></i>Test All Operations
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Results Section -->
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-clipboard-list me-2"></i>Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="keyManagementResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- SGX Enclave Tab -->
-                    <div class="tab-pane fade" id="v-pills-enclave" role="tabpanel">
-                        <h2 class="section-title">SGX Enclave Operations</h2>
                         
-                        <div class="alert alert-success">
-                            <i class="fas fa-shield-alt me-2"></i>
-                            <strong>Production Mode:</strong> The SGX Enclave is running in full production mode with real Intel SGX hardware. All operations are cryptographically secure and attested.
-                        </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-shield-alt me-2"></i>Enclave Operations</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <button class="btn btn-primary w-100" onclick="testEnclaveInit()">
-                                            <i class="fas fa-power-off me-2"></i>Initialize Enclave
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-success w-100" onclick="testRandomGeneration()">
-                                            <i class="fas fa-random me-2"></i>Generate Random
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-info w-100" onclick="testEncryption()">
-                                            <i class="fas fa-lock me-2"></i>Test Encryption
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-warning w-100" onclick="testAttestation()">
-                                            <i class="fas fa-certificate me-2"></i>Get Attestation
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-secondary w-100" onclick="testJavaScript()">
-                                            <i class="fab fa-js me-2"></i>Execute JavaScript
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-dark w-100" onclick="testAIOperation()">
-                                            <i class="fas fa-brain me-2"></i>AI Operations
-                                        </button>
-                                    </div>
-                                </div>
+                        <div class="mt-4">
+                            <h6>Available Endpoints:</h6>
+                            <div class="d-flex flex-wrap gap-2">
+                                <span class="badge bg-primary">/api/randomness</span>
+                                <span class="badge bg-success">/api/keymanagement</span>
+                                <span class="badge bg-info">/api/prediction</span>
+                                <span class="badge bg-warning">/api/info</span>
                             </div>
                         </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-terminal me-2"></i>Enclave Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="enclaveResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Enclave operation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- AI Services Tab -->
-                    <div class="tab-pane fade" id="v-pills-ai" role="tabpanel">
-                        <h2 class="section-title">AI Prediction Services</h2>
                         
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-line me-2"></i>Make Prediction</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="predictionForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Model Type</label>
-                                                <select class="form-select" id="modelType" required>
-                                                    <option value="PricePredictor">Price Prediction</option>
-                                                    <option value="TrendAnalyzer">Trend Analysis</option>
-                                                    <option value="RiskAssessment">Risk Assessment</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Asset Symbol</label>
-                                                <input type="text" class="form-control" id="assetSymbol" placeholder="NEO" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Historical Data (JSON)</label>
-                                        <textarea class="form-control" id="historicalData" rows="4" placeholder='[{"price": 10.5, "volume": 1000, "timestamp": "2024-01-01"}]'></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-magic me-2"></i>Generate Prediction
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-bar me-2"></i>Prediction Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="predictionResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Prediction results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Pattern Recognition Tab -->
-                    <div class="tab-pane fade" id="v-pills-pattern" role="tabpanel">
-                        <h2 class="section-title">Pattern Recognition</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-search me-2"></i>Analyze Patterns</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="patternForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Analysis Type</label>
-                                                <select class="form-select" id="analysisType" required>
-                                                    <option value="TechnicalPattern">Technical Pattern</option>
-                                                    <option value="AnomalyDetection">Anomaly Detection</option>
-                                                    <option value="TrendPattern">Trend Pattern</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Time Window</label>
-                                                <select class="form-select" id="timeWindow" required>
-                                                    <option value="1h">1 Hour</option>
-                                                    <option value="24h">24 Hours</option>
-                                                    <option value="7d">7 Days</option>
-                                                    <option value="30d">30 Days</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Data Points (JSON Array)</label>
-                                        <textarea class="form-control" id="dataPoints" rows="4" placeholder='[{"value": 10.5, "timestamp": "2024-01-01T00:00:00Z"}]'></textarea>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-search me-2"></i>Analyze Pattern
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-area me-2"></i>Pattern Analysis Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="patternResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Pattern analysis results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Storage Tab -->
-                    <div class="tab-pane fade" id="v-pills-storage" role="tabpanel">
-                        <h2 class="section-title">Storage Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-upload me-2"></i>Store Data</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="storeDataForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Storage Key</label>
-                                                <input type="text" class="form-control" id="storageKey" placeholder="unique-storage-key" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="storageBlockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Data to Store</label>
-                                        <textarea class="form-control" id="storageData" rows="4" placeholder="Enter your data here..." required></textarea>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="enableEncryption" checked>
-                                                <label class="form-check-label" for="enableEncryption">Enable Encryption</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="enableCompression" checked>
-                                                <label class="form-check-label" for="enableCompression">Enable Compression</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label class="form-label">Storage Class</label>
-                                                <select class="form-select" id="storageClass">
-                                                    <option value="Standard">Standard</option>
-                                                    <option value="Hot">Hot</option>
-                                                    <option value="Cold">Cold</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <button type="submit" class="btn btn-primary">
-                                        <i class="fas fa-save me-2"></i>Store Data
-                                    </button>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-download me-2"></i>Retrieve Data</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="retrieveDataForm">
-                                    <div class="row">
-                                        <div class="col-md-8">
-                                            <div class="mb-3">
-                                                <label class="form-label">Storage Key</label>
-                                                <input type="text" class="form-control" id="retrieveKey" placeholder="unique-storage-key" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-4">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="retrieveBlockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-success">
-                                            <i class="fas fa-download me-2"></i>Retrieve Data
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="listStorageData()">
-                                            <i class="fas fa-list me-2"></i>List All Data
-                                        </button>
-                                        <button type="button" class="btn btn-warning" onclick="getStorageMetadata()">
-                                            <i class="fas fa-info-circle me-2"></i>Get Metadata
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-clipboard-list me-2"></i>Storage Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="storageResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Storage operation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Oracle Tab -->
-                    <div class="tab-pane fade" id="v-pills-oracle" role="tabpanel">
-                        <h2 class="section-title">Oracle Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-globe me-2"></i>Get External Data</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="oracleDataForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Data Source</label>
-                                                <select class="form-select" id="oracleDataSource" required>
-                                                    <option value="price-feed">Price Feed</option>
-                                                    <option value="weather-data">Weather Data</option>
-                                                    <option value="stock-price">Stock Price</option>
-                                                    <option value="crypto-price">Crypto Price</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Asset/Symbol</label>
-                                                <input type="text" class="form-control" id="oracleSymbol" placeholder="NEO, BTC, ETH" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="oracleBlockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Time Range</label>
-                                                <select class="form-select" id="oracleTimeRange">
-                                                    <option value="current">Current</option>
-                                                    <option value="1h">Last 1 Hour</option>
-                                                    <option value="24h">Last 24 Hours</option>
-                                                    <option value="7d">Last 7 Days</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-download me-2"></i>Get Data
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getOracleFeeds()">
-                                            <i class="fas fa-rss me-2"></i>List Feeds
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="subscribeToFeed()">
-                                            <i class="fas fa-plus me-2"></i>Subscribe to Feed
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-bar me-2"></i>Oracle Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="oracleResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Oracle data results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Voting Tab -->
-                    <div class="tab-pane fade" id="v-pills-voting" role="tabpanel">
-                        <h2 class="section-title">Voting Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-vote-yea me-2"></i>Voting Operations</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="votingForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Voting Strategy</label>
-                                                <select class="form-select" id="votingStrategy" required>
-                                                    <option value="AutomaticVoting">Automatic Voting</option>
-                                                    <option value="PerformanceBased">Performance Based</option>
-                                                    <option value="WeightedVoting">Weighted Voting</option>
-                                                    <option value="DelegatedVoting">Delegated Voting</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="votingBlockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Wallet Address</label>
-                                                <input type="text" class="form-control" id="voterAddress" placeholder="Nvf7R...8QvB" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Vote Amount (NEO)</label>
-                                                <input type="number" class="form-control" id="voteAmount" placeholder="100" min="1" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-check me-2"></i>Submit Vote
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getCandidates()">
-                                            <i class="fas fa-users me-2"></i>Get Candidates
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="getRecommendations()">
-                                            <i class="fas fa-lightbulb me-2"></i>Get Recommendations
-                                        </button>
-                                        <button type="button" class="btn btn-warning" onclick="getVotingHistory()">
-                                            <i class="fas fa-history me-2"></i>Voting History
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-pie me-2"></i>Voting Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="votingResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Voting operation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Compliance Tab -->
-                    <div class="tab-pane fade" id="v-pills-compliance" role="tabpanel">
-                        <h2 class="section-title">Compliance Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-check-circle me-2"></i>Compliance Check</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="complianceForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Transaction Data</label>
-                                                <textarea class="form-control" id="transactionData" rows="3" placeholder="Enter transaction data to verify..." required></textarea>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Blockchain Type</label>
-                                                <select class="form-select" id="complianceBlockchainType" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-shield-alt me-2"></i>Check Compliance
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getComplianceRules()">
-                                            <i class="fas fa-list me-2"></i>View Rules
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="generateComplianceReport()">
-                                            <i class="fas fa-file-alt me-2"></i>Generate Report
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-clipboard-check me-2"></i>Compliance Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="complianceResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Compliance check results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Zero Knowledge Tab -->
-                    <div class="tab-pane fade" id="v-pills-zeroknowledge" role="tabpanel">
-                        <h2 class="section-title">Zero Knowledge Proofs</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-user-secret me-2"></i>Generate Proof</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="zkProofForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Proof Type</label>
-                                                <select class="form-select" id="proofType" required>
-                                                    <option value="merkle">Merkle Proof</option>
-                                                    <option value="zk-snark">zk-SNARK</option>
-                                                    <option value="range">Range Proof</option>
-                                                    <option value="membership">Membership Proof</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Circuit Type</label>
-                                                <select class="form-select" id="circuitType" required>
-                                                    <option value="ownership">Ownership</option>
-                                                    <option value="balance">Balance</option>
-                                                    <option value="identity">Identity</option>
-                                                    <option value="custom">Custom</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Private Input (JSON)</label>
-                                        <textarea class="form-control" id="privateInput" rows="3" placeholder='{"secret": "value", "amount": 100}' required></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Public Input (JSON)</label>
-                                        <textarea class="form-control" id="publicInput" rows="3" placeholder='{"commitment": "0x123..."}' required></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-key me-2"></i>Generate Proof
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="verifyZkProof()">
-                                            <i class="fas fa-check me-2"></i>Verify Proof
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-lock me-2"></i>ZK Proof Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="zkResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Zero knowledge proof results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Backup Tab -->
-                    <div class="tab-pane fade" id="v-pills-backup" role="tabpanel">
-                        <h2 class="section-title">Backup Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-save me-2"></i>Create Backup</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="backupForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Backup Type</label>
-                                                <select class="form-select" id="backupType" required>
-                                                    <option value="full">Full Backup</option>
-                                                    <option value="incremental">Incremental</option>
-                                                    <option value="differential">Differential</option>
-                                                    <option value="selective">Selective</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Storage Location</label>
-                                                <select class="form-select" id="storageLocation" required>
-                                                    <option value="local">Local Storage</option>
-                                                    <option value="cloud">Cloud Storage</option>
-                                                    <option value="distributed">Distributed</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="enableEncryption" checked>
-                                                <label class="form-check-label" for="enableEncryption">Enable Encryption</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="enableCompression" checked>
-                                                <label class="form-check-label" for="enableCompression">Enable Compression</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-download me-2"></i>Create Backup
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="listBackups()">
-                                            <i class="fas fa-list me-2"></i>List Backups
-                                        </button>
-                                        <button type="button" class="btn btn-warning" onclick="restoreBackup()">
-                                            <i class="fas fa-upload me-2"></i>Restore Backup
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-archive me-2"></i>Backup Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="backupResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Backup operation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Abstract Account Tab -->
-                    <div class="tab-pane fade" id="v-pills-abstractaccount" role="tabpanel">
-                        <h2 class="section-title">Abstract Account</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-user-cog me-2"></i>Account Operations</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="abstractAccountForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Operation Type</label>
-                                                <select class="form-select" id="accountOperation" required>
-                                                    <option value="create">Create Account</option>
-                                                    <option value="transfer">Transfer Tokens</option>
-                                                    <option value="approve">Approve Transaction</option>
-                                                    <option value="delegate">Delegate Authority</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Account Address</label>
-                                                <input type="text" class="form-control" id="accountAddress" placeholder="Nvf7R...8QvB">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Session Key</label>
-                                                <input type="text" class="form-control" id="sessionKey" placeholder="Optional session key">
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Expiry (Hours)</label>
-                                                <input type="number" class="form-control" id="sessionExpiry" placeholder="24" min="1" max="168">
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-play me-2"></i>Execute Operation
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getAccountInfo()">
-                                            <i class="fas fa-info me-2"></i>Account Info
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-receipt me-2"></i>Account Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="abstractAccountResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Abstract account operation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Cross Chain Tab -->
-                    <div class="tab-pane fade" id="v-pills-crosschain" role="tabpanel">
-                        <h2 class="section-title">Cross Chain Bridge</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-exchange-alt me-2"></i>Bridge Assets</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="crossChainForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Source Chain</label>
-                                                <select class="form-select" id="sourceChain" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                    <option value="Ethereum">Ethereum</option>
-                                                    <option value="Polygon">Polygon</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Target Chain</label>
-                                                <select class="form-select" id="targetChain" required>
-                                                    <option value="NeoN3">Neo N3</option>
-                                                    <option value="NeoX">Neo X</option>
-                                                    <option value="Ethereum">Ethereum</option>
-                                                    <option value="Polygon">Polygon</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Asset Type</label>
-                                                <select class="form-select" id="assetType" required>
-                                                    <option value="NEO">NEO</option>
-                                                    <option value="GAS">GAS</option>
-                                                    <option value="USDT">USDT</option>
-                                                    <option value="Custom">Custom Token</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Amount</label>
-                                                <input type="number" class="form-control" id="bridgeAmount" placeholder="100" min="0.01" step="0.01" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Recipient Address</label>
-                                        <input type="text" class="form-control" id="recipientAddress" placeholder="Target chain address" required>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-bridge me-2"></i>Bridge Assets
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getBridgeStatus()">
-                                            <i class="fas fa-search me-2"></i>Check Status
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-network-wired me-2"></i>Bridge Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="crossChainResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Cross chain bridge results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Proof of Reserve Tab -->
-                    <div class="tab-pane fade" id="v-pills-proofofreserve" role="tabpanel">
-                        <h2 class="section-title">Proof of Reserve</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-certificate me-2"></i>Generate Proof</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="proofOfReserveForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Asset Type</label>
-                                                <select class="form-select" id="porAssetType" required>
-                                                    <option value="NEO">NEO</option>
-                                                    <option value="GAS">GAS</option>
-                                                    <option value="USDT">USDT</option>
-                                                    <option value="Custom">Custom Token</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Reserve Amount</label>
-                                                <input type="number" class="form-control" id="reserveAmount" placeholder="1000" min="0.01" step="0.01" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Proof Type</label>
-                                                <select class="form-select" id="porProofType" required>
-                                                    <option value="merkle">Merkle Tree</option>
-                                                    <option value="cryptographic">Cryptographic</option>
-                                                    <option value="zk-proof">Zero Knowledge</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Attestation Period</label>
-                                                <select class="form-select" id="attestationPeriod" required>
-                                                    <option value="daily">Daily</option>
-                                                    <option value="weekly">Weekly</option>
-                                                    <option value="monthly">Monthly</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-shield-alt me-2"></i>Generate Proof
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="verifyProofOfReserve()">
-                                            <i class="fas fa-check-circle me-2"></i>Verify Proof
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="getReserveHistory()">
-                                            <i class="fas fa-history me-2"></i>View History
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-coins me-2"></i>Proof Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="proofOfReserveResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Proof of reserve results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Compute Tab -->
-                    <div class="tab-pane fade" id="v-pills-compute" role="tabpanel">
-                        <h2 class="section-title">Compute Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-microchip me-2"></i>Submit Compute Job</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="computeForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Job Type</label>
-                                                <select class="form-select" id="jobType" required>
-                                                    <option value="cpu">CPU Intensive</option>
-                                                    <option value="memory">Memory Intensive</option>
-                                                    <option value="ai">AI/ML Processing</option>
-                                                    <option value="custom">Custom Script</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Priority</label>
-                                                <select class="form-select" id="jobPriority" required>
-                                                    <option value="low">Low</option>
-                                                    <option value="normal">Normal</option>
-                                                    <option value="high">High</option>
-                                                    <option value="urgent">Urgent</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Job Description</label>
-                                        <textarea class="form-control" id="jobDescription" rows="3" placeholder="Describe the compute task..." required></textarea>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Input Data (JSON)</label>
-                                        <textarea class="form-control" id="computeInputData" rows="4" placeholder='{"data": [1,2,3,4,5], "algorithm": "sum"}' required></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-play me-2"></i>Submit Job
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getComputeJobs()">
-                                            <i class="fas fa-list me-2"></i>List Jobs
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="getJobStatus()">
-                                            <i class="fas fa-search me-2"></i>Check Status
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-tasks me-2"></i>Compute Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="computeResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Compute job results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Automation Tab -->
-                    <div class="tab-pane fade" id="v-pills-automation" role="tabpanel">
-                        <h2 class="section-title">Automation Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-robot me-2"></i>Create Automation Rule</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="automationForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Rule Name</label>
-                                                <input type="text" class="form-control" id="ruleName" placeholder="My automation rule" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Trigger Type</label>
-                                                <select class="form-select" id="triggerType" required>
-                                                    <option value="time">Time-based</option>
-                                                    <option value="event">Event-based</option>
-                                                    <option value="condition">Condition-based</option>
-                                                    <option value="manual">Manual</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Action Type</label>
-                                                <select class="form-select" id="actionType" required>
-                                                    <option value="api_call">API Call</option>
-                                                    <option value="notification">Send Notification</option>
-                                                    <option value="transfer">Transfer Assets</option>
-                                                    <option value="backup">Create Backup</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Execution Interval</label>
-                                                <select class="form-select" id="executionInterval">
-                                                    <option value="once">Execute Once</option>
-                                                    <option value="hourly">Every Hour</option>
-                                                    <option value="daily">Daily</option>
-                                                    <option value="weekly">Weekly</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Rule Configuration (JSON)</label>
-                                        <textarea class="form-control" id="ruleConfig" rows="4" placeholder='{"condition": "price > 100", "action": "notify"}' required></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Create Rule
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="listAutomationRules()">
-                                            <i class="fas fa-list me-2"></i>List Rules
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="testAutomationRule()">
-                                            <i class="fas fa-play me-2"></i>Test Rule
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-cogs me-2"></i>Automation Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="automationResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Automation rule results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Notification Tab -->
-                    <div class="tab-pane fade" id="v-pills-notification" role="tabpanel">
-                        <h2 class="section-title">Notification Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-bell me-2"></i>Send Notification</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="notificationForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Channel Type</label>
-                                                <select class="form-select" id="channelType" required>
-                                                    <option value="email">Email</option>
-                                                    <option value="sms">SMS</option>
-                                                    <option value="push">Push Notification</option>
-                                                    <option value="webhook">Webhook</option>
-                                                    <option value="discord">Discord</option>
-                                                    <option value="slack">Slack</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Priority</label>
-                                                <select class="form-select" id="notificationPriority" required>
-                                                    <option value="low">Low</option>
-                                                    <option value="normal">Normal</option>
-                                                    <option value="high">High</option>
-                                                    <option value="urgent">Urgent</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Recipient</label>
-                                                <input type="text" class="form-control" id="recipient" placeholder="user@example.com or +1234567890" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Template</label>
-                                                <select class="form-select" id="notificationTemplate">
-                                                    <option value="default">Default</option>
-                                                    <option value="alert">Alert</option>
-                                                    <option value="transaction">Transaction</option>
-                                                    <option value="custom">Custom</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Subject</label>
-                                        <input type="text" class="form-control" id="notificationSubject" placeholder="Notification subject" required>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Message Content</label>
-                                        <textarea class="form-control" id="notificationMessage" rows="4" placeholder="Your notification message..." required></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-paper-plane me-2"></i>Send Notification
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getNotificationHistory()">
-                                            <i class="fas fa-history me-2"></i>History
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="testNotificationChannel()">
-                                            <i class="fas fa-check me-2"></i>Test Channel
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-inbox me-2"></i>Notification Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="notificationResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Notification results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Randomness Tab -->
-                    <div class="tab-pane fade" id="v-pills-randomness" role="tabpanel">
-                        <h2 class="section-title">Randomness Service</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-dice me-2"></i>Generate Random Values</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="randomnessForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Random Type</label>
-                                                <select class="form-select" id="randomType" required>
-                                                    <option value="number">Random Number</option>
-                                                    <option value="bytes">Random Bytes</option>
-                                                    <option value="string">Random String</option>
-                                                    <option value="uuid">UUID</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Output Format</label>
-                                                <select class="form-select" id="outputFormat" required>
-                                                    <option value="decimal">Decimal</option>
-                                                    <option value="hex">Hexadecimal</option>
-                                                    <option value="base64">Base64</option>
-                                                    <option value="binary">Binary</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Length/Count</label>
-                                                <input type="number" class="form-control" id="randomLength" placeholder="32" min="1" max="1024" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Entropy Source</label>
-                                                <select class="form-select" id="entropySource" required>
-                                                    <option value="hardware">Hardware RNG</option>
-                                                    <option value="enclave">SGX Enclave</option>
-                                                    <option value="combined">Combined Sources</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-random me-2"></i>Generate Random
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="testRandomnessQuality()">
-                                            <i class="fas fa-chart-bar me-2"></i>Test Quality
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="generateSecureSeeds()">
-                                            <i class="fas fa-seedling me-2"></i>Generate Seeds
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-fingerprint me-2"></i>Randomness Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="randomnessResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Random generation results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Health Tab -->
-                    <div class="tab-pane fade" id="v-pills-health" role="tabpanel">
-                        <h2 class="section-title">Health Monitoring</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-heartbeat me-2"></i>System Health Status</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-4">
-                                        <button class="btn btn-primary w-100" onclick="checkSystemHealth()">
-                                            <i class="fas fa-stethoscope me-2"></i>Check Health
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-info w-100" onclick="getHealthHistory()">
-                                            <i class="fas fa-chart-line me-2"></i>Health History
-                                        </button>
-                                    </div>
-                                    <div class="col-md-4">
-                                        <button class="btn btn-success w-100" onclick="runDiagnostics()">
-                                            <i class="fas fa-tools me-2"></i>Run Diagnostics
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-cog me-2"></i>Service Health Checks</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-primary w-100" onclick="checkEnclaveHealth()">
-                                            <i class="fas fa-shield-alt me-2"></i>Enclave
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-info w-100" onclick="checkDatabaseHealth()">
-                                            <i class="fas fa-database me-2"></i>Database
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-success w-100" onclick="checkNetworkHealth()">
-                                            <i class="fas fa-network-wired me-2"></i>Network
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-outline-warning w-100" onclick="checkStorageHealth()">
-                                            <i class="fas fa-hdd me-2"></i>Storage
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-pulse me-2"></i>Health Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="healthResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Health check results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Monitoring Tab -->
-                    <div class="tab-pane fade" id="v-pills-monitoring" role="tabpanel">
-                        <h2 class="section-title">System Monitoring</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-area me-2"></i>Real-time Metrics</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row g-3">
-                                    <div class="col-md-3">
-                                        <button class="btn btn-primary w-100" onclick="getSystemMetrics()">
-                                            <i class="fas fa-server me-2"></i>System Metrics
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-info w-100" onclick="getPerformanceMetrics()">
-                                            <i class="fas fa-tachometer-alt me-2"></i>Performance
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-success w-100" onclick="getResourceUsage()">
-                                            <i class="fas fa-microchip me-2"></i>Resource Usage
-                                        </button>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <button class="btn btn-warning w-100" onclick="getSecurityMetrics()">
-                                            <i class="fas fa-shield-alt me-2"></i>Security
-                                        </button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-bell me-2"></i>Alerts & Thresholds</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="alertForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Metric Type</label>
-                                                <select class="form-select" id="metricType" required>
-                                                    <option value="cpu">CPU Usage</option>
-                                                    <option value="memory">Memory Usage</option>
-                                                    <option value="disk">Disk Usage</option>
-                                                    <option value="network">Network Traffic</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Threshold (%)</label>
-                                                <input type="number" class="form-control" id="alertThreshold" placeholder="80" min="1" max="100" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-plus me-2"></i>Set Alert
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="listAlerts()">
-                                            <i class="fas fa-list me-2"></i>List Alerts
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-chart-bar me-2"></i>Monitoring Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="monitoringResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Monitoring data will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Configuration Tab -->
-                    <div class="tab-pane fade" id="v-pills-configuration" role="tabpanel">
-                        <h2 class="section-title">Configuration Management</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-cog me-2"></i>Manage Configuration</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="configurationForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Configuration Key</label>
-                                                <input type="text" class="form-control" id="configKey" placeholder="service.timeout" required>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Value Type</label>
-                                                <select class="form-select" id="configValueType" required>
-                                                    <option value="string">String</option>
-                                                    <option value="number">Number</option>
-                                                    <option value="boolean">Boolean</option>
-                                                    <option value="json">JSON Object</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Configuration Value</label>
-                                        <textarea class="form-control" id="configValue" rows="3" placeholder="Configuration value..." required></textarea>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="configEncrypted">
-                                                <label class="form-check-label" for="configEncrypted">Encrypt Value</label>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="form-check">
-                                                <input class="form-check-input" type="checkbox" id="configValidated">
-                                                <label class="form-check-label" for="configValidated">Validate Value</label>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="d-flex gap-2 mt-3">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-save me-2"></i>Save Config
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="getConfiguration()">
-                                            <i class="fas fa-download me-2"></i>Get Config
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="listConfigurations()">
-                                            <i class="fas fa-list me-2"></i>List All
-                                        </button>
-                                        <button type="button" class="btn btn-warning" onclick="validateConfiguration()">
-                                            <i class="fas fa-check me-2"></i>Validate
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-wrench me-2"></i>Configuration Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="configurationResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Configuration results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Event Subscription Tab -->
-                    <div class="tab-pane fade" id="v-pills-events" role="tabpanel">
-                        <h2 class="section-title">Event Subscription</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-calendar-plus me-2"></i>Create Subscription</h5>
-                            </div>
-                            <div class="card-body">
-                                <form id="eventSubscriptionForm">
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Event Type</label>
-                                                <select class="form-select" id="eventType" required>
-                                                    <option value="transaction">Transaction Events</option>
-                                                    <option value="block">Block Events</option>
-                                                    <option value="contract">Smart Contract Events</option>
-                                                    <option value="system">System Events</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Filter Pattern</label>
-                                                <input type="text" class="form-control" id="eventFilter" placeholder="address:0x123... OR amount:>100" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="row">
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Notification Method</label>
-                                                <select class="form-select" id="notificationMethod" required>
-                                                    <option value="webhook">Webhook</option>
-                                                    <option value="email">Email</option>
-                                                    <option value="push">Push Notification</option>
-                                                    <option value="websocket">WebSocket</option>
-                                                </select>
-                                            </div>
-                                        </div>
-                                        <div class="col-md-6">
-                                            <div class="mb-3">
-                                                <label class="form-label">Endpoint/Address</label>
-                                                <input type="text" class="form-control" id="notificationEndpoint" placeholder="https://example.com/webhook" required>
-                                            </div>
-                                        </div>
-                                    </div>
-                                    <div class="mb-3">
-                                        <label class="form-label">Description</label>
-                                        <textarea class="form-control" id="subscriptionDescription" rows="2" placeholder="Describe this subscription..."></textarea>
-                                    </div>
-                                    <div class="d-flex gap-2">
-                                        <button type="submit" class="btn btn-primary">
-                                            <i class="fas fa-plus me-2"></i>Subscribe
-                                        </button>
-                                        <button type="button" class="btn btn-info" onclick="listSubscriptions()">
-                                            <i class="fas fa-list me-2"></i>List Subscriptions
-                                        </button>
-                                        <button type="button" class="btn btn-success" onclick="testEventSubscription()">
-                                            <i class="fas fa-play me-2"></i>Test Subscription
-                                        </button>
-                                    </div>
-                                </form>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-stream me-2"></i>Event Results</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="eventSubscriptionResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">Event subscription results will appear here...</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-
-                    <!-- Developer Tools Tab -->
-                    <div class="tab-pane fade" id="v-pills-tools" role="tabpanel">
-                        <h2 class="section-title">Developer Tools</h2>
-                        
-                        <div class="card mb-4">
-                            <div class="card-header">
-                                <h5><i class="fas fa-tools me-2"></i>API Testing</h5>
-                            </div>
-                            <div class="card-body">
-                                <div class="row">
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">API Endpoint</label>
-                                            <select class="form-select" id="apiEndpoint">
-                                                <option value="/api/info">API Info</option>
-                                                <option value="/health">Health Check</option>
-                                                <option value="/swagger/v1/swagger.json">Swagger JSON</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-3">
-                                            <label class="form-label">HTTP Method</label>
-                                            <select class="form-select" id="httpMethod">
-                                                <option value="GET">GET</option>
-                                                <option value="POST">POST</option>
-                                                <option value="PUT">PUT</option>
-                                                <option value="DELETE">DELETE</option>
-                                            </select>
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="mb-3">
-                                    <label class="form-label">Request Body (JSON)</label>
-                                    <textarea class="form-control" id="requestBody" rows="4" placeholder='{"key": "value"}'></textarea>
-                                </div>
-                                <button class="btn btn-primary" onclick="testApiEndpoint()">
-                                    <i class="fas fa-play me-2"></i>Test Endpoint
-                                </button>
-                                <button class="btn btn-secondary ms-2" onclick="window.open('/swagger', '_blank')">
-                                    <i class="fas fa-book me-2"></i>Open Swagger
-                                </button>
-                            </div>
-                        </div>
-
-                        <div class="card">
-                            <div class="card-header">
-                                <h5><i class="fas fa-code me-2"></i>API Response</h5>
-                            </div>
-                            <div class="card-body">
-                                <div id="apiTestResults" class="result-container p-3">
-                                    <p class="text-muted mb-0">API test results will appear here...</p>
-                                </div>
-                            </div>
+                        <div class="mt-3">
+                            <a href="/swagger" class="btn-neo btn-outline w-100" target="_blank">
+                                <i class="fas fa-external-link-alt me-2"></i>
+                                View Full API Documentation
+                            </a>
                         </div>
                     </div>
                 </div>
             </div>
         </div>
-    </div>
+    </section>
 
-    <!-- Modals -->
-    <!-- Sign Data Modal -->
-    <div class="modal fade" id="signDataModal" tabindex="-1">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Sign Data</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+    <!-- Footer -->
+    <footer class="py-5 bg-dark text-white" id="contact">
+        <div class="container">
+            <div class="row">
+                <div class="col-lg-4">
+                    <h5>
+                        <i class="fas fa-cube me-2"></i>
+                        Neo Service Layer
+                    </h5>
+                    <p class="text-white-50">
+                        Enterprise-grade blockchain infrastructure powered by Intel SGX and AI analytics.
+                    </p>
+                    <div class="d-flex gap-3">
+                        <a href="#" class="text-white-50"><i class="fab fa-github"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-discord"></i></a>
+                        <a href="#" class="text-white-50"><i class="fab fa-linkedin"></i></a>
+                    </div>
                 </div>
-                <div class="modal-body">
-                    <form id="signDataForm">
-                        <div class="mb-3">
-                            <label class="form-label">Key ID</label>
-                            <input type="text" class="form-control" id="signKeyId" placeholder="key-id" required>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Data to Sign (Hex)</label>
-                            <textarea class="form-control" id="signData" rows="3" placeholder="48656c6c6f20576f726c64" required></textarea>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Signing Algorithm</label>
-                            <select class="form-select" id="signingAlgorithm" required>
-                                <option value="ECDSA">ECDSA</option>
-                                <option value="EdDSA">EdDSA</option>
-                                <option value="RSA">RSA</option>
-                            </select>
-                        </div>
-                        <div class="mb-3">
-                            <label class="form-label">Blockchain Type</label>
-                            <select class="form-select" id="signBlockchainType" required>
-                                <option value="NeoN3">Neo N3</option>
-                                <option value="NeoX">Neo X</option>
-                            </select>
-                        </div>
-                    </form>
+                <div class="col-lg-2">
+                    <h6>Products</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white-50">Services</a></li>
+                        <li><a href="/swagger" class="text-white-50">API</a></li>
+                        <li><a href="#" class="text-white-50">SDK</a></li>
+                        <li><a href="#" class="text-white-50">Documentation</a></li>
+                    </ul>
                 </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Close</button>
-                    <button type="button" class="btn btn-primary" onclick="signData()">Sign Data</button>
+                <div class="col-lg-2">
+                    <h6>Developers</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white-50">Quick Start</a></li>
+                        <li><a href="#" class="text-white-50">Examples</a></li>
+                        <li><a href="#" class="text-white-50">Tutorials</a></li>
+                        <li><a href="#" class="text-white-50">Community</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2">
+                    <h6>Company</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white-50">About</a></li>
+                        <li><a href="#" class="text-white-50">Blog</a></li>
+                        <li><a href="#" class="text-white-50">Careers</a></li>
+                        <li><a href="#" class="text-white-50">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="col-lg-2">
+                    <h6>Support</h6>
+                    <ul class="list-unstyled">
+                        <li><a href="#" class="text-white-50">Help Center</a></li>
+                        <li><a href="#" class="text-white-50">Status</a></li>
+                        <li><a href="#" class="text-white-50">Security</a></li>
+                        <li><a href="#" class="text-white-50">Privacy</a></li>
+                    </ul>
+                </div>
+            </div>
+            <hr class="my-4">
+            <div class="row align-items-center">
+                <div class="col-md-6">
+                    <p class="mb-0 text-white-50">
+                        &copy; 2025 Neo Service Layer. All rights reserved.
+                    </p>
+                </div>
+                <div class="col-md-6 text-md-end">
+                    <p class="mb-0 text-white-50">
+                        Built with ❤️ for the Neo ecosystem
+                    </p>
                 </div>
             </div>
         </div>
-    </div>
+    </footer>
 
     <!-- Scripts -->
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/modern-app.js"></script>
+    
+    <script>
+        // Page-specific functions
+        function scrollToSection(sectionId) {
+            document.getElementById(sectionId).scrollIntoView({ 
+                behavior: 'smooth' 
+            });
+        }
+        
+        function exploreServices(category) {
+            window.location.href = `/services#${category}`;
+        }
+        
+        async function getDemoToken() {
+            const resultDiv = document.getElementById('demo-result');
+            resultDiv.style.display = 'block';
+            resultDiv.innerHTML = '<div class="loading-spinner mx-auto"></div>';
+            
+            try {
+                const response = await fetch('/api/auth/demo-token', { method: 'POST' });
+                const data = await response.json();
+                
+                resultDiv.innerHTML = `
+                    <div class="text-success mb-2">
+                        <i class="fas fa-check-circle"></i> Token Generated Successfully
+                    </div>
+                    <div class="small mb-2"><strong>Token:</strong></div>
+                    <div class="text-break text-info">${data.token}</div>
+                    <div class="small mt-2"><strong>Expires:</strong> ${new Date(data.expires).toLocaleString()}</div>
+                    <button class="btn-neo btn-outline btn-sm mt-2" onclick="copyToClipboard('${data.token}')">
+                        <i class="fas fa-copy"></i> Copy Token
+                    </button>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="text-danger">
+                        <i class="fas fa-exclamation-triangle"></i> Error: ${error.message}
+                    </div>
+                `;
+            }
+        }
+        
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                window.neoApp.showToast('Token copied to clipboard!', 'success');
+            });
+        }
+        
+        // Update connection status
+        setTimeout(() => {
+            document.getElementById('connection-status').innerHTML = 
+                '<i class="fas fa-check-circle text-success"></i> All services online';
+        }, 2000);
+    </script>
 </body>
-</html> 
+</html>
