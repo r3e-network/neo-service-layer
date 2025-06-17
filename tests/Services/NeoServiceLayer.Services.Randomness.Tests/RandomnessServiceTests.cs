@@ -58,6 +58,10 @@ public class RandomnessServiceTests
             .ReturnsAsync(42);
 
         _enclaveManagerMock
+            .Setup(e => e.GenerateRandomBytesAsync(It.IsAny<int>(), It.IsAny<string>()))
+            .ReturnsAsync((int length, string seed) => Enumerable.Range(0, length).Select(i => (byte)(42 + i)).ToArray());
+
+        _enclaveManagerMock
             .Setup(e => e.SignDataAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("0102030405");
 
@@ -190,7 +194,7 @@ public class RandomnessServiceTests
 
         // Assert
         Assert.Equal(5, result.Length);
-        _enclaveManagerMock.Verify(e => e.GenerateRandomAsync(0, 255), Times.Exactly(5));
+        _enclaveManagerMock.Verify(e => e.GenerateRandomBytesAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -231,7 +235,8 @@ public class RandomnessServiceTests
 
         // Assert
         Assert.Equal(10, result.Length);
-        _enclaveManagerMock.Verify(e => e.GenerateRandomAsync(0, It.IsAny<int>()), Times.Exactly(10));
+        // Verify that the enclave manager was called to generate random bytes
+        _enclaveManagerMock.Verify(e => e.GenerateRandomBytesAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]
@@ -242,17 +247,15 @@ public class RandomnessServiceTests
         await _service.StartAsync();
         var charset = "ABC";
 
-        // Setup enclave manager to return predictable indices
-        _enclaveManagerMock
-            .Setup(e => e.GenerateRandomAsync(0, 2))
-            .ReturnsAsync(0);
-
         // Act
         var result = await _service.GenerateRandomStringAsync(5, charset, BlockchainType.NeoN3);
 
         // Assert
-        Assert.Equal("AAAAA", result);
-        _enclaveManagerMock.Verify(e => e.GenerateRandomAsync(0, 2), Times.Exactly(5));
+        Assert.Equal(5, result.Length);
+        // All characters should be from the provided charset
+        Assert.All(result, c => Assert.Contains(c, charset));
+        // Verify that the enclave manager was called to generate random bytes
+        _enclaveManagerMock.Verify(e => e.GenerateRandomBytesAsync(It.IsAny<int>(), It.IsAny<string>()), Times.Once);
     }
 
     [Fact]

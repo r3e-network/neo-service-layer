@@ -124,6 +124,20 @@ public class ExportBackupRequest
     public ExportFormat Format { get; set; } = ExportFormat.Native;
 
     /// <summary>
+    /// Gets or sets the export path.
+    /// </summary>
+    public string ExportPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the export format (alias for Format).
+    /// </summary>
+    public ExportFormat ExportFormat 
+    { 
+        get => Format; 
+        set => Format = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the export options.
     /// </summary>
     public ExportOptions Options { get; set; } = new();
@@ -202,6 +216,11 @@ public class BackupExportResult
     public string ExportId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the backup ID that was exported.
+    /// </summary>
+    public string BackupId { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets whether the export was successful.
     /// </summary>
     public bool Success { get; set; }
@@ -217,6 +236,15 @@ public class BackupExportResult
     public string ExportLocation { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the export path (alias for ExportLocation).
+    /// </summary>
+    public string ExportPath 
+    { 
+        get => ExportLocation; 
+        set => ExportLocation = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the export size in bytes.
     /// </summary>
     public long ExportSizeBytes { get; set; }
@@ -230,6 +258,15 @@ public class BackupExportResult
     /// Gets or sets the export completion time.
     /// </summary>
     public DateTime? CompletionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the export was completed (alias for CompletionTime).
+    /// </summary>
+    public DateTime? ExportedAt 
+    { 
+        get => CompletionTime; 
+        set => CompletionTime = value; 
+    }
 
     /// <summary>
     /// Gets or sets the export checksum.
@@ -251,6 +288,16 @@ public class ImportBackupRequest
     /// Gets or sets the import source.
     /// </summary>
     public ImportSource Source { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the import path.
+    /// </summary>
+    public string ImportPath { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the import format.
+    /// </summary>
+    public ExportFormat ImportFormat { get; set; } = ExportFormat.Native;
 
     /// <summary>
     /// Gets or sets the import destination.
@@ -341,6 +388,15 @@ public class BackupImportResult
     public string ImportedBackupId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the backup ID (alias for ImportedBackupId).
+    /// </summary>
+    public string BackupId 
+    { 
+        get => ImportedBackupId; 
+        set => ImportedBackupId = value; 
+    }
+
+    /// <summary>
     /// Gets or sets whether the import was successful.
     /// </summary>
     public bool Success { get; set; }
@@ -351,6 +407,11 @@ public class BackupImportResult
     public string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// Gets or sets the import path.
+    /// </summary>
+    public string ImportPath { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the import start time.
     /// </summary>
     public DateTime StartTime { get; set; }
@@ -359,6 +420,15 @@ public class BackupImportResult
     /// Gets or sets the import completion time.
     /// </summary>
     public DateTime? CompletionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the import was completed (alias for CompletionTime).
+    /// </summary>
+    public DateTime? ImportedAt 
+    { 
+        get => CompletionTime; 
+        set => CompletionTime = value; 
+    }
 
     /// <summary>
     /// Gets or sets the imported data size in bytes.

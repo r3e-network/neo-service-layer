@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Notification.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.Services.Notification;
 
@@ -139,7 +140,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<SubscriptionResult> SubscribeToNotificationsAsync(SubscribeToNotificationsRequest request, BlockchainType blockchainType)
+    public async Task<Models.SubscriptionResult> SubscribeToNotificationsAsync(SubscribeToNotificationsRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -154,12 +155,11 @@ public partial class NotificationService
 
             var subscription = new NotificationSubscription
             {
-                SubscriptionId = subscriptionId,
+                Id = subscriptionId,
                 SubscriberId = request.SubscriberId,
-                EventTypes = request.EventTypes,
-                PreferredChannels = request.PreferredChannels,
+                Categories = request.Categories,
+                Channels = request.Channels,
                 Preferences = request.Preferences,
-                Filters = new Dictionary<string, object>(request.Filters),
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 Metadata = new Dictionary<string, object>(request.Metadata)
@@ -172,10 +172,10 @@ public partial class NotificationService
 
             var activeCount = _subscriptions.Values.Count(s => s.SubscriberId == request.SubscriberId && s.IsActive);
 
-            Logger.LogInformation("Created subscription {SubscriptionId} for subscriber {SubscriberId} with {EventCount} event types",
-                subscriptionId, request.SubscriberId, request.EventTypes.Length);
+            Logger.LogInformation("Created subscription {SubscriptionId} for subscriber {SubscriberId} with {CategoryCount} categories",
+                subscriptionId, request.SubscriberId, request.Categories.Length);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 SubscriptionId = subscriptionId,
                 Success = true,
@@ -184,8 +184,8 @@ public partial class NotificationService
                 Metadata = new Dictionary<string, object>
                 {
                     ["subscriber_id"] = request.SubscriberId,
-                    ["event_types_count"] = request.EventTypes.Length,
-                    ["preferred_channels_count"] = request.PreferredChannels.Length
+                    ["categories_count"] = request.Categories.Length,
+                    ["channels_count"] = request.Channels.Length
                 }
             };
         }
@@ -193,7 +193,7 @@ public partial class NotificationService
         {
             Logger.LogError(ex, "Failed to create subscription for {SubscriberId}", request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 Success = false,
                 ErrorMessage = ex.Message,
@@ -203,7 +203,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<SubscriptionResult> UnsubscribeFromNotificationsAsync(UnsubscribeFromNotificationsRequest request, BlockchainType blockchainType)
+    public async Task<Models.SubscriptionResult> UnsubscribeFromNotificationsAsync(Models.UnsubscribeFromNotificationsRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -220,12 +220,12 @@ public partial class NotificationService
             {
                 var subscriptionsToRemove = _subscriptions.Values
                     .Where(s => s.SubscriberId == request.SubscriberId && s.IsActive)
-                    .Where(s => request.EventTypes.Length == 0 || s.EventTypes.Any(et => request.EventTypes.Contains(et)))
+                    .Where(s => request.Categories.Length == 0 || s.Categories.Any(et => request.Categories.Contains(et)))
                     .ToArray();
 
                 foreach (var subscription in subscriptionsToRemove)
                 {
-                    if (request.EventTypes.Length == 0)
+                    if (request.Categories.Length == 0)
                     {
                         // Remove entire subscription
                         subscription.IsActive = false;
@@ -233,9 +233,9 @@ public partial class NotificationService
                     }
                     else
                     {
-                        // Remove specific event types
-                        subscription.EventTypes = subscription.EventTypes.Except(request.EventTypes).ToArray();
-                        if (subscription.EventTypes.Length == 0)
+                        // Remove specific categories
+                        subscription.Categories = subscription.Categories.Except(request.Categories).ToArray();
+                        if (subscription.Categories.Length == 0)
                         {
                             subscription.IsActive = false;
                         }
@@ -249,7 +249,7 @@ public partial class NotificationService
             Logger.LogInformation("Unsubscribed {RemovedCount} subscriptions for subscriber {SubscriberId}",
                 removedCount, request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 SubscriptionId = string.Empty, // Not applicable for unsubscribe
                 Success = true,
@@ -259,7 +259,7 @@ public partial class NotificationService
                 {
                     ["subscriber_id"] = request.SubscriberId,
                     ["removed_count"] = removedCount,
-                    ["event_types"] = request.EventTypes
+                    ["categories"] = request.Categories
                 }
             };
         }
@@ -267,7 +267,7 @@ public partial class NotificationService
         {
             Logger.LogError(ex, "Failed to unsubscribe {SubscriberId}", request.SubscriberId);
 
-            return new SubscriptionResult
+            return new Models.SubscriptionResult
             {
                 Success = false,
                 ErrorMessage = ex.Message,

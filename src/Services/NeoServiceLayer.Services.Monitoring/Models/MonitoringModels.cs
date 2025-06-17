@@ -29,14 +29,19 @@ public class PerformanceStatisticsRequest
 public class PerformanceStatisticsResult
 {
     /// <summary>
-    /// Gets or sets the overall system performance.
+    /// Gets or sets the system performance data.
     /// </summary>
     public SystemPerformance SystemPerformance { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the individual service performance statistics.
+    /// Gets or sets the individual service performance data.
     /// </summary>
     public ServicePerformance[] ServicePerformances { get; set; } = Array.Empty<ServicePerformance>();
+
+    /// <summary>
+    /// Gets or sets the time range for the statistics.
+    /// </summary>
+    public TimeSpan TimeRange { get; set; }
 
     /// <summary>
     /// Gets or sets whether the operation was successful.
@@ -626,9 +631,39 @@ public class MonitoringResult
 public class PerformanceTrend
 {
     /// <summary>
+    /// Gets or sets the service name.
+    /// </summary>
+    public string ServiceName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the time range for the trend analysis.
+    /// </summary>
+    public TimeSpan TimeRange { get; set; }
+
+    /// <summary>
     /// Gets or sets the metric name.
     /// </summary>
     public string MetricName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the trend direction.
+    /// </summary>
+    public TrendDirection TrendDirection { get; set; }
+
+    /// <summary>
+    /// Gets or sets the response time trend.
+    /// </summary>
+    public TrendDirection ResponseTimeTrend { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error rate trend.
+    /// </summary>
+    public TrendDirection ErrorRateTrend { get; set; }
+
+    /// <summary>
+    /// Gets or sets the request rate trend.
+    /// </summary>
+    public TrendDirection RequestRateTrend { get; set; }
 
     /// <summary>
     /// Gets or sets the trend direction.
@@ -649,6 +684,26 @@ public class PerformanceTrend
     /// Gets or sets the confidence level of the trend.
     /// </summary>
     public double Confidence { get; set; }
+
+    /// <summary>
+    /// Gets or sets the confidence level of the trend.
+    /// </summary>
+    public double ConfidenceLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of data points analyzed.
+    /// </summary>
+    public int DataPoints { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the analysis was performed.
+    /// </summary>
+    public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets any error message.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Gets or sets additional trend metadata.
@@ -677,6 +732,16 @@ public enum TrendDirection
     Decreasing,
 
     /// <summary>
+    /// Trend is improving.
+    /// </summary>
+    Improving,
+
+    /// <summary>
+    /// Trend is degrading.
+    /// </summary>
+    Degrading,
+
+    /// <summary>
     /// Trend is volatile.
     /// </summary>
     Volatile,
@@ -692,6 +757,41 @@ public enum TrendDirection
 /// </summary>
 public class PerformanceSummary
 {
+    /// <summary>
+    /// Gets or sets the total number of services.
+    /// </summary>
+    public int TotalServices { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total requests per second.
+    /// </summary>
+    public double TotalRequestsPerSecond { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average response time in milliseconds.
+    /// </summary>
+    public double AverageResponseTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average error rate percentage.
+    /// </summary>
+    public double AverageErrorRatePercent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the overall health percentage.
+    /// </summary>
+    public double OverallHealthPercentage { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the summary was generated.
+    /// </summary>
+    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets any error message.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
     /// <summary>
     /// Gets or sets the overall health score.
     /// </summary>

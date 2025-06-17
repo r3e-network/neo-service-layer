@@ -4,6 +4,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Tests.Infrastructure;
 
 namespace NeoServiceLayer.ServiceFramework.Tests;
 

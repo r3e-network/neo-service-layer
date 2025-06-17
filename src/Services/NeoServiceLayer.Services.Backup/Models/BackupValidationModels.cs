@@ -115,6 +115,32 @@ public class ValidateBackupRequest
 }
 
 /// <summary>
+/// Validation check information.
+/// </summary>
+public class ValidationCheck
+{
+    /// <summary>
+    /// Gets or sets the check name.
+    /// </summary>
+    public string CheckName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the check passed.
+    /// </summary>
+    public bool Passed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the check message.
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the check details.
+    /// </summary>
+    public Dictionary<string, object> Details { get; set; } = new();
+}
+
+/// <summary>
 /// Backup validation result.
 /// </summary>
 public class BackupValidationResult
@@ -140,14 +166,33 @@ public class BackupValidationResult
     public ValidationError[] ValidationErrors { get; set; } = Array.Empty<ValidationError>();
 
     /// <summary>
+    /// Gets or sets the validation checks performed.
+    /// </summary>
+    public ValidationCheck[] ValidationChecks { get; set; } = Array.Empty<ValidationCheck>();
+
+    /// <summary>
     /// Gets or sets the validation timestamp.
     /// </summary>
     public DateTime ValidationTime { get; set; }
 
     /// <summary>
+    /// Gets or sets when the validation was performed (alias for ValidationTime).
+    /// </summary>
+    public DateTime ValidatedAt 
+    { 
+        get => ValidationTime; 
+        set => ValidationTime = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the validation duration.
     /// </summary>
     public TimeSpan ValidationDuration { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if validation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata.

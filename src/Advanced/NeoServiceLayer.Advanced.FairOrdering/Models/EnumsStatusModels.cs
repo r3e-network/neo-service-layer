@@ -1,6 +1,37 @@
 namespace NeoServiceLayer.Advanced.FairOrdering.Models;
 
 /// <summary>
+/// Represents risk level.
+/// </summary>
+public enum RiskLevel
+{
+    /// <summary>
+    /// Minimal risk level.
+    /// </summary>
+    Minimal,
+
+    /// <summary>
+    /// Low risk level.
+    /// </summary>
+    Low,
+
+    /// <summary>
+    /// Medium risk level.
+    /// </summary>
+    Medium,
+
+    /// <summary>
+    /// High risk level.
+    /// </summary>
+    High,
+
+    /// <summary>
+    /// Critical risk level.
+    /// </summary>
+    Critical
+}
+
+/// <summary>
 /// Represents pool status.
 /// </summary>
 public enum PoolStatus
@@ -50,6 +81,16 @@ public enum OrderingAlgorithm
     /// Priority-based ordering.
     /// </summary>
     Priority,
+
+    /// <summary>
+    /// Priority-based fair ordering.
+    /// </summary>
+    PriorityFair,
+
+    /// <summary>
+    /// Random fair ordering.
+    /// </summary>
+    RandomFair,
 
     /// <summary>
     /// Weighted fair queuing.

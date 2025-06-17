@@ -163,82 +163,77 @@ public partial class EnclaveWrapper
     }
 
     /// <summary>
-    /// Lists all stored data keys.
+    /// Lists all stored data keys in the enclave's secure storage.
     /// </summary>
-    /// <returns>Array of storage keys.</returns>
-    public string[] ListStorageKeys()
+    /// <returns>JSON string containing array of storage keys and metadata.</returns>
+    /// <exception cref="EnclaveException">
+    /// Thrown when key enumeration fails due to storage system errors.
+    /// </exception>
+    public string ListStorageKeys()
     {
         EnsureInitialized();
 
-        // List all keys from secure storage
+        byte[] resultBytes = new byte[8192]; // 8KB buffer for key list
+        IntPtr actualResultSizePtr = Marshal.AllocHGlobal(IntPtr.Size);
+
         try
         {
-            var keys = new List<string>();
+            int result = NativeOcclumEnclave.occlum_storage_list_keys(
+                resultBytes,
+                (UIntPtr)resultBytes.Length,
+                actualResultSizePtr);
 
-            // In a production environment, this would enumerate keys from secure storage
-            // For now, return keys from our mock storage
-            lock (_secureStorage)
+            if (result != 0)
             {
-                keys.AddRange(_secureStorage.Keys);
+                Logger.LogError("Failed to list storage keys. Error code: {ErrorCode}", result);
+                throw new EnclaveException($"Failed to list storage keys. Error code: {result}");
             }
 
-            Logger.LogDebug("Listed {KeyCount} keys from secure storage", keys.Count);
-            return keys.ToArray();
+            int actualResultSize = Marshal.ReadInt32(actualResultSizePtr);
+            return Encoding.UTF8.GetString(resultBytes, 0, actualResultSize);
         }
-        catch (Exception ex)
+        finally
         {
-            Logger.LogError(ex, "Failed to list keys from secure storage");
-            throw new EnclaveException($"Failed to list keys: {ex.Message}", ex);
+            Marshal.FreeHGlobal(actualResultSizePtr);
         }
     }
 
     /// <summary>
-    /// Gets the total storage usage.
+    /// Gets comprehensive storage usage statistics from the enclave's secure storage.
     /// </summary>
-    /// <returns>Storage usage information as a JSON string.</returns>
+    /// <returns>JSON string containing detailed storage usage information.</returns>
+    /// <exception cref="EnclaveException">
+    /// Thrown when storage usage retrieval fails due to storage system errors.
+    /// </exception>
     public string GetStorageUsage()
     {
         EnsureInitialized();
 
-        // Get actual storage usage from secure storage
+        byte[] resultBytes = new byte[4096]; // 4KB buffer for usage statistics
+        IntPtr actualResultSizePtr = Marshal.AllocHGlobal(IntPtr.Size);
+
         try
         {
-            long totalSize = 0;
-            int keyCount = 0;
+            int result = NativeOcclumEnclave.occlum_storage_get_usage(
+                resultBytes,
+                (UIntPtr)resultBytes.Length,
+                actualResultSizePtr);
 
-            lock (_secureStorage)
+            if (result != 0)
             {
-                keyCount = _secureStorage.Count;
-                totalSize = _secureStorage.Values.Sum(data => System.Text.Encoding.UTF8.GetByteCount(data));
+                Logger.LogError("Failed to get storage usage. Error code: {ErrorCode}", result);
+                throw new EnclaveException($"Failed to get storage usage. Error code: {result}");
             }
 
-            // In a production environment, these would be actual storage limits
-            const long maxStorageSize = 100 * 1024 * 1024; // 100 MB limit
-            long availableSize = maxStorageSize - totalSize;
-
-            var storageInfo = new
-            {
-                totalKeys = keyCount,
-                totalSizeBytes = totalSize,
-                availableSpaceBytes = Math.Max(0, availableSize),
-                compressionRatio = 0.0, // Would be calculated based on actual compression
-                encryptionEnabled = true,
-                utilizationPercentage = Math.Round((double)totalSize / maxStorageSize * 100, 2),
-                timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds()
-            };
-
-            Logger.LogDebug("Storage usage: {UsedSize}/{TotalSize} bytes ({UtilizationPercentage}%), {KeyCount} keys",
-                totalSize, maxStorageSize, storageInfo.utilizationPercentage, keyCount);
-
-            return System.Text.Json.JsonSerializer.Serialize(storageInfo, new System.Text.Json.JsonSerializerOptions
-            {
-                WriteIndented = true
-            });
+            int actualResultSize = Marshal.ReadInt32(actualResultSizePtr);
+            string usageInfo = Encoding.UTF8.GetString(resultBytes, 0, actualResultSize);
+            
+            Logger.LogDebug("Retrieved storage usage information successfully");
+            return usageInfo;
         }
-        catch (Exception ex)
+        finally
         {
-            Logger.LogError(ex, "Failed to get storage usage");
-            throw new EnclaveException($"Failed to get storage usage: {ex.Message}", ex);
+            Marshal.FreeHGlobal(actualResultSizePtr);
         }
     }
 }

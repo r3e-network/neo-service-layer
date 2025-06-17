@@ -1,0 +1,404 @@
+@page "/servicepages/health"
+@model NeoServiceLayer.Web.Pages.ServicePages.HealthModel
+@{
+    ViewData["Title"] = "Health Service";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #dc3545;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-checking { background-color: #ffc107; }
+        .health-good { color: #28a745; }
+        .health-warning { color: #ffc107; }
+        .health-critical { color: #dc3545; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-heartbeat me-3"></i>Health Service
+                    </h1>
+                    <p class="lead mb-0">System Health Monitoring & Diagnostics</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-heartbeat feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">Health Service</h6>
+                        <p class="card-text small">System health monitoring and diagnostic reporting with alerting capabilities for all Neo Service Layer components.</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> Infrastructure Service</li>
+                            <li><strong>Layer:</strong> Infrastructure</li>
+                            <li><strong>Monitoring:</strong> Real-time</li>
+                            <li><strong>Alerts:</strong> Enabled</li>
+                            <li><strong>Retention:</strong> 30 days</li>
+                        </ul>
+
+                        <h6>Health Checks</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-check text-success me-2"></i>Service Availability</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Resource Usage</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Performance Metrics</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Error Detection</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Dependency Status</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Dashboard -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="overview-tab" data-bs-toggle="tab" data-bs-target="#overview" type="button" role="tab">
+                                    <i class="fas fa-tachometer-alt me-2"></i>Overview
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="services-tab" data-bs-toggle="tab" data-bs-target="#services" type="button" role="tab">
+                                    <i class="fas fa-server me-2"></i>Services
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="alerts-tab" data-bs-toggle="tab" data-bs-target="#alerts" type="button" role="tab">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Alerts
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Overview Tab -->
+                            <div class="tab-pane fade show active" id="overview" role="tabpanel">
+                                <h5>System Health Overview</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="services-online">--</h4>
+                                                <small>Services Online</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-warning text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="services-degraded">--</h4>
+                                                <small>Degraded</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-danger text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="services-offline">--</h4>
+                                                <small>Offline</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-info text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="system-uptime">--</h4>
+                                                <small>Uptime</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-microchip text-primary fa-2x mb-2"></i>
+                                                <h6>CPU Usage</h6>
+                                                <h4 id="cpu-usage" class="health-good">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-memory text-info fa-2x mb-2"></i>
+                                                <h6>Memory Usage</h6>
+                                                <h4 id="memory-usage" class="health-good">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-hdd text-warning fa-2x mb-2"></i>
+                                                <h6>Disk Usage</h6>
+                                                <h4 id="disk-usage" class="health-good">--</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="refreshOverview()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Overview
+                                </button>
+                            </div>
+
+                            <!-- Services Tab -->
+                            <div class="tab-pane fade" id="services" role="tabpanel">
+                                <h5>Service Status</h5>
+                                
+                                <div id="services-list" class="row g-2">
+                                    <!-- Service status cards will be populated here -->
+                                </div>
+
+                                <button class="btn btn-primary mt-3" onclick="checkAllServices()">
+                                    <i class="fas fa-sync-alt me-2"></i>Check All Services
+                                </button>
+                            </div>
+
+                            <!-- Alerts Tab -->
+                            <div class="tab-pane fade" id="alerts" role="tabpanel">
+                                <h5>Recent Alerts</h5>
+                                
+                                <div id="alerts-list">
+                                    <div class="text-center text-muted">
+                                        <i class="fas fa-spinner fa-spin me-2"></i>Loading alerts...
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary mt-3" onclick="refreshAlerts()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Alerts
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceStatus();
+            refreshOverview();
+            checkAllServices();
+            refreshAlerts();
+            
+            // Auto-refresh every 30 seconds
+            setInterval(refreshOverview, 30000);
+        });
+
+        async function checkServiceStatus() {
+            try {
+                updateServiceStatus('checking');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                updateServiceStatus(Math.random() > 0.05 ? 'online' : 'offline');
+            } catch (error) {
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        async function refreshOverview() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                const onlineServices = Math.floor(Math.random() * 3) + 18;
+                const degradedServices = Math.floor(Math.random() * 2) + 1;
+                const offlineServices = 21 - onlineServices - degradedServices;
+                
+                document.getElementById('services-online').textContent = onlineServices;
+                document.getElementById('services-degraded').textContent = degradedServices;
+                document.getElementById('services-offline').textContent = offlineServices;
+                document.getElementById('system-uptime').textContent = Math.floor(Math.random() * 10) + 20 + 'd';
+                
+                // Resource usage
+                const cpuUsage = Math.floor(Math.random() * 40) + 20;
+                const memoryUsage = Math.floor(Math.random() * 30) + 40;
+                const diskUsage = Math.floor(Math.random() * 20) + 30;
+                
+                updateResourceUsage('cpu-usage', cpuUsage);
+                updateResourceUsage('memory-usage', memoryUsage);
+                updateResourceUsage('disk-usage', diskUsage);
+                
+            } catch (error) {
+                console.error('Error refreshing overview:', error);
+            }
+        }
+
+        function updateResourceUsage(elementId, percentage) {
+            const element = document.getElementById(elementId);
+            element.textContent = percentage + '%';
+            
+            if (percentage < 70) {
+                element.className = 'health-good';
+            } else if (percentage < 85) {
+                element.className = 'health-warning';
+            } else {
+                element.className = 'health-critical';
+            }
+        }
+
+        async function checkAllServices() {
+            try {
+                const servicesList = document.getElementById('services-list');
+                servicesList.innerHTML = '<div class="col-12 text-center"><i class="fas fa-spinner fa-spin me-2"></i>Checking services...</div>';
+                
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const services = [
+                    'Key Management', 'SGX Enclave', 'Storage', 'Compliance', 'Zero Knowledge',
+                    'Backup', 'AI Prediction', 'Pattern Recognition', 'Oracle', 'Abstract Account',
+                    'Voting', 'Cross Chain', 'Proof of Reserve', 'Compute', 'Automation',
+                    'Notification', 'Randomness', 'Health', 'Monitoring', 'Configuration', 'Event Subscription'
+                ];
+                
+                let html = '';
+                services.forEach(service => {
+                    const isHealthy = Math.random() > 0.15;
+                    const statusClass = isHealthy ? 'bg-success' : 'bg-danger';
+                    const statusText = isHealthy ? 'Online' : 'Offline';
+                    
+                    html += `
+                        <div class="col-md-4 mb-2">
+                            <div class="card">
+                                <div class="card-body p-2">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <small class="fw-bold">${service}</small>
+                                        <span class="badge ${statusClass}">${statusText}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                servicesList.innerHTML = html;
+            } catch (error) {
+                console.error('Error checking services:', error);
+            }
+        }
+
+        async function refreshAlerts() {
+            try {
+                const alertsList = document.getElementById('alerts-list');
+                alertsList.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</div>';
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const alerts = [
+                    { time: '2 minutes ago', level: 'warning', message: 'High memory usage detected on Storage service' },
+                    { time: '15 minutes ago', level: 'info', message: 'SGX Enclave service restarted successfully' },
+                    { time: '1 hour ago', level: 'error', message: 'Temporary connection failure to Oracle service' },
+                    { time: '2 hours ago', level: 'success', message: 'All services health check completed' }
+                ];
+                
+                let html = '';
+                alerts.forEach(alert => {
+                    const iconClass = alert.level === 'error' ? 'fa-exclamation-circle text-danger' : 
+                                     alert.level === 'warning' ? 'fa-exclamation-triangle text-warning' :
+                                     alert.level === 'success' ? 'fa-check-circle text-success' : 'fa-info-circle text-info';
+                    
+                    html += `
+                        <div class="d-flex align-items-start mb-3 p-2 border rounded">
+                            <i class="fas ${iconClass} me-3 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${alert.message}</div>
+                                <small class="text-muted">${alert.time}</small>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                alertsList.innerHTML = html;
+            } catch (error) {
+                alertsList.innerHTML = '<div class="text-danger">Error loading alerts</div>';
+            }
+        }
+    </script>
+</body>
+</html> 

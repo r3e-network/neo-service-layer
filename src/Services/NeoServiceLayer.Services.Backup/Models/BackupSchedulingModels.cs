@@ -47,6 +47,21 @@ public class CreateScheduledBackupRequest
     public string ScheduleName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the backup name.
+    /// </summary>
+    public string BackupName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the data sources to backup.
+    /// </summary>
+    public BackupDataSource[] DataSources { get; set; } = Array.Empty<BackupDataSource>();
+
+    /// <summary>
+    /// Gets or sets the backup destination.
+    /// </summary>
+    public BackupDestination Destination { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets the backup configuration.
     /// </summary>
     public CreateBackupRequest BackupConfiguration { get; set; } = new();
@@ -134,6 +149,15 @@ public class ScheduledBackupResult
     public DateTime? NextExecutionTime { get; set; }
 
     /// <summary>
+    /// Gets or sets the next run time (alias for NextExecutionTime).
+    /// </summary>
+    public DateTime? NextRunTime 
+    { 
+        get => NextExecutionTime; 
+        set => NextExecutionTime = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the creation timestamp.
     /// </summary>
     public DateTime CreatedAt { get; set; }
@@ -184,6 +208,20 @@ public class BackupStatisticsResult
     /// Gets or sets the storage statistics.
     /// </summary>
     public StorageStatistics Storage { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the statistics (alias for Overall).
+    /// </summary>
+    public OverallStatistics Statistics 
+    { 
+        get => Overall; 
+        set => Overall = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets when the statistics were generated.
+    /// </summary>
+    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Gets or sets whether the operation was successful.

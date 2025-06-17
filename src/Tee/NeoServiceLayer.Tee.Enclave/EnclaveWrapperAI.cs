@@ -4,8 +4,10 @@ using System.Text;
 namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
-/// AI and account operations for the enclave wrapper.
+/// DEPRECATED: AI and account operations for the legacy enclave wrapper.
+/// This partial class is deprecated. Use OcclumEnclaveWrapper instead.
 /// </summary>
+[Obsolete("This class is deprecated. Use OcclumEnclaveWrapper instead.")]
 public partial class EnclaveWrapper
 {
     /// <summary>
@@ -217,7 +219,7 @@ public partial class EnclaveWrapper
         }
     }
 
-    // Additional interface methods for compatibility
+    // Interface compatibility methods - delegate to internal implementations
     public string TrainAIModel(string modelId, string modelType, double[] trainingData, string parameters = "{}")
     {
         return TrainModel(modelId, modelType, trainingData, parameters);
@@ -241,46 +243,5 @@ public partial class EnclaveWrapper
     public string AddAbstractAccountGuardian(string accountId, string guardianData)
     {
         return AddGuardian(accountId, guardianData);
-    }
-
-    public byte[] Encrypt(byte[] data, byte[] key)
-    {
-        // Simple XOR encryption for mock implementation
-        var encrypted = new byte[data.Length];
-        for (int i = 0; i < data.Length; i++)
-        {
-            encrypted[i] = (byte)(data[i] ^ key[i % key.Length]);
-        }
-        return encrypted;
-    }
-
-    public byte[] Decrypt(byte[] data, byte[] key)
-    {
-        // Simple XOR decryption for mock implementation
-        return Encrypt(data, key); // XOR is symmetric
-    }
-
-    public byte[] Sign(byte[] data, byte[] key)
-    {
-        // Mock signature implementation
-        var signature = new byte[32]; // Mock 32-byte signature
-        for (int i = 0; i < signature.Length; i++)
-        {
-            signature[i] = (byte)((data[i % data.Length] + key[i % key.Length]) % 256);
-        }
-        return signature;
-    }
-
-    public bool Verify(byte[] data, byte[] signature, byte[] key)
-    {
-        // Mock verification implementation
-        var expectedSignature = Sign(data, key);
-        if (signature.Length != expectedSignature.Length) return false;
-
-        for (int i = 0; i < signature.Length; i++)
-        {
-            if (signature[i] != expectedSignature[i]) return false;
-        }
-        return true;
     }
 }

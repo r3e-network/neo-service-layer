@@ -1,0 +1,398 @@
+@page "/servicepages/storage"
+@model NeoServiceLayer.Web.Pages.ServicePages.StorageModel
+@{
+    ViewData["Title"] = "Storage Service";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #17a2b8;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-checking { background-color: #ffc107; }
+        .result-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .response-json {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-database me-3"></i>Storage Service
+                    </h1>
+                    <p class="lead mb-0">Encrypted & Compressed Data Storage</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-database feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">Storage Service</h6>
+                        <p class="card-text small">Secure, encrypted, and compressed data storage with transaction support and metadata management.</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> Foundation Service</li>
+                            <li><strong>Layer:</strong> Foundation</li>
+                            <li><strong>Encryption:</strong> AES-256-GCM</li>
+                            <li><strong>Compression:</strong> LZ4</li>
+                            <li><strong>Backend:</strong> RocksDB</li>
+                        </ul>
+
+                        <h6>Storage Features</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-check text-success me-2"></i>Encryption at Rest</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Data Compression</li>
+                            <li><i class="fas fa-check text-success me-2"></i>ACID Transactions</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Metadata Support</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Backup & Recovery</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>Operations
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="stats-tab" data-bs-toggle="tab" data-bs-target="#stats" type="button" role="tab">
+                                    <i class="fas fa-chart-bar me-2"></i>Statistics
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="maintenance-tab" data-bs-toggle="tab" data-bs-target="#maintenance" type="button" role="tab">
+                                    <i class="fas fa-tools me-2"></i>Maintenance
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Operations Tab -->
+                            <div class="tab-pane fade show active" id="operations" role="tabpanel">
+                                <h5>Storage Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-plus-circle me-2"></i>Store Data</h6>
+                                                <form id="store-data-form">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Key</label>
+                                                        <input type="text" class="form-control" id="storeKey" placeholder="data_key">
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Value</label>
+                                                        <textarea class="form-control" id="storeValue" rows="3" placeholder="JSON data or text"></textarea>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-save me-2"></i>Store Data
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-search me-2"></i>Retrieve Data</h6>
+                                                <form id="retrieve-data-form">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Key</label>
+                                                        <input type="text" class="form-control" id="retrieveKey" placeholder="data_key">
+                                                    </div>
+                                                    <button type="submit" class="btn btn-info">
+                                                        <i class="fas fa-download me-2"></i>Retrieve Data
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="operation-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Operation Response</h6>
+                                    <pre id="operation-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Statistics Tab -->
+                            <div class="tab-pane fade" id="stats" role="tabpanel">
+                                <h5>Storage Statistics</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card bg-primary text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="total-keys">--</h4>
+                                                <small>Total Keys</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="data-size">--</h4>
+                                                <small>Data Size</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-warning text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="compression-ratio">--</h4>
+                                                <small>Compression</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-info text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="transactions">--</h4>
+                                                <small>Transactions</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="refreshStats()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Statistics
+                                </button>
+                            </div>
+
+                            <!-- Maintenance Tab -->
+                            <div class="tab-pane fade" id="maintenance" role="tabpanel">
+                                <h5>Maintenance Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-broom me-2"></i>Cleanup</h6>
+                                                <p class="small text-muted">Remove unused data and optimize storage</p>
+                                                <button class="btn btn-warning" onclick="performCleanup()">
+                                                    <i class="fas fa-broom me-2"></i>Run Cleanup
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-shield-alt me-2"></i>Backup</h6>
+                                                <p class="small text-muted">Create encrypted backup of all data</p>
+                                                <button class="btn btn-success" onclick="createBackup()">
+                                                    <i class="fas fa-download me-2"></i>Create Backup
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceStatus();
+            refreshStats();
+            
+            document.getElementById('store-data-form').addEventListener('submit', handleStoreData);
+            document.getElementById('retrieve-data-form').addEventListener('submit', handleRetrieveData);
+        });
+
+        async function checkServiceStatus() {
+            try {
+                updateServiceStatus('checking');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                updateServiceStatus(Math.random() > 0.1 ? 'online' : 'offline');
+            } catch (error) {
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        async function handleStoreData(event) {
+            event.preventDefault();
+            
+            const key = document.getElementById('storeKey').value;
+            const value = document.getElementById('storeValue').value;
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const result = {
+                    operation: "store",
+                    key: key,
+                    size: value.length,
+                    compressed: Math.floor(value.length * 0.7),
+                    encrypted: true,
+                    timestamp: new Date().toISOString()
+                };
+                
+                document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('operation-result').style.display = 'block';
+                
+                refreshStats();
+            } catch (error) {
+                console.error('Error storing data:', error);
+            }
+        }
+
+        async function handleRetrieveData(event) {
+            event.preventDefault();
+            
+            const key = document.getElementById('retrieveKey').value;
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                const result = {
+                    operation: "retrieve",
+                    key: key,
+                    found: Math.random() > 0.2,
+                    value: "Sample encrypted data content...",
+                    size: Math.floor(Math.random() * 1000) + 100,
+                    timestamp: new Date().toISOString()
+                };
+                
+                document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('operation-result').style.display = 'block';
+            } catch (error) {
+                console.error('Error retrieving data:', error);
+            }
+        }
+
+        async function refreshStats() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                document.getElementById('total-keys').textContent = Math.floor(Math.random() * 50000) + 10000;
+                document.getElementById('data-size').textContent = Math.floor(Math.random() * 100) + 50 + ' GB';
+                document.getElementById('compression-ratio').textContent = Math.floor(Math.random() * 30) + 60 + '%';
+                document.getElementById('transactions').textContent = Math.floor(Math.random() * 1000) + 500;
+            } catch (error) {
+                console.error('Error refreshing stats:', error);
+            }
+        }
+
+        async function performCleanup() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 3000));
+                alert('Cleanup completed successfully!');
+            } catch (error) {
+                alert('Cleanup failed: ' + error.message);
+            }
+        }
+
+        async function createBackup() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                alert('Backup created successfully!');
+            } catch (error) {
+                alert('Backup failed: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

@@ -1,0 +1,76 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" Version="9.0.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Versioning" Version="5.1.0" />
+    
+    <!-- Explicit Microsoft.IdentityModel packages for .NET 9.0 compatibility -->
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.1" />
+    <PackageReference Include="Microsoft.IdentityModel.JsonWebTokens" Version="8.3.1" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
+
+    <PackageReference Include="Serilog" Version="4.2.0" />
+    <PackageReference Include="Serilog.AspNetCore" Version="9.0.0" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="6.0.0" />
+    <PackageReference Include="Serilog.Sinks.File" Version="6.0.0" />
+        <PackageReference Include="Swashbuckle.AspNetCore" Version="7.2.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Infrastructure\NeoServiceLayer.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
+    <!-- Key Management and AI Services -->
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />
+    <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.Prediction\NeoServiceLayer.AI.Prediction.csproj" />
+    <!-- <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.PatternRecognition\NeoServiceLayer.AI.PatternRecognition.csproj" /> -->
+    
+    <!-- Core Services (temporarily commented out for demo) -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Backup\NeoServiceLayer.Services.Backup.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Oracle\NeoServiceLayer.Services.Oracle.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Voting\NeoServiceLayer.Services.Voting.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ZeroKnowledge\NeoServiceLayer.Services.ZeroKnowledge.csproj" /> -->
+    
+    <!-- Security and Compliance Services (temporarily commented out for demo) -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compliance\NeoServiceLayer.Services.Compliance.csproj" /> -->
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ProofOfReserve\NeoServiceLayer.Services.ProofOfReserve.csproj" /> -->
+    
+    <!-- Communication and Monitoring Services (temporarily commented out for demo) -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Notification\NeoServiceLayer.Services.Notification.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Monitoring\NeoServiceLayer.Services.Monitoring.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EventSubscription\NeoServiceLayer.Services.EventSubscription.csproj" /> -->
+    
+    <!-- Configuration and Cross-Chain Services (temporarily commented out for demo) -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Configuration\NeoServiceLayer.Services.Configuration.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.CrossChain\NeoServiceLayer.Services.CrossChain.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.AbstractAccount\NeoServiceLayer.Services.AbstractAccount.csproj" /> -->
+    
+    <!-- Compute and Automation Services (temporarily commented out for demo) -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compute\NeoServiceLayer.Services.Compute.csproj" /> -->
+    <!-- <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Automation\NeoServiceLayer.Services.Automation.csproj" /> -->
+
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="wwwroot\css\" />
+    <Folder Include="wwwroot\js\" />
+    <Folder Include="wwwroot\lib\" />
+  </ItemGroup>
+
+</Project> 

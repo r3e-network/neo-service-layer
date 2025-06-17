@@ -1,0 +1,514 @@
+@page "/servicepages/keymanagement"
+@model NeoServiceLayer.Web.Pages.ServicePages.KeyManagementModel
+@{
+    ViewData["Title"] = "Key Management Service";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .service-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #007bff;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .status-checking {
+            background-color: #ffc107;
+        }
+        .result-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .response-json {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-key me-3"></i>Key Management Service
+                    </h1>
+                    <p class="lead mb-0">Cryptographic Key Generation, Storage & Management</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-key feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">Key Management</h6>
+                        <p class="card-text small">Secure cryptographic key generation, storage, and management with Intel SGX enclave protection.</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> Foundation Service</li>
+                            <li><strong>Layer:</strong> Foundation</li>
+                            <li><strong>Security:</strong> SGX Enclave</li>
+                            <li><strong>API Version:</strong> v1.0</li>
+                            <li><strong>Endpoints:</strong> 8</li>
+                        </ul>
+
+                        <h6>Key Features</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-check text-success me-2"></i>Key Generation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Secure Storage</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Key Rotation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Access Control</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Audit Logging</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
+                                    <i class="fas fa-heartbeat me-2"></i>Status & Health
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>Operations
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="monitoring-tab" data-bs-toggle="tab" data-bs-target="#monitoring" type="button" role="tab">
+                                    <i class="fas fa-chart-line me-2"></i>Monitoring
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Status Tab -->
+                            <div class="tab-pane fade show active" id="status" role="tabpanel">
+                                <h5>Service Status</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-server text-primary fa-2x mb-2"></i>
+                                                <h6>Service Health</h6>
+                                                <span id="health-status" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                                                <h6>Enclave Status</h6>
+                                                <span id="enclave-status" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="checkServiceHealth()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Status
+                                </button>
+
+                                <div id="status-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Status Response</h6>
+                                    <pre id="status-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Operations Tab -->
+                            <div class="tab-pane fade" id="operations" role="tabpanel">
+                                <h5>Key Management Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-plus-circle me-2"></i>Generate Key</h6>
+                                                <form id="generate-key-form">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Key Type</label>
+                                                        <select class="form-select" id="keyType">
+                                                            <option value="RSA2048">RSA 2048</option>
+                                                            <option value="RSA4096">RSA 4096</option>
+                                                            <option value="ECDSA">ECDSA P-256</option>
+                                                            <option value="Ed25519">Ed25519</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Key Purpose</label>
+                                                        <select class="form-select" id="keyPurpose">
+                                                            <option value="Signing">Digital Signing</option>
+                                                            <option value="Encryption">Encryption</option>
+                                                            <option value="KeyExchange">Key Exchange</option>
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-key me-2"></i>Generate Key
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-list me-2"></i>List Keys</h6>
+                                                <p class="small text-muted">View all stored keys and their metadata</p>
+                                                <button class="btn btn-info" onclick="listKeys()">
+                                                    <i class="fas fa-search me-2"></i>List All Keys
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="operation-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Operation Response</h6>
+                                    <pre id="operation-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Monitoring Tab -->
+                            <div class="tab-pane fade" id="monitoring" role="tabpanel">
+                                <h5>Service Metrics</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card bg-primary text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="total-keys">--</h4>
+                                                <small>Total Keys</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="active-keys">--</h4>
+                                                <small>Active Keys</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-warning text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="pending-rotations">--</h4>
+                                                <small>Pending Rotations</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-info text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="operations-today">--</h4>
+                                                <small>Operations Today</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="refreshMetrics()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Metrics
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Activity Log -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-history me-2"></i>Recent Activity
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshActivityLog()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="activity-log">
+                            <div class="text-center text-muted">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Loading activity log...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize service status check
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceHealth();
+            refreshMetrics();
+            refreshActivityLog();
+            
+            // Set up form handlers
+            document.getElementById('generate-key-form').addEventListener('submit', handleGenerateKey);
+        });
+
+        async function checkServiceHealth() {
+            try {
+                updateServiceStatus('checking');
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                
+                const isHealthy = Math.random() > 0.1;
+                
+                if (isHealthy) {
+                    updateServiceStatus('online');
+                    document.getElementById('health-status').textContent = 'Healthy';
+                    document.getElementById('health-status').className = 'badge bg-success';
+                    document.getElementById('enclave-status').textContent = 'Active';
+                    document.getElementById('enclave-status').className = 'badge bg-success';
+                    
+                    // Show status result
+                    const statusResult = {
+                        status: "healthy",
+                        enclave: "active",
+                        timestamp: new Date().toISOString(),
+                        version: "1.0.0",
+                        uptime: "2d 14h 32m"
+                    };
+                    
+                    document.getElementById('status-output').textContent = JSON.stringify(statusResult, null, 2);
+                    document.getElementById('status-result').style.display = 'block';
+                } else {
+                    updateServiceStatus('offline');
+                    document.getElementById('health-status').textContent = 'Unhealthy';
+                    document.getElementById('health-status').className = 'badge bg-danger';
+                    document.getElementById('enclave-status').textContent = 'Inactive';
+                    document.getElementById('enclave-status').className = 'badge bg-danger';
+                }
+            } catch (error) {
+                console.error('Error checking service health:', error);
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            const indicator = statusElement.querySelector('.status-indicator');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        async function handleGenerateKey(event) {
+            event.preventDefault();
+            
+            const keyType = document.getElementById('keyType').value;
+            const keyPurpose = document.getElementById('keyPurpose').value;
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const result = {
+                    keyId: `key_${Date.now()}`,
+                    keyType: keyType,
+                    purpose: keyPurpose,
+                    created: new Date().toISOString(),
+                    status: "active"
+                };
+                
+                document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('operation-result').style.display = 'block';
+                
+                // Refresh metrics
+                refreshMetrics();
+                
+                showNotification('Key generated successfully!', 'success');
+            } catch (error) {
+                showNotification('Error generating key: ' + error.message, 'error');
+            }
+        }
+
+        async function listKeys() {
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const result = {
+                    keys: [
+                        { id: "key_1", type: "RSA2048", purpose: "Signing", created: "2024-01-15T10:30:00Z", status: "active" },
+                        { id: "key_2", type: "ECDSA", purpose: "Encryption", created: "2024-01-14T15:20:00Z", status: "active" },
+                        { id: "key_3", type: "Ed25519", purpose: "KeyExchange", created: "2024-01-13T09:45:00Z", status: "rotating" }
+                    ],
+                    total: 3
+                };
+                
+                document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('operation-result').style.display = 'block';
+            } catch (error) {
+                showNotification('Error listing keys: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshMetrics() {
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                document.getElementById('total-keys').textContent = Math.floor(Math.random() * 50) + 20;
+                document.getElementById('active-keys').textContent = Math.floor(Math.random() * 40) + 15;
+                document.getElementById('pending-rotations').textContent = Math.floor(Math.random() * 5);
+                document.getElementById('operations-today').textContent = Math.floor(Math.random() * 100) + 50;
+            } catch (error) {
+                console.error('Error refreshing metrics:', error);
+            }
+        }
+
+        async function refreshActivityLog() {
+            try {
+                const activityLog = document.getElementById('activity-log');
+                activityLog.innerHTML = '<div class="text-center text-muted"><i class="fas fa-spinner fa-spin me-2"></i>Loading...</div>';
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const activities = [
+                    { time: '2 minutes ago', action: 'Key generated', details: 'RSA2048 signing key created', type: 'success' },
+                    { time: '15 minutes ago', action: 'Key rotated', details: 'key_abc123 rotated successfully', type: 'info' },
+                    { time: '1 hour ago', action: 'Access granted', details: 'User admin accessed key_def456', type: 'warning' },
+                    { time: '2 hours ago', action: 'Health check', details: 'Service health check completed', type: 'success' }
+                ];
+                
+                let logHtml = '';
+                activities.forEach(activity => {
+                    const iconClass = activity.type === 'success' ? 'fa-check-circle text-success' : 
+                                     activity.type === 'info' ? 'fa-info-circle text-info' : 
+                                     'fa-exclamation-triangle text-warning';
+                    
+                    logHtml += `
+                        <div class="d-flex align-items-start mb-3">
+                            <i class="fas ${iconClass} me-3 mt-1"></i>
+                            <div class="flex-grow-1">
+                                <div class="fw-bold">${activity.action}</div>
+                                <div class="text-muted small">${activity.details}</div>
+                                <div class="text-muted small">${activity.time}</div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                activityLog.innerHTML = logHtml;
+            } catch (error) {
+                document.getElementById('activity-log').innerHTML = '<div class="text-danger">Error loading activity log</div>';
+            }
+        }
+
+        function showNotification(message, type) {
+            // Create a simple notification
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            // Auto remove after 5 seconds
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

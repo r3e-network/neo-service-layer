@@ -1,0 +1,85 @@
+{
+  "BenchmarkConfiguration": {
+    "WarmupCount": 3,
+    "IterationCount": 10,
+    "InvocationCount": 1000,
+    "UnrollFactor": 16,
+    "MaxRelativeError": 0.02,
+    "OutputDirectory": "./BenchmarkDotNet.Artifacts",
+    "EnableMemoryDiagnoser": true,
+    "EnableThreadingDiagnoser": true,
+    "EnableExceptionDiagnoser": true
+  },
+  "Benchmarks": {
+    "EnclaveBenchmarks": {
+      "DataSizes": [256, 1024, 4096, 16384, 65536, 262144],
+      "KeySizes": [128, 256, 512],
+      "IterationMultiplier": 1000,
+      "Categories": ["Initialization", "Sealing", "Unsealing", "Cryptography", "Attestation"]
+    },
+    "CryptographyBenchmarks": {
+      "Algorithms": ["AES-256-GCM", "secp256k1", "ECDSA"],
+      "DataSizes": [32, 64, 128, 256, 512, 1024, 2048, 4096],
+      "OperationTypes": ["Encrypt", "Decrypt", "Sign", "Verify"],
+      "IterationMultiplier": 5000
+    },
+    "StorageBenchmarks": {
+      "DataSizes": [1024, 8192, 65536, 524288, 1048576],
+      "CompressionLevels": [0, 1, 6, 9],
+      "OperationTypes": ["Store", "Retrieve", "Delete"],
+      "IterationMultiplier": 100
+    },
+    "JavaScriptBenchmarks": {
+      "ScriptTypes": ["Simple", "Mathematical", "StringProcessing", "JsonParsing"],
+      "InputSizes": [100, 1000, 10000],
+      "MemoryLimits": [1048576, 16777216, 67108864],
+      "IterationMultiplier": 50
+    },
+    "NetworkBenchmarks": {
+      "RequestSizes": [256, 1024, 4096, 16384],
+      "ResponseSizes": [512, 2048, 8192, 32768],
+      "ConnectionTypes": ["HTTP", "HTTPS"],
+      "IterationMultiplier": 20
+    }
+  },
+  "PerformanceBaselines": {
+    "EnclaveInitialization": {
+      "TargetMs": 100,
+      "TolerancePercent": 20
+    },
+    "DataSealing1KB": {
+      "TargetMs": 1,
+      "TolerancePercent": 50
+    },
+    "DataUnsealing1KB": {
+      "TargetMs": 1,
+      "TolerancePercent": 50
+    },
+    "SignatureGeneration": {
+      "TargetMs": 5,
+      "TolerancePercent": 30
+    },
+    "SignatureVerification": {
+      "TargetMs": 3,
+      "TolerancePercent": 30
+    },
+    "JavaScriptExecution": {
+      "TargetMs": 10,
+      "TolerancePercent": 100
+    },
+    "AttestationGeneration": {
+      "TargetMs": 50,
+      "TolerancePercent": 50
+    }
+  },
+  "ComparisonBaselines": {
+    "SimulationVsHardware": {
+      "ExpectedHardwareSlowdown": 2.0,
+      "TolerancePercent": 25
+    },
+    "DebugVsRelease": {
+      "ExpectedReleaseSpeedup": 1.5,
+      "TolerancePercent": 20
+    }
+  }
+} 

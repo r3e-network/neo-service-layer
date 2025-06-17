@@ -1,4 +1,5 @@
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Compliance.Models;
 
 namespace NeoServiceLayer.Services.Compliance;
 
@@ -61,127 +62,112 @@ public interface IComplianceService : IEnclaveService, IBlockchainService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the rule was updated successfully, false otherwise.</returns>
     Task<bool> UpdateComplianceRuleAsync(ComplianceRule rule, BlockchainType blockchainType);
+
+    // New methods for controller compatibility
+
+    /// <summary>
+    /// Checks compliance for a transaction or entity.
+    /// </summary>
+    /// <param name="request">The compliance check request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance check result.</returns>
+    Task<ComplianceCheckResult> CheckComplianceAsync(ComplianceCheckRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Generates a compliance report.
+    /// </summary>
+    /// <param name="request">The compliance report request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance report result.</returns>
+    Task<ComplianceReportResult> GenerateComplianceReportAsync(ComplianceReportRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Creates a compliance rule.
+    /// </summary>
+    /// <param name="request">The create compliance rule request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance rule result.</returns>
+    Task<ComplianceRuleResult> CreateComplianceRuleAsync(CreateComplianceRuleRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Updates a compliance rule.
+    /// </summary>
+    /// <param name="request">The update compliance rule request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance rule result.</returns>
+    Task<ComplianceRuleResult> UpdateComplianceRuleAsync(UpdateComplianceRuleRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Deletes a compliance rule.
+    /// </summary>
+    /// <param name="request">The delete compliance rule request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance rule result.</returns>
+    Task<ComplianceRuleResult> DeleteComplianceRuleAsync(DeleteComplianceRuleRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets compliance rules with pagination and filtering.
+    /// </summary>
+    /// <param name="request">The get compliance rules request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance rules result.</returns>
+    Task<GetComplianceRulesResult> GetComplianceRulesAsync(GetComplianceRulesRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Starts an audit.
+    /// </summary>
+    /// <param name="request">The start audit request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The audit result.</returns>
+    Task<AuditResult> StartAuditAsync(StartAuditRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets audit status.
+    /// </summary>
+    /// <param name="request">The get audit status request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The audit result.</returns>
+    Task<AuditResult> GetAuditStatusAsync(GetAuditStatusRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Reports a violation.
+    /// </summary>
+    /// <param name="request">The report violation request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The violation result.</returns>
+    Task<ViolationResult> ReportViolationAsync(ReportViolationRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets violations with pagination and filtering.
+    /// </summary>
+    /// <param name="request">The get violations request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The violations result.</returns>
+    Task<GetViolationsResult> GetViolationsAsync(GetViolationsRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Creates a remediation plan.
+    /// </summary>
+    /// <param name="request">The create remediation plan request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The remediation plan result.</returns>
+    Task<RemediationPlanResult> CreateRemediationPlanAsync(CreateRemediationPlanRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets compliance dashboard data.
+    /// </summary>
+    /// <param name="request">The compliance dashboard request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compliance dashboard result.</returns>
+    Task<ComplianceDashboardResult> GetComplianceDashboardAsync(ComplianceDashboardRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Requests certification.
+    /// </summary>
+    /// <param name="request">The request certification request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The certification result.</returns>
+    Task<CertificationResult> RequestCertificationAsync(RequestCertificationRequest request, BlockchainType blockchainType);
 }
 
-/// <summary>
-/// Verification result.
-/// </summary>
-public class VerificationResult
-{
-    /// <summary>
-    /// Gets or sets a value indicating whether the verification passed.
-    /// </summary>
-    public bool Passed { get; set; }
 
-    /// <summary>
-    /// Gets or sets the list of rule violations.
-    /// </summary>
-    public List<RuleViolation> Violations { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the risk score (0-100, where 0 is no risk and 100 is highest risk).
-    /// </summary>
-    public int RiskScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets the verification timestamp.
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// Gets or sets the verification ID.
-    /// </summary>
-    public string VerificationId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the blockchain type.
-    /// </summary>
-    public BlockchainType BlockchainType { get; set; }
-
-    /// <summary>
-    /// Gets or sets the proof.
-    /// </summary>
-    public string Proof { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Rule violation.
-/// </summary>
-public class RuleViolation
-{
-    /// <summary>
-    /// Gets or sets the rule ID.
-    /// </summary>
-    public string RuleId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule name.
-    /// </summary>
-    public string RuleName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule description.
-    /// </summary>
-    public string RuleDescription { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the severity (0-100, where 0 is lowest severity and 100 is highest severity).
-    /// </summary>
-    public int Severity { get; set; }
-
-    /// <summary>
-    /// Gets or sets the violation details.
-    /// </summary>
-    public string Details { get; set; } = string.Empty;
-}
-
-/// <summary>
-/// Compliance rule.
-/// </summary>
-public class ComplianceRule
-{
-    /// <summary>
-    /// Gets or sets the rule ID.
-    /// </summary>
-    public string RuleId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule name.
-    /// </summary>
-    public string RuleName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule description.
-    /// </summary>
-    public string RuleDescription { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule type.
-    /// </summary>
-    public string RuleType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the rule parameters.
-    /// </summary>
-    public Dictionary<string, string> Parameters { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the severity (0-100, where 0 is lowest severity and 100 is highest severity).
-    /// </summary>
-    public int Severity { get; set; }
-
-    /// <summary>
-    /// Gets or sets a value indicating whether the rule is enabled.
-    /// </summary>
-    public bool Enabled { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets the creation date.
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// Gets or sets the last modified date.
-    /// </summary>
-    public DateTime LastModifiedAt { get; set; }
-}

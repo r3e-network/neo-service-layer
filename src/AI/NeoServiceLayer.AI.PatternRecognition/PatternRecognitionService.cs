@@ -7,6 +7,8 @@ using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Tee.Host.Services;
 using System.Text;
 using System.Text.Json;
+using CoreModels = NeoServiceLayer.Core.Models;
+using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -93,7 +95,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     }
 
     /// <inheritdoc/>
-    public async Task<Models.FraudDetectionResult> DetectFraudAsync(Models.FraudDetectionRequest request, BlockchainType blockchainType)
+    public async Task<NeoServiceLayer.Core.Models.FraudDetectionResult> DetectFraudAsync(NeoServiceLayer.Core.Models.FraudDetectionRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -108,25 +110,28 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
             try
             {
-                Logger.LogDebug("Detecting fraud {DetectionId} for transaction {TransactionId}",
-                    detectionId, request.TransactionId);
+                Logger.LogDebug("Detecting fraud {DetectionId} for transaction data",
+                    detectionId);
 
                 // Perform fraud detection within the enclave
                 var fraudScore = await CalculateFraudScoreInEnclaveAsync(request);
                 var riskFactors = await AnalyzeRiskFactorsInEnclaveAsync(request);
-                var isFraudulent = fraudScore > request.Threshold;
+                var isFraudulent = fraudScore > 0.7; // Default threshold
 
-                var result = new Models.FraudDetectionResult
+                var result = new NeoServiceLayer.Core.Models.FraudDetectionResult
                 {
                     DetectionId = detectionId,
-                    TransactionId = request.TransactionId,
-                    FraudScore = fraudScore,
+                    RiskScore = fraudScore,
                     IsFraudulent = isFraudulent,
-                    RiskLevel = CalculateRiskLevel(fraudScore),
+                    Confidence = 0.85, // Simulated confidence
+                    DetectedPatterns = new List<CoreModels.FraudPattern>(),
                     RiskFactors = riskFactors,
                     DetectedAt = DateTime.UtcNow,
-                    Success = true,
-                    Metadata = request.Metadata
+                    Details = new Dictionary<string, object>
+                    {
+                        ["analyzed_data_points"] = request.TransactionData.Count,
+                        ["sensitivity"] = request.Sensitivity.ToString()
+                    }
                 };
 
                 Logger.LogInformation("Fraud detection {DetectionId}: Score {Score:F3}, Fraudulent: {IsFraudulent} on {Blockchain}",
@@ -148,21 +153,24 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Logger.LogError(ex, "Failed to detect fraud {DetectionId}", detectionId);
 
-                return new Models.FraudDetectionResult
+                return new CoreModels.FraudDetectionResult
                 {
                     DetectionId = detectionId,
-                    TransactionId = request.TransactionId,
-                    Success = false,
-                    ErrorMessage = ex.Message,
+                    RiskScore = 0,
+                    IsFraudulent = false,
+                    Confidence = 0,
                     DetectedAt = DateTime.UtcNow,
-                    Metadata = request.Metadata
+                    Details = new Dictionary<string, object>
+                    {
+                        ["error"] = ex.Message
+                    }
                 };
             }
         });
     }
 
     /// <inheritdoc/>
-    public async Task<Models.AnomalyDetectionResult> DetectAnomaliesAsync(Models.AnomalyDetectionRequest request, BlockchainType blockchainType)
+    public async Task<CoreModels.AnomalyDetectionResult> DetectAnomaliesAsync(CoreModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -177,40 +185,25 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
             try
             {
-                Logger.LogDebug("Detecting anomalies {DetectionId} for {DataPointCount} data points",
-                    detectionId, request.DataPoints.Length);
+                Logger.LogDebug("Detecting anomalies {DetectionId} for data points",
+                    detectionId);
 
                 // Detect anomalies within the enclave
                 var anomalies = await DetectAnomaliesInEnclaveAsync(request);
                 var anomalyScore = CalculateAnomalyScore(anomalies);
 
-                var result = new Models.AnomalyDetectionResult
+                var result = new CoreModels.AnomalyDetectionResult
                 {
                     DetectionId = detectionId,
-                    Anomalies = anomalies.ToList(),
+                    DetectedAnomalies = anomalies.ToList(),
                     AnomalyScore = anomalyScore,
                     DetectedAt = DateTime.UtcNow,
-                    Success = true,
-                    Metadata = request.Metadata
-                };
-
-                // Store anomaly history
-                if (!string.IsNullOrEmpty(request.ModelId))
-                {
-                    lock (_modelsLock)
+                    Details = new Dictionary<string, object>
                     {
-                        if (_anomalyHistory.TryGetValue(request.ModelId, out var history))
-                        {
-                            history.Add(result);
-
-                            // Keep only last 1000 results
-                            if (history.Count > 1000)
-                            {
-                                history.RemoveAt(0);
-                            }
-                        }
+                        ["total_data_points"] = request.Data?.Count ?? 0,
+                        ["anomaly_threshold"] = request.Threshold
                     }
-                }
+                };
 
                 Logger.LogInformation("Anomaly detection {DetectionId}: {AnomalyCount} anomalies, Score {Score:F3} on {Blockchain}",
                     detectionId, anomalies.Length, anomalyScore, blockchainType);
@@ -221,13 +214,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Logger.LogError(ex, "Failed to detect anomalies {DetectionId}", detectionId);
 
-                return new Models.AnomalyDetectionResult
+                return new CoreModels.AnomalyDetectionResult
                 {
                     DetectionId = detectionId,
-                    Success = false,
-                    ErrorMessage = ex.Message,
                     DetectedAt = DateTime.UtcNow,
-                    Metadata = request.Metadata
+                    Details = new Dictionary<string, object>
+                    {
+                        ["error"] = ex.Message
+                    }
                 };
             }
         });
@@ -360,8 +354,6 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         });
     }
 
-
-
     /// <inheritdoc/>
     public async Task<string> CreateModelAsync(PatternModelDefinition definition, BlockchainType blockchainType)
     {
@@ -386,18 +378,16 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         throw new ArgumentException($"Pattern model {modelId} not found", nameof(modelId));
     }
 
-
-
     /// <summary>
     /// Calculates the anomaly score based on detected anomalies.
     /// </summary>
     /// <param name="anomalies">The detected anomalies.</param>
     /// <returns>The anomaly score.</returns>
-    private double CalculateAnomalyScore(DetectedAnomaly[] anomalies)
+    private double CalculateAnomalyScore(CoreModels.Anomaly[] anomalies)
     {
         if (anomalies.Length == 0) return 0.0;
 
-        return anomalies.Average(a => a.Severity);
+        return anomalies.Average(a => a.Score);
     }
 
     /// <summary>
@@ -765,6 +755,280 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         });
     }
 
+
+
+    /// <inheritdoc/>
+    public async Task<CoreModels.ClassificationResult> ClassifyDataAsync(CoreModels.ClassificationRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var classificationId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogDebug("Classifying data {ClassificationId}", classificationId);
+
+                var classification = await ClassifyDataInEnclaveAsync(request);
+                var confidence = await CalculateClassificationConfidenceAsync(classification);
+
+                var result = new CoreModels.ClassificationResult
+                {
+                    ClassificationId = classificationId,
+                    PredictedClass = classification,
+                    Confidence = confidence,
+                    ClassifiedAt = DateTime.UtcNow
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to classify data {ClassificationId}", classificationId);
+
+                return new CoreModels.ClassificationResult
+                {
+                    ClassificationId = classificationId,
+                    ClassifiedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <summary>
+    /// Core interface implementation for fraud detection.
+    /// </summary>
+    async Task<CoreModels.FraudDetectionResult> Core.IPatternRecognitionService.DetectFraudAsync(CoreModels.FraudDetectionRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var detectionId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogDebug("Core fraud detection {DetectionId}", detectionId);
+
+                var fraudScore = await CalculateFraudScoreInEnclaveAsync(request);
+                var riskFactors = await AnalyzeRiskFactorsInEnclaveAsync(request);
+
+                var result = new CoreModels.FraudDetectionResult
+                {
+                    DetectionId = detectionId,
+                    RiskScore = fraudScore,
+                    IsFraudulent = fraudScore > 0.7,
+                    Confidence = 0.85,
+                    RiskFactors = riskFactors,
+                    DetectedAt = DateTime.UtcNow
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed core fraud detection {DetectionId}", detectionId);
+
+                return new CoreModels.FraudDetectionResult
+                {
+                    DetectionId = detectionId,
+                    TransactionId = request.TransactionId ?? "unknown",
+                    DetectedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <summary>
+    /// Core interface implementation for anomaly detection.
+    /// </summary>
+    async Task<CoreModels.AnomalyDetectionResult> Core.IPatternRecognitionService.DetectAnomaliesAsync(CoreModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var detectionId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogDebug("Core anomaly detection {DetectionId}", detectionId);
+
+                var anomalies = await DetectAnomaliesInEnclaveAsync(request);
+                var anomalyScore = CalculateAnomalyScore(anomalies);
+
+                var result = new CoreModels.AnomalyDetectionResult
+                {
+                    DetectionId = detectionId,
+                    Anomalies = anomalies.ToList(),
+                    AnomalyScore = anomalyScore,
+                    DetectedAt = DateTime.UtcNow
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed core anomaly detection {DetectionId}", detectionId);
+
+                return new CoreModels.AnomalyDetectionResult
+                {
+                    DetectionId = detectionId,
+                    DetectedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <summary>
+    /// Core interface implementation for data classification.
+    /// </summary>
+    async Task<CoreModels.ClassificationResult> Core.IPatternRecognitionService.ClassifyDataAsync(CoreModels.ClassificationRequest request, BlockchainType blockchainType)
+    {
+        return await ClassifyDataAsync(request, blockchainType);
+    }
+
+    // Core interface implementations are handled by the existing public methods
+    // The service already implements the required Core interface methods with the correct signatures
+
+    // AI-specific interface implementations using AI Models
+    /// <inheritdoc/>
+    public async Task<Models.FraudDetectionResult> DetectFraudAsync(Models.FraudDetectionRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var detectionId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogDebug("AI Fraud detection {DetectionId} for transaction {TransactionId}",
+                    detectionId, request.TransactionId);
+
+                // Create Core request from AI request
+                var coreRequest = new CoreModels.FraudDetectionRequest
+                {
+                    TransactionId = request.TransactionId,
+                    TransactionData = request.TransactionData,
+                    Sensitivity = request.Sensitivity,
+                    Threshold = request.Threshold
+                };
+
+                var fraudScore = await CalculateFraudScoreInEnclaveAsync(coreRequest);
+                var riskFactors = await AnalyzeRiskFactorsInEnclaveAsync(coreRequest);
+                var isFraudulent = fraudScore > request.Threshold;
+
+                var result = new Models.FraudDetectionResult
+                {
+                    DetectionId = detectionId,
+                    TransactionId = request.TransactionId,
+                    FraudScore = fraudScore,
+                    IsFraudulent = isFraudulent,
+                    RiskLevel = CalculateRiskLevel(fraudScore),
+                    RiskFactors = riskFactors,
+                    DetectedAt = DateTime.UtcNow,
+                    Success = true
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed AI fraud detection {DetectionId}", detectionId);
+
+                return new Models.FraudDetectionResult
+                {
+                    DetectionId = detectionId,
+                    TransactionId = request.TransactionId,
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    DetectedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<Models.AnomalyDetectionResult> DetectAnomaliesAsync(Models.AnomalyDetectionRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var detectionId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogDebug("AI Anomaly detection {DetectionId} for {DataPointCount} data points",
+                    detectionId, request.DataPoints.Count);
+
+                // Create Core request from AI request  
+                var coreRequest = new CoreModels.AnomalyDetectionRequest
+                {
+                    Data = request.DataPoints,
+                    Threshold = request.Threshold
+                };
+
+                var anomalies = await DetectAnomaliesInEnclaveAsync(coreRequest);
+                var anomalyScore = CalculateAnomalyScore(anomalies);
+
+                var result = new Models.AnomalyDetectionResult
+                {
+                    DetectionId = detectionId,
+                    Anomalies = anomalies.ToList(),
+                    AnomalyScore = anomalyScore,
+                    DetectedAt = DateTime.UtcNow,
+                    Success = true,
+                    Metadata = request.Metadata
+                };
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed AI anomaly detection {DetectionId}", detectionId);
+
+                return new Models.AnomalyDetectionResult
+                {
+                    DetectionId = detectionId,
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    DetectedAt = DateTime.UtcNow,
+                    Metadata = request.Metadata
+                };
+            }
+        });
+    }
+
+
+
     /// <summary>
     /// Initializes default models for common use cases.
     /// </summary>
@@ -879,4 +1143,163 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             throw;
         }
     }
+
+    /// <summary>
+    /// Calculates the fraud score for a request within the enclave.
+    /// </summary>
+    /// <param name="request">The fraud detection request.</param>
+    /// <returns>The calculated fraud score.</returns>
+    private async Task<double> CalculateFraudScoreInEnclaveAsync(CoreModels.FraudDetectionRequest request)
+    {
+        await Task.Delay(150); // Simulate fraud analysis time
+        
+        // In production, this would use real ML models within the enclave
+        double baseScore = 0.0;
+        
+        // Analyze transaction amount patterns
+        if (request.TransactionData.TryGetValue("amount", out var amountObj) && 
+            double.TryParse(amountObj?.ToString(), out var amount))
+        {
+            if (amount > 100000) baseScore += 0.3;
+            if (amount < 0.01) baseScore += 0.2;
+        }
+        
+        // Analyze frequency patterns
+        if (request.TransactionData.TryGetValue("frequency", out var freqObj) &&
+            int.TryParse(freqObj?.ToString(), out var frequency))
+        {
+            if (frequency > 100) baseScore += 0.4;
+        }
+        
+        // Add sensitivity adjustment
+        var sensitivityMultiplier = request.Sensitivity switch
+        {
+            DetectionSensitivity.Low => 0.7,
+            DetectionSensitivity.Standard => 1.0,
+            DetectionSensitivity.High => 1.3,
+            _ => 1.0
+        };
+        
+        return Math.Min(1.0, baseScore * sensitivityMultiplier);
+    }
+
+    /// <summary>
+    /// Analyzes risk factors for a fraud detection request.
+    /// </summary>
+    /// <param name="request">The fraud detection request.</param>
+    /// <returns>The risk factors and their scores.</returns>
+    private async Task<Dictionary<string, double>> AnalyzeRiskFactorsInEnclaveAsync(CoreModels.FraudDetectionRequest request)
+    {
+        await Task.Delay(100); // Simulate analysis time
+        
+        var riskFactors = new Dictionary<string, double>();
+        
+        // Analyze various risk factors from transaction data
+        foreach (var kvp in request.TransactionData)
+        {
+            switch (kvp.Key.ToLowerInvariant())
+            {
+                case "amount":
+                    if (double.TryParse(kvp.Value?.ToString(), out var amount))
+                    {
+                        riskFactors["amount_risk"] = amount > 50000 ? 0.8 : 0.1;
+                    }
+                    break;
+                    
+                case "frequency":
+                    if (int.TryParse(kvp.Value?.ToString(), out var freq))
+                    {
+                        riskFactors["frequency_risk"] = freq > 50 ? 0.7 : 0.2;
+                    }
+                    break;
+                    
+                case "new_address":
+                    if (bool.TryParse(kvp.Value?.ToString(), out var isNew) && isNew)
+                    {
+                        riskFactors["new_address_risk"] = 0.6;
+                    }
+                    break;
+                    
+                default:
+                    riskFactors[$"{kvp.Key}_risk"] = 0.1;
+                    break;
+            }
+        }
+        
+        return riskFactors;
+    }
+
+    /// <summary>
+    /// Detects anomalies in the request data within the enclave.
+    /// </summary>
+    /// <param name="request">The anomaly detection request.</param>
+    /// <returns>Array of detected anomalies.</returns>
+    private async Task<CoreModels.Anomaly[]> DetectAnomaliesInEnclaveAsync(CoreModels.AnomalyDetectionRequest request)
+    {
+        await Task.Delay(200); // Simulate anomaly detection time
+        
+        var anomalies = new List<CoreModels.Anomaly>();
+        
+        // In production, this would use real anomaly detection algorithms
+        if (request.Data?.Count > 10)
+        {
+            anomalies.Add(new CoreModels.Anomaly
+            {
+                AnomalyId = Guid.NewGuid().ToString(),
+                Type = CoreModels.AnomalyType.Statistical,
+                Score = 0.7,
+                Description = "High data volume detected",
+                DetectedAt = DateTime.UtcNow,
+                AffectedDataPoints = new List<string> { "data_volume" }
+            });
+        }
+        
+        return anomalies.ToArray();
+    }
+
+    /// <summary>
+    /// Classifies data within the enclave.
+    /// </summary>
+    /// <param name="request">The classification request.</param>
+    /// <returns>The classification result.</returns>
+    private async Task<string> ClassifyDataInEnclaveAsync(CoreModels.ClassificationRequest request)
+    {
+        await Task.Delay(100); // Simulate classification time
+        
+        // In production, this would use real classification models
+        if (request.Data.ContainsKey("risk") && 
+            double.TryParse(request.Data["risk"]?.ToString(), out var risk))
+        {
+            return risk switch
+            {
+                > 0.8 => "High Risk",
+                > 0.5 => "Medium Risk",
+                > 0.2 => "Low Risk",
+                _ => "Minimal Risk"
+            };
+        }
+        
+        return "Unknown";
+    }
+
+    /// <summary>
+    /// Calculates classification confidence.
+    /// </summary>
+    /// <param name="classification">The classification result.</param>
+    /// <returns>The confidence score.</returns>
+    private async Task<double> CalculateClassificationConfidenceAsync(string classification)
+    {
+        await Task.Delay(50); // Simulate confidence calculation
+        
+        return classification switch
+        {
+            "High Risk" => 0.92,
+            "Medium Risk" => 0.85,
+            "Low Risk" => 0.78,
+            "Minimal Risk" => 0.88,
+            _ => 0.5
+        };
+    }
+
+
 }

@@ -8,7 +8,7 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 /// <summary>
 /// Implementation of the Proof of Reserve Service that provides asset backing verification capabilities.
 /// </summary>
-public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfReserveService
+public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProofOfReserveService
 {
     private readonly Dictionary<string, MonitoredAsset> _monitoredAssets = new();
     private readonly Dictionary<string, List<ReserveSnapshot>> _reserveHistory = new();
@@ -23,7 +23,7 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
     /// <param name="logger">The logger.</param>
     /// <param name="configuration">The service configuration.</param>
     public ProofOfReserveService(ILogger<ProofOfReserveService> logger, IServiceConfiguration? configuration = null)
-        : base("ProofOfReserveService", "Asset backing verification and reserve monitoring service", "1.0.0", logger, configuration)
+        : base("ProofOfReserve", "Asset backing verification and reserve monitoring service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         Configuration = configuration;
 
@@ -33,6 +33,7 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
         AddCapability<IProofOfReserveService>();
         AddDependency(ServiceDependency.Required("OracleService", "1.0.0"));
         AddDependency(ServiceDependency.Required("KeyManagementService", "1.0.0"));
+        AddDependency(ServiceDependency.Required("EnclaveManager", "1.0.0"));
     }
 
     /// <summary>
@@ -192,23 +193,33 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
             {
                 Logger.LogDebug("Verifying proof {ProofId} on {Blockchain}", proofId, blockchainType);
 
-                // Retrieve the proof from storage
+                // Retrieve the proof from storage using the enclave manager
                 Core.ProofOfReserve? proof = null;
-                lock (_assetsLock)
+                
+                try
                 {
-                    // For now, we'll create a mock proof since we don't have a proof storage system yet
-                    // In a real implementation, this would query the proof storage
-                    proof = new Core.ProofOfReserve
+                    // Query the actual proof storage system
+                    var storageKey = $"proof_{proofId}_{blockchainType}";
+                    var proofJson = await _enclaveManager.StorageRetrieveDataAsync(
+                        storageKey, 
+                        GetProofEncryptionKey(), 
+                        CancellationToken.None);
+
+                    if (!string.IsNullOrEmpty(proofJson))
                     {
-                        ProofId = proofId,
-                        AssetId = "mock-asset",
-                        GeneratedAt = DateTime.UtcNow,
-                        TotalSupply = 1000000m,
-                        TotalReserves = 1000000m,
-                        ReserveRatio = 1.0m,
-                        MerkleRoot = Convert.ToBase64String(new byte[32]),
-                        Signature = Convert.ToBase64String(new byte[64])
-                    };
+                        proof = System.Text.Json.JsonSerializer.Deserialize<Core.ProofOfReserve>(proofJson);
+                        Logger.LogDebug("Retrieved proof {ProofId} from secure storage", proofId);
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Proof {ProofId} not found in secure storage", proofId);
+                        return false;
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError(ex, "Failed to retrieve proof {ProofId} from storage", proofId);
+                    return false;
                 }
 
                 if (proof == null)
@@ -695,10 +706,8 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
     {
         Logger.LogInformation("Initializing Proof of Reserve Service");
 
-        if (!await base.OnInitializeAsync())
-        {
-            return false;
-        }
+        // Initialize proof of reserve specific components
+        await Task.CompletedTask;
 
         Logger.LogInformation("Proof of Reserve Service initialized successfully");
         return true;
@@ -727,11 +736,10 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
-        var baseHealth = base.OnGetHealthAsync().Result;
-
-        if (baseHealth != ServiceHealth.Healthy)
+        // Check if service is properly initialized
+        if (!IsRunning)
         {
-            return Task.FromResult(baseHealth);
+            return Task.FromResult(ServiceHealth.Unhealthy);
         }
 
         // Check proof of reserve specific health
@@ -765,6 +773,16 @@ public partial class ProofOfReserveService : CryptographicServiceBase, IProofOfR
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var combined = data.SelectMany(d => d).ToArray();
         return await Task.FromResult(sha256.ComputeHash(combined));
+    }
+
+    /// <summary>
+    /// Gets the encryption key for proof storage operations.
+    /// </summary>
+    /// <returns>The proof encryption key.</returns>
+    private string GetProofEncryptionKey()
+    {
+        // In production, this would derive from enclave identity or configuration
+        return "proof-storage-encryption-key-v1";
     }
 }
 

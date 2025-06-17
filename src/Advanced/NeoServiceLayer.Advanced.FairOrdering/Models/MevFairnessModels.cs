@@ -13,6 +13,31 @@ public class FairOrderingResult
     public string TransactionId { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the pool ID.
+    /// </summary>
+    public string PoolId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the batch ID.
+    /// </summary>
+    public string BatchId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the original position in the pool.
+    /// </summary>
+    public int OriginalPosition { get; set; }
+
+    /// <summary>
+    /// Gets or sets the final position after ordering.
+    /// </summary>
+    public int FinalPosition { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ordering algorithm used.
+    /// </summary>
+    public OrderingAlgorithm OrderingAlgorithm { get; set; }
+
+    /// <summary>
     /// Gets or sets the ordering position.
     /// </summary>
     public int OrderingPosition { get; set; }
@@ -48,6 +73,11 @@ public class FairOrderingResult
     public DateTime OrderedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
+    /// Gets or sets when the transaction was processed.
+    /// </summary>
+    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
@@ -58,6 +88,12 @@ public class FairOrderingResult
 /// </summary>
 public class MevAnalysisRequest
 {
+    /// <summary>
+    /// Gets or sets the transaction hash to analyze.
+    /// </summary>
+    [Required]
+    public string TransactionHash { get; set; } = string.Empty;
+
     /// <summary>
     /// Gets or sets the transaction to analyze.
     /// </summary>
@@ -86,6 +122,16 @@ public class MevAnalysisRequest
 public class MevProtectionResult
 {
     /// <summary>
+    /// Gets or sets the analysis ID.
+    /// </summary>
+    public string AnalysisId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction hash.
+    /// </summary>
+    public string TransactionHash { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the transaction ID.
     /// </summary>
     public string TransactionId { get; set; } = string.Empty;
@@ -93,12 +139,32 @@ public class MevProtectionResult
     /// <summary>
     /// Gets or sets the MEV risk score.
     /// </summary>
+    public double MevRiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the MEV risk score.
+    /// </summary>
     public double RiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public RiskLevel RiskLevel { get; set; }
 
     /// <summary>
     /// Gets or sets the protection level applied.
     /// </summary>
     public MevProtectionLevel ProtectionLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the detected threats.
+    /// </summary>
+    public List<string> DetectedThreats { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the protection strategies.
+    /// </summary>
+    public List<string> ProtectionStrategies { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the detected MEV opportunities.
@@ -116,35 +182,40 @@ public class MevProtectionResult
     public bool Success { get; set; }
 
     /// <summary>
+    /// Gets or sets the error message if unsuccessful.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
     /// Gets or sets the analysis timestamp.
     /// </summary>
     public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
-/// Represents fairness metrics.
+/// Represents fairness metrics for an ordering pool.
 /// </summary>
 public class FairnessMetrics
 {
     /// <summary>
+    /// Gets or sets the pool ID.
+    /// </summary>
+    public string PoolId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the total number of transactions processed.
+    /// </summary>
+    public int TotalTransactionsProcessed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average processing time.
+    /// </summary>
+    public TimeSpan AverageProcessingTime { get; set; }
+
+    /// <summary>
     /// Gets or sets the overall fairness score.
     /// </summary>
-    public double OverallFairnessScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets the ordering fairness score.
-    /// </summary>
-    public double OrderingFairness { get; set; }
-
-    /// <summary>
-    /// Gets or sets the temporal fairness score.
-    /// </summary>
-    public double TemporalFairness { get; set; }
-
-    /// <summary>
-    /// Gets or sets the economic fairness score.
-    /// </summary>
-    public double EconomicFairness { get; set; }
+    public double FairnessScore { get; set; }
 
     /// <summary>
     /// Gets or sets the MEV protection effectiveness.
@@ -152,24 +223,14 @@ public class FairnessMetrics
     public double MevProtectionEffectiveness { get; set; }
 
     /// <summary>
-    /// Gets or sets the transaction throughput.
+    /// Gets or sets the ordering algorithm efficiency.
     /// </summary>
-    public double TransactionThroughput { get; set; }
+    public double OrderingAlgorithmEfficiency { get; set; }
 
     /// <summary>
-    /// Gets or sets the average confirmation time.
+    /// Gets or sets when the metrics were generated.
     /// </summary>
-    public TimeSpan AverageConfirmationTime { get; set; }
-
-    /// <summary>
-    /// Gets or sets the measurement period.
-    /// </summary>
-    public TimeSpan MeasurementPeriod { get; set; }
-
-    /// <summary>
-    /// Gets or sets the measurement timestamp.
-    /// </summary>
-    public DateTime MeasuredAt { get; set; } = DateTime.UtcNow;
+    public DateTime MetricsGeneratedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -218,56 +279,7 @@ public class MevOpportunity
     public Dictionary<string, object> Details { get; set; } = new();
 }
 
-/// <summary>
-/// Represents a processed batch of transactions.
-/// </summary>
-public class ProcessedBatch
-{
-    /// <summary>
-    /// Gets or sets the batch ID.
-    /// </summary>
-    public string Id { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the batch number.
-    /// </summary>
-    public int BatchNumber { get; set; }
-
-    /// <summary>
-    /// Gets or sets the transactions in the batch.
-    /// </summary>
-    public List<string> TransactionIds { get; set; } = new();
-
-    /// <summary>
-    /// Gets or sets the batch processing start time.
-    /// </summary>
-    public DateTime ProcessingStarted { get; set; }
-
-    /// <summary>
-    /// Gets or sets the batch processing completion time.
-    /// </summary>
-    public DateTime ProcessingCompleted { get; set; }
-
-    /// <summary>
-    /// Gets or sets the batch fairness score.
-    /// </summary>
-    public double FairnessScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets the MEV protection effectiveness.
-    /// </summary>
-    public double MevProtectionEffectiveness { get; set; }
-
-    /// <summary>
-    /// Gets or sets the batch status.
-    /// </summary>
-    public BatchStatus Status { get; set; }
-
-    /// <summary>
-    /// Gets or sets batch processing metrics.
-    /// </summary>
-    public Dictionary<string, object> Metrics { get; set; } = new();
-}
 
 /// <summary>
 /// Represents batch processing statistics.

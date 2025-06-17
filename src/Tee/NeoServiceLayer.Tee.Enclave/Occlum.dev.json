@@ -1,0 +1,278 @@
+{
+  "resource_limits": {
+    "user_space_size": "512MB",
+    "kernel_space_heap_size": "64MB",
+    "kernel_space_stack_size": "4MB",
+    "max_num_of_threads": 32,
+    "max_num_of_file_descriptors": 2048,
+    "max_num_of_epoll_events": 512
+  },
+  "process": {
+    "default_stack_size": "4MB",
+    "default_heap_size": "128MB",
+    "default_mmap_size": "256MB"
+  },
+  "entry_points": [
+    "/opt/neo-service-layer/bin/neo-service-enclave-dev"
+  ],
+  "env": {
+    "RUST_LOG": "debug",
+    "RUST_BACKTRACE": "full",
+    "NEO_SERVICE_MODE": "development",
+    "SGX_MODE": "SIM",
+    "OCCLUM_LOG_LEVEL": "debug",
+    "DOTNET_ENVIRONMENT": "Development",
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "DOTNET_EnableDiagnostics": "1",
+    "DOTNET_DiagnosticPorts": "/tmp/dotnet-diagnostic.sock",
+    "COMPlus_EnableDiagnostics": "1"
+  },
+  "metadata": {
+    "version": "1.0.0-dev",
+    "author": "Neo Service Layer Team",
+    "debuggable": true,
+    "product_id": 0,
+    "security_version": 0
+  },
+  "mount": [
+    {
+      "target": "/",
+      "type": "unionfs",
+      "options": {
+        "layers": [
+          {
+            "target": "/opt/neo-service-layer",
+            "type": "hostfs",
+            "source": "./neo-service-layer",
+            "options": {
+              "integrity_only": false
+            }
+          },
+          {
+            "target": "/lib",
+            "type": "hostfs", 
+            "source": "/lib",
+            "options": {
+              "integrity_only": false
+            }
+          },
+          {
+            "target": "/lib64",
+            "type": "hostfs",
+            "source": "/lib64", 
+            "options": {
+              "integrity_only": false
+            }
+          },
+          {
+            "target": "/usr/lib",
+            "type": "hostfs",
+            "source": "/usr/lib",
+            "options": {
+              "integrity_only": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "target": "/tmp",
+      "type": "ramfs",
+      "options": {
+        "size": "256MB"
+      }
+    },
+    {
+      "target": "/data",
+      "type": "hostfs",
+      "source": "./dev-data",
+      "options": {
+        "integrity_only": false
+      }
+    },
+    {
+      "target": "/secure",
+      "type": "encrypted_fs", 
+      "options": {
+        "size": "256MB",
+        "key_derivation": "user_key",
+        "integrity_protection": false,
+        "access_mode": "0644"
+      }
+    },
+    {
+      "target": "/dev/host",
+      "type": "hostfs",
+      "source": "/dev",
+      "options": {
+        "integrity_only": false
+      }
+    }
+  ],
+  "sgx": {
+    "enclave_size": "1GB",
+    "thread_num": 16,
+    "heap_size": "256MB",
+    "stack_size": "4MB",
+    "debug": true,
+    "productionKey": false,
+    "launchable": true,
+    "provision_key": false,
+    "einittoken_key": false,
+    "kss": false
+  },
+  "network": {
+    "enabled": true,
+    "allowed_domains": [
+      "*"
+    ],
+    "blocked_domains": [],
+    "max_connections": 50,
+    "timeout_seconds": 60
+  },
+  "security": {
+    "enable_syscall_auditing": true,
+    "enable_file_integrity_checking": false,
+    "enable_network_monitoring": true,
+    "blocked_syscalls": [
+      "ptrace"
+    ],
+    "mandatory_access_control": {
+      "enabled": false,
+      "policy": "permissive",
+      "label_scheme": "neo_service_dev"
+    }
+  },
+  "crypto": {
+    "random_device": "/dev/urandom",
+    "entropy_source": "sgx_rdrand",
+    "key_derivation_functions": [
+      "pbkdf2",
+      "scrypt"
+    ],
+    "supported_algorithms": {
+      "symmetric": [
+        "aes-256-gcm",
+        "aes-256-ctr"
+      ],
+      "asymmetric": [
+        "secp256k1",
+        "ed25519"
+      ],
+      "hash": [
+        "sha256",
+        "sha3-256"
+      ]
+    }
+  },
+  "storage": {
+    "encrypted_storage": {
+      "enabled": false,
+      "encryption_algorithm": "aes-256-gcm",
+      "key_derivation": "enclave_identity",
+      "integrity_protection": false,
+      "compression": {
+        "enabled": false,
+        "algorithm": "lz4"
+      }
+    },
+    "backup": {
+      "enabled": false,
+      "interval_minutes": 60,
+      "retention_days": 1,
+      "encryption": false
+    },
+    "cache": {
+      "enabled": true,
+      "size_mb": 32,
+      "eviction_policy": "lru"
+    }
+  },
+  "logging": {
+    "level": "debug",
+    "destinations": [
+      {
+        "type": "file",
+        "path": "/data/logs/neo-service-dev.log",
+        "max_size_mb": 50,
+        "max_files": 5,
+        "format": "json"
+      },
+      {
+        "type": "console",
+        "format": "text"
+      }
+    ],
+    "audit": {
+      "enabled": true,
+      "events": [
+        "syscalls",
+        "network",
+        "file_access",
+        "crypto_operations"
+      ]
+    }
+  },
+  "monitoring": {
+    "health_checks": {
+      "enabled": true,
+      "interval_seconds": 10,
+      "endpoints": [
+        "/health/enclave",
+        "/health/storage", 
+        "/health/network"
+      ]
+    },
+    "metrics": {
+      "enabled": true,
+      "collection_interval_seconds": 30,
+      "retention_hours": 4
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": [
+        "console",
+        "file"
+      ]
+    }
+  },
+  "development": {
+    "allow_debug": true,
+    "enable_profiling": true,
+    "mock_services": true,
+    "test_mode": true,
+    "hot_reload": {
+      "enabled": true,
+      "watch_directories": [
+        "/opt/neo-service-layer/bin"
+      ],
+      "restart_on_change": true
+    },
+    "debugging": {
+      "enable_gdb": true,
+      "enable_strace": true,
+      "enable_valgrind": false,
+      "debug_symbols": true,
+      "core_dumps": true
+    },
+    "testing": {
+      "unit_tests": true,
+      "integration_tests": true,
+      "performance_tests": false,
+      "security_tests": true,
+      "mock_external_services": true
+    }
+  },
+  "experimental": {
+    "features": [
+      "enhanced_debugging",
+      "runtime_inspection",
+      "memory_profiling"
+    ],
+    "unsafe_operations": {
+      "allow_host_filesystem_access": true,
+      "allow_network_debugging": true,
+      "disable_memory_protection": false
+    }
+  }
+} 

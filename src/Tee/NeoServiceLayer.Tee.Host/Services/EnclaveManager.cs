@@ -18,25 +18,11 @@ public partial class EnclaveManager : IEnclaveManager, IDisposable
     /// Initializes a new instance of the <see cref="EnclaveManager"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
-    /// <param name="enclaveWrapperLogger">The logger for the enclave wrapper.</param>
-    public EnclaveManager(ILogger<EnclaveManager> logger, ILogger<EnclaveWrapper> enclaveWrapperLogger)
-    {
-        _logger = logger;
-        _enclaveWrapper = new EnclaveWrapper(enclaveWrapperLogger);
-        _disposed = false;
-        _initialized = false;
-    }
-
-    /// <summary>
-    /// Initializes a new instance of the <see cref="EnclaveManager"/> class with a custom enclave wrapper.
-    /// This constructor is primarily for testing purposes.
-    /// </summary>
-    /// <param name="logger">The logger.</param>
     /// <param name="enclaveWrapper">The enclave wrapper instance.</param>
     public EnclaveManager(ILogger<EnclaveManager> logger, IEnclaveWrapper enclaveWrapper)
     {
-        _logger = logger;
-        _enclaveWrapper = enclaveWrapper;
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper));
         _disposed = false;
         _initialized = false;
     }

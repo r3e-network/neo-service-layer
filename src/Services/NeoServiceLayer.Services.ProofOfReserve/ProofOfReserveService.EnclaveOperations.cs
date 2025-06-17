@@ -9,39 +9,39 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 /// </summary>
 public partial class ProofOfReserveService
 {
-    // Abstract method implementations for CryptographicServiceBase
-    protected override async Task GenerateKeyInEnclaveAsync(NeoServiceLayer.ServiceFramework.CryptoKeyInfo keyInfo)
+    // Enclave operations for cryptographic operations
+    protected async Task GenerateKeyInEnclaveAsync(NeoServiceLayer.ServiceFramework.CryptoKeyInfo keyInfo)
     {
         // Generate cryptographic key in enclave
         var keyData = await GenerateSecureKeyAsync(keyInfo.Type, keyInfo.Size);
         await StoreKeySecurelyAsync(keyInfo.Id, keyData);
     }
 
-    protected override async Task<byte[]> SignDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
+    protected async Task<byte[]> SignDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
     {
         var keyData = await RetrieveKeySecurelyAsync(keyId);
         return await PerformSigningAsync(keyData, data, algorithm);
     }
 
-    protected override async Task<bool> VerifySignatureInEnclaveAsync(string keyId, byte[] data, byte[] signature, string algorithm)
+    protected async Task<bool> VerifySignatureInEnclaveAsync(string keyId, byte[] data, byte[] signature, string algorithm)
     {
         var keyData = await RetrieveKeySecurelyAsync(keyId);
         return await PerformVerificationAsync(keyData, data, signature, algorithm);
     }
 
-    protected override async Task<byte[]> EncryptDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
+    protected async Task<byte[]> EncryptDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
     {
         var keyData = await RetrieveKeySecurelyAsync(keyId);
         return await PerformEncryptionAsync(keyData, data, algorithm);
     }
 
-    protected override async Task<byte[]> DecryptDataInEnclaveAsync(string keyId, byte[] encryptedData, string algorithm)
+    protected async Task<byte[]> DecryptDataInEnclaveAsync(string keyId, byte[] encryptedData, string algorithm)
     {
         var keyData = await RetrieveKeySecurelyAsync(keyId);
         return await PerformDecryptionAsync(keyData, encryptedData, algorithm);
     }
 
-    protected override async Task DeleteKeyInEnclaveAsync(string keyId)
+    protected async Task DeleteKeyInEnclaveAsync(string keyId)
     {
         await SecurelyDeleteKeyAsync(keyId);
     }
@@ -98,8 +98,15 @@ public partial class ProofOfReserveService
 
     private async Task<byte[]> SignProofAsync(byte[] proofHash)
     {
-        var keyId = await GenerateKeyAsync(CryptoKeyType.ECDSA, 256, CryptoKeyUsage.Signing);
-        return await SignDataAsync(keyId, proofHash);
+        var keyInfo = new NeoServiceLayer.ServiceFramework.CryptoKeyInfo 
+        { 
+            Type = CryptoKeyType.ECDSA, 
+            Size = 256, 
+            Usage = CryptoKeyUsage.Signing,
+            Id = Guid.NewGuid().ToString()
+        };
+        await GenerateKeyInEnclaveAsync(keyInfo);
+        return await SignDataInEnclaveAsync(keyInfo.Id, proofHash, "ECDSA");
     }
 
     private async Task<bool> VerifyProofSignatureAsync(byte[] proofHash, byte[] signature)

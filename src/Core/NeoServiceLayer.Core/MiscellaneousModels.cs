@@ -44,10 +44,10 @@ public class ZkComputationResult
     public string CircuitId { get; set; } = string.Empty;
     public object[] Results { get; set; } = Array.Empty<object>();
     public string Proof { get; set; } = string.Empty;
-    public string[] PublicSignals { get; set; } = Array.Empty<string>();
     public DateTime ComputedAt { get; set; } = DateTime.UtcNow;
-    public int ComputationTimeMs { get; set; }
     public bool IsValid { get; set; } = true;
+    public string? ErrorMessage { get; set; }
+    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 // Cryptographic Service Models
@@ -64,9 +64,10 @@ public class CryptoKeyInfo
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
-// Fair Ordering Service Models
+// Fair Ordering Service Models (Basic types only - detailed models in service-specific namespace)
 public class FairTransactionRequest
 {
+    public string TransactionId { get; set; } = Guid.NewGuid().ToString();
     public string From { get; set; } = string.Empty;
     public string To { get; set; } = string.Empty;
     public decimal Value { get; set; }
@@ -76,26 +77,37 @@ public class FairTransactionRequest
     public decimal MaxSlippage { get; set; }
     public DateTime? ExecuteAfter { get; set; }
     public DateTime? ExecuteBefore { get; set; }
-}
-
-public class TransactionAnalysisRequest
-{
     public string TransactionData { get; set; } = string.Empty;
-    public string From { get; set; } = string.Empty;
-    public string To { get; set; } = string.Empty;
-    public decimal Value { get; set; }
-    public Dictionary<string, object> Context { get; set; } = new();
+    public int Priority { get; set; } = 0;
+    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
+    public Dictionary<string, object> Parameters { get; set; } = new();
 }
 
 public class FairnessAnalysisResult
 {
+    public string AnalysisId { get; set; } = Guid.NewGuid().ToString();
+    public string TransactionId { get; set; } = string.Empty;
     public string TransactionHash { get; set; } = string.Empty;
+    public double FairnessScore { get; set; }
     public string RiskLevel { get; set; } = "Low";
     public decimal EstimatedMEV { get; set; }
+    public string[] RiskFactors { get; set; } = Array.Empty<string>();
     public string[] DetectedRisks { get; set; } = Array.Empty<string>();
     public string[] Recommendations { get; set; } = Array.Empty<string>();
     public decimal ProtectionFee { get; set; }
     public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
+    public Dictionary<string, object> Details { get; set; } = new();
+}
+
+public class TransactionAnalysisRequest
+{
+    public string TransactionId { get; set; } = string.Empty;
+    public string From { get; set; } = string.Empty;
+    public string To { get; set; } = string.Empty;
+    public decimal Value { get; set; }
+    public string TransactionData { get; set; } = string.Empty;
+    public Dictionary<string, object> Context { get; set; } = new();
+    public DateTime RequestedAt { get; set; } = DateTime.UtcNow;
 }
 
 // Risk Assessment Models (for PatternRecognition)
@@ -157,98 +169,6 @@ public class NotificationPreferences
     public Dictionary<string, object> Settings { get; set; } = new();
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
     public DateTime? UpdatedAt { get; set; }
-}
-
-// Fair Ordering Service Models
-public class OrderingPool
-{
-    public string Id { get; set; } = string.Empty;
-    public string PoolId { get; set; } = string.Empty;
-    public string Name { get; set; } = string.Empty;
-    public string Description { get; set; } = string.Empty;
-    public bool IsActive { get; set; } = true;
-    public TimeSpan BatchTimeout { get; set; } = TimeSpan.FromSeconds(5);
-    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
-}
-
-public class ProcessedBatch
-{
-    public string Id { get; set; } = string.Empty;
-    public string BatchId { get; set; } = string.Empty;
-    public string PoolId { get; set; } = string.Empty;
-    public int TransactionCount { get; set; }
-    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
-    public OrderingAlgorithm OrderingAlgorithm { get; set; }
-}
-
-public class PendingTransaction
-{
-    public string Id { get; set; } = string.Empty;
-    public string TransactionId { get; set; } = string.Empty;
-    public string TransactionType { get; set; } = string.Empty;
-    public decimal GasPrice { get; set; }
-    public decimal TransactionValue { get; set; }
-    public bool IsTimesensitive { get; set; }
-    public TimeSpan ProcessingDelay { get; set; }
-}
-
-public class MevAnalysisRequest
-{
-    public string TransactionId { get; set; } = string.Empty;
-    public string TransactionType { get; set; } = string.Empty;
-    public decimal GasPrice { get; set; }
-    public decimal TransactionValue { get; set; }
-    public bool IsTimesensitive { get; set; }
-}
-
-public class MevProtectionResult
-{
-    public string TransactionId { get; set; } = string.Empty;
-    public bool Success { get; set; }
-    public string? ErrorMessage { get; set; }
-}
-
-public class FairnessMetrics
-{
-    public string PoolId { get; set; } = string.Empty;
-    public int TotalTransactionsProcessed { get; set; }
-    public TimeSpan AverageProcessingTime { get; set; }
-    public double FairnessScore { get; set; }
-    public double OrderingAlgorithmEfficiency { get; set; }
-    public DateTime MetricsGeneratedAt { get; set; } = DateTime.UtcNow;
-}
-
-public class FairOrderingResult
-{
-    public string TransactionId { get; set; } = string.Empty;
-    public string PoolId { get; set; } = string.Empty;
-    public string BatchId { get; set; } = string.Empty;
-    public int OriginalPosition { get; set; }
-    public int FinalPosition { get; set; }
-    public OrderingAlgorithm OrderingAlgorithm { get; set; }
-    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
-}
-
-// Fair Ordering Enums
-public enum OrderingAlgorithm
-{
-    FIFO,
-    PriorityBased,
-    RandomizedFair,
-    TimeWeightedFair,
-    GasPriceWeighted
-}
-
-public enum FairnessLevel
-{
-    Basic,
-    Standard,
-    Strict,
-    Moderate,
-    Relaxed,
-    High,
-    Maximum
 }
 
 // Miscellaneous Enums

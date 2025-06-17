@@ -303,6 +303,42 @@ public class BackupResult
     public string Checksum { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the storage location (alias for BackupLocation).
+    /// </summary>
+    public string StorageLocation 
+    { 
+        get => BackupLocation; 
+        set => BackupLocation = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the backup size (alias for BackupSizeBytes).
+    /// </summary>
+    public long BackupSize 
+    { 
+        get => BackupSizeBytes; 
+        set => BackupSizeBytes = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the creation time (alias for StartTime).
+    /// </summary>
+    public DateTime CreatedAt 
+    { 
+        get => StartTime; 
+        set => StartTime = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the completion time (alias for CompletionTime).
+    /// </summary>
+    public DateTime? CompletedAt 
+    { 
+        get => CompletionTime; 
+        set => CompletionTime = value; 
+    }
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();

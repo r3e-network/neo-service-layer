@@ -1,0 +1,240 @@
+{
+  "resource_limits": {
+    "user_space_size": "1GB",
+    "kernel_space_heap_size": "128MB",
+    "kernel_space_stack_size": "8MB",
+    "max_num_of_threads": 64,
+    "max_num_of_file_descriptors": 4096,
+    "max_num_of_epoll_events": 1024
+  },
+  "process": {
+    "default_stack_size": "8MB",
+    "default_heap_size": "256MB",
+    "default_mmap_size": "512MB"
+  },
+  "entry_points": [
+    "/opt/neo-service-layer/bin/neo-service-enclave"
+  ],
+  "env": {
+    "RUST_LOG": "info",
+    "RUST_BACKTRACE": "1",
+    "NEO_SERVICE_MODE": "production",
+    "SGX_MODE": "HW",
+    "OCCLUM_LOG_LEVEL": "info"
+  },
+  "metadata": {
+    "version": "1.0.0",
+    "author": "Neo Service Layer Team",
+    "debuggable": false,
+    "product_id": 1,
+    "security_version": 1
+  },
+  "mount": [
+    {
+      "target": "/",
+      "type": "unionfs",
+      "options": {
+        "layers": [
+          {
+            "target": "/opt/neo-service-layer",
+            "type": "hostfs",
+            "source": "./neo-service-layer",
+            "options": {
+              "integrity_only": false
+            }
+          },
+          {
+            "target": "/lib",
+            "type": "hostfs", 
+            "source": "/lib",
+            "options": {
+              "integrity_only": true
+            }
+          },
+          {
+            "target": "/lib64",
+            "type": "hostfs",
+            "source": "/lib64", 
+            "options": {
+              "integrity_only": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "target": "/tmp",
+      "type": "ramfs",
+      "options": {
+        "size": "128MB"
+      }
+    },
+    {
+      "target": "/data",
+      "type": "encrypted_fs",
+      "options": {
+        "size": "1GB",
+        "key_derivation": "enclave_identity",
+        "integrity_protection": true,
+        "compression": true
+      }
+    },
+    {
+      "target": "/secure",
+      "type": "encrypted_fs", 
+      "options": {
+        "size": "512MB",
+        "key_derivation": "user_key",
+        "integrity_protection": true,
+        "access_mode": "0600"
+      }
+    }
+  ],
+  "sgx": {
+    "enclave_size": "2GB",
+    "thread_num": 32,
+    "heap_size": "512MB",
+    "stack_size": "8MB",
+    "debug": false,
+    "productionKey": true,
+    "launchable": true,
+    "provision_key": false,
+    "einittoken_key": false,
+    "kss": false
+  },
+  "network": {
+    "enabled": true,
+    "allowed_domains": [
+      "api.neo.org",
+      "mainnet.neo.org",
+      "testnet.neo.org",
+      "*.oracle-providers.net"
+    ],
+    "blocked_domains": [
+      "*.ads.com",
+      "*.tracking.com"
+    ],
+    "max_connections": 100,
+    "timeout_seconds": 30
+  },
+  "security": {
+    "enable_syscall_auditing": true,
+    "enable_file_integrity_checking": true,
+    "enable_network_monitoring": true,
+    "blocked_syscalls": [
+      "ptrace",
+      "syslog",
+      "kexec_load",
+      "delete_module"
+    ],
+    "mandatory_access_control": {
+      "enabled": true,
+      "policy": "strict",
+      "label_scheme": "neo_service_mac"
+    }
+  },
+  "crypto": {
+    "random_device": "/dev/urandom",
+    "entropy_source": "sgx_rdrand",
+    "key_derivation_functions": [
+      "pbkdf2",
+      "scrypt",
+      "argon2"
+    ],
+    "supported_algorithms": {
+      "symmetric": [
+        "aes-256-gcm",
+        "aes-256-ctr",
+        "chacha20-poly1305"
+      ],
+      "asymmetric": [
+        "secp256k1",
+        "ed25519",
+        "rsa-2048"
+      ],
+      "hash": [
+        "sha256",
+        "sha3-256",
+        "blake3"
+      ]
+    }
+  },
+  "storage": {
+    "encrypted_storage": {
+      "enabled": true,
+      "encryption_algorithm": "aes-256-gcm",
+      "key_derivation": "enclave_identity",
+      "integrity_protection": true,
+      "compression": {
+        "enabled": true,
+        "algorithm": "lz4"
+      }
+    },
+    "backup": {
+      "enabled": true,
+      "interval_minutes": 30,
+      "retention_days": 7,
+      "encryption": true
+    },
+    "cache": {
+      "enabled": true,
+      "size_mb": 64,
+      "eviction_policy": "lru"
+    }
+  },
+  "logging": {
+    "level": "info",
+    "destinations": [
+      {
+        "type": "file",
+        "path": "/data/logs/neo-service.log",
+        "max_size_mb": 100,
+        "max_files": 10,
+        "format": "json"
+      },
+      {
+        "type": "syslog",
+        "facility": "daemon",
+        "format": "rfc3164"
+      }
+    ],
+    "audit": {
+      "enabled": true,
+      "events": [
+        "syscalls",
+        "network",
+        "file_access",
+        "crypto_operations"
+      ]
+    }
+  },
+  "monitoring": {
+    "health_checks": {
+      "enabled": true,
+      "interval_seconds": 30,
+      "endpoints": [
+        "/health/enclave",
+        "/health/storage", 
+        "/health/network"
+      ]
+    },
+    "metrics": {
+      "enabled": true,
+      "collection_interval_seconds": 60,
+      "retention_hours": 24
+    },
+    "alerts": {
+      "enabled": true,
+      "channels": [
+        "syslog",
+        "file"
+      ]
+    }
+  },
+  "development": {
+    "allow_debug": false,
+    "enable_profiling": false,
+    "mock_services": false,
+    "test_mode": false
+  }
+} 

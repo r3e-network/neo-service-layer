@@ -1,0 +1,123 @@
+{
+  "name": "Neo Service Layer - Ubuntu 24 + SGX + Occlum + .NET 9",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "..",
+    "options": [
+      "--dns=8.8.8.8",
+      "--dns=8.8.4.4"
+    ]
+  },
+  "runArgs": [
+    "--dns=8.8.8.8",
+    "--dns=8.8.4.4"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true,
+      "upgradePackages": true,
+      "username": "vscode",
+      "userUid": "automatic",
+      "userGid": "automatic"
+    },
+    "ghcr.io/devcontainers/features/git:1": {
+      "ppa": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/github-cli:1": {
+      "installDirectlyFromGitHubRelease": true,
+      "version": "latest"
+    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "enableNonRootDocker": "true",
+      "moby": "true"
+    }
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-dotnettools.csharp",
+        "ms-dotnettools.dotnet-interactive-vscode",
+        "ms-dotnettools.vscode-dotnet-runtime",
+        "ms-vscode.vscode-json",
+        "ms-vscode.powershell",
+        "rust-lang.rust-analyzer",
+        "vadimcn.vscode-lldb",
+        "serayuzgur.crates",
+        "ms-vscode.cmake-tools",
+        "ms-vscode.cpptools",
+        "ms-vscode.cpptools-extension-pack",
+        "ms-azuretools.vscode-docker",
+        "redhat.vscode-yaml",
+        "ms-kubernetes-tools.vscode-kubernetes-tools",
+        "ms-vscode-remote.remote-containers",
+        "github.copilot",
+        "github.copilot-chat",
+        "ms-vscode.vscode-typescript-next",
+        "bradlc.vscode-tailwindcss",
+        "esbenp.prettier-vscode"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "dotnet.server.useOmnisharp": false,
+        "omnisharp.useModernNet": true,
+        "files.exclude": {
+          "**/bin": true,
+          "**/obj": true,
+          "**/.vs": true,
+          "**/target": true
+        },
+        "rust-analyzer.cargo.buildScripts.enable": true,
+        "rust-analyzer.checkOnSave.command": "clippy",
+        "C_Cpp.default.configurationProvider": "ms-vscode.cmake-tools",
+        "cmake.configureOnOpen": false
+      }
+    }
+  },
+  "forwardPorts": [
+    5000,
+    5001,
+    8080,
+    3000
+  ],
+  "portsAttributes": {
+    "5000": {
+      "label": "Neo Service Layer Web (HTTP)",
+      "onAutoForward": "notify"
+    },
+    "5001": {
+      "label": "Neo Service Layer Web (HTTPS)",
+      "onAutoForward": "notify"
+    },
+    "8080": {
+      "label": "Additional Web Service",
+      "onAutoForward": "silent"
+    },
+    "3000": {
+      "label": "Development Server",
+      "onAutoForward": "silent"
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "ASPNETCORE_ENVIRONMENT": "Development",
+    "DOTNET_ENVIRONMENT": "Development",
+    "SGX_MODE": "SIM",
+    "SGX_SDK": "/opt/intel/sgxsdk",
+    "PATH": "/opt/intel/sgxsdk/bin/x64:/home/vscode/.cargo/bin:/home/vscode/.dotnet:/home/vscode/.dotnet/tools:${PATH}",
+    "LD_LIBRARY_PATH": "/opt/intel/sgxsdk/sdk_libs:/opt/occlum/build/lib:${LD_LIBRARY_PATH}",
+    "RUST_BACKTRACE": "1",
+    "CARGO_NET_GIT_FETCH_WITH_CLI": "true"
+  },
+  "mounts": [
+    "source=neo-service-layer-extensions,target=/home/vscode/.vscode-server/extensions,type=volume",
+    "source=neo-service-layer-cargo,target=/home/vscode/.cargo,type=volume",
+    "source=neo-service-layer-nuget,target=/home/vscode/.nuget,type=volume"
+  ],
+  "workspaceFolder": "/workspace",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspace,type=bind,consistency=cached"
+} 

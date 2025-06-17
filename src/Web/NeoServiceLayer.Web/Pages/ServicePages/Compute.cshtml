@@ -1,0 +1,496 @@
+@page "/servicepages/compute"
+@model NeoServiceLayer.Web.Pages.ServicePages.ComputeModel
+@{
+    ViewData["Title"] = "Compute Service";
+    Model.OnGet();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #007bff 0%, #6f42c1 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .service-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #007bff;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .status-checking {
+            background-color: #ffc107;
+        }
+        .compute-job {
+            border: 1px solid #dee2e6;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            transition: all 0.2s ease;
+        }
+        .compute-job:hover {
+            background-color: #f8f9fa;
+            border-color: #007bff;
+        }
+        .enclave-indicator {
+            display: inline-block;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        .enclave-active {
+            background-color: #28a745;
+            box-shadow: 0 0 8px #28a745;
+        }
+        .enclave-inactive {
+            background-color: #dc3545;
+        }
+        .code-editor {
+            font-family: 'Courier New', monospace;
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 10px;
+            min-height: 150px;
+            resize: vertical;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="@Model.ServiceIcon me-3"></i>@Model.ServiceDisplayName
+                    </h1>
+                    <p class="lead mb-0">@Model.ServiceSubtitle</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="@Model.ServiceIcon feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">@Model.ServiceDisplayName</h6>
+                        <p class="card-text small">@Model.ServiceDescription</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> @Model.ServiceType</li>
+                            <li><strong>Layer:</strong> @Model.ServiceLayer</li>
+                            <li><strong>Security:</strong> SGX Enclave</li>
+                            <li><strong>API Version:</strong> v1.0</li>
+                        </ul>
+
+                        <h6>Key Features</h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var feature in Model.ServiceFeatures)
+                            {
+                                <li><i class="fas fa-check text-success me-2"></i>@feature</li>
+                            }
+                        </ul>
+
+                        <hr>
+
+                        <h6>Enclave Status</h6>
+                        <div class="d-flex align-items-center mb-2">
+                            <span class="enclave-indicator enclave-active" id="enclave-indicator"></span>
+                            <span id="enclave-status-text">SGX Enclave Active</span>
+                        </div>
+                        <small class="text-muted">Secure execution environment ready</small>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
+                                    <i class="fas fa-heartbeat me-2"></i>Status & Health
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="compute-tab" data-bs-toggle="tab" data-bs-target="#compute" type="button" role="tab">
+                                    <i class="fas fa-microchip me-2"></i>Compute Jobs
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="execute-tab" data-bs-toggle="tab" data-bs-target="#execute" type="button" role="tab">
+                                    <i class="fas fa-code me-2"></i>Execute Code
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>Operations
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Status Tab -->
+                            <div class="tab-pane fade show active" id="status" role="tabpanel">
+                                <h5>Service Status</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-server text-primary fa-2x mb-2"></i>
+                                                <h6>Service Health</h6>
+                                                <span id="health-status" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                                                <h6>Enclave Status</h6>
+                                                <span id="enclave-health" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-tasks text-info fa-2x mb-2"></i>
+                                                <h6>Active Jobs</h6>
+                                                <h4 id="active-jobs">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-microchip text-warning fa-2x mb-2"></i>
+                                                <h6>CPU Usage</h6>
+                                                <h4 id="cpu-usage">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-memory text-success fa-2x mb-2"></i>
+                                                <h6>Memory</h6>
+                                                <h4 id="memory-usage">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-clock text-secondary fa-2x mb-2"></i>
+                                                <h6>Uptime</h6>
+                                                <h4 id="uptime">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="checkServiceHealth()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Status
+                                </button>
+                            </div>
+
+                            <!-- Compute Jobs Tab -->
+                            <div class="tab-pane fade" id="compute" role="tabpanel">
+                                <div class="d-flex justify-content-between align-items-center mb-4">
+                                    <h5>Compute Jobs</h5>
+                                    <button class="btn btn-success" onclick="createComputeJob()">
+                                        <i class="fas fa-plus me-1"></i>New Job
+                                    </button>
+                                </div>
+                                
+                                <div id="compute-jobs">
+                                    <!-- Jobs will be populated here -->
+                                </div>
+                            </div>
+
+                            <!-- Execute Code Tab -->
+                            <div class="tab-pane fade" id="execute" role="tabpanel">
+                                <h5>Secure Code Execution</h5>
+                                <p class="text-muted">Execute code securely within the SGX enclave environment.</p>
+                                
+                                <div class="mb-3">
+                                    <label for="code-language" class="form-label">Language</label>
+                                    <select class="form-select" id="code-language">
+                                        <option value="javascript">JavaScript</option>
+                                        <option value="python">Python</option>
+                                        <option value="csharp">C#</option>
+                                        <option value="rust">Rust</option>
+                                    </select>
+                                </div>
+
+                                <div class="mb-3">
+                                    <label for="code-input" class="form-label">Code</label>
+                                    <textarea class="form-control code-editor" id="code-input" rows="8" placeholder="Enter your code here...">// Example: Neo balance check
+function checkBalance(address) {
+    // This code runs securely in SGX enclave
+    return neo.getBalance(address);
+}</textarea>
+                                </div>
+
+                                <div class="mb-3">
+                                    <button class="btn btn-primary me-2" onclick="executeCode()">
+                                        <i class="fas fa-play me-1"></i>Execute in Enclave
+                                    </button>
+                                    <button class="btn btn-outline-secondary" onclick="clearCode()">
+                                        <i class="fas fa-trash me-1"></i>Clear
+                                    </button>
+                                </div>
+
+                                <div id="execution-results" class="d-none">
+                                    <h6>Execution Results</h6>
+                                    <div class="card bg-light">
+                                        <div class="card-body">
+                                            <pre id="results-output" class="mb-0"></pre>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Operations Tab -->
+                            <div class="tab-pane fade" id="operations" role="tabpanel">
+                                <h5>@Model.ServiceDisplayName Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    @foreach (var operation in Model.ServiceOperations)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6><i class="fas fa-play-circle me-2"></i>@operation</h6>
+                                                    <button class="btn btn-outline-primary btn-sm" onclick="executeOperation('@operation')">
+                                                        Execute
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceHealth();
+            loadComputeJobs();
+        });
+
+        async function checkServiceHealth() {
+            try {
+                updateServiceStatus('checking');
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                
+                const isHealthy = Math.random() > 0.1;
+                
+                if (isHealthy) {
+                    updateServiceStatus('online');
+                    document.getElementById('health-status').textContent = 'Healthy';
+                    document.getElementById('health-status').className = 'badge bg-success';
+                    document.getElementById('enclave-health').textContent = 'Active';
+                    document.getElementById('enclave-health').className = 'badge bg-success';
+                    
+                    // Update metrics
+                    document.getElementById('active-jobs').textContent = Math.floor(Math.random() * 10 + 2);
+                    document.getElementById('cpu-usage').textContent = Math.floor(Math.random() * 50 + 20) + '%';
+                    document.getElementById('memory-usage').textContent = Math.floor(Math.random() * 40 + 30) + '%';
+                    document.getElementById('uptime').textContent = Math.floor(Math.random() * 30 + 1) + 'd';
+                } else {
+                    updateServiceStatus('offline');
+                    document.getElementById('health-status').textContent = 'Unhealthy';
+                    document.getElementById('health-status').className = 'badge bg-danger';
+                    document.getElementById('enclave-health').textContent = 'Inactive';
+                    document.getElementById('enclave-health').className = 'badge bg-danger';
+                    
+                    // Update enclave indicator
+                    document.getElementById('enclave-indicator').className = 'enclave-indicator enclave-inactive';
+                    document.getElementById('enclave-status-text').textContent = 'SGX Enclave Inactive';
+                }
+            } catch (error) {
+                console.error('Error checking service health:', error);
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        function loadComputeJobs() {
+            const jobsContainer = document.getElementById('compute-jobs');
+            const jobs = [
+                { id: 1, name: 'Neo Transaction Processing', status: 'Running', progress: 65, created: '5 minutes ago', enclave: true },
+                { id: 2, name: 'Balance Calculation', status: 'Queued', progress: 0, created: '10 minutes ago', enclave: true },
+                { id: 3, name: 'Smart Contract Verification', status: 'Completed', progress: 100, created: '15 minutes ago', enclave: true },
+                { id: 4, name: 'Data Analytics', status: 'Running', progress: 30, created: '20 minutes ago', enclave: true }
+            ];
+
+            jobsContainer.innerHTML = jobs.map(job => `
+                <div class="compute-job">
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <div class="d-flex align-items-center">
+                            <span class="enclave-indicator ${job.enclave ? 'enclave-active' : 'enclave-inactive'}"></span>
+                            <h6 class="mb-0">${job.name}</h6>
+                        </div>
+                        <span class="badge bg-${getJobStatusColor(job.status)}">${job.status}</span>
+                    </div>
+                    <div class="progress mb-2" style="height: 6px;">
+                        <div class="progress-bar" style="width: ${job.progress}%"></div>
+                    </div>
+                    <div class="d-flex justify-content-between align-items-center">
+                        <small class="text-muted">Created: ${job.created}</small>
+                        <div class="btn-group btn-group-sm">
+                            <button class="btn btn-outline-primary" onclick="viewJob(${job.id})">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="stopJob(${job.id})">
+                                <i class="fas fa-stop"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function getJobStatusColor(status) {
+            switch (status) {
+                case 'Running': return 'primary';
+                case 'Queued': return 'warning';
+                case 'Completed': return 'success';
+                case 'Failed': return 'danger';
+                default: return 'secondary';
+            }
+        }
+
+        function createComputeJob() {
+            alert('Opening compute job creator...');
+        }
+
+        function viewJob(id) {
+            alert(`Viewing job ${id} details...`);
+        }
+
+        function stopJob(id) {
+            if (confirm('Are you sure you want to stop this job?')) {
+                alert(`Job ${id} stopped.`);
+                loadComputeJobs();
+            }
+        }
+
+        function executeCode() {
+            const language = document.getElementById('code-language').value;
+            const code = document.getElementById('code-input').value;
+            
+            if (!code.trim()) {
+                alert('Please enter some code to execute.');
+                return;
+            }
+
+            // Simulate code execution
+            document.getElementById('results-output').textContent = `Executing ${language} code in SGX enclave...\n\nResult: Code executed successfully.\nExecution time: ${Math.floor(Math.random() * 500 + 100)}ms\nMemory used: ${Math.floor(Math.random() * 50 + 10)}MB`;
+            document.getElementById('execution-results').classList.remove('d-none');
+        }
+
+        function clearCode() {
+            document.getElementById('code-input').value = '';
+            document.getElementById('execution-results').classList.add('d-none');
+        }
+
+        async function executeOperation(operation) {
+            try {
+                console.log('Executing operation:', operation);
+                alert(`Executing ${operation} operation in secure enclave...`);
+            } catch (error) {
+                console.error('Error executing operation:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

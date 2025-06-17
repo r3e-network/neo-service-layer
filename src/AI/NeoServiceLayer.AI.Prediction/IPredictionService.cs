@@ -1,6 +1,6 @@
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.AI.Prediction.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -50,7 +50,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="modelId">The model ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The prediction history.</returns>
-    Task<IEnumerable<PredictionResult>> GetPredictionHistoryAsync(string modelId, BlockchainType blockchainType);
+    Task<IEnumerable<CoreModels.PredictionResult>> GetPredictionHistoryAsync(string modelId, BlockchainType blockchainType);
 
     /// <summary>
     /// Retrains a model with new data.
@@ -71,5 +71,5 @@ public interface IPredictionService : Core.IPredictionService
 }
 
 // Note: PredictionRequest, PredictionResult, SentimentAnalysisRequest, SentimentResult, and ModelRegistration
-// are defined in NeoServiceLayer.Core.ServiceModels and should be used from there.
+// are defined in NeoServiceLayer.Core.Models and should be used from there.
 // Additional service-specific types are defined in Models/PredictionModels.cs

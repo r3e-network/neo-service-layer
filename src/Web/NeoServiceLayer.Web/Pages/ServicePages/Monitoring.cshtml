@@ -1,0 +1,388 @@
+@page "/servicepages/monitoring"
+@model NeoServiceLayer.Web.Pages.ServicePages.MonitoringModel
+@{
+    ViewData["Title"] = "Monitoring Service";
+    Model.OnGet();
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #2196f3 0%, #21cbf3 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .service-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #2196f3;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .status-checking {
+            background-color: #ffc107;
+        }
+        .metric-card {
+            border-left: 4px solid #2196f3;
+            height: 120px;
+        }
+        .chart-container {
+            height: 200px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="@Model.ServiceIcon me-3"></i>@Model.ServiceDisplayName
+                    </h1>
+                    <p class="lead mb-0">@Model.ServiceSubtitle</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="@Model.ServiceIcon feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">@Model.ServiceDisplayName</h6>
+                        <p class="card-text small">@Model.ServiceDescription</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> @Model.ServiceType</li>
+                            <li><strong>Layer:</strong> @Model.ServiceLayer</li>
+                            <li><strong>Security:</strong> SGX Enclave</li>
+                            <li><strong>API Version:</strong> v1.0</li>
+                        </ul>
+
+                        <h6>Key Features</h6>
+                        <ul class="list-unstyled small">
+                            @foreach (var feature in Model.ServiceFeatures)
+                            {
+                                <li><i class="fas fa-check text-success me-2"></i>@feature</li>
+                            }
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="status-tab" data-bs-toggle="tab" data-bs-target="#status" type="button" role="tab">
+                                    <i class="fas fa-heartbeat me-2"></i>Status & Health
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="metrics-tab" data-bs-toggle="tab" data-bs-target="#metrics" type="button" role="tab">
+                                    <i class="fas fa-chart-line me-2"></i>Performance Metrics
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="operations-tab" data-bs-toggle="tab" data-bs-target="#operations" type="button" role="tab">
+                                    <i class="fas fa-cogs me-2"></i>Operations
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Status Tab -->
+                            <div class="tab-pane fade show active" id="status" role="tabpanel">
+                                <h5>Service Status</h5>
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-server text-primary fa-2x mb-2"></i>
+                                                <h6>Service Health</h6>
+                                                <span id="health-status" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card bg-light">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-shield-alt text-success fa-2x mb-2"></i>
+                                                <h6>Enclave Status</h6>
+                                                <span id="enclave-status" class="badge bg-warning">Checking...</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-3">
+                                        <div class="card metric-card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-microchip text-primary fa-2x mb-2"></i>
+                                                <h6>CPU Usage</h6>
+                                                <h4 id="cpu-usage">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card metric-card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-memory text-success fa-2x mb-2"></i>
+                                                <h6>Memory</h6>
+                                                <h4 id="memory-usage">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card metric-card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-hdd text-warning fa-2x mb-2"></i>
+                                                <h6>Disk I/O</h6>
+                                                <h4 id="disk-io">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="card metric-card">
+                                            <div class="card-body text-center">
+                                                <i class="fas fa-network-wired text-info fa-2x mb-2"></i>
+                                                <h6>Network</h6>
+                                                <h4 id="network-io">-</h4>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="checkServiceHealth()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Status
+                                </button>
+                            </div>
+
+                            <!-- Metrics Tab -->
+                            <div class="tab-pane fade" id="metrics" role="tabpanel">
+                                <h5>Performance Metrics</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">CPU Usage Over Time</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <i class="fas fa-chart-line fa-3x text-muted"></i>
+                                                    <span class="ms-2 text-muted">CPU Chart</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Memory Usage</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <i class="fas fa-chart-area fa-3x text-muted"></i>
+                                                    <span class="ms-2 text-muted">Memory Chart</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="row g-3">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Network Traffic</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <i class="fas fa-chart-bar fa-3x text-muted"></i>
+                                                    <span class="ms-2 text-muted">Network Chart</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-header">
+                                                <h6 class="mb-0">Disk Performance</h6>
+                                            </div>
+                                            <div class="card-body">
+                                                <div class="chart-container">
+                                                    <i class="fas fa-chart-pie fa-3x text-muted"></i>
+                                                    <span class="ms-2 text-muted">Disk Chart</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Operations Tab -->
+                            <div class="tab-pane fade" id="operations" role="tabpanel">
+                                <h5>@Model.ServiceDisplayName Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    @foreach (var operation in Model.ServiceOperations)
+                                    {
+                                        <div class="col-md-6">
+                                            <div class="card">
+                                                <div class="card-body">
+                                                    <h6><i class="fas fa-play-circle me-2"></i>@operation</h6>
+                                                    <button class="btn btn-outline-primary btn-sm" onclick="executeOperation('@operation')">
+                                                        Execute
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    }
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceHealth();
+            startMetricsUpdater();
+        });
+
+        async function checkServiceHealth() {
+            try {
+                updateServiceStatus('checking');
+                
+                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                
+                const isHealthy = Math.random() > 0.1;
+                
+                if (isHealthy) {
+                    updateServiceStatus('online');
+                    document.getElementById('health-status').textContent = 'Healthy';
+                    document.getElementById('health-status').className = 'badge bg-success';
+                    document.getElementById('enclave-status').textContent = 'Active';
+                    document.getElementById('enclave-status').className = 'badge bg-success';
+                    
+                    updateMetrics();
+                } else {
+                    updateServiceStatus('offline');
+                    document.getElementById('health-status').textContent = 'Unhealthy';
+                    document.getElementById('health-status').className = 'badge bg-danger';
+                    document.getElementById('enclave-status').textContent = 'Inactive';
+                    document.getElementById('enclave-status').className = 'badge bg-danger';
+                }
+            } catch (error) {
+                console.error('Error checking service health:', error);
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        function updateMetrics() {
+            document.getElementById('cpu-usage').textContent = Math.floor(Math.random() * 60 + 20) + '%';
+            document.getElementById('memory-usage').textContent = Math.floor(Math.random() * 40 + 30) + '%';
+            document.getElementById('disk-io').textContent = Math.floor(Math.random() * 100 + 50) + ' MB/s';
+            document.getElementById('network-io').textContent = Math.floor(Math.random() * 50 + 10) + ' Mbps';
+        }
+
+        function startMetricsUpdater() {
+            setInterval(updateMetrics, 5000); // Update every 5 seconds
+        }
+
+        async function executeOperation(operation) {
+            try {
+                console.log('Executing operation:', operation);
+                alert(`Executing ${operation} operation...`);
+            } catch (error) {
+                console.error('Error executing operation:', error);
+            }
+        }
+    </script>
+</body>
+</html> 

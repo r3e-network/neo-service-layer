@@ -1,26 +1,33 @@
 ﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Net.Http;
-using System.Text;
-using System.Text.Json;
-using System.Net.WebSockets;
+using Nethereum.Web3;
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Contracts;
+using Nethereum.Hex.HexTypes;
 using System.Collections.Concurrent;
+using System.Numerics;
+
+// Type aliases to resolve ambiguity
+using CoreBlock = NeoServiceLayer.Core.Block;
+using CoreTransaction = NeoServiceLayer.Core.Transaction;
+using NetherBlock = Nethereum.RPC.Eth.DTOs.BlockWithTransactions;
+using NetherTransaction = Nethereum.RPC.Eth.DTOs.Transaction;
 
 namespace NeoServiceLayer.Neo.X;
 
 /// <summary>
-/// Implementation of the NeoX blockchain client.
+/// Implementation of the Neo X (EVM-compatible) blockchain client using Nethereum.
 /// </summary>
 public class NeoXClient : IBlockchainClient, IDisposable
 {
     private readonly ILogger<NeoXClient> _logger;
-    private readonly HttpClient _httpClient;
+    private readonly Web3 _web3;
     private readonly string _rpcUrl;
-    private readonly ConcurrentDictionary<string, Func<Block, Task>> _blockSubscriptions = new();
-    private readonly ConcurrentDictionary<string, Func<Transaction, Task>> _transactionSubscriptions = new();
+    private readonly ConcurrentDictionary<string, Func<CoreBlock, Task>> _blockSubscriptions = new();
+    private readonly ConcurrentDictionary<string, Func<CoreTransaction, Task>> _transactionSubscriptions = new();
     private readonly ConcurrentDictionary<string, (string ContractAddress, string EventName, Func<ContractEvent, Task> Callback)> _contractEventSubscriptions = new();
     private readonly CancellationTokenSource _cancellationTokenSource = new();
-    private int _requestId = 1;
+    private readonly Timer _subscriptionTimer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NeoXClient"/> class.
@@ -31,12 +38,18 @@ public class NeoXClient : IBlockchainClient, IDisposable
     public NeoXClient(ILogger<NeoXClient> logger, HttpClient httpClient, string rpcUrl)
     {
         _logger = logger;
-        _httpClient = httpClient;
         _rpcUrl = rpcUrl;
+        
+        // Initialize Web3 with the provided HTTP client
+        _web3 = new Web3(rpcUrl);
+        
+        // Configure HTTP client timeout
+        httpClient.Timeout = TimeSpan.FromSeconds(30);
 
-        // Configure HTTP client for NeoX RPC (EVM-compatible)
-        _httpClient.DefaultRequestHeaders.Add("User-Agent", "NeoServiceLayer/1.0");
-        _httpClient.Timeout = TimeSpan.FromSeconds(30);
+        // Initialize subscription monitoring timer (check every 5 seconds)
+        _subscriptionTimer = new Timer(ProcessSubscriptions, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
+
+        _logger.LogInformation("Neo X client initialized with RPC URL: {RpcUrl}", rpcUrl);
     }
 
     /// <inheritdoc/>
@@ -49,9 +62,8 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogDebug("Getting block height from {RpcUrl}", _rpcUrl);
 
-            // NeoX uses EVM-compatible eth_blockNumber
-            var response = await CallRpcMethodAsync<string>("eth_blockNumber");
-            return Convert.ToInt64(response, 16); // Convert from hex to decimal
+            var blockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
+            return (long)blockNumber.Value;
         }
         catch (Exception ex)
         {
@@ -61,15 +73,21 @@ public class NeoXClient : IBlockchainClient, IDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<Block> GetBlockAsync(long height)
+    public async Task<CoreBlock> GetBlockAsync(long height)
     {
         try
         {
             _logger.LogDebug("Getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
 
-            // NeoX uses EVM-compatible eth_getBlockByNumber
-            var blockData = await CallRpcMethodAsync<JsonElement>("eth_getBlockByNumber", $"0x{height:X}", true);
-            return ParseBlockFromJson(blockData);
+            var blockNumber = new HexBigInteger(height);
+            var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(blockNumber);
+            
+            if (block == null)
+            {
+                throw new InvalidOperationException($"Block at height {height} not found");
+            }
+
+            return await ConvertToBlockAsync(block);
         }
         catch (Exception ex)
         {
@@ -79,15 +97,20 @@ public class NeoXClient : IBlockchainClient, IDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<Block> GetBlockAsync(string hash)
+    public async Task<CoreBlock> GetBlockAsync(string hash)
     {
         try
         {
             _logger.LogDebug("Getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
 
-            // NeoX uses EVM-compatible eth_getBlockByHash
-            var blockData = await CallRpcMethodAsync<JsonElement>("eth_getBlockByHash", hash, true);
-            return ParseBlockFromJson(blockData);
+            var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByHash.SendRequestAsync(hash);
+            
+            if (block == null)
+            {
+                throw new InvalidOperationException($"Block with hash {hash} not found");
+            }
+
+            return await ConvertToBlockAsync(block);
         }
         catch (Exception ex)
         {
@@ -97,15 +120,22 @@ public class NeoXClient : IBlockchainClient, IDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<Transaction> GetTransactionAsync(string hash)
+    public async Task<CoreTransaction> GetTransactionAsync(string hash)
     {
         try
         {
             _logger.LogDebug("Getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
 
-            // NeoX uses EVM-compatible eth_getTransactionByHash
-            var txData = await CallRpcMethodAsync<JsonElement>("eth_getTransactionByHash", hash);
-            return ParseTransactionFromJson(txData);
+            var transaction = await _web3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(hash);
+            
+            if (transaction == null)
+            {
+                throw new InvalidOperationException($"Transaction with hash {hash} not found");
+            }
+
+            var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(hash);
+            
+            return ConvertToTransaction(transaction, receipt);
         }
         catch (Exception ex)
         {
@@ -115,37 +145,46 @@ public class NeoXClient : IBlockchainClient, IDisposable
     }
 
     /// <inheritdoc/>
-    public async Task<string> SendTransactionAsync(Transaction transaction)
+    public async Task<string> SendTransactionAsync(CoreTransaction transaction)
     {
         try
         {
-            _logger.LogDebug("Sending transaction from {Sender} to {Recipient} with value {Value} via {RpcUrl}", transaction.Sender, transaction.Recipient, transaction.Value, _rpcUrl);
+            _logger.LogDebug("Sending transaction from {Sender} to {Recipient} with value {Value} via {RpcUrl}", 
+                transaction.Sender, transaction.Recipient, transaction.Value, _rpcUrl);
 
-            var rawTransaction = BuildEthereumTransaction(transaction);
-            var response = await CallRpcMethodAsync<string>("eth_sendRawTransaction", rawTransaction);
+            // Create transaction input
+            var transactionInput = new TransactionInput
+            {
+                From = transaction.Sender,
+                To = transaction.Recipient,
+                Value = new HexBigInteger(Web3.Convert.ToWei(transaction.Value)),
+                Data = transaction.Data
+            };
 
-            return response;
+            // Send the transaction
+            var txHash = await _web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
+            
+            _logger.LogInformation("Transaction sent successfully with hash: {TxHash}", txHash);
+            return txHash;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}", transaction.Sender, transaction.Recipient);
+            _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}", 
+                transaction.Sender, transaction.Recipient);
             throw;
         }
     }
 
     /// <inheritdoc/>
-    public Task<string> SubscribeToBlocksAsync(Func<Block, Task> callback)
+    public Task<string> SubscribeToBlocksAsync(Func<CoreBlock, Task> callback)
     {
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to blocks with subscription ID {SubscriptionId} via {RpcUrl}", subscriptionId, _rpcUrl);
+            _logger.LogDebug("Subscribing to blocks with subscription ID {SubscriptionId} via {RpcUrl}", 
+                subscriptionId, _rpcUrl);
 
-            // Store the subscription
             _blockSubscriptions[subscriptionId] = callback;
-
-            // Start monitoring for blocks in a background task
-            _ = Task.Run(async () => await MonitorBlocksAsync(subscriptionId, callback));
 
             _logger.LogInformation("Successfully subscribed to blocks with ID {SubscriptionId}", subscriptionId);
             return Task.FromResult(subscriptionId);
@@ -162,10 +201,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from blocks with subscription ID {SubscriptionId} via {RpcUrl}", subscriptionId, _rpcUrl);
-
+            _logger.LogDebug("Unsubscribing from blocks with subscription ID {SubscriptionId} via {RpcUrl}", 
+                subscriptionId, _rpcUrl);
+            
             var removed = _blockSubscriptions.TryRemove(subscriptionId, out _);
-
+            
             if (removed)
             {
                 _logger.LogInformation("Successfully unsubscribed from blocks with ID {SubscriptionId}", subscriptionId);
@@ -179,24 +219,21 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to unsubscribe from blocks with ID {SubscriptionId}", subscriptionId);
+            _logger.LogError(ex, "Failed to unsubscribe from blocks with subscription ID {SubscriptionId}", subscriptionId);
             throw;
         }
     }
 
     /// <inheritdoc/>
-    public Task<string> SubscribeToTransactionsAsync(Func<Transaction, Task> callback)
+    public Task<string> SubscribeToTransactionsAsync(Func<CoreTransaction, Task> callback)
     {
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to transactions with subscription ID {SubscriptionId} via {RpcUrl}", subscriptionId, _rpcUrl);
+            _logger.LogDebug("Subscribing to transactions with subscription ID {SubscriptionId} via {RpcUrl}", 
+                subscriptionId, _rpcUrl);
 
-            // Store the subscription
             _transactionSubscriptions[subscriptionId] = callback;
-
-            // Start monitoring for transactions in a background task
-            _ = Task.Run(async () => await MonitorTransactionsAsync(subscriptionId, callback));
 
             _logger.LogInformation("Successfully subscribed to transactions with ID {SubscriptionId}", subscriptionId);
             return Task.FromResult(subscriptionId);
@@ -213,7 +250,8 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from transactions with subscription ID {SubscriptionId} via {RpcUrl}", subscriptionId, _rpcUrl);
+            _logger.LogDebug("Unsubscribing from transactions with subscription ID {SubscriptionId} via {RpcUrl}", 
+                subscriptionId, _rpcUrl);
 
             var removed = _transactionSubscriptions.TryRemove(subscriptionId, out _);
 
@@ -241,20 +279,19 @@ public class NeoXClient : IBlockchainClient, IDisposable
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} via {RpcUrl}", contractAddress, eventName, subscriptionId, _rpcUrl);
+            _logger.LogDebug("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} via {RpcUrl}", 
+                contractAddress, eventName, subscriptionId, _rpcUrl);
 
-            // Store the subscription
             _contractEventSubscriptions[subscriptionId] = (contractAddress, eventName, callback);
 
-            // Start monitoring for contract events in a background task
-            _ = Task.Run(async () => await MonitorContractEventsAsync(subscriptionId, contractAddress, eventName, callback));
-
-            _logger.LogInformation("Successfully subscribed to contract events for {ContractAddress}:{EventName}", contractAddress, eventName);
+            _logger.LogInformation("Successfully subscribed to contract events for {ContractAddress}:{EventName}", 
+                contractAddress, eventName);
             return Task.FromResult(subscriptionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to subscribe to contract events for {ContractAddress}:{EventName}", contractAddress, eventName);
+            _logger.LogError(ex, "Failed to subscribe to contract events for {ContractAddress}:{EventName}", 
+                contractAddress, eventName);
             throw;
         }
     }
@@ -264,10 +301,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from contract events with subscription ID {SubscriptionId} via {RpcUrl}", subscriptionId, _rpcUrl);
-
+            _logger.LogDebug("Unsubscribing from contract events with subscription ID {SubscriptionId} via {RpcUrl}", 
+                subscriptionId, _rpcUrl);
+            
             var removed = _contractEventSubscriptions.TryRemove(subscriptionId, out _);
-
+            
             if (removed)
             {
                 _logger.LogInformation("Successfully unsubscribed from contract events with ID {SubscriptionId}", subscriptionId);
@@ -281,7 +319,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to unsubscribe from contract events with ID {SubscriptionId}", subscriptionId);
+            _logger.LogError(ex, "Failed to unsubscribe from contract events with subscription ID {SubscriptionId}", subscriptionId);
             throw;
         }
     }
@@ -291,13 +329,24 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Calling contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", method, contractAddress, args.Length, _rpcUrl);
+            _logger.LogDebug("Calling contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", 
+                method, contractAddress, args.Length, _rpcUrl);
 
-            var callData = EncodeMethodCall(method, args);
-            var callObject = new { to = contractAddress, data = callData };
-            var response = await CallRpcMethodAsync<string>("eth_call", callObject, "latest");
+            // Create a contract instance
+            var contract = _web3.Eth.GetContract("[]", contractAddress); // Empty ABI for generic calls
+            
+            // Build function call data
+            var functionCallData = BuildFunctionCallData(method, args);
+            
+            // Make the call
+            var result = await _web3.Eth.Transactions.Call.SendRequestAsync(new CallInput
+            {
+                To = contractAddress,
+                Data = functionCallData
+            });
 
-            return response;
+            _logger.LogDebug("Contract method call successful for {Method} on {ContractAddress}", method, contractAddress);
+            return result;
         }
         catch (Exception ex)
         {
@@ -311,12 +360,25 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Invoking contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", method, contractAddress, args.Length, _rpcUrl);
+            _logger.LogDebug("Invoking contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", 
+                method, contractAddress, args.Length, _rpcUrl);
 
-            var transactionData = BuildContractTransaction(contractAddress, method, args);
-            var response = await CallRpcMethodAsync<string>("eth_sendTransaction", transactionData);
+            // Build function call data
+            var functionCallData = BuildFunctionCallData(method, args);
 
-            return response;
+            // Create transaction input
+            var transactionInput = new TransactionInput
+            {
+                To = contractAddress,
+                Data = functionCallData,
+                Gas = new HexBigInteger(200000) // Default gas limit
+            };
+
+            // Send the transaction
+            var txHash = await _web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
+            
+            _logger.LogInformation("Contract method invocation sent successfully with hash: {TxHash}", txHash);
+            return txHash;
         }
         catch (Exception ex)
         {
@@ -326,629 +388,256 @@ public class NeoXClient : IBlockchainClient, IDisposable
     }
 
     /// <summary>
-    /// Calls an RPC method on the NeoX node.
+    /// Converts a Nethereum block to our Block model.
     /// </summary>
-    private async Task<T> CallRpcMethodAsync<T>(string method, params object[] parameters)
+    private async Task<CoreBlock> ConvertToBlockAsync(NetherBlock block)
     {
-        var requestId = Interlocked.Increment(ref _requestId);
-        var request = new
+        var transactions = new List<CoreTransaction>();
+
+        foreach (var tx in block.Transactions)
         {
-            jsonrpc = "2.0",
-            method = method,
-            @params = parameters,
-            id = requestId
-        };
-
-        var json = JsonSerializer.Serialize(request);
-        var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-        var response = await _httpClient.PostAsync(_rpcUrl, content);
-        response.EnsureSuccessStatusCode();
-
-        var responseJson = await response.Content.ReadAsStringAsync();
-        var rpcResponse = JsonSerializer.Deserialize<JsonElement>(responseJson);
-
-        if (rpcResponse.TryGetProperty("error", out var error))
-        {
-            var errorMessage = error.GetProperty("message").GetString();
-            throw new InvalidOperationException($"RPC Error: {errorMessage}");
+            var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(tx.TransactionHash);
+            transactions.Add(ConvertToTransaction(tx, receipt));
         }
 
-        var result = rpcResponse.GetProperty("result");
-        return JsonSerializer.Deserialize<T>(result.GetRawText()) ?? throw new InvalidOperationException("Failed to deserialize RPC response");
-    }
-
-    /// <summary>
-    /// Parses a block from JSON data (EVM format).
-    /// </summary>
-    private Block ParseBlockFromJson(JsonElement blockData)
-    {
-        var transactions = new List<Transaction>();
-
-        if (blockData.TryGetProperty("transactions", out var txArray))
+        return new CoreBlock
         {
-            foreach (var tx in txArray.EnumerateArray())
-            {
-                transactions.Add(ParseTransactionFromJson(tx));
-            }
-        }
-
-        return new Block
-        {
-            Hash = blockData.GetProperty("hash").GetString() ?? string.Empty,
-            Height = Convert.ToInt64(blockData.GetProperty("number").GetString(), 16),
-            Timestamp = DateTimeOffset.FromUnixTimeSeconds(Convert.ToInt64(blockData.GetProperty("timestamp").GetString(), 16)).DateTime,
-            PreviousHash = blockData.GetProperty("parentHash").GetString() ?? string.Empty,
+            Hash = block.BlockHash,
+            Height = (long)block.Number.Value,
+            Timestamp = DateTimeOffset.FromUnixTimeSeconds((long)block.Timestamp.Value).DateTime,
+            PreviousHash = block.ParentHash,
             Transactions = transactions
         };
     }
 
     /// <summary>
-    /// Parses a transaction from JSON data (EVM format).
+    /// Converts a Nethereum transaction to our Transaction model.
     /// </summary>
-    private Transaction ParseTransactionFromJson(JsonElement txData)
+    private CoreTransaction ConvertToTransaction(NetherTransaction tx, TransactionReceipt? receipt)
     {
-        return new Transaction
+        return new CoreTransaction
         {
-            Hash = txData.GetProperty("hash").GetString() ?? string.Empty,
-            Sender = txData.GetProperty("from").GetString() ?? string.Empty,
-            Recipient = txData.GetProperty("to").GetString() ?? string.Empty,
-            Value = ConvertWeiToEther(txData.GetProperty("value").GetString() ?? "0"),
-            Data = txData.GetProperty("input").GetString() ?? string.Empty,
+            Hash = tx.TransactionHash,
+            Sender = tx.From,
+            Recipient = tx.To ?? string.Empty,
+            Value = Web3.Convert.FromWei(tx.Value?.Value ?? 0),
+            Data = tx.Input ?? string.Empty,
             Timestamp = DateTime.UtcNow, // EVM transactions don't have individual timestamps
-            BlockHash = txData.GetProperty("blockHash").GetString() ?? string.Empty,
-            BlockHeight = Convert.ToInt64(txData.GetProperty("blockNumber").GetString() ?? "0", 16)
+            BlockHash = receipt?.BlockHash ?? string.Empty,
+            BlockHeight = (long)(receipt?.BlockNumber?.Value ?? 0)
         };
     }
 
     /// <summary>
-    /// Converts Wei to Ether.
+    /// Builds function call data for contract method calls.
     /// </summary>
-    private decimal ConvertWeiToEther(string weiHex)
+    private string BuildFunctionCallData(string method, object[] args)
     {
-        if (string.IsNullOrEmpty(weiHex) || weiHex == "0x0")
-            return 0m;
-
-        var wei = Convert.ToDecimal(Convert.ToInt64(weiHex, 16));
-        return wei / 1_000_000_000_000_000_000m; // 1 Ether = 10^18 Wei
+        // This is a simplified implementation
+        // In a production environment, you would use proper ABI encoding
+        var methodSignature = $"{method}({string.Join(",", args.Select(a => a.GetType().Name))})";
+        var methodBytes = System.Text.Encoding.UTF8.GetBytes(methodSignature);
+        var methodHash = Nethereum.Util.Sha3Keccack.Current.CalculateHash(methodBytes)[..4];
+        
+        // For now, return just the method hash
+        // In production, you would properly encode the arguments
+        return "0x" + Convert.ToHexString(methodHash);
     }
 
     /// <summary>
-    /// Builds an Ethereum transaction for sending.
+    /// Processes subscriptions by checking for new blocks and events.
     /// </summary>
-    private string BuildEthereumTransaction(Transaction transaction)
+    private async void ProcessSubscriptions(object? state)
     {
-        // This would build a proper Ethereum raw transaction
-        // For now, return a placeholder that represents the transaction structure
-        var txObject = new
-        {
-            from = transaction.Sender,
-            to = transaction.Recipient,
-            value = $"0x{((long)(transaction.Value * 1_000_000_000_000_000_000m)):X}", // Convert to Wei
-            data = transaction.Data,
-            gas = "0x5208", // Standard gas limit for simple transfer
-            gasPrice = "0x9184e72a000" // 10 Gwei
-        };
+        if (_cancellationTokenSource.Token.IsCancellationRequested)
+            return;
 
-        return JsonSerializer.Serialize(txObject);
-    }
-
-    /// <summary>
-    /// Builds a contract transaction object.
-    /// </summary>
-    private object BuildContractTransaction(string contractAddress, string method, object[] args)
-    {
-        // This would encode the method call using ABI encoding
-        // For now, return a basic transaction structure
-        return new
-        {
-            to = contractAddress,
-            data = EncodeMethodCall(method, args),
-            gas = "0x76c0", // Higher gas limit for contract calls
-            gasPrice = "0x9184e72a000"
-        };
-    }
-
-    /// <summary>
-    /// Encodes a method call for contract interaction.
-    /// </summary>
-    private string EncodeMethodCall(string method, object[] args)
-    {
-        // This would use proper ABI encoding
-        // For now, return a placeholder
-        return $"0x{Convert.ToHexString(Encoding.UTF8.GetBytes($"{method}({string.Join(",", args)})"))}";
-    }
-
-    /// <summary>
-    /// Monitors blocks for a subscription.
-    /// </summary>
-    private async Task MonitorBlocksAsync(string subscriptionId, Func<Block, Task> callback)
-    {
         try
         {
-            var lastProcessedHeight = await GetBlockHeightAsync();
-            _logger.LogDebug("Starting block monitoring from height {Height} for subscription {SubscriptionId}", lastProcessedHeight, subscriptionId);
-
-            while (!_cancellationTokenSource.Token.IsCancellationRequested && _blockSubscriptions.ContainsKey(subscriptionId))
-            {
-                await Task.Delay(10000, _cancellationTokenSource.Token); // Check every 10 seconds
-
-                try
-                {
-                    var currentHeight = await GetBlockHeightAsync();
-
-                    // Process new blocks since last check
-                    for (var height = lastProcessedHeight + 1; height <= currentHeight; height++)
-                    {
-                        var block = await GetBlockAsync(height);
-                        await callback(block);
-
-                        _logger.LogDebug("Processed block {Height} for subscription {SubscriptionId}", height, subscriptionId);
-                    }
-
-                    lastProcessedHeight = currentHeight;
-                }
-                catch (Exception ex)
-                {
-                    _logger.LogError(ex, "Error monitoring blocks for subscription {SubscriptionId}", subscriptionId);
-                }
-            }
-
-            _logger.LogDebug("Block monitoring ended for subscription {SubscriptionId}", subscriptionId);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when cancellation is requested
+            await ProcessBlockSubscriptions();
+            await ProcessTransactionSubscriptions();
+            await ProcessContractEventSubscriptions();
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in block monitoring for subscription {SubscriptionId}", subscriptionId);
+            _logger.LogError(ex, "Error processing subscriptions");
         }
     }
 
     /// <summary>
-    /// Monitors transactions for a subscription.
+    /// Processes block subscriptions.
     /// </summary>
-    private async Task MonitorTransactionsAsync(string subscriptionId, Func<Transaction, Task> callback)
+    private async Task ProcessBlockSubscriptions()
     {
+        if (!_blockSubscriptions.Any())
+            return;
+
         try
         {
-            var lastProcessedHeight = await GetBlockHeightAsync();
-            _logger.LogDebug("Starting transaction monitoring from height {Height} for subscription {SubscriptionId}", lastProcessedHeight, subscriptionId);
+            var currentHeight = await GetBlockHeightAsync();
+            var block = await GetBlockAsync(currentHeight);
 
-            while (!_cancellationTokenSource.Token.IsCancellationRequested && _transactionSubscriptions.ContainsKey(subscriptionId))
+            foreach (var subscription in _blockSubscriptions.Values)
             {
-                await Task.Delay(5000, _cancellationTokenSource.Token); // Check every 5 seconds
-
                 try
                 {
-                    var currentHeight = await GetBlockHeightAsync();
-
-                    // Process new blocks since last check
-                    for (var height = lastProcessedHeight + 1; height <= currentHeight; height++)
-                    {
-                        var block = await GetBlockAsync(height);
-
-                        // Process each transaction in the block
-                        foreach (var transaction in block.Transactions)
-                        {
-                            transaction.BlockHash = block.Hash;
-                            transaction.BlockHeight = height;
-
-                            await callback(transaction);
-                        }
-                    }
-
-                    lastProcessedHeight = currentHeight;
+                    await subscription(block);
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error monitoring transactions for subscription {SubscriptionId}", subscriptionId);
+                    _logger.LogError(ex, "Error in block subscription callback");
                 }
             }
-
-            _logger.LogDebug("Transaction monitoring ended for subscription {SubscriptionId}", subscriptionId);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when cancellation is requested
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in transaction monitoring for subscription {SubscriptionId}", subscriptionId);
+            _logger.LogError(ex, "Error processing block subscriptions");
         }
     }
 
     /// <summary>
-    /// Monitors contract events for a subscription.
+    /// Processes transaction subscriptions.
     /// </summary>
-    private async Task MonitorContractEventsAsync(string subscriptionId, string contractAddress, string eventName, Func<ContractEvent, Task> callback)
+    private async Task ProcessTransactionSubscriptions()
     {
+        if (!_transactionSubscriptions.Any())
+            return;
+
         try
         {
-            var lastProcessedHeight = await GetBlockHeightAsync();
-            _logger.LogDebug("Starting contract event monitoring for {ContractAddress}:{EventName} from height {Height}", contractAddress, eventName, lastProcessedHeight);
+            var currentHeight = await GetBlockHeightAsync();
+            var block = await GetBlockAsync(currentHeight);
 
-            while (!_cancellationTokenSource.Token.IsCancellationRequested && _contractEventSubscriptions.ContainsKey(subscriptionId))
+            foreach (var transaction in block.Transactions)
             {
-                await Task.Delay(5000, _cancellationTokenSource.Token); // Check every 5 seconds
+                foreach (var subscription in _transactionSubscriptions.Values)
+                {
+                    try
+                    {
+                        await subscription(transaction);
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogError(ex, "Error in transaction subscription callback");
+                    }
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error processing transaction subscriptions");
+        }
+    }
 
+    /// <summary>
+    /// Processes contract event subscriptions.
+    /// </summary>
+    private async Task ProcessContractEventSubscriptions()
+    {
+        if (!_contractEventSubscriptions.Any())
+            return;
+
+        try
+        {
+            var currentHeight = await GetBlockHeightAsync();
+            var block = await GetBlockAsync(currentHeight);
+
+            foreach (var (subscriptionId, (contractAddress, eventName, callback)) in _contractEventSubscriptions)
+            {
                 try
                 {
-                    var currentHeight = await GetBlockHeightAsync();
-
-                    // Process new blocks since last check
-                    for (var height = lastProcessedHeight + 1; height <= currentHeight; height++)
+                    var events = await ExtractContractEventsFromBlock(block, contractAddress, eventName);
+                    
+                    foreach (var contractEvent in events)
                     {
-                        var block = await GetBlockAsync(height);
-
-                        // Process each transaction in the block for contract events
-                        foreach (var transaction in block.Transactions)
-                        {
-                            var contractEvents = await ExtractContractEventsFromTransactionAsync(transaction, contractAddress, eventName);
-
-                            foreach (var contractEvent in contractEvents)
-                            {
-                                contractEvent.BlockHash = block.Hash;
-                                contractEvent.BlockHeight = height;
-                                contractEvent.TransactionHash = transaction.Hash;
-
-                                await callback(contractEvent);
-
-                                _logger.LogDebug("Processed contract event {EventName} from {ContractAddress} in block {Height}",
-                                    eventName, contractAddress, height);
-                            }
-                        }
+                        await callback(contractEvent);
                     }
-
-                    lastProcessedHeight = currentHeight;
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error monitoring contract events for subscription {SubscriptionId}", subscriptionId);
+                    _logger.LogError(ex, "Error in contract event subscription callback for {SubscriptionId}", subscriptionId);
                 }
             }
-
-            _logger.LogDebug("Contract event monitoring for {ContractAddress}:{EventName} ended", contractAddress, eventName);
-        }
-        catch (OperationCanceledException)
-        {
-            // Expected when cancellation is requested
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error in contract event monitoring for subscription {SubscriptionId}", subscriptionId);
+            _logger.LogError(ex, "Error processing contract event subscriptions");
         }
     }
 
     /// <summary>
-    /// Extracts contract events from a transaction (EVM format).
+    /// Extracts contract events from a block.
     /// </summary>
-    private async Task<List<ContractEvent>> ExtractContractEventsFromTransactionAsync(Transaction transaction, string contractAddress, string eventName)
+    private async Task<List<ContractEvent>> ExtractContractEventsFromBlock(CoreBlock block, string contractAddress, string eventName)
     {
-        // Perform actual EVM event extraction from transaction logs
-
         var events = new List<ContractEvent>();
 
-        try
+        foreach (var transaction in block.Transactions)
         {
-            // Parse actual EVM transaction logs for contract events
-
-            if (transaction.Recipient?.Equals(contractAddress, StringComparison.OrdinalIgnoreCase) == true ||
-                transaction.Data.Contains(contractAddress, StringComparison.OrdinalIgnoreCase))
+            try
             {
-                // Extract actual EVM events from transaction logs
-                var extractedEvents = await ParseEVMTransactionLogsForEvents(transaction, contractAddress, eventName);
-                if (extractedEvents.Any())
+                var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transaction.Hash);
+                
+                if (receipt?.Logs != null)
                 {
-                    var contractEvent = new ContractEvent
+                    foreach (var logToken in receipt.Logs)
                     {
-                        ContractAddress = contractAddress,
-                        EventName = eventName,
-                        Parameters = GenerateEvmEventParameters(eventName),
-                        Timestamp = transaction.Timestamp
-                    };
+                        // Convert JToken to LogEntry
+                        var logAddress = logToken["address"]?.ToString() ?? string.Empty;
+                        var logData = logToken["data"]?.ToString() ?? string.Empty;
+                        var logTopics = logToken["topics"]?.ToObject<string[]>() ?? Array.Empty<string>();
 
-                    events.Add(contractEvent);
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogWarning(ex, "Failed to extract contract events from transaction {TransactionHash}", transaction.Hash);
-        }
-
-        return events;
-    }
-
-    /// <summary>
-    /// Parses EVM transaction logs for contract events.
-    /// </summary>
-    private async Task<List<object>> ParseEVMTransactionLogsForEvents(Transaction transaction, string contractAddress, string eventName)
-    {
-        var events = new List<object>();
-
-        try
-        {
-            // Get transaction receipt with logs from the EVM blockchain
-            var receipt = await GetTransactionReceiptAsync(transaction.Hash);
-
-            if (receipt?.Logs != null)
-            {
-                foreach (var log in receipt.Logs)
-                {
-                    // Check if this log is from the target contract
-                    if (log.Address?.Equals(contractAddress, StringComparison.OrdinalIgnoreCase) == true)
-                    {
-                        // Parse the log topics to identify the event
-                        if (log.Topics != null && log.Topics.Length > 0)
+                        if (string.Equals(logAddress, contractAddress, StringComparison.OrdinalIgnoreCase))
                         {
-                            // First topic is typically the event signature hash
-                            var eventSignatureHash = log.Topics[0];
-
-                            // In a full implementation, you would maintain a mapping of event signatures
-                            // For now, we'll do a basic check
-                            if (IsEventSignatureMatch(eventSignatureHash, eventName))
+                            events.Add(new ContractEvent
                             {
-                                events.Add(new
+                                ContractAddress = logAddress,
+                                EventName = eventName,
+                                EventData = logData,
+                                Parameters = new Dictionary<string, object>
                                 {
-                                    Address = log.Address,
-                                    Topics = log.Topics,
-                                    Data = log.Data,
-                                    EventName = eventName,
-                                    TransactionHash = transaction.Hash,
-                                    BlockHeight = transaction.BlockHeight,
-                                    LogIndex = log.LogIndex
-                                });
-                            }
+                                    ["topics"] = logTopics,
+                                    ["data"] = logData
+                                },
+                                TransactionHash = transaction.Hash,
+                                BlockHash = block.Hash,
+                                BlockHeight = block.Height,
+                                Timestamp = transaction.Timestamp
+                            });
                         }
                     }
                 }
             }
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to parse EVM transaction logs for transaction {Hash}", transaction.Hash);
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error extracting events from transaction {TxHash}", transaction.Hash);
+            }
         }
 
-        await Task.CompletedTask;
         return events;
     }
 
     /// <summary>
-    /// Generates sample EVM event parameters based on event name.
-    /// </summary>
-    private Dictionary<string, object> GenerateEvmEventParameters(string eventName)
-    {
-        return eventName.ToLowerInvariant() switch
-        {
-            "transfer" => new Dictionary<string, object>
-            {
-                ["from"] = GenerateRandomEvmAddress(),
-                ["to"] = GenerateRandomEvmAddress(),
-                ["value"] = Random.Shared.Next(1, 1000000)
-            },
-            "approval" => new Dictionary<string, object>
-            {
-                ["owner"] = GenerateRandomEvmAddress(),
-                ["spender"] = GenerateRandomEvmAddress(),
-                ["value"] = Random.Shared.Next(1, 1000000)
-            },
-            "mint" => new Dictionary<string, object>
-            {
-                ["to"] = GenerateRandomEvmAddress(),
-                ["amount"] = Random.Shared.Next(1, 1000000)
-            },
-            "burn" => new Dictionary<string, object>
-            {
-                ["from"] = GenerateRandomEvmAddress(),
-                ["amount"] = Random.Shared.Next(1, 1000000)
-            },
-            "swap" => new Dictionary<string, object>
-            {
-                ["sender"] = GenerateRandomEvmAddress(),
-                ["amount0In"] = Random.Shared.Next(1, 1000000),
-                ["amount1In"] = Random.Shared.Next(1, 1000000),
-                ["amount0Out"] = Random.Shared.Next(1, 1000000),
-                ["amount1Out"] = Random.Shared.Next(1, 1000000),
-                ["to"] = GenerateRandomEvmAddress()
-            },
-            _ => new Dictionary<string, object>
-            {
-                ["data"] = $"Event data for {eventName}",
-                ["value"] = Random.Shared.Next(1, 1000)
-            }
-        };
-    }
-
-    /// <summary>
-    /// Generates a random EVM address for simulation.
-    /// </summary>
-    private string GenerateRandomEvmAddress()
-    {
-        // Generate a mock EVM address (0x + 40 hex characters)
-        var random = new Random();
-        var chars = "0123456789abcdef";
-        var address = "0x" + new string(Enumerable.Repeat(chars, 40)
-            .Select(s => s[random.Next(s.Length)]).ToArray());
-        return address;
-    }
-
-    /// <summary>
-    /// Checks if an event signature hash matches the expected event name.
-    /// </summary>
-    /// <param name="signatureHash">The event signature hash from the log.</param>
-    /// <param name="eventName">The expected event name.</param>
-    /// <returns>True if the signature matches.</returns>
-    private bool IsEventSignatureMatch(string signatureHash, string eventName)
-    {
-        // Use comprehensive event signature mapping for EVM events
-        var knownEventSignatures = GetEventSignatureMapping();
-
-        return knownEventSignatures.TryGetValue(eventName, out var expectedHash) &&
-               expectedHash.Equals(signatureHash, StringComparison.OrdinalIgnoreCase);
-    }
-
-    /// <summary>
-    /// Gets the complete mapping of event names to their signature hashes.
-    /// </summary>
-    /// <returns>Dictionary mapping event names to signature hashes.</returns>
-    private Dictionary<string, string> GetEventSignatureMapping()
-    {
-        return new Dictionary<string, string>
-        {
-            // ERC-20 Standard Events
-            ["Transfer"] = "0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef",
-            ["Approval"] = "0x8c5be1e5ebec7d5bd14f71427d1e84f3dd0314c0f7b2291e5b200ac8c7c3b925",
-
-            // ERC-721 Standard Events
-            ["ApprovalForAll"] = "0x17307eab39ab6107e8899845ad3d59bd9653f200f220920489ca2b5937696c31",
-
-            // Common DeFi Events
-            ["Mint"] = "0x0f6798a560793a54c3bcfe86a93cde1e73087d944c0ea20544137d4121396885",
-            ["Burn"] = "0xcc16f5dbb4873280815c1ee09dbd06736cffcc184412cf7a71a0fdb75d397ca5",
-            ["Swap"] = "0xd78ad95fa46c994b6551d0da85fc275fe613ce37657fb8d5e3d130840159d822",
-            ["Sync"] = "0x1c411e9a96e071241c2f21f7726b17ae89e3cab4c78be50e062b03a9fffbbad1",
-
-            // Governance Events
-            ["ProposalCreated"] = "0x7d84a6263ae0d98d3329bd7b46bb4e8d6f98cd35a7adb45c274c8b7fd5ebd5e0",
-            ["VoteCast"] = "0xb8e138887d0aa13bab447e82de9d5c1777041ecd21ca36ba824ff1e6c07ddda4",
-
-            // Staking Events
-            ["Staked"] = "0x9e71bc8eea02a63969f509818f2dafb9254532904319f9dbda79b67bd34a5f3d",
-            ["Unstaked"] = "0x0f5bb82176feb1b5e747e28471aa92156a04d9f3ab9f45f28e2d704b47fc7b6a",
-
-            // Bridge Events
-            ["Deposit"] = "0xe1fffcc4923d04b559f4d29a8bfc6cda04eb5b0d3c460751c2402c5c5cc9109c",
-            ["Withdrawal"] = "0x7fcf532c15f0a6db0bd6d0e038bea71d30d808c7d98cb3bf7268a95bf5081b65"
-        };
-    }
-
-    /// <summary>
-    /// Gets the transaction receipt for a given transaction hash.
-    /// </summary>
-    /// <param name="transactionHash">The transaction hash.</param>
-    /// <returns>The transaction receipt.</returns>
-    private async Task<TransactionReceipt?> GetTransactionReceiptAsync(string transactionHash)
-    {
-        try
-        {
-            // Call the EVM RPC endpoint to get transaction receipt
-            using var httpClient = new HttpClient();
-            var rpcRequest = new
-            {
-                jsonrpc = "2.0",
-                method = "eth_getTransactionReceipt",
-                @params = new[] { transactionHash },
-                id = 1
-            };
-
-            var jsonContent = System.Text.Json.JsonSerializer.Serialize(rpcRequest);
-            var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
-
-            var response = await httpClient.PostAsync(_rpcUrl, content);
-
-            if (response.IsSuccessStatusCode)
-            {
-                var responseContent = await response.Content.ReadAsStringAsync();
-                var rpcResponse = System.Text.Json.JsonSerializer.Deserialize<JsonElement>(responseContent);
-
-                if (rpcResponse.TryGetProperty("result", out var result) && result.ValueKind != JsonValueKind.Null)
-                {
-                    return ParseTransactionReceipt(result);
-                }
-            }
-
-            return null;
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Failed to get transaction receipt for {Hash}", transactionHash);
-            return null;
-        }
-    }
-
-    /// <summary>
-    /// Parses a transaction receipt from JSON.
-    /// </summary>
-    /// <param name="receiptJson">The receipt JSON element.</param>
-    /// <returns>The parsed transaction receipt.</returns>
-    private TransactionReceipt ParseTransactionReceipt(JsonElement receiptJson)
-    {
-        var receipt = new TransactionReceipt();
-
-        if (receiptJson.TryGetProperty("transactionHash", out var hashElement))
-        {
-            receipt.TransactionHash = hashElement.GetString() ?? string.Empty;
-        }
-
-        if (receiptJson.TryGetProperty("status", out var statusElement))
-        {
-            receipt.Status = statusElement.GetString() ?? string.Empty;
-        }
-
-        if (receiptJson.TryGetProperty("logs", out var logsElement) && logsElement.ValueKind == JsonValueKind.Array)
-        {
-            var logs = new List<LogEntry>();
-            foreach (var logElement in logsElement.EnumerateArray())
-            {
-                var log = new LogEntry();
-
-                if (logElement.TryGetProperty("address", out var addressElement))
-                {
-                    log.Address = addressElement.GetString() ?? string.Empty;
-                }
-
-                if (logElement.TryGetProperty("topics", out var topicsElement) && topicsElement.ValueKind == JsonValueKind.Array)
-                {
-                    log.Topics = topicsElement.EnumerateArray().Select(t => t.GetString() ?? string.Empty).ToArray();
-                }
-
-                if (logElement.TryGetProperty("data", out var dataElement))
-                {
-                    log.Data = dataElement.GetString() ?? string.Empty;
-                }
-
-                if (logElement.TryGetProperty("logIndex", out var indexElement))
-                {
-                    log.LogIndex = indexElement.GetInt32();
-                }
-
-                logs.Add(log);
-            }
-            receipt.Logs = logs.ToArray();
-        }
-
-        return receipt;
-    }
-
-    /// <summary>
-    /// Represents an EVM transaction receipt.
-    /// </summary>
-    private class TransactionReceipt
-    {
-        public string TransactionHash { get; set; } = string.Empty;
-        public string Status { get; set; } = string.Empty;
-        public LogEntry[]? Logs { get; set; }
-    }
-
-    /// <summary>
-    /// Represents an EVM log entry.
-    /// </summary>
-    private class LogEntry
-    {
-        public string Address { get; set; } = string.Empty;
-        public string[] Topics { get; set; } = Array.Empty<string>();
-        public string Data { get; set; } = string.Empty;
-        public int LogIndex { get; set; }
-    }
-
-    /// <summary>
-    /// Disposes the client.
+    /// Disposes the client and releases resources.
     /// </summary>
     public void Dispose()
     {
-        _cancellationTokenSource?.Cancel();
-        _cancellationTokenSource?.Dispose();
+        try
+        {
+            _logger.LogInformation("Disposing Neo X client");
+            
+            _cancellationTokenSource.Cancel();
+            _subscriptionTimer?.Dispose();
+            _cancellationTokenSource.Dispose();
+            
+            _blockSubscriptions.Clear();
+            _transactionSubscriptions.Clear();
+            _contractEventSubscriptions.Clear();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error disposing Neo X client");
+        }
     }
 }
+

@@ -39,6 +39,29 @@ public class OracleServiceTests
             .ReturnsAsync((string dataSource, string dataPath) =>
                 $"{{\"value\": 42, \"source\": \"{dataSource}\", \"path\": \"{dataPath}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
 
+        // Setup KMS encryption mock - all overloads
+        _enclaveManagerMock.Setup(e => e.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string keyId, string dataHex, string algorithm, CancellationToken ct) => 
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"encrypted_{dataHex}")));
+
+        // Also setup the version without cancellation token
+        _enclaveManagerMock.Setup(e => e.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string keyId, string dataHex, string algorithm) => 
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"encrypted_{dataHex}")));
+
+        // Remove the problematic Oracle fetch method setups that cause expression tree errors
+        // _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
+        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+        //     .ReturnsAsync((string url, string method, string headers, string body, string script, string options, CancellationToken ct) =>
+        //         $"{{\"value\": 42, \"source\": \"{url}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
+
+        // _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
+        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+        //     .ReturnsAsync((string url, string method, string headers, string body, string script, string options) =>
+        //         $"{{\"value\": 42, \"source\": \"{url}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
+
         _blockchainClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<BlockchainType>()))
             .Returns(_blockchainClientMock.Object);
         _blockchainClientMock.Setup(c => c.GetBlockHeightAsync()).ReturnsAsync(1000L);
@@ -51,10 +74,9 @@ public class OracleServiceTests
         {
             Content = new StringContent("{\"test\": \"data\"}")
         };
-        _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mockResponse);
-        _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(mockResponse);
+        // Remove the problematic setup that causes expression tree error
+        // _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+        //     .ReturnsAsync(mockResponse);
 
         _service = new OracleService(
             _configurationMock.Object,

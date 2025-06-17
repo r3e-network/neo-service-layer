@@ -19,65 +19,71 @@ public partial class ConfigurationService
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        try
+        if (!IsEnclaveInitialized)
         {
-            Logger.LogInformation("Setting configuration {Key} on {Blockchain}", request.Key, blockchainType);
+            throw new InvalidOperationException("Enclave is not initialized.");
+        }
 
-            // Validate configuration
-            await ValidateConfigurationAsync(request);
-
-            var entry = new ConfigurationEntry
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
             {
-                Key = request.Key,
-                Value = request.Value,
-                ValueType = (Models.ConfigurationValueType)request.ValueType,
-                Description = request.Description,
-                EncryptValue = request.EncryptValue,
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow,
-                Version = 1,
-                BlockchainType = blockchainType
-            };
+                Logger.LogInformation("Setting configuration {Key} on {Blockchain} with enclave security", request.Key, blockchainType);
 
-            lock (_configLock)
-            {
-                if (_configurations.TryGetValue(request.Key, out var existing))
+                // Validate configuration within the enclave
+                await ValidateConfigurationInEnclaveAsync(request);
+
+                var entry = new ConfigurationEntry
                 {
-                    entry.Version = existing.Version + 1;
-                    entry.CreatedAt = existing.CreatedAt;
+                    Key = request.Key,
+                    Value = request.Value,
+                    ValueType = (Models.ConfigurationValueType)request.ValueType,
+                    Description = request.Description,
+                    EncryptValue = request.EncryptValue || IsSensitiveConfiguration(request.Key),
+                    CreatedAt = DateTime.UtcNow,
+                    UpdatedAt = DateTime.UtcNow,
+                    Version = 1,
+                    BlockchainType = blockchainType
+                };
+
+                lock (_configLock)
+                {
+                    if (_configurations.TryGetValue(request.Key, out var existing))
+                    {
+                        entry.Version = existing.Version + 1;
+                        entry.CreatedAt = existing.CreatedAt;
+                    }
+
+                    _configurations[request.Key] = entry;
                 }
 
-                _configurations[request.Key] = entry;
+                // Persist configuration securely in the enclave
+                await PersistConfigurationAsync(entry);
+
+                // Notify subscribers
+                await NotifySubscribersAsync(request.Key, entry);
+
+                Logger.LogInformation("Configuration {Key} set successfully with version {Version}", request.Key, entry.Version);
+
+                return new ConfigurationSetResult
+                {
+                    Key = request.Key,
+                    Success = true,
+                    NewVersion = entry.Version,
+                    Timestamp = entry.UpdatedAt
+                };
             }
-
-            // Persist configuration
-            await PersistConfigurationAsync(entry);
-
-            // Notify subscribers
-            await NotifySubscribersAsync(request.Key, entry);
-
-            Logger.LogInformation("Configuration {Key} set successfully with version {Version}",
-                request.Key, entry.Version);
-
-            return new ConfigurationSetResult
+            catch (Exception ex)
             {
-                Key = request.Key,
-                Success = true,
-                NewVersion = entry.Version,
-                Timestamp = entry.UpdatedAt
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to set configuration {Key}", request.Key);
-
-            return new ConfigurationSetResult
-            {
-                Key = request.Key,
-                Success = false,
-                ErrorMessage = ex.Message
-            };
-        }
+                Logger.LogError(ex, "Failed to set configuration {Key}", request.Key);
+                return new ConfigurationSetResult
+                {
+                    Key = request.Key,
+                    Success = false,
+                    ErrorMessage = ex.Message
+                };
+            }
+        });
     }
 
     /// <inheritdoc/>
@@ -374,5 +380,79 @@ public partial class ConfigurationService
                 ErrorMessage = ex.Message
             };
         }
+    }
+
+    /// <summary>
+    /// Validates configuration data within the enclave.
+    /// </summary>
+    /// <param name="request">The configuration set request.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    private async Task ValidateConfigurationInEnclaveAsync(SetConfigurationRequest request)
+    {
+        try
+        {
+            // Validate configuration key format
+            if (string.IsNullOrWhiteSpace(request.Key) || request.Key.Length > 255)
+            {
+                throw new ArgumentException("Configuration key must be between 1 and 255 characters");
+            }
+
+            // Validate configuration value based on type
+            var validationScript = $@"
+                validateConfigurationValue('{request.Key}', '{request.Value}', '{request.ValueType}')
+            ";
+
+            var validationResult = await _enclaveManager.ExecuteJavaScriptAsync(validationScript);
+            
+            if (validationResult?.ToString() != "true")
+            {
+                throw new ArgumentException($"Configuration value validation failed for key {request.Key}");
+            }
+
+            Logger.LogDebug("Configuration {Key} validated successfully in enclave", request.Key);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Configuration validation failed for key {Key}", request.Key);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Encrypts a configuration value within the enclave.
+    /// </summary>
+    /// <param name="value">The value to encrypt.</param>
+    /// <returns>The encrypted value.</returns>
+    private async Task<string> EncryptConfigurationValueAsync(string value)
+    {
+        try
+        {
+            var encryptionScript = $"encryptConfigurationValue('{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value))}')";
+            var encryptedResult = await _enclaveManager.ExecuteJavaScriptAsync(encryptionScript);
+            
+            return encryptedResult?.ToString() ?? throw new InvalidOperationException("Encryption failed");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to encrypt configuration value");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Determines if a configuration key contains sensitive data.
+    /// </summary>
+    /// <param name="key">The configuration key.</param>
+    /// <returns>True if the configuration is considered sensitive.</returns>
+    private static bool IsSensitiveConfiguration(string key)
+    {
+        var sensitiveKeywords = new[]
+        {
+            "password", "secret", "key", "token", "credential", "private",
+            "connection", "database", "api", "auth", "certificate", "cert"
+        };
+
+        var lowerKey = key.ToLowerInvariant();
+        return sensitiveKeywords.Any(keyword => lowerKey.Contains(keyword));
     }
 }

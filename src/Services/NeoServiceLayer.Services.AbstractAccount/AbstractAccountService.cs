@@ -66,9 +66,9 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                         GuardianName = $"Guardian {i + 1}",
                         Status = GuardianStatus.Active,
                         AddedAt = DateTime.UtcNow
-                    }).ToArray(),
+                    }).ToList(),
                     RecoveryThreshold = request.RecoveryThreshold,
-                    SessionKeys = Array.Empty<SessionKeyInfo>(),
+                    SessionKeys = new List<SessionKeyInfo>(),
                     GaslessTransactionsEnabled = request.EnableGaslessTransactions,
                     CreatedAt = DateTime.UtcNow,
                     LastActivityAt = DateTime.UtcNow,
@@ -197,7 +197,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
             try
             {
                 Logger.LogDebug("Executing batch transaction {BatchId} with {Count} transactions for account {AccountId}",
-                    batchId, request.Transactions.Length, request.AccountId);
+                    batchId, request.Transactions.Count, request.AccountId);
 
                 foreach (var transaction in request.Transactions)
                 {
@@ -221,7 +221,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                 return new BatchTransactionResult
                 {
                     BatchId = batchId,
-                    Results = results.ToArray(),
+                    Results = results,
                     AllSuccessful = allSuccessful,
                     TotalGasUsed = totalGasUsed,
                     ExecutedAt = DateTime.UtcNow,
@@ -235,7 +235,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                 return new BatchTransactionResult
                 {
                     BatchId = batchId,
-                    Results = results.ToArray(),
+                    Results = results,
                     AllSuccessful = false,
                     TotalGasUsed = totalGasUsed,
                     ExecutedAt = DateTime.UtcNow,
@@ -335,7 +335,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     {
                         var guardiansList = account.Guardians.ToList();
                         guardiansList.Add(guardianInfo);
-                        account.Guardians = guardiansList.ToArray();
+                        account.Guardians = guardiansList;
                         account.LastActivityAt = DateTime.UtcNow;
                     }
 
@@ -487,7 +487,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     {
                         var sessionKeysList = account.SessionKeys.ToList();
                         sessionKeysList.Add(sessionKeyInfo);
-                        account.SessionKeys = sessionKeysList.ToArray();
+                        account.SessionKeys = sessionKeysList;
                         account.LastActivityAt = DateTime.UtcNow;
                     }
 
@@ -633,7 +633,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     .OrderByDescending(h => h.ExecutedAt)
                     .Skip(request.Offset)
                     .Take(request.Limit)
-                    .ToArray();
+                    .ToList();
 
                 return new TransactionHistoryResult
                 {

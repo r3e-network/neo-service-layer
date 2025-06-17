@@ -248,9 +248,33 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    public async Task<string> DoSomethingAsync(string input)");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Implementation goes here");
-        sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-        sb.AppendLine("        return $\"Processed: {input}\";");
+        sb.AppendLine("        ArgumentNullException.ThrowIfNull(input);");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogInformation(\"Processing input: {Input}\", input);");
+        sb.AppendLine();
+        sb.AppendLine("            // Validate input");
+        sb.AppendLine("            if (string.IsNullOrWhiteSpace(input))");
+        sb.AppendLine("            {");
+        sb.AppendLine("                throw new ArgumentException(\"Input cannot be null or empty\", nameof(input));");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            // Process the input with service-specific logic");
+        sb.AppendLine("            var processedResult = await ProcessInputAsync(input);");
+        sb.AppendLine("            if (string.IsNullOrEmpty(processedResult))");
+        sb.AppendLine("            {");
+        sb.AppendLine("                throw new InvalidOperationException(\"Processing failed to produce a result\");");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            Logger.LogInformation(\"Successfully processed input: {Input}\", input);");
+        sb.AppendLine("            return processedResult;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error processing input: {Input}\", input);");
+        sb.AppendLine("            throw;");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
@@ -259,17 +283,41 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
             sb.AppendLine("    /// <inheritdoc/>");
             sb.AppendLine("    public async Task<string> DoSomethingWithBlockchainAsync(string input, BlockchainType blockchainType)");
             sb.AppendLine("    {");
+            sb.AppendLine("        ArgumentNullException.ThrowIfNull(input);");
+            sb.AppendLine();
             sb.AppendLine("        if (!SupportsBlockchain(blockchainType))");
             sb.AppendLine("        {");
             sb.AppendLine("            throw new NotSupportedException($\"Blockchain type {blockchainType} is not supported.\");");
             sb.AppendLine("        }");
             sb.AppendLine();
-            sb.AppendLine("        var client = _blockchainClientFactory.CreateClient(blockchainType);");
-            sb.AppendLine("        var blockHeight = await client.GetBlockHeightAsync();");
+            sb.AppendLine("        try");
+            sb.AppendLine("        {");
+            sb.AppendLine("            Logger.LogInformation(\"Processing input: {Input} on blockchain: {BlockchainType}\", input, blockchainType);");
             sb.AppendLine();
-            sb.AppendLine("        // Implementation goes here");
-            sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-            sb.AppendLine("        return $\"Processed: {input} on {blockchainType} at block {blockHeight}\";");
+            sb.AppendLine("            var client = _blockchainClientFactory.CreateClient(blockchainType);");
+            sb.AppendLine("            if (client == null)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                throw new InvalidOperationException($\"Failed to create blockchain client for {blockchainType}\");");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            var blockHeight = await client.GetBlockHeightAsync();");
+            sb.AppendLine("            Logger.LogDebug(\"Current block height on {BlockchainType}: {BlockHeight}\", blockchainType, blockHeight);");
+            sb.AppendLine();
+            sb.AppendLine("            // Process the input with blockchain context");
+            sb.AppendLine("            var processedResult = await ProcessInputWithBlockchainAsync(input, client, blockchainType);");
+            sb.AppendLine("            if (string.IsNullOrEmpty(processedResult))");
+            sb.AppendLine("            {");
+            sb.AppendLine("                throw new InvalidOperationException(\"Blockchain processing failed to produce a result\");");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            Logger.LogInformation(\"Successfully processed input: {Input} on {BlockchainType} at block {BlockHeight}\", input, blockchainType, blockHeight);");
+            sb.AppendLine("            return processedResult;");
+            sb.AppendLine("        }");
+            sb.AppendLine("        catch (Exception ex)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            Logger.LogError(ex, \"Error processing input: {Input} on blockchain: {BlockchainType}\", input, blockchainType);");
+            sb.AppendLine("            throw;");
+            sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -278,9 +326,41 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    protected override async Task<bool> OnInitializeAsync()");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Initialize the service");
-        sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-        sb.AppendLine("        return true;");
+        sb.AppendLine("        Logger.LogInformation(\"Initializing service\");");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            // Validate configuration");
+        sb.AppendLine("            if (!await ValidateServiceConfigurationAsync())");
+        sb.AppendLine("            {");
+        sb.AppendLine("                Logger.LogError(\"Service configuration validation failed\");");
+        sb.AppendLine("                return false;");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            // Initialize service dependencies");
+        sb.AppendLine("            if (!await InitializeServiceDependenciesAsync())");
+        sb.AppendLine("            {");
+        sb.AppendLine("                Logger.LogError(\"Failed to initialize service dependencies\");");
+        sb.AppendLine("                return false;");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        if (includeBlockchain)
+        {
+            sb.AppendLine("            // Verify blockchain connectivity");
+            sb.AppendLine("            if (!await VerifyBlockchainConnectivityAsync())");
+            sb.AppendLine("            {");
+            sb.AppendLine("                Logger.LogWarning(\"Blockchain connectivity check failed - service will continue with degraded functionality\");");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+        }
+        sb.AppendLine("            Logger.LogInformation(\"Service initialized successfully\");");
+        sb.AppendLine("            return true;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error during service initialization\");");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
@@ -289,8 +369,40 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
             sb.AppendLine("    /// <inheritdoc/>");
             sb.AppendLine("    protected override async Task<bool> OnInitializeEnclaveAsync()");
             sb.AppendLine("    {");
-            sb.AppendLine("        // Initialize the enclave");
-            sb.AppendLine("        return await _enclaveManager.InitializeEnclaveAsync();");
+            sb.AppendLine("        Logger.LogInformation(\"Initializing service enclave\");");
+            sb.AppendLine();
+            sb.AppendLine("        try");
+            sb.AppendLine("        {");
+            sb.AppendLine("            // Verify SGX support");
+            sb.AppendLine("            if (!await VerifySgxSupportAsync())");
+            sb.AppendLine("            {");
+            sb.AppendLine("                Logger.LogError(\"SGX support verification failed\");");
+            sb.AppendLine("                return false;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            // Initialize enclave with proper configuration");
+            sb.AppendLine("            var initResult = await _enclaveManager.InitializeEnclaveAsync();");
+            sb.AppendLine("            if (!initResult)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                Logger.LogError(\"Enclave initialization failed\");");
+            sb.AppendLine("                return false;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            // Verify enclave attestation");
+            sb.AppendLine("            if (!await VerifyEnclaveAttestationAsync())");
+            sb.AppendLine("            {");
+            sb.AppendLine("                Logger.LogError(\"Enclave attestation verification failed\");");
+            sb.AppendLine("                return false;");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+            sb.AppendLine("            Logger.LogInformation(\"Service enclave initialized successfully\");");
+            sb.AppendLine("            return true;");
+            sb.AppendLine("        }");
+            sb.AppendLine("        catch (Exception ex)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            Logger.LogError(ex, \"Error during enclave initialization\");");
+            sb.AppendLine("            return false;");
+            sb.AppendLine("        }");
             sb.AppendLine("    }");
             sb.AppendLine();
         }
@@ -298,42 +410,460 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    protected override async Task<bool> OnStartAsync()");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Start the service");
-        sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-        sb.AppendLine("        return true;");
+        sb.AppendLine("        Logger.LogInformation(\"Starting service\");");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            // Start background services if any");
+        sb.AppendLine("            await StartBackgroundServicesAsync();");
+        sb.AppendLine();
+        sb.AppendLine("            // Setup monitoring and metrics");
+        sb.AppendLine("            SetupMonitoringAndMetrics();");
+        sb.AppendLine();
+        sb.AppendLine("            Logger.LogInformation(\"Service started successfully\");");
+        sb.AppendLine("            return true;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error starting service\");");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    protected override async Task<bool> OnStopAsync()");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Stop the service");
-        sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-        sb.AppendLine("        return true;");
+        sb.AppendLine("        Logger.LogInformation(\"Stopping service\");");
+        sb.AppendLine();
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            // Stop background services gracefully");
+        sb.AppendLine("            await StopBackgroundServicesAsync();");
+        sb.AppendLine();
+        sb.AppendLine("            // Cleanup resources");
+        sb.AppendLine("            await CleanupResourcesAsync();");
+        sb.AppendLine();
+        sb.AppendLine("            Logger.LogInformation(\"Service stopped successfully\");");
+        sb.AppendLine("            return true;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error stopping service\");");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    protected override async Task<ServiceHealth> OnGetHealthAsync()");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Check the health of the service");
-        sb.AppendLine("        await Task.Delay(100); // Simulate some work");
-        sb.AppendLine("        return ServiceHealth.Healthy;");
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            var healthChecks = new List<(string Name, bool IsHealthy, string? Details)>();");
+        sb.AppendLine();
+        sb.AppendLine("            // Check service configuration");
+        sb.AppendLine("            var configHealthy = _configuration != null;");
+        sb.AppendLine("            healthChecks.Add((\"Configuration\", configHealthy, configHealthy ? null : \"Configuration is missing\"));");
+        sb.AppendLine();
+        if (includeEnclave)
+        {
+            sb.AppendLine("            // Check enclave health");
+            sb.AppendLine("            var enclaveHealthy = IsEnclaveInitialized && await CheckEnclaveHealthAsync();");
+            sb.AppendLine("            healthChecks.Add((\"Enclave\", enclaveHealthy, enclaveHealthy ? null : \"Enclave is not healthy\"));");
+            sb.AppendLine();
+        }
+        if (includeBlockchain)
+        {
+            sb.AppendLine("            // Check blockchain connectivity");
+            sb.AppendLine("            var blockchainHealthy = await CheckBlockchainHealthAsync();");
+            sb.AppendLine("            healthChecks.Add((\"Blockchain\", blockchainHealthy, blockchainHealthy ? null : \"Blockchain connectivity issues\"));");
+            sb.AppendLine();
+        }
+        sb.AppendLine("            // Check resource usage");
+        sb.AppendLine("            var resourceHealthy = await CheckResourceHealthAsync();");
+        sb.AppendLine("            healthChecks.Add((\"Resources\", resourceHealthy, resourceHealthy ? null : \"Resource usage is high\"));");
+        sb.AppendLine();
+        sb.AppendLine("            // Determine overall health");
+        sb.AppendLine("            var unhealthyChecks = healthChecks.Where(c => !c.IsHealthy).ToList();");
+        sb.AppendLine("            if (unhealthyChecks.Count == 0)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                return ServiceHealth.Healthy;");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            // Log health issues");
+        sb.AppendLine("            foreach (var check in unhealthyChecks)");
+        sb.AppendLine("            {");
+        sb.AppendLine("                Logger.LogWarning(\"Health check failed: {Name} - {Details}\", check.Name, check.Details);");
+        sb.AppendLine("            }");
+        sb.AppendLine();
+        sb.AppendLine("            // Return degraded if some checks fail, unhealthy if critical checks fail");
+        sb.AppendLine("            var criticalChecks = new[] { \"Configuration\" };");
+        if (includeEnclave)
+        {
+            sb.AppendLine("            criticalChecks = criticalChecks.Concat(new[] { \"Enclave\" }).ToArray();");
+        }
+        sb.AppendLine("            var criticalFailures = unhealthyChecks.Where(c => criticalChecks.Contains(c.Name)).ToList();");
+        sb.AppendLine();
+        sb.AppendLine("            return criticalFailures.Count > 0 ? ServiceHealth.Unhealthy : ServiceHealth.Degraded;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error during health check\");");
+        sb.AppendLine("            return ServiceHealth.Unhealthy;");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
         sb.AppendLine();
 
         sb.AppendLine("    /// <inheritdoc/>");
         sb.AppendLine("    protected override async Task OnUpdateMetricsAsync()");
         sb.AppendLine("    {");
-        sb.AppendLine("        // Update service metrics");
-        sb.AppendLine("        UpdateMetric(\"LastUpdated\", DateTime.UtcNow);");
-        sb.AppendLine("        UpdateMetric(\"RequestCount\", 0); // Replace with actual metric");
-        sb.AppendLine("        await Task.CompletedTask;");
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            // Update standard metrics");
+        sb.AppendLine("            UpdateMetric(\"LastUpdated\", DateTime.UtcNow);");
+        sb.AppendLine("            UpdateMetric(\"UptimeSeconds\", (DateTime.UtcNow - StartTime).TotalSeconds);");
+        sb.AppendLine();
+        sb.AppendLine("            // Update performance metrics");
+        sb.AppendLine("            var currentProcess = System.Diagnostics.Process.GetCurrentProcess();");
+        sb.AppendLine("            UpdateMetric(\"MemoryUsageBytes\", currentProcess.WorkingSet64);");
+        sb.AppendLine("            UpdateMetric(\"CpuTimeMs\", currentProcess.TotalProcessorTime.TotalMilliseconds);");
+        sb.AppendLine();
+        if (includeEnclave)
+        {
+            sb.AppendLine("            // Update enclave-specific metrics");
+            sb.AppendLine("            if (IsEnclaveInitialized)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                var enclaveMetrics = await GetEnclaveMetricsAsync();");
+            sb.AppendLine("                foreach (var metric in enclaveMetrics)");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    UpdateMetric($\"Enclave_{metric.Key}\", metric.Value);");
+            sb.AppendLine("                }");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+        }
+        if (includeBlockchain)
+        {
+            sb.AppendLine("            // Update blockchain-specific metrics");
+            sb.AppendLine("            var blockchainMetrics = await GetBlockchainMetricsAsync();");
+            sb.AppendLine("            foreach (var metric in blockchainMetrics)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                UpdateMetric($\"Blockchain_{metric.Key}\", metric.Value);");
+            sb.AppendLine("            }");
+            sb.AppendLine();
+        }
+        sb.AppendLine("            await Task.CompletedTask;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch (Exception ex)");
+        sb.AppendLine("        {");
+        sb.AppendLine("            Logger.LogError(ex, \"Error updating metrics\");");
+        sb.AppendLine("        }");
         sb.AppendLine("    }");
+
+        // Add helper methods
+        GenerateServiceHelperMethods(sb, serviceName, includeEnclave, includeBlockchain);
 
         sb.AppendLine("}");
 
         return sb.ToString();
+    }
+
+    /// <summary>
+    /// Generates helper methods for the service implementation.
+    /// </summary>
+    /// <param name="sb">The string builder.</param>
+    /// <param name="serviceName">The service name.</param>
+    /// <param name="includeEnclave">Whether to include enclave support.</param>
+    /// <param name="includeBlockchain">Whether to include blockchain support.</param>
+    private static void GenerateServiceHelperMethods(StringBuilder sb, string serviceName, bool includeEnclave, bool includeBlockchain)
+    {
+        // ProcessInputAsync method
+        sb.AppendLine();
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Processes the input with service-specific logic.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <param name=\"input\">The input to process.</param>");
+        sb.AppendLine("    /// <returns>The processed result.</returns>");
+        sb.AppendLine("    protected virtual async Task<string> ProcessInputAsync(string input)");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to implement service-specific processing logic");
+        sb.AppendLine("        await Task.Delay(10); // Simulate processing");
+        sb.AppendLine("        return $\"Processed: {input} at {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}\";");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        if (includeBlockchain)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Processes the input with blockchain context.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <param name=\"input\">The input to process.</param>");
+            sb.AppendLine("    /// <param name=\"client\">The blockchain client.</param>");
+            sb.AppendLine("    /// <param name=\"blockchainType\">The blockchain type.</param>");
+            sb.AppendLine("    /// <returns>The processed result.</returns>");
+            sb.AppendLine("    protected virtual async Task<string> ProcessInputWithBlockchainAsync(string input, IBlockchainClient client, BlockchainType blockchainType)");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to implement blockchain-specific processing logic");
+            sb.AppendLine("        var blockHeight = await client.GetBlockHeightAsync();");
+            sb.AppendLine("        await Task.Delay(10); // Simulate processing");
+            sb.AppendLine("        return $\"Processed: {input} on {blockchainType} at block {blockHeight} - {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss}\";");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        // Configuration validation
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Validates the service configuration.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <returns>True if the configuration is valid.</returns>");
+        sb.AppendLine("    protected virtual async Task<bool> ValidateServiceConfigurationAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to implement configuration validation");
+        sb.AppendLine("        await Task.CompletedTask;");
+        sb.AppendLine("        return _configuration != null;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Service dependencies initialization
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Initializes service dependencies.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <returns>True if dependencies are initialized successfully.</returns>");
+        sb.AppendLine("    protected virtual async Task<bool> InitializeServiceDependenciesAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to implement dependency initialization");
+        sb.AppendLine("        await Task.Delay(10); // Simulate initialization");
+        sb.AppendLine("        return true;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        if (includeBlockchain)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Verifies blockchain connectivity.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>True if blockchain connectivity is verified.</returns>");
+            sb.AppendLine("    protected virtual async Task<bool> VerifyBlockchainConnectivityAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        try");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var supportedBlockchains = new[] { BlockchainType.NeoN3, BlockchainType.NeoX };");
+            sb.AppendLine("            foreach (var blockchain in supportedBlockchains)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                if (SupportsBlockchain(blockchain))");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    var client = _blockchainClientFactory.CreateClient(blockchain);");
+            sb.AppendLine("                    if (client != null)");
+            sb.AppendLine("                    {");
+            sb.AppendLine("                        await client.GetBlockHeightAsync();");
+            sb.AppendLine("                        Logger.LogDebug(\"Blockchain connectivity verified for {BlockchainType}\", blockchain);");
+            sb.AppendLine("                    }");
+            sb.AppendLine("                }");
+            sb.AppendLine("            }");
+            sb.AppendLine("            return true;");
+            sb.AppendLine("        }");
+            sb.AppendLine("        catch (Exception ex)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            Logger.LogError(ex, \"Blockchain connectivity verification failed\");");
+            sb.AppendLine("            return false;");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        if (includeEnclave)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Verifies SGX support on the system.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>True if SGX is supported.</returns>");
+            sb.AppendLine("    protected virtual async Task<bool> VerifySgxSupportAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to implement SGX support verification");
+            sb.AppendLine("        await Task.Delay(10); // Simulate verification");
+            sb.AppendLine("        return true; // Placeholder - implement actual SGX detection");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Verifies enclave attestation.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>True if attestation is valid.</returns>");
+            sb.AppendLine("    protected virtual async Task<bool> VerifyEnclaveAttestationAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to implement attestation verification");
+            sb.AppendLine("        await Task.Delay(10); // Simulate verification");
+            sb.AppendLine("        return true; // Placeholder - implement actual attestation verification");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        // Background services
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Starts background services.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    protected virtual async Task StartBackgroundServicesAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to start background services");
+        sb.AppendLine("        await Task.CompletedTask;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Stops background services.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    protected virtual async Task StopBackgroundServicesAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to stop background services gracefully");
+        sb.AppendLine("        await Task.CompletedTask;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Monitoring and metrics
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Sets up monitoring and metrics collection.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    protected virtual void SetupMonitoringAndMetrics()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to setup monitoring and metrics");
+        sb.AppendLine("        Logger.LogDebug(\"Monitoring and metrics setup completed\");");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Resource cleanup
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Cleans up resources during service shutdown.");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    protected virtual async Task CleanupResourcesAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        // Override this method to cleanup resources");
+        sb.AppendLine("        await Task.CompletedTask;");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Health check methods
+        if (includeEnclave)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Checks enclave health.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>True if enclave is healthy.</returns>");
+            sb.AppendLine("    protected virtual async Task<bool> CheckEnclaveHealthAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to implement enclave health check");
+            sb.AppendLine("        await Task.Delay(5); // Simulate health check");
+            sb.AppendLine("        return IsEnclaveInitialized;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        if (includeBlockchain)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Checks blockchain health.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>True if blockchain connectivity is healthy.</returns>");
+            sb.AppendLine("    protected virtual async Task<bool> CheckBlockchainHealthAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        try");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var supportedBlockchains = new[] { BlockchainType.NeoN3, BlockchainType.NeoX };");
+            sb.AppendLine("            foreach (var blockchain in supportedBlockchains)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                if (SupportsBlockchain(blockchain))");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    var client = _blockchainClientFactory.CreateClient(blockchain);");
+            sb.AppendLine("                    if (client != null)");
+            sb.AppendLine("                    {");
+            sb.AppendLine("                        await client.GetBlockHeightAsync();");
+            sb.AppendLine("                    }");
+            sb.AppendLine("                }");
+            sb.AppendLine("            }");
+            sb.AppendLine("            return true;");
+            sb.AppendLine("        }");
+            sb.AppendLine("        catch");
+            sb.AppendLine("        {");
+            sb.AppendLine("            return false;");
+            sb.AppendLine("        }");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        sb.AppendLine("    /// <summary>");
+        sb.AppendLine("    /// Checks resource health (memory, CPU, etc.).");
+        sb.AppendLine("    /// </summary>");
+        sb.AppendLine("    /// <returns>True if resource usage is healthy.</returns>");
+        sb.AppendLine("    protected virtual async Task<bool> CheckResourceHealthAsync()");
+        sb.AppendLine("    {");
+        sb.AppendLine("        try");
+        sb.AppendLine("        {");
+        sb.AppendLine("            await Task.Delay(5); // Simulate resource check");
+        sb.AppendLine("            var process = System.Diagnostics.Process.GetCurrentProcess();");
+        sb.AppendLine("            var memoryUsage = process.WorkingSet64;");
+        sb.AppendLine("            var memoryThreshold = 1_000_000_000L; // 1GB");
+        sb.AppendLine("            return memoryUsage < memoryThreshold;");
+        sb.AppendLine("        }");
+        sb.AppendLine("        catch");
+        sb.AppendLine("        {");
+        sb.AppendLine("            return false;");
+        sb.AppendLine("        }");
+        sb.AppendLine("    }");
+        sb.AppendLine();
+
+        // Metrics methods
+        if (includeEnclave)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Gets enclave-specific metrics.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>Dictionary of enclave metrics.</returns>");
+            sb.AppendLine("    protected virtual async Task<Dictionary<string, object>> GetEnclaveMetricsAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to collect enclave metrics");
+            sb.AppendLine("        await Task.Delay(5); // Simulate metrics collection");
+            sb.AppendLine("        return new Dictionary<string, object>");
+            sb.AppendLine("        {");
+            sb.AppendLine("            [\"Initialized\"] = IsEnclaveInitialized,");
+            sb.AppendLine("            [\"LastUsed\"] = DateTime.UtcNow");
+            sb.AppendLine("        };");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
+
+        if (includeBlockchain)
+        {
+            sb.AppendLine("    /// <summary>");
+            sb.AppendLine("    /// Gets blockchain-specific metrics.");
+            sb.AppendLine("    /// </summary>");
+            sb.AppendLine("    /// <returns>Dictionary of blockchain metrics.</returns>");
+            sb.AppendLine("    protected virtual async Task<Dictionary<string, object>> GetBlockchainMetricsAsync()");
+            sb.AppendLine("    {");
+            sb.AppendLine("        // Override this method to collect blockchain metrics");
+            sb.AppendLine("        var metrics = new Dictionary<string, object>();");
+            sb.AppendLine("        try");
+            sb.AppendLine("        {");
+            sb.AppendLine("            var supportedBlockchains = new[] { BlockchainType.NeoN3, BlockchainType.NeoX };");
+            sb.AppendLine("            foreach (var blockchain in supportedBlockchains)");
+            sb.AppendLine("            {");
+            sb.AppendLine("                if (SupportsBlockchain(blockchain))");
+            sb.AppendLine("                {");
+            sb.AppendLine("                    var client = _blockchainClientFactory.CreateClient(blockchain);");
+            sb.AppendLine("                    if (client != null)");
+            sb.AppendLine("                    {");
+            sb.AppendLine("                        var blockHeight = await client.GetBlockHeightAsync();");
+            sb.AppendLine("                        metrics[$\"{blockchain}_BlockHeight\"] = blockHeight;");
+            sb.AppendLine("                    }");
+            sb.AppendLine("                }");
+            sb.AppendLine("            }");
+            sb.AppendLine("        }");
+            sb.AppendLine("        catch (Exception ex)");
+            sb.AppendLine("        {");
+            sb.AppendLine("            Logger.LogError(ex, \"Error collecting blockchain metrics\");");
+            sb.AppendLine("        }");
+            sb.AppendLine("        return metrics;");
+            sb.AppendLine("    }");
+            sb.AppendLine();
+        }
     }
 
     /// <inheritdoc/>
@@ -474,6 +1004,7 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         sb.AppendLine();
         sb.AppendLine("        // Assert");
         sb.AppendLine("        Assert.Equal(ServiceHealth.Healthy, result);");
+        sb.AppendLine();
         sb.AppendLine("    }");
         sb.AppendLine();
         sb.AppendLine("    [Fact]");

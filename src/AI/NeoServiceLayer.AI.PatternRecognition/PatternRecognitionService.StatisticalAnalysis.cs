@@ -1,6 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
@@ -152,12 +152,12 @@ public partial class PatternRecognitionService
     /// <summary>
     /// Determines the type of anomaly based on statistical analysis.
     /// </summary>
-    private AnomalyType DetermineAnomalyType(double value, DataStatistics stats, AnomalyThreshold threshold)
+    private Models.AnomalyType DetermineAnomalyType(double value, DataStatistics stats, AnomalyThreshold threshold)
     {
-        if (value > stats.Max * 0.9) return AnomalyType.HighValue;
-        if (value < stats.Min * 1.1) return AnomalyType.LowValue;
-        if (Math.Abs(value - stats.Mean) > 3 * stats.StandardDeviation) return AnomalyType.Outlier;
-        return AnomalyType.Statistical;
+        if (value > stats.Max * 0.9) return Models.AnomalyType.HighValue;
+        if (value < stats.Min * 1.1) return Models.AnomalyType.LowValue;
+        if (Math.Abs(value - stats.Mean) > 3 * stats.StandardDeviation) return Models.AnomalyType.Outlier;
+        return Models.AnomalyType.Statistical;
     }
 
     /// <summary>

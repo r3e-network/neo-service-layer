@@ -1,0 +1,123 @@
+version: '3.8'
+
+services:
+  neo-service-layer-dev:
+    build:
+      context: ..
+      dockerfile: .devcontainer/Dockerfile
+    volumes:
+      - ..:/workspace:cached
+      - neo-service-layer-extensions:/home/vscode/.vscode-server/extensions
+      - neo-service-layer-cargo:/home/vscode/.cargo
+      - neo-service-layer-nuget:/home/vscode/.nuget
+    
+    # Port mappings for development
+    ports:
+      - "5000:5000"    # HTTP web application
+      - "5001:5001"    # HTTPS web application  
+      - "8080:8080"    # Additional services
+      - "3000:3000"    # Development server
+    
+    # Environment variables
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - DOTNET_ENVIRONMENT=Development
+      - SGX_MODE=SIM
+      - SGX_SDK=/opt/intel/sgxsdk
+      - RUST_BACKTRACE=1
+      - CARGO_NET_GIT_FETCH_WITH_CLI=true
+    
+    # Keep container running
+    command: sleep infinity
+    
+    # Enable privileged mode for SGX simulation and Docker-in-Docker
+    # Note: Only enable privileged mode if SGX hardware mode is needed
+    # privileged: true
+    
+    # Security options for development
+    # security_opt:
+    #   - seccomp:unconfined
+    
+    # Shared memory for build processes
+    shm_size: '2gb'
+    
+    # Working directory
+    working_dir: /workspace
+    
+    # User context
+    user: vscode
+    
+    # Network configuration
+    networks:
+      - neo-dev-network
+
+  # Optional: PostgreSQL database for testing
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: neo_service_layer_dev
+      POSTGRES_USER: neo_dev
+      POSTGRES_PASSWORD: neo_dev_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neo-dev-network
+    profiles:
+      - database
+
+  # Optional: Redis for caching and sessions
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - neo-dev-network
+    profiles:
+      - cache
+
+  # Optional: Elasticsearch for logging and search
+  elasticsearch:
+    image: docker.elastic.co/elasticsearch/elasticsearch:8.11.0
+    environment:
+      - discovery.type=single-node
+      - xpack.security.enabled=false
+      - "ES_JAVA_OPTS=-Xms512m -Xmx512m"
+    ports:
+      - "9200:9200"
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    networks:
+      - neo-dev-network
+    profiles:
+      - logging
+
+  # Optional: Seq for structured logging
+  seq:
+    image: datalust/seq:2023.4
+    environment:
+      - ACCEPT_EULA=Y
+    ports:
+      - "5341:80"
+    volumes:
+      - seq_data:/data
+    networks:
+      - neo-dev-network
+    profiles:
+      - logging
+
+volumes:
+  neo-service-layer-extensions:
+  neo-service-layer-cargo:
+  neo-service-layer-nuget:
+  postgres_data:
+  redis_data:
+  elasticsearch_data:
+  seq_data:
+
+networks:
+  neo-dev-network:
+    driver: bridge 

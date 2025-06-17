@@ -95,9 +95,15 @@ public class StorageServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Key.Should().Be(key);
-        // Verify that the data was stored via JavaScript
+        // Verify that the data was stored via StorageStoreDataAsync (the actual method used)
+        _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify that metadata was stored via JavaScript
         _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("storeData")),
+            It.Is<string>(script => script.Contains("storeMetadata")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -202,9 +208,15 @@ public class StorageServiceTests : IDisposable
             It.IsAny<string>(),
             It.IsAny<string>(),
             It.Is<string>(alg => alg == "AES-256-GCM")), Times.Once);
-        // Verify that the data was stored via JavaScript
+        // Verify that the data was stored via StorageStoreDataAsync
+        _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify that metadata was stored via JavaScript
         _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("storeData")),
+            It.Is<string>(script => script.Contains("storeMetadata")),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -553,11 +565,12 @@ public class StorageServiceTests : IDisposable
         // Setup storage-specific methods
         _mockEnclaveManager
             .Setup(x => x.StorageStoreDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("success");
+            .ReturnsAsync("{\"success\": true, \"key\": \"test_key\"}");
 
         _mockEnclaveManager
             .Setup(x => x.StorageRetrieveDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("test_data_content");
+            .ReturnsAsync((string key, string encryptionKey, CancellationToken ct) => 
+                Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("test_data_content")));
 
         _mockEnclaveManager
             .Setup(x => x.StorageDeleteDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

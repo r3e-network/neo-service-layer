@@ -1,6 +1,6 @@
 using NeoServiceLayer.Core;
 
-namespace NeoServiceLayer.Services.Oracle;
+namespace NeoServiceLayer.Services.Oracle.Models;
 
 /// <summary>
 /// Represents an oracle request.

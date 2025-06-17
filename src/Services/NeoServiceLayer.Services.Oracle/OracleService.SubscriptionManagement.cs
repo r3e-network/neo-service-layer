@@ -1,5 +1,6 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Oracle.Models;
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -119,7 +120,7 @@ public partial class OracleService
             DataType = "JSON",
             UpdateFrequency = TimeSpan.FromMinutes(5),
             IsActive = true,
-            LastUpdated = dataSource.LastAccessedAt,
+            LastUpdated = dataSource.LastAccessedAt ?? DateTime.UtcNow,
             SourceUrl = dataSource.Url,
             ReliabilityScore = 0.95
         });

@@ -141,17 +141,30 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
             throw new InvalidOperationException("Service is not running.");
         }
 
-        try
+        return await ExecuteInEnclaveAsync(async () =>
         {
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            // Generate key in the enclave
+            Logger.LogInformation("Generating key {KeyId} of type {KeyType} securely within enclave", keyId, keyType);
+
+            // Generate key in the enclave with enhanced security
             string result = await _enclaveManager.KmsGenerateKeyAsync(keyId, keyType, keyUsage, exportable, description);
 
             // Parse the result
             var keyMetadata = JsonSerializer.Deserialize<KeyMetadata>(result) ??
                 throw new InvalidOperationException("Failed to deserialize key metadata.");
+
+            // Validate key metadata integrity
+            if (string.IsNullOrEmpty(keyMetadata.KeyId) || keyMetadata.KeyId != keyId)
+            {
+                throw new InvalidOperationException("Key generation validation failed: KeyId mismatch");
+            }
+
+            if (string.IsNullOrEmpty(keyMetadata.PublicKeyHex))
+            {
+                throw new InvalidOperationException("Key generation validation failed: Missing public key");
+            }
 
             // Update the cache
             lock (_keyCache)
@@ -161,17 +174,13 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
+            UpdateMetric("TotalKeysGenerated", _keyCache.Count);
+
+            Logger.LogInformation("Successfully generated key {KeyId} with public key {PublicKey} in enclave", 
+                keyId, keyMetadata.PublicKeyHex[..16] + "...");
+
             return keyMetadata;
-        }
-        catch (Exception ex)
-        {
-            _failureCount++;
-            UpdateMetric("LastFailureTime", DateTime.UtcNow);
-            UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error generating key {KeyId} of type {KeyType} for blockchain {BlockchainType}",
-                keyId, keyType, blockchainType);
-            throw;
-        }
+        });
     }
 
     /// <inheritdoc/>
@@ -307,30 +316,45 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
             throw new InvalidOperationException("Service is not running.");
         }
 
-        try
+        return await ExecuteInEnclaveAsync(async () =>
         {
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            // Sign data in the enclave
+            Logger.LogDebug("Signing data with key {KeyId} using algorithm {Algorithm} securely within enclave", keyId, signingAlgorithm);
+
+            // Validate key exists and is authorized for signing
+            var keyMetadata = await GetKeyMetadataAsync(keyId, blockchainType);
+            if (keyMetadata == null)
+            {
+                throw new UnauthorizedAccessException($"Key {keyId} not found or not authorized");
+            }
+
+            if (!keyMetadata.KeyUsage.Contains("signing", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException($"Key {keyId} is not authorized for signing operations");
+            }
+
+            // Sign data in the enclave with enhanced security
             string result = await _enclaveManager.KmsSignDataAsync(keyId, dataHex, signingAlgorithm);
+
+            // Validate signature result
+            if (string.IsNullOrEmpty(result))
+            {
+                throw new InvalidOperationException("Signing operation returned empty result");
+            }
 
             // Update the key's last used timestamp
             await UpdateKeyLastUsedAsync(keyId);
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
+            UpdateMetric("TotalSigningOperations", (_successCount).ToString());
+
+            Logger.LogDebug("Successfully signed data with key {KeyId}, signature length: {Length}", keyId, result.Length);
+
             return result;
-        }
-        catch (Exception ex)
-        {
-            _failureCount++;
-            UpdateMetric("LastFailureTime", DateTime.UtcNow);
-            UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error signing data with key {KeyId} using algorithm {SigningAlgorithm} for blockchain {BlockchainType}",
-                keyId, signingAlgorithm, blockchainType);
-            throw;
-        }
+        });
     }
 
     /// <inheritdoc/>
@@ -444,30 +468,52 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
             throw new InvalidOperationException("Service is not running.");
         }
 
-        try
+        return await ExecuteInEnclaveAsync(async () =>
         {
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            // Decrypt data in the enclave
+            Logger.LogDebug("Decrypting data with key {KeyId} using algorithm {Algorithm} securely within enclave", keyId, encryptionAlgorithm);
+
+            // Validate key exists and is authorized for decryption
+            var keyMetadata = await GetKeyMetadataAsync(keyId, blockchainType);
+            if (keyMetadata == null)
+            {
+                throw new UnauthorizedAccessException($"Key {keyId} not found or not authorized");
+            }
+
+            if (!keyMetadata.KeyUsage.Contains("encryption", StringComparison.OrdinalIgnoreCase) &&
+                !keyMetadata.KeyUsage.Contains("decryption", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new UnauthorizedAccessException($"Key {keyId} is not authorized for decryption operations");
+            }
+
+            // Validate encrypted data format
+            if (string.IsNullOrEmpty(encryptedDataHex) || encryptedDataHex.Length < 16)
+            {
+                throw new ArgumentException("Invalid encrypted data format", nameof(encryptedDataHex));
+            }
+
+            // Decrypt data in the enclave with enhanced security
             string result = await _enclaveManager.KmsDecryptDataAsync(keyId, encryptedDataHex, encryptionAlgorithm);
+
+            // Validate decryption result
+            if (string.IsNullOrEmpty(result))
+            {
+                throw new InvalidOperationException("Decryption operation returned empty result");
+            }
 
             // Update the key's last used timestamp
             await UpdateKeyLastUsedAsync(keyId);
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
+            UpdateMetric("TotalDecryptionOperations", (_successCount).ToString());
+
+            Logger.LogDebug("Successfully decrypted data with key {KeyId}, result length: {Length}", keyId, result.Length);
+
             return result;
-        }
-        catch (Exception ex)
-        {
-            _failureCount++;
-            UpdateMetric("LastFailureTime", DateTime.UtcNow);
-            UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error decrypting data with key {KeyId} using algorithm {EncryptionAlgorithm} for blockchain {BlockchainType}",
-                keyId, encryptionAlgorithm, blockchainType);
-            throw;
-        }
+        });
     }
 
     /// <inheritdoc/>

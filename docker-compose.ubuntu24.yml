@@ -1,0 +1,162 @@
+version: '3.8'
+
+services:
+  # Neo Service Layer Main Application
+  neo-service-layer:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu24
+    container_name: neo-service-layer-ubuntu24
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - SGX_MODE=SIM
+      - DOTNET_ENVIRONMENT=Production
+      - NEO_SERVICE_LAYER_ENV=Docker
+    volumes:
+      - ./logs:/neo-service-layer/logs
+      - ./data:/neo-service-layer/data
+      - ./keys:/neo-service-layer/keys
+      - ./config:/neo-service-layer/config
+      - neo-service-layer-data:/neo-service-layer/data
+    privileged: true
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    cap_add:
+      - SYS_ADMIN
+    networks:
+      - neo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/api/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Development environment with shell access
+  neo-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu24
+    container_name: neo-dev-ubuntu24
+    ports:
+      - "5002:5000"
+      - "5003:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - SGX_MODE=SIM
+      - DOTNET_ENVIRONMENT=Development
+    volumes:
+      - .:/neo-service-layer
+      - neo-dev-data:/neo-service-layer/data
+    privileged: true
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    cap_add:
+      - SYS_ADMIN
+    networks:
+      - neo-network
+    command: /neo-service-layer/dev-tools.sh shell
+    stdin_open: true
+    tty: true
+
+  # Test runner service
+  neo-test:
+    build:
+      context: .
+      dockerfile: Dockerfile.ubuntu24
+    container_name: neo-test-ubuntu24
+    environment:
+      - SGX_MODE=SIM
+      - DOTNET_ENVIRONMENT=Test
+    volumes:
+      - ./test-results:/neo-service-layer/TestResults
+      - neo-test-data:/neo-service-layer/data
+    privileged: true
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    cap_add:
+      - SYS_ADMIN
+    networks:
+      - neo-network
+    command: /neo-service-layer/run-comprehensive-tests.sh
+    profiles:
+      - test
+
+  # Database service (if needed for integration tests)
+  postgres:
+    image: postgres:16
+    container_name: neo-postgres
+    environment:
+      POSTGRES_DB: neo_service_layer
+      POSTGRES_USER: neo_user
+      POSTGRES_PASSWORD: neo_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    profiles:
+      - database
+
+  # Redis service (for caching and session management)
+  redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis-data:/data
+    networks:
+      - neo-network
+    profiles:
+      - cache
+
+  # Monitoring service
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: neo-prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus-data:/prometheus
+    networks:
+      - neo-network
+    profiles:
+      - monitoring
+
+  # Grafana for visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: neo-grafana
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin
+    volumes:
+      - grafana-data:/var/lib/grafana
+    networks:
+      - neo-network
+    profiles:
+      - monitoring
+
+volumes:
+  neo-service-layer-data:
+  neo-dev-data:
+  neo-test-data:
+  postgres-data:
+  redis-data:
+  prometheus-data:
+  grafana-data:
+
+networks:
+  neo-network:
+    driver: bridge 

@@ -8,31 +8,25 @@ namespace NeoServiceLayer.Services.Backup;
 /// <summary>
 /// Core implementation of the Backup service for data backup and recovery operations.
 /// </summary>
-public partial class BackupService : EnhancedServiceBase, IBackupService
+public partial class BackupService : EnclaveBlockchainServiceBase, IBackupService
 {
     private readonly Dictionary<string, BackupJob> _activeJobs = new();
     private readonly Dictionary<string, BackupSchedule> _schedules = new();
     private readonly object _jobsLock = new();
 
-    public BackupService(ILogger<BackupService> logger, IServiceConfiguration configuration)
-        : base(logger, configuration)
+    public BackupService(ILogger<BackupService> logger)
+        : base("Backup", "Data Backup and Recovery Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
+        // Add capabilities
+        AddCapability<IBackupService>();
+        
+        // Add metadata
+        SetMetadata("MaxActiveJobs", "10");
+        SetMetadata("SupportedBlockchains", "NeoN3,NeoX");
     }
 
     /// <inheritdoc/>
-    public override string ServiceName => "BackupService";
-
-    /// <inheritdoc/>
-    public override string ServiceVersion => "1.0.0";
-
-    /// <inheritdoc/>
-    public override bool SupportsBlockchain(BlockchainType blockchainType)
-    {
-        return blockchainType == BlockchainType.NeoN3 || blockchainType == BlockchainType.NeoX;
-    }
-
-    /// <inheritdoc/>
-    protected override async Task<bool> InitializeServiceAsync()
+    protected override async Task<bool> OnInitializeAsync()
     {
         Logger.LogInformation("Initializing Backup Service...");
 
@@ -47,7 +41,7 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
     }
 
     /// <inheritdoc/>
-    protected override async Task<bool> StartServiceAsync()
+    protected override async Task<bool> OnStartAsync()
     {
         Logger.LogInformation("Starting Backup Service...");
 
@@ -59,7 +53,7 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
     }
 
     /// <inheritdoc/>
-    protected override async Task<bool> StopServiceAsync()
+    protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Stopping Backup Service...");
 
@@ -68,6 +62,59 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
 
         Logger.LogInformation("Backup Service stopped successfully");
         return true;
+    }
+
+    /// <inheritdoc/>
+    protected override Task<ServiceHealth> OnGetHealthAsync()
+    {
+        try
+        {
+            var health = ServiceHealth.Healthy;
+            var activeJobCount = 0;
+            var scheduleCount = 0;
+
+            lock (_jobsLock)
+            {
+                activeJobCount = _activeJobs.Count;
+                scheduleCount = _schedules.Count;
+            }
+
+            // Check if there are too many active jobs
+            if (activeJobCount > 10)
+            {
+                health = ServiceHealth.Degraded;
+            }
+
+            Logger.LogDebug("Backup service health check: {ActiveJobs} active jobs, {Schedules} schedules", 
+                activeJobCount, scheduleCount);
+
+            return Task.FromResult(health);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting backup service health");
+            return Task.FromResult(ServiceHealth.Unhealthy);
+        }
+    }
+
+    /// <inheritdoc/>
+    protected override async Task<bool> OnInitializeEnclaveAsync()
+    {
+        Logger.LogInformation("Initializing Backup Service enclave");
+
+        try
+        {
+            // Initialize enclave-specific backup operations
+            await Task.Delay(100); // Simulate enclave initialization
+
+            Logger.LogInformation("Backup Service enclave initialized successfully");
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize Backup Service enclave");
+            return false;
+        }
     }
 
     /// <summary>
@@ -212,7 +259,8 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
                 CronExpression = "0 2 * * *", // Daily at 2 AM
                 IsEnabled = true,
                 CreatedAt = DateTime.UtcNow.AddDays(-7),
-                NextRunTime = DateTime.UtcNow.AddHours(2)
+                NextRunTime = DateTime.UtcNow.AddHours(2),
+                BlockchainType = BlockchainType.NeoN3
             }
         };
     }
@@ -222,7 +270,7 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
     /// </summary>
     private async Task ScheduleMonitoringLoopAsync()
     {
-        while (true)
+        while (IsRunning)
         {
             try
             {
@@ -273,19 +321,54 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
     {
         Logger.LogInformation("Executing scheduled backup {ScheduleId}", schedule.ScheduleId);
 
-        // Execute the backup
-        var result = await CreateBackupAsync(schedule.BackupRequest, schedule.BlockchainType);
+        // Create a CreateBackupRequest from the BackupRequest
+        var createRequest = new CreateBackupRequest
+        {
+            BackupName = $"Scheduled_{schedule.ScheduleId}_{DateTime.UtcNow:yyyyMMdd_HHmmss}",
+            BackupType = BackupType.Full,
+            DataSources = new[]
+            {
+                new BackupDataSource
+                {
+                    SourceType = DataSourceType.Blockchain,
+                    SourceId = schedule.BackupRequest.DataType,
+                    SourcePath = schedule.BackupRequest.SourcePath
+                }
+            }
+        };
 
-        // Update schedule for next run
+        // Execute the backup using the correct method signature
+        var result = await CreateBackupAsync(createRequest, schedule.BlockchainType);
+
+        // Update schedule for next run - using methods from other partial files
         schedule.NextRunTime = CalculateNextRunTime(schedule.CronExpression);
         schedule.LastRunTime = DateTime.UtcNow;
         schedule.LastRunResult = result.Success ? "Success" : result.ErrorMessage;
 
-        // Persist updated schedule
+        // Persist updated schedule - using method from other partial files
         await PersistScheduleAsync(schedule);
 
         Logger.LogInformation("Scheduled backup {ScheduleId} completed. Success: {Success}",
             schedule.ScheduleId, result.Success);
+    }
+
+    /// <summary>
+    /// Calculates the next run time for a cron expression.
+    /// </summary>
+    private DateTime CalculateNextRunTime(string cronExpression)
+    {
+        // Simple implementation - in production, use a proper cron parser
+        return DateTime.UtcNow.AddDays(1);
+    }
+
+    /// <summary>
+    /// Persists a schedule to storage.
+    /// </summary>
+    private async Task PersistScheduleAsync(BackupSchedule schedule)
+    {
+        // Simulate persistence
+        await Task.Delay(10);
+        Logger.LogDebug("Persisted schedule {ScheduleId}", schedule.ScheduleId);
     }
 
     /// <summary>
@@ -317,17 +400,19 @@ public partial class BackupService : EnhancedServiceBase, IBackupService
     {
         lock (_jobsLock)
         {
+            var nextScheduledBackup = _schedules.Values
+                .Where(s => s.IsEnabled)
+                .Min(s => s.NextRunTime);
+
             return new BackupServiceStatistics
             {
                 ActiveJobs = _activeJobs.Count,
                 TotalSchedules = _schedules.Count,
                 EnabledSchedules = _schedules.Values.Count(s => s.IsEnabled),
-                LastBackupTime = _activeJobs.Values.Any() 
-                    ? _activeJobs.Values.Max(j => j.StartedAt) 
-                    : (DateTime?)null,
-                NextScheduledBackup = _schedules.Values.Any() 
-                    ? _schedules.Values.Where(s => s.IsEnabled).Min(s => s.NextRunTime) 
-                    : (DateTime?)null
+                LastBackupTime = _activeJobs.Values
+                    .Where(j => j.CompletedAt.HasValue)
+                    .Max(j => j.CompletedAt),
+                NextScheduledBackup = nextScheduledBackup == DateTime.MinValue ? null : nextScheduledBackup
             };
         }
     }

@@ -465,3 +465,51 @@ FodyWeavers.xsd
 *.sgx.cpp.out
 *.sgx.cc.out
 *.sgx.cxx.out
+
+# Additional cleanup patterns
+*.tmp
+*.temp
+*~
+.DS_Store
+Thumbs.db
+*.bak
+*.old
+*.orig
+
+# Coverage reports
+coverage-reports/
+coverage-history/
+TestResults/
+test-results/
+
+# Documentation temporary files
+*STATUS*.md
+*REPORT*.md
+*SUMMARY*.md
+*COMPLETE*.md
+BUILD_ERROR*.md
+COMPREHENSIVE*.md
+DEVCONTAINER*.md
+DOCKER_CONNECTIVITY*.md
+ENCLAVE_INTEGRATION*.md
+FINAL_*.md
+PRODUCTION_*.md
+SGX_ENCLAVE*.md
+UNIT_TESTING*.md
+
+# IDE specific
+.vscode/settings.json
+.vscode/launch.json
+.vscode/tasks.json
+.vscode/extensions.json
+
+# Rust build artifacts (for Occlum)
+target/
+Cargo.lock
+
+# Docker build artifacts
+.dockerignore.bak
+
+# Temporary scripts
+*.ps1.bak
+*.sh.bak

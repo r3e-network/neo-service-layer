@@ -1,0 +1,648 @@
+@page "/servicepages/oracle"
+@model NeoServiceLayer.Web.Pages.ServicePages.OracleModel
+@{
+    ViewData["Title"] = "Oracle Service";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .service-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #007bff;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online {
+            background-color: #28a745;
+        }
+        .status-offline {
+            background-color: #dc3545;
+        }
+        .status-checking {
+            background-color: #ffc107;
+        }
+        .result-container {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .response-json {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+        }
+        .price-card {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+        }
+        .price-change-positive {
+            color: #28a745;
+        }
+        .price-change-negative {
+            color: #dc3545;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-eye me-3"></i>Oracle Service
+                    </h1>
+                    <p class="lead mb-0">External Data Feeds & Price Oracles</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-eye feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">Oracle Service</h6>
+                        <p class="card-text small">Secure external data aggregation and price feeds with cryptographic verification and multi-source validation.</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> Intelligence Service</li>
+                            <li><strong>Layer:</strong> Intelligence</li>
+                            <li><strong>Security:</strong> SGX Enclave</li>
+                            <li><strong>API Version:</strong> v1.0</li>
+                            <li><strong>Data Sources:</strong> 12</li>
+                        </ul>
+
+                        <h6>Supported Assets</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fab fa-bitcoin text-warning me-2"></i>Bitcoin (BTC)</li>
+                            <li><i class="fab fa-ethereum text-primary me-2"></i>Ethereum (ETH)</li>
+                            <li><i class="fas fa-coins text-success me-2"></i>NEO (NEO)</li>
+                            <li><i class="fas fa-dollar-sign text-info me-2"></i>Stablecoins</li>
+                            <li><i class="fas fa-chart-line text-secondary me-2"></i>Traditional Assets</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="feeds-tab" data-bs-toggle="tab" data-bs-target="#feeds" type="button" role="tab">
+                                    <i class="fas fa-rss me-2"></i>Data Feeds
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="prices-tab" data-bs-toggle="tab" data-bs-target="#prices" type="button" role="tab">
+                                    <i class="fas fa-chart-line me-2"></i>Price Oracles
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="sources-tab" data-bs-toggle="tab" data-bs-target="#sources" type="button" role="tab">
+                                    <i class="fas fa-database me-2"></i>Data Sources
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Data Feeds Tab -->
+                            <div class="tab-pane fade show active" id="feeds" role="tabpanel">
+                                <h5>Live Data Feeds</h5>
+                                
+                                <!-- Real-time Price Cards -->
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card price-card">
+                                            <div class="card-body text-center">
+                                                <i class="fab fa-bitcoin fa-2x mb-2"></i>
+                                                <h4 id="btc-price">Loading...</h4>
+                                                <small>Bitcoin (BTC/USD)</small>
+                                                <div id="btc-change" class="mt-2">
+                                                    <span class="badge bg-light text-dark">--</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card price-card">
+                                            <div class="card-body text-center">
+                                                <i class="fab fa-ethereum fa-2x mb-2"></i>
+                                                <h4 id="eth-price">Loading...</h4>
+                                                <small>Ethereum (ETH/USD)</small>
+                                                <div id="eth-change" class="mt-2">
+                                                    <span class="badge bg-light text-dark">--</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="refreshPriceFeeds()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Feeds
+                                </button>
+
+                                <div id="feeds-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Feed Data Response</h6>
+                                    <pre id="feeds-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Price Oracles Tab -->
+                            <div class="tab-pane fade" id="prices" role="tabpanel">
+                                <h5>Price Oracle Operations</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-search me-2"></i>Get Price</h6>
+                                                <form id="get-price-form">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Asset Pair</label>
+                                                        <select class="form-select" id="assetPair">
+                                                            <option value="BTC/USD">BTC/USD</option>
+                                                            <option value="ETH/USD">ETH/USD</option>
+                                                            <option value="NEO/USD">NEO/USD</option>
+                                                            <option value="GAS/USD">GAS/USD</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Timestamp (Optional)</label>
+                                                        <input type="datetime-local" class="form-control" id="timestamp">
+                                                    </div>
+                                                    <button type="submit" class="btn btn-success">
+                                                        <i class="fas fa-chart-line me-2"></i>Get Price
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-history me-2"></i>Price History</h6>
+                                                <form id="price-history-form">
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Asset</label>
+                                                        <select class="form-select" id="historyAsset">
+                                                            <option value="BTC">Bitcoin</option>
+                                                            <option value="ETH">Ethereum</option>
+                                                            <option value="NEO">NEO</option>
+                                                        </select>
+                                                    </div>
+                                                    <div class="mb-3">
+                                                        <label class="form-label">Time Range</label>
+                                                        <select class="form-select" id="timeRange">
+                                                            <option value="1h">Last Hour</option>
+                                                            <option value="1d">Last Day</option>
+                                                            <option value="7d">Last Week</option>
+                                                            <option value="30d">Last Month</option>
+                                                        </select>
+                                                    </div>
+                                                    <button type="submit" class="btn btn-info">
+                                                        <i class="fas fa-history me-2"></i>Get History
+                                                    </button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div id="price-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Price Oracle Response</h6>
+                                    <pre id="price-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+
+                            <!-- Data Sources Tab -->
+                            <div class="tab-pane fade" id="sources" role="tabpanel">
+                                <h5>Data Source Management</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="active-sources">--</h4>
+                                                <small>Active Sources</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-warning text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="pending-sources">--</h4>
+                                                <small>Pending</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-danger text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="failed-sources">--</h4>
+                                                <small>Failed</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="d-flex gap-2 mb-3">
+                                    <button class="btn btn-primary" onclick="listDataSources()">
+                                        <i class="fas fa-list me-2"></i>List Sources
+                                    </button>
+                                    <button class="btn btn-success" onclick="testDataSources()">
+                                        <i class="fas fa-check-circle me-2"></i>Test All Sources
+                                    </button>
+                                    <button class="btn btn-info" onclick="refreshSourceMetrics()">
+                                        <i class="fas fa-sync-alt me-2"></i>Refresh Metrics
+                                    </button>
+                                </div>
+
+                                <div id="sources-result" class="result-container mt-3 p-3" style="display: none;">
+                                    <h6>Data Sources Response</h6>
+                                    <pre id="sources-output" class="response-json p-3 mb-0"></pre>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Feed Status Dashboard -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-tachometer-alt me-2"></i>Oracle Status Dashboard
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshDashboard()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="oracle-dashboard">
+                            <div class="row g-3">
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-server text-primary fa-2x"></i>
+                                        <h6 class="mt-2">Service Health</h6>
+                                        <span id="service-health" class="badge bg-warning">Checking...</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-clock text-info fa-2x"></i>
+                                        <h6 class="mt-2">Last Update</h6>
+                                        <span id="last-update" class="badge bg-info">--</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-chart-line text-success fa-2x"></i>
+                                        <h6 class="mt-2">Updates Today</h6>
+                                        <span id="updates-today" class="badge bg-success">--</span>
+                                    </div>
+                                </div>
+                                <div class="col-md-3">
+                                    <div class="text-center">
+                                        <i class="fas fa-exclamation-triangle text-warning fa-2x"></i>
+                                        <h6 class="mt-2">Accuracy</h6>
+                                        <span id="accuracy" class="badge bg-warning">--</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Initialize oracle service
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceHealth();
+            refreshPriceFeeds();
+            refreshSourceMetrics();
+            refreshDashboard();
+            
+            // Set up form handlers
+            document.getElementById('get-price-form').addEventListener('submit', handleGetPrice);
+            document.getElementById('price-history-form').addEventListener('submit', handlePriceHistory);
+            
+            // Auto-refresh prices every 30 seconds
+            setInterval(refreshPriceFeeds, 30000);
+        });
+
+        async function checkServiceHealth() {
+            try {
+                updateServiceStatus('checking');
+                
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const isHealthy = Math.random() > 0.1;
+                
+                if (isHealthy) {
+                    updateServiceStatus('online');
+                    document.getElementById('service-health').textContent = 'Healthy';
+                    document.getElementById('service-health').className = 'badge bg-success';
+                } else {
+                    updateServiceStatus('offline');
+                    document.getElementById('service-health').textContent = 'Unhealthy';
+                    document.getElementById('service-health').className = 'badge bg-danger';
+                }
+            } catch (error) {
+                console.error('Error checking service health:', error);
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        async function refreshPriceFeeds() {
+            try {
+                // Simulate price feed updates
+                const btcPrice = 45000 + (Math.random() - 0.5) * 2000;
+                const ethPrice = 3000 + (Math.random() - 0.5) * 200;
+                
+                const btcChange = (Math.random() - 0.5) * 5;
+                const ethChange = (Math.random() - 0.5) * 8;
+                
+                document.getElementById('btc-price').textContent = `$${btcPrice.toFixed(2)}`;
+                document.getElementById('eth-price').textContent = `$${ethPrice.toFixed(2)}`;
+                
+                // Update change indicators
+                const btcChangeElement = document.getElementById('btc-change');
+                const ethChangeElement = document.getElementById('eth-change');
+                
+                btcChangeElement.innerHTML = `<span class="badge ${btcChange > 0 ? 'bg-success' : 'bg-danger'}">${btcChange > 0 ? '+' : ''}${btcChange.toFixed(2)}%</span>`;
+                ethChangeElement.innerHTML = `<span class="badge ${ethChange > 0 ? 'bg-success' : 'bg-danger'}">${ethChange > 0 ? '+' : ''}${ethChange.toFixed(2)}%</span>`;
+                
+                // Show feed result
+                const feedData = {
+                    timestamp: new Date().toISOString(),
+                    prices: {
+                        "BTC/USD": { price: btcPrice, change: btcChange, volume: Math.floor(Math.random() * 1000000) },
+                        "ETH/USD": { price: ethPrice, change: ethChange, volume: Math.floor(Math.random() * 500000) }
+                    },
+                    sources: ["Coinbase", "Binance", "Kraken", "Gemini"],
+                    confidence: 0.98
+                };
+                
+                document.getElementById('feeds-output').textContent = JSON.stringify(feedData, null, 2);
+                document.getElementById('feeds-result').style.display = 'block';
+                
+            } catch (error) {
+                console.error('Error refreshing price feeds:', error);
+            }
+        }
+
+        async function handleGetPrice(event) {
+            event.preventDefault();
+            
+            const assetPair = document.getElementById('assetPair').value;
+            const timestamp = document.getElementById('timestamp').value;
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const price = 45000 + Math.random() * 10000;
+                const result = {
+                    pair: assetPair,
+                    price: price.toFixed(2),
+                    timestamp: timestamp || new Date().toISOString(),
+                    sources: ["Coinbase", "Binance", "Kraken"],
+                    confidence: 0.97,
+                    deviation: 0.02
+                };
+                
+                document.getElementById('price-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('price-result').style.display = 'block';
+                
+                showNotification('Price data retrieved successfully!', 'success');
+            } catch (error) {
+                showNotification('Error getting price: ' + error.message, 'error');
+            }
+        }
+
+        async function handlePriceHistory(event) {
+            event.preventDefault();
+            
+            const asset = document.getElementById('historyAsset').value;
+            const timeRange = document.getElementById('timeRange').value;
+            
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const historyData = [];
+                const numPoints = timeRange === '1h' ? 60 : timeRange === '1d' ? 24 : timeRange === '7d' ? 7 : 30;
+                
+                for (let i = 0; i < numPoints; i++) {
+                    historyData.push({
+                        timestamp: new Date(Date.now() - i * 3600000).toISOString(),
+                        price: 45000 + Math.random() * 5000,
+                        volume: Math.floor(Math.random() * 1000000)
+                    });
+                }
+                
+                const result = {
+                    asset: asset,
+                    timeRange: timeRange,
+                    dataPoints: historyData.length,
+                    data: historyData.slice(0, 5), // Show first 5 points
+                    summary: {
+                        min: Math.min(...historyData.map(d => d.price)).toFixed(2),
+                        max: Math.max(...historyData.map(d => d.price)).toFixed(2),
+                        avg: (historyData.reduce((sum, d) => sum + d.price, 0) / historyData.length).toFixed(2)
+                    }
+                };
+                
+                document.getElementById('price-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('price-result').style.display = 'block';
+                
+                showNotification('Price history retrieved successfully!', 'success');
+            } catch (error) {
+                showNotification('Error getting price history: ' + error.message, 'error');
+            }
+        }
+
+        async function listDataSources() {
+            try {
+                // Simulate API call
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                const sources = [
+                    { id: "coinbase", name: "Coinbase Pro", status: "active", latency: 150, accuracy: 99.2 },
+                    { id: "binance", name: "Binance", status: "active", latency: 120, accuracy: 98.8 },
+                    { id: "kraken", name: "Kraken", status: "active", latency: 180, accuracy: 99.1 },
+                    { id: "gemini", name: "Gemini", status: "degraded", latency: 250, accuracy: 97.5 }
+                ];
+                
+                const result = {
+                    totalSources: sources.length,
+                    activeSources: sources.filter(s => s.status === 'active').length,
+                    sources: sources
+                };
+                
+                document.getElementById('sources-output').textContent = JSON.stringify(result, null, 2);
+                document.getElementById('sources-result').style.display = 'block';
+            } catch (error) {
+                showNotification('Error listing data sources: ' + error.message, 'error');
+            }
+        }
+
+        async function testDataSources() {
+            try {
+                // Simulate testing
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                const testResults = {
+                    timestamp: new Date().toISOString(),
+                    totalTested: 4,
+                    passed: 3,
+                    failed: 1,
+                    results: [
+                        { source: "Coinbase", status: "pass", responseTime: 120 },
+                        { source: "Binance", status: "pass", responseTime: 95 },
+                        { source: "Kraken", status: "pass", responseTime: 180 },
+                        { source: "Gemini", status: "fail", error: "Connection timeout" }
+                    ]
+                };
+                
+                document.getElementById('sources-output').textContent = JSON.stringify(testResults, null, 2);
+                document.getElementById('sources-result').style.display = 'block';
+                
+                showNotification('Data source testing completed!', 'success');
+            } catch (error) {
+                showNotification('Error testing data sources: ' + error.message, 'error');
+            }
+        }
+
+        async function refreshSourceMetrics() {
+            try {
+                // Simulate metrics update
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                document.getElementById('active-sources').textContent = Math.floor(Math.random() * 3) + 10;
+                document.getElementById('pending-sources').textContent = Math.floor(Math.random() * 3);
+                document.getElementById('failed-sources').textContent = Math.floor(Math.random() * 2);
+            } catch (error) {
+                console.error('Error refreshing source metrics:', error);
+            }
+        }
+
+        async function refreshDashboard() {
+            try {
+                // Simulate dashboard update
+                await new Promise(resolve => setTimeout(resolve, 500));
+                
+                document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+                document.getElementById('updates-today').textContent = Math.floor(Math.random() * 1000) + 5000;
+                document.getElementById('accuracy').textContent = (98 + Math.random() * 2).toFixed(1) + '%';
+            } catch (error) {
+                console.error('Error refreshing dashboard:', error);
+            }
+        }
+
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+    </script>
+</body>
+</html> 

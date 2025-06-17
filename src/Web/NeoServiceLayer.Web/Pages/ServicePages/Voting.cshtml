@@ -1,0 +1,473 @@
+@page "/servicepages/voting"
+@model NeoServiceLayer.Web.Pages.ServicePages.VotingModel
+@{
+    ViewData["Title"] = "Voting Service";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .feature-icon {
+            font-size: 3rem;
+            color: #6f42c1;
+        }
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-online { background-color: #28a745; }
+        .status-offline { background-color: #dc3545; }
+        .status-checking { background-color: #ffc107; }
+        .voting-card {
+            background: linear-gradient(135deg, #6f42c1 0%, #495057 100%);
+            color: white;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-vote-yea me-3"></i>Voting Service
+                    </h1>
+                    <p class="lead mb-0">Decentralized Governance & Consensus Management</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <div class="d-flex align-items-center justify-content-end">
+                        <span id="service-status" class="badge bg-warning me-3">
+                            <span class="status-indicator status-checking"></span>Checking...
+                        </span>
+                        <a href="/services" class="btn btn-light btn-sm me-2">
+                            <i class="fas fa-arrow-left me-1"></i>Services
+                        </a>
+                        <a href="/" class="btn btn-light btn-sm">
+                            <i class="fas fa-home me-1"></i>Home
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <div class="row">
+            <!-- Service Information -->
+            <div class="col-md-4 mb-4">
+                <div class="card service-card h-100">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-info-circle me-2"></i>Service Information
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <i class="fas fa-vote-yea feature-icon"></i>
+                        </div>
+                        <h6 class="card-title">Voting Service</h6>
+                        <p class="card-text small">Decentralized voting with strategy automation and consensus node management for blockchain governance.</p>
+                        
+                        <hr>
+                        
+                        <h6>Service Details</h6>
+                        <ul class="list-unstyled small">
+                            <li><strong>Type:</strong> Blockchain Service</li>
+                            <li><strong>Layer:</strong> Blockchain</li>
+                            <li><strong>Consensus:</strong> dBFT 3.0</li>
+                            <li><strong>Voting Power:</strong> Token-based</li>
+                            <li><strong>Strategies:</strong> Multiple</li>
+                        </ul>
+
+                        <h6>Governance Features</h6>
+                        <ul class="list-unstyled small">
+                            <li><i class="fas fa-check text-success me-2"></i>Proposal Creation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Vote Delegation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Strategy Automation</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Consensus Monitoring</li>
+                            <li><i class="fas fa-check text-success me-2"></i>Result Verification</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Interactive Controls -->
+            <div class="col-md-8">
+                <div class="card">
+                    <div class="card-header">
+                        <ul class="nav nav-tabs card-header-tabs" id="service-tabs" role="tablist">
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link active" id="proposals-tab" data-bs-toggle="tab" data-bs-target="#proposals" type="button" role="tab">
+                                    <i class="fas fa-clipboard-list me-2"></i>Proposals
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="voting-tab" data-bs-toggle="tab" data-bs-target="#voting" type="button" role="tab">
+                                    <i class="fas fa-check-square me-2"></i>Vote
+                                </button>
+                            </li>
+                            <li class="nav-item" role="presentation">
+                                <button class="nav-link" id="strategies-tab" data-bs-toggle="tab" data-bs-target="#strategies" type="button" role="tab">
+                                    <i class="fas fa-robot me-2"></i>Strategies
+                                </button>
+                            </li>
+                        </ul>
+                    </div>
+                    <div class="card-body">
+                        <div class="tab-content" id="service-tabContent">
+                            <!-- Proposals Tab -->
+                            <div class="tab-pane fade show active" id="proposals" role="tabpanel">
+                                <h5>Active Proposals</h5>
+                                
+                                <div id="proposals-list" class="mb-4">
+                                    <!-- Proposals will be populated here -->
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6><i class="fas fa-plus-circle me-2"></i>Create New Proposal</h6>
+                                        <form id="create-proposal-form">
+                                            <div class="mb-3">
+                                                <label class="form-label">Title</label>
+                                                <input type="text" class="form-control" id="proposalTitle" placeholder="Proposal title">
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Description</label>
+                                                <textarea class="form-control" id="proposalDescription" rows="3" placeholder="Detailed description"></textarea>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Voting Duration</label>
+                                                <select class="form-select" id="votingDuration">
+                                                    <option value="24">24 Hours</option>
+                                                    <option value="72">3 Days</option>
+                                                    <option value="168">1 Week</option>
+                                                    <option value="336">2 Weeks</option>
+                                                </select>
+                                            </div>
+                                            <button type="submit" class="btn btn-success">
+                                                <i class="fas fa-file-contract me-2"></i>Create Proposal
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Voting Tab -->
+                            <div class="tab-pane fade" id="voting" role="tabpanel">
+                                <h5>Cast Your Vote</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-4">
+                                        <div class="card voting-card">
+                                            <div class="card-body text-center">
+                                                <h4 id="voting-power">--</h4>
+                                                <small>Your Voting Power</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-info text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="active-proposals">--</h4>
+                                                <small>Active Proposals</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="card bg-success text-white">
+                                            <div class="card-body text-center">
+                                                <h4 id="votes-cast">--</h4>
+                                                <small>Votes Cast</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="card">
+                                    <div class="card-body">
+                                        <h6><i class="fas fa-vote-yea me-2"></i>Quick Vote</h6>
+                                        <form id="vote-form">
+                                            <div class="mb-3">
+                                                <label class="form-label">Proposal</label>
+                                                <select class="form-select" id="voteProposal">
+                                                    <option value="">Select a proposal...</option>
+                                                </select>
+                                            </div>
+                                            <div class="mb-3">
+                                                <label class="form-label">Your Vote</label>
+                                                <div class="btn-group w-100" role="group">
+                                                    <input type="radio" class="btn-check" name="voteChoice" id="vote-yes" value="yes">
+                                                    <label class="btn btn-outline-success" for="vote-yes">
+                                                        <i class="fas fa-thumbs-up me-2"></i>Yes
+                                                    </label>
+                                                    <input type="radio" class="btn-check" name="voteChoice" id="vote-no" value="no">
+                                                    <label class="btn btn-outline-danger" for="vote-no">
+                                                        <i class="fas fa-thumbs-down me-2"></i>No
+                                                    </label>
+                                                    <input type="radio" class="btn-check" name="voteChoice" id="vote-abstain" value="abstain">
+                                                    <label class="btn btn-outline-secondary" for="vote-abstain">
+                                                        <i class="fas fa-minus me-2"></i>Abstain
+                                                    </label>
+                                                </div>
+                                            </div>
+                                            <button type="submit" class="btn btn-primary">
+                                                <i class="fas fa-check me-2"></i>Submit Vote
+                                            </button>
+                                        </form>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Strategies Tab -->
+                            <div class="tab-pane fade" id="strategies" role="tabpanel">
+                                <h5>Voting Strategies</h5>
+                                
+                                <div class="row g-3 mb-4">
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-robot me-2"></i>Auto-Vote Strategy</h6>
+                                                <p class="small text-muted">Automatically vote based on predefined criteria</p>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input" type="checkbox" id="autoVoteEnabled">
+                                                    <label class="form-check-label" for="autoVoteEnabled">
+                                                        Enable Auto-Vote
+                                                    </label>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="card">
+                                            <div class="card-body">
+                                                <h6><i class="fas fa-user-friends me-2"></i>Delegation</h6>
+                                                <p class="small text-muted">Delegate voting power to trusted addresses</p>
+                                                <button class="btn btn-info btn-sm" onclick="manageDelegation()">
+                                                    <i class="fas fa-cog me-1"></i>Manage
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" onclick="refreshStrategies()">
+                                    <i class="fas fa-sync-alt me-2"></i>Refresh Strategies
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            checkServiceStatus();
+            loadProposals();
+            loadVotingMetrics();
+            loadVoteOptions();
+            
+            document.getElementById('create-proposal-form').addEventListener('submit', handleCreateProposal);
+            document.getElementById('vote-form').addEventListener('submit', handleVote);
+        });
+
+        async function checkServiceStatus() {
+            try {
+                updateServiceStatus('checking');
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                updateServiceStatus(Math.random() > 0.1 ? 'online' : 'offline');
+            } catch (error) {
+                updateServiceStatus('offline');
+            }
+        }
+
+        function updateServiceStatus(status) {
+            const statusElement = document.getElementById('service-status');
+            
+            switch (status) {
+                case 'online':
+                    statusElement.innerHTML = '<span class="status-indicator status-online"></span>Online';
+                    statusElement.className = 'badge bg-success me-3';
+                    break;
+                case 'offline':
+                    statusElement.innerHTML = '<span class="status-indicator status-offline"></span>Offline';
+                    statusElement.className = 'badge bg-danger me-3';
+                    break;
+                case 'checking':
+                    statusElement.innerHTML = '<span class="status-indicator status-checking"></span>Checking...';
+                    statusElement.className = 'badge bg-warning me-3';
+                    break;
+            }
+        }
+
+        async function loadProposals() {
+            try {
+                const proposalsList = document.getElementById('proposals-list');
+                proposalsList.innerHTML = '<div class="text-center"><i class="fas fa-spinner fa-spin me-2"></i>Loading proposals...</div>';
+                
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                const proposals = [
+                    { id: 1, title: "Increase Block Gas Limit", status: "Active", votes: { yes: 125, no: 45, abstain: 12 }, timeLeft: "2 days" },
+                    { id: 2, title: "Protocol Fee Adjustment", status: "Active", votes: { yes: 89, no: 23, abstain: 8 }, timeLeft: "5 days" },
+                    { id: 3, title: "New Oracle Integration", status: "Pending", votes: { yes: 0, no: 0, abstain: 0 }, timeLeft: "7 days" }
+                ];
+                
+                let html = '';
+                proposals.forEach(proposal => {
+                    const totalVotes = proposal.votes.yes + proposal.votes.no + proposal.votes.abstain;
+                    const yesPercentage = totalVotes > 0 ? Math.round((proposal.votes.yes / totalVotes) * 100) : 0;
+                    
+                    html += `
+                        <div class="card mb-3">
+                            <div class="card-body">
+                                <div class="d-flex justify-content-between align-items-start">
+                                    <div>
+                                        <h6 class="card-title">${proposal.title}</h6>
+                                        <small class="text-muted">ID: ${proposal.id} • ${proposal.timeLeft} remaining</small>
+                                    </div>
+                                    <span class="badge ${proposal.status === 'Active' ? 'bg-success' : 'bg-warning'}">${proposal.status}</span>
+                                </div>
+                                <div class="mt-3">
+                                    <div class="row text-center">
+                                        <div class="col-4">
+                                            <div class="text-success"><strong>${proposal.votes.yes}</strong></div>
+                                            <small>Yes</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-danger"><strong>${proposal.votes.no}</strong></div>
+                                            <small>No</small>
+                                        </div>
+                                        <div class="col-4">
+                                            <div class="text-secondary"><strong>${proposal.votes.abstain}</strong></div>
+                                            <small>Abstain</small>
+                                        </div>
+                                    </div>
+                                    <div class="progress mt-2" style="height: 6px;">
+                                        <div class="progress-bar bg-success" style="width: ${yesPercentage}%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                });
+                
+                proposalsList.innerHTML = html;
+            } catch (error) {
+                document.getElementById('proposals-list').innerHTML = '<div class="text-danger">Error loading proposals</div>';
+            }
+        }
+
+        async function loadVotingMetrics() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 800));
+                
+                document.getElementById('voting-power').textContent = Math.floor(Math.random() * 1000) + 500;
+                document.getElementById('active-proposals').textContent = Math.floor(Math.random() * 5) + 3;
+                document.getElementById('votes-cast').textContent = Math.floor(Math.random() * 20) + 15;
+            } catch (error) {
+                console.error('Error loading voting metrics:', error);
+            }
+        }
+
+        async function loadVoteOptions() {
+            try {
+                const select = document.getElementById('voteProposal');
+                select.innerHTML = '<option value="">Loading...</option>';
+                
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                
+                select.innerHTML = `
+                    <option value="">Select a proposal...</option>
+                    <option value="1">Increase Block Gas Limit</option>
+                    <option value="2">Protocol Fee Adjustment</option>
+                    <option value="3">New Oracle Integration</option>
+                `;
+            } catch (error) {
+                console.error('Error loading vote options:', error);
+            }
+        }
+
+        async function handleCreateProposal(event) {
+            event.preventDefault();
+            
+            const title = document.getElementById('proposalTitle').value;
+            const description = document.getElementById('proposalDescription').value;
+            const duration = document.getElementById('votingDuration').value;
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 2000));
+                
+                alert('Proposal created successfully!');
+                document.getElementById('create-proposal-form').reset();
+                loadProposals();
+            } catch (error) {
+                alert('Error creating proposal: ' + error.message);
+            }
+        }
+
+        async function handleVote(event) {
+            event.preventDefault();
+            
+            const proposal = document.getElementById('voteProposal').value;
+            const choice = document.querySelector('input[name="voteChoice"]:checked')?.value;
+            
+            if (!proposal || !choice) {
+                alert('Please select a proposal and vote choice');
+                return;
+            }
+            
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1500));
+                
+                alert('Vote submitted successfully!');
+                document.getElementById('vote-form').reset();
+                loadProposals();
+                loadVotingMetrics();
+            } catch (error) {
+                alert('Error submitting vote: ' + error.message);
+            }
+        }
+
+        async function manageDelegation() {
+            // Simulate delegation management
+            const delegateAddress = prompt('Enter delegate address:');
+            if (delegateAddress) {
+                alert('Delegation configured successfully!');
+            }
+        }
+
+        async function refreshStrategies() {
+            try {
+                await new Promise(resolve => setTimeout(resolve, 1000));
+                alert('Strategies refreshed successfully!');
+            } catch (error) {
+                alert('Error refreshing strategies: ' + error.message);
+            }
+        }
+    </script>
+</body>
+</html> 

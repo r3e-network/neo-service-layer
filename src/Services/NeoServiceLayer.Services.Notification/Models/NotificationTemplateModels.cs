@@ -1,6 +1,67 @@
 namespace NeoServiceLayer.Services.Notification.Models;
 
 /// <summary>
+/// Notification template.
+/// </summary>
+public class NotificationTemplate
+{
+    /// <summary>
+    /// Gets or sets the template ID.
+    /// </summary>
+    public string TemplateId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template name.
+    /// </summary>
+    public string TemplateName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template body.
+    /// </summary>
+    public string Body { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template variables.
+    /// </summary>
+    public string[] Variables { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the supported channels.
+    /// </summary>
+    public NotificationChannel[] SupportedChannels { get; set; } = Array.Empty<NotificationChannel>();
+
+    /// <summary>
+    /// Gets or sets the template category.
+    /// </summary>
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the template is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the creation timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last updated timestamp.
+    /// </summary>
+    public DateTime UpdatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
 /// Create template request.
 /// </summary>
 public class CreateTemplateRequest

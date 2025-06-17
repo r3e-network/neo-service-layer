@@ -1,27 +1,6 @@
 namespace NeoServiceLayer.Core;
 
-// Prediction Service Models
-public class PredictionRequest
-{
-    public string ModelId { get; set; } = string.Empty;
-    public object[] InputData { get; set; } = Array.Empty<object>();
-    public Dictionary<string, object> Parameters { get; set; } = new();
-    public string DataFormat { get; set; } = "json";
-    public bool ReturnConfidence { get; set; } = true;
-    public string RequestId { get; set; } = Guid.NewGuid().ToString();
-}
-
-public class PredictionResult
-{
-    public string RequestId { get; set; } = string.Empty;
-    public string ModelId { get; set; } = string.Empty;
-    public object[] Predictions { get; set; } = Array.Empty<object>();
-    public double[] ConfidenceScores { get; set; } = Array.Empty<double>();
-    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
-    public int ProcessingTimeMs { get; set; }
-    public string Proof { get; set; } = string.Empty;
-}
-
+// Sentiment Analysis Models
 public class SentimentAnalysisRequest
 {
     public string[] TextData { get; set; } = Array.Empty<string>();

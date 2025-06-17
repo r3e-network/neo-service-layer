@@ -37,7 +37,7 @@ public partial class MonitoringService : EnclaveBlockchainServiceBase, IMonitori
         Configuration = configuration;
 
         AddCapability<IMonitoringService>();
-        AddDependency(new ServiceDependency { Name = "EnclaveManager", Version = "1.0.0", IsRequired = true });
+        AddDependency(new ServiceDependency("EnclaveManager", true, "1.0.0"));
 
         // Initialize timers for periodic health checks and metrics collection
         _healthCheckTimer = new Timer(PerformHealthCheck, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
@@ -489,5 +489,41 @@ public partial class MonitoringService : EnclaveBlockchainServiceBase, IMonitori
     {
         await Task.Delay(50);
         Logger.LogDebug("Alerting subsystem initialized");
+    }
+
+    /// <summary>
+    /// Executes an operation asynchronously with proper error handling.
+    /// </summary>
+    /// <typeparam name="T">The return type.</typeparam>
+    /// <param name="operation">The operation to execute.</param>
+    /// <returns>The result of the operation.</returns>
+    protected async Task<T> ExecuteAsync<T>(Func<Task<T>> operation)
+    {
+        try
+        {
+            return await operation();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error executing operation");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Executes an operation asynchronously with proper error handling.
+    /// </summary>
+    /// <param name="operation">The operation to execute.</param>
+    protected async Task ExecuteAsync(Func<Task> operation)
+    {
+        try
+        {
+            await operation();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error executing operation");
+            throw;
+        }
     }
 }

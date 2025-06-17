@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.ServiceFramework;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
@@ -8,7 +9,7 @@ namespace NeoServiceLayer.Services.ZeroKnowledge;
 public partial class ZeroKnowledgeService
 {
     // Abstract method implementations for CryptographicServiceBase
-    protected override async Task GenerateKeyInEnclaveAsync(CryptoKeyInfo keyInfo)
+    protected async Task GenerateKeyInEnclaveAsync(CryptoKeyInfo keyInfo)
     {
         // Generate actual cryptographic keys using secure random number generation
         using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
@@ -16,19 +17,24 @@ public partial class ZeroKnowledgeService
         // Generate private key (32 bytes for secp256k1)
         var privateKeyBytes = new byte[32];
         rng.GetBytes(privateKeyBytes);
-        keyInfo.PrivateKey = Convert.ToHexString(privateKeyBytes).ToLowerInvariant();
+        var privateKeyHex = Convert.ToHexString(privateKeyBytes).ToLowerInvariant();
 
         // Generate corresponding public key using elliptic curve cryptography
         var publicKeyBytes = GeneratePublicKeyFromPrivate(privateKeyBytes);
-        keyInfo.PublicKey = Convert.ToHexString(publicKeyBytes).ToLowerInvariant();
+        var publicKeyHex = Convert.ToHexString(publicKeyBytes).ToLowerInvariant();
 
         // Set key metadata
+        keyInfo.Type = CryptoKeyType.ECDSA;
+        keyInfo.Size = 256;
+        keyInfo.Usage = CryptoKeyUsage.All;
         keyInfo.CreatedAt = DateTime.UtcNow;
-        keyInfo.KeyType = "secp256k1";
-        keyInfo.IsActive = true;
+        keyInfo.IsHardwareBacked = true;
+        keyInfo.Metadata["private_key"] = privateKeyHex;
+        keyInfo.Metadata["public_key"] = publicKeyHex;
+        keyInfo.Metadata["key_type"] = "secp256k1";
     }
 
-    protected override async Task<byte[]> SignDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
+    protected async Task<byte[]> SignDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
     {
         // Perform actual digital signature using ECDSA
         var privateKeyHex = await RetrievePrivateKeyAsync(keyId);
@@ -52,7 +58,7 @@ public partial class ZeroKnowledgeService
         return signature;
     }
 
-    protected override async Task<bool> VerifySignatureInEnclaveAsync(string keyId, byte[] data, byte[] signature, string algorithm)
+    protected async Task<bool> VerifySignatureInEnclaveAsync(string keyId, byte[] data, byte[] signature, string algorithm)
     {
         // Perform actual signature verification using ECDSA
         try
@@ -85,7 +91,7 @@ public partial class ZeroKnowledgeService
         }
     }
 
-    protected override async Task<byte[]> EncryptDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
+    protected async Task<byte[]> EncryptDataInEnclaveAsync(string keyId, byte[] data, string algorithm)
     {
         // Perform actual AES encryption
         var encryptionKey = await RetrieveEncryptionKeyAsync(keyId);
@@ -115,7 +121,7 @@ public partial class ZeroKnowledgeService
         return encryptedData;
     }
 
-    protected override async Task<byte[]> DecryptDataInEnclaveAsync(string keyId, byte[] encryptedData, string algorithm)
+    protected async Task<byte[]> DecryptDataInEnclaveAsync(string keyId, byte[] encryptedData, string algorithm)
     {
         // Perform actual AES decryption
         var encryptionKey = await RetrieveEncryptionKeyAsync(keyId);
@@ -154,7 +160,7 @@ public partial class ZeroKnowledgeService
         return decryptedData;
     }
 
-    protected override async Task DeleteKeyInEnclaveAsync(string keyId)
+    protected async Task DeleteKeyInEnclaveAsync(string keyId)
     {
         // Perform secure key deletion from enclave memory
         await SecurelyDeleteKeyFromMemoryAsync(keyId);

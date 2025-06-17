@@ -1,4 +1,6 @@
-﻿namespace NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core.Models;
+
+namespace NeoServiceLayer.Core;
 
 /// <summary>
 /// Interface for all services in the Neo Service Layer.

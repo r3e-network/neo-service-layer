@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  # Neo Service Layer Web Application
+  neo-web:
+    build:
+      context: .
+      dockerfile: Dockerfile.simple
+    container_name: neo-web-app
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+      - SGX_MODE=SIM
+      - DOTNET_ENVIRONMENT=Development
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    networks:
+      - neo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  neo-network:
+    driver: bridge 

@@ -1,0 +1,101 @@
+{
+  "LoadTestConfiguration": {
+    "SGXMode": "SIM",
+    "EnableDebug": true,
+    "TestDurationMinutes": 5,
+    "WarmupDurationSeconds": 30,
+    "ReportingIntervalSeconds": 10,
+    "MaxConcurrentUsers": 100,
+    "ResourceMonitoring": {
+      "EnableCpuMonitoring": true,
+      "EnableMemoryMonitoring": true,
+      "EnableSgxMemoryMonitoring": true,
+      "MonitoringIntervalMs": 1000
+    }
+  },
+  "Scenarios": {
+    "EnclaveInitialization": {
+      "MaxRps": 10,
+      "Duration": "00:02:00",
+      "ConcurrentCopies": 5,
+      "ExpectedLatencyP95Ms": 200,
+      "ExpectedLatencyP99Ms": 500
+    },
+    "DataSealing": {
+      "MaxRps": 1000,
+      "Duration": "00:05:00",
+      "ConcurrentCopies": 20,
+      "DataSizes": [1024, 4096, 16384, 65536],
+      "ExpectedLatencyP95Ms": 10,
+      "ExpectedLatencyP99Ms": 25
+    },
+    "DataUnsealing": {
+      "MaxRps": 1000,
+      "Duration": "00:05:00",
+      "ConcurrentCopies": 20,
+      "ExpectedLatencyP95Ms": 8,
+      "ExpectedLatencyP99Ms": 20
+    },
+    "CryptographicOperations": {
+      "MaxRps": 500,
+      "Duration": "00:03:00",
+      "ConcurrentCopies": 15,
+      "Operations": ["Sign", "Verify", "Encrypt", "Decrypt"],
+      "ExpectedLatencyP95Ms": 15,
+      "ExpectedLatencyP99Ms": 30
+    },
+    "JavaScriptExecution": {
+      "MaxRps": 200,
+      "Duration": "00:03:00",
+      "ConcurrentCopies": 10,
+      "ScriptComplexity": ["Simple", "Moderate", "Complex"],
+      "ExpectedLatencyP95Ms": 50,
+      "ExpectedLatencyP99Ms": 100
+    },
+    "SecureHttpRequests": {
+      "MaxRps": 100,
+      "Duration": "00:04:00",
+      "ConcurrentCopies": 8,
+      "RequestSizes": [256, 1024, 4096],
+      "ExpectedLatencyP95Ms": 100,
+      "ExpectedLatencyP99Ms": 200
+    },
+    "AttestationGeneration": {
+      "MaxRps": 50,
+      "Duration": "00:02:00",
+      "ConcurrentCopies": 5,
+      "ExpectedLatencyP95Ms": 80,
+      "ExpectedLatencyP99Ms": 150
+    }
+  },
+  "StressTestScenarios": {
+    "MemoryPressure": {
+      "DataSizeMultiplier": 10,
+      "ConcurrentOperations": 50,
+      "Duration": "00:10:00"
+    },
+    "HighThroughput": {
+      "TargetRps": 2000,
+      "Duration": "00:05:00",
+      "ConcurrentCopies": 50
+    },
+    "LongRunning": {
+      "Duration": "00:30:00",
+      "SteadyStateRps": 100,
+      "ConcurrentCopies": 20
+    },
+    "BurstLoad": {
+      "BurstRps": 1000,
+      "BurstDurationSeconds": 30,
+      "RestDurationSeconds": 60,
+      "TotalBursts": 10
+    }
+  },
+  "PerformanceThresholds": {
+    "MaxCpuUsagePercent": 80,
+    "MaxMemoryUsageMB": 2048,
+    "MaxSgxMemoryUsageMB": 256,
+    "MaxErrorRatePercent": 1,
+    "MinThroughputRps": 50
+  }
+} 

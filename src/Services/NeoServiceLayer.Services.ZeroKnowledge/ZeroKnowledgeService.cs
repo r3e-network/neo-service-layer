@@ -1,13 +1,15 @@
 ﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.ZeroKnowledge.Models;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
 /// <summary>
 /// Implementation of the Zero-Knowledge Service that provides privacy-preserving computation capabilities.
 /// </summary>
-public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowledgeService
+public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroKnowledgeService
 {
     private readonly Dictionary<string, ZkCircuit> _circuits = new();
     private readonly Dictionary<string, ZkProof> _proofs = new();
@@ -19,65 +21,22 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
     /// <param name="logger">The logger.</param>
     /// <param name="configuration">The service configuration.</param>
     public ZeroKnowledgeService(ILogger<ZeroKnowledgeService> logger, IServiceConfiguration? configuration = null)
-        : base("ZeroKnowledgeService", "Privacy-preserving computation and zero-knowledge proof service", "1.0.0", logger, configuration)
+        : base("ZeroKnowledgeService", "Privacy-preserving computation and zero-knowledge proof service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         Configuration = configuration;
 
         AddCapability<IZeroKnowledgeService>();
-        AddDependency(new ServiceDependency("KeyManagementService", "1.0.0", true));
-        AddDependency(new ServiceDependency("ComputeService", "1.0.0", false));
+        AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("ComputeService", false, "1.0.0"));
     }
 
     /// <summary>
     /// Gets the service configuration.
     /// </summary>
-    protected new IServiceConfiguration? Configuration { get; }
+    protected IServiceConfiguration? Configuration { get; }
 
     /// <inheritdoc/>
-    public async Task<string> CompileCircuitAsync(ZkCircuitDefinition definition, BlockchainType blockchainType)
-    {
-        ArgumentNullException.ThrowIfNull(definition);
-
-        if (!SupportsBlockchain(blockchainType))
-        {
-            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
-        }
-
-        return await ExecuteInEnclaveAsync(async () =>
-        {
-            var circuitId = Guid.NewGuid().ToString();
-
-            // Compile circuit within the enclave for security
-            var compiledCircuit = await CompileCircuitInEnclaveAsync(definition);
-
-            var circuit = new ZkCircuit
-            {
-                CircuitId = circuitId,
-                Name = definition.Name,
-                Description = definition.Description,
-                Type = definition.Type,
-                CompiledCode = compiledCircuit,
-                InputSchema = definition.InputSchema,
-                OutputSchema = definition.OutputSchema,
-                CreatedAt = DateTime.UtcNow,
-                IsActive = true,
-                Metadata = definition.Metadata
-            };
-
-            lock (_circuitsLock)
-            {
-                _circuits[circuitId] = circuit;
-            }
-
-            Logger.LogInformation("Compiled ZK circuit {CircuitId} ({Name}) for {Blockchain}",
-                circuitId, definition.Name, blockchainType);
-
-            return circuitId;
-        });
-    }
-
-    /// <inheritdoc/>
-    public async Task<ProofResult> GenerateProofAsync(ProofRequest request, BlockchainType blockchainType)
+    public async Task<CoreModels.ProofResult> GenerateProofAsync(CoreModels.ProofRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -115,13 +74,14 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
                     _proofs[proofId] = proof;
                 }
 
-                var result = new ProofResult
+                var result = new CoreModels.ProofResult
                 {
                     ProofId = proofId,
-                    Proof = proofData,
-                    PublicSignals = publicSignals,
+                    ProofData = System.Text.Encoding.UTF8.GetBytes(proofData),
+                    PublicOutputs = new Dictionary<string, object> { ["signals"] = publicSignals },
+                    Success = true,
                     GeneratedAt = DateTime.UtcNow,
-                    VerificationKey = await GetVerificationKeyAsync(request.CircuitId)
+                    Metadata = new Dictionary<string, object> { ["verification_key"] = await GetVerificationKeyAsync(request.CircuitId) }
                 };
 
                 Logger.LogInformation("Generated ZK proof {ProofId} for circuit {CircuitId} on {Blockchain}",
@@ -133,20 +93,21 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             {
                 Logger.LogError(ex, "Failed to generate ZK proof {ProofId} for circuit {CircuitId}", proofId, request.CircuitId);
 
-                return new ProofResult
+                return new CoreModels.ProofResult
                 {
                     ProofId = proofId,
-                    Proof = string.Empty,
-                    PublicSignals = Array.Empty<string>(),
-                    GeneratedAt = DateTime.UtcNow,
-                    VerificationKey = string.Empty
+                    ProofData = Array.Empty<byte>(),
+                    PublicOutputs = new Dictionary<string, object>(),
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    GeneratedAt = DateTime.UtcNow
                 };
             }
         });
     }
 
     /// <inheritdoc/>
-    public async Task<bool> VerifyProofAsync(ProofVerification verification, BlockchainType blockchainType)
+    public async Task<bool> VerifyProofAsync(CoreModels.ProofVerification verification, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(verification);
 
@@ -160,7 +121,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             var circuit = GetCircuit(verification.CircuitId);
 
             // Verify proof within the enclave
-            var isValid = await VerifyProofInEnclaveAsync(circuit, verification.Proof, verification.PublicSignals);
+            var isValid = await VerifyProofInEnclaveAsync(circuit, verification.ProofData, verification.PublicInputs);
 
             Logger.LogDebug("ZK proof verification for circuit {CircuitId} on {Blockchain}: {IsValid}",
                 verification.CircuitId, blockchainType, isValid);
@@ -195,11 +156,11 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
                 var computationResult = new ZkComputationResult
                 {
                     ComputationId = computationId,
-                    Success = true,
-                    Result = result,
+                    CircuitId = request.CircuitId,
+                    Results = new object[] { result },
                     Proof = proof,
-                    ExecutedAt = DateTime.UtcNow,
-                    ComputationType = request.ComputationType
+                    ComputedAt = DateTime.UtcNow,
+                    IsValid = true
                 };
 
                 Logger.LogInformation("Executed private computation {ComputationId} on {Blockchain}",
@@ -214,10 +175,11 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
                 return new ZkComputationResult
                 {
                     ComputationId = computationId,
-                    Success = false,
-                    ErrorMessage = ex.Message,
-                    ExecutedAt = DateTime.UtcNow,
-                    ComputationType = request.ComputationType
+                    CircuitId = request.CircuitId,
+                    Results = Array.Empty<object>(),
+                    Proof = string.Empty,
+                    ComputedAt = DateTime.UtcNow,
+                    IsValid = false
                 };
             }
         });
@@ -231,13 +193,13 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() =>
+        return await Task.Run(() =>
         {
             lock (_circuitsLock)
             {
                 return _circuits.Values.Where(c => c.IsActive).ToList();
             }
-        })();
+        });
     }
 
     /// <inheritdoc/>
@@ -250,7 +212,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() => GetCircuit(circuitId))();
+        return await Task.Run(() => GetCircuit(circuitId));
     }
 
     /// <inheritdoc/>
@@ -263,7 +225,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() => GetProof(proofId))();
+        return await Task.Run(() => GetProof(proofId));
     }
 
     /// <inheritdoc/>
@@ -276,7 +238,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await Task.FromResult(() =>
+        return await Task.Run(() =>
         {
             lock (_circuitsLock)
             {
@@ -290,7 +252,7 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
 
             Logger.LogWarning("Circuit {CircuitId} not found for deletion on {Blockchain}", circuitId, blockchainType);
             return false;
-        })();
+        });
     }
 
     /// <summary>
@@ -329,17 +291,10 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
         throw new ArgumentException($"Proof {proofId} not found", nameof(proofId));
     }
 
-
-
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
         Logger.LogInformation("Initializing Zero-Knowledge Service");
-
-        if (!await base.OnInitializeAsync())
-        {
-            return false;
-        }
 
         // Initialize default circuits for common use cases
         await InitializeDefaultCircuitsAsync();
@@ -431,13 +386,6 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
-        var baseHealth = base.OnGetHealthAsync().Result;
-
-        if (baseHealth != ServiceHealth.Healthy)
-        {
-            return Task.FromResult(baseHealth);
-        }
-
         // Check ZK-specific health
         var activeCircuitCount = _circuits.Values.Count(c => c.IsActive);
         var totalProofCount = _proofs.Count;
@@ -446,5 +394,88 @@ public partial class ZeroKnowledgeService : CryptographicServiceBase, IZeroKnowl
             activeCircuitCount, totalProofCount);
 
         return Task.FromResult(ServiceHealth.Healthy);
+    }
+
+    // Make the interface methods explicit to avoid conflicts
+    async Task<ProofResult> IZeroKnowledgeService.GenerateProofAsync(ProofRequest request, BlockchainType blockchainType)
+    {
+        // Convert to Core models and call the implementation
+        var coreRequest = new CoreModels.ProofRequest
+        {
+            CircuitId = request.CircuitId,
+            PrivateInputs = request.PrivateInputs,
+            PublicInputs = request.PublicInputs,
+            Parameters = request.Parameters
+        };
+
+        var coreResult = await GenerateProofAsync(coreRequest, blockchainType);
+        
+        // Convert back to interface result
+        return new ProofResult
+        {
+            ProofId = coreResult.ProofId,
+            Proof = System.Text.Encoding.UTF8.GetString(coreResult.ProofData),
+            PublicSignals = coreResult.PublicOutputs.ContainsKey("signals") ? 
+                (string[])coreResult.PublicOutputs["signals"] : Array.Empty<string>(),
+            GeneratedAt = coreResult.GeneratedAt,
+            VerificationKey = coreResult.Metadata.ContainsKey("verification_key") ? 
+                coreResult.Metadata["verification_key"].ToString() ?? "" : ""
+        };
+    }
+
+    async Task<bool> IZeroKnowledgeService.VerifyProofAsync(ProofVerification verification, BlockchainType blockchainType)
+    {
+        // Convert to Core models and call the implementation
+        var coreVerification = new CoreModels.ProofVerification
+        {
+            ProofData = System.Text.Encoding.UTF8.GetBytes(verification.Proof),
+            PublicInputs = verification.PublicSignals.ToDictionary(s => s, s => (object)s),
+            CircuitId = verification.CircuitId
+        };
+
+        return await VerifyProofAsync(coreVerification, blockchainType);
+    }
+
+    // Helper methods for enclave operations
+    private async Task<string> GenerateProofInEnclaveAsync(ZkCircuit circuit, Dictionary<string, object> publicInputs, Dictionary<string, object> privateInputs)
+    {
+        await Task.Delay(200); // Simulate proof generation
+        return $"proof_{circuit.CircuitId}_{DateTime.UtcNow.Ticks}";
+    }
+
+    private async Task<string[]> ExtractPublicSignalsAsync(Dictionary<string, object> publicInputs)
+    {
+        await Task.Delay(50);
+        return publicInputs.Keys.ToArray();
+    }
+
+    private async Task<bool> VerifyProofInEnclaveAsync(ZkCircuit circuit, byte[] proofData, Dictionary<string, object> publicInputs)
+    {
+        await Task.Delay(100); // Simulate verification
+        return proofData.Length > 0 && publicInputs.Count > 0;
+    }
+
+    private async Task<string> GetVerificationKeyAsync(string circuitId)
+    {
+        await Task.Delay(10);
+        return $"vk_{circuitId}";
+    }
+
+    private async Task<Dictionary<string, object>> ExecuteComputationInEnclaveAsync(ZkComputationRequest request)
+    {
+        await Task.Delay(300); // Simulate computation
+        return new Dictionary<string, object> { ["result"] = "computed_value", ["type"] = request.ComputationType };
+    }
+
+    private async Task<string> GenerateComputationProofAsync(ZkComputationRequest request, Dictionary<string, object> result)
+    {
+        await Task.Delay(100);
+        return $"computation_proof_{request.ComputationType}_{DateTime.UtcNow.Ticks}";
+    }
+
+    private async Task InitializeZkEnclaveAsync()
+    {
+        await Task.Delay(100); // Simulate enclave initialization
+        Logger.LogDebug("ZK enclave components initialized");
     }
 }

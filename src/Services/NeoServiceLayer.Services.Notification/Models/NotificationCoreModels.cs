@@ -235,3 +235,384 @@ public class NotificationResult
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
+
+/// <summary>
+/// Notification request.
+/// </summary>
+public class NotificationRequest
+{
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public string Channel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recipient address.
+    /// </summary>
+    public string Recipient { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification message.
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification priority.
+    /// </summary>
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+
+    /// <summary>
+    /// Gets or sets the notification category.
+    /// </summary>
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets additional attachments.
+    /// </summary>
+    public NotificationAttachment[] Attachments { get; set; } = Array.Empty<NotificationAttachment>();
+
+    /// <summary>
+    /// Gets or sets the scheduled delivery time.
+    /// </summary>
+    public DateTime? ScheduledAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Bulk notification request.
+/// </summary>
+public class BulkNotificationRequest
+{
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public string Channel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the list of recipients.
+    /// </summary>
+    public List<string> Recipients { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the notification subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification message.
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification priority.
+    /// </summary>
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+
+    /// <summary>
+    /// Gets or sets the notification category.
+    /// </summary>
+    public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets additional attachments.
+    /// </summary>
+    public NotificationAttachment[] Attachments { get; set; } = Array.Empty<NotificationAttachment>();
+
+    /// <summary>
+    /// Gets or sets the scheduled delivery time.
+    /// </summary>
+    public DateTime? ScheduledAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Broadcast notification request.
+/// </summary>
+public class BroadcastNotificationRequest
+{
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message to broadcast.
+    /// </summary>
+    public string Message { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the target audience.
+    /// </summary>
+    public string TargetAudience { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+}
+
+/// <summary>
+/// Notification subscription request.
+/// </summary>
+public class NotificationSubscriptionRequest
+{
+    /// <summary>
+    /// Gets or sets the subscriber address.
+    /// </summary>
+    public string SubscriberAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification types to subscribe to.
+    /// </summary>
+    public List<string> NotificationTypes { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the preferred channel.
+    /// </summary>
+    public NotificationChannel PreferredChannel { get; set; }
+}
+
+/// <summary>
+/// Create notification template request.
+/// </summary>
+public class CreateNotificationTemplateRequest
+{
+    /// <summary>
+    /// Gets or sets the template name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template body.
+    /// </summary>
+    public string Body { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template type.
+    /// </summary>
+    public string Type { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Update notification template request.
+/// </summary>
+public class UpdateNotificationTemplateRequest
+{
+    /// <summary>
+    /// Gets or sets the template ID.
+    /// </summary>
+    public string TemplateId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template name.
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template subject.
+    /// </summary>
+    public string? Subject { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template body.
+    /// </summary>
+    public string? Body { get; set; }
+}
+
+/// <summary>
+/// Create notification channel request.
+/// </summary>
+public class CreateNotificationChannelRequest
+{
+    /// <summary>
+    /// Gets or sets the channel name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the channel type.
+    /// </summary>
+    public NotificationChannel Type { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    public Dictionary<string, object> Configuration { get; set; } = new();
+}
+
+/// <summary>
+/// Update notification channel request.
+/// </summary>
+public class UpdateNotificationChannelRequest
+{
+    /// <summary>
+    /// Gets or sets the channel ID.
+    /// </summary>
+    public string ChannelId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the channel name.
+    /// </summary>
+    public string? Name { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    public Dictionary<string, object>? Configuration { get; set; }
+}
+
+/// <summary>
+/// Unsubscribe notification request.
+/// </summary>
+public class UnsubscribeNotificationRequest
+{
+    /// <summary>
+    /// Gets or sets the subscription ID.
+    /// </summary>
+    public string SubscriptionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason for unsubscribing.
+    /// </summary>
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Delete notification template request.
+/// </summary>
+public class DeleteNotificationTemplateRequest
+{
+    /// <summary>
+    /// Gets or sets the template ID.
+    /// </summary>
+    public string TemplateId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason for deletion.
+    /// </summary>
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Get notification templates request.
+/// </summary>
+public class GetNotificationTemplatesRequest
+{
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the search query.
+    /// </summary>
+    public string? SearchQuery { get; set; }
+}
+
+/// <summary>
+/// Get notification history request.
+/// </summary>
+public class GetNotificationHistoryRequest
+{
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the recipient filter.
+    /// </summary>
+    public string? Recipient { get; set; }
+}
+
+/// <summary>
+/// Get notification status request.
+/// </summary>
+public class GetNotificationStatusRequest
+{
+    /// <summary>
+    /// Gets or sets the notification ID.
+    /// </summary>
+    public string NotificationId { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Delete notification channel request.
+/// </summary>
+public class DeleteNotificationChannelRequest
+{
+    /// <summary>
+    /// Gets or sets the channel ID.
+    /// </summary>
+    public string ChannelId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason for deletion.
+    /// </summary>
+    public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Get notification channels request.
+/// </summary>
+public class GetNotificationChannelsRequest
+{
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    public int PageNumber { get; set; } = 1;
+}
+
+/// <summary>
+/// Notification statistics request.
+/// </summary>
+public class NotificationStatisticsRequest
+{
+    /// <summary>
+    /// Gets or sets the start date for statistics.
+    /// </summary>
+    public DateTime? StartDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the end date for statistics.
+    /// </summary>
+    public DateTime? EndDate { get; set; }
+}

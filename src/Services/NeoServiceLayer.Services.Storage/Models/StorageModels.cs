@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Storage;
+namespace NeoServiceLayer.Services.Storage.Models;
 
 /// <summary>
 /// Storage statistics information.

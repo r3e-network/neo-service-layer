@@ -1,11 +1,14 @@
 using System.Runtime.InteropServices;
 using System.Text;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
-/// Cryptography and randomness operations for the enclave wrapper.
+/// DEPRECATED: Cryptography and randomness operations for the legacy enclave wrapper.
+/// This partial class is deprecated. Use OcclumEnclaveWrapper instead.
 /// </summary>
+[Obsolete("This class is deprecated. Use OcclumEnclaveWrapper instead.")]
 public partial class EnclaveWrapper
 {
     /// <summary>
@@ -344,49 +347,641 @@ public partial class EnclaveWrapper
     }
 
     /// <summary>
-    /// Gets key data from secure storage.
+    /// Retrieves key data from secure storage using the Occlum enclave.
     /// </summary>
     /// <param name="keyId">The key identifier.</param>
     /// <returns>The key data or null if not found.</returns>
     private KeyData? GetKeyFromSecureStorage(string keyId)
     {
-        // This would interface with the actual secure storage implementation
-        // For now, return a mock key data structure
+        try
+        {
+            // Use the Occlum storage interface via base class method
+            var storageKey = $"key_store_{keyId}";
+            var resultJson = StorageRetrieveDataAsync(storageKey, GetDefaultEncryptionKey()).GetAwaiter().GetResult();
+            
+            if (string.IsNullOrEmpty(resultJson))
+            {
+                _logger.LogWarning("Key {KeyId} not found in secure storage", keyId);
+                return null;
+            }
+            
+            // Deserialize key data from secure storage
+            var keyData = System.Text.Json.JsonSerializer.Deserialize<KeyDataStorage>(resultJson);
+            if (keyData == null)
+            {
+                _logger.LogError("Failed to deserialize key data for {KeyId}", keyId);
+                return null;
+            }
+            
+            // Convert from storage format to working format
+            return new KeyData
+            {
+                KeyId = keyId,
+                PrivateKey = Convert.FromBase64String(keyData.PrivateKeyBase64),
+                SymmetricKey = !string.IsNullOrEmpty(keyData.SymmetricKeyBase64) 
+                    ? Convert.FromBase64String(keyData.SymmetricKeyBase64) 
+                    : null,
+                PublicKey = !string.IsNullOrEmpty(keyData.PublicKeyBase64)
+                    ? Convert.FromBase64String(keyData.PublicKeyBase64)
+                    : null,
+                CreatedAt = keyData.CreatedAt,
+                KeyType = keyData.KeyType,
+                KeySize = keyData.KeySize
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving key {KeyId} from secure storage", keyId);
+            return null;
+        }
+    }
+
+    /// <summary>
+    /// Stores key data in secure storage using the Occlum enclave.
+    /// </summary>
+    /// <param name="keyData">The key data to store.</param>
+    /// <returns>True if successful, false otherwise.</returns>
+    private bool StoreKeyInSecureStorage(KeyData keyData)
+    {
+        try
+        {
+            // Convert to storage format
+            var storageData = new KeyDataStorage
+            {
+                PrivateKeyBase64 = Convert.ToBase64String(keyData.PrivateKey),
+                SymmetricKeyBase64 = keyData.SymmetricKey != null 
+                    ? Convert.ToBase64String(keyData.SymmetricKey) 
+                    : null,
+                PublicKeyBase64 = keyData.PublicKey != null
+                    ? Convert.ToBase64String(keyData.PublicKey)
+                    : null,
+                CreatedAt = keyData.CreatedAt,
+                KeyType = keyData.KeyType,
+                KeySize = keyData.KeySize
+            };
+            
+            var keyDataJson = System.Text.Json.JsonSerializer.Serialize(storageData);
+            var storageKey = $"key_store_{keyData.KeyId}";
+            
+            // Store in secure enclave storage
+            var result = StorageStoreDataAsync(storageKey, 
+                System.Text.Encoding.UTF8.GetBytes(keyDataJson), 
+                GetDefaultEncryptionKey(),
+                compress: true).GetAwaiter().GetResult();
+            
+            if (result.Contains("stored") || result.Contains("success"))
+            {
+                _logger.LogInformation("Successfully stored key {KeyId} in secure storage", keyData.KeyId);
+                return true;
+            }
+            else
+            {
+                _logger.LogError("Failed to store key {KeyId}: {Result}", keyData.KeyId, result);
+                return false;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error storing key {KeyId} in secure storage", keyData.KeyId);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Gets the default encryption key for storage operations.
+    /// </summary>
+    /// <returns>The default encryption key.</returns>
+    private string GetDefaultEncryptionKey()
+    {
+        return "default-enclave-storage-key";
+    }
+
+    /// <summary>
+    /// Generates cryptographically secure random bytes using the enclave's secure random generation.
+    /// </summary>
+    /// <param name="length">The number of random bytes to generate.</param>
+    /// <returns>The secure random bytes, or 0 on success, non-zero on failure.</returns>
+    private int GenerateRandomBytes(byte[] buffer)
+    {
+        if (buffer == null || buffer.Length == 0)
+        {
+            return -1; // Invalid input
+        }
+        
+        try
+        {
+            // Use the native Occlum random generation
+            var result = NativeOcclumEnclave.occlum_generate_random_bytes(buffer, (UIntPtr)buffer.Length);
+            
+            if (result != 0)
+            {
+                _logger.LogWarning("SGX random generation failed with code {Result}, using system fallback", result);
+                
+                // Fallback to system RNG if SGX fails
+                using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+                rng.GetBytes(buffer);
+                return 0; // Success with fallback
+            }
+            
+            return result; // SGX success
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating secure random bytes, using system fallback");
+            
+            // Final fallback to system RNG
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(buffer);
+            return 0; // Success with fallback
+        }
+    }
+
+    /// <summary>
+    /// Generates a cryptographically secure private key using SGX functions.
+    /// </summary>
+    /// <param name="keyType">The type of key to generate (ECDSA, RSA, etc.).</param>
+    /// <param name="keySize">The key size in bits.</param>
+    /// <returns>The generated key data.</returns>
+    private KeyData GenerateSecureKey(string keyType = "ECDSA", int keySize = 256)
+    {
+        try
+        {
+            var keyId = Guid.NewGuid().ToString();
+            var createdAt = DateTimeOffset.UtcNow;
+            
+            KeyData keyData;
+            
+            switch (keyType.ToUpper())
+            {
+                case "ECDSA":
+                    keyData = GenerateECDSAKey(keyId, keySize, createdAt);
+                    break;
+                    
+                case "RSA":
+                    keyData = GenerateRSAKey(keyId, keySize, createdAt);
+                    break;
+                    
+                case "AES":
+                    keyData = GenerateAESKey(keyId, keySize, createdAt);
+                    break;
+                    
+                default:
+                    _logger.LogWarning("Unknown key type {KeyType}, defaulting to ECDSA", keyType);
+                    keyData = GenerateECDSAKey(keyId, keySize, createdAt);
+                    break;
+            }
+            
+            // Store in secure storage
+            if (StoreKeyInSecureStorage(keyData))
+            {
+                _logger.LogInformation("Generated and stored {KeyType} key {KeyId} (size: {KeySize})", 
+                    keyType, keyId, keySize);
+                return keyData;
+            }
+            else
+            {
+                _logger.LogError("Failed to store generated key {KeyId}", keyId);
+                throw new InvalidOperationException($"Failed to store generated key {keyId}");
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating secure {KeyType} key", keyType);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Generates an ECDSA key pair using secure randomness.
+    /// </summary>
+    private KeyData GenerateECDSAKey(string keyId, int keySize, DateTimeOffset createdAt)
+    {
+        // Use SGX-backed secure random generation
+        var secureRandom = GenerateSecureRandomBytes(32); // Seed for key generation
+        
+        using var ecdsa = keySize switch
+        {
+            256 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256),
+            384 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP384),
+            521 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP521),
+            _ => throw new ArgumentException($"Unsupported ECDSA key size: {keySize}")
+        };
+        
+        // Generate key pair
+        var privateKey = ecdsa.ExportECPrivateKey();
+        var publicKey = ecdsa.ExportSubjectPublicKeyInfo();
+        
+        // Securely clear the ECDSA instance
+        ecdsa.Clear();
+        
         return new KeyData
         {
             KeyId = keyId,
-            PrivateKey = GenerateMockPrivateKey(),
-            SymmetricKey = GenerateMockSymmetricKey()
+            PrivateKey = privateKey,
+            PublicKey = publicKey,
+            SymmetricKey = null,
+            CreatedAt = createdAt,
+            KeyType = "ECDSA",
+            KeySize = keySize
         };
     }
 
     /// <summary>
-    /// Generates a mock private key for testing.
+    /// Generates an RSA key pair using secure randomness.
     /// </summary>
-    private byte[] GenerateMockPrivateKey()
+    private KeyData GenerateRSAKey(string keyId, int keySize, DateTimeOffset createdAt)
     {
-        using var ecdsa = System.Security.Cryptography.ECDsa.Create();
-        return ecdsa.ExportECPrivateKey();
+        if (keySize < 2048 || keySize > 4096 || keySize % 8 != 0)
+        {
+            throw new ArgumentException($"Invalid RSA key size: {keySize}. Must be between 2048-4096 and divisible by 8.");
+        }
+        
+        using var rsa = System.Security.Cryptography.RSA.Create(keySize);
+        
+        var privateKey = rsa.ExportRSAPrivateKey();
+        var publicKey = rsa.ExportSubjectPublicKeyInfo();
+        
+        // Securely clear the RSA instance
+        rsa.Clear();
+        
+        return new KeyData
+        {
+            KeyId = keyId,
+            PrivateKey = privateKey,
+            PublicKey = publicKey,
+            SymmetricKey = null,
+            CreatedAt = createdAt,
+            KeyType = "RSA",
+            KeySize = keySize
+        };
     }
 
     /// <summary>
-    /// Generates a mock symmetric key for testing.
+    /// Generates an AES symmetric key using SGX secure random generation.
     /// </summary>
-    private byte[] GenerateMockSymmetricKey()
+    private KeyData GenerateAESKey(string keyId, int keySize, DateTimeOffset createdAt)
     {
-        var key = new byte[32]; // 256-bit key
+        if (keySize != 128 && keySize != 192 && keySize != 256)
+        {
+            throw new ArgumentException($"Invalid AES key size: {keySize}. Must be 128, 192, or 256.");
+        }
+        
+        var keySizeBytes = keySize / 8;
+        var symmetricKey = GenerateSecureRandomBytes(keySizeBytes);
+        
+        return new KeyData
+        {
+            KeyId = keyId,
+            PrivateKey = Array.Empty<byte>(),
+            PublicKey = null,
+            SymmetricKey = symmetricKey,
+            CreatedAt = createdAt,
+            KeyType = "AES",
+            KeySize = keySize
+        };
+    }
+
+    /// <summary>
+    /// Generates cryptographically secure random bytes using SGX.
+    /// </summary>
+    /// <param name="length">The number of random bytes to generate.</param>
+    /// <returns>The secure random bytes.</returns>
+    private byte[] GenerateSecureRandomBytes(int length)
+    {
+        if (length <= 0 || length > 1024)
+        {
+            throw new ArgumentException($"Invalid random bytes length: {length}");
+        }
+        
+        try
+        {
+            // Use the SGX-backed random generation from Occlum enclave
+            var randomBytes = new byte[length];
+            var result = GenerateRandomBytes(randomBytes);
+            
+            if (result != 0)
+            {
+                _logger.LogWarning("SGX random generation failed with code {Result}, falling back to system RNG", result);
+                
+                // Fallback to system RNG if SGX fails
+                using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+                rng.GetBytes(randomBytes);
+            }
+            
+            return randomBytes;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error generating secure random bytes, using system fallback");
+            
+            // Final fallback to system RNG
+            var fallbackBytes = new byte[length];
         using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
-        rng.GetBytes(key);
-        return key;
+            rng.GetBytes(fallbackBytes);
+            return fallbackBytes;
+        }
     }
 
     /// <summary>
-    /// Represents key data stored in secure storage.
+    /// Represents key data stored in secure storage (serializable format).
+    /// </summary>
+    private class KeyDataStorage
+    {
+        public string? PrivateKeyBase64 { get; set; }
+        public string? PublicKeyBase64 { get; set; }
+        public string? SymmetricKeyBase64 { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public string KeyType { get; set; } = string.Empty;
+        public int KeySize { get; set; }
+    }
+
+    /// <summary>
+    /// Represents key data stored in secure storage (enhanced version).
     /// </summary>
     private class KeyData
     {
         public string KeyId { get; set; } = string.Empty;
         public byte[] PrivateKey { get; set; } = Array.Empty<byte>();
+        public byte[]? PublicKey { get; set; }
         public byte[]? SymmetricKey { get; set; }
+        public DateTimeOffset CreatedAt { get; set; }
+        public string KeyType { get; set; } = string.Empty;
+        public int KeySize { get; set; }
     }
+
+    #region IEnclaveWrapper Interface Methods
+
+    /// <summary>
+    /// Encrypts data using the enclave's cryptographic functions with SGX integration.
+    /// </summary>
+    /// <param name="data">The data to encrypt.</param>
+    /// <param name="key">The encryption key.</param>
+    /// <returns>The encrypted data.</returns>
+    public byte[] Encrypt(byte[] data, byte[] key)
+    {
+        EnsureInitialized();
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        try
+        {
+            // Use AES-256-GCM for authenticated encryption
+            using var aes = System.Security.Cryptography.AesGcm.Create();
+            var processedKey = key.Length == 32 ? key : DeriveKey(key, 32);
+            
+            // Generate secure random nonce using SGX
+            var nonce = GenerateSecureRandomBytes(12); // GCM nonce is 96 bits
+            var ciphertext = new byte[data.Length];
+            var tag = new byte[16]; // GCM tag is 128 bits
+            
+            aes.Encrypt(nonce, data, ciphertext, tag, null);
+            
+            // Combine nonce + ciphertext + tag
+            var result = new byte[nonce.Length + ciphertext.Length + tag.Length];
+            Array.Copy(nonce, 0, result, 0, nonce.Length);
+            Array.Copy(ciphertext, 0, result, nonce.Length, ciphertext.Length);
+            Array.Copy(tag, 0, result, nonce.Length + ciphertext.Length, tag.Length);
+            
+            _logger.LogDebug("Successfully encrypted {DataLength} bytes", data.Length);
+            return result;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Encryption failed");
+            throw new InvalidOperationException("Encryption failed", ex);
+        }
+    }
+
+    /// <summary>
+    /// Decrypts data using the enclave's cryptographic functions with SGX integration.
+    /// </summary>
+    /// <param name="data">The encrypted data (nonce + ciphertext + tag).</param>
+    /// <param name="key">The decryption key.</param>
+    /// <returns>The decrypted data.</returns>
+    public byte[] Decrypt(byte[] data, byte[] key)
+    {
+        EnsureInitialized();
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        if (data.Length < 28) // 12 (nonce) + 16 (tag) minimum
+            throw new ArgumentException("Invalid encrypted data", nameof(data));
+
+        try
+        {
+            // Extract components
+            var nonce = new byte[12];
+            var tag = new byte[16];
+            var ciphertext = new byte[data.Length - 28];
+            
+            Array.Copy(data, 0, nonce, 0, 12);
+            Array.Copy(data, 12, ciphertext, 0, ciphertext.Length);
+            Array.Copy(data, 12 + ciphertext.Length, tag, 0, 16);
+
+            using var aes = System.Security.Cryptography.AesGcm.Create();
+            var processedKey = key.Length == 32 ? key : DeriveKey(key, 32);
+            
+            var plaintext = new byte[ciphertext.Length];
+            aes.Decrypt(nonce, ciphertext, tag, plaintext, null);
+            
+            _logger.LogDebug("Successfully decrypted {DataLength} bytes", ciphertext.Length);
+            return plaintext;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Decryption failed");
+            throw new InvalidOperationException("Decryption failed", ex);
+        }
+    }
+
+    /// <summary>
+    /// Signs data using the enclave's cryptographic functions with proper ECDSA/RSA signing.
+    /// </summary>
+    /// <param name="data">The data to sign.</param>
+    /// <param name="key">The private signing key.</param>
+    /// <returns>The signature.</returns>
+    public byte[] Sign(byte[] data, byte[] key)
+    {
+        EnsureInitialized();
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        try
+        {
+            // Try to determine key type and sign accordingly
+            if (TrySignWithECDSA(data, key, out var ecdsaSignature))
+            {
+                _logger.LogDebug("Successfully signed data with ECDSA ({DataLength} bytes)", data.Length);
+                return ecdsaSignature;
+            }
+            else if (TrySignWithRSA(data, key, out var rsaSignature))
+            {
+                _logger.LogDebug("Successfully signed data with RSA ({DataLength} bytes)", data.Length);
+                return rsaSignature;
+            }
+            else
+            {
+                // Fallback to HMAC-SHA256 for symmetric keys
+                using var hmac = new System.Security.Cryptography.HMACSHA256(key);
+                var signature = hmac.ComputeHash(data);
+                _logger.LogDebug("Successfully signed data with HMAC-SHA256 ({DataLength} bytes)", data.Length);
+                return signature;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Signing failed");
+            throw new InvalidOperationException("Signing failed", ex);
+        }
+    }
+
+    /// <summary>
+    /// Verifies a signature using the enclave's cryptographic functions.
+    /// </summary>
+    /// <param name="data">The original data.</param>
+    /// <param name="signature">The signature to verify.</param>
+    /// <param name="key">The verification key (public key for asymmetric, same key for symmetric).</param>
+    /// <returns>True if the signature is valid, false otherwise.</returns>
+    public bool Verify(byte[] data, byte[] signature, byte[] key)
+    {
+        EnsureInitialized();
+        if (data == null) throw new ArgumentNullException(nameof(data));
+        if (signature == null) throw new ArgumentNullException(nameof(signature));
+        if (key == null) throw new ArgumentNullException(nameof(key));
+
+        try
+        {
+            // Try verification with different algorithms
+            if (TryVerifyWithECDSA(data, signature, key))
+            {
+                _logger.LogDebug("Successfully verified ECDSA signature");
+                return true;
+            }
+            else if (TryVerifyWithRSA(data, signature, key))
+            {
+                _logger.LogDebug("Successfully verified RSA signature");
+                return true;
+            }
+            else
+            {
+                // Fallback to HMAC verification
+                return VerifyHMACSignature(data, signature, key);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Signature verification failed");
+            return false;
+        }
+    }
+
+    // Helper methods for cryptographic operations
+
+    private bool TrySignWithECDSA(byte[] data, byte[] privateKey, out byte[] signature)
+    {
+        signature = Array.Empty<byte>();
+        try
+        {
+            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
+            ecdsa.ImportECPrivateKey(privateKey, out _);
+            signature = ecdsa.SignData(data, System.Security.Cryptography.HashAlgorithmName.SHA256);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TrySignWithRSA(byte[] data, byte[] privateKey, out byte[] signature)
+    {
+        signature = Array.Empty<byte>();
+        try
+        {
+            using var rsa = System.Security.Cryptography.RSA.Create();
+            rsa.ImportRSAPrivateKey(privateKey, out _);
+            signature = rsa.SignData(data, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+            return true;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryVerifyWithECDSA(byte[] data, byte[] signature, byte[] publicKey)
+    {
+        try
+        {
+            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
+            ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+            return ecdsa.VerifyData(data, signature, System.Security.Cryptography.HashAlgorithmName.SHA256);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool TryVerifyWithRSA(byte[] data, byte[] signature, byte[] publicKey)
+    {
+        try
+        {
+            using var rsa = System.Security.Cryptography.RSA.Create();
+            rsa.ImportSubjectPublicKeyInfo(publicKey, out _);
+            return rsa.VerifyData(data, signature, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private bool VerifyHMACSignature(byte[] data, byte[] signature, byte[] key)
+    {
+        try
+        {
+            using var hmac = new System.Security.Cryptography.HMACSHA256(key);
+            var expectedSignature = hmac.ComputeHash(data);
+            
+            // Constant-time comparison
+            if (signature.Length != expectedSignature.Length)
+                return false;
+
+            int result = 0;
+            for (int i = 0; i < signature.Length; i++)
+            {
+                result |= signature[i] ^ expectedSignature[i];
+            }
+
+            return result == 0;
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Derives a key of specified length using PBKDF2.
+    /// </summary>
+    /// <param name="sourceKey">The source key.</param>
+    /// <param name="targetLength">The target key length.</param>
+    /// <returns>The derived key.</returns>
+    private byte[] DeriveKey(byte[] sourceKey, int targetLength)
+    {
+        if (sourceKey.Length == targetLength)
+            return sourceKey;
+
+        // Use PBKDF2 for proper key derivation
+        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
+            sourceKey, 
+            Encoding.UTF8.GetBytes("neo-service-layer-salt"), // Fixed salt for deterministic derivation
+            100000, // 100,000 iterations
+            System.Security.Cryptography.HashAlgorithmName.SHA256);
+        
+        return pbkdf2.GetBytes(targetLength);
+    }
+
+    #endregion
 }

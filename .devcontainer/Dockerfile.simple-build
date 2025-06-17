@@ -1,0 +1,55 @@
+# Neo Service Layer Simple Build Container
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build-env
+
+# Set environment variables
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_ENVIRONMENT=Development
+ENV SGX_MODE=SIM
+
+# Create workspace
+WORKDIR /workspace
+
+# Copy project files first (for better caching)
+COPY src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj src/Web/NeoServiceLayer.Web/
+COPY src/Core/ src/Core/
+COPY Directory.Build.props .
+COPY global.json .
+
+# Create logs directory
+RUN mkdir -p src/Web/NeoServiceLayer.Web/logs
+
+# Restore packages
+RUN dotnet restore src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj
+
+# Copy remaining files including web assets
+COPY src/ src/
+
+# Build the application
+RUN dotnet build src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj -c Release
+
+# Production stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0
+
+# Set environment variables
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV DOTNET_ENVIRONMENT=Production
+ENV SGX_MODE=SIM
+ENV ASPNETCORE_URLS=http://0.0.0.0:5000
+
+# Create workspace
+WORKDIR /app
+
+# Copy built application
+COPY --from=build-env /workspace/src/Web/NeoServiceLayer.Web/bin/Release/net9.0/ .
+
+# Copy static web assets
+COPY --from=build-env /workspace/src/Web/NeoServiceLayer.Web/wwwroot/ ./wwwroot/
+
+# Create logs directory
+RUN mkdir -p logs
+
+# Expose port
+EXPOSE 5000
+
+# Run the application (DLL is in linux-x64 subdirectory)
+ENTRYPOINT ["dotnet", "linux-x64/NeoServiceLayer.Web.dll"] 

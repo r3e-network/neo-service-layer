@@ -73,6 +73,21 @@ public class BackupStatusResult
     public string? ErrorMessage { get; set; }
 
     /// <summary>
+    /// Gets or sets the start time.
+    /// </summary>
+    public DateTime StartTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the completion time.
+    /// </summary>
+    public DateTime? CompletionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the status was checked.
+    /// </summary>
+    public DateTime CheckedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
@@ -216,6 +231,16 @@ public class ListBackupsRequest
     public int Offset { get; set; } = 0;
 
     /// <summary>
+    /// Gets or sets the page number for pagination.
+    /// </summary>
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the page size for pagination.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
     /// Gets or sets the sort order.
     /// </summary>
     public SortOrder SortOrder { get; set; } = SortOrder.Descending;
@@ -245,6 +270,21 @@ public class BackupListResult
     /// Gets or sets whether there are more results.
     /// </summary>
     public bool HasMore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    public int PageNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the list was retrieved.
+    /// </summary>
+    public DateTime RetrievedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Gets or sets whether the operation was successful.
@@ -368,6 +408,15 @@ public class BackupDeletionResult
     /// Gets or sets the deletion timestamp.
     /// </summary>
     public DateTime DeletionTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the backup was deleted (alias for DeletionTime).
+    /// </summary>
+    public DateTime DeletedAt 
+    { 
+        get => DeletionTime; 
+        set => DeletionTime = value; 
+    }
 
     /// <summary>
     /// Gets or sets the amount of space freed in bytes.

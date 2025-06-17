@@ -66,7 +66,7 @@ public class OrderingPool
     /// <summary>
     /// Gets or sets the last update timestamp.
     /// </summary>
-    public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
+    public DateTime? UpdatedAt { get; set; }
 
     /// <summary>
     /// Gets or sets the blockchain type.
@@ -75,7 +75,7 @@ public class OrderingPool
 }
 
 /// <summary>
-/// Represents ordering pool configuration.
+/// Configuration for an ordering pool.
 /// </summary>
 public class OrderingPoolConfig
 {
@@ -88,11 +88,6 @@ public class OrderingPoolConfig
     /// Gets or sets the pool description.
     /// </summary>
     public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the maximum pool size.
-    /// </summary>
-    public int MaxPoolSize { get; set; } = 1000;
 
     /// <summary>
     /// Gets or sets the ordering algorithm.
@@ -110,29 +105,65 @@ public class OrderingPoolConfig
     public TimeSpan BatchTimeout { get; set; } = TimeSpan.FromSeconds(5);
 
     /// <summary>
-    /// Gets or sets the MEV protection level.
+    /// Gets or sets the fairness level.
     /// </summary>
-    public MevProtectionLevel MevProtection { get; set; } = MevProtectionLevel.High;
+    public FairnessLevel FairnessLevel { get; set; } = FairnessLevel.Standard;
 
     /// <summary>
     /// Gets or sets whether MEV protection is enabled.
     /// </summary>
     public bool MevProtectionEnabled { get; set; } = true;
+}
+
+/// <summary>
+/// Represents a transaction submission for fair ordering.
+/// </summary>
+public class TransactionSubmission
+{
+    /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    public string TransactionId { get; set; } = Guid.NewGuid().ToString();
 
     /// <summary>
-    /// Gets or sets the fairness level.
+    /// Gets or sets the sender address.
     /// </summary>
-    public FairnessLevel FairnessLevel { get; set; } = FairnessLevel.High;
+    public string From { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets whether to enable priority fees.
+    /// Gets or sets the recipient address.
     /// </summary>
-    public bool EnablePriorityFees { get; set; } = true;
+    public string To { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the maximum priority fee.
+    /// Gets or sets the transaction value.
     /// </summary>
-    public decimal MaxPriorityFee { get; set; } = 1000;
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gas price.
+    /// </summary>
+    public decimal GasPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gas limit.
+    /// </summary>
+    public decimal GasLimit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the priority fee.
+    /// </summary>
+    public decimal PriorityFee { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction data.
+    /// </summary>
+    public string TransactionData { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets when the transaction was submitted.
+    /// </summary>
+    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -173,7 +204,7 @@ public class PendingTransaction
     /// <summary>
     /// Gets or sets the gas limit.
     /// </summary>
-    public long GasLimit { get; set; }
+    public decimal GasLimit { get; set; }
 
     /// <summary>
     /// Gets or sets the priority fee.
@@ -186,29 +217,14 @@ public class PendingTransaction
     public byte[] Data { get; set; } = Array.Empty<byte>();
 
     /// <summary>
-    /// Gets or sets the submission timestamp.
+    /// Gets or sets when the transaction was submitted.
     /// </summary>
     public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets the ordering score.
-    /// </summary>
-    public double OrderingScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets the MEV risk score.
-    /// </summary>
-    public double MevRiskScore { get; set; }
-
-    /// <summary>
-    /// Gets or sets the fairness score.
-    /// </summary>
-    public double FairnessScore { get; set; }
-
-    /// <summary>
     /// Gets or sets the transaction priority.
     /// </summary>
-    public int Priority { get; set; } = 1;
+    public int Priority { get; set; }
 
     /// <summary>
     /// Gets or sets the transaction status.
@@ -216,127 +232,60 @@ public class PendingTransaction
     public TransactionStatus Status { get; set; } = TransactionStatus.Pending;
 
     /// <summary>
-    /// Gets or sets additional metadata.
+    /// Gets or sets the fairness score.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public double FairnessScore { get; set; }
 }
 
 /// <summary>
-/// Represents a transaction submission request.
+/// Represents a processed batch of transactions.
 /// </summary>
-public class TransactionSubmission
+public class ProcessedBatch
 {
     /// <summary>
-    /// Gets or sets the transaction data.
+    /// Gets or sets the batch ID.
     /// </summary>
-    [Required]
-    public string TransactionData { get; set; } = string.Empty;
+    public string BatchId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the sender address.
+    /// Gets or sets the pool ID.
     /// </summary>
-    [Required]
-    public string From { get; set; } = string.Empty;
+    public string PoolId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the recipient address.
+    /// Gets or sets the number of transactions in the batch.
     /// </summary>
-    [Required]
-    public string To { get; set; } = string.Empty;
+    public int TransactionCount { get; set; }
 
     /// <summary>
-    /// Gets or sets the transaction value.
+    /// Gets or sets when the batch was processed.
     /// </summary>
-    public decimal Value { get; set; }
+    public DateTime ProcessedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets the gas price.
+    /// Gets or sets when processing started.
     /// </summary>
-    public decimal GasPrice { get; set; }
+    public DateTime ProcessingStarted { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets the gas limit.
+    /// Gets or sets when processing completed.
     /// </summary>
-    public long GasLimit { get; set; }
+    public DateTime ProcessingCompleted { get; set; } = DateTime.UtcNow;
 
     /// <summary>
-    /// Gets or sets the priority fee.
+    /// Gets or sets the ordering algorithm used.
     /// </summary>
-    public decimal PriorityFee { get; set; }
+    public OrderingAlgorithm OrderingAlgorithm { get; set; }
 
     /// <summary>
-    /// Gets or sets the desired fairness level.
+    /// Gets or sets the fairness score for the batch.
     /// </summary>
-    public FairnessLevel FairnessLevel { get; set; } = FairnessLevel.Standard;
+    public double FairnessScore { get; set; }
 
     /// <summary>
-    /// Gets or sets additional submission options.
+    /// Gets or sets the MEV protection effectiveness score.
     /// </summary>
-    public Dictionary<string, object> Options { get; set; } = new();
+    public double MevProtectionEffectiveness { get; set; }
 }
 
-/// <summary>
-/// Represents a fair transaction for protected ordering.
-/// </summary>
-public class FairTransaction
-{
-    /// <summary>
-    /// Gets or sets the transaction ID.
-    /// </summary>
-    public string TransactionId { get; set; } = string.Empty;
 
-    /// <summary>
-    /// Gets or sets the sender address.
-    /// </summary>
-    public string From { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the recipient address.
-    /// </summary>
-    public string To { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the transaction value.
-    /// </summary>
-    public decimal Value { get; set; }
-
-    /// <summary>
-    /// Gets or sets the transaction data.
-    /// </summary>
-    public string Data { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the gas limit.
-    /// </summary>
-    public decimal GasLimit { get; set; }
-
-    /// <summary>
-    /// Gets or sets the protection level.
-    /// </summary>
-    public string ProtectionLevel { get; set; } = "Standard";
-
-    /// <summary>
-    /// Gets or sets the maximum slippage.
-    /// </summary>
-    public decimal MaxSlippage { get; set; }
-
-    /// <summary>
-    /// Gets or sets the earliest execution time.
-    /// </summary>
-    public DateTime? ExecuteAfter { get; set; }
-
-    /// <summary>
-    /// Gets or sets the latest execution time.
-    /// </summary>
-    public DateTime? ExecuteBefore { get; set; }
-
-    /// <summary>
-    /// Gets or sets when the transaction was submitted.
-    /// </summary>
-    public DateTime SubmittedAt { get; set; } = DateTime.UtcNow;
-
-    /// <summary>
-    /// Gets or sets the transaction status.
-    /// </summary>
-    public string Status { get; set; } = "Pending";
-}

@@ -1,12 +1,84 @@
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using NeoServiceLayer.ServiceFramework;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
 /// <summary>
-/// Circuit compilation operations for the Zero-Knowledge Service.
+/// Circuit compilation operations for the Zero Knowledge Service.
 /// </summary>
 public partial class ZeroKnowledgeService
 {
+    /// <summary>
+    /// Compiles a zero-knowledge circuit definition.
+    /// </summary>
+    /// <param name="definition">The circuit definition.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The compiled circuit ID.</returns>
+    public async Task<string> CompileCircuitAsync(ZkCircuitDefinition definition, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(definition);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var circuitId = Guid.NewGuid().ToString();
+
+            try
+            {
+                Logger.LogInformation("Compiling circuit {CircuitName} of type {CircuitType}",
+                    definition.Name, definition.Type);
+
+                // Validate circuit definition
+                if (string.IsNullOrEmpty(definition.Name))
+                {
+                    throw new ArgumentException("Circuit name is required");
+                }
+
+                if (definition.Constraints.Length == 0)
+                {
+                    throw new ArgumentException("Circuit constraints are required");
+                }
+
+                // Compile circuit within the enclave
+                var compiledData = await CompileCircuitInEnclaveAsync(definition);
+
+                // Create compiled circuit
+                var circuit = new ZkCircuit
+                {
+                    CircuitId = circuitId,
+                    Name = definition.Name,
+                    Description = definition.Description,
+                    Type = definition.Type,
+                    CompiledData = compiledData,
+                    VerificationKey = GenerateVerificationKey(),
+                    ProvingKey = GenerateProvingKey(),
+                    IsActive = true,
+                    CompiledAt = DateTime.UtcNow,
+                    BlockchainType = blockchainType
+                };
+
+                // Store compiled circuit
+                await StoreCompiledCircuitAsync(circuit);
+
+                Logger.LogInformation("Circuit {CircuitName} compiled successfully with ID {CircuitId}",
+                    definition.Name, circuitId);
+
+                return circuitId;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to compile circuit {CircuitName}", definition.Name);
+                throw;
+            }
+        });
+    }
+
     /// <summary>
     /// Compiles a circuit within the enclave.
     /// </summary>
@@ -30,10 +102,10 @@ public partial class ZeroKnowledgeService
         var keys = await GenerateProvingKeysAsync(r1cs);
 
         // Store the compiled circuit securely
-        var compiledCode = await StoreCompiledCircuitAsync(definition, r1cs, keys);
+        var compiledCode = await SerializeCompiledCircuitAsync(definition, r1cs, keys);
 
-        Logger.LogInformation("Compiled circuit {CircuitId} in {ElapsedMs}ms", 
-            definition.Id, (DateTime.UtcNow - startTime).TotalMilliseconds);
+        Logger.LogInformation("Compiled circuit {CircuitName} in {ElapsedMs}ms", 
+            definition.Name, (DateTime.UtcNow - startTime).TotalMilliseconds);
 
         return compiledCode;
     }
@@ -50,10 +122,10 @@ public partial class ZeroKnowledgeService
         return new ParsedCircuit
         {
             Name = definition.Name,
-            Constraints = ParseConstraints(definition.Code),
-            Variables = ExtractVariables(definition.Code),
-            PublicInputs = IdentifyPublicInputs(definition.Code),
-            PrivateInputs = IdentifyPrivateInputs(definition.Code)
+            Constraints = ParseConstraints(definition.Constraints),
+            Variables = ExtractVariables(definition.Constraints),
+            PublicInputs = ExtractPublicInputs(definition.InputSchema),
+            PrivateInputs = ExtractPrivateInputs(definition.InputSchema)
         };
     }
 
@@ -115,15 +187,15 @@ public partial class ZeroKnowledgeService
     }
 
     /// <summary>
-    /// Stores compiled circuit securely.
+    /// Serializes compiled circuit to binary format.
     /// </summary>
     /// <param name="definition">The circuit definition.</param>
     /// <param name="r1cs">The R1CS representation.</param>
     /// <param name="keys">The proving keys.</param>
-    /// <returns>The compiled circuit data.</returns>
-    private async Task<byte[]> StoreCompiledCircuitAsync(ZkCircuitDefinition definition, R1CS r1cs, ProvingKeys keys)
+    /// <returns>The serialized data.</returns>
+    private async Task<byte[]> SerializeCompiledCircuitAsync(ZkCircuitDefinition definition, R1CS r1cs, ProvingKeys keys)
     {
-        await Task.Delay(100); // Simulate storage
+        await Task.Delay(100); // Simulate serialization
 
         var compiledData = new CompiledCircuit
         {
@@ -133,82 +205,105 @@ public partial class ZeroKnowledgeService
             CompiledAt = DateTime.UtcNow
         };
 
-        return SerializeCompiledCircuit(compiledData);
+        // In production, this would use a proper serialization format
+        var json = System.Text.Json.JsonSerializer.Serialize(compiledData);
+        return System.Text.Encoding.UTF8.GetBytes(json);
     }
 
     /// <summary>
-    /// Parses constraints from circuit code.
+    /// Stores compiled circuit securely.
     /// </summary>
-    /// <param name="code">The circuit code.</param>
-    /// <returns>List of constraints.</returns>
-    private List<CircuitConstraint> ParseConstraints(string code)
+    /// <param name="circuit">The compiled circuit.</param>
+    private async Task StoreCompiledCircuitAsync(ZkCircuit circuit)
     {
-        var constraints = new List<CircuitConstraint>();
-        var lines = code.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        await Task.Delay(50); // Simulate storage
+        // In production, store in secure enclave storage
+    }
 
-        foreach (var line in lines)
+    /// <summary>
+    /// Generates a verification key.
+    /// </summary>
+    /// <returns>The verification key.</returns>
+    private string GenerateVerificationKey()
+    {
+        return Convert.ToHexString(GenerateRandomKey(64)).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Generates a proving key.
+    /// </summary>
+    /// <returns>The proving key.</returns>
+    private string GenerateProvingKey()
+    {
+        return Convert.ToHexString(GenerateRandomKey(128)).ToLowerInvariant();
+    }
+
+    /// <summary>
+    /// Parses constraints from constraint array.
+    /// </summary>
+    /// <param name="constraints">The constraint strings.</param>
+    /// <returns>List of parsed constraints.</returns>
+    private List<CircuitConstraint> ParseConstraints(string[] constraints)
+    {
+        var parsedConstraints = new List<CircuitConstraint>();
+
+        foreach (var constraint in constraints)
         {
-            var trimmedLine = line.Trim();
-            if (trimmedLine.Contains("===") || trimmedLine.Contains("constraint"))
+            if (!string.IsNullOrWhiteSpace(constraint))
             {
-                constraints.Add(new CircuitConstraint
+                parsedConstraints.Add(new CircuitConstraint
                 {
-                    Expression = trimmedLine,
-                    Type = DetermineConstraintType(trimmedLine),
-                    Variables = ExtractVariablesFromExpression(trimmedLine)
+                    Expression = constraint,
+                    Type = DetermineConstraintType(constraint),
+                    Variables = ExtractVariablesFromExpression(constraint)
                 });
             }
         }
 
-        return constraints;
+        return parsedConstraints;
     }
 
     /// <summary>
-    /// Extracts variables from circuit code.
+    /// Extracts variables from constraints.
     /// </summary>
-    /// <param name="code">The circuit code.</param>
+    /// <param name="constraints">The constraint strings.</param>
     /// <returns>List of variables.</returns>
-    private List<CircuitVariable> ExtractVariables(string code)
+    private List<CircuitVariable> ExtractVariables(string[] constraints)
     {
-        var variables = new List<CircuitVariable>();
-        var lines = code.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+        var variables = new HashSet<string>();
 
-        foreach (var line in lines)
+        foreach (var constraint in constraints)
         {
-            var trimmedLine = line.Trim();
-            if (trimmedLine.StartsWith("signal") || trimmedLine.StartsWith("var"))
+            var constraintVars = ExtractVariablesFromExpression(constraint);
+            foreach (var variable in constraintVars)
             {
-                var variable = ParseVariableDeclaration(trimmedLine);
-                if (variable != null)
-                {
-                    variables.Add(variable);
-                }
+                variables.Add(variable);
             }
         }
 
-        return variables;
+        return variables.Select(v => new CircuitVariable
+        {
+            Name = v,
+            Type = "field",
+            IsPublic = false,
+            IsPrivate = true
+        }).ToList();
     }
 
     /// <summary>
-    /// Identifies public inputs from circuit code.
+    /// Extracts public inputs from input schema.
     /// </summary>
-    /// <param name="code">The circuit code.</param>
+    /// <param name="inputSchema">The input schema.</param>
     /// <returns>List of public input names.</returns>
-    private List<string> IdentifyPublicInputs(string code)
+    private List<string> ExtractPublicInputs(Dictionary<string, object> inputSchema)
     {
         var publicInputs = new List<string>();
-        var lines = code.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (var line in lines)
+        foreach (var kvp in inputSchema)
         {
-            var trimmedLine = line.Trim();
-            if (trimmedLine.Contains("public") && (trimmedLine.Contains("input") || trimmedLine.Contains("signal")))
+            if (kvp.Value?.ToString()?.Contains("public") == true)
             {
-                var inputName = ExtractVariableName(trimmedLine);
-                if (!string.IsNullOrEmpty(inputName))
-                {
-                    publicInputs.Add(inputName);
-                }
+                publicInputs.Add(kvp.Key);
             }
         }
 
@@ -216,25 +311,19 @@ public partial class ZeroKnowledgeService
     }
 
     /// <summary>
-    /// Identifies private inputs from circuit code.
+    /// Extracts private inputs from input schema.
     /// </summary>
-    /// <param name="code">The circuit code.</param>
+    /// <param name="inputSchema">The input schema.</param>
     /// <returns>List of private input names.</returns>
-    private List<string> IdentifyPrivateInputs(string code)
+    private List<string> ExtractPrivateInputs(Dictionary<string, object> inputSchema)
     {
         var privateInputs = new List<string>();
-        var lines = code.Split('\n', StringSplitOptions.RemoveEmptyEntries);
 
-        foreach (var line in lines)
+        foreach (var kvp in inputSchema)
         {
-            var trimmedLine = line.Trim();
-            if (trimmedLine.Contains("private") && (trimmedLine.Contains("input") || trimmedLine.Contains("signal")))
+            if (kvp.Value?.ToString()?.Contains("private") == true)
             {
-                var inputName = ExtractVariableName(trimmedLine);
-                if (!string.IsNullOrEmpty(inputName))
-                {
-                    privateInputs.Add(inputName);
-                }
+                privateInputs.Add(kvp.Key);
             }
         }
 
@@ -283,18 +372,6 @@ public partial class ZeroKnowledgeService
         var data = System.Text.Encoding.UTF8.GetBytes($"{r1cs.NumVariables}:{r1cs.NumConstraints}");
         var hash = sha256.ComputeHash(data);
         return Convert.ToHexString(hash).ToLowerInvariant();
-    }
-
-    /// <summary>
-    /// Serializes compiled circuit to binary format.
-    /// </summary>
-    /// <param name="compiledData">The compiled circuit data.</param>
-    /// <returns>The serialized data.</returns>
-    private byte[] SerializeCompiledCircuit(CompiledCircuit compiledData)
-    {
-        // In production, this would use a proper serialization format
-        var json = System.Text.Json.JsonSerializer.Serialize(compiledData);
-        return System.Text.Encoding.UTF8.GetBytes(json);
     }
 
     /// <summary>
@@ -352,46 +429,6 @@ public partial class ZeroKnowledgeService
     }
 
     /// <summary>
-    /// Parses variable declaration from code line.
-    /// </summary>
-    /// <param name="line">The code line.</param>
-    /// <returns>The parsed variable or null.</returns>
-    private CircuitVariable? ParseVariableDeclaration(string line)
-    {
-        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        if (parts.Length < 2) return null;
-
-        var name = ExtractVariableName(line);
-        if (string.IsNullOrEmpty(name)) return null;
-
-        return new CircuitVariable
-        {
-            Name = name,
-            Type = parts[0], // signal, var, etc.
-            IsPublic = line.Contains("public"),
-            IsPrivate = line.Contains("private")
-        };
-    }
-
-    /// <summary>
-    /// Extracts variable name from declaration.
-    /// </summary>
-    /// <param name="declaration">The variable declaration.</param>
-    /// <returns>The variable name.</returns>
-    private string ExtractVariableName(string declaration)
-    {
-        var parts = declaration.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        foreach (var part in parts)
-        {
-            if (IsVariableName(part) && !IsKeyword(part))
-            {
-                return part.TrimEnd(';', ',');
-            }
-        }
-        return string.Empty;
-    }
-
-    /// <summary>
     /// Checks if token is a variable name.
     /// </summary>
     /// <param name="token">The token to check.</param>
@@ -401,17 +438,6 @@ public partial class ZeroKnowledgeService
         return !string.IsNullOrEmpty(token) && 
                char.IsLetter(token[0]) && 
                token.All(c => char.IsLetterOrDigit(c) || c == '_');
-    }
-
-    /// <summary>
-    /// Checks if token is a keyword.
-    /// </summary>
-    /// <param name="token">The token to check.</param>
-    /// <returns>True if it's a keyword.</returns>
-    private bool IsKeyword(string token)
-    {
-        var keywords = new[] { "signal", "var", "public", "private", "input", "output", "constraint" };
-        return keywords.Contains(token, StringComparer.OrdinalIgnoreCase);
     }
 
     /// <summary>
@@ -437,4 +463,53 @@ public partial class ZeroKnowledgeService
 
         return row;
     }
-}
+
+    // Internal models for circuit compilation
+    private class ParsedCircuit
+    {
+        public string Name { get; set; } = string.Empty;
+        public List<CircuitConstraint> Constraints { get; set; } = new();
+        public List<CircuitVariable> Variables { get; set; } = new();
+        public List<string> PublicInputs { get; set; } = new();
+        public List<string> PrivateInputs { get; set; } = new();
+    }
+
+    private class CircuitConstraint
+    {
+        public string Expression { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public List<string> Variables { get; set; } = new();
+    }
+
+    private class CircuitVariable
+    {
+        public string Name { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public bool IsPublic { get; set; }
+        public bool IsPrivate { get; set; }
+    }
+
+    private class R1CS
+    {
+        public int NumVariables { get; set; }
+        public int NumConstraints { get; set; }
+        public double[][] A { get; set; } = Array.Empty<double[]>();
+        public double[][] B { get; set; } = Array.Empty<double[]>();
+        public double[][] C { get; set; } = Array.Empty<double[]>();
+    }
+
+    private class ProvingKeys
+    {
+        public byte[] ProvingKey { get; set; } = Array.Empty<byte>();
+        public byte[] VerifyingKey { get; set; } = Array.Empty<byte>();
+        public string CircuitHash { get; set; } = string.Empty;
+    }
+
+    private class CompiledCircuit
+    {
+        public ZkCircuitDefinition Definition { get; set; } = new();
+        public R1CS R1CS { get; set; } = new();
+        public ProvingKeys Keys { get; set; } = new();
+        public DateTime CompiledAt { get; set; }
+    }
+} 

@@ -1,0 +1,360 @@
+FROM ubuntu:24.04
+
+# Set environment variables
+ENV DEBIAN_FRONTEND=noninteractive
+ENV SGX_MODE=SIM
+ENV DOTNET_ROOT=/usr/share/dotnet
+ENV PATH="$PATH:/usr/share/dotnet:/root/.dotnet/tools"
+ENV DOTNET_CLI_TELEMETRY_OPTOUT=1
+ENV DOTNET_SKIP_FIRST_TIME_EXPERIENCE=1
+
+# Set working directory
+WORKDIR /neo-service-layer
+
+# Update system and install basic dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    gnupg \
+    software-properties-common \
+    apt-transport-https \
+    ca-certificates \
+    lsb-release \
+    build-essential \
+    cmake \
+    git \
+    vim \
+    nano \
+    htop \
+    unzip \
+    pkg-config \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    protobuf-compiler \
+    libprotobuf-dev \
+    autotools-dev \
+    libtool \
+    automake \
+    autoconf \
+    make \
+    gcc \
+    g++ \
+    libc6-dev \
+    libstdc++6 \
+    python3 \
+    python3-pip \
+    python3-dev \
+    clang \
+    llvm \
+    gdb \
+    valgrind \
+    strace \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install .NET 9.0
+RUN wget https://packages.microsoft.com/config/ubuntu/24.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb \
+    && dpkg -i packages-microsoft-prod.deb \
+    && rm packages-microsoft-prod.deb \
+    && apt-get update \
+    && apt-get install -y dotnet-sdk-9.0 aspnetcore-runtime-9.0 dotnet-runtime-9.0 \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Rust (required for Occlum)
+RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y \
+    && . /root/.cargo/env \
+    && rustup default stable \
+    && rustup target add x86_64-unknown-linux-musl
+
+# Add Rust to PATH
+ENV PATH="/root/.cargo/bin:${PATH}"
+
+# Install Intel SGX SDK
+RUN echo 'deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu jammy main' | tee /etc/apt/sources.list.d/intel-sgx.list \
+    && wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | apt-key add - \
+    && apt-get update \
+    && apt-get install -y \
+        libsgx-launch \
+        libsgx-urts \
+        libsgx-epid \
+        libsgx-quote-ex \
+        libsgx-dcap-ql \
+        libsgx-dcap-default-qpl \
+        sgx-aesm-service \
+        libsgx-aesm-launch-plugin \
+        libsgx-aesm-epid-plugin \
+        libsgx-aesm-quote-ex-plugin \
+        libsgx-aesm-ecdsa-plugin \
+        libsgx-dcap-quote-verify \
+        libsgx-dcap-quote-verify-dev \
+        libsgx-uae-service \
+        libsgx-ra-network \
+        libsgx-ra-uefi \
+    && rm -rf /var/lib/apt/lists/*
+
+# Download and install SGX SDK
+RUN wget https://download.01.org/intel-sgx/sgx-linux/2.24/distro/ubuntu24.04-server/sgx_linux_x64_sdk_2.24.100.3.bin \
+    && chmod +x sgx_linux_x64_sdk_2.24.100.3.bin \
+    && echo -e 'no\n/opt/intel' | ./sgx_linux_x64_sdk_2.24.100.3.bin \
+    && rm sgx_linux_x64_sdk_2.24.100.3.bin
+
+# Set SGX SDK environment
+ENV SGX_SDK=/opt/intel/sgxsdk
+ENV PATH="$PATH:$SGX_SDK/bin:$SGX_SDK/bin/x64"
+ENV PKG_CONFIG_PATH="$PKG_CONFIG_PATH:$SGX_SDK/pkgconfig"
+ENV LD_LIBRARY_PATH="$LD_LIBRARY_PATH:$SGX_SDK/sdk_libs"
+
+# Install Occlum dependencies
+RUN apt-get update && apt-get install -y \
+        libfuse-dev \
+        libtool \
+        libgflags-dev \
+        libboost-system-dev \
+        libboost-filesystem-dev \
+        libprotobuf-c-dev \
+        protobuf-c-compiler \
+        jq \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Occlum LibOS
+RUN git clone https://github.com/occlum/occlum.git /tmp/occlum \
+    && cd /tmp/occlum \
+    && git checkout v0.30.1 \
+    && . /root/.cargo/env \
+    && source /opt/intel/sgxsdk/environment \
+    && make submodule \
+    && OCCLUM_RELEASE_BUILD=1 make install \
+    && rm -rf /tmp/occlum
+
+# Set Occlum environment
+ENV PATH="/opt/occlum/bin:${PATH}"
+ENV OCCLUM_PATH="/opt/occlum"
+
+# Install additional tools
+RUN apt-get update && apt-get install -y \
+        jq \
+        zip \
+        unzip \
+        tree \
+        nano \
+        vim \
+        htop \
+        net-tools \
+        iputils-ping \
+        telnet \
+        curl \
+        wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install Node.js (for web dependencies)
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
+    && apt-get install -y nodejs \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create necessary directories
+RUN mkdir -p /neo-service-layer/logs \
+    && mkdir -p /neo-service-layer/keys \
+    && mkdir -p /neo-service-layer/data \
+    && mkdir -p /neo-service-layer/config \
+    && mkdir -p /neo-service-layer/build \
+    && mkdir -p /neo-service-layer/test-results
+
+# Copy source code
+COPY . /neo-service-layer/
+
+# Set SGX environment for builds
+RUN echo 'source /opt/intel/sgxsdk/environment' >> /root/.bashrc
+RUN echo 'export PATH="/opt/occlum/bin:${PATH}"' >> /root/.bashrc
+RUN echo 'export OCCLUM_PATH="/opt/occlum"' >> /root/.bashrc
+
+# Make scripts executable
+RUN find /neo-service-layer -name "*.sh" -type f -exec chmod +x {} \;
+RUN find /neo-service-layer -name "*.ps1" -type f -exec chmod +x {} \;
+
+# Restore .NET packages
+RUN cd /neo-service-layer \
+    && source /opt/intel/sgxsdk/environment \
+    && dotnet restore NeoServiceLayer.sln
+
+# Build the solution
+RUN cd /neo-service-layer \
+    && source /opt/intel/sgxsdk/environment \
+    && dotnet build NeoServiceLayer.sln --configuration Release --no-restore
+
+# Create startup script
+COPY <<EOF /neo-service-layer/start-neo-service-layer.sh
+#!/bin/bash
+set -e
+
+echo "🚀 Starting Neo Service Layer in Docker Container"
+echo "================================================"
+
+# Source SGX environment
+source /opt/intel/sgxsdk/environment
+
+# Set SGX simulation mode
+export SGX_MODE=SIM
+
+# Display environment info
+echo "Environment Information:"
+echo "- Ubuntu: \$(lsb_release -d | cut -f2)"
+echo "- .NET: \$(dotnet --version)"
+echo "- SGX SDK: \$SGX_SDK"
+echo "- Occlum: \$(occlum --version 2>/dev/null || echo 'Not available')"
+echo "- SGX Mode: \$SGX_MODE"
+echo ""
+
+# Create default configuration if not exists
+if [ ! -f "/neo-service-layer/appsettings.Production.json" ]; then
+    echo "Creating default production configuration..."
+    cp /neo-service-layer/src/Web/NeoServiceLayer.Web/appsettings.json /neo-service-layer/appsettings.Production.json
+fi
+
+# Start AESM service for SGX
+echo "Starting AESM service..."
+service aesmd start 2>/dev/null || true
+
+# Run tests if requested
+if [ "\$1" = "test" ]; then
+    echo "🧪 Running comprehensive tests..."
+    cd /neo-service-layer
+    dotnet test --configuration Release --logger "console;verbosity=detailed" --collect:"XPlat Code Coverage"
+    echo "✅ Tests completed!"
+    exit 0
+fi
+
+# Build if requested
+if [ "\$1" = "build" ]; then
+    echo "🔨 Building Neo Service Layer..."
+    cd /neo-service-layer
+    dotnet clean
+    dotnet restore
+    dotnet build --configuration Release
+    echo "✅ Build completed!"
+    exit 0
+fi
+
+# Default: Run the web application
+echo "🌐 Starting Neo Service Layer Web Application..."
+cd /neo-service-layer/src/Web/NeoServiceLayer.Web
+
+# Start the application
+exec dotnet run --configuration Release --urls="http://0.0.0.0:5000"
+EOF
+
+RUN chmod +x /neo-service-layer/start-neo-service-layer.sh
+
+# Create comprehensive test script
+COPY <<EOF /neo-service-layer/run-comprehensive-tests.sh
+#!/bin/bash
+set -e
+
+echo "🧪 Neo Service Layer Comprehensive Test Suite"
+echo "============================================="
+
+# Source SGX environment
+source /opt/intel/sgxsdk/environment
+export SGX_MODE=SIM
+
+cd /neo-service-layer
+
+echo "1. Running Unit Tests..."
+dotnet test --configuration Release --logger "console;verbosity=normal" --collect:"XPlat Code Coverage"
+
+echo ""
+echo "2. Running Integration Tests..."
+dotnet test tests/Integration/NeoServiceLayer.Integration.Tests --configuration Release --logger "console;verbosity=normal"
+
+echo ""
+echo "3. Running Performance Tests..."
+dotnet test tests/Performance/NeoServiceLayer.Performance.Tests --configuration Release --logger "console;verbosity=normal"
+
+echo ""
+echo "4. Testing SGX Enclave Integration..."
+cd src/Tee/NeoServiceLayer.Tee.Enclave
+dotnet test --configuration Release --logger "console;verbosity=normal"
+
+echo ""
+echo "5. Testing Service Health Endpoints..."
+cd /neo-service-layer/src/Web/NeoServiceLayer.Web
+dotnet run --configuration Release --urls="http://localhost:5001" &
+WEB_PID=\$!
+sleep 10
+
+# Test health endpoints
+echo "Testing health endpoints..."
+curl -f http://localhost:5001/api/health || echo "Health endpoint test failed"
+curl -f http://localhost:5001/api/keymanagement/health || echo "KeyManagement health test failed"
+curl -f http://localhost:5001/api/sgx/health || echo "SGX health test failed"
+
+# Stop web server
+kill \$WEB_PID 2>/dev/null || true
+
+echo ""
+echo "✅ All tests completed!"
+echo "Check test results in TestResults/ directory"
+EOF
+
+RUN chmod +x /neo-service-layer/run-comprehensive-tests.sh
+
+# Create development helper script
+COPY <<EOF /neo-service-layer/dev-tools.sh
+#!/bin/bash
+
+case "\$1" in
+    "build")
+        echo "🔨 Building Neo Service Layer..."
+        source /opt/intel/sgxsdk/environment
+        cd /neo-service-layer
+        dotnet clean
+        dotnet restore
+        dotnet build --configuration Release
+        ;;
+    "test")
+        echo "🧪 Running tests..."
+        /neo-service-layer/run-comprehensive-tests.sh
+        ;;
+    "run")
+        echo "🚀 Running web application..."
+        /neo-service-layer/start-neo-service-layer.sh
+        ;;
+    "debug")
+        echo "🐛 Starting debug mode..."
+        cd /neo-service-layer/src/Web/NeoServiceLayer.Web
+        dotnet run --configuration Debug --urls="http://0.0.0.0:5000"
+        ;;
+    "shell")
+        echo "🐚 Starting interactive shell..."
+        source /opt/intel/sgxsdk/environment
+        bash
+        ;;
+    "info")
+        echo "📋 System Information:"
+        echo "- Ubuntu: \$(lsb_release -d | cut -f2)"
+        echo "- .NET: \$(dotnet --version)"
+        echo "- SGX SDK: \$SGX_SDK"
+        echo "- Occlum: \$(occlum --version 2>/dev/null || echo 'Not available')"
+        echo "- Rust: \$(rustc --version)"
+        echo "- Node.js: \$(node --version)"
+        ;;
+    *)
+        echo "Neo Service Layer Development Tools"
+        echo "Usage: \$0 {build|test|run|debug|shell|info}"
+        echo ""
+        echo "Commands:"
+        echo "  build  - Clean and build the solution"
+        echo "  test   - Run comprehensive test suite"
+        echo "  run    - Start the web application"
+        echo "  debug  - Start in debug mode"
+        echo "  shell  - Open interactive shell"
+        echo "  info   - Show system information"
+        ;;
+esac
+EOF
+
+RUN chmod +x /neo-service-layer/dev-tools.sh
+
+# Expose ports
+EXPOSE 5000 5001
+
+# Set default command
+CMD ["/neo-service-layer/start-neo-service-layer.sh"] 

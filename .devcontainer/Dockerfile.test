@@ -1,0 +1,12 @@
+# Minimal test container for Neo Service Layer
+FROM mcr.microsoft.com/dotnet/sdk:9.0
+
+# Set environment variables
+ENV ASPNETCORE_ENVIRONMENT=Development
+ENV DOTNET_ENVIRONMENT=Development
+
+# Create workspace directory
+WORKDIR /workspace
+
+# Just test basic .NET functionality
+CMD ["dotnet", "--version"] 

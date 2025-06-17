@@ -30,11 +30,11 @@ public class VotingStrategyHelper
     {
         return strategy.StrategyType switch
         {
-            VotingStrategyType.Automatic => allCandidates.Where(c => c.IsActive),
-            VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward).Take(21),
-            VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsConsensusNode),
-            VotingStrategyType.Conditional => GetConditionalCandidates(allCandidates, strategy),
-            VotingStrategyType.Custom => GetCustomCandidates(allCandidates, strategy),
+            Core.VotingStrategyType.Automatic => allCandidates.Where(c => c.IsActive),
+            Core.VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward).Take(21),
+            Core.VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsConsensusNode),
+            Core.VotingStrategyType.Conditional => GetConditionalCandidates(allCandidates, strategy),
+            Core.VotingStrategyType.Custom => GetCustomCandidates(allCandidates, strategy),
             _ => allCandidates.Where(c => c.IsActive)
         };
     }
@@ -248,16 +248,16 @@ public class VotingStrategyHelper
     /// <param name="strategyType">The strategy type.</param>
     /// <param name="candidateCount">Number of recommended candidates.</param>
     /// <returns>Reasoning text.</returns>
-    public string GenerateRecommendationReasoning(VotingStrategyType strategyType, int candidateCount)
+    public string GenerateRecommendationReasoning(Core.VotingStrategyType strategyType, int candidateCount)
     {
         return strategyType switch
         {
-            VotingStrategyType.Automatic => $"Recommended {candidateCount} candidates using automatic selection to ensure voting power goes to operational nodes.",
-            VotingStrategyType.Manual => $"Manual selection of {candidateCount} candidates based on user preferences.",
-            VotingStrategyType.Conditional => $"Applied conditional voting logic with {candidateCount} candidates based on preferences.",
-            VotingStrategyType.ProfitOptimized => $"Recommended {candidateCount} candidates with highest expected rewards to maximize returns.",
-            VotingStrategyType.StabilityFocused => $"Recommended {candidateCount} highly reliable candidates for stable returns.",
-            VotingStrategyType.Custom => $"Applied custom voting logic with {candidateCount} candidates based on custom parameters.",
+            Core.VotingStrategyType.Automatic => $"Recommended {candidateCount} candidates using automatic selection to ensure voting power goes to operational nodes.",
+            Core.VotingStrategyType.Manual => $"Manual selection of {candidateCount} candidates based on user preferences.",
+            Core.VotingStrategyType.Conditional => $"Applied conditional voting logic with {candidateCount} candidates based on preferences.",
+            Core.VotingStrategyType.ProfitOptimized => $"Recommended {candidateCount} candidates with highest expected rewards to maximize returns.",
+            Core.VotingStrategyType.StabilityFocused => $"Recommended {candidateCount} highly reliable candidates for stable returns.",
+            Core.VotingStrategyType.Custom => $"Applied custom voting logic with {candidateCount} candidates based on custom parameters.",
             _ => $"Recommended {candidateCount} candidates based on specified criteria."
         };
     }

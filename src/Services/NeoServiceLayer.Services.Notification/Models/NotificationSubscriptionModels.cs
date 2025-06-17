@@ -170,3 +170,116 @@ public class UnsubscribeResult
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
+
+/// <summary>
+/// Notification subscription.
+/// </summary>
+public class NotificationSubscription
+{
+    /// <summary>
+    /// Gets or sets the subscription ID.
+    /// </summary>
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recipient address.
+    /// </summary>
+    public string Recipient { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the subscriber identifier.
+    /// </summary>
+    public string SubscriberId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification channels.
+    /// </summary>
+    public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
+
+    /// <summary>
+    /// Gets or sets the notification categories.
+    /// </summary>
+    public string[] Categories { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the subscription preferences.
+    /// </summary>
+    public SubscriptionPreferences Preferences { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether the subscription is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the creation timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Unsubscribe from notifications request.
+/// </summary>
+public class UnsubscribeFromNotificationsRequest
+{
+    /// <summary>
+    /// Gets or sets the subscriber identifier.
+    /// </summary>
+    public string SubscriberId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the categories to unsubscribe from (empty means all).
+    /// </summary>
+    public string[] Categories { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the reason for unsubscribing.
+    /// </summary>
+    public string? Reason { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Subscription result.
+/// </summary>
+public class SubscriptionResult
+{
+    /// <summary>
+    /// Gets or sets the subscription ID.
+    /// </summary>
+    public string SubscriptionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the operation was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if the operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the operation timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the active subscriptions count.
+    /// </summary>
+    public int ActiveSubscriptionsCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}

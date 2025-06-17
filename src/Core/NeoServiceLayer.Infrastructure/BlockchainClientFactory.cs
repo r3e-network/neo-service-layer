@@ -1,4 +1,6 @@
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Neo.N3;
 using NeoServiceLayer.Neo.X;
@@ -6,64 +8,193 @@ using NeoServiceLayer.Neo.X;
 namespace NeoServiceLayer.Infrastructure;
 
 /// <summary>
-/// Implementation of the blockchain client factory.
+/// Factory for creating blockchain clients.
 /// </summary>
 public class BlockchainClientFactory : IBlockchainClientFactory
 {
-    private readonly ILoggerFactory _loggerFactory;
-    private readonly Dictionary<BlockchainType, string> _rpcUrls;
-    private readonly Dictionary<BlockchainType, IBlockchainClient> _clients = new();
+    private readonly IServiceProvider _serviceProvider;
+    private readonly ILogger<BlockchainClientFactory> _logger;
+    private readonly BlockchainConfiguration _configuration;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BlockchainClientFactory"/> class.
     /// </summary>
-    /// <param name="loggerFactory">The logger factory.</param>
-    /// <param name="rpcUrls">The RPC URLs for each blockchain type.</param>
-    public BlockchainClientFactory(ILoggerFactory loggerFactory, Dictionary<BlockchainType, string> rpcUrls)
+    /// <param name="serviceProvider">The service provider.</param>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The blockchain configuration.</param>
+    public BlockchainClientFactory(
+        IServiceProvider serviceProvider,
+        ILogger<BlockchainClientFactory> logger,
+        IOptions<BlockchainConfiguration> configuration)
     {
-        _loggerFactory = loggerFactory;
-        _rpcUrls = rpcUrls;
+        _serviceProvider = serviceProvider;
+        _logger = logger;
+        _configuration = configuration.Value;
     }
 
     /// <inheritdoc/>
     public IBlockchainClient CreateClient(BlockchainType blockchainType)
     {
-        // Return cached client if available
-        if (_clients.TryGetValue(blockchainType, out var cachedClient))
+        try
         {
-            return cachedClient;
-        }
+            _logger.LogDebug("Creating blockchain client for {BlockchainType}", blockchainType);
 
-        if (!_rpcUrls.TryGetValue(blockchainType, out var rpcUrl))
+            return blockchainType switch
+            {
+                BlockchainType.NeoN3 => CreateNeoN3Client(),
+                BlockchainType.NeoX => CreateNeoXClient(),
+                _ => throw new NotSupportedException($"Blockchain type {blockchainType} is not supported")
+            };
+        }
+        catch (Exception ex)
         {
-            throw new ArgumentException($"Blockchain type {blockchainType} is not supported.", nameof(blockchainType));
+            _logger.LogError(ex, "Failed to create blockchain client for {BlockchainType}", blockchainType);
+            throw;
         }
-
-        IBlockchainClient client;
-        switch (blockchainType)
-        {
-            case BlockchainType.NeoN3:
-                client = new NeoN3ClientAdapter(_loggerFactory.CreateLogger<NeoN3ClientAdapter>(),
-                    new NeoN3Client(_loggerFactory.CreateLogger<NeoN3Client>(), new HttpClient(), rpcUrl));
-                break;
-            case BlockchainType.NeoX:
-                client = new NeoXClientAdapter(_loggerFactory.CreateLogger<NeoXClientAdapter>(),
-                    new NeoXClient(_loggerFactory.CreateLogger<NeoXClient>(), new HttpClient(), rpcUrl));
-                break;
-            default:
-                throw new ArgumentException($"Blockchain type {blockchainType} is not supported.", nameof(blockchainType));
-        }
-
-        // Cache the client
-        _clients[blockchainType] = client;
-        return client;
     }
 
     /// <inheritdoc/>
     public IEnumerable<BlockchainType> GetSupportedBlockchainTypes()
     {
-        return _rpcUrls.Keys;
+        return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
     }
+
+    /// <summary>
+    /// Creates a Neo N3 blockchain client.
+    /// </summary>
+    /// <returns>The Neo N3 blockchain client.</returns>
+    private IBlockchainClient CreateNeoN3Client()
+    {
+        var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<Neo.N3.NeoN3Client>>();
+        var rpcUrl = _configuration.NeoN3?.RpcUrl ?? "http://localhost:20332";
+
+        // Use reflection to create the client since we can't directly reference the implementation
+        var clientType = Type.GetType("NeoServiceLayer.Neo.N3.NeoN3Client, NeoServiceLayer.Neo.N3");
+        if (clientType == null)
+        {
+            throw new InvalidOperationException("Neo N3 client type not found. Ensure NeoServiceLayer.Neo.N3 assembly is loaded.");
+        }
+
+        var client = Activator.CreateInstance(clientType, logger, httpClient, rpcUrl) as IBlockchainClient;
+        if (client == null)
+        {
+            throw new InvalidOperationException("Failed to create Neo N3 client instance.");
+        }
+
+        _logger.LogInformation("Created Neo N3 client with RPC URL: {RpcUrl}", rpcUrl);
+        return client;
+    }
+
+    /// <summary>
+    /// Creates a Neo X blockchain client.
+    /// </summary>
+    /// <returns>The Neo X blockchain client.</returns>
+    private IBlockchainClient CreateNeoXClient()
+    {
+        var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<Neo.X.NeoXClient>>();
+        var rpcUrl = _configuration.NeoX?.RpcUrl ?? "http://localhost:8545";
+
+        // Use reflection to create the client since we can't directly reference the implementation
+        var clientType = Type.GetType("NeoServiceLayer.Neo.X.NeoXClient, NeoServiceLayer.Neo.X");
+        if (clientType == null)
+        {
+            throw new InvalidOperationException("Neo X client type not found. Ensure NeoServiceLayer.Neo.X assembly is loaded.");
+        }
+
+        var client = Activator.CreateInstance(clientType, logger, httpClient, rpcUrl) as IBlockchainClient;
+        if (client == null)
+        {
+            throw new InvalidOperationException("Failed to create Neo X client instance.");
+        }
+
+        _logger.LogInformation("Created Neo X client with RPC URL: {RpcUrl}", rpcUrl);
+        return client;
+    }
+}
+
+/// <summary>
+/// Configuration for blockchain clients.
+/// </summary>
+public class BlockchainConfiguration
+{
+    /// <summary>
+    /// Gets or sets the Neo N3 configuration.
+    /// </summary>
+    public NeoN3Configuration? NeoN3 { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Neo X configuration.
+    /// </summary>
+    public NeoXConfiguration? NeoX { get; set; }
+}
+
+/// <summary>
+/// Configuration for Neo N3 blockchain client.
+/// </summary>
+public class NeoN3Configuration
+{
+    /// <summary>
+    /// Gets or sets the RPC URL.
+    /// </summary>
+    public string RpcUrl { get; set; } = "http://localhost:20332";
+
+    /// <summary>
+    /// Gets or sets the WebSocket URL for subscriptions.
+    /// </summary>
+    public string? WebSocketUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the network magic number.
+    /// </summary>
+    public uint NetworkMagic { get; set; } = 860833102; // Neo N3 MainNet
+
+    /// <summary>
+    /// Gets or sets the request timeout in seconds.
+    /// </summary>
+    public int TimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Gets or sets whether to enable debug logging.
+    /// </summary>
+    public bool EnableDebugLogging { get; set; } = false;
+}
+
+/// <summary>
+/// Configuration for Neo X blockchain client.
+/// </summary>
+public class NeoXConfiguration
+{
+    /// <summary>
+    /// Gets or sets the RPC URL.
+    /// </summary>
+    public string RpcUrl { get; set; } = "http://localhost:8545";
+
+    /// <summary>
+    /// Gets or sets the WebSocket URL for subscriptions.
+    /// </summary>
+    public string? WebSocketUrl { get; set; }
+
+    /// <summary>
+    /// Gets or sets the chain ID.
+    /// </summary>
+    public int ChainId { get; set; } = 12227332; // Neo X MainNet
+
+    /// <summary>
+    /// Gets or sets the request timeout in seconds.
+    /// </summary>
+    public int TimeoutSeconds { get; set; } = 30;
+
+    /// <summary>
+    /// Gets or sets whether to enable debug logging.
+    /// </summary>
+    public bool EnableDebugLogging { get; set; } = false;
+
+    /// <summary>
+    /// Gets or sets the gas price strategy.
+    /// </summary>
+    public string GasPriceStrategy { get; set; } = "standard";
 }
 
 /// <summary>

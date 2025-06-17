@@ -1,12 +1,13 @@
 using NeoServiceLayer.Core;
 using NeoServiceLayer.AI.PatternRecognition.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
 /// <summary>
 /// Interface for the Pattern Recognition Service that provides AI-powered fraud detection and anomaly analysis.
 /// </summary>
-public interface IPatternRecognitionService
+public interface IPatternRecognitionService : Core.IPatternRecognitionService
 {
     /// <summary>
     /// Detects fraud in transaction data.

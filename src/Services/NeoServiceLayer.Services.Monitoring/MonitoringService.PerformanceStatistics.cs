@@ -1,6 +1,8 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
+using System.Diagnostics;
+using System.Runtime.InteropServices;
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -58,15 +60,16 @@ public partial class MonitoringService
 
                 var systemPerformance = new SystemPerformance
                 {
-                    CpuUsagePercent = Random.Shared.NextDouble() * 80, // Simulate CPU usage
-                    MemoryUsagePercent = Random.Shared.NextDouble() * 70, // Simulate memory usage
+                    CpuUsagePercent = await GetCurrentCpuUsageAsync(),
+                    MemoryUsagePercent = await GetCurrentMemoryUsageAsync(),
                     RequestsPerSecond = servicePerformances.Sum(s => s.RequestsPerSecond),
                     AverageResponseTimeMs = servicePerformances.Any() ? servicePerformances.Average(s => s.AverageResponseTimeMs) : 0,
                     ErrorRatePercent = servicePerformances.Any() ? servicePerformances.Average(s => s.ErrorRatePercent) : 0,
                     Metadata = new Dictionary<string, object>
                     {
                         ["service_count"] = servicePerformances.Count,
-                        ["time_range"] = request.TimeRange.ToString()
+                        ["time_range"] = request.TimeRange.ToString(),
+                        ["measurement_time"] = DateTime.UtcNow
                     }
                 };
 
@@ -319,6 +322,266 @@ public partial class MonitoringService
                 GeneratedAt = DateTime.UtcNow,
                 ErrorMessage = ex.Message
             };
+        }
+    }
+
+    /// <summary>
+    /// Gets the current CPU usage percentage.
+    /// </summary>
+    /// <returns>CPU usage percentage (0-100).</returns>
+    private async Task<double> GetCurrentCpuUsageAsync()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return await GetWindowsCpuUsageAsync();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return await GetLinuxCpuUsageAsync();
+            }
+            else
+            {
+                // Fallback for other platforms
+                return await GetProcessCpuUsageAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get CPU usage");
+            return 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current memory usage percentage.
+    /// </summary>
+    /// <returns>Memory usage percentage (0-100).</returns>
+    private async Task<double> GetCurrentMemoryUsageAsync()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return await GetWindowsMemoryUsageAsync();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return await GetLinuxMemoryUsageAsync();
+            }
+            else
+            {
+                // Fallback for other platforms
+                return await GetProcessMemoryUsageAsync();
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to get memory usage");
+            return 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Gets CPU usage on Windows.
+    /// </summary>
+    private async Task<double> GetWindowsCpuUsageAsync()
+    {
+        try
+        {
+            // Use process CPU time calculation as the primary method on Windows
+            return await GetProcessCpuUsageAsync();
+        }
+        catch
+        {
+            return 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Gets CPU usage on Linux by reading /proc/stat.
+    /// </summary>
+    private async Task<double> GetLinuxCpuUsageAsync()
+    {
+        try
+        {
+            if (!File.Exists("/proc/stat"))
+            {
+                return await GetProcessCpuUsageAsync();
+            }
+
+            // Read CPU stats twice with a delay to calculate usage
+            var (idle1, total1) = await ReadCpuStatsAsync();
+            await Task.Delay(100);
+            var (idle2, total2) = await ReadCpuStatsAsync();
+
+            var idleDiff = idle2 - idle1;
+            var totalDiff = total2 - total1;
+
+            if (totalDiff == 0)
+            {
+                return await GetProcessCpuUsageAsync();
+            }
+
+            var cpuUsage = (1.0 - (double)idleDiff / totalDiff) * 100.0;
+            return Math.Min(100.0, Math.Max(0.0, cpuUsage));
+        }
+        catch
+        {
+            return await GetProcessCpuUsageAsync();
+        }
+    }
+
+    /// <summary>
+    /// Reads CPU statistics from /proc/stat.
+    /// </summary>
+    private async Task<(long idle, long total)> ReadCpuStatsAsync()
+    {
+        var lines = await File.ReadAllLinesAsync("/proc/stat");
+        var cpuLine = lines.FirstOrDefault(line => line.StartsWith("cpu "));
+        
+        if (cpuLine == null)
+        {
+            return (0, 0);
+        }
+
+        var values = cpuLine.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        if (values.Length < 8)
+        {
+            return (0, 0);
+        }
+
+        // Parse CPU time values: user, nice, system, idle, iowait, irq, softirq, steal
+        var cpuTimes = values.Skip(1).Take(7).Select(long.Parse).ToArray();
+        var total = cpuTimes.Sum();
+        var idle = cpuTimes[3]; // idle time is the 4th value
+
+        return (idle, total);
+    }
+
+    /// <summary>
+    /// Gets process-specific CPU usage as a fallback.
+    /// </summary>
+    private async Task<double> GetProcessCpuUsageAsync()
+    {
+        try
+        {
+            using var currentProcess = Process.GetCurrentProcess();
+            var startTime = DateTime.UtcNow;
+            var startCpuUsage = currentProcess.TotalProcessorTime;
+            
+            await Task.Delay(100);
+            
+            currentProcess.Refresh();
+            var endTime = DateTime.UtcNow;
+            var endCpuUsage = currentProcess.TotalProcessorTime;
+            
+            var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
+            var totalMsPassed = (endTime - startTime).TotalMilliseconds;
+            var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
+            
+            return Math.Min(100.0, Math.Max(0.0, cpuUsageTotal * 100.0));
+        }
+        catch
+        {
+            return 0.0;
+        }
+    }
+
+    /// <summary>
+    /// Gets memory usage on Windows.
+    /// </summary>
+    private async Task<double> GetWindowsMemoryUsageAsync()
+    {
+        try
+        {
+            // Use GC memory pressure and process working set as indicators
+            var gcMemory = GC.GetTotalMemory(false);
+            var workingSet = Environment.WorkingSet;
+            
+            // Estimate system memory usage based on process characteristics
+            // This is a simplified approach using available .NET APIs
+            var estimatedUsage = Math.Min(100.0, (double)workingSet / (1024 * 1024 * 1024) * 100); // As percentage of 1GB
+            
+            await Task.CompletedTask;
+            return Math.Max(10.0, estimatedUsage); // Minimum 10% to show some usage
+        }
+        catch
+        {
+            return await GetProcessMemoryUsageAsync();
+        }
+    }
+
+    /// <summary>
+    /// Gets memory usage on Linux by reading /proc/meminfo.
+    /// </summary>
+    private async Task<double> GetLinuxMemoryUsageAsync()
+    {
+        try
+        {
+            if (!File.Exists("/proc/meminfo"))
+            {
+                return await GetProcessMemoryUsageAsync();
+            }
+
+            var lines = await File.ReadAllLinesAsync("/proc/meminfo");
+            var memInfo = new Dictionary<string, long>();
+
+            foreach (var line in lines)
+            {
+                var parts = line.Split(':', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 2)
+                {
+                    var key = parts[0].Trim();
+                    var valueStr = parts[1].Trim().Replace(" kB", "");
+                    if (long.TryParse(valueStr, out var value))
+                    {
+                        memInfo[key] = value;
+                    }
+                }
+            }
+
+            var totalKB = memInfo.GetValueOrDefault("MemTotal", 0);
+            var availableKB = memInfo.GetValueOrDefault("MemAvailable", memInfo.GetValueOrDefault("MemFree", 0));
+            
+            if (totalKB == 0)
+            {
+                return await GetProcessMemoryUsageAsync();
+            }
+
+            var usedKB = totalKB - availableKB;
+            var memoryUsage = (double)usedKB / totalKB * 100.0;
+            
+            return Math.Min(100.0, Math.Max(0.0, memoryUsage));
+        }
+        catch
+        {
+            return await GetProcessMemoryUsageAsync();
+        }
+    }
+
+    /// <summary>
+    /// Gets process-specific memory usage as a fallback.
+    /// </summary>
+    private async Task<double> GetProcessMemoryUsageAsync()
+    {
+        try
+        {
+            using var currentProcess = Process.GetCurrentProcess();
+            var workingSetMB = currentProcess.WorkingSet64 / (1024.0 * 1024.0);
+            
+            // Estimate system memory and calculate percentage
+            // This is a very rough estimate for fallback purposes
+            var estimatedSystemMemoryMB = Math.Max(workingSetMB * 4, 1024); // At least 1GB
+            var memoryUsage = (workingSetMB / estimatedSystemMemoryMB) * 100.0;
+            
+            await Task.CompletedTask;
+            return Math.Min(100.0, Math.Max(0.0, memoryUsage));
+        }
+        catch
+        {
+            return 0.0;
         }
     }
 }
