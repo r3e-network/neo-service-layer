@@ -1,0 +1,32 @@
+using Microsoft.Extensions.Logging;
+using Moq;
+using Xunit;
+using FluentAssertions;
+using NeoServiceLayer.Services.Monitoring;
+using NeoServiceLayer.TestInfrastructure;
+
+namespace NeoServiceLayer.Services.Monitoring.Tests;
+
+public class MonitoringServiceTests : TestBase
+{
+    private readonly Mock<ILogger<MonitoringService>> _loggerMock;
+    private readonly MonitoringService _service;
+
+    public MonitoringServiceTests()
+    {
+        _loggerMock = new Mock<ILogger<MonitoringService>>();
+        _service = new MonitoringService(_loggerMock.Object, MockEnclaveWrapper.Object);
+    }
+
+    [Fact]
+    public void Constructor_ShouldInitializeService()
+    {
+        // Act & Assert
+        _service.Should().NotBeNull();
+    }
+
+    // TODO: Add comprehensive tests for all service methods
+    // TODO: Add enclave integration tests
+    // TODO: Add error handling tests
+    // TODO: Add performance tests
+}

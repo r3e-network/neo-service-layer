@@ -76,36 +76,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await ExecuteInEnclaveAsync(async () =>
-        {
-            var poolId = Guid.NewGuid().ToString();
-
-            var pool = new FairOrderingModels.OrderingPool
-            {
-                Id = poolId,
-                Name = config.Name,
-                Configuration = config,
-                OrderingAlgorithm = config.OrderingAlgorithm,
-                BatchSize = config.BatchSize,
-                MevProtectionEnabled = config.MevProtectionEnabled,
-                FairnessLevel = config.FairnessLevel,
-                CreatedAt = DateTime.UtcNow,
-                Status = PoolStatus.Active,
-                PendingTransactions = new List<FairOrderingModels.PendingTransaction>(),
-                ProcessedBatches = new List<FairOrderingModels.ProcessedBatch>(),
-                BlockchainType = blockchainType
-            };
-
-            lock (_poolsLock)
-            {
-                _orderingPools[poolId] = pool;
-            }
-
-            Logger.LogInformation("Created ordering pool {PoolId} ({Name}) with algorithm {Algorithm} on {Blockchain}",
-                poolId, config.Name, config.OrderingAlgorithm, blockchainType);
-
-            return poolId;
-        });
+        return await CreateOrderingPoolWithResilienceAsync(config, blockchainType);
     }
 
     /// <inheritdoc/>
@@ -118,49 +89,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await ExecuteInEnclaveAsync(async () =>
-        {
-            var transactionId = Guid.NewGuid().ToString();
-
-            Logger.LogInformation("Submitting fair transaction {TransactionId} from {From} to {To} on {Blockchain}",
-                transactionId, request.From, request.To, blockchainType);
-
-            // Validate transaction parameters
-            if (string.IsNullOrEmpty(request.From) || string.IsNullOrEmpty(request.To))
-            {
-                throw new ArgumentException("From and To addresses are required");
-            }
-
-            if (request.Value < 0 || request.GasLimit <= 0)
-            {
-                throw new ArgumentException("Invalid transaction parameters");
-            }
-
-            // Create fair transaction entry
-            var fairTransaction = new FairTransaction
-            {
-                TransactionId = transactionId,
-                From = request.From,
-                To = request.To,
-                Value = request.Value,
-                Data = System.Text.Encoding.UTF8.GetBytes(request.Data ?? string.Empty),
-                GasLimit = request.GasLimit,
-                ProtectionLevel = request.ProtectionLevel,
-                MaxSlippage = request.MaxSlippage,
-                ExecuteAfter = request.ExecuteAfter,
-                ExecuteBefore = request.ExecuteBefore,
-                SubmittedAt = DateTime.UtcNow,
-                Status = TransactionStatus.Pending
-            };
-
-            // Store transaction for fair ordering processing
-            await StoreFairTransactionAsync(fairTransaction);
-
-            Logger.LogInformation("Fair transaction {TransactionId} submitted successfully on {Blockchain}",
-                transactionId, blockchainType);
-
-            return transactionId;
-        });
+        return await SubmitFairTransactionWithResilienceAsync(request, blockchainType);
     }
 
     /// <inheritdoc/>
@@ -173,110 +102,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await ExecuteInEnclaveAsync(async () =>
-        {
-            var analysisId = Guid.NewGuid().ToString();
-
-            try
-            {
-                Logger.LogDebug("Analyzing fairness risk {AnalysisId} for transaction from {From} to {To}",
-                    analysisId, request.From, request.To);
-
-                // Validate analysis request
-                if (string.IsNullOrEmpty(request.TransactionData))
-                {
-                    throw new ArgumentException("Transaction data is required for analysis");
-                }
-
-                // Perform comprehensive fairness analysis
-                var riskFactors = new List<string>();
-                var recommendations = new List<string>();
-                decimal estimatedMev = 0m;
-                string riskLevel = "Low";
-
-                // Analyze transaction value and patterns
-                if (request.Value > 1000000m) // Large transaction
-                {
-                    riskFactors.Add("Large transaction value detected");
-                    estimatedMev += request.Value * 0.001m; // 0.1% potential MEV
-                    riskLevel = "Medium";
-                    recommendations.Add("Consider splitting large transactions");
-                }
-
-                // Analyze gas price patterns (for NeoX)
-                if (blockchainType == BlockchainType.NeoX)
-                {
-                    var gasAnalysis = await AnalyzeGasPatternsAsync(request);
-                    if (gasAnalysis.IsHighPriority)
-                    {
-                        riskFactors.Add("High gas price detected - potential front-running target");
-                        estimatedMev += gasAnalysis.EstimatedMevExposure;
-                        riskLevel = gasAnalysis.EstimatedMevExposure > 10m ? "High" : "Medium";
-                        recommendations.Add("Use fair ordering protection to prevent front-running");
-                    }
-                }
-
-                // Analyze transaction timing
-                var timingAnalysis = AnalyzeTransactionTiming(request);
-                if (timingAnalysis.IsSuspicious)
-                {
-                    riskFactors.Add("Suspicious transaction timing detected");
-                    riskLevel = "High";
-                    recommendations.Add("Delay transaction execution to avoid timing attacks");
-                }
-
-                // Analyze contract interactions
-                if (!string.IsNullOrEmpty(request.To) && IsContractAddress(request.To))
-                {
-                    var contractAnalysis = await AnalyzeContractInteractionAsync(request);
-                    if (contractAnalysis.HasMevRisk)
-                    {
-                        riskFactors.AddRange(contractAnalysis.RiskFactors);
-                        estimatedMev += contractAnalysis.EstimatedMev;
-                        if (contractAnalysis.RiskLevel == "Critical")
-                        {
-                            riskLevel = "Critical";
-                        }
-                        recommendations.AddRange(contractAnalysis.Recommendations);
-                    }
-                }
-
-                // Calculate protection fee based on risk and value
-                decimal protectionFee = CalculateProtectionFee(request.Value, estimatedMev, riskLevel);
-
-                var result = new FairnessAnalysisResult
-                {
-                    TransactionHash = !string.IsNullOrEmpty(request.TransactionData) ?
-                        ComputeTransactionHash(request.TransactionData) : string.Empty,
-                    RiskLevel = riskLevel,
-                    EstimatedMEV = estimatedMev,
-                    DetectedRisks = riskFactors.Count > 0 ? riskFactors.ToArray() : new[] { "No significant risks detected" },
-                    Recommendations = recommendations.Count > 0 ? recommendations.ToArray() : new[] { "Transaction appears fair" },
-                    ProtectionFee = protectionFee,
-                    AnalyzedAt = DateTime.UtcNow
-                };
-
-                Logger.LogInformation("Fairness analysis {AnalysisId}: Risk {RiskLevel}, MEV {EstimatedMev:F4}, Fee {ProtectionFee:F6} on {Blockchain}",
-                    analysisId, result.RiskLevel, result.EstimatedMEV, result.ProtectionFee, blockchainType);
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to analyze fairness risk {AnalysisId}", analysisId);
-
-                return new FairnessAnalysisResult
-                {
-                    TransactionHash = string.Empty,
-                    RiskLevel = "Error",
-                    EstimatedMEV = 0.0m,
-                    DetectedRisks = new[] { $"Analysis failed: {ex.Message}" },
-                    Recommendations = new[] { "Unable to analyze transaction - proceed with caution" },
-                    ProtectionFee = 0.0m,
-                    AnalyzedAt = DateTime.UtcNow
-                };
-            }
-        });
+        return await AnalyzeFairnessRiskWithResilienceAsync(request, blockchainType);
     }
 
     /// <inheritdoc/>

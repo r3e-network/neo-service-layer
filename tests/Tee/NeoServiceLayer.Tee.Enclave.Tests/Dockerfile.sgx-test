@@ -1,0 +1,78 @@
+# Dockerfile for running SGX SDK tests in simulation mode
+FROM ubuntu:20.04
+
+# Prevent interactive prompts during package installation
+ENV DEBIAN_FRONTEND=noninteractive
+
+# Install dependencies
+RUN apt-get update && apt-get install -y \
+    wget \
+    curl \
+    gnupg \
+    software-properties-common \
+    build-essential \
+    cmake \
+    git \
+    libssl-dev \
+    libcurl4-openssl-dev \
+    libprotobuf-dev \
+    protobuf-compiler \
+    python3 \
+    python3-pip \
+    && rm -rf /var/lib/apt/lists/*
+
+# Install .NET 9.0 SDK
+RUN wget https://dot.net/v1/dotnet-install.sh -O dotnet-install.sh && \
+    chmod +x ./dotnet-install.sh && \
+    ./dotnet-install.sh --channel 9.0 --install-dir /usr/share/dotnet && \
+    ln -s /usr/share/dotnet/dotnet /usr/bin/dotnet && \
+    rm dotnet-install.sh
+
+# Install Intel SGX SDK in simulation mode
+WORKDIR /tmp
+RUN wget https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.22.100.3.bin && \
+    chmod +x sgx_linux_x64_sdk_2.22.100.3.bin && \
+    echo 'yes' | ./sgx_linux_x64_sdk_2.22.100.3.bin --prefix=/opt/intel && \
+    rm sgx_linux_x64_sdk_2.22.100.3.bin
+
+# Install Occlum
+RUN wget https://github.com/occlum/occlum/releases/download/0.29.7/occlum_0.29.7_amd64.deb && \
+    apt-get update && \
+    apt-get install -y ./occlum_0.29.7_amd64.deb && \
+    rm occlum_0.29.7_amd64.deb && \
+    rm -rf /var/lib/apt/lists/*
+
+# Set up SGX environment
+ENV SGX_MODE=SIM
+ENV SGX_SDK=/opt/intel/sgxsdk
+ENV PATH=$SGX_SDK/bin:$SGX_SDK/bin/x64:$PATH
+ENV LD_LIBRARY_PATH=$SGX_SDK/lib64:$LD_LIBRARY_PATH
+ENV OCCLUM_PREFIX=/opt/occlum
+ENV PATH=$OCCLUM_PREFIX/bin:$PATH
+ENV LD_LIBRARY_PATH=$OCCLUM_PREFIX/lib:$LD_LIBRARY_PATH
+
+# Create working directory
+WORKDIR /app
+
+# Copy the entire project
+COPY . .
+
+# Source SGX environment and build
+RUN /bin/bash -c "source $SGX_SDK/environment && \
+    cd /app && \
+    dotnet restore && \
+    dotnet build"
+
+# Create entrypoint script
+RUN echo '#!/bin/bash\n\
+source $SGX_SDK/environment\n\
+cd /app/tests/Tee/NeoServiceLayer.Tee.Enclave.Tests\n\
+echo "=== Running SGX SDK Tests in Simulation Mode ==="\n\
+echo "SGX_MODE=$SGX_MODE"\n\
+echo "SGX_SDK=$SGX_SDK"\n\
+echo "LD_LIBRARY_PATH=$LD_LIBRARY_PATH"\n\
+echo ""\n\
+exec dotnet test --filter "Category=SGXIntegration" --logger "console;verbosity=detailed"' > /entrypoint.sh && \
+    chmod +x /entrypoint.sh
+
+ENTRYPOINT ["/entrypoint.sh"]

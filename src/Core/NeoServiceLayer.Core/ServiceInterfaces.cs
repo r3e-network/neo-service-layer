@@ -22,9 +22,13 @@ public interface IProofOfReserveService : IEnclaveService, IBlockchainService
     Task<ProofOfReserve> GenerateProofAsync(string assetId, BlockchainType blockchainType);
     Task<bool> VerifyProofAsync(string proofId, BlockchainType blockchainType);
     Task<ReserveStatusInfo> GetReserveStatusAsync(string assetId, BlockchainType blockchainType);
+    Task<ReserveHealthStatus> GetReserveHealthAsync(string assetId, BlockchainType blockchainType);
     Task<IEnumerable<MonitoredAsset>> GetRegisteredAssetsAsync(BlockchainType blockchainType);
     Task<ReserveSnapshot[]> GetReserveHistoryAsync(string assetId, DateTime from, DateTime to, BlockchainType blockchainType);
+    Task<string> SubscribeToReserveUpdatesAsync(string assetId, string callbackUrl, BlockchainType blockchainType);
+    Task<bool> UnsubscribeFromReserveUpdatesAsync(string subscriptionId, BlockchainType blockchainType);
     Task<bool> SetAlertThresholdAsync(string assetId, decimal threshold, BlockchainType blockchainType);
+    Task<string> SetupAlertAsync(string assetId, ReserveAlertConfig alertConfig, BlockchainType blockchainType);
     Task<IEnumerable<ReserveAlert>> GetActiveAlertsAsync(BlockchainType blockchainType);
     Task<AuditReport> GenerateAuditReportAsync(string assetId, DateTime from, DateTime to, BlockchainType blockchainType);
 }

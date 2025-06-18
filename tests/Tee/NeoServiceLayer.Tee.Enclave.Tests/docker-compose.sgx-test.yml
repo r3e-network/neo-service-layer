@@ -1,0 +1,46 @@
+version: '3.8'
+
+services:
+  sgx-test:
+    build:
+      context: ../../../
+      dockerfile: tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/Dockerfile.sgx-test
+    container_name: neo-sgx-tests
+    environment:
+      - SGX_MODE=SIM
+      - SGX_DEBUG=1
+      - DOTNET_ENVIRONMENT=Development
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+    volumes:
+      # Mount test results for retrieval
+      - ./TestResults:/app/tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/TestResults
+    # Required for SGX, even in simulation mode
+    privileged: true
+    devices:
+      # SGX device (optional for simulation mode but included for compatibility)
+      - /dev/sgx_enclave:/dev/sgx_enclave:rw
+      - /dev/sgx_provision:/dev/sgx_provision:rw
+    # Network configuration
+    network_mode: bridge
+    # Resource limits
+    deploy:
+      resources:
+        limits:
+          cpus: '2'
+          memory: 4G
+        reservations:
+          cpus: '1'
+          memory: 2G
+
+  # Alternative service for running without building (using pre-built image)
+  sgx-test-prebuilt:
+    image: neo-service-layer-sgx-test:latest
+    container_name: neo-sgx-tests-prebuilt
+    environment:
+      - SGX_MODE=SIM
+      - SGX_DEBUG=1
+    volumes:
+      - ./TestResults:/app/tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/TestResults
+    privileged: true
+    profiles:
+      - prebuilt

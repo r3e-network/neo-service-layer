@@ -1,0 +1,52 @@
+version: '3.8'
+
+services:
+  occlum-sgx-tests:
+    image: occlum/occlum:0.30.1-ubuntu20.04
+    container_name: neo-occlum-sgx-tests
+    working_dir: /workspace
+    environment:
+      - SGX_MODE=SIM
+      - SGX_DEBUG=1
+      - DOTNET_ENVIRONMENT=Development
+      - DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1
+      - DOTNET_CLI_TELEMETRY_OPTOUT=1
+      - OCCLUM_LOG_LEVEL=info
+    volumes:
+      # Mount the entire project
+      - .:/workspace
+      # Mount test results for retrieval
+      - ./TestResults:/workspace/TestResults
+    # Required for SGX operations
+    privileged: true
+    devices:
+      # SGX devices (will be simulated)
+      - /dev/sgx_enclave:/dev/sgx_enclave:rw
+      - /dev/sgx_provision:/dev/sgx_provision:rw
+    # Keep container running for interactive testing
+    stdin_open: true
+    tty: true
+    command: /bin/bash -c "cd /workspace && ./tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/run-all-enclave-tests.sh"
+    
+  # Service for development and debugging
+  occlum-sgx-dev:
+    image: occlum/occlum:0.30.1-ubuntu20.04
+    container_name: neo-occlum-sgx-dev
+    working_dir: /workspace
+    environment:
+      - SGX_MODE=SIM
+      - SGX_DEBUG=1
+      - DOTNET_ENVIRONMENT=Development
+      - OCCLUM_LOG_LEVEL=debug
+    volumes:
+      - .:/workspace
+      - ./TestResults:/workspace/TestResults
+    privileged: true
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave:rw
+      - /dev/sgx_provision:/dev/sgx_provision:rw
+    stdin_open: true
+    tty: true
+    command: /bin/bash
+    profiles:
+      - dev

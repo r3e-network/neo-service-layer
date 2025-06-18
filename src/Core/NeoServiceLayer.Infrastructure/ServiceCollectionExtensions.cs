@@ -28,6 +28,7 @@ using NeoServiceLayer.Advanced.FairOrdering;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Configuration;
+using NeoServiceLayer.Infrastructure.Security;
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -55,6 +56,9 @@ public static class ServiceCollectionExtensions
         
         // Register advanced features
         services.AddAdvancedFeatures(configuration);
+        
+        // Register security logging and monitoring
+        services.AddSecurityLogging(configuration);
         
         return services;
     }

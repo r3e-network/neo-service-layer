@@ -37,25 +37,7 @@ public partial class ProofOfReserveService
     /// <param name="blockchainType">The blockchain type.</param>
     private async Task UpdateReserveStatusAsync(string assetId, string[] reserveAddresses, BlockchainType blockchainType)
     {
-        try
-        {
-            // Fetch reserve balances from blockchain
-            var balances = await FetchReserveBalancesAsync(reserveAddresses, blockchainType);
-
-            var updateRequest = new ReserveUpdateRequest
-            {
-                ReserveAddresses = reserveAddresses,
-                ReserveBalances = balances,
-                AuditSource = "NeoServiceLayer",
-                AuditTimestamp = DateTime.UtcNow
-            };
-
-            await UpdateReserveDataAsync(assetId, updateRequest, blockchainType);
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error updating reserve status for asset {AssetId}", assetId);
-        }
+        await UpdateReserveStatusWithResilienceAsync(assetId, reserveAddresses, blockchainType);
     }
 
     /// <summary>
@@ -471,10 +453,18 @@ Neo Service Layer Team
     private async Task<decimal[]> FetchReserveBalancesAsync(string[] reserveAddresses, BlockchainType blockchainType)
     {
         var balances = new decimal[reserveAddresses.Length];
+        var (_, _, cachingEnabled) = GetPerformanceSettings();
 
         for (int i = 0; i < reserveAddresses.Length; i++)
         {
-            balances[i] = await QueryAddressBalanceAsync(reserveAddresses[i], blockchainType);
+            if (cachingEnabled && _cacheHelper != null)
+            {
+                balances[i] = await GetBlockchainBalanceWithCachingAsync(reserveAddresses[i], blockchainType);
+            }
+            else
+            {
+                balances[i] = await QueryAddressBalanceAsync(reserveAddresses[i], blockchainType);
+            }
         }
 
         return balances;
