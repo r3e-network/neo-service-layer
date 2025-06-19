@@ -11,7 +11,6 @@
     <PackageReference Include="Nethereum.Contracts" Version="4.21.4" />
     <PackageReference Include="Nethereum.RPC" Version="4.21.4" />
     <PackageReference Include="Nethereum.JsonRpc.Client" Version="4.21.4" />
-    <PackageReference Include="System.Net.WebSockets.Client" Version="4.3.2" />
   </ItemGroup>
 
   <PropertyGroup>
