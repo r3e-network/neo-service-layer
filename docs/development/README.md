@@ -2,14 +2,24 @@
 
 ## Overview
 
-This guide provides instructions for setting up a development environment for the Neo Service Layer and contributing to the project. It covers prerequisites, development setup, coding standards, testing, and contribution guidelines.
+This guide provides comprehensive instructions for developing the Neo Service Layer with its **20+ services** and **interactive web application**. It covers development environment setup, project structure, coding standards, testing strategies, and contribution guidelines for the complete ecosystem.
+
+## 🌐 Web Application Development
+
+The Neo Service Layer includes a full-featured web application built with:
+- **ASP.NET Core 8.0** with Razor Pages
+- **Bootstrap 5** for responsive UI
+- **JavaScript ES6+** for client-side functionality
+- **JWT Authentication** with role-based authorization
+- **OpenAPI/Swagger** for API documentation
+- **Real-time Service Integration** with all 20+ services
 
 ## Prerequisites
 
 ### Development Environment
 
 - **Operating System**: Windows 10/11, macOS, or Linux
-- **.NET SDK**: .NET 9.0 or later
+- **.NET SDK**: .NET 8.0 (current implementation)
 - **IDE**: Visual Studio 2025, Visual Studio Code, or JetBrains Rider
 - **Git**: Git 2.30 or later
 - **Intel SGX SDK**: SGX SDK 2.15 or later (for enclave development)
@@ -65,55 +75,112 @@ sudo ./install.sh
 dotnet build
 ```
 
-### Run the Solution
+### Run the Web Application
 
 ```bash
+# Run the complete web application with all services
+dotnet run --project src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj
+
+# Access the application at:
+# - Main Interface: http://localhost:5000
+# - Service Demo: http://localhost:5000/servicepages/servicedemo
+# - API Documentation: http://localhost:5000/swagger
+```
+
+**Alternative - API Only:**
+```bash
+# For API-only development
 dotnet run --project src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj
 ```
 
 ### Configure Development Environment
 
 ```bash
-# Copy the example configuration
-cp config/appsettings.Development.example.json config/appsettings.Development.json
+# Configure web application
+cp src/Web/NeoServiceLayer.Web/appsettings.example.json src/Web/NeoServiceLayer.Web/appsettings.Development.json
 
-# Edit the configuration
-nano config/appsettings.Development.json
+# Configure API service (if running separately)
+cp src/Api/NeoServiceLayer.Api/appsettings.example.json src/Api/NeoServiceLayer.Api/appsettings.Development.json
+
+# Edit configurations as needed
+nano src/Web/NeoServiceLayer.Web/appsettings.Development.json
 ```
 
 ## Project Structure
 
-The Neo Service Layer project is structured as follows:
+The Neo Service Layer is organized as a comprehensive solution with 20+ services:
 
-- **src**: Source code
-  - **Api**: API service
-  - **Core**: Core framework
-  - **Infrastructure**: Infrastructure components
-  - **Services**: Service implementations
-  - **Tee**: Trusted Execution Environment components
-    - **Host**: Host application
-    - **Enclave**: Enclave code
-  - **Shared**: Shared components
+### Source Code (`src/`)
 
-- **tests**: Test code
-  - **Api**: API service tests
-  - **Core**: Core framework tests
-  - **Infrastructure**: Infrastructure component tests
-  - **Services**: Service implementation tests
-  - **Tee**: Trusted Execution Environment component tests
-  - **Shared**: Shared component tests
+```
+src/
+├── Web/
+│   └── NeoServiceLayer.Web/          # Interactive web application
+├── Api/
+│   └── NeoServiceLayer.Api/          # RESTful API service
+├── Core/
+│   ├── NeoServiceLayer.Core/         # Core framework and interfaces
+│   └── NeoServiceLayer.ServiceFramework/  # Service lifecycle management
+├── Services/                        # 20+ Service implementations
+│   ├── NeoServiceLayer.Services.KeyManagement/
+│   ├── NeoServiceLayer.Services.Randomness/
+│   ├── NeoServiceLayer.Services.Oracle/
+│   ├── NeoServiceLayer.Services.Voting/
+│   ├── NeoServiceLayer.Services.Storage/
+│   ├── NeoServiceLayer.Services.Backup/
+│   ├── NeoServiceLayer.Services.Configuration/
+│   ├── NeoServiceLayer.Services.ZeroKnowledge/
+│   ├── NeoServiceLayer.Services.AbstractAccount/
+│   ├── NeoServiceLayer.Services.Compliance/
+│   ├── NeoServiceLayer.Services.ProofOfReserve/
+│   ├── NeoServiceLayer.Services.Automation/
+│   ├── NeoServiceLayer.Services.Monitoring/
+│   ├── NeoServiceLayer.Services.Health/
+│   ├── NeoServiceLayer.Services.Notification/
+│   ├── NeoServiceLayer.Services.CrossChain/
+│   ├── NeoServiceLayer.Services.Compute/
+│   ├── NeoServiceLayer.Services.EventSubscription/
+│   ├── NeoServiceLayer.AI.PatternRecognition/
+│   └── NeoServiceLayer.AI.Prediction/
+├── Advanced/
+│   └── NeoServiceLayer.Advanced.FairOrdering/
+├── Tee/                            # Trusted Execution Environment
+│   ├── NeoServiceLayer.Tee.Host/     # Host application
+│   └── NeoServiceLayer.Tee.Enclave/  # SGX + Occlum enclave code
+└── Infrastructure/
+    └── NeoServiceLayer.Infrastructure/  # Shared infrastructure
+```
 
-- **docs**: Documentation
-  - **api**: API documentation
-  - **architecture**: Architecture documentation
-  - **deployment**: Deployment documentation
-  - **development**: Development documentation
-  - **services**: Service documentation
-  - **workflows**: Workflow documentation
+### Tests (`tests/`)
 
-- **scripts**: Scripts for building, testing, and deployment
+```
+tests/
+├── Web/
+│   └── NeoServiceLayer.Web.Tests/     # Web application tests
+├── Api/
+│   └── NeoServiceLayer.Api.Tests/     # API service tests
+├── Services/                       # Service-specific tests
+│   ├── NeoServiceLayer.Services.*.Tests/
+│   └── ...
+├── Tee/
+│   └── NeoServiceLayer.Tee.*.Tests/   # SGX enclave tests
+└── TestInfrastructure/
+    └── NeoServiceLayer.TestInfrastructure/  # Shared test utilities
+```
 
-- **config**: Configuration files
+### Documentation (`docs/`)
+
+```
+docs/
+├── web/                    # Web application documentation
+├── api/                    # API documentation
+├── architecture/           # System architecture
+├── services/               # Service documentation
+├── deployment/             # Deployment guides
+├── development/            # Development guides
+├── security/               # Security documentation
+└── troubleshooting/        # Troubleshooting guides
+```
 
 ## Coding Standards
 
@@ -187,7 +254,13 @@ The Neo Service Layer project uses the following testing frameworks:
 dotnet test
 
 # Run specific test project
-dotnet test tests/Services/NeoServiceLayer.Services.Randomness.Tests
+dotnet test tests/Services/NeoServiceLayer.Services.Randomness.Tests/
+
+# Run web application tests
+dotnet test tests/Web/NeoServiceLayer.Web.Tests/
+
+# Run tests with coverage
+dotnet test --collect:"XPlat Code Coverage"
 
 # Run tests with specific filter
 dotnet test --filter "Category=Unit"
@@ -265,27 +338,180 @@ public async Task GenerateRandomNumber_WithValidRange_ReturnsNumberInRange()
 4. **Approval**: Approval by project maintainers
 5. **Merge**: Merge into the main branch
 
-## Adding a New Service
+## 🔧 Web Application Development
 
-To add a new service to the Neo Service Layer, follow these steps:
+### Adding a New Service to Web Application
 
-1. **Create Service Interface**: Create an interface for the service in the Core project
-2. **Create Service Implementation**: Create an implementation of the service in the Services project
-3. **Create Enclave Code**: Create enclave code for the service in the Tee.Enclave project
-4. **Create Host Code**: Create host code for the service in the Tee.Host project
-5. **Create API Endpoints**: Create API endpoints for the service in the Api project
-6. **Create Tests**: Create tests for the service in the tests project
-7. **Update Documentation**: Update documentation for the service in the docs project
+1. **Create Service Implementation** (if new):
+```bash
+dotnet new classlib -n NeoServiceLayer.Services.YourService \
+  -o src/Services/NeoServiceLayer.Services.YourService -f net8.0
+```
 
-For detailed instructions, see [Adding New Services](../architecture/adding-new-services.md).
+2. **Add Web Application Reference**:
+```bash
+dotnet add src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj \
+  reference src/Services/NeoServiceLayer.Services.YourService/
+```
 
-## References
+3. **Register Service in Program.cs**:
+```csharp
+// In src/Web/NeoServiceLayer.Web/Program.cs
+builder.Services.AddScoped<IYourService, YourService>();
+```
 
-- [Neo Service Layer Architecture](../architecture/README.md)
-- [Neo Service Layer API](../api/README.md)
-- [Neo Service Layer Services](../services/README.md)
-- [Neo Service Layer Workflows](../workflows/README.md)
-- [Neo N3 Documentation](https://docs.neo.org/)
-- [NeoX Documentation](https://docs.neo.org/neox/)
-- [Intel SGX Documentation](https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html)
-- [Occlum LibOS Documentation](https://occlum.io/)
+4. **Create API Controller**:
+```csharp
+[ApiController]
+[Route("api/[controller]")]
+[Authorize]
+public class YourServiceController : ControllerBase
+{
+    private readonly IYourService _yourService;
+    
+    [HttpPost("endpoint")]
+    public async Task<IActionResult> YourEndpoint([FromBody] YourRequest request)
+    {
+        var result = await _yourService.ProcessAsync(request);
+        return Ok(new { success = true, data = result });
+    }
+}
+```
+
+5. **Add to Service Demo Page**:
+```javascript
+// In src/Web/NeoServiceLayer.Web/Pages/ServicePages/ServiceDemo.cshtml
+// Add service section to the web interface
+```
+
+6. **Update Documentation**:
+- Add service to [API Reference](../web/API_REFERENCE.md)
+- Update [Service Integration Guide](../web/SERVICE_INTEGRATION.md)
+
+### Web Application Architecture
+
+```
+Web Application
+├── Controllers/           # API controllers for each service
+├── Pages/
+│   ├── Shared/            # Shared layout and components
+│   └── ServicePages/      # Service demonstration pages
+├── wwwroot/
+│   ├── css/               # Stylesheets
+│   ├── js/                # JavaScript files
+│   └── lib/               # Third-party libraries
+├── Models/                # View models and DTOs
+├── Services/              # Web application services
+└── Configuration/         # Web app configuration
+```
+
+## 🔄 Development Workflow
+
+### Daily Development
+
+1. **Start Development Environment**:
+```bash
+# Start web application with hot reload
+dotnet watch run --project src/Web/NeoServiceLayer.Web
+```
+
+2. **Test Changes**:
+```bash
+# Access web interface
+open http://localhost:5000/servicepages/servicedemo
+
+# Test API endpoints
+curl -H "Authorization: Bearer $(curl -X POST http://localhost:5000/api/auth/demo-token | jq -r '.token')" \
+     http://localhost:5000/api/yourservice/endpoint
+```
+
+3. **Run Tests**:
+```bash
+# Run all tests
+dotnet test
+
+# Run specific service tests
+dotnet test tests/Services/NeoServiceLayer.Services.YourService.Tests/
+
+# Run web application tests
+dotnet test tests/Web/NeoServiceLayer.Web.Tests/
+```
+
+### Integration Testing
+
+```csharp
+[Collection("Web Application")]
+public class ServiceIntegrationTests : IClassFixture<WebApplicationFactory<Program>>
+{
+    private readonly WebApplicationFactory<Program> _factory;
+    private readonly HttpClient _client;
+    
+    public ServiceIntegrationTests(WebApplicationFactory<Program> factory)
+    {
+        _factory = factory;
+        _client = factory.CreateClient();
+    }
+    
+    [Fact]
+    public async Task ServiceDemo_Page_Should_Load_All_Services()
+    {
+        // Test that service demo page loads and all services are accessible
+        var response = await _client.GetAsync("/servicepages/servicedemo");
+        response.StatusCode.Should().Be(HttpStatusCode.OK);
+        
+        var content = await response.Content.ReadAsStringAsync();
+        content.Should().Contain("Key Management Service");
+        content.Should().Contain("Randomness Service");
+        // ... test for all 20+ services
+    }
+}
+```
+
+## 📚 Related Documentation
+
+### Neo Service Layer Documentation
+- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - System architecture and design
+- **[Services Documentation](../services/README.md)** - All 20+ services documentation
+- **[Web Application Guide](../web/WEB_APPLICATION_GUIDE.md)** - Complete web app guide
+- **[API Reference](../web/API_REFERENCE.md)** - Detailed API documentation
+- **[Service Integration](../web/SERVICE_INTEGRATION.md)** - Service integration patterns
+- **[Authentication & Security](../web/AUTHENTICATION.md)** - Security implementation
+- **[Deployment Guide](../deployment/README.md)** - Production deployment
+
+### Framework Documentation
+- **[ASP.NET Core Documentation](https://docs.microsoft.com/en-us/aspnet/core/)** - Web framework
+- **[Bootstrap 5 Documentation](https://getbootstrap.com/docs/5.0/)** - UI framework
+- **[xUnit Documentation](https://xunit.net/)** - Testing framework
+- **[Moq Documentation](https://github.com/moq/moq4)** - Mocking framework
+
+### Blockchain Documentation
+- **[Neo N3 Documentation](https://docs.neo.org/)** - Neo N3 blockchain
+- **[NeoX Documentation](https://docs.neo.org/neox/)** - NeoX EVM-compatible chain
+
+### Security Documentation
+- **[Intel SGX Documentation](https://www.intel.com/content/www/us/en/developer/tools/software-guard-extensions/overview.html)** - Intel SGX
+- **[Occlum LibOS Documentation](https://occlum.io/)** - Occlum LibOS for SGX
+
+## ✅ Development Checklist
+
+### Environment Setup
+- [ ] .NET 8.0 SDK installed
+- [ ] Intel SGX driver installed (for enclave development)
+- [ ] Occlum LibOS installed (for enclave development)
+- [ ] Repository cloned and dependencies restored
+- [ ] Web application builds and runs successfully
+
+### Development Workflow
+- [ ] Web application accessible at `http://localhost:5000`
+- [ ] Service demo page functional with all 20+ services
+- [ ] API documentation available at `/swagger`
+- [ ] Authentication working with JWT tokens
+- [ ] All tests passing
+
+### Before Contributing
+- [ ] Code follows established patterns and standards
+- [ ] New services registered in web application
+- [ ] API endpoints properly documented
+- [ ] Unit and integration tests written
+- [ ] Documentation updated
+- [ ] Pull request follows contribution guidelines

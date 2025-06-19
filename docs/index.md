@@ -1,61 +1,119 @@
 # Neo Service Layer Documentation
 
-Welcome to the comprehensive Neo Service Layer documentation. This documentation provides detailed information about the Neo Service Layer, its architecture, services, APIs, and development guidelines.
+Welcome to the comprehensive Neo Service Layer documentation. This documentation provides detailed information about the Neo Service Layer, its architecture, services, APIs, web application, and development guidelines.
 
 ## Overview
 
-The Neo Service Layer (NSL) is the most advanced blockchain infrastructure platform that leverages Intel SGX with Occlum LibOS enclaves to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains, offering unprecedented capabilities for decentralized applications.
+The Neo Service Layer (NSL) is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS enclaves to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains with a comprehensive **interactive web application** and full API access.
+
+## 🌐 Interactive Web Application
+
+The Neo Service Layer includes a **full-featured web application** that provides:
+
+- **🔴 Live Service Demonstrations**: Interactive testing of all 20+ services
+- **🔐 JWT Authentication**: Secure API access with role-based permissions
+- **📊 Real-time Monitoring**: Service status and system health indicators
+- **🎨 Professional UI**: Modern, responsive interface with service-specific designs
+- **📱 Cross-Platform**: Works on desktop, tablet, and mobile devices
+
+**Quick Access:**
+- **Web Interface**: `http://localhost:5000` - Main application interface
+- **Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Interactive service testing
+- **API Documentation**: `http://localhost:5000/swagger` - Complete API reference
+
+For complete web application documentation, see **[Web Application Guide](web/WEB_APPLICATION_GUIDE.md)**.
 
 ## Service Portfolio
 
-The Neo Service Layer consists of **15 focused services** organized into three categories:
+The Neo Service Layer consists of **20+ production-ready services** organized into six categories:
 
-### Core Infrastructure Services (11)
+### **🔧 Core Services (4)**
+Essential blockchain operations:
+1. **[Key Management Service](services/key-management-service.md)** - Generate and manage cryptographic keys securely
+2. **[Randomness Service](services/randomness-service.md)** - Cryptographically secure random number generation
+3. **[Oracle Service](services/oracle-service.md)** - External data feeds with cryptographic proofs
+4. **[Voting Service](services/voting-service.md)** - Decentralized voting and governance proposals
 
-1. **[Randomness Service](services/randomness-service.md)** - Verifiable random number generation
-2. **[Oracle Service](services/oracle-service.md)** - External data feeds and price aggregation
-3. **[Key Management Service](services/key-management-service.md)** - Cryptographic key management
-4. **[Compute Service](services/compute-service.md)** - Secure JavaScript execution
-5. **[Storage Service](services/storage-service.md)** - Encrypted data storage
-6. **[Compliance Service](services/compliance-service.md)** - Regulatory compliance automation
-7. **[Event Subscription Service](services/event-subscription-service.md)** - Blockchain event monitoring
-8. **[Automation Service](services/automation-service.md)** - Smart contract automation
-9. **[Cross-Chain Service](services/cross-chain-service.md)** - Cross-chain interoperability
-10. **[Proof of Reserve Service](services/proof-of-reserve-service.md)** - Asset backing verification
-11. **[Zero-Knowledge Service](services/zero-knowledge-service.md)** - Privacy-preserving computations
+### **💾 Storage & Data Services (3)**
+Data management and persistence:
+5. **[Storage Service](services/storage-service.md)** - Encrypted data storage and retrieval
+6. **[Backup Service](services/backup-service.md)** - Automated backup and restore operations
+7. **[Configuration Service](services/configuration-service.md)** - Dynamic system configuration management
 
-### Specialized AI Services (2)
+### **🔒 Security Services (4)**
+Advanced security and privacy features:
+8. **[Zero Knowledge Service](services/zero-knowledge-service.md)** - ZK proof generation and verification
+9. **[Abstract Account Service](services/abstract-account-service.md)** - Smart contract account management
+10. **[Compliance Service](services/compliance-service.md)** - Regulatory compliance and AML/KYC checks
+11. **[Proof of Reserve Service](services/proof-of-reserve-service.md)** - Cryptographic asset verification
 
-12. **[Prediction Service](services/prediction-service.md)** - AI-powered forecasting and sentiment analysis
-13. **[Pattern Recognition Service](services/pattern-recognition-service.md)** - Fraud detection and behavioral analysis
+### **⚙️ Operations Services (4)**
+System management and monitoring:
+12. **[Automation Service](services/automation-service.md)** - Workflow automation and scheduling
+13. **[Monitoring Service](services/monitoring-service.md)** - System metrics and performance analytics
+14. **[Health Service](services/health-service.md)** - System health diagnostics and reporting
+15. **[Notification Service](services/notification-service.md)** - Multi-channel notification system
 
-### Advanced Infrastructure Services (2)
+### **🌐 Infrastructure Services (3)**
+Multi-chain and compute services:
+16. **[Cross-Chain Service](services/cross-chain-service.md)** - Multi-blockchain interoperability
+17. **[Compute Service](services/compute-service.md)** - Secure TEE computations
+18. **[Event Subscription Service](services/event-subscription-service.md)** - Blockchain event monitoring
 
-14. **[Fair Ordering Service](services/fair-ordering-service.md)** - Transaction fairness and MEV protection
-15. **Future Services** - Additional services based on ecosystem needs
+### **🤖 AI Services (2)**
+Machine learning and analytics:
+19. **[Pattern Recognition Service](services/pattern-recognition-service.md)** - AI-powered analysis and fraud detection
+20. **[Prediction Service](services/prediction-service.md)** - Machine learning forecasting and analytics
+
+### **🚀 Advanced Services (2+)**
+Specialized blockchain features:
+21. **[Fair Ordering Service](services/fair-ordering-service.md)** - Transaction fairness and MEV protection
+22. **Additional Services** - Continuously expanding based on ecosystem needs
 
 For detailed information about all services, see [Services Overview](services/README.md).
 
 ## Architecture
 
-The Neo Service Layer is built on a sophisticated modular architecture designed for security, scalability, and extensibility:
+The Neo Service Layer is built on a modern, production-ready architecture that combines enterprise-grade security with developer-friendly interfaces:
+
+### System Architecture
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    Neo Service Layer                        │
+├─────────────────────────────────────────────────────────────┤
+│  Interactive Web Application (ASP.NET Core + Razor Pages)  │
+├─────────────────────────────────────────────────────────────┤
+│  RESTful API Layer (20+ Service Controllers)               │
+├─────────────────────────────────────────────────────────────┤
+│  Service Framework & Registry                               │
+├─────────────────────────────────────────────────────────────┤
+│  Microservices (AI, Oracle, Storage, etc.)                 │
+├─────────────────────────────────────────────────────────────┤
+│  Intel SGX + Occlum LibOS (Trusted Execution)              │
+├─────────────────────────────────────────────────────────────┤
+│  Neo N3 & Neo X Blockchain Integration                     │
+└─────────────────────────────────────────────────────────────┘
+```
 
 ### Core Components
 
-- **[Service Framework](architecture/service-framework.md)** - Foundation for all services with registration, configuration, and lifecycle management
+- **[Web Application](web/WEB_APPLICATION_GUIDE.md)** - Interactive interface for all services with real-time testing
+- **[Service Framework](architecture/service-framework.md)** - Foundation for all services with registration and lifecycle management
+- **[API Layer](api/README.md)** - Comprehensive RESTful APIs with JWT authentication and Swagger documentation
 - **[Enclave Integration](architecture/enclave-integration.md)** - Intel SGX with Occlum LibOS integration for secure execution
-- **[Blockchain Integration](architecture/blockchain-integration.md)** - Neo N3 and NeoX blockchain connectivity and interaction
-- **[Persistent Storage](architecture/persistent-storage.md)** - Multi-provider encrypted storage with transaction support
-- **[API Layer](api/README.md)** - RESTful API endpoints with authentication and rate limiting
+- **[Blockchain Integration](architecture/blockchain-integration.md)** - Neo N3 and NeoX blockchain connectivity
 
 ### Key Features
 
-- **Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
-- **Multi-Blockchain Support**: Native support for both Neo N3 and NeoX
-- **Modular Design**: Easy to extend with new services
-- **Production Ready**: Comprehensive testing, monitoring, and deployment support
+- **🌐 Interactive Web Interface**: Complete service testing and management interface
+- **🔒 Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
+- **⛓️ Multi-Blockchain Support**: Native support for both Neo N3 and NeoX
+- **🏗️ Microservices Architecture**: 20+ independent, scalable services
+- **🔐 JWT Authentication**: Secure API access with role-based permissions
+- **📊 Real-time Monitoring**: Comprehensive health and performance monitoring
+- **🚀 Production Ready**: Docker containerization, CI/CD, and comprehensive testing
 
-For detailed architecture information, see [Architecture Overview](architecture/README.md).
+For detailed architecture information, see [Architecture Overview](architecture/ARCHITECTURE_OVERVIEW.md).
 
 ## Getting Started
 

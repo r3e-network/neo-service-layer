@@ -1,178 +1,313 @@
 # Neo Service Layer Services
 
-This directory contains documentation for the various services provided by the Neo Service Layer. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability.
+The Neo Service Layer provides **20+ production-ready services** organized into six categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability, with full integration through an interactive web application.
 
-## Core Services
+## 🌐 Interactive Web Application
 
-### [Randomness Service](randomness-service.md)
+All services are accessible through a comprehensive web application:
+- **Service Demonstrations**: `http://localhost:5000/servicepages/servicedemo`
+- **API Documentation**: `http://localhost:5000/swagger`
+- **Real-time Testing**: Direct integration with actual service endpoints
+- **JWT Authentication**: Secure access with role-based permissions
 
-The Randomness Service provides secure, verifiable random number generation using Intel SGX with Occlum LibOS enclaves. It generates cryptographically secure random numbers that can be verified by third parties.
+For complete web application documentation, see [Web Application Guide](../web/WEB_APPLICATION_GUIDE.md).
 
-**Key Features:**
-- Secure random number generation within Intel SGX with Occlum LibOS enclaves
-- Verifiable randomness with cryptographic proofs
-- Support for multiple blockchain types (Neo N3, NeoX)
-- Generation of random numbers, bytes, and strings
-- Custom seed support and batch generation
+## 🔧 Core Services (4)
 
-### [Oracle Service](oracle-service.md)
+Essential blockchain operations:
 
-The Oracle Service provides secure, verifiable data feeds from external sources to blockchain smart contracts, including comprehensive price feed capabilities. It leverages Intel SGX with Occlum LibOS enclaves to ensure the integrity and confidentiality of data.
+### 1. [Key Management Service](key-management-service.md)
 
-**Key Features:**
-- Secure data feeds from external sources
-- Decentralized price and market data aggregation
-- Verifiable data with cryptographic proofs
-- Support for multiple blockchain types (Neo N3, NeoX)
-- Data source management and subscriptions
-- Real-time price feeds for cryptocurrencies and traditional assets
-- Request batching and custom data transformations
-- High availability with redundant data sources
-
-### [Key Management Service](key-management-service.md)
-
-The Key Management Service provides secure key generation, storage, and management using Intel SGX with Occlum LibOS enclaves. It enables secure signing and encryption operations for blockchain applications.
+Generate and manage cryptographic keys securely using Intel SGX with Occlum LibOS enclaves.
 
 **Key Features:**
 - Secure key generation and storage within Intel SGX with Occlum LibOS enclaves
-- Support for multiple key types and algorithms
-- Key rotation and revocation
-- Threshold signatures and multi-party computation
+- Support for multiple key types (ECDSA, Ed25519, RSA)
+- Key rotation, revocation, and lifecycle management
 - Hardware security module (HSM) integration
+- Multi-blockchain support (Neo N3, NeoX)
 
-### [Compute Service](compute-service.md)
+### 2. [Randomness Service](randomness-service.md)
 
-The Compute Service provides secure, verifiable computation and JavaScript execution within Intel SGX with Occlum LibOS enclaves. It enables secure off-chain computation with access to user secrets.
-
-**Key Features:**
-- Secure JavaScript execution within Intel SGX with Occlum LibOS enclaves
-- User secret management and access control
-- Verifiable computation results with cryptographic proofs
-- Blockchain integration for smart contract interactions
-- Gas accounting and resource management
-
-### [Storage Service](storage-service.md)
-
-The Storage Service provides secure, encrypted data storage with compression, chunking, and access control. It supports multiple storage providers and transaction support.
+Cryptographically secure random number generation with verifiable proofs.
 
 **Key Features:**
-- Encrypted data storage with compression and chunking
+- Hardware-level entropy using Intel SGX with Occlum LibOS
+- Verifiable randomness with cryptographic proofs
+- Multiple output formats (hex, decimal, binary, base64)
+- Custom seed support and batch generation
+- Multi-blockchain integration
+
+### 3. [Oracle Service](oracle-service.md)
+
+External data feeds with cryptographic proofs and integrity verification.
+
+**Key Features:**
+- Secure data feeds from external APIs and sources
+- Decentralized price and market data aggregation
+- Verifiable data with cryptographic integrity proofs
+- Real-time feeds for cryptocurrencies and traditional assets
+- High availability with redundant data sources
+
+### 4. [Voting Service](voting-service.md)
+
+Decentralized voting and governance proposals with cryptographic verification.
+
+**Key Features:**
+- Multiple voting mechanisms (simple majority, weighted, quadratic)
+- Zero-knowledge voting for privacy
+- Vote delegation and proxy voting
+- Governance proposal lifecycle management
+- Cryptographic vote verification and audit trails
+
+## 💾 Storage & Data Services (3)
+
+Data management and persistence:
+
+### 5. [Storage Service](storage-service.md)
+
+Encrypted data storage and retrieval with advanced security features.
+
+**Key Features:**
+- AES-256-GCM encryption for all stored data
+- Compression and chunking for large data
 - Multiple storage provider implementations
 - Access control and versioning support
-- Transaction support for data consistency
 - Backup and recovery mechanisms
 
-### [Compliance Service](compliance-service.md)
+### 6. [Backup Service](backup-service.md)
 
-The Compliance Service provides regulatory compliance verification for transactions, addresses, and contracts. It helps ensure adherence to various regulatory frameworks.
-
-**Key Features:**
-- Regulatory compliance verification
-- Risk scoring and violation reporting
-- Support for multiple compliance frameworks
-- Real-time transaction monitoring
-- Audit trail and reporting
-
-### [Event Subscription Service](event-subscription-service.md)
-
-The Event Subscription Service enables applications to subscribe to blockchain events and trigger actions based on those events. It provides reliable event delivery and processing.
+Automated backup and restore operations for critical system data.
 
 **Key Features:**
-- Blockchain event monitoring and filtering
-- Reliable event delivery with at-least-once semantics
-- Event transformation and enrichment
-- Webhook and callback integration
-- Retry mechanisms and error handling
+- Automated full, incremental, and differential backups
+- Encrypted backup storage with integrity verification
+- Scheduled backup policies and retention management
+- Cross-region backup replication
+- Disaster recovery and restore procedures
 
-### [Automation Service](automation-service.md)
+### 7. [Configuration Service](configuration-service.md)
 
-The Automation Service provides reliable, decentralized smart contract automation, similar to Chainlink Automation (formerly Keepers). It enables automated execution of smart contract functions.
+Dynamic system configuration management with validation.
 
 **Key Features:**
-- Smart contract automation based on conditions
-- Time-based and condition-based triggers
+- Centralized configuration management
+- Real-time configuration updates
+- Configuration validation and schema enforcement
+- Environment-specific configuration profiles
+- Audit trail for configuration changes
+
+## 🔒 Security Services (4)
+
+Advanced security and privacy features:
+
+### 8. [Zero Knowledge Service](zero-knowledge-service.md)
+
+ZK proof generation and verification for privacy-preserving operations.
+
+**Key Features:**
+- zk-SNARK and zk-STARK proof systems
+- Private set intersection and confidential computing
+- Selective disclosure and range proofs
+- Circuit compilation and verification
+- Privacy-preserving transactions
+
+### 9. [Abstract Account Service](abstract-account-service.md)
+
+Smart contract account management with advanced features.
+
+**Key Features:**
+- Multi-signature account creation and management
+- Social recovery and account abstraction
+- Time-locked transactions and spending limits
+- Batch transaction execution
+- Custom authorization logic
+
+### 10. [Compliance Service](compliance-service.md)
+
+Regulatory compliance and AML/KYC verification.
+
+**Key Features:**
+- AML/KYC verification and risk scoring
+- Sanctions screening and regulatory compliance
+- Transaction monitoring and suspicious activity detection
+- Audit trail and compliance reporting
+- Multiple regulatory framework support
+
+### 11. [Proof of Reserve Service](proof-of-reserve-service.md)
+
+Cryptographic asset verification and reserve monitoring.
+
+**Key Features:**
+- Real-time asset reserve verification
+- Multi-asset support (crypto, fiat, commodities)
+- Cryptographic proofs of reserve adequacy
+- Automated monitoring and alerting
+- Audit trail and transparency reports
+
+## ⚙️ Operations Services (4)
+
+System management and monitoring:
+
+### 12. [Automation Service](automation-service.md)
+
+Workflow automation and smart contract scheduling.
+
+**Key Features:**
+- Time-based and condition-based automation triggers
+- Smart contract automation and job scheduling
 - High reliability with redundancy and failover
 - Gas optimization for automated transactions
-- Custom logic support for complex automation
+- Custom automation logic and workflows
 
-### [Cross-Chain Service](cross-chain-service.md)
+### 13. [Monitoring Service](monitoring-service.md)
 
-The Cross-Chain Service provides secure cross-chain interoperability, similar to Chainlink CCIP. It enables seamless communication and asset transfers between different blockchains.
+System metrics and performance analytics.
+
+**Key Features:**
+- Real-time system monitoring and metrics collection
+- Performance analytics and trend analysis
+- Custom dashboards and alerting
+- Service health monitoring and SLA tracking
+- Historical data analysis and reporting
+
+### 14. [Health Service](health-service.md)
+
+System health diagnostics and reporting.
+
+**Key Features:**
+- Comprehensive system health checks
+- Service dependency monitoring
+- Health status aggregation and reporting
+- Automated health issue detection
+- Health trend analysis and predictions
+
+### 15. [Notification Service](notification-service.md)
+
+Multi-channel notification and alert system.
+
+**Key Features:**
+- Multi-channel notifications (email, SMS, webhook, push)
+- Priority-based message routing
+- Template-based notification management
+- Delivery confirmation and retry mechanisms
+- Notification analytics and optimization
+
+## 🌐 Infrastructure Services (3)
+
+Multi-chain and compute services:
+
+### 16. [Cross-Chain Service](cross-chain-service.md)
+
+Multi-blockchain interoperability and asset transfers.
 
 **Key Features:**
 - Cross-chain messaging and token transfers
-- Smart contract calls across chains
+- Smart contract calls across different blockchains
 - Message verification with cryptographic proofs
-- Support for multiple blockchains
-- Programmable transfers with smart contract execution
+- Support for multiple blockchain networks
+- Programmable cross-chain transactions
 
-### [Proof of Reserve Service](proof-of-reserve-service.md)
+### 17. [Compute Service](compute-service.md)
 
-The Proof of Reserve Service provides cryptographic verification of asset backing for tokenized assets and stablecoins, similar to Chainlink Proof of Reserve.
-
-**Key Features:**
-- Asset verification and reserve monitoring
-- Real-time monitoring of reserve levels
-- Multi-asset support (fiat, crypto, commodities)
-- Cryptographic proofs of reserve adequacy
-- Automated alerts and audit trails
-
-## Advanced Infrastructure Services
-
-### [Zero-Knowledge Service](zero-knowledge-service.md)
-
-The Zero-Knowledge Service provides privacy-preserving computation and verification capabilities using zk-SNARKs, zk-STARKs, and other zero-knowledge proof systems.
+Secure TEE computations with confidential computing.
 
 **Key Features:**
-- zk-SNARK and zk-STARK proof generation and verification
-- Private set intersection and confidential voting
-- Selective disclosure and range proofs
-- Privacy-preserving transactions and computations
-- Circuit compilation and verification
+- Secure computation within Intel SGX with Occlum LibOS
+- Confidential smart contract execution
+- User secret management and access control
+- Verifiable computation results
+- Gas accounting and resource management
 
-### [AI Inference Service](ai-inference-service.md)
+### 18. [Event Subscription Service](event-subscription-service.md)
 
-The AI Inference Service provides secure artificial intelligence and machine learning capabilities for smart contracts, enabling intelligent automation and decision-making.
+Blockchain event monitoring and subscription management.
 
 **Key Features:**
-- Secure AI model inference within Intel SGX with Occlum LibOS enclaves
-- Prediction markets and sentiment analysis
-- Pattern recognition and anomaly detection
-- Natural language processing and computer vision
-- Model verification and integrity protection
+- Real-time blockchain event monitoring
+- Event filtering and transformation
+- Reliable event delivery with webhook integration
+- Subscription management and lifecycle
+- Event replay and historical data access
 
-### [Prediction Service](prediction-service.md)
+## 🤖 AI Services (2)
 
-The Prediction Service provides AI-powered prediction and forecasting capabilities for smart contracts, enabling market forecasting, sentiment analysis, and trend prediction.
+Machine learning and analytics:
+
+### 19. [Pattern Recognition Service](pattern-recognition-service.md)
+
+AI-powered analysis and fraud detection.
+
+**Key Features:**
+- Advanced fraud detection and transaction monitoring
+- Behavioral analysis and anomaly detection
+- Risk pattern recognition in financial data
+- Real-time ML model inference
+- Model verification and explainable AI
+
+### 20. [Prediction Service](prediction-service.md)
+
+Machine learning forecasting and analytics.
 
 **Key Features:**
 - Market prediction and price forecasting
-- Sentiment analysis from social media and news
+- Sentiment analysis from multiple data sources
 - Time series forecasting and trend detection
 - Risk prediction and probability assessment
-- Model verification and confidence intervals
+- Confidence intervals and uncertainty quantification
 
-### [Pattern Recognition Service](pattern-recognition-service.md)
+## 🚀 Advanced Services (2+)
 
-The Pattern Recognition Service provides AI-powered pattern detection and classification capabilities, enabling fraud detection, anomaly detection, and behavioral analysis.
+Specialized blockchain features:
 
-**Key Features:**
-- Fraud detection and transaction monitoring
-- Anomaly detection and outlier identification
-- Behavioral analysis and user classification
-- Risk pattern recognition in financial data
-- Real-time detection and model verification
+### 21. [Fair Ordering Service](fair-ordering-service.md)
 
-### [Fair Ordering Service](fair-ordering-service.md)
-
-The Fair Ordering Service provides protection against unfair transaction ordering and MEV attacks, ensuring transaction fairness across both Neo N3 and NeoX blockchains.
+Transaction fairness and MEV protection.
 
 **Key Features:**
-- Fair transaction ordering across both chains
-- MEV protection for NeoX (EVM-compatible)
-- Front-running and sandwich attack prevention
-- Private transaction pool and batch processing
-- Fairness guarantees and cryptographic proofs
+- Fair transaction ordering across Neo N3 and NeoX
+- MEV protection and front-running prevention
+- Private transaction pools and batch processing
+- Cryptographic fairness guarantees
+- Transaction privacy and batching
+
+### 22. Additional Services
+
+The Neo Service Layer is continuously expanding with new services based on ecosystem needs and technological advances.
+
+## 📊 Service Status & Integration
+
+### Current Implementation Status
+- **Total Services**: 20+ production-ready services
+- **Web Integration**: All services fully integrated with interactive web application
+- **API Coverage**: Complete RESTful API access for all services
+- **Authentication**: JWT-based security with role-based access control
+- **Documentation**: Comprehensive API documentation with Swagger/OpenAPI
+
+### Service Categories
+1. **Core Services (4)**: Essential blockchain operations
+2. **Storage & Data (3)**: Data management and persistence
+3. **Security Services (4)**: Advanced security and privacy
+4. **Operations (4)**: System management and monitoring
+5. **Infrastructure (3)**: Multi-chain and compute services
+6. **AI Services (2)**: Machine learning and analytics
+7. **Advanced Services (2+)**: Specialized blockchain features
+
+### Web Application Access
+All services are accessible through:
+- **Interactive Interface**: `http://localhost:5000/servicepages/servicedemo`
+- **API Documentation**: `http://localhost:5000/swagger`
+- **Authentication**: JWT tokens with configurable permissions
+- **Real-time Testing**: Direct service endpoint integration
+
+## 🛡️ Security & Compliance
+
+All services implement enterprise-grade security:
+- **Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
+- **End-to-End Encryption**: All data encrypted in transit and at rest
+- **Cryptographic Verification**: All operations cryptographically verifiable
+- **Audit Trails**: Comprehensive logging and audit capabilities
+- **Compliance**: Support for regulatory requirements (GDPR, SOX, etc.)
 
 ## Service Framework
 
@@ -211,26 +346,31 @@ The Neo Service Layer is built on a modular service framework that provides comm
 - Enclave attestation and verification
 - Secure storage and key management
 
-## Developing New Services
+## 🚀 Getting Started
 
-To develop a new service for the Neo Service Layer, follow these steps:
+### Quick Service Testing
+1. **Start the Application**: `dotnet run --project src/Web/NeoServiceLayer.Web`
+2. **Access Web Interface**: `http://localhost:5000/servicepages/servicedemo`
+3. **Get Authentication Token**: Use the demo token endpoint
+4. **Test Services**: Interactive testing of all 20+ services
 
-1. Create a new project for the service:
+### API Integration
+1. **Review API Documentation**: `http://localhost:5000/swagger`
+2. **Authenticate**: Obtain JWT token from `/api/auth/demo-token`
+3. **Call Services**: Use RESTful APIs with Bearer token authentication
+4. **Handle Responses**: Standard JSON response format across all services
 
-```bash
-dotnet new classlib -n NeoServiceLayer.Services.YourService -o src/Services/NeoServiceLayer.Services.YourService -f net9.0
-```
+### Development
+For adding new services or extending existing ones:
 
-2. Add the necessary references:
+1. **Service Framework**: Follow established patterns in [Service Framework](../architecture/service-framework.md)
+2. **Web Integration**: Add controllers and UI components for new services
+3. **Testing**: Comprehensive unit and integration testing
+4. **Documentation**: API documentation and user guides
 
-```bash
-dotnet add src/Services/NeoServiceLayer.Services.YourService/NeoServiceLayer.Services.YourService.csproj reference src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj
-```
+## 📚 Related Documentation
 
-3. Implement the service interface and implementation.
-
-4. Create tests for the service.
-
-5. Create documentation for the service.
-
-For detailed instructions, see [Service Framework](../architecture/service-framework.md).
+- **[Web Application Guide](../web/WEB_APPLICATION_GUIDE.md)** - Complete web application documentation
+- **[API Reference](../web/API_REFERENCE.md)** - Detailed API documentation
+- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - System architecture
+- **[Development Guide](../development/README.md)** - Development guidelines

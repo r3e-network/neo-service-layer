@@ -10,22 +10,31 @@ The Neo Service Layer is a comprehensive, enterprise-grade blockchain service pl
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                        Client Applications                       │
+│                 Interactive Web Application                     │
+│              (ASP.NET Core + Razor Pages)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                         API Gateway                             │
+│                    RESTful API Layer                           │
+│                 (20+ Service Controllers)                      │
 ├─────────────────────────────────────────────────────────────────┤
-│                    Neo Service Layer API                        │
+│                  Service Framework & Registry                   │
+│               (JWT Auth + Service Lifecycle)                   │
 ├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
-│  │   Core      │ │  Services   │ │     AI      │ │  Advanced   │ │
-│  │ Components  │ │    Layer    │ │  Services   │ │  Features   │ │
+│  │   Core      │ │  Security   │ │     AI      │ │  Advanced   │ │
+│  │ Services    │ │  Services   │ │  Services   │ │  Services   │ │
+│  │    (4)      │ │    (4)      │ │    (2)      │ │    (2+)     │ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐               │
+│  │ Storage &   │ │ Operations  │ │Infrastructure│               │
+│  │ Data (3)    │ │ Services(4) │ │ Services(3) │               │
+│  └─────────────┘ └─────────────┘ └─────────────┘               │
+├─────────────────────────────────────────────────────────────────┤
+│              Intel SGX + Occlum LibOS (TEE)                    │
 ├─────────────────────────────────────────────────────────────────┤
 │                    Infrastructure Layer                         │
-├─────────────────────────────────────────────────────────────────┤
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
 │  │  Database   │ │    Cache    │ │   Message   │ │  External   │ │
-│  │   Layer     │ │    Layer    │ │    Queue    │ │  Services   │ │
+│  │ PostgreSQL  │ │    Redis    │ │  RabbitMQ   │ │  Services   │ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ │
 ├─────────────────────────────────────────────────────────────────┤
 │                      Blockchain Layer                           │
@@ -64,9 +73,53 @@ The Neo Service Layer is a comprehensive, enterprise-grade blockchain service pl
 
 ## Core Components
 
-### 1. API Layer (`NeoServiceLayer.Api`)
+### 1. Interactive Web Application (`NeoServiceLayer.Web`)
 
-The API layer serves as the primary entry point for all client interactions.
+The web application provides a complete interactive interface for all services.
+
+#### Responsibilities
+- **Service Demonstrations**: Interactive testing of all 20+ services
+- **Real-time Integration**: Direct communication with actual service endpoints
+- **User Interface**: Professional, responsive design with Bootstrap 5
+- **Authentication Management**: JWT token handling and user session management
+- **Service Documentation**: Integrated API documentation and examples
+
+#### Key Components
+```csharp
+// Service demonstration controller
+public class ServiceDemoController : Controller
+{
+    public IActionResult Index() => View();
+    
+    [HttpPost]
+    public async Task<IActionResult> TestService([FromBody] ServiceRequest request)
+    {
+        return Json(await _serviceManager.ExecuteAsync(request));
+    }
+}
+
+// Authentication controller for JWT tokens
+public class AuthController : Controller
+{
+    [HttpPost("demo-token")]
+    public IActionResult GetDemoToken()
+    {
+        var token = _jwtService.GenerateToken("demo-user", ["User"]);
+        return Json(new { token, expires = DateTime.UtcNow.AddHours(1) });
+    }
+}
+```
+
+#### Web Application Features
+- **🌐 Interactive Interface**: Full-featured web application at `http://localhost:5000`
+- **🔴 Live Demonstrations**: Service testing at `http://localhost:5000/servicepages/servicedemo`
+- **📊 Real-time Monitoring**: Service status and system health indicators
+- **🔐 Secure Access**: JWT authentication with role-based permissions
+- **📱 Responsive Design**: Works on desktop, tablet, and mobile devices
+
+### 2. RESTful API Layer (`NeoServiceLayer.Api` + Controllers)
+
+The API layer serves as the programmatic entry point for all service interactions.
 
 #### Responsibilities
 - **Request Routing**: Route incoming requests to appropriate services
@@ -104,7 +157,7 @@ public class ApiResponse<T>
 - **Security Headers**: HSTS, CSP, and other security headers
 - **Rate Limiting**: Per-endpoint and per-user rate limiting
 
-### 2. Core Infrastructure (`NeoServiceLayer.Core`)
+### 3. Service Framework & Registry (`NeoServiceLayer.Core`)
 
 The core infrastructure provides foundational services and abstractions.
 
@@ -149,7 +202,7 @@ public class ConfigurationValidator : IValidateOptions<ServiceConfiguration>
 - **Error Models**: Standardized error representations
 - **Event Models**: Domain events for inter-service communication
 
-### 3. Blockchain Integration (`NeoServiceLayer.Blockchain`)
+### 4. Blockchain Integration (`NeoServiceLayer.Blockchain`)
 
 Provides unified access to multiple blockchain networks.
 
@@ -182,7 +235,47 @@ public interface IBlockchainClient
 - **Cross-Chain Bridges**: Support for asset transfers between chains
 - **Gas Management**: Optimize gas usage for transactions
 
-### 4. Service Layer Components
+### 5. Service Portfolio (20+ Services)
+
+The Neo Service Layer includes 20+ production-ready services organized into six categories:
+
+#### Core Services (4)
+- **Key Management Service**: Generate and manage cryptographic keys securely
+- **Randomness Service**: Cryptographically secure random number generation  
+- **Oracle Service**: External data feeds with cryptographic proofs
+- **Voting Service**: Decentralized voting and governance proposals
+
+#### Storage & Data Services (3)
+- **Storage Service**: Encrypted data storage and retrieval
+- **Backup Service**: Automated backup and restore operations
+- **Configuration Service**: Dynamic system configuration management
+
+#### Security Services (4)
+- **Zero Knowledge Service**: ZK proof generation and verification
+- **Abstract Account Service**: Smart contract account management
+- **Compliance Service**: Regulatory compliance and AML/KYC checks
+- **Proof of Reserve Service**: Cryptographic asset verification
+
+#### Operations Services (4)
+- **Automation Service**: Workflow automation and scheduling
+- **Monitoring Service**: System metrics and performance analytics
+- **Health Service**: System health diagnostics and reporting
+- **Notification Service**: Multi-channel notification system
+
+#### Infrastructure Services (3)
+- **Cross-Chain Service**: Multi-blockchain interoperability
+- **Compute Service**: Secure TEE computations
+- **Event Subscription Service**: Blockchain event monitoring
+
+#### AI Services (2)
+- **Pattern Recognition Service**: AI-powered analysis and fraud detection
+- **Prediction Service**: Machine learning forecasting and analytics
+
+#### Advanced Services (2+)
+- **Fair Ordering Service**: Transaction fairness and MEV protection
+- **Additional Services**: Continuously expanding based on ecosystem needs
+
+### 6. Service Implementation Details
 
 #### Key Management Service (`NeoServiceLayer.Services.KeyManagement`)
 
@@ -266,7 +359,7 @@ public interface IVotingService
 - **Governance**: Built-in governance mechanisms
 - **Audit**: Complete voting audit trail
 
-### 5. AI Services
+### 7. AI Services Implementation
 
 #### Pattern Recognition (`NeoServiceLayer.AI.PatternRecognition`)
 
@@ -308,7 +401,7 @@ public interface IPredictionService
 - **Ensemble Methods**: Combine multiple models for better accuracy
 - **Confidence Intervals**: Provide prediction confidence levels
 
-### 6. Advanced Features
+### 8. Advanced Features Implementation
 
 #### Zero-Knowledge Proofs (`NeoServiceLayer.Services.ZeroKnowledge`)
 
@@ -330,25 +423,27 @@ public interface IZeroKnowledgeService
 - **Verification**: Efficient proof verification
 - **Privacy**: Maintain privacy while proving statements
 
-#### Trusted Execution Environment (`NeoServiceLayer.Tee`)
+#### Trusted Execution Environment (`NeoServiceLayer.Tee.Enclave`)
 
-Secure computation in trusted environments.
+Secure computation using Intel SGX with Occlum LibOS.
 
 ```csharp
-public interface ITeeService
+public interface IOcclumEnclaveWrapper
 {
     Task<string> CreateEnclaveAsync(EnclaveDefinition definition);
     Task<ComputationResult> ExecuteSecureComputationAsync(SecureComputationRequest request);
     Task<AttestationResult> GetAttestationAsync(string enclaveId);
+    Task<bool> ValidateEnclaveIntegrityAsync(string enclaveId);
 }
 ```
 
 **Features:**
-- **Intel SGX Support**: Integration with Intel Software Guard Extensions
-- **Remote Attestation**: Verify enclave integrity
-- **Secure Computation**: Execute sensitive computations securely
-- **Key Management**: Secure key generation and storage
-- **Confidential Computing**: Protect data during computation
+- **Intel SGX + Occlum**: Integration with Intel SGX and Occlum LibOS
+- **Remote Attestation**: Cryptographic verification of enclave integrity
+- **Secure Computation**: Execute sensitive computations in hardware-protected environment
+- **Key Management**: Hardware-level key generation and storage
+- **Confidential Computing**: Protect data and code during execution
+- **LibOS Support**: Full POSIX compatibility through Occlum LibOS
 
 ## Data Architecture
 

@@ -2,7 +2,7 @@
 
 [![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/neo-project/neo-service-layer)
 [![Test Coverage](https://img.shields.io/badge/coverage-80%25+-green)](https://github.com/neo-project/neo-service-layer)
-[![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
+[![.NET](https://img.shields.io/badge/.NET-8.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/8.0)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 
 The Neo Service Layer is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
@@ -17,60 +17,83 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 - **📊 Enterprise-Grade Quality**: 80%+ test coverage, comprehensive documentation
 - **🚀 Production Ready**: Docker containerization, monitoring, and CI/CD
 
-## 🏢 Core Services
+## 🎯 Key Features & Benefits
 
-### **Blockchain Infrastructure**
-- **🎲 Randomness Service**: Verifiable random number generation using SGX
-- **🔮 Oracle Service**: Secure external data feeds with cryptographic proofs
-- **🔐 Key Management Service**: Hardware-secured cryptographic key management
-- **💾 Storage Service**: Encrypted data storage with compression and access control
+### **🔒 Enterprise-Grade Security**
+- **Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
+- **Cryptographic Verification**: All operations cryptographically verifiable
+- **Privacy Protection**: Zero-knowledge proofs and confidential computing
+- **Compliance Ready**: Built-in regulatory compliance and audit capabilities
 
-### **AI & Analytics**
-- **🧠 Pattern Recognition Service**: AI-powered fraud detection and behavioral analysis
-- **📈 Prediction Service**: Machine learning forecasting and market analysis
-- **⚖️ Fair Ordering Service**: MEV protection and transaction fairness
-- **🔍 Zero-Knowledge Service**: Privacy-preserving computations
+### **🌐 Complete Web Integration**
+- **Interactive Interface**: Full-featured web application for all services
+- **Real-time Testing**: Live service demonstrations and API testing
+- **Professional UI**: Modern, responsive design with service-specific interfaces
+- **Comprehensive Documentation**: Built-in API documentation and user guides
 
-### **Enterprise Features**
-- **📋 Compliance Service**: Regulatory compliance verification
-- **🔔 Event Subscription Service**: Real-time blockchain event monitoring
-- **⚙️ Automation Service**: Smart contract automation and triggers
-- **🌉 Cross-Chain Service**: Multi-blockchain interoperability
+### **🤖 Advanced AI Capabilities**
+- **Pattern Recognition**: AI-powered fraud detection and behavioral analysis
+- **Predictive Analytics**: Machine learning forecasting and market analysis
+- **Real-time Processing**: Stream processing for real-time AI inference
+- **Model Management**: Versioning and deployment of ML models
 
-### **Advanced Services**
-- **🛡️ Proof of Reserve Service**: Cryptographic asset backing verification
-- **💼 Abstract Account Service**: Account abstraction and gasless transactions
-- **📊 Monitoring Service**: Comprehensive system health and metrics
+### **⛓️ Multi-Blockchain Support**
+- **Neo N3 Integration**: Native support for Neo N3 blockchain
+- **NeoX Compatibility**: Full EVM-compatible functionality
+- **Cross-Chain Bridge**: Seamless asset transfers between chains
+- **Universal APIs**: Consistent API design across all blockchain types
 
-## 🏗️ Architecture
+### **🚀 Production Ready**
+- **High Availability**: Designed for 99.9%+ uptime
+- **Scalable Architecture**: Microservices with horizontal scaling
+- **Comprehensive Testing**: 80%+ test coverage with automated CI/CD
+- **Docker Support**: Containerized deployment and orchestration
+
+## 🏗️ System Architecture
 
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                    Neo Service Layer                        │
 ├─────────────────────────────────────────────────────────────┤
-│  Interactive Web Application (ASP.NET Core + Razor Pages)  │
+│  🌐 Interactive Web Application (ASP.NET Core 8.0)        │
+│     • Service Demonstrations  • JWT Authentication         │
+│     • Real-time Testing      • API Documentation           │
 ├─────────────────────────────────────────────────────────────┤
-│  RESTful API Layer (20+ Service Controllers)               │
+│  🔌 RESTful API Layer (20+ Service Controllers)           │
+│     • Standardized APIs      • Swagger Documentation       │
+│     • Authentication         • Rate Limiting               │
 ├─────────────────────────────────────────────────────────────┤
-│  Service Framework & Registry                               │
+│  ⚙️ Service Framework & Registry                          │
+│     • Service Lifecycle      • Dependency Injection        │
+│     • Health Monitoring      • Configuration Management    │
 ├─────────────────────────────────────────────────────────────┤
-│  Microservices (AI, Oracle, Storage, etc.)                 │
+│  🏢 Microservices Portfolio (20+ Services)                │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
+│  │   Core (4)  │ │Security (4) │ │    AI (2)   │ │Advanced │ │
+│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │ (2+)    │ │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────┘ │
 ├─────────────────────────────────────────────────────────────┤
-│  Intel SGX + Occlum LibOS (Trusted Execution)              │
+│  🔒 Intel SGX + Occlum LibOS (Trusted Execution)          │
+│     • Hardware Security      • Remote Attestation          │
+│     • Confidential Computing • Secure Enclaves             │
 ├─────────────────────────────────────────────────────────────┤
-│  Neo N3 & Neo X Blockchain Integration                     │
+│  ⛓️ Multi-Blockchain Integration                          │
+│     • Neo N3 Native         • NeoX EVM-Compatible          │
+│     • Cross-Chain Bridge    • Universal APIs               │
 └─────────────────────────────────────────────────────────────┘
 ```
+
+For detailed architecture information, see [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md).
 
 ## 🚀 Quick Start
 
 ### Prerequisites
 
-- **.NET 9.0 SDK** or later
+- **.NET 8.0 SDK** or later
 - **Docker** (for containerized deployment)
 - **Git** for source control
 - **Intel SGX SDK** (for enclave development)
-- **Visual Studio 2025** or **VS Code** (recommended)
+- **Visual Studio 2022/2025** or **VS Code** (recommended)
 
 ### Installation
 
@@ -96,8 +119,82 @@ dotnet run --project src/Web/NeoServiceLayer.Web
 ```
 
 5. **Access the Application:**
-   - **Web Interface**: `http://localhost:5000` - Interactive service demonstrations
-   - **Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Live service testing
+   - **🌐 Web Interface**: `http://localhost:5000` - Main application dashboard
+   - **🎮 Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Interactive service testing
+   - **📚 API Documentation**: `http://localhost:5000/swagger` - Complete API reference
+
+## 🌐 Interactive Web Application
+
+The Neo Service Layer includes a **comprehensive web application** that provides:
+
+### **🔴 Live Service Demonstrations**
+- **Real-time Testing**: Interactive testing of all 20+ services
+- **Professional UI**: Modern, responsive interface built with Bootstrap 5
+- **Service Categories**: Organized into 6 categories for easy navigation
+- **Direct Integration**: Real communication with actual service endpoints (no mock data)
+
+### **🔐 Security & Authentication**
+- **JWT Authentication**: Secure API access with role-based permissions
+- **Demo Mode**: Easy token generation for testing and development
+- **Environment Configuration**: Flexible authentication for different environments
+
+### **📊 Real-time Monitoring**
+- **Service Health**: Live status indicators for all services
+- **Performance Metrics**: Real-time performance and response time monitoring
+- **System Analytics**: Comprehensive system health dashboards
+
+### **🎨 User Experience**
+- **Cross-Platform**: Works seamlessly on desktop, tablet, and mobile devices
+- **Service-Specific UI**: Tailored interfaces for each service type
+- **Error Handling**: Comprehensive error reporting and user feedback
+- **Documentation Integration**: Built-in help and API documentation
+
+## 📊 Service Portfolio (20+ Services)
+
+The Neo Service Layer provides a comprehensive suite of production-ready services organized into six categories:
+
+### **🔧 Core Services (4)**
+Essential blockchain operations:
+1. **Key Management Service** - Generate and manage cryptographic keys securely
+2. **Randomness Service** - Cryptographically secure random number generation
+3. **Oracle Service** - External data feeds with cryptographic proofs
+4. **Voting Service** - Decentralized voting and governance proposals
+
+### **💾 Storage & Data Services (3)**
+Data management and persistence:
+5. **Storage Service** - Encrypted data storage and retrieval
+6. **Backup Service** - Automated backup and restore operations
+7. **Configuration Service** - Dynamic system configuration management
+
+### **🔒 Security Services (4)**
+Advanced security and privacy features:
+8. **Zero Knowledge Service** - ZK proof generation and verification
+9. **Abstract Account Service** - Smart contract account management
+10. **Compliance Service** - Regulatory compliance and AML/KYC checks
+11. **Proof of Reserve Service** - Cryptographic asset verification
+
+### **⚙️ Operations Services (4)**
+System management and monitoring:
+12. **Automation Service** - Workflow automation and scheduling
+13. **Monitoring Service** - System metrics and performance analytics
+14. **Health Service** - System health diagnostics and reporting
+15. **Notification Service** - Multi-channel notification system
+
+### **🌐 Infrastructure Services (3)**
+Multi-chain and compute services:
+16. **Cross-Chain Service** - Multi-blockchain interoperability
+17. **Compute Service** - Secure TEE computations
+18. **Event Subscription Service** - Blockchain event monitoring
+
+### **🤖 AI Services (2)**
+Machine learning and analytics:
+19. **Pattern Recognition Service** - AI-powered analysis and fraud detection
+20. **Prediction Service** - Machine learning forecasting and analytics
+
+### **🚀 Advanced Services (2+)**
+Specialized blockchain features:
+21. **Fair Ordering Service** - Transaction fairness and MEV protection
+22. **Additional Services** - Continuously expanding based on ecosystem needs
    - **Swagger API**: `http://localhost:5000/swagger` - API documentation
    - **Health Check**: `http://localhost:5000/health` - System status
 
@@ -175,33 +272,40 @@ All web demonstrations call **real service endpoints** - no simulated responses.
 - Returns real data from the service layer
 - Displays comprehensive error handling
 
-## 📚 Documentation
+## 📚 Comprehensive Documentation
 
-### **📖 Architecture & Design**
-- [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)
-- [Service Framework](docs/architecture/service-framework.md)
-- [Enclave Integration](docs/architecture/enclave-integration.md)
+### **🌐 Web Application Documentation**
+- **[Web Application Guide](docs/web/WEB_APPLICATION_GUIDE.md)** - Complete introduction and setup guide
+- **[Service Integration Guide](docs/web/SERVICE_INTEGRATION.md)** - Technical integration documentation
+- **[Authentication & Security](docs/web/AUTHENTICATION.md)** - JWT authentication and security implementation
+- **[API Reference](docs/web/API_REFERENCE.md)** - Complete API documentation for all 20+ services
 
-### **🌐 Web Application**
-- [Web Application Guide](docs/web/WEB_APPLICATION_GUIDE.md)
-- [Service Integration](docs/web/SERVICE_INTEGRATION.md)
-- [Authentication & Security](docs/web/AUTHENTICATION.md)
-- [API Reference](docs/web/API_REFERENCE.md)
+### **🏗️ Architecture & Design**
+- **[Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - System architecture and design patterns
+- **[Service Framework Documentation](docs/architecture/service-framework.md)** - Service development framework
+- **[Enclave Integration Guide](docs/architecture/enclave-integration.md)** - Intel SGX + Occlum LibOS integration
 
-### **🔧 Development**
-- [Coding Standards](docs/development/CODING_STANDARDS.md)
-- [Testing Guide](docs/development/testing-guide.md)
-- [Adding New Services](docs/architecture/adding-new-services.md)
+### **🛠️ Development Resources**
+- **[Development Guide](docs/development/README.md)** - Development environment setup and workflow
+- **[Coding Standards](docs/development/CODING_STANDARDS.md)** - Code style and best practices
+- **[Testing Guide](docs/development/testing-guide.md)** - Testing strategies and frameworks
+- **[Adding New Services](docs/architecture/adding-new-services.md)** - Guide for extending the platform
 
-### **🚀 Deployment**
-- [SGX Deployment Guide](docs/deployment/sgx-deployment-guide.md)
-- [Occlum LibOS Guide](docs/deployment/occlum-libos-guide.md)
-- [Production Configuration](docs/deployment/README.md)
+### **🚀 Deployment & Operations**
+- **[Deployment Guide](docs/deployment/README.md)** - Production deployment instructions
+- **[Configuration Management](docs/deployment/configuration.md)** - Environment configuration
+- **[Security Considerations](docs/security/README.md)** - Security best practices
+- **[Troubleshooting Guide](docs/troubleshooting/README.md)** - Common issues and solutions
 
-### **📊 Services**
-- [API Reference](docs/api/API_REFERENCE.md)
-- [Service Documentation](docs/services/README.md)
-- [Integration Examples](docs/workflows/README.md)
+### **📊 Service Documentation**
+- **[Services Overview](docs/services/README.md)** - Complete documentation for all 20+ services
+- **[API Reference](docs/api/README.md)** - RESTful API documentation
+- **[Integration Examples](docs/workflows/README.md)** - Service integration patterns and examples
+
+### **🔒 Security Documentation**
+- **[Intel SGX Implementation](docs/security/sgx-implementation.md)** - SGX enclave development
+- **[Occlum LibOS Guide](docs/security/occlum-guide.md)** - Occlum LibOS configuration
+- **[Cryptographic Standards](docs/security/cryptography.md)** - Cryptographic implementation details
 
 ## 🧪 Testing
 
