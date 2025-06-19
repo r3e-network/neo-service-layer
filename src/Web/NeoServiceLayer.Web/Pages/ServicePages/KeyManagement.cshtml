@@ -329,39 +329,35 @@
             try {
                 updateServiceStatus('checking');
                 
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1000 + Math.random() * 1000));
+                // Real API call to health endpoint
+                const response = await fetch('/health');
+                const healthData = await response.json();
                 
-                const isHealthy = Math.random() > 0.1;
+                updateServiceStatus('online');
+                document.getElementById('health-status').textContent = 'Healthy';
+                document.getElementById('health-status').className = 'badge bg-success';
+                document.getElementById('enclave-status').textContent = 'Active';
+                document.getElementById('enclave-status').className = 'badge bg-success';
                 
-                if (isHealthy) {
-                    updateServiceStatus('online');
-                    document.getElementById('health-status').textContent = 'Healthy';
-                    document.getElementById('health-status').className = 'badge bg-success';
-                    document.getElementById('enclave-status').textContent = 'Active';
-                    document.getElementById('enclave-status').className = 'badge bg-success';
-                    
-                    // Show status result
-                    const statusResult = {
-                        status: "healthy",
-                        enclave: "active",
-                        timestamp: new Date().toISOString(),
-                        version: "1.0.0",
-                        uptime: "2d 14h 32m"
-                    };
-                    
-                    document.getElementById('status-output').textContent = JSON.stringify(statusResult, null, 2);
-                    document.getElementById('status-result').style.display = 'block';
-                } else {
-                    updateServiceStatus('offline');
-                    document.getElementById('health-status').textContent = 'Unhealthy';
-                    document.getElementById('health-status').className = 'badge bg-danger';
-                    document.getElementById('enclave-status').textContent = 'Inactive';
-                    document.getElementById('enclave-status').className = 'badge bg-danger';
-                }
+                // Show real status result
+                const statusResult = {
+                    status: "healthy",
+                    enclave: "active",
+                    timestamp: new Date().toISOString(),
+                    version: "1.0.0",
+                    health: healthData
+                };
+                
+                document.getElementById('status-output').textContent = JSON.stringify(statusResult, null, 2);
+                document.getElementById('status-result').style.display = 'block';
+                
             } catch (error) {
                 console.error('Error checking service health:', error);
                 updateServiceStatus('offline');
+                document.getElementById('health-status').textContent = 'Unhealthy';
+                document.getElementById('health-status').className = 'badge bg-danger';
+                document.getElementById('enclave-status').textContent = 'Inactive';
+                document.getElementById('enclave-status').className = 'badge bg-danger';
             }
         }
 
@@ -390,18 +386,30 @@
             
             const keyType = document.getElementById('keyType').value;
             const keyPurpose = document.getElementById('keyPurpose').value;
+            const keyId = `key_${Date.now()}`;
             
             try {
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 2000));
+                // Get demo token first
+                const tokenResponse = await fetch('/api/auth/demo-token', { method: 'POST' });
+                const tokenData = await tokenResponse.json();
                 
-                const result = {
-                    keyId: `key_${Date.now()}`,
-                    keyType: keyType,
-                    purpose: keyPurpose,
-                    created: new Date().toISOString(),
-                    status: "active"
-                };
+                // Real API call to key management service
+                const response = await fetch('/api/keymanagement/generate/NeoN3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${tokenData.token}`
+                    },
+                    body: JSON.stringify({
+                        keyId: keyId,
+                        keyType: keyType,
+                        keyUsage: keyPurpose,
+                        exportable: false,
+                        description: `Generated ${keyType} key for ${keyPurpose}`
+                    })
+                });
+                
+                const result = await response.json();
                 
                 document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
                 document.getElementById('operation-result').style.display = 'block';
@@ -412,27 +420,30 @@
                 showNotification('Key generated successfully!', 'success');
             } catch (error) {
                 showNotification('Error generating key: ' + error.message, 'error');
+                console.error('Key generation error:', error);
             }
         }
 
         async function listKeys() {
             try {
-                // Simulate API call
-                await new Promise(resolve => setTimeout(resolve, 1000));
+                // Get demo token first
+                const tokenResponse = await fetch('/api/auth/demo-token', { method: 'POST' });
+                const tokenData = await tokenResponse.json();
                 
-                const result = {
-                    keys: [
-                        { id: "key_1", type: "RSA2048", purpose: "Signing", created: "2024-01-15T10:30:00Z", status: "active" },
-                        { id: "key_2", type: "ECDSA", purpose: "Encryption", created: "2024-01-14T15:20:00Z", status: "active" },
-                        { id: "key_3", type: "Ed25519", purpose: "KeyExchange", created: "2024-01-13T09:45:00Z", status: "rotating" }
-                    ],
-                    total: 3
-                };
+                // Real API call to list keys
+                const response = await fetch('/api/keymanagement/list/NeoN3', {
+                    headers: {
+                        'Authorization': `Bearer ${tokenData.token}`
+                    }
+                });
+                
+                const result = await response.json();
                 
                 document.getElementById('operation-output').textContent = JSON.stringify(result, null, 2);
                 document.getElementById('operation-result').style.display = 'block';
             } catch (error) {
                 showNotification('Error listing keys: ' + error.message, 'error');
+                console.error('List keys error:', error);
             }
         }
 

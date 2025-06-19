@@ -10,6 +10,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 ## 🌟 Key Features
 
 - **🔒 Trusted Execution Environment**: Intel SGX with Occlum LibOS for maximum security
+- **🌐 Interactive Web Application**: Full-featured web interface with real-time service interaction
 - **🤖 AI-Powered Services**: Pattern recognition, fraud detection, and predictive analytics
 - **⛓️ Multi-Chain Support**: Neo N3 and Neo X blockchain integration
 - **🏗️ Microservices Architecture**: 20+ production-ready services
@@ -47,7 +48,9 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 ┌─────────────────────────────────────────────────────────────┐
 │                    Neo Service Layer                        │
 ├─────────────────────────────────────────────────────────────┤
-│  RESTful API Layer (ASP.NET Core)                          │
+│  Interactive Web Application (ASP.NET Core + Razor Pages)  │
+├─────────────────────────────────────────────────────────────┤
+│  RESTful API Layer (20+ Service Controllers)               │
 ├─────────────────────────────────────────────────────────────┤
 │  Service Framework & Registry                               │
 ├─────────────────────────────────────────────────────────────┤
@@ -87,14 +90,16 @@ dotnet build
 dotnet test
 ```
 
-4. **Start the API:**
+4. **Start the Web Application:**
 ```bash
-dotnet run --project src/Api/NeoServiceLayer.Api
+dotnet run --project src/Web/NeoServiceLayer.Web
 ```
 
-5. **Access the API:**
-   - Swagger UI: `http://localhost:5000/swagger`
-   - Health Check: `http://localhost:5000/health`
+5. **Access the Application:**
+   - **Web Interface**: `http://localhost:5000` - Interactive service demonstrations
+   - **Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Live service testing
+   - **Swagger API**: `http://localhost:5000/swagger` - API documentation
+   - **Health Check**: `http://localhost:5000/health` - System status
 
 ### Docker Deployment
 
@@ -109,12 +114,79 @@ docker-compose ps
 docker-compose logs -f
 ```
 
+## 🌐 Web Application
+
+The Neo Service Layer includes a **comprehensive web application** that provides an interactive interface to all services. The web application features:
+
+### **🎯 Key Features:**
+- **🔴 Live Service Demonstrations**: Interactive testing of all 20+ services
+- **🔐 JWT Authentication**: Secure API access with role-based permissions
+- **📊 Real-time Monitoring**: Service status and system health indicators
+- **🎨 Professional UI**: Modern, responsive interface with service-specific designs
+- **📱 Cross-Platform**: Works on desktop, tablet, and mobile devices
+
+### **🛠️ Available Services:**
+
+| Category | Services | Description |
+|----------|----------|-------------|
+| **🔧 Core** | Key Management, Randomness, Oracle, Voting | Essential blockchain operations |
+| **💾 Storage** | Storage, Backup, Configuration | Data management and persistence |
+| **🔒 Security** | Zero Knowledge, Abstract Account, Compliance, Proof of Reserve | Advanced security features |
+| **⚙️ Operations** | Automation, Monitoring, Health, Notification | System management |
+| **🌐 Infrastructure** | Cross-Chain, Compute, Event Subscription | Multi-chain and compute services |
+| **🤖 AI** | Pattern Recognition, Prediction | Machine learning capabilities |
+
+### **📋 Web Application Structure:**
+```
+src/Web/NeoServiceLayer.Web/
+├── Controllers/           # 20+ API controllers for all services
+├── Pages/                # Razor pages for web interface
+│   ├── ServicePages/     # Service-specific pages
+│   └── Shared/          # Shared layouts and components
+├── Models/              # Request/response models
+├── wwwroot/             # Static assets (CSS, JS, images)
+└── Program.cs           # Application configuration
+```
+
+### **🚀 Getting Started with the Web App:**
+
+1. **Start the application:**
+   ```bash
+   dotnet run --project src/Web/NeoServiceLayer.Web
+   ```
+
+2. **Navigate to the service demo:**
+   ```
+   http://localhost:5000/servicepages/servicedemo
+   ```
+
+3. **Explore services:**
+   - Click any service card to test functionality
+   - View real-time responses from actual services
+   - Monitor system health and status
+
+### **🔑 Authentication:**
+The web application uses JWT authentication. A demo token is automatically generated for testing purposes with full permissions.
+
+### **📈 Service Integration:**
+All web demonstrations call **real service endpoints** - no simulated responses. Each service interaction:
+- Authenticates via JWT tokens
+- Calls actual service implementations
+- Returns real data from the service layer
+- Displays comprehensive error handling
+
 ## 📚 Documentation
 
 ### **📖 Architecture & Design**
 - [Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)
 - [Service Framework](docs/architecture/service-framework.md)
 - [Enclave Integration](docs/architecture/enclave-integration.md)
+
+### **🌐 Web Application**
+- [Web Application Guide](docs/web/WEB_APPLICATION_GUIDE.md)
+- [Service Integration](docs/web/SERVICE_INTEGRATION.md)
+- [Authentication & Security](docs/web/AUTHENTICATION.md)
+- [API Reference](docs/web/API_REFERENCE.md)
 
 ### **🔧 Development**
 - [Coding Standards](docs/development/CODING_STANDARDS.md)

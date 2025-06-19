@@ -19,7 +19,7 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     
     <!-- JSON Handling -->
-    <PackageReference Include="System.Text.Json" Version="9.0.0" />
+    <PackageReference Include="System.Text.Json" Version="9.0.1" />
     
     <!-- Memory and Performance - removed as they're included in .NET 8 -->
   </ItemGroup>

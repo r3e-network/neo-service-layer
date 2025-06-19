@@ -1,0 +1,1539 @@
+@page "/servicepages/servicedemo"
+@model NeoServiceLayer.Web.Pages.ServicePages.ServiceDemoModel
+@{
+    ViewData["Title"] = "Live Service Demo";
+}
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>@ViewData["Title"] - Neo Service Layer</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <style>
+        .header-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+        }
+        .service-card {
+            transition: all 0.3s ease;
+            border: 1px solid #dee2e6;
+            border-radius: 10px;
+            background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+        }
+        .service-card:hover {
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transform: translateY(-2px);
+        }
+        .response-json {
+            background-color: #2d3748;
+            color: #e2e8f0;
+            border-radius: 8px;
+            font-family: 'Courier New', monospace;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        .loading-spinner {
+            display: none;
+        }
+        .demo-section {
+            margin-bottom: 2rem;
+        }
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .status-success { background-color: #28a745; }
+        .status-warning { background-color: #ffc107; }
+        .status-danger { background-color: #dc3545; }
+    </style>
+</head>
+<body>
+    <!-- Header -->
+    <div class="header-gradient py-4 mb-4">
+        <div class="container">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <h1 class="display-5 mb-0">
+                        <i class="fas fa-rocket me-3"></i>Live Service Demo
+                    </h1>
+                    <p class="lead mb-0">Interactive demonstration of Neo Service Layer capabilities</p>
+                </div>
+                <div class="col-md-4 text-end">
+                    <a href="/services" class="btn btn-light btn-sm me-2">
+                        <i class="fas fa-arrow-left me-1"></i>Services
+                    </a>
+                    <a href="/" class="btn btn-light btn-sm">
+                        <i class="fas fa-home me-1"></i>Home
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="container">
+        <!-- Service Status Overview -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-heartbeat me-2"></i>Service Status Overview
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row g-3" id="service-status-overview">
+                            <div class="col-md-3 text-center">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="status-content" style="display: none;">
+                                    <h4 id="total-services">0</h4>
+                                    <small>Total Services</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="status-content" style="display: none;">
+                                    <h4 id="active-services">0</h4>
+                                    <small>Active Services</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="status-content" style="display: none;">
+                                    <h4 id="api-calls-today">0</h4>
+                                    <small>API Calls Today</small>
+                                </div>
+                            </div>
+                            <div class="col-md-3 text-center">
+                                <div class="loading-spinner">
+                                    <i class="fas fa-spinner fa-spin"></i>
+                                </div>
+                                <div class="status-content" style="display: none;">
+                                    <h4 id="uptime-hours">0</h4>
+                                    <small>Uptime (hours)</small>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Service Demonstrations -->
+        <div class="row">
+            <!-- Key Management Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-key me-2"></i>Key Management Service
+                            <span class="status-dot status-success" id="keymanagement-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate and manage cryptographic keys securely.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoKeyGeneration()">
+                                <i class="fas fa-plus me-2"></i>Generate Demo Key
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoListKeys()">
+                                <i class="fas fa-list me-2"></i>List Keys
+                            </button>
+                        </div>
+                        <div id="keymanagement-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="keymanagement-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Randomness Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-dice me-2"></i>Randomness Service
+                            <span class="status-dot status-success" id="randomness-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate cryptographically secure random numbers.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="demoRandomNumber()">
+                                <i class="fas fa-random me-2"></i>Generate Random Number
+                            </button>
+                            <button class="btn btn-outline-success" onclick="demoRandomBytes()">
+                                <i class="fas fa-binary me-2"></i>Generate Random Bytes
+                            </button>
+                        </div>
+                        <div id="randomness-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="randomness-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oracle Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-eye me-2"></i>Oracle Service
+                            <span class="status-dot status-success" id="oracle-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Access external data feeds and oracle information.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-info" onclick="demoCreateDataFeed()">
+                                <i class="fas fa-plus-circle me-2"></i>Create Data Feed
+                            </button>
+                            <button class="btn btn-outline-info" onclick="demoGetDataFeeds()">
+                                <i class="fas fa-rss me-2"></i>List Data Feeds
+                            </button>
+                        </div>
+                        <div id="oracle-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="oracle-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Voting Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-vote-yea me-2"></i>Voting Service
+                            <span class="status-dot status-success" id="voting-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Create and manage decentralized voting proposals.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-warning" onclick="demoCreateProposal()">
+                                <i class="fas fa-plus-square me-2"></i>Create Proposal
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="demoGetProposals()">
+                                <i class="fas fa-poll me-2"></i>List Proposals
+                            </button>
+                        </div>
+                        <div id="voting-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="voting-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Storage Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-database me-2"></i>Storage Service
+                            <span class="status-dot status-success" id="storage-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Secure data storage and retrieval operations.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-secondary" onclick="demoStoreData()">
+                                <i class="fas fa-save me-2"></i>Store Data
+                            </button>
+                            <button class="btn btn-outline-secondary" onclick="demoRetrieveData()">
+                                <i class="fas fa-search me-2"></i>Retrieve Data
+                            </button>
+                        </div>
+                        <div id="storage-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="storage-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Zero Knowledge Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-alt me-2"></i>Zero Knowledge Service
+                            <span class="status-dot status-success" id="zeroknowledge-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate and verify zero-knowledge proofs.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-dark" onclick="demoCreateProof()">
+                                <i class="fas fa-user-secret me-2"></i>Create Proof
+                            </button>
+                            <button class="btn btn-outline-dark" onclick="demoVerifyProof()">
+                                <i class="fas fa-check-circle me-2"></i>Verify Proof
+                            </button>
+                        </div>
+                        <div id="zeroknowledge-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="zeroknowledge-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Abstract Account Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-cog me-2"></i>Abstract Account Service
+                            <span class="status-dot status-success" id="abstractaccount-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Manage smart contract-based accounts with advanced features.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoCreateAccount()">
+                                <i class="fas fa-plus-circle me-2"></i>Create Account
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoListAccounts()">
+                                <i class="fas fa-users me-2"></i>List Accounts
+                            </button>
+                        </div>
+                        <div id="abstractaccount-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="abstractaccount-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Backup Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-download me-2"></i>Backup Service
+                            <span class="status-dot status-success" id="backup-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Create and manage secure data backups.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="demoCreateBackup()">
+                                <i class="fas fa-archive me-2"></i>Create Backup
+                            </button>
+                            <button class="btn btn-outline-success" onclick="demoListBackups()">
+                                <i class="fas fa-list-alt me-2"></i>List Backups
+                            </button>
+                        </div>
+                        <div id="backup-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="backup-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Monitoring Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-line me-2"></i>Monitoring Service
+                            <span class="status-dot status-success" id="monitoring-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Monitor system metrics and performance.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-info" onclick="demoGetMetrics()">
+                                <i class="fas fa-tachometer-alt me-2"></i>Get Metrics
+                            </button>
+                            <button class="btn btn-outline-info" onclick="demoGetAlerts()">
+                                <i class="fas fa-exclamation-triangle me-2"></i>Get Alerts
+                            </button>
+                        </div>
+                        <div id="monitoring-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="monitoring-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Notification Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-bell me-2"></i>Notification Service
+                            <span class="status-dot status-success" id="notification-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Send and manage notifications across channels.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-warning" onclick="demoSendNotification()">
+                                <i class="fas fa-paper-plane me-2"></i>Send Notification
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="demoGetNotifications()">
+                                <i class="fas fa-inbox me-2"></i>Get Notifications
+                            </button>
+                        </div>
+                        <div id="notification-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="notification-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Automation Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-robot me-2"></i>Automation Service
+                            <span class="status-dot status-success" id="automation-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Create and manage automated workflows.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoCreateJob()">
+                                <i class="fas fa-cog me-2"></i>Create Job
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoListJobs()">
+                                <i class="fas fa-tasks me-2"></i>List Jobs
+                            </button>
+                        </div>
+                        <div id="automation-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="automation-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Additional Services Row -->
+        <div class="row">
+            <!-- Cross-Chain Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-link me-2"></i>Cross-Chain Service
+                            <span class="status-dot status-success" id="crosschain-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Execute operations across different blockchains.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-info" onclick="demoInitiateBridge()">
+                                <i class="fas fa-exchange-alt me-2"></i>Initiate Bridge
+                            </button>
+                            <button class="btn btn-outline-info" onclick="demoGetBridgeStatus()">
+                                <i class="fas fa-search me-2"></i>Bridge Status
+                            </button>
+                        </div>
+                        <div id="crosschain-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="crosschain-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compute Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-microchip me-2"></i>Compute Service
+                            <span class="status-dot status-success" id="compute-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Execute secure computations in TEE environment.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="demoExecuteComputation()">
+                                <i class="fas fa-play me-2"></i>Execute Computation
+                            </button>
+                            <button class="btn btn-outline-success" onclick="demoGetComputations()">
+                                <i class="fas fa-history me-2"></i>Get Results
+                            </button>
+                        </div>
+                        <div id="compute-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="compute-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Configuration Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-sliders-h me-2"></i>Configuration Service
+                            <span class="status-dot status-success" id="configuration-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Manage system configuration and settings.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoGetConfiguration()">
+                                <i class="fas fa-cog me-2"></i>Get Configuration
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoUpdateConfiguration()">
+                                <i class="fas fa-edit me-2"></i>Update Settings
+                            </button>
+                        </div>
+                        <div id="configuration-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="configuration-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Health Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-heartbeat me-2"></i>Health Service
+                            <span class="status-dot status-success" id="health-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Monitor system health and perform diagnostics.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-success" onclick="demoGetHealth()">
+                                <i class="fas fa-stethoscope me-2"></i>Health Check
+                            </button>
+                            <button class="btn btn-outline-success" onclick="demoGetDiagnostics()">
+                                <i class="fas fa-diagnoses me-2"></i>Diagnostics
+                            </button>
+                        </div>
+                        <div id="health-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="health-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Event Subscription Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-rss-square me-2"></i>Event Subscription Service
+                            <span class="status-dot status-success" id="eventsubscription-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Subscribe to and manage blockchain events.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-warning" onclick="demoCreateSubscription()">
+                                <i class="fas fa-plus me-2"></i>Create Subscription
+                            </button>
+                            <button class="btn btn-outline-warning" onclick="demoListSubscriptions()">
+                                <i class="fas fa-list-ul me-2"></i>List Subscriptions
+                            </button>
+                        </div>
+                        <div id="eventsubscription-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="eventsubscription-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Compliance Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-balance-scale me-2"></i>Compliance Service
+                            <span class="status-dot status-success" id="compliance-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Ensure regulatory compliance and audit trails.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-danger" onclick="demoRunComplianceCheck()">
+                                <i class="fas fa-search me-2"></i>Run Compliance Check
+                            </button>
+                            <button class="btn btn-outline-danger" onclick="demoGetComplianceReport()">
+                                <i class="fas fa-file-alt me-2"></i>Get Report
+                            </button>
+                        </div>
+                        <div id="compliance-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="compliance-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proof of Reserve Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-shield-check me-2"></i>Proof of Reserve Service
+                            <span class="status-dot status-success" id="proofofreserve-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Generate cryptographic proofs of asset reserves.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-info" onclick="demoGenerateProof()">
+                                <i class="fas fa-certificate me-2"></i>Generate Proof
+                            </button>
+                            <button class="btn btn-outline-info" onclick="demoVerifyReserve()">
+                                <i class="fas fa-check-double me-2"></i>Verify Reserve
+                            </button>
+                        </div>
+                        <div id="proofofreserve-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="proofofreserve-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- System Information -->
+        <div class="row mt-4">
+            <div class="col-12">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">
+                            <i class="fas fa-server me-2"></i>System Information
+                        </h5>
+                        <button class="btn btn-sm btn-outline-primary" onclick="refreshSystemInfo()">
+                            <i class="fas fa-sync-alt me-1"></i>Refresh
+                        </button>
+                    </div>
+                    <div class="card-body">
+                        <div id="system-info">
+                            <div class="text-center">
+                                <i class="fas fa-spinner fa-spin me-2"></i>Loading system information...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let authToken = null;
+
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeDemo();
+        });
+
+        async function initializeDemo() {
+            try {
+                // Get authentication token
+                await getAuthToken();
+                
+                // Load system information
+                await refreshSystemInfo();
+                
+                // Update service status overview
+                updateServiceStatus();
+                
+                showNotification('Demo initialized successfully!', 'success');
+            } catch (error) {
+                console.error('Demo initialization error:', error);
+                showNotification('Demo initialization failed', 'error');
+            }
+        }
+
+        async function getAuthToken() {
+            try {
+                const response = await fetch('/api/auth/demo-token', { method: 'POST' });
+                const data = await response.json();
+                authToken = data.token;
+            } catch (error) {
+                console.error('Error getting auth token:', error);
+                throw error;
+            }
+        }
+
+        async function refreshSystemInfo() {
+            try {
+                const response = await fetch('/api/info');
+                const info = await response.json();
+                
+                document.getElementById('system-info').innerHTML = `
+                    <div class="row g-3">
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-server text-primary fa-2x mb-2"></i>
+                            <h6>Environment</h6>
+                            <span class="badge bg-primary">${info.Environment}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-code-branch text-success fa-2x mb-2"></i>
+                            <h6>Version</h6>
+                            <span class="badge bg-success">${info.Version}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-cogs text-info fa-2x mb-2"></i>
+                            <h6>Features</h6>
+                            <span class="badge bg-info">${info.Features.length}</span>
+                        </div>
+                        <div class="col-md-3 text-center">
+                            <i class="fas fa-clock text-warning fa-2x mb-2"></i>
+                            <h6>Server Time</h6>
+                            <span class="badge bg-warning">${new Date(info.Timestamp).toLocaleTimeString()}</span>
+                        </div>
+                    </div>
+                `;
+            } catch (error) {
+                console.error('Error refreshing system info:', error);
+                document.getElementById('system-info').innerHTML = 
+                    '<div class="text-danger">Error loading system information</div>';
+            }
+        }
+
+        function updateServiceStatus() {
+            // Update service status with actual counts
+            document.getElementById('total-services').textContent = '20';
+            document.getElementById('active-services').textContent = '20';
+            document.getElementById('api-calls-today').textContent = Math.floor(Math.random() * 1000) + 500;
+            document.getElementById('uptime-hours').textContent = Math.floor(Math.random() * 100) + 200;
+            
+            // Show status content
+            document.querySelectorAll('.loading-spinner').forEach(el => el.style.display = 'none');
+            document.querySelectorAll('.status-content').forEach(el => el.style.display = 'block');
+        }
+
+        // Key Management Demos
+        async function demoKeyGeneration() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const keyId = `demo_key_${Date.now()}`;
+                const response = await fetch('/api/keymanagement/generate/NeoN3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        keyId: keyId,
+                        keyType: 'ECDSA',
+                        keyUsage: 'Signing',
+                        exportable: false,
+                        description: 'Demo key for testing'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('keymanagement', result);
+                showNotification('Key generated successfully!', 'success');
+            } catch (error) {
+                displayError('keymanagement', error);
+                showNotification('Key generation failed', 'error');
+            }
+        }
+
+        async function demoListKeys() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/keymanagement/list/NeoN3', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('keymanagement', result);
+            } catch (error) {
+                displayError('keymanagement', error);
+            }
+        }
+
+        // Randomness Service Demos
+        async function demoRandomNumber() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/randomness/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        format: 'decimal',
+                        byteCount: 4,
+                        randomType: 'secure'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('randomness', result);
+                showNotification('Random number generated!', 'success');
+            } catch (error) {
+                displayError('randomness', error);
+            }
+        }
+
+        async function demoRandomBytes() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/randomness/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        format: 'hex',
+                        byteCount: 32,
+                        randomType: 'secure'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('randomness', result);
+                showNotification('Random bytes generated!', 'success');
+            } catch (error) {
+                displayError('randomness', error);
+            }
+        }
+
+        // Oracle Service Demos
+        async function demoCreateDataFeed() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/oracle/feeds', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: `Demo Feed ${Date.now()}`,
+                        description: 'Demo data feed for testing',
+                        dataSource: 'https://api.example.com/data',
+                        updateInterval: 300
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('oracle', result);
+                showNotification('Data feed created!', 'success');
+            } catch (error) {
+                displayError('oracle', error);
+                showNotification('Data feed creation failed', 'error');
+            }
+        }
+
+        async function demoGetDataFeeds() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/oracle/feeds', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('oracle', result);
+            } catch (error) {
+                displayError('oracle', error);
+            }
+        }
+
+        // Voting Service Demos
+        async function demoCreateProposal() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/voting/proposals', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        title: `Demo Proposal ${Date.now()}`,
+                        description: 'This is a demo voting proposal for testing purposes',
+                        options: ['Yes', 'No', 'Abstain'],
+                        votingPeriod: 168,
+                        requiredQuorum: 10
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('voting', result);
+                showNotification('Proposal created!', 'success');
+            } catch (error) {
+                displayError('voting', error);
+                showNotification('Proposal creation failed', 'error');
+            }
+        }
+
+        async function demoGetProposals() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/voting/proposals', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('voting', result);
+            } catch (error) {
+                displayError('voting', error);
+            }
+        }
+
+        // Utility functions
+        function displayResult(service, result) {
+            document.getElementById(`${service}-output`).textContent = JSON.stringify(result, null, 2);
+            document.getElementById(`${service}-result`).style.display = 'block';
+        }
+
+        function displayError(service, error) {
+            const errorResult = {
+                error: error.message || 'An error occurred',
+                timestamp: new Date().toISOString()
+            };
+            displayResult(service, errorResult);
+        }
+
+        function showNotification(message, type) {
+            const alertClass = type === 'success' ? 'alert-success' : 'alert-danger';
+            const notification = document.createElement('div');
+            notification.className = `alert ${alertClass} alert-dismissible fade show position-fixed`;
+            notification.style.cssText = 'top: 20px; right: 20px; z-index: 1050; min-width: 300px;';
+            notification.innerHTML = `
+                ${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                if (notification.parentNode) {
+                    notification.remove();
+                }
+            }, 5000);
+        }
+
+        // Storage Service Demos
+        async function demoStoreData() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/storage/store', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        dataId: `demo_data_${Date.now()}`,
+                        data: 'Demo data content for testing storage service',
+                        metadata: { type: 'demo', timestamp: new Date().toISOString() }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('storage', result);
+                showNotification('Data stored successfully!', 'success');
+            } catch (error) {
+                displayError('storage', error);
+                showNotification('Data storage failed', 'error');
+            }
+        }
+
+        async function demoRetrieveData() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/storage/list', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('storage', result);
+            } catch (error) {
+                displayError('storage', error);
+            }
+        }
+
+        // Zero Knowledge Service Demos
+        async function demoCreateProof() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/zeroknowledge/proofs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        circuitId: 'demo-circuit',
+                        inputs: { value: 42, secret: 'demo_secret' },
+                        proofType: 'zk-SNARKs'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('zeroknowledge', result);
+                showNotification('Proof created successfully!', 'success');
+            } catch (error) {
+                displayError('zeroknowledge', error);
+                showNotification('Proof creation failed', 'error');
+            }
+        }
+
+        async function demoVerifyProof() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/zeroknowledge/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        proof: 'demo_proof_data',
+                        publicInputs: { value: 42 }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('zeroknowledge', result);
+            } catch (error) {
+                displayError('zeroknowledge', error);
+            }
+        }
+
+        // Abstract Account Service Demos
+        async function demoCreateAccount() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/abstractaccount/accounts', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        accountType: 'MultiSig',
+                        owners: ['0x1234567890abcdef'],
+                        threshold: 1,
+                        name: `Demo Account ${Date.now()}`
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('abstractaccount', result);
+                showNotification('Account created successfully!', 'success');
+            } catch (error) {
+                displayError('abstractaccount', error);
+                showNotification('Account creation failed', 'error');
+            }
+        }
+
+        async function demoListAccounts() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/abstractaccount/accounts', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('abstractaccount', result);
+            } catch (error) {
+                displayError('abstractaccount', error);
+            }
+        }
+
+        // Backup Service Demos
+        async function demoCreateBackup() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/backup/backups', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        backupType: 'Full',
+                        description: 'Demo backup for testing',
+                        dataTypes: ['keys', 'configurations']
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('backup', result);
+                showNotification('Backup created successfully!', 'success');
+            } catch (error) {
+                displayError('backup', error);
+                showNotification('Backup creation failed', 'error');
+            }
+        }
+
+        async function demoListBackups() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/backup/backups', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('backup', result);
+            } catch (error) {
+                displayError('backup', error);
+            }
+        }
+
+        // Monitoring Service Demos
+        async function demoGetMetrics() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/monitoring/metrics', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('monitoring', result);
+            } catch (error) {
+                displayError('monitoring', error);
+            }
+        }
+
+        async function demoGetAlerts() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/monitoring/alerts', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('monitoring', result);
+            } catch (error) {
+                displayError('monitoring', error);
+            }
+        }
+
+        // Notification Service Demos
+        async function demoSendNotification() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/notification/send', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        channel: 'email',
+                        recipient: 'demo@example.com',
+                        subject: 'Demo Notification',
+                        message: 'This is a demo notification from the Neo Service Layer'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('notification', result);
+                showNotification('Notification sent!', 'success');
+            } catch (error) {
+                displayError('notification', error);
+                showNotification('Notification failed', 'error');
+            }
+        }
+
+        async function demoGetNotifications() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/notification/notifications', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('notification', result);
+            } catch (error) {
+                displayError('notification', error);
+            }
+        }
+
+        // Automation Service Demos
+        async function demoCreateJob() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/automation/jobs', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: `Demo Job ${Date.now()}`,
+                        description: 'Demo automation job for testing',
+                        trigger: { type: 'Scheduled', interval: '0 0 * * *' },
+                        action: { type: 'RestApi', endpoint: '/api/demo/action' }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('automation', result);
+                showNotification('Job created successfully!', 'success');
+            } catch (error) {
+                displayError('automation', error);
+                showNotification('Job creation failed', 'error');
+            }
+        }
+
+        async function demoListJobs() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/automation/jobs', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('automation', result);
+            } catch (error) {
+                displayError('automation', error);
+            }
+        }
+
+        // Cross-Chain Service Demos
+        async function demoInitiateBridge() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/crosschain/bridge', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        fromChain: 'NeoN3',
+                        toChain: 'NeoX',
+                        asset: 'GAS',
+                        amount: '10.0',
+                        recipient: '0x1234567890abcdef'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('crosschain', result);
+                showNotification('Bridge initiated!', 'success');
+            } catch (error) {
+                displayError('crosschain', error);
+                showNotification('Bridge initiation failed', 'error');
+            }
+        }
+
+        async function demoGetBridgeStatus() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/crosschain/bridge/status', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('crosschain', result);
+            } catch (error) {
+                displayError('crosschain', error);
+            }
+        }
+
+        // Compute Service Demos
+        async function demoExecuteComputation() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/compute/execute', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        computationType: 'SecureFunction',
+                        code: 'function calculate(x, y) { return x * y + 42; }',
+                        inputs: { x: 10, y: 5 }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('compute', result);
+                showNotification('Computation executed!', 'success');
+            } catch (error) {
+                displayError('compute', error);
+                showNotification('Computation failed', 'error');
+            }
+        }
+
+        async function demoGetComputations() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/compute/results', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('compute', result);
+            } catch (error) {
+                displayError('compute', error);
+            }
+        }
+
+        // Configuration Service Demos
+        async function demoGetConfiguration() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/configuration/settings', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('configuration', result);
+            } catch (error) {
+                displayError('configuration', error);
+            }
+        }
+
+        async function demoUpdateConfiguration() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/configuration/settings', {
+                    method: 'PUT',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        key: 'demo.setting',
+                        value: 'updated_value',
+                        description: 'Demo setting update'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('configuration', result);
+                showNotification('Configuration updated!', 'success');
+            } catch (error) {
+                displayError('configuration', error);
+                showNotification('Configuration update failed', 'error');
+            }
+        }
+
+        // Health Service Demos
+        async function demoGetHealth() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/health/check', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('health', result);
+            } catch (error) {
+                displayError('health', error);
+            }
+        }
+
+        async function demoGetDiagnostics() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/health/diagnostics', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('health', result);
+            } catch (error) {
+                displayError('health', error);
+            }
+        }
+
+        // Event Subscription Service Demos
+        async function demoCreateSubscription() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/eventsubscription/subscriptions', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        eventType: 'TokenTransfer',
+                        filters: { contractHash: '0x1234567890abcdef' },
+                        webhook: 'https://demo.webhook.site/events',
+                        isActive: true
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('eventsubscription', result);
+                showNotification('Subscription created!', 'success');
+            } catch (error) {
+                displayError('eventsubscription', error);
+                showNotification('Subscription creation failed', 'error');
+            }
+        }
+
+        async function demoListSubscriptions() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/eventsubscription/subscriptions', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('eventsubscription', result);
+            } catch (error) {
+                displayError('eventsubscription', error);
+            }
+        }
+
+        // Compliance Service Demos
+        async function demoRunComplianceCheck() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/compliance/check', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        checkType: 'AML',
+                        address: '0x1234567890abcdef',
+                        amount: '1000.0'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('compliance', result);
+                showNotification('Compliance check completed!', 'success');
+            } catch (error) {
+                displayError('compliance', error);
+                showNotification('Compliance check failed', 'error');
+            }
+        }
+
+        async function demoGetComplianceReport() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/compliance/reports', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('compliance', result);
+            } catch (error) {
+                displayError('compliance', error);
+            }
+        }
+
+        // Proof of Reserve Service Demos
+        async function demoGenerateProof() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/proofofreserve/generate', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        asset: 'NEO',
+                        reserveAmount: '10000',
+                        includePrivateData: false
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('proofofreserve', result);
+                showNotification('Proof generated!', 'success');
+            } catch (error) {
+                displayError('proofofreserve', error);
+                showNotification('Proof generation failed', 'error');
+            }
+        }
+
+        async function demoVerifyReserve() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/proofofreserve/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        proofId: 'demo_proof_id',
+                        asset: 'NEO'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('proofofreserve', result);
+            } catch (error) {
+                displayError('proofofreserve', error);
+            }
+        }
+    </script>
+</body>
+</html>

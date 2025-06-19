@@ -158,28 +158,28 @@ builder.Services.AddNeoServiceLayer(builder.Configuration);
 // Add Neo Service Framework (provides IServiceConfiguration)
 builder.Services.AddNeoServiceFramework();
 
-// Register working Neo Service Layer services (temporarily commented out for demo)
-// builder.Services.AddScoped<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService, NeoServiceLayer.Services.AbstractAccount.AbstractAccountService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Backup.IBackupService, NeoServiceLayer.Services.Backup.BackupService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Configuration.IConfigurationService, NeoServiceLayer.Services.Configuration.ConfigurationService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>(); // Interface mismatch - needs fixing
-// builder.Services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Health.IHealthService, NeoServiceLayer.Services.Health.HealthService>(); // Interface missing - needs creating
+// Register all Neo Service Layer services
 builder.Services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService, NeoServiceLayer.Services.Monitoring.MonitoringService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService, NeoServiceLayer.Services.Notification.NotificationService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Oracle.IOracleService, NeoServiceLayer.Services.Oracle.OracleService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>(); // Interface missing - needs creating
 builder.Services.AddScoped<NeoServiceLayer.Services.Randomness.IRandomnessService, NeoServiceLayer.Services.Randomness.RandomnessService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Storage.IStorageService, NeoServiceLayer.Services.Storage.StorageService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.Voting.IVotingService, NeoServiceLayer.Services.Voting.VotingService>();
-// builder.Services.AddScoped<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService, NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Oracle.IOracleService, NeoServiceLayer.Services.Oracle.OracleService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Storage.IStorageService, NeoServiceLayer.Services.Storage.StorageService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Voting.IVotingService, NeoServiceLayer.Services.Voting.VotingService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService, NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Backup.IBackupService, NeoServiceLayer.Services.Backup.BackupService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Health.IHealthService, NeoServiceLayer.Services.Health.HealthService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService, NeoServiceLayer.Services.Monitoring.MonitoringService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService, NeoServiceLayer.Services.Notification.NotificationService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService, NeoServiceLayer.Services.AbstractAccount.AbstractAccountService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Configuration.IConfigurationService, NeoServiceLayer.Services.Configuration.ConfigurationService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
+builder.Services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
 
-// Register AI Services (temporarily commented out for demo)
-// builder.Services.AddScoped<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService, NeoServiceLayer.AI.PatternRecognition.PatternRecognitionService>(); // Temporarily commented out due to build errors
+// Register AI Services
+builder.Services.AddScoped<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService, NeoServiceLayer.AI.PatternRecognition.PatternRecognitionService>();
 builder.Services.AddScoped<NeoServiceLayer.AI.Prediction.IPredictionService, NeoServiceLayer.AI.Prediction.PredictionService>();
 
 // Register TEE Services

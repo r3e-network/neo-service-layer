@@ -2,7 +2,23 @@
 
 ## Overview
 
-The Neo Service Layer provides a RESTful API for interacting with its services. The API is designed to be simple, consistent, and secure.
+The Neo Service Layer provides a comprehensive RESTful API for interacting with all 20+ services. The API is accessible through both programmatic integration and an interactive web application interface.
+
+## 🌐 Interactive Web Application
+
+The Neo Service Layer includes a full-featured web application that provides:
+
+- **Live Service Demonstrations**: Interactive testing of all services
+- **Real-time API Calls**: Direct integration with actual service endpoints
+- **Professional UI**: Modern, responsive interface for all services
+- **Authentication Management**: Automatic JWT token handling
+
+**Access the Web Application:**
+- **Main Interface**: `http://localhost:5000`
+- **Service Demo**: `http://localhost:5000/servicepages/servicedemo`
+- **API Documentation**: `http://localhost:5000/swagger`
+
+For detailed web application documentation, see [Web Application Guide](../web/WEB_APPLICATION_GUIDE.md).
 
 ## Authentication
 
