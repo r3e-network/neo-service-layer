@@ -1,152 +1,277 @@
 using Microsoft.AspNetCore.Mvc;
-using NeoServiceLayer.Services.Randomness;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Randomness;
 
 namespace NeoServiceLayer.Web.Controllers;
 
-[ApiController]
-[Route("api/[controller]")]
-public class RandomnessController : ControllerBase
+/// <summary>
+/// API controller for randomness generation operations.
+/// </summary>
+[Tags("Randomness")]
+public class RandomnessController : BaseApiController
 {
     private readonly IRandomnessService _randomnessService;
-    private readonly ILogger<RandomnessController> _logger;
 
-    public RandomnessController(IRandomnessService randomnessService, ILogger<RandomnessController> logger)
+    /// <summary>
+    /// Initializes a new instance of the <see cref="RandomnessController"/> class.
+    /// </summary>
+    /// <param name="randomnessService">The randomness service.</param>
+    /// <param name="logger">The logger.</param>
+    public RandomnessController(
+        IRandomnessService randomnessService,
+        ILogger<RandomnessController> logger) : base(logger)
     {
         _randomnessService = randomnessService;
-        _logger = logger;
     }
 
-    [HttpPost("generate")]
-    public async Task<IActionResult> GenerateRandom([FromBody] RandomGenerationRequest? request)
+    /// <summary>
+    /// Generates a random number within the specified range.
+    /// </summary>
+    /// <param name="min">The minimum value (inclusive).</param>
+    /// <param name="max">The maximum value (inclusive).</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>A random number between min and max (inclusive).</returns>
+    /// <response code="200">Random number generated successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="500">Random number generation failed.</response>
+    [HttpGet("number/{min}/{max}/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<int>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+    public async Task<IActionResult> GenerateRandomNumber(
+        [FromRoute] int min,
+        [FromRoute] int max,
+        [FromRoute] string blockchainType)
     {
         try
         {
-            if (request == null)
+            if (!IsValidBlockchainType(blockchainType))
             {
-                return BadRequest(new { error = "Invalid request body" });
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            if (request.ByteCount <= 0 || request.ByteCount > 1024)
+            if (min > max)
             {
-                return BadRequest(new { error = "Byte count must be between 1 and 1024" });
+                return BadRequest(CreateErrorResponse("Minimum value must be less than or equal to maximum value"));
             }
 
-            _logger.LogInformation("Generating {ByteCount} random bytes using SGX enclave", request.ByteCount);
+            var blockchain = ParseBlockchainType(blockchainType);
+            var randomNumber = await _randomnessService.GenerateRandomNumberAsync(min, max, blockchain);
 
-            // Generate secure random bytes using the SGX enclave service
-            var randomBytes = await _randomnessService.GenerateRandomBytesAsync(request.ByteCount, BlockchainType.NeoN3);
+            Logger.LogInformation("Generated random number {RandomNumber} between {Min} and {Max} on {BlockchainType} by user {UserId}",
+                randomNumber, min, max, blockchainType, GetCurrentUserId());
 
-            // Format according to requested format
-            var output = FormatRandomBytes(randomBytes, request.Format);
-
-            var response = new RandomGenerationResponse
-            {
-                Success = true,
-                Data = output,
-                Format = request.Format,
-                ByteCount = request.ByteCount,
-                RandomType = request.RandomType,
-                Timestamp = DateTime.UtcNow,
-                EntropySource = "SGX-Enclave-RNG"
-            };
-
-            _logger.LogInformation("Successfully generated {ByteCount} bytes in {Format} format", request.ByteCount, request.Format);
-            return Ok(response);
+            return Ok(CreateResponse(randomNumber, "Random number generated successfully"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate random numbers: {Error}", ex.Message);
-            return StatusCode(500, new { 
-                success = false, 
-                error = "Failed to generate random numbers", 
-                details = ex.Message 
-            });
+            return HandleException(ex, "GenerateRandomNumber");
         }
     }
 
-    [HttpGet("health")]
-    public IActionResult GetHealth()
+    /// <summary>
+    /// Generates random bytes of the specified length.
+    /// </summary>
+    /// <param name="length">The number of bytes to generate.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>Random bytes as a base64 string.</returns>
+    /// <response code="200">Random bytes generated successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="500">Random bytes generation failed.</response>
+    [HttpGet("bytes/{length}/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<string>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+    public async Task<IActionResult> GenerateRandomBytes(
+        [FromRoute] int length,
+        [FromRoute] string blockchainType)
     {
         try
         {
-            return Ok(new
+            if (!IsValidBlockchainType(blockchainType))
             {
-                status = "healthy",
-                service = "Randomness Service",
-                timestamp = DateTime.UtcNow,
-                enclave_status = "active",
-                entropy_quality = 0.999,
-                numbers_generated = Random.Shared.Next(10000, 100000),
-                uptime = TimeSpan.FromDays(Random.Shared.Next(1, 30)).ToString(@"dd\d")
-            });
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            if (length <= 0)
+            {
+                return BadRequest(CreateErrorResponse("Length must be greater than zero"));
+            }
+
+            if (length > 1024)
+            {
+                return BadRequest(CreateErrorResponse("Length cannot exceed 1024 bytes"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var randomBytes = await _randomnessService.GenerateRandomBytesAsync(length, blockchain);
+            var base64Bytes = Convert.ToBase64String(randomBytes);
+
+            Logger.LogInformation("Generated {Length} random bytes on {BlockchainType} by user {UserId}",
+                length, blockchainType, GetCurrentUserId());
+
+            return Ok(CreateResponse(base64Bytes, "Random bytes generated successfully"));
         }
         catch (Exception ex)
         {
-            return StatusCode(500, new { error = "Health check failed", details = ex.Message });
+            return HandleException(ex, "GenerateRandomBytes");
         }
     }
 
-    [HttpGet("generate-simple")]
-    public async Task<IActionResult> GenerateSimpleRandom()
+    /// <summary>
+    /// Generates a random string of the specified length using an optional character set.
+    /// </summary>
+    /// <param name="length">The length of the string to generate.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <param name="charset">Optional character set to use. If not provided, uses alphanumeric characters.</param>
+    /// <returns>A random string.</returns>
+    /// <response code="200">Random string generated successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="500">Random string generation failed.</response>
+    [HttpGet("string/{length}/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<string>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+    public async Task<IActionResult> GenerateRandomString(
+        [FromRoute] int length,
+        [FromRoute] string blockchainType,
+        [FromQuery] string? charset = null)
     {
         try
         {
-            _logger.LogInformation("Generating 32 random bytes using SGX enclave (simple endpoint)");
-
-            // Generate 32 bytes of random data using SGX enclave
-            var randomBytes = await _randomnessService.GenerateRandomBytesAsync(32, BlockchainType.NeoN3);
-            var hexOutput = Convert.ToHexString(randomBytes).ToLower();
-
-            return Ok(new
+            if (!IsValidBlockchainType(blockchainType))
             {
-                success = true,
-                data = hexOutput,
-                format = "hex",
-                byteCount = 32,
-                timestamp = DateTime.UtcNow,
-                entropySource = "SGX-Enclave-RNG"
-            });
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            if (length <= 0)
+            {
+                return BadRequest(CreateErrorResponse("Length must be greater than zero"));
+            }
+
+            if (length > 1000)
+            {
+                return BadRequest(CreateErrorResponse("Length cannot exceed 1000 characters"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var randomString = await _randomnessService.GenerateRandomStringAsync(length, charset, blockchain);
+
+            Logger.LogInformation("Generated random string of length {Length} on {BlockchainType} by user {UserId}",
+                length, blockchainType, GetCurrentUserId());
+
+            return Ok(CreateResponse(randomString, "Random string generated successfully"));
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to generate simple random: {Error}", ex.Message);
-            return StatusCode(500, new { 
-                success = false,
-                error = "Failed to generate random", 
-                details = ex.Message 
-            });
+            return HandleException(ex, "GenerateRandomString");
         }
     }
 
-    private static string FormatRandomBytes(byte[] bytes, string format)
+    /// <summary>
+    /// Generates a verifiable random number with cryptographic proof.
+    /// </summary>
+    /// <param name="min">The minimum value (inclusive).</param>
+    /// <param name="max">The maximum value (inclusive).</param>
+    /// <param name="seed">The seed for random generation.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>A verifiable random result containing the random number and proof.</returns>
+    /// <response code="200">Verifiable random number generated successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="500">Verifiable random number generation failed.</response>
+    [HttpPost("verifiable/{min}/{max}/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<VerifiableRandomResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+    public async Task<IActionResult> GenerateVerifiableRandomNumber(
+        [FromRoute] int min,
+        [FromRoute] int max,
+        [FromBody] string seed,
+        [FromRoute] string blockchainType)
     {
-        return format?.ToLower() switch
+        try
         {
-            "hex" => Convert.ToHexString(bytes).ToLower(),
-            "decimal" => string.Join(" ", bytes),
-            "binary" => string.Join(" ", bytes.Select(b => Convert.ToString(b, 2).PadLeft(8, '0'))),
-            "base64" => Convert.ToBase64String(bytes),
-            _ => Convert.ToHexString(bytes).ToLower()
-        };
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            if (min > max)
+            {
+                return BadRequest(CreateErrorResponse("Minimum value must be less than or equal to maximum value"));
+            }
+
+            if (string.IsNullOrEmpty(seed))
+            {
+                return BadRequest(CreateErrorResponse("Seed cannot be null or empty"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var result = await _randomnessService.GenerateVerifiableRandomNumberAsync(min, max, seed, blockchain);
+
+            Logger.LogInformation("Generated verifiable random number {RandomNumber} with request ID {RequestId} on {BlockchainType} by user {UserId}",
+                result.Value, result.RequestId, blockchainType, GetCurrentUserId());
+
+            return Ok(CreateResponse(result, "Verifiable random number generated successfully"));
+        }
+        catch (Exception ex)
+        {
+            return HandleException(ex, "GenerateVerifiableRandomNumber");
+        }
     }
-}
 
-public class RandomGenerationRequest
-{
-    public string Format { get; set; } = "hex";
-    public int ByteCount { get; set; } = 32;
-    public string RandomType { get; set; } = "secure";
-    public string? Seed { get; set; }
-}
+    /// <summary>
+    /// Verifies the authenticity of a verifiable random result.
+    /// </summary>
+    /// <param name="result">The verifiable random result to verify.</param>
+    /// <returns>The verification result.</returns>
+    /// <response code="200">Verification completed successfully.</response>
+    /// <response code="400">Invalid request parameters.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="500">Verification failed.</response>
+    [HttpPost("verify")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+    public async Task<IActionResult> VerifyRandomNumber([FromBody] VerifiableRandomResult result)
+    {
+        try
+        {
+            if (result == null)
+            {
+                return BadRequest(CreateErrorResponse("Verifiable random result cannot be null"));
+            }
 
-public class RandomGenerationResponse
-{
-    public bool Success { get; set; }
-    public string Data { get; set; } = string.Empty;
-    public string Format { get; set; } = string.Empty;
-    public int ByteCount { get; set; }
-    public string RandomType { get; set; } = string.Empty;
-    public DateTime Timestamp { get; set; }
-    public string EntropySource { get; set; } = string.Empty;
+            if (string.IsNullOrEmpty(result.Proof))
+            {
+                return BadRequest(CreateErrorResponse("Proof cannot be null or empty"));
+            }
+
+            var isValid = await _randomnessService.VerifyRandomNumberAsync(result);
+
+            Logger.LogInformation("Verified random number {RandomNumber} with request ID {RequestId}: {IsValid} by user {UserId}",
+                result.Value, result.RequestId, isValid, GetCurrentUserId());
+
+            return Ok(CreateResponse(isValid, $"Random number verification completed - Result: {(isValid ? "Valid" : "Invalid")}"));
+        }
+        catch (Exception ex)
+        {
+            return HandleException(ex, "VerifyRandomNumber");
+        }
+    }
 } 
