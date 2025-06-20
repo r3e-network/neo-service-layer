@@ -1301,5 +1301,29 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         };
     }
 
+    /// <summary>
+    /// Public implementation for fraud detection (Core interface).
+    /// </summary>
+    public async Task<CoreModels.FraudDetectionResult> DetectFraudAsync(CoreModels.FraudDetectionRequest request, BlockchainType blockchainType)
+    {
+        return await ((Core.IPatternRecognitionService)this).DetectFraudAsync(request, blockchainType);
+    }
+
+    /// <summary>
+    /// Public implementation for anomaly detection (Core interface).
+    /// </summary>
+    public async Task<CoreModels.AnomalyDetectionResult> DetectAnomaliesAsync(CoreModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
+    {
+        return await ((Core.IPatternRecognitionService)this).DetectAnomaliesAsync(request, blockchainType);
+    }
+
+    /// <summary>
+    /// Public implementation for data classification (Core interface).
+    /// </summary>
+    public async Task<CoreModels.ClassificationResult> ClassifyDataAsync(CoreModels.ClassificationRequest request, BlockchainType blockchainType)
+    {
+        return await ((Core.IPatternRecognitionService)this).ClassifyDataAsync(request, blockchainType);
+    }
+
 
 }

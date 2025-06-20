@@ -14,8 +14,8 @@ public partial class ProofOfReserveService
     /// <summary>
     /// Initializes the enclave for secure operations.
     /// </summary>
-    /// <returns>A task representing the asynchronous operation.</returns>
-    protected override async Task OnInitializeEnclaveAsync()
+    /// <returns>A task representing the asynchronous operation with a boolean result.</returns>
+    protected override async Task<bool> OnInitializeEnclaveAsync()
     {
         Logger.LogInformation("Initializing Proof of Reserve Service enclave");
         
@@ -23,6 +23,7 @@ public partial class ProofOfReserveService
         await Task.CompletedTask;
         
         Logger.LogInformation("Proof of Reserve Service enclave initialized successfully");
+        return true;
     }
 
     /// <summary>

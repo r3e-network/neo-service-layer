@@ -7,9 +7,6 @@ using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
 
-// Use Infrastructure namespace for IBlockchainClientFactory
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
-
 namespace NeoServiceLayer.Services.Oracle;
 
 /// <summary>

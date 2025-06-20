@@ -318,7 +318,7 @@ public partial class FairOrderingService
     {
         var circuitBreaker = GetOrCreateCircuitBreaker("StorageOperations", 5, TimeSpan.FromMinutes(1));
 
-        await ResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
+        await ResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync<bool>(
             async () =>
             {
                 try
@@ -331,6 +331,7 @@ public partial class FairOrderingService
                     }
 
                     Logger.LogDebug("Stored fair transaction {TransactionId}", transaction.TransactionId);
+                    return true;
                 }
                 catch (Exception ex)
                 {
