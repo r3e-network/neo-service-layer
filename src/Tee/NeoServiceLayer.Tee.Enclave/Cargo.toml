@@ -28,7 +28,7 @@ url = "2.4"
 
 # JavaScript engine for secure computation
 deno_core = "0.237"
-deno_runtime = "0.134"
+deno_runtime = "0.215"
 
 # Compression for storage
 flate2 = "1.0"
