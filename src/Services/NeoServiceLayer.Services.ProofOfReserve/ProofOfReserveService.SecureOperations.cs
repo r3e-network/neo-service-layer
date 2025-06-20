@@ -512,7 +512,7 @@ public class SecureOperationResult<T>
     public string? ErrorCode { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
 
-    public static SecureOperationResult<T> Success(T data)
+    public static SecureOperationResult<T> CreateSuccess(T data)
     {
         return new SecureOperationResult<T>
         {
@@ -521,7 +521,7 @@ public class SecureOperationResult<T>
         };
     }
 
-    public static SecureOperationResult<T> Failure(string errorMessage, string? errorCode = null)
+    public static SecureOperationResult<T> CreateFailure(string errorMessage, string? errorCode = null)
     {
         return new SecureOperationResult<T>
         {

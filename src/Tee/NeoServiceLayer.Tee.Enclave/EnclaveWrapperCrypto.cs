@@ -251,10 +251,13 @@ public partial class EnclaveWrapper
             // Convert data to bytes
             var dataBytes = Encoding.UTF8.GetBytes(data);
 
-            // Generate random IV
+            // Generate cryptographically secure random IV using SGX
             using var aes = System.Security.Cryptography.Aes.Create();
             aes.Key = keyData.SymmetricKey ?? throw new EnclaveException("Symmetric key not available");
-            aes.GenerateIV();
+            
+            // Use SGX-backed secure random for IV generation
+            var secureIV = GenerateSecureRandomBytes(aes.BlockSize / 8);
+            aes.IV = secureIV;
 
             // Encrypt the data
             using var encryptor = aes.CreateEncryptor();
@@ -448,12 +451,24 @@ public partial class EnclaveWrapper
     }
 
     /// <summary>
-    /// Gets the default encryption key for storage operations.
+    /// Gets the default encryption key for storage operations using proper key derivation.
     /// </summary>
     /// <returns>The default encryption key.</returns>
     private string GetDefaultEncryptionKey()
     {
-        return "default-enclave-storage-key";
+        // In production, this should be derived from SGX sealing key or master key
+        // For now, use a fixed salt with PBKDF2 for better security than plaintext
+        var masterPassword = Environment.GetEnvironmentVariable("ENCLAVE_MASTER_KEY") ?? "default-master-key";
+        var salt = Encoding.UTF8.GetBytes("neo-enclave-storage-salt-v1");
+        
+        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
+            masterPassword,
+            salt,
+            100000, // 100,000 iterations
+            System.Security.Cryptography.HashAlgorithmName.SHA256);
+        
+        var keyBytes = pbkdf2.GetBytes(32); // 256-bit key
+        return Convert.ToBase64String(keyBytes);
     }
 
     /// <summary>
@@ -973,14 +988,19 @@ public partial class EnclaveWrapper
         if (sourceKey.Length == targetLength)
             return sourceKey;
 
-        // Use PBKDF2 for proper key derivation
-        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
-            sourceKey, 
-            Encoding.UTF8.GetBytes("neo-service-layer-salt"), // Fixed salt for deterministic derivation
-            100000, // 100,000 iterations
-            System.Security.Cryptography.HashAlgorithmName.SHA256);
+        // Use HKDF for proper key derivation (preferred over PBKDF2 for key derivation)
+        var salt = Encoding.UTF8.GetBytes("neo-service-layer-hkdf-salt-v1");
+        var info = Encoding.UTF8.GetBytes("neo-encryption-key-derivation");
         
-        return pbkdf2.GetBytes(targetLength);
+        var derivedKey = new byte[targetLength];
+        System.Security.Cryptography.HKDF.DeriveKey(
+            System.Security.Cryptography.HashAlgorithmName.SHA256,
+            sourceKey,
+            derivedKey,
+            salt,
+            info);
+        
+        return derivedKey;
     }
 
     #endregion

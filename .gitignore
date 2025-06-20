@@ -513,3 +513,13 @@ Cargo.lock
 # Temporary scripts
 *.ps1.bak
 *.sh.bak
+
+# Environment variables and secrets
+.env
+.env.local
+.env.production
+.env.staging
+.env.development
+*.env
+appsettings.Secrets.json
+secrets.json

@@ -5,6 +5,8 @@ using Microsoft.AspNetCore.RateLimiting;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Api.Filters;
+using NeoServiceLayer.Api.Middleware;
 using Serilog;
 using System.Reflection;
 using System.Security.Claims;
@@ -52,7 +54,11 @@ var builder = WebApplication.CreateBuilder(args);
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers();
+builder.Services.AddControllers(options =>
+{
+    // Add global exception filter
+    options.Filters.Add<GlobalExceptionFilter>();
+});
 builder.Services.AddEndpointsApiExplorer();
 
 // Configure API Versioning
@@ -130,23 +136,35 @@ builder.Services.AddSwaggerGen(c =>
     c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 });
 
-// Configure JWT Authentication
+// Configure JWT Authentication with secure key management
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSettings["SecretKey"];
 var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
 var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
 
-// In production, require JWT secret key from configuration
-if (builder.Environment.IsProduction() && 
-    (string.IsNullOrEmpty(secretKey) || secretKey == "YourSuperSecretKeyThatIsAtLeast32CharactersLong!"))
-{
-    throw new InvalidOperationException("JWT secret key must be configured via environment variables in production");
-}
-
-// Fallback for development only
+// Validate JWT secret key
 if (string.IsNullOrEmpty(secretKey))
 {
-    secretKey = "YourSuperSecretKeyThatIsAtLeast32CharactersLong!";
+    throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+}
+
+// Ensure minimum key length for security
+if (secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+}
+
+// Prevent use of default/example keys
+var forbiddenKeys = new[]
+{
+    "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
+    "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024ProductionReadyCompliantWith256BitMinimumRequirementAndMoreCharacters!",
+    "default-secret-key"
+};
+
+if (forbiddenKeys.Contains(secretKey))
+{
+    throw new InvalidOperationException("Default/example JWT secret keys are not allowed. Use a secure, unique key.");
 }
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
@@ -225,9 +243,13 @@ builder.Services.AddNeoServiceLayer(builder.Configuration);
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
+
+// Add global error handling middleware (must be early in pipeline)
+app.UseMiddleware<ErrorHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    // Note: Don't use UseDeveloperExceptionPage() with our custom error handling
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {

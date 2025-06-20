@@ -9,7 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Core", "Core", "{B597606C-E
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoServiceLayer.Core", "src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj", "{0018826C-7194-4B5D-A897-49C2B875ED89}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoServiceLayer.Infrastructure", "src\Core\NeoServiceLayer.Infrastructure\NeoServiceLayer.Infrastructure.csproj", "{313501C5-7B1A-42DD-82A4-702DB16371B5}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoServiceLayer.Infrastructure.Blockchain", "src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj", "{313501C5-7B1A-42DD-82A4-702DB16371B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoServiceLayer.Infrastructure.Security", "src\Infrastructure\NeoServiceLayer.Infrastructure.Security\NeoServiceLayer.Infrastructure.Security.csproj", "{A1B2C3D4-5E6F-7A8B-9C0D-1E2F3A4B5C6D}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NeoServiceLayer.Shared", "src\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj", "{1DF93834-C1C0-4C71-9F41-8347708FC6CC}"
 EndProject

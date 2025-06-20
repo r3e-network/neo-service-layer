@@ -29,7 +29,9 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
     /// <param name="attestationService">Optional attestation service for SGX verification.</param>
     public OcclumEnclaveWrapper(ILogger<OcclumEnclaveWrapper> logger, AttestationService? attestationService = null)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(logger);
+        
+        _logger = logger;
         _attestationService = attestationService;
         _disposed = false;
         _initialized = false;

@@ -3,6 +3,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Oracle.Models;
+using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
 
@@ -43,6 +44,11 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         ILogger<OracleService> logger)
         : base("Oracle", "Confidential Oracle Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
+        ArgumentNullException.ThrowIfNull(configuration);
+        ArgumentNullException.ThrowIfNull(enclaveManager);
+        ArgumentNullException.ThrowIfNull(blockchainClientFactory);
+        ArgumentNullException.ThrowIfNull(httpClientService);
+        
         _configuration = configuration;
         _enclaveManager = enclaveManager;
         _blockchainClientFactory = blockchainClientFactory;
@@ -51,6 +57,48 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         _successCount = 0;
         _failureCount = 0;
         _lastRequestTime = DateTime.MinValue;
+        
+        InitializeService();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OracleService"/> class using the builder pattern.
+    /// </summary>
+    /// <param name="dependencies">The service dependencies.</param>
+    /// <param name="options">The service options.</param>
+    internal OracleService(
+        OracleServiceDependencies dependencies,
+        OracleServiceOptions options)
+        : base("Oracle", "Confidential Oracle Service", "1.0.0", dependencies.Logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+    {
+        ArgumentNullException.ThrowIfNull(dependencies);
+        ArgumentNullException.ThrowIfNull(options);
+        
+        _configuration = options.Configuration ?? throw new ArgumentException("Configuration is required", nameof(options));
+        _enclaveManager = dependencies.EnclaveManager;
+        _blockchainClientFactory = dependencies.BlockchainClientFactory;
+        _httpClientService = dependencies.HttpClientService;
+        _requestCount = 0;
+        _successCount = 0;
+        _failureCount = 0;
+        _lastRequestTime = DateTime.MinValue;
+        
+        InitializeService();
+    }
+
+    /// <summary>
+    /// Initializes common service settings.
+    /// </summary>
+    private void InitializeService()
+    {
+        // Add capabilities
+        AddCapability<IOracleService>();
+
+        // Add metadata
+        SetMetadata("CreatedAt", DateTime.UtcNow.ToString("o"));
+        SetMetadata("MaxDataSources", "100");
+        SetMetadata("SupportedBlockchains", "NeoN3,NeoX");
+        SetMetadata("DefaultCacheTTL", "300"); // 5 minutes
 
         // Add capabilities
         AddCapability<IOracleService>();

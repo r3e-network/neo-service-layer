@@ -17,8 +17,11 @@ public class EnclaveStorageService : IEnclaveStorageService
     /// <param name="logger">The logger.</param>
     public EnclaveStorageService(IEnclaveWrapper enclaveWrapper, ILogger<EnclaveStorageService> logger)
     {
-        _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        ArgumentNullException.ThrowIfNull(enclaveWrapper);
+        ArgumentNullException.ThrowIfNull(logger);
+        
+        _enclaveWrapper = enclaveWrapper;
+        _logger = logger;
     }
 
     /// <inheritdoc/>

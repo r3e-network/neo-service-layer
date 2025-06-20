@@ -91,24 +91,37 @@ builder.Services.AddSwaggerGen(c =>
     });
 });
 
-// Configure JWT Authentication
+// Configure JWT Authentication with secure key management
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = jwtSettings["SecretKey"];
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSettings["SecretKey"];
 var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
 var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
 
-// In production, require JWT secret key from configuration
-if (builder.Environment.IsProduction() && 
-    (string.IsNullOrEmpty(secretKey) || secretKey.Contains("YourSuperSecretKey")))
-{
-    throw new InvalidOperationException("JWT secret key must be configured via environment variables in production");
-}
-
-// Fallback for development only
+// Validate JWT secret key
 if (string.IsNullOrEmpty(secretKey))
 {
-    secretKey = "YourSuperSecretKeyThatIsAtLeast32CharactersLongForProperHMACSHA256!";
+    throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
 }
+
+// Ensure minimum key length for security
+if (secretKey.Length < 32)
+{
+    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+}
+
+// Prevent use of default/example keys
+var forbiddenKeys = new[]
+{
+    "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
+    "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024ProductionReadyCompliantWith256BitMinimumRequirementAndMoreCharacters!",
+    "default-secret-key"
+};
+
+if (forbiddenKeys.Contains(secretKey))
+{
+    throw new InvalidOperationException("Default/example JWT secret keys are not allowed. Use a secure, unique key.");
+}
+
 
 builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
     .AddJwtBearer(options =>

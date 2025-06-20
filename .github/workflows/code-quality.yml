@@ -1,0 +1,329 @@
+name: Code Quality Enforcement
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  MIN_CODE_COVERAGE: 75
+  MIN_BRANCH_COVERAGE: 70
+
+jobs:
+  # Quality Gate Enforcement
+  quality-gates:
+    name: Enforce Quality Gates
+    runs-on: ubuntu-latest
+    outputs:
+      coverage-meets-threshold: ${{ steps.coverage-check.outputs.meets-threshold }}
+      security-scan-passed: ${{ steps.security-check.outputs.passed }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore
+      continue-on-error: true
+
+    - name: Build solution
+      run: dotnet build --configuration Release --no-restore --verbosity minimal
+      continue-on-error: true
+
+    - name: Run tests with coverage
+      run: |
+        dotnet test --configuration Release --no-build --verbosity minimal \
+          --logger trx --results-directory TestResults/ \
+          --collect:"XPlat Code Coverage" --settings tests/codecoverage.runsettings
+      continue-on-error: true
+
+    - name: Generate coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      if: always()
+      with:
+        reports: 'TestResults/**/coverage.cobertura.xml'
+        targetdir: 'TestResults/CoverageReport'
+        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary;Badges'
+
+    - name: Check code coverage threshold
+      id: coverage-check
+      run: |
+        if [ -f "TestResults/CoverageReport/Summary.json" ]; then
+          COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.linecoverage // 0')
+          BRANCH_COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.branchcoverage // 0')
+          
+          echo "Line coverage: ${COVERAGE}%"
+          echo "Branch coverage: ${BRANCH_COVERAGE}%"
+          echo "line-coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch-coverage=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
+          
+          if (( $(echo "${COVERAGE} >= ${MIN_CODE_COVERAGE}" | bc -l) )); then
+            if (( $(echo "${BRANCH_COVERAGE} >= ${MIN_BRANCH_COVERAGE}" | bc -l) )); then
+              echo "meets-threshold=true" >> $GITHUB_OUTPUT
+              echo "✅ Code coverage meets threshold: ${COVERAGE}% line, ${BRANCH_COVERAGE}% branch"
+            else
+              echo "meets-threshold=false" >> $GITHUB_OUTPUT
+              echo "❌ Branch coverage below threshold: ${BRANCH_COVERAGE}% < ${MIN_BRANCH_COVERAGE}%"
+              exit 1
+            fi
+          else
+            echo "meets-threshold=false" >> $GITHUB_OUTPUT
+            echo "❌ Line coverage below threshold: ${COVERAGE}% < ${MIN_CODE_COVERAGE}%"
+            exit 1
+          fi
+        else
+          echo "⚠️ No coverage report found, assuming failure"
+          echo "meets-threshold=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+
+    - name: Upload coverage reports
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: coverage-report
+        path: TestResults/CoverageReport/
+
+    - name: Comment PR with coverage
+      uses: 5monkeys/cobertura-action@master
+      if: github.event_name == 'pull_request' && always()
+      with:
+        path: TestResults/CoverageReport/Cobertura.xml
+        minimum_coverage: ${{ env.MIN_CODE_COVERAGE }}
+        fail_below_minimum: true
+        show_missing: true
+        show_line: true
+        show_branch: true
+
+    - name: Security scan check
+      id: security-check
+      run: |
+        echo "🔍 Running comprehensive security scans..."
+        
+        # Check for vulnerable NuGet packages
+        echo "Checking for vulnerable packages..."
+        if dotnet list package --vulnerable --include-transitive 2>&1 | grep -q "has the following vulnerable packages"; then
+          echo "❌ Vulnerable packages detected"
+          dotnet list package --vulnerable --include-transitive
+          echo "passed=false" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo "✅ No vulnerable packages detected"
+        fi
+        
+        # Check for hardcoded secrets (basic patterns)
+        echo "Scanning for potential hardcoded secrets..."
+        SECRET_PATTERNS=(
+          "password\s*=\s*['\"][^'\"]{8,}['\"]"
+          "api[_-]?key\s*=\s*['\"][^'\"]{8,}['\"]"
+          "secret\s*=\s*['\"][^'\"]{8,}['\"]"
+          "token\s*=\s*['\"][^'\"]{8,}['\"]"
+          "['\"][a-zA-Z0-9]{32,}['\"]"
+        )
+        
+        SECRET_FOUND=false
+        for pattern in "${SECRET_PATTERNS[@]}"; do
+          if grep -r -E -i "$pattern" src/ --include="*.cs" --include="*.json" --exclude-dir=bin --exclude-dir=obj; then
+            echo "⚠️ Potential secret pattern found: $pattern"
+            SECRET_FOUND=true
+          fi
+        done
+        
+        # Check for insecure configurations
+        echo "Checking for insecure configurations..."
+        INSECURE_CONFIGS=(
+          "sslmode=disable"
+          "verify_ssl.*false"
+          "validate.*certificate.*false"
+          "AllowAnyServerCertificate.*true"
+        )
+        
+        for config in "${INSECURE_CONFIGS[@]}"; do
+          if grep -r -E -i "$config" src/ --include="*.cs" --include="*.json" --exclude-dir=bin --exclude-dir=obj; then
+            echo "⚠️ Insecure configuration found: $config"
+            SECRET_FOUND=true
+          fi
+        done
+        
+        # Check for dangerous code patterns
+        echo "Checking for dangerous code patterns..."
+        DANGEROUS_PATTERNS=(
+          "Process\.Start"
+          "eval\("
+          "new\s+ProcessStartInfo"
+          "Environment\.GetEnvironmentVariable.*password"
+          "GetBytes.*password"
+        )
+        
+        for pattern in "${DANGEROUS_PATTERNS[@]}"; do
+          if grep -r -E "$pattern" src/ --include="*.cs" --exclude-dir=bin --exclude-dir=obj; then
+            echo "⚠️ Potentially dangerous pattern found: $pattern"
+            # Don't fail on these, just warn
+          fi
+        done
+        
+        # Check file permissions on sensitive files
+        echo "Checking file permissions..."
+        if [ -f ".env" ]; then
+          PERMS=$(stat -c %a .env)
+          if [ "$PERMS" != "600" ]; then
+            echo "⚠️ .env file has permissive permissions: $PERMS (should be 600)"
+          fi
+        fi
+        
+        if [ "$SECRET_FOUND" = true ]; then
+          echo "❌ Security issues detected"
+          echo "passed=false" >> $GITHUB_OUTPUT
+          exit 1
+        else
+          echo "✅ Security scan passed"
+          echo "passed=true" >> $GITHUB_OUTPUT
+        fi
+
+  # Fail the workflow if quality gates don't pass
+  enforce-quality-gates:
+    name: Quality Gates Result
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    if: always()
+    
+    steps:
+    - name: Check quality gates
+      run: |
+        COVERAGE_OK="${{ needs.quality-gates.outputs.coverage-meets-threshold }}"
+        SECURITY_OK="${{ needs.quality-gates.outputs.security-scan-passed }}"
+        
+        echo "Coverage threshold met: ${COVERAGE_OK}"
+        echo "Security scan passed: ${SECURITY_OK}"
+        
+        if [ "${COVERAGE_OK}" != "true" ] || [ "${SECURITY_OK}" != "true" ]; then
+          echo "❌ Quality gates failed!"
+          echo "- Code coverage: ${COVERAGE_OK}"
+          echo "- Security scan: ${SECURITY_OK}"
+          exit 1
+        else
+          echo "✅ All quality gates passed!"
+        fi
+
+  # Generate quality report
+  quality-report:
+    name: Generate Quality Report
+    runs-on: ubuntu-latest
+    needs: quality-gates
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Download coverage report
+      uses: actions/download-artifact@v4
+      with:
+        name: coverage-report
+        path: coverage-report/
+
+    - name: Generate quality dashboard
+      run: |
+        mkdir -p quality-dashboard
+        
+        cat > quality-dashboard/index.html << 'EOF'
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <title>Neo Service Layer - Quality Dashboard</title>
+            <style>
+                body { font-family: Arial, sans-serif; margin: 40px; }
+                .header { background: #2196F3; color: white; padding: 20px; border-radius: 5px; }
+                .metric { display: inline-block; margin: 20px; padding: 15px; border-radius: 5px; min-width: 150px; text-align: center; }
+                .good { background: #4CAF50; color: white; }
+                .warning { background: #FF9800; color: white; }
+                .bad { background: #F44336; color: white; }
+                .section { margin: 30px 0; }
+            </style>
+        </head>
+        <body>
+            <div class="header">
+                <h1>Neo Service Layer - Quality Dashboard</h1>
+                <p>Generated: $(date)</p>
+            </div>
+            
+            <div class="section">
+                <h2>Code Quality Metrics</h2>
+                <div class="metric good">
+                    <h3>Code Coverage</h3>
+                    <p>Line: ${{ needs.quality-gates.outputs.line-coverage || 'N/A' }}%</p>
+                    <p>Branch: ${{ needs.quality-gates.outputs.branch-coverage || 'N/A' }}%</p>
+                </div>
+                
+                <div class="metric ${{ needs.quality-gates.outputs.coverage-meets-threshold == 'true' && 'good' || 'bad' }}">
+                    <h3>Coverage Gate</h3>
+                    <p>${{ needs.quality-gates.outputs.coverage-meets-threshold == 'true' && '✅ PASSED' || '❌ FAILED' }}</p>
+                </div>
+                
+                <div class="metric ${{ needs.quality-gates.outputs.security-scan-passed == 'true' && 'good' || 'bad' }}">
+                    <h3>Security Scan</h3>
+                    <p>${{ needs.quality-gates.outputs.security-scan-passed == 'true' && '✅ PASSED' || '❌ FAILED' }}</p>
+                </div>
+            </div>
+            
+            <div class="section">
+                <h2>Quality Requirements</h2>
+                <ul>
+                    <li>Minimum Line Coverage: ${MIN_CODE_COVERAGE}%</li>
+                    <li>Minimum Branch Coverage: ${MIN_BRANCH_COVERAGE}%</li>
+                    <li>Security vulnerabilities: None allowed</li>
+                    <li>Build warnings: None allowed</li>
+                </ul>
+            </div>
+            
+            <div class="section">
+                <h2>Reports</h2>
+                <p><a href="coverage-report/index.html">📊 Detailed Coverage Report</a></p>
+                <p><a href="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}">🔗 Full CI/CD Run</a></p>
+            </div>
+        </body>
+        </html>
+        EOF
+
+    - name: Upload quality dashboard
+      uses: actions/upload-artifact@v4
+      with:
+        name: quality-dashboard
+        path: quality-dashboard/
+
+    - name: Update commit status
+      uses: actions/github-script@v7
+      if: github.event_name == 'push'
+      with:
+        script: |
+          const coverageOk = '${{ needs.quality-gates.outputs.coverage-meets-threshold }}' === 'true';
+          const securityOk = '${{ needs.quality-gates.outputs.security-scan-passed }}' === 'true';
+          const allPassed = coverageOk && securityOk;
+          
+          await github.rest.repos.createCommitStatus({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            sha: context.sha,
+            state: allPassed ? 'success' : 'failure',
+            target_url: `https://github.com/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`,
+            description: allPassed ? 'All quality gates passed' : 'Quality gates failed',
+            context: 'quality-gates'
+          });

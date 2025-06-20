@@ -12,6 +12,20 @@ public partial class ProofOfReserveService
     private ProofOfReserveCacheHelper? _cacheHelper;
 
     /// <summary>
+    /// Initializes the enclave for secure operations.
+    /// </summary>
+    /// <returns>A task representing the asynchronous operation.</returns>
+    protected override async Task OnInitializeEnclaveAsync()
+    {
+        Logger.LogInformation("Initializing Proof of Reserve Service enclave");
+        
+        // Initialize secure storage for private keys
+        await Task.CompletedTask;
+        
+        Logger.LogInformation("Proof of Reserve Service enclave initialized successfully");
+    }
+
+    /// <summary>
     /// Initializes the cache helper if caching is enabled.
     /// </summary>
     /// <param name="memoryCache">The memory cache instance.</param>

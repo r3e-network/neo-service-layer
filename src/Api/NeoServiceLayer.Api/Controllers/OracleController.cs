@@ -417,4 +417,144 @@ public class OracleController : BaseApiController
             return StatusCode(500, CreateErrorResponse($"Failed to execute batch request: {ex.Message}"));
         }
     }
+
+    /// <summary>
+    /// Creates a subscription to receive data updates from oracle sources.
+    /// </summary>
+    /// <param name="request">The subscription request.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>The subscription details.</returns>
+    /// <response code="200">Subscription created successfully.</response>
+    /// <response code="400">Invalid request.</response>
+    /// <response code="401">Unauthorized access.</response>
+    [HttpPost("subscriptions/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<OracleSubscriptionResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    public async Task<IActionResult> CreateSubscription(
+        [FromBody] OracleSubscriptionRequest request,
+        [FromRoute] string blockchainType)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var subscription = await _oracleService.SubscribeAsync(request, blockchain);
+            
+            _logger.LogInformation("Oracle subscription created: {SubscriptionId} on {Blockchain}", 
+                subscription.SubscriptionId, blockchainType);
+            
+            return Ok(CreateSuccessResponse(subscription, "Subscription created successfully"));
+        }
+        catch (ArgumentException ex)
+        {
+            _logger.LogWarning(ex, "Invalid subscription request");
+            return BadRequest(CreateErrorResponse($"Invalid subscription request: {ex.Message}"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error creating subscription");
+            return StatusCode(500, CreateErrorResponse($"Failed to create subscription: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// Cancels an existing oracle subscription.
+    /// </summary>
+    /// <param name="subscriptionId">The subscription ID to cancel.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>Success indicator.</returns>
+    /// <response code="200">Subscription cancelled successfully.</response>
+    /// <response code="400">Invalid request.</response>
+    /// <response code="401">Unauthorized access.</response>
+    /// <response code="404">Subscription not found.</response>
+    [HttpDelete("subscriptions/{subscriptionId}/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+    public async Task<IActionResult> CancelSubscription(
+        [FromRoute] string subscriptionId,
+        [FromRoute] string blockchainType)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var request = new OracleUnsubscribeRequest { SubscriptionId = subscriptionId };
+            var success = await _oracleService.UnsubscribeAsync(request, blockchain);
+            
+            if (!success)
+            {
+                return NotFound(CreateErrorResponse($"Subscription not found: {subscriptionId}"));
+            }
+            
+            _logger.LogInformation("Oracle subscription cancelled: {SubscriptionId} on {Blockchain}", 
+                subscriptionId, blockchainType);
+            
+            return Ok(CreateSuccessResponse(success, "Subscription cancelled successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error cancelling subscription: {SubscriptionId}", subscriptionId);
+            return StatusCode(500, CreateErrorResponse($"Failed to cancel subscription: {ex.Message}"));
+        }
+    }
+
+    /// <summary>
+    /// Lists all active subscriptions for the current user.
+    /// </summary>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <param name="skip">Number of items to skip (for pagination).</param>
+    /// <param name="take">Number of items to take (for pagination).</param>
+    /// <returns>List of active subscriptions.</returns>
+    /// <response code="200">Subscriptions retrieved successfully.</response>
+    /// <response code="400">Invalid request.</response>
+    /// <response code="401">Unauthorized access.</response>
+    [HttpGet("subscriptions/{blockchainType}")]
+    [Authorize(Roles = "Admin,ServiceUser")]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<OracleSubscriptionInfo>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    public async Task<IActionResult> ListSubscriptions(
+        [FromRoute] string blockchainType,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            if (take > 100)
+            {
+                return BadRequest(CreateErrorResponse("Maximum page size is 100"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var subscriptions = await _oracleService.ListSubscriptionsAsync(blockchain, skip, take);
+            
+            _logger.LogInformation("Listed {Count} subscriptions on {Blockchain}", 
+                subscriptions.Items.Count, blockchainType);
+            
+            return Ok(CreateSuccessResponse(subscriptions, "Subscriptions retrieved successfully"));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error listing subscriptions");
+            return StatusCode(500, CreateErrorResponse($"Failed to list subscriptions: {ex.Message}"));
+        }
+    }
 }

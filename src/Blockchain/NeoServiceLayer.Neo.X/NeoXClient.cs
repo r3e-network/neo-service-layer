@@ -582,10 +582,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
                 {
                     foreach (var logToken in receipt.Logs)
                     {
-                        // Convert JToken to LogEntry
-                        var logAddress = logToken["address"]?.ToString() ?? string.Empty;
-                        var logData = logToken["data"]?.ToString() ?? string.Empty;
-                        var logTopics = logToken["topics"]?.ToObject<string[]>() ?? Array.Empty<string>();
+                        // Handle FilterLog type properly
+                        var filterLog = logToken as FilterLog;
+                        var logAddress = filterLog?.Address ?? string.Empty;
+                        var logData = filterLog?.Data ?? string.Empty;
+                        var logTopics = filterLog?.Topics ?? Array.Empty<object>();
 
                         if (string.Equals(logAddress, contractAddress, StringComparison.OrdinalIgnoreCase))
                         {

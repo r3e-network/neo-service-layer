@@ -20,7 +20,9 @@
     "RUST_BACKTRACE": "1",
     "NEO_SERVICE_MODE": "production",
     "SGX_MODE": "HW",
-    "OCCLUM_LOG_LEVEL": "info"
+    "OCCLUM_LOG_LEVEL": "info",
+    "ENCLAVE_SECURE_STORAGE_PATH": "/secure/storage",
+    "ENCLAVE_MASTER_KEY": "${ENCLAVE_MASTER_KEY}"
   },
   "metadata": {
     "version": "1.0.0",

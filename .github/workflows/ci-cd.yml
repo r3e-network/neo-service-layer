@@ -1,0 +1,471 @@
+name: Neo Service Layer CI/CD
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  # Build and Test Job
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        configuration: [Debug, Release]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Shallow clones should be disabled for better relevancy of analysis
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Setup Node.js (for Solidity contracts)
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18'
+        cache: 'npm'
+        cache-dependency-path: 'contracts/package-lock.json'
+
+    - name: Cache .NET packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/*.fsproj', '**/*.vbproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Cache Rust dependencies (for SGX enclaves)
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+          src/Tee/NeoServiceLayer.Tee.Enclave/target/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
+
+    - name: Install Rust toolchain
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        components: rustfmt, clippy
+
+    - name: Install SGX SDK (Simulation Mode)
+      run: |
+        echo "Installing Intel SGX SDK for CI simulation..."
+        wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+        echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+        sudo apt-get update
+        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev
+        echo "SGX_MODE=SIM" >> $GITHUB_ENV
+
+    - name: Restore .NET dependencies
+      run: dotnet restore
+
+    - name: Install Solidity dependencies
+      working-directory: contracts
+      run: npm ci
+
+    - name: Build solution
+      run: dotnet build --configuration ${{ matrix.configuration }} --no-restore --verbosity minimal
+
+    - name: Run unit tests
+      run: |
+        dotnet test --configuration ${{ matrix.configuration }} --no-build --verbosity minimal \
+          --logger trx --results-directory TestResults/ \
+          --collect:"XPlat Code Coverage" --settings tests/codecoverage.runsettings
+
+    - name: Run integration tests
+      env:
+        SGX_MODE: SIM
+        TEST_ENVIRONMENT: CI
+      run: |
+        dotnet test tests/Integration/ --configuration ${{ matrix.configuration }} --no-build \
+          --logger trx --results-directory TestResults/Integration/ \
+          --collect:"XPlat Code Coverage"
+
+    - name: Run Solidity tests
+      working-directory: contracts
+      run: npm test
+
+    - name: Generate code coverage report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: 'TestResults/**/coverage.cobertura.xml'
+        targetdir: 'TestResults/CoverageReport'
+        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary'
+
+    - name: Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results-${{ matrix.configuration }}
+        path: TestResults/
+
+    - name: Upload coverage reports to Codecov
+      uses: codecov/codecov-action@v4
+      with:
+        file: TestResults/CoverageReport/Cobertura.xml
+        flags: unittests
+        name: codecov-umbrella
+        fail_ci_if_error: false
+
+    - name: Check code coverage threshold
+      id: coverage-check
+      run: |
+        if [ -f "TestResults/CoverageReport/Summary.json" ]; then
+          COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.linecoverage // 0')
+          BRANCH_COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.branchcoverage // 0')
+          
+          echo "Line coverage: ${COVERAGE}%"
+          echo "Branch coverage: ${BRANCH_COVERAGE}%"
+          echo "line-coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          echo "branch-coverage=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
+          
+          if (( $(echo "${COVERAGE} >= 75" | bc -l) )); then
+            if (( $(echo "${BRANCH_COVERAGE} >= 70" | bc -l) )); then
+              echo "coverage-passed=true" >> $GITHUB_OUTPUT
+              echo "✅ Code coverage meets threshold: ${COVERAGE}% line, ${BRANCH_COVERAGE}% branch"
+            else
+              echo "coverage-passed=false" >> $GITHUB_OUTPUT
+              echo "❌ Branch coverage below threshold: ${BRANCH_COVERAGE}% < 70%"
+            fi
+          else
+            echo "coverage-passed=false" >> $GITHUB_OUTPUT
+            echo "❌ Line coverage below threshold: ${COVERAGE}% < 75%"
+          fi
+        else
+          echo "⚠️ No coverage report found"
+          echo "coverage-passed=false" >> $GITHUB_OUTPUT
+        fi
+
+    - name: Comment PR with coverage
+      uses: 5monkeys/cobertura-action@master
+      if: github.event_name == 'pull_request'
+      with:
+        path: TestResults/CoverageReport/Cobertura.xml
+        minimum_coverage: 75
+        fail_below_minimum: true
+        show_missing: true
+        show_line: true
+        show_branch: true
+
+    - name: Fail build on low coverage
+      if: steps.coverage-check.outputs.coverage-passed == 'false'
+      run: |
+        echo "❌ Build failed due to insufficient code coverage"
+        echo "Required: 75% line coverage, 70% branch coverage"
+        echo "Actual: ${{ steps.coverage-check.outputs.line-coverage }}% line, ${{ steps.coverage-check.outputs.branch-coverage }}% branch"
+        exit 1
+
+  # Security Analysis Job
+  security-analysis:
+    name: Security Analysis
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp, javascript
+
+    - name: Restore and build for CodeQL
+      run: |
+        dotnet restore
+        dotnet build --configuration Release --no-restore
+
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+
+    - name: Run security scan with Snyk
+      uses: snyk/actions/dotnet@master
+      env:
+        SNYK_TOKEN: ${{ secrets.SNYK_TOKEN }}
+      with:
+        args: --severity-threshold=high --file=NeoServiceLayer.sln
+
+    - name: Upload Snyk results to GitHub
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: snyk.sarif
+
+  # Quality Gate Job
+  quality-gate:
+    name: Quality Gate
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Install SonarCloud scanner
+      run: dotnet tool install --global dotnet-sonarscanner
+
+    - name: Begin SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: |
+        dotnet sonarscanner begin \
+          /k:"neo-service-layer" \
+          /o:"your-org" \
+          /d:sonar.login="${{ secrets.SONAR_TOKEN }}" \
+          /d:sonar.host.url="https://sonarcloud.io" \
+          /d:sonar.cs.opencover.reportsPaths="TestResults/**/coverage.opencover.xml" \
+          /d:sonar.coverage.exclusions="**/bin/**,**/obj/**,**/*Tests.cs,**/Program.cs"
+
+    - name: Build for SonarCloud
+      run: dotnet build --configuration Release
+
+    - name: End SonarCloud analysis
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      run: dotnet sonarscanner end /d:sonar.login="${{ secrets.SONAR_TOKEN }}"
+
+  # Performance Testing Job
+  performance-tests:
+    name: Performance Tests
+    runs-on: ubuntu-latest
+    needs: [build-and-test]
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Run performance tests
+      env:
+        SGX_MODE: SIM
+      run: |
+        dotnet test tests/Performance/ --configuration Release \
+          --logger "console;verbosity=detailed" \
+          --results-directory TestResults/Performance/
+
+    - name: Upload performance test results
+      uses: actions/upload-artifact@v4
+      with:
+        name: performance-test-results
+        path: TestResults/Performance/
+
+  # Docker Build Job
+  docker-build:
+    name: Build Docker Images
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-analysis]
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        platforms: linux/amd64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          SGX_MODE=SIM
+          BUILDKIT_INLINE_CACHE=1
+
+    - name: Build Ubuntu 24 development image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: Dockerfile.ubuntu24
+        platforms: linux/amd64
+        push: true
+        tags: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:ubuntu24-dev
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+
+  # Deployment Job (Development)
+  deploy-dev:
+    name: Deploy to Development
+    runs-on: ubuntu-latest
+    needs: [docker-build, quality-gate]
+    if: github.ref == 'refs/heads/develop'
+    environment: development
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to development environment
+      run: |
+        echo "Deploying to development environment..."
+        # Add your deployment logic here
+        # Example: kubectl apply -f k8s/development/
+        # Or: docker-compose -f docker-compose.dev.yml up -d
+
+    - name: Run smoke tests
+      run: |
+        echo "Running smoke tests..."
+        # Add smoke test commands here
+        sleep 30 # Wait for services to start
+        curl -f http://dev-api.neo-service-layer.com/health || exit 1
+
+    - name: Notify deployment status
+      uses: 8398a7/action-slack@v3
+      if: always()
+      with:
+        status: ${{ job.status }}
+        channel: '#deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Deployment Job (Staging)
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: [docker-build, quality-gate]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    environment: staging
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Deploy to staging environment
+      run: |
+        echo "Deploying to staging environment..."
+        # Add your deployment logic here
+
+    - name: Run end-to-end tests
+      run: |
+        echo "Running E2E tests..."
+        # Add E2E test commands here
+
+  # Release Job
+  release:
+    name: Create Release
+    runs-on: ubuntu-latest
+    needs: [deploy-staging]
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    permissions:
+      contents: write
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Generate changelog
+      id: changelog
+      uses: TriPSs/conventional-changelog-action@v4
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        output-file: 'CHANGELOG.md'
+
+    - name: Create Release
+      uses: actions/create-release@v1
+      if: ${{ steps.changelog.outputs.skipped == 'false' }}
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      with:
+        tag_name: ${{ steps.changelog.outputs.tag }}
+        release_name: ${{ steps.changelog.outputs.tag }}
+        body: ${{ steps.changelog.outputs.clean_changelog }}
+
+  # Cleanup Job
+  cleanup:
+    name: Cleanup
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-analysis, docker-build]
+    if: always()
+    
+    steps:
+    - name: Cleanup old artifacts
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const artifacts = await github.rest.actions.listWorkflowRunArtifacts({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            run_id: context.runId,
+          });
+          
+          // Keep only the latest 10 artifacts
+          const artifactsToDelete = artifacts.data.artifacts.slice(10);
+          
+          for (const artifact of artifactsToDelete) {
+            console.log(`Deleting artifact: ${artifact.name}`);
+            await github.rest.actions.deleteArtifact({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              artifact_id: artifact.id,
+            });
+          }
