@@ -96,13 +96,43 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
 
     - name: 🔧 Setup Rust
       if: ${{ matrix.ecosystem == 'rust' }}
       uses: dtolnay/rust-toolchain@stable
       with:
         toolchain: ${{ env.RUST_VERSION }}
+
+    - name: 🚀 Cache .NET dependencies
+      if: ${{ matrix.ecosystem == 'dotnet' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: 🚀 Cache Node.js dependencies
+      if: ${{ matrix.ecosystem == 'node' }}
+      uses: actions/cache@v4
+      with:
+        path: ~/.npm
+        key: ${{ runner.os }}-npm-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-npm-
+
+    - name: 🚀 Cache Rust dependencies
+      if: ${{ matrix.ecosystem == 'rust' }}
+      uses: actions/cache@v4
+      with:
+        path: |
+          ~/.cargo/bin/
+          ~/.cargo/registry/index/
+          ~/.cargo/registry/cache/
+          ~/.cargo/git/db/
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-cargo-
 
     # .NET Dependency Scanning
     - name: 🔍 Scan .NET dependencies

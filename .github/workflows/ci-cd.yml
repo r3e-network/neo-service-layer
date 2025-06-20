@@ -69,8 +69,6 @@ jobs:
       uses: actions/setup-node@v4
       with:
         node-version: ${{ env.NODE_VERSION }}
-        cache: 'npm'
-        cache-dependency-path: '**/package-lock.json'
 
     - name: 🔧 Setup Rust toolchain
       uses: dtolnay/rust-toolchain@stable
@@ -78,22 +76,38 @@ jobs:
         toolchain: ${{ env.RUST_VERSION }}
         components: rustfmt, clippy
 
-    - name: 🚀 Cache dependencies
+    - name: 🚀 Cache .NET dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: 🚀 Cache Rust dependencies
       uses: actions/cache@v4
       with:
         path: |
-          ~/.nuget/packages
           ~/.cargo/bin/
           ~/.cargo/registry/index/
           ~/.cargo/registry/cache/
           ~/.cargo/git/db/
           src/Tee/NeoServiceLayer.Tee.Enclave/target/
-          node_modules
-        key: ${{ runner.os }}-deps-${{ hashFiles('**/*.csproj', '**/Cargo.lock', '**/package-lock.json', 'global.json') }}
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
         restore-keys: |
-          ${{ runner.os }}-deps-
-          ${{ runner.os }}-nuget-
           ${{ runner.os }}-cargo-
+
+    - name: 🚀 Cache Node.js dependencies
+      uses: actions/cache@v4
+      if: hashFiles('**/package-lock.json') != ''
+      with:
+        path: |
+          ~/.npm
+          node_modules
+          contracts/node_modules
+        key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-node-
 
     - name: 🔒 Install SGX SDK (Simulation Mode)
       run: |
@@ -112,10 +126,16 @@ jobs:
         echo "::endgroup::"
         
         echo "::group::Installing Solidity dependencies"
-        if [ -d "contracts" ]; then
-          cd contracts && npm ci --silent
+        if [ -d "contracts" ] && [ -f "contracts/package.json" ]; then
+          cd contracts
+          if [ -f "package-lock.json" ]; then
+            npm ci --silent
+          else
+            npm install --silent
+          fi
+          echo "Solidity dependencies installed"
         else
-          echo "No contracts directory found, skipping Solidity dependencies"
+          echo "No contracts directory or package.json found, skipping Solidity dependencies"
         fi
         echo "::endgroup::"
 
