@@ -342,6 +342,9 @@ jobs:
     needs: [dependency-scan]
     if: always()
     
+    env:
+      SLACK_WEBHOOK: ${{ secrets.SLACK_WEBHOOK }}
+    
     steps:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
@@ -397,9 +400,23 @@ jobs:
         echo "## 📊 Scan Results" >> $GITHUB_STEP_SUMMARY
         echo "| Ecosystem | Status | Details |" >> $GITHUB_STEP_SUMMARY
         echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| .NET | ${{ needs.dependency-scan.outputs.dotnet-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | NuGet packages |" >> $GITHUB_STEP_SUMMARY
-        echo "| Node.js | ${{ needs.dependency-scan.outputs.node-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | npm packages |" >> $GITHUB_STEP_SUMMARY
-        echo "| Rust | ${{ needs.dependency-scan.outputs.rust-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | Cargo dependencies |" >> $GITHUB_STEP_SUMMARY
+        if [ "${{ needs.dependency-scan.outputs.dotnet-vulnerabilities }}" = "true" ]; then
+          echo "| .NET | ❌ Vulnerabilities Found | NuGet packages |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| .NET | ✅ Clean | NuGet packages |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.dependency-scan.outputs.node-vulnerabilities }}" = "true" ]; then
+          echo "| Node.js | ❌ Vulnerabilities Found | npm packages |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Node.js | ✅ Clean | npm packages |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        if [ "${{ needs.dependency-scan.outputs.rust-vulnerabilities }}" = "true" ]; then
+          echo "| Rust | ❌ Vulnerabilities Found | Cargo dependencies |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Rust | ✅ Clean | Cargo dependencies |" >> $GITHUB_STEP_SUMMARY
+        fi
         echo "" >> $GITHUB_STEP_SUMMARY
         
         if [ "${{ steps.aggregate.outputs.has-vulnerabilities }}" = "true" ]; then
@@ -439,9 +456,9 @@ jobs:
           
           | Ecosystem | Status |
           |-----------|--------|
-          | .NET | ${{ needs.dependency-scan.outputs.dotnet-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
-          | Node.js | ${{ needs.dependency-scan.outputs.node-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
-          | Rust | ${{ needs.dependency-scan.outputs.rust-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
+          | .NET | ${{ needs.dependency-scan.outputs.dotnet-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} |
+          | Node.js | ${{ needs.dependency-scan.outputs.node-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} |
+          | Rust | ${{ needs.dependency-scan.outputs.rust-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} |
           
           ### 🔧 Action Required
           
@@ -500,7 +517,7 @@ jobs:
           }
 
     - name: 📢 Slack notification
-      if: ${{ steps.aggregate.outputs.has-vulnerabilities == 'true' && secrets.SLACK_WEBHOOK }}
+      if: ${{ steps.aggregate.outputs.has-vulnerabilities == 'true' && env.SLACK_WEBHOOK != '' }}
       uses: 8398a7/action-slack@v3
       with:
         status: failure
