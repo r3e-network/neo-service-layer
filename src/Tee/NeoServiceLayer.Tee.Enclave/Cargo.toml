@@ -18,7 +18,7 @@ env_logger = "0.10"
 # Cryptographic dependencies
 ring = "0.17"
 sha2 = "0.10"
-secp256k1 = { version = "0.28", features = ["recovery", "global-context"] }
+secp256k1 = { version = "0.31", features = ["recovery", "global-context"] }
 ed25519-dalek = "2.0"
 hex = "0.4"
 
