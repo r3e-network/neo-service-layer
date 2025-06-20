@@ -182,7 +182,7 @@ jobs:
 
     - name: 📊 Generate coverage report
       if: ${{ matrix.collect_coverage && !github.event.inputs.skip_tests }}
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.4.8
       with:
         reports: 'TestResults/**/coverage.cobertura.xml'
         targetdir: 'TestResults/CoverageReport'
