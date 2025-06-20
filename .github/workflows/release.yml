@@ -1,0 +1,534 @@
+name: 🚀 Release & Publish Pipeline
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+      - 'v*.*.*-*'
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g., v1.2.3)'
+        required: true
+        type: string
+      prerelease:
+        description: 'Mark as pre-release'
+        required: false
+        default: false
+        type: boolean
+      draft:
+        description: 'Create as draft release'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '20'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+permissions:
+  contents: write
+  packages: write
+  id-token: write
+  security-events: write
+
+jobs:
+  # 🔍 Pre-Release Validation
+  validate-release:
+    name: 🔍 Validate Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is-prerelease: ${{ steps.version.outputs.is-prerelease }}
+      should-publish: ${{ steps.validation.outputs.should-publish }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🏷️ Extract version information
+      id: version
+      run: |
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          VERSION="${{ github.event.inputs.version }}"
+        else
+          VERSION="${{ github.ref_name }}"
+        fi
+        
+        echo "version=${VERSION}" >> $GITHUB_OUTPUT
+        echo "Version: ${VERSION}"
+        
+        # Check if this is a pre-release
+        if [[ "$VERSION" =~ -[a-zA-Z] ]]; then
+          echo "is-prerelease=true" >> $GITHUB_OUTPUT
+          echo "Pre-release detected"
+        else
+          echo "is-prerelease=false" >> $GITHUB_OUTPUT
+          echo "Stable release detected"
+        fi
+
+    - name: ✅ Validate release prerequisites
+      id: validation
+      run: |
+        echo "::group::Validating release prerequisites"
+        
+        # Check if tag already exists (for workflow_dispatch)
+        if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+          if git tag | grep -q "^${{ steps.version.outputs.version }}$"; then
+            echo "::error::Tag ${{ steps.version.outputs.version }} already exists"
+            exit 1
+          fi
+        fi
+        
+        # Validate version format
+        if [[ ! "${{ steps.version.outputs.version }}" =~ ^v[0-9]+\.[0-9]+\.[0-9]+(-[a-zA-Z0-9.-]+)?$ ]]; then
+          echo "::error::Invalid version format. Expected: v1.2.3 or v1.2.3-alpha.1"
+          exit 1
+        fi
+        
+        # Check if we're on main/master branch for stable releases
+        if [ "${{ steps.version.outputs.is-prerelease }}" = "false" ]; then
+          CURRENT_BRANCH=$(git branch --show-current || echo "")
+          if [[ "$CURRENT_BRANCH" != "main" && "$CURRENT_BRANCH" != "master" ]]; then
+            echo "::warning::Stable release should be from main/master branch"
+          fi
+        fi
+        
+        echo "should-publish=true" >> $GITHUB_OUTPUT
+        echo "✅ Release validation passed"
+        echo "::endgroup::"
+
+  # 🏗️ Build Release Artifacts
+  build-artifacts:
+    name: 🏗️ Build Release Artifacts
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [validate-release]
+    if: ${{ needs.validate-release.outputs.should-publish == 'true' }}
+    
+    strategy:
+      matrix:
+        target: [linux-x64, win-x64, osx-x64, osx-arm64]
+        include:
+          - target: linux-x64
+            os: ubuntu-latest
+            runtime: linux-x64
+          - target: win-x64
+            os: ubuntu-latest
+            runtime: win-x64
+          - target: osx-x64
+            os: ubuntu-latest
+            runtime: osx-x64
+          - target: osx-arm64
+            os: ubuntu-latest
+            runtime: osx-arm64
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 🚀 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-release-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-release-
+          ${{ runner.os }}-nuget-
+
+    - name: 📦 Restore dependencies
+      run: dotnet restore
+
+    - name: 🏗️ Build release binaries
+      env:
+        VERSION: ${{ needs.validate-release.outputs.version }}
+      run: |
+        echo "::group::Building release binaries for ${{ matrix.runtime }}"
+        
+        # Update version in project files
+        VERSION_NUMBER=${VERSION#v}  # Remove 'v' prefix
+        
+        dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+          --configuration Release \
+          --runtime ${{ matrix.runtime }} \
+          --self-contained true \
+          --output ./artifacts/${{ matrix.target }}/ \
+          --property:PublishSingleFile=true \
+          --property:Version=${VERSION_NUMBER} \
+          --property:AssemblyVersion=${VERSION_NUMBER} \
+          --property:FileVersion=${VERSION_NUMBER} \
+          --verbosity minimal
+        
+        echo "::endgroup::"
+
+    - name: 📦 Package artifacts
+      run: |
+        echo "::group::Packaging artifacts"
+        cd artifacts/${{ matrix.target }}/
+        
+        if [[ "${{ matrix.target }}" == win-* ]]; then
+          zip -r ../neo-service-layer-${{ needs.validate-release.outputs.version }}-${{ matrix.target }}.zip .
+        else
+          tar -czf ../neo-service-layer-${{ needs.validate-release.outputs.version }}-${{ matrix.target }}.tar.gz .
+        fi
+        
+        cd ../..
+        echo "::endgroup::"
+
+    - name: 📤 Upload build artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: release-${{ matrix.target }}-${{ github.run_number }}
+        path: artifacts/neo-service-layer-${{ needs.validate-release.outputs.version }}-${{ matrix.target }}.*
+        retention-days: 30
+
+  # 📦 Build and Publish NuGet Packages
+  publish-nuget:
+    name: 📦 Publish NuGet Packages
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    needs: [validate-release]
+    if: ${{ needs.validate-release.outputs.should-publish == 'true' }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 🚀 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-pack-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-pack-
+          ${{ runner.os }}-nuget-
+
+    - name: 📦 Restore dependencies
+      run: dotnet restore
+
+    - name: 🏗️ Build solution
+      env:
+        VERSION: ${{ needs.validate-release.outputs.version }}
+      run: |
+        VERSION_NUMBER=${VERSION#v}  # Remove 'v' prefix
+        dotnet build --configuration Release --no-restore \
+          --property:Version=${VERSION_NUMBER} \
+          --property:AssemblyVersion=${VERSION_NUMBER} \
+          --property:FileVersion=${VERSION_NUMBER}
+
+    - name: 📦 Create NuGet packages
+      env:
+        VERSION: ${{ needs.validate-release.outputs.version }}
+      run: |
+        echo "::group::Creating NuGet packages"
+        VERSION_NUMBER=${VERSION#v}  # Remove 'v' prefix
+        
+        # Pack all library projects (exclude test and API projects)
+        PACK_PROJECTS=(
+          "src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj"
+          "src/Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj"
+          "src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj"
+          "src/Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj"
+          "src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj"
+        )
+        
+        mkdir -p ./packages
+        
+        for project in "${PACK_PROJECTS[@]}"; do
+          if [ -f "$project" ]; then
+            echo "Packing $project"
+            dotnet pack "$project" \
+              --configuration Release \
+              --no-build \
+              --output ./packages \
+              --property:Version=${VERSION_NUMBER} \
+              --property:PackageVersion=${VERSION_NUMBER}
+          fi
+        done
+        
+        echo "::endgroup::"
+
+    - name: 📤 Upload NuGet packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: nuget-packages-${{ github.run_number }}
+        path: packages/*.nupkg
+        retention-days: 30
+
+    - name: 🚀 Publish to NuGet.org
+      if: ${{ !github.event.inputs.draft }}
+      env:
+        NUGET_API_KEY: ${{ secrets.NUGET_API_KEY }}
+      run: |
+        if [ -n "$NUGET_API_KEY" ]; then
+          echo "::group::Publishing to NuGet.org"
+          dotnet nuget push packages/*.nupkg \
+            --api-key $NUGET_API_KEY \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate
+          echo "::endgroup::"
+        else
+          echo "⚠️ NUGET_API_KEY not configured, skipping NuGet publish"
+        fi
+
+    - name: 🚀 Publish to GitHub Packages
+      run: |
+        echo "::group::Publishing to GitHub Packages"
+        dotnet nuget add source --username ${{ github.actor }} --password ${{ secrets.GITHUB_TOKEN }} --store-password-in-clear-text --name github "https://nuget.pkg.github.com/${{ github.repository_owner }}/index.json"
+        
+        dotnet nuget push packages/*.nupkg \
+          --api-key ${{ secrets.GITHUB_TOKEN }} \
+          --source "github" \
+          --skip-duplicate
+        echo "::endgroup::"
+
+  # 🐳 Build and Publish Docker Images
+  publish-docker:
+    name: 🐳 Publish Docker Images
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    needs: [validate-release]
+    if: ${{ needs.validate-release.outputs.should-publish == 'true' }}
+    
+    strategy:
+      matrix:
+        variant: [api, worker]
+        include:
+          - variant: api
+            dockerfile: Dockerfile
+            context: .
+            image-suffix: ""
+          - variant: worker
+            dockerfile: Dockerfile.worker
+            context: .
+            image-suffix: "-worker"
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 🔧 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: 📝 Log in to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ghcr.io
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: 📝 Log in to Docker Hub
+      if: ${{ secrets.DOCKER_HUB_USERNAME && secrets.DOCKER_HUB_TOKEN }}
+      uses: docker/login-action@v3
+      with:
+        username: ${{ secrets.DOCKER_HUB_USERNAME }}
+        password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+    - name: 🏷️ Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: |
+          ghcr.io/${{ github.repository }}${{ matrix.image-suffix }}
+          ${{ secrets.DOCKER_HUB_USERNAME && format('{0}/neo-service-layer{1}', secrets.DOCKER_HUB_USERNAME, matrix.image-suffix) || '' }}
+        tags: |
+          type=ref,event=tag
+          type=semver,pattern={{version}}
+          type=semver,pattern={{major}}.{{minor}}
+          type=semver,pattern={{major}}
+        labels: |
+          org.opencontainers.image.title=Neo Service Layer ${{ matrix.variant }}
+          org.opencontainers.image.description=Enterprise-grade blockchain service layer for Neo (${{ matrix.variant }})
+          org.opencontainers.image.vendor=Neo Project
+          org.opencontainers.image.version=${{ needs.validate-release.outputs.version }}
+          org.opencontainers.image.licenses=MIT
+
+    - name: 🐳 Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ matrix.context }}
+        file: ${{ matrix.dockerfile }}
+        platforms: linux/amd64,linux/arm64
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha,scope=${{ matrix.variant }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.variant }}
+        build-args: |
+          VERSION=${{ needs.validate-release.outputs.version }}
+          BUILD_DATE=${{ github.event.head_commit.timestamp }}
+          VCS_REF=${{ github.sha }}
+        provenance: true
+        sbom: true
+
+  # 📝 Generate Release Notes
+  generate-changelog:
+    name: 📝 Generate Release Notes
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [validate-release]
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 📝 Generate changelog
+      id: changelog
+      uses: mikepenz/release-changelog-builder-action@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        configuration: |
+          {
+            "categories": [
+              {
+                "title": "## 🚀 Features",
+                "labels": ["feature", "enhancement"]
+              },
+              {
+                "title": "## 🐛 Bug Fixes", 
+                "labels": ["bug", "fix"]
+              },
+              {
+                "title": "## 🔒 Security",
+                "labels": ["security"]
+              },
+              {
+                "title": "## 📚 Documentation",
+                "labels": ["documentation", "docs"]
+              },
+              {
+                "title": "## 🧹 Housekeeping",
+                "labels": ["chore", "dependencies"]
+              }
+            ],
+            "template": "#{{CHANGELOG}}\n\n## 📦 Assets\n\n- Docker Images: `ghcr.io/${{ github.repository }}:${{ needs.validate-release.outputs.version }}`\n- NuGet Packages: Available on [NuGet.org](https://nuget.org/packages?q=NeoServiceLayer)\n\n## 🔗 Links\n\n- [Full Changelog](https://github.com/${{ github.repository }}/compare/{{FROM_TAG}}...{{TO_TAG}})\n- [Documentation](https://github.com/${{ github.repository }}/blob/main/README.md)",
+            "pr_template": "- #{{TITLE}} ##{{NUMBER}} (@#{{AUTHOR}})"
+          }
+        fromTag: ${{ github.event.before }}
+        toTag: ${{ needs.validate-release.outputs.version }}
+
+  # 🎉 Create GitHub Release
+  create-release:
+    name: 🎉 Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [validate-release, build-artifacts, publish-nuget, publish-docker, generate-changelog]
+    if: ${{ always() && needs.validate-release.outputs.should-publish == 'true' }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📥 Download all artifacts
+      uses: actions/download-artifact@v4
+      with:
+        path: ./release-artifacts/
+
+    - name: 📦 Prepare release assets
+      run: |
+        echo "::group::Preparing release assets"
+        mkdir -p ./release-assets/
+        
+        # Move binary artifacts
+        find ./release-artifacts/ -name "neo-service-layer-*" -type f | while read file; do
+          mv "$file" ./release-assets/
+        done
+        
+        # Create checksums
+        cd ./release-assets/
+        sha256sum * > checksums.txt
+        cd ..
+        
+        echo "Release assets:"
+        ls -la ./release-assets/
+        echo "::endgroup::"
+
+    - name: 🎉 Create GitHub Release
+      uses: softprops/action-gh-release@v2
+      with:
+        tag_name: ${{ needs.validate-release.outputs.version }}
+        name: "Neo Service Layer ${{ needs.validate-release.outputs.version }}"
+        body: ${{ needs.generate-changelog.outputs.changelog }}
+        files: ./release-assets/*
+        prerelease: ${{ needs.validate-release.outputs.is-prerelease == 'true' || github.event.inputs.prerelease == 'true' }}
+        draft: ${{ github.event.inputs.draft == 'true' }}
+        generate_release_notes: false
+        make_latest: ${{ needs.validate-release.outputs.is-prerelease == 'false' }}
+        token: ${{ secrets.GITHUB_TOKEN }}
+
+  # 📢 Post-Release Notifications
+  notify-release:
+    name: 📢 Post-Release Notifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [validate-release, create-release]
+    if: ${{ always() && needs.create-release.result == 'success' }}
+    
+    steps:
+    - name: 📢 Notify Slack
+      if: ${{ secrets.SLACK_WEBHOOK }}
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        channel: '#releases'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author,took
+        custom_payload: |
+          {
+            attachments: [{
+              color: 'good',
+              blocks: [{
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `🎉 *Neo Service Layer ${{ needs.validate-release.outputs.version }}* has been released!\n\n📦 [View Release](https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }})\n🐳 \`docker pull ghcr.io/${{ github.repository }}:${{ needs.validate-release.outputs.version }}\``
+                }
+              }]
+            }]
+          }
+
+    - name: 📊 Update release metrics
+      run: |
+        echo "# 🎉 Release Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Version:** ${{ needs.validate-release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Type:** ${{ needs.validate-release.outputs.is-prerelease == 'true' && 'Pre-release' || 'Stable Release' }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Release Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 📦 Published Assets" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Binary packages for multiple platforms" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ NuGet packages" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ Docker images (multi-arch)" >> $GITHUB_STEP_SUMMARY
+        echo "- ✅ GitHub release with changelog" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔗 Quick Links" >> $GITHUB_STEP_SUMMARY
+        echo "- [📋 Release Notes](https://github.com/${{ github.repository }}/releases/tag/${{ needs.validate-release.outputs.version }})" >> $GITHUB_STEP_SUMMARY
+        echo "- [🐳 Docker Image](https://github.com/${{ github.repository }}/pkgs/container/neo-service-layer)" >> $GITHUB_STEP_SUMMARY
+        echo "- [📦 NuGet Packages](https://nuget.org/packages?q=NeoServiceLayer)" >> $GITHUB_STEP_SUMMARY

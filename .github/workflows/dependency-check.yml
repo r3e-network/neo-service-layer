@@ -1,0 +1,500 @@
+name: 🛡️ Dependency Security Check
+
+on:
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  push:
+    branches: [ main, master, develop ]
+    paths:
+      - '**/packages.lock.json'
+      - '**/*.csproj'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/Cargo.lock'
+      - 'global.json'
+  pull_request:
+    branches: [ main, master ]
+    paths:
+      - '**/packages.lock.json'
+      - '**/*.csproj'
+      - '**/package.json'
+      - '**/package-lock.json'
+      - '**/Cargo.lock'
+      - 'global.json'
+  workflow_dispatch:
+    inputs:
+      full_scan:
+        description: 'Run comprehensive dependency scan'
+        required: false
+        default: false
+        type: boolean
+      create_issue:
+        description: 'Create GitHub issue for vulnerabilities'
+        required: false
+        default: true
+        type: boolean
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  NODE_VERSION: '20'
+  RUST_VERSION: 'stable'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+permissions:
+  contents: read
+  security-events: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  # 🔍 Dependency Vulnerability Scan
+  dependency-scan:
+    name: 🔍 Dependency Scan (${{ matrix.ecosystem }})
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    strategy:
+      fail-fast: false
+      matrix:
+        ecosystem: [dotnet, node, rust]
+        include:
+          - ecosystem: dotnet
+            name: ".NET Dependencies"
+            scan-command: "scan-dotnet"
+            report-format: "sarif"
+          - ecosystem: node
+            name: "Node.js Dependencies"
+            scan-command: "scan-node"
+            report-format: "sarif"
+          - ecosystem: rust
+            name: "Rust Dependencies"
+            scan-command: "scan-rust"
+            report-format: "sarif"
+    
+    outputs:
+      dotnet-vulnerabilities: ${{ steps.dotnet-scan.outputs.vulnerabilities-found }}
+      node-vulnerabilities: ${{ steps.node-scan.outputs.vulnerabilities-found }}
+      rust-vulnerabilities: ${{ steps.rust-scan.outputs.vulnerabilities-found }}
+      total-vulnerabilities: ${{ steps.summary.outputs.total-vulnerabilities }}
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔧 Setup development environment
+      if: ${{ matrix.ecosystem == 'dotnet' }}
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 🔧 Setup Node.js
+      if: ${{ matrix.ecosystem == 'node' }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ env.NODE_VERSION }}
+        cache: 'npm'
+
+    - name: 🔧 Setup Rust
+      if: ${{ matrix.ecosystem == 'rust' }}
+      uses: dtolnay/rust-toolchain@stable
+      with:
+        toolchain: ${{ env.RUST_VERSION }}
+
+    # .NET Dependency Scanning
+    - name: 🔍 Scan .NET dependencies
+      id: dotnet-scan
+      if: ${{ matrix.ecosystem == 'dotnet' }}
+      run: |
+        echo "::group::Scanning .NET dependencies for vulnerabilities"
+        
+        VULNERABILITIES_FOUND=false
+        VULN_COUNT=0
+        
+        # Check for vulnerable NuGet packages
+        echo "🔍 Checking for vulnerable NuGet packages..."
+        if dotnet list package --vulnerable --include-transitive > vulnerable-packages.txt 2>&1; then
+          if grep -q "has the following vulnerable packages" vulnerable-packages.txt; then
+            echo "❌ Vulnerable packages detected:"
+            cat vulnerable-packages.txt
+            VULNERABILITIES_FOUND=true
+            VULN_COUNT=$(grep -c "Severity:" vulnerable-packages.txt || echo "0")
+          else
+            echo "✅ No vulnerable packages detected"
+          fi
+        else
+          echo "⚠️ Failed to check for vulnerable packages"
+        fi
+        
+        # Check for deprecated packages
+        echo "🔍 Checking for deprecated packages..."
+        if dotnet list package --deprecated > deprecated-packages.txt 2>&1; then
+          if grep -q "has the following deprecated packages" deprecated-packages.txt; then
+            echo "⚠️ Deprecated packages detected:"
+            cat deprecated-packages.txt
+          else
+            echo "✅ No deprecated packages detected"
+          fi
+        fi
+        
+        # Check for outdated packages
+        echo "🔍 Checking for outdated packages..."
+        if dotnet list package --outdated > outdated-packages.txt 2>&1; then
+          if grep -q "has the following updates" outdated-packages.txt; then
+            echo "📦 Outdated packages detected:"
+            cat outdated-packages.txt
+          else
+            echo "✅ All packages are up to date"
+          fi
+        fi
+        
+        echo "vulnerabilities-found=${VULNERABILITIES_FOUND}" >> $GITHUB_OUTPUT
+        echo "vulnerability-count=${VULN_COUNT}" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+
+    # Node.js Dependency Scanning
+    - name: 🔍 Scan Node.js dependencies
+      id: node-scan
+      if: ${{ matrix.ecosystem == 'node' }}
+      run: |
+        echo "::group::Scanning Node.js dependencies for vulnerabilities"
+        
+        VULNERABILITIES_FOUND=false
+        VULN_COUNT=0
+        
+        # Find package.json files
+        PACKAGE_JSON_FILES=$(find . -name "package.json" -not -path "*/node_modules/*" | head -10)
+        
+        if [ -z "$PACKAGE_JSON_FILES" ]; then
+          echo "✅ No package.json files found"
+          echo "vulnerabilities-found=false" >> $GITHUB_OUTPUT
+          echo "vulnerability-count=0" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          exit 0
+        fi
+        
+        for package_file in $PACKAGE_JSON_FILES; do
+          echo "📦 Checking $(dirname $package_file)"
+          cd "$(dirname $package_file)"
+          
+          # Install dependencies if needed
+          if [ -f "package-lock.json" ]; then
+            npm ci --silent 2>/dev/null || npm install --silent 2>/dev/null || true
+          else
+            npm install --silent 2>/dev/null || true
+          fi
+          
+          # Run audit
+          if npm audit --audit-level=moderate --json > audit-result.json 2>/dev/null; then
+            AUDIT_VULNS=$(cat audit-result.json | jq -r '.metadata.vulnerabilities.total // 0')
+            if [ "$AUDIT_VULNS" -gt 0 ]; then
+              echo "❌ Found $AUDIT_VULNS vulnerabilities in $(dirname $package_file)"
+              npm audit --audit-level=moderate
+              VULNERABILITIES_FOUND=true
+              VULN_COUNT=$((VULN_COUNT + AUDIT_VULNS))
+            else
+              echo "✅ No vulnerabilities found in $(dirname $package_file)"
+            fi
+          else
+            echo "⚠️ Could not run audit for $(dirname $package_file)"
+          fi
+          
+          cd - > /dev/null
+        done
+        
+        echo "vulnerabilities-found=${VULNERABILITIES_FOUND}" >> $GITHUB_OUTPUT
+        echo "vulnerability-count=${VULN_COUNT}" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+
+    # Rust Dependency Scanning
+    - name: 🔍 Scan Rust dependencies
+      id: rust-scan
+      if: ${{ matrix.ecosystem == 'rust' }}
+      run: |
+        echo "::group::Scanning Rust dependencies for vulnerabilities"
+        
+        VULNERABILITIES_FOUND=false
+        VULN_COUNT=0
+        
+        # Find Cargo.lock files
+        CARGO_LOCK_FILES=$(find . -name "Cargo.lock" | head -10)
+        
+        if [ -z "$CARGO_LOCK_FILES" ]; then
+          echo "✅ No Cargo.lock files found"
+          echo "vulnerabilities-found=false" >> $GITHUB_OUTPUT
+          echo "vulnerability-count=0" >> $GITHUB_OUTPUT
+          echo "::endgroup::"
+          exit 0
+        fi
+        
+        # Install cargo-audit
+        cargo install cargo-audit --quiet 2>/dev/null || echo "cargo-audit already installed"
+        
+        for cargo_file in $CARGO_LOCK_FILES; do
+          echo "📦 Checking $(dirname $cargo_file)"
+          cd "$(dirname $cargo_file)"
+          
+          if cargo audit --json > audit-result.json 2>/dev/null; then
+            AUDIT_VULNS=$(cat audit-result.json | jq -r '.vulnerabilities.count // 0')
+            if [ "$AUDIT_VULNS" -gt 0 ]; then
+              echo "❌ Found $AUDIT_VULNS vulnerabilities in $(dirname $cargo_file)"
+              cargo audit
+              VULNERABILITIES_FOUND=true
+              VULN_COUNT=$((VULN_COUNT + AUDIT_VULNS))
+            else
+              echo "✅ No vulnerabilities found in $(dirname $cargo_file)"
+            fi
+          else
+            echo "⚠️ Could not run audit for $(dirname $cargo_file)"
+          fi
+          
+          cd - > /dev/null
+        done
+        
+        echo "vulnerabilities-found=${VULNERABILITIES_FOUND}" >> $GITHUB_OUTPUT
+        echo "vulnerability-count=${VULN_COUNT}" >> $GITHUB_OUTPUT
+        echo "::endgroup::"
+
+    # Advanced Security Scanning (if requested)
+    - name: 🔒 Advanced security scan
+      if: ${{ github.event.inputs.full_scan == 'true' || github.event_name == 'schedule' }}
+      run: |
+        echo "::group::Running advanced security scan"
+        
+        # OWASP Dependency Check
+        echo "🔍 Running OWASP Dependency Check..."
+        
+        # Download OWASP Dependency Check
+        wget -q https://github.com/jeremylong/DependencyCheck/releases/download/v8.4.0/dependency-check-8.4.0-release.zip
+        unzip -q dependency-check-8.4.0-release.zip
+        
+        # Run dependency check
+        ./dependency-check/bin/dependency-check.sh \
+          --project "Neo Service Layer" \
+          --scan . \
+          --exclude "**/node_modules/**" \
+          --exclude "**/bin/**" \
+          --exclude "**/obj/**" \
+          --exclude "**/target/**" \
+          --format ALL \
+          --out ./dependency-check-reports/ \
+          --suppression dependency-check-suppressions.xml 2>/dev/null || true
+        
+        # Check results
+        if [ -f "./dependency-check-reports/dependency-check-report.json" ]; then
+          DEPS_VULNS=$(cat ./dependency-check-reports/dependency-check-report.json | jq -r '.dependencies[].vulnerabilities // [] | length' | awk '{sum += $1} END {print sum+0}')
+          echo "📊 OWASP Dependency Check found $DEPS_VULNS vulnerabilities"
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 📤 Upload scan results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: dependency-scan-${{ matrix.ecosystem }}-${{ github.run_number }}
+        path: |
+          vulnerable-packages.txt
+          deprecated-packages.txt
+          outdated-packages.txt
+          audit-result.json
+          dependency-check-reports/
+        retention-days: 30
+
+  # 📊 Aggregate Results & Reporting
+  security-report:
+    name: 📊 Security Report & Notifications
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [dependency-scan]
+    if: always()
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+
+    - name: 📊 Aggregate scan results
+      id: aggregate
+      run: |
+        echo "::group::Aggregating scan results"
+        
+        DOTNET_VULNS="${{ needs.dependency-scan.outputs.dotnet-vulnerabilities }}"
+        NODE_VULNS="${{ needs.dependency-scan.outputs.node-vulnerabilities }}"
+        RUST_VULNS="${{ needs.dependency-scan.outputs.rust-vulnerabilities }}"
+        
+        TOTAL_ISSUES=0
+        AFFECTED_ECOSYSTEMS=()
+        
+        if [ "$DOTNET_VULNS" = "true" ]; then
+          AFFECTED_ECOSYSTEMS+=(".NET")
+          TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+        fi
+        
+        if [ "$NODE_VULNS" = "true" ]; then
+          AFFECTED_ECOSYSTEMS+=("Node.js")
+          TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+        fi
+        
+        if [ "$RUST_VULNS" = "true" ]; then
+          AFFECTED_ECOSYSTEMS+=("Rust")
+          TOTAL_ISSUES=$((TOTAL_ISSUES + 1))
+        fi
+        
+        echo "total-issues=${TOTAL_ISSUES}" >> $GITHUB_OUTPUT
+        echo "affected-ecosystems=${AFFECTED_ECOSYSTEMS[*]}" >> $GITHUB_OUTPUT
+        
+        if [ $TOTAL_ISSUES -gt 0 ]; then
+          echo "has-vulnerabilities=true" >> $GITHUB_OUTPUT
+          echo "❌ Found vulnerabilities in: ${AFFECTED_ECOSYSTEMS[*]}"
+        else
+          echo "has-vulnerabilities=false" >> $GITHUB_OUTPUT
+          echo "✅ No vulnerabilities found in dependencies"
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 📈 Generate security report
+      run: |
+        echo "# 🛡️ Dependency Security Report" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Scan Date:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        echo "## 📊 Scan Results" >> $GITHUB_STEP_SUMMARY
+        echo "| Ecosystem | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|-----------|--------|---------|" >> $GITHUB_STEP_SUMMARY
+        echo "| .NET | ${{ needs.dependency-scan.outputs.dotnet-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | NuGet packages |" >> $GITHUB_STEP_SUMMARY
+        echo "| Node.js | ${{ needs.dependency-scan.outputs.node-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | npm packages |" >> $GITHUB_STEP_SUMMARY
+        echo "| Rust | ${{ needs.dependency-scan.outputs.rust-vulnerabilities == 'true' && '❌ Vulnerabilities Found' || '✅ Clean' }} | Cargo dependencies |" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.aggregate.outputs.has-vulnerabilities }}" = "true" ]; then
+          echo "## ⚠️ Action Required" >> $GITHUB_STEP_SUMMARY
+          echo "Vulnerabilities were found in the following ecosystems: ${{ steps.aggregate.outputs.affected-ecosystems }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Recommended Actions" >> $GITHUB_STEP_SUMMARY
+          echo "1. Review the detailed scan results in the workflow artifacts" >> $GITHUB_STEP_SUMMARY
+          echo "2. Update vulnerable dependencies to secure versions" >> $GITHUB_STEP_SUMMARY
+          echo "3. Consider using alternative packages if updates are not available" >> $GITHUB_STEP_SUMMARY
+          echo "4. Add security suppressions for false positives" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "## ✅ All Clear" >> $GITHUB_STEP_SUMMARY
+          echo "No security vulnerabilities were found in the dependency scan." >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "## 🔗 Resources" >> $GITHUB_STEP_SUMMARY
+        echo "- [Security Policy](https://github.com/${{ github.repository }}/security/policy)" >> $GITHUB_STEP_SUMMARY
+        echo "- [Dependency Management Guidelines](https://github.com/${{ github.repository }}/blob/main/docs/DEPENDENCIES.md)" >> $GITHUB_STEP_SUMMARY
+        echo "- [OWASP Dependency Check](https://owasp.org/www-project-dependency-check/)" >> $GITHUB_STEP_SUMMARY
+
+    - name: 🚨 Create security issue
+      if: ${{ steps.aggregate.outputs.has-vulnerabilities == 'true' && (github.event.inputs.create_issue == 'true' || github.event_name == 'schedule') }}
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const title = `🚨 Security Alert: Vulnerable Dependencies Detected`;
+          const body = `## 🛡️ Dependency Security Alert
+          
+          **Alert Date:** ${new Date().toISOString()}
+          **Triggered by:** ${{ github.event_name }}
+          **Affected Ecosystems:** ${{ steps.aggregate.outputs.affected-ecosystems }}
+          
+          ### 📊 Summary
+          Our automated dependency security scan has detected vulnerabilities in project dependencies.
+          
+          | Ecosystem | Status |
+          |-----------|--------|
+          | .NET | ${{ needs.dependency-scan.outputs.dotnet-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
+          | Node.js | ${{ needs.dependency-scan.outputs.node-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
+          | Rust | ${{ needs.dependency-scan.outputs.rust-vulnerabilities == 'true' ? '❌ Vulnerabilities Found' : '✅ Clean' }} |
+          
+          ### 🔧 Action Required
+          
+          1. **Review Scan Results**: Check the [workflow run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}) for detailed vulnerability information
+          2. **Update Dependencies**: Update vulnerable packages to secure versions
+          3. **Test Changes**: Ensure application functionality after updates
+          4. **Security Review**: Consider if any workarounds are needed for dependencies that cannot be updated
+          
+          ### 📋 Checklist
+          
+          - [ ] Review detailed vulnerability reports
+          - [ ] Update .NET packages (if affected)
+          - [ ] Update Node.js packages (if affected)  
+          - [ ] Update Rust dependencies (if affected)
+          - [ ] Test application after updates
+          - [ ] Close this issue when resolved
+          
+          ### 🔗 Resources
+          
+          - [Security Policy](https://github.com/${{ github.repository }}/security/policy)
+          - [Workflow Run](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})
+          - [OWASP Dependency Check](https://owasp.org/www-project-dependency-check/)
+          
+          ---
+          <sub>This issue was automatically created by the dependency security scan workflow.</sub>`;
+          
+          // Check if similar issue already exists
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: 'security,dependencies',
+            state: 'open'
+          });
+          
+          const existingIssue = issues.find(issue => 
+            issue.title.includes('Vulnerable Dependencies Detected')
+          );
+          
+          if (existingIssue) {
+            console.log(`Updating existing issue #${existingIssue.number}`);
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: existingIssue.number,
+              body: `🔄 **Updated Security Alert**\n\n${body}`
+            });
+          } else {
+            console.log('Creating new security issue');
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['security', 'dependencies', 'high-priority']
+            });
+          }
+
+    - name: 📢 Slack notification
+      if: ${{ steps.aggregate.outputs.has-vulnerabilities == 'true' && secrets.SLACK_WEBHOOK }}
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        channel: '#security'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+        fields: repo,message,commit,author
+        custom_payload: |
+          {
+            attachments: [{
+              color: 'danger',
+              blocks: [{
+                type: 'section',
+                text: {
+                  type: 'mrkdwn',
+                  text: `🚨 *Security Alert: Vulnerable Dependencies*\n\n*Repository:* ${{ github.repository }}\n*Affected:* ${{ steps.aggregate.outputs.affected-ecosystems }}\n*Action:* [View Details](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})`
+                }
+              }]
+            }]
+          }
+
+    - name: ❌ Fail on vulnerabilities
+      if: ${{ steps.aggregate.outputs.has-vulnerabilities == 'true' && github.event_name == 'pull_request' }}
+      run: |
+        echo "❌ Security vulnerabilities detected in dependencies!"
+        echo "Affected ecosystems: ${{ steps.aggregate.outputs.affected-ecosystems }}"
+        echo "Please review and fix the vulnerabilities before merging."
+        exit 1

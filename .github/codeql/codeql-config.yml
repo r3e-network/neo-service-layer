@@ -1,0 +1,32 @@
+# CodeQL Configuration for Neo Service Layer
+name: "CodeQL Configuration"
+
+# Disable default queries to use only security-focused ones
+disable-default-queries: false
+
+# Additional queries to run
+queries:
+  - name: "Security and Quality"
+    uses: 
+      - security-and-quality
+      - security-experimental
+
+# Paths to include in the analysis
+paths:
+  - src/
+  - tests/
+
+# Paths to ignore
+paths-ignore:
+  - "**/bin/**"
+  - "**/obj/**"
+  - "**/node_modules/**"
+  - "**/target/**"
+  - "**/*.Designer.cs"
+  - "**/*.generated.cs"
+  - "**/Migrations/**"
+  - "demo/**"
+  - "scripts/**"
+
+# Build mode configuration
+build-mode: manual

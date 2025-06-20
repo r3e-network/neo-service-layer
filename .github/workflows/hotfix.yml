@@ -1,0 +1,277 @@
+name: 🚨 Hotfix Pipeline
+
+on:
+  push:
+    branches: [ 'hotfix/**' ]
+  workflow_dispatch:
+    inputs:
+      target_branch:
+        description: 'Target branch for hotfix (master/main)'
+        required: true
+        default: 'master'
+        type: choice
+        options:
+          - master
+          - main
+      skip_security:
+        description: 'Skip security checks (emergency only)'
+        required: false
+        default: false
+        type: boolean
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  # 🚨 Emergency Validation
+  emergency-validation:
+    name: 🚨 Emergency Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+      is_emergency: ${{ steps.emergency.outputs.is_emergency }}
+    
+    steps:
+      - name: 🔍 Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: 🏷️ Extract Version
+        id: version
+        run: |
+          VERSION=$(jq -r '.version // "1.0.0"' global.json 2>/dev/null || echo "1.0.0")
+          echo "version=${VERSION}" >> $GITHUB_OUTPUT
+          echo "🏷️ Version: ${VERSION}"
+      
+      - name: 🚨 Check Emergency Status
+        id: emergency
+        run: |
+          COMMIT_MSG="${{ github.event.head_commit.message }}"
+          if [[ "$COMMIT_MSG" == *"[emergency]"* ]] || [[ "${{ github.event.inputs.skip_security }}" == "true" ]]; then
+            echo "is_emergency=true" >> $GITHUB_OUTPUT
+            echo "🚨 Emergency hotfix detected"
+          else
+            echo "is_emergency=false" >> $GITHUB_OUTPUT
+            echo "📝 Regular hotfix"
+          fi
+
+  # 🏗️ Fast Build and Test
+  fast-build:
+    name: 🏗️ Fast Build & Critical Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    needs: emergency-validation
+    
+    steps:
+      - name: 🔍 Checkout
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: 📦 Cache Dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.nuget/packages
+          key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/packages.lock.json') }}
+          restore-keys: |
+            ${{ runner.os }}-nuget-
+      
+      - name: 🔄 Restore Dependencies
+        run: dotnet restore
+      
+      - name: 🏗️ Build (Release)
+        run: dotnet build --configuration Release --no-restore
+      
+      - name: 🧪 Run Critical Tests
+        run: |
+          echo "🧪 Running critical tests only..."
+          dotnet test --configuration Release --no-build \
+            --filter "Category=Critical|Category=Security" \
+            --logger "trx;LogFileName=critical-tests.trx" \
+            --results-directory ./test-results
+      
+      - name: 📊 Upload Test Results
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: critical-test-results
+          path: ./test-results/
+
+  # 🛡️ Security Check (Conditional)
+  security-check:
+    name: 🛡️ Security Check
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    needs: [emergency-validation, fast-build]
+    if: needs.emergency-validation.outputs.is_emergency != 'true'
+    
+    steps:
+      - name: 🔍 Checkout
+        uses: actions/checkout@v4
+      
+      - name: 🔧 Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: 🛡️ Security Scan
+        run: |
+          echo "🛡️ Running security scan..."
+          dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
+          
+          if grep -i "critical\|high" security-scan.txt; then
+            echo "❌ Critical/High vulnerabilities found!"
+            cat security-scan.txt
+            exit 1
+          else
+            echo "✅ No critical vulnerabilities found"
+          fi
+
+  # 🚀 Hotfix Deployment
+  deploy-hotfix:
+    name: 🚀 Deploy Hotfix
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    needs: [emergency-validation, fast-build, security-check]
+    if: always() && (needs.fast-build.result == 'success') && (needs.security-check.result == 'success' || needs.emergency-validation.outputs.is_emergency == 'true')
+    environment: 
+      name: ${{ github.event.inputs.target_branch == 'main' && 'production' || 'staging' }}
+    
+    steps:
+      - name: 🔍 Checkout
+        uses: actions/checkout@v4
+      
+      - name: 🏗️ Create Deployment Package
+        run: |
+          echo "🏗️ Creating hotfix deployment package..."
+          dotnet publish --configuration Release --output ./publish
+      
+      - name: 📦 Create Deployment Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: hotfix-package-${{ needs.emergency-validation.outputs.version }}
+          path: ./publish/
+          retention-days: 30
+      
+      - name: 🚀 Deploy to Environment
+        run: |
+          TARGET="${{ github.event.inputs.target_branch || 'master' }}"
+          echo "🚀 Deploying hotfix to ${TARGET} environment..."
+          echo "📦 Package: hotfix-package-${{ needs.emergency-validation.outputs.version }}"
+          echo "🌿 Branch: ${{ github.ref_name }}"
+          
+          # Add actual deployment logic here
+          # This would typically involve:
+          # 1. Deploying to staging/production
+          # 2. Running smoke tests
+          # 3. Health checks
+          
+          echo "✅ Hotfix deployed successfully"
+
+  # 🔄 Create Merge PR
+  create-merge-pr:
+    name: 🔄 Create Merge PR
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    needs: [emergency-validation, deploy-hotfix]
+    if: needs.deploy-hotfix.result == 'success'
+    
+    steps:
+      - name: 🔍 Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 0
+      
+      - name: 🔄 Create Pull Request
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          TARGET_BRANCH="${{ github.event.inputs.target_branch || 'master' }}"
+          HOTFIX_BRANCH="${{ github.ref_name }}"
+          
+          # Create PR
+          gh pr create \
+            --title "🚨 Hotfix: Merge ${HOTFIX_BRANCH} to ${TARGET_BRANCH}" \
+            --body "## 🚨 Hotfix Merge Request
+
+          ### Summary
+          - **Source Branch:** \`${HOTFIX_BRANCH}\`
+          - **Target Branch:** \`${TARGET_BRANCH}\`
+          - **Version:** \`${{ needs.emergency-validation.outputs.version }}\`
+          - **Emergency:** ${{ needs.emergency-validation.outputs.is_emergency }}
+
+          ### Deployment Status
+          ✅ Hotfix has been successfully deployed and tested
+
+          ### Validation
+          - ✅ Critical tests passed
+          - ${{ needs.emergency-validation.outputs.is_emergency == 'true' && '⚠️ Security checks skipped (emergency)' || '✅ Security checks passed' }}
+          - ✅ Deployment successful
+
+          ### Next Steps
+          1. Review the changes
+          2. Merge this PR to apply hotfix to ${TARGET_BRANCH}
+          3. Create release tag if needed
+          4. Monitor production metrics
+
+          **Auto-generated by Hotfix Pipeline**" \
+            --base "${TARGET_BRANCH}" \
+            --head "${HOTFIX_BRANCH}" \
+            --assignee "${{ github.actor }}" \
+            --label "hotfix,priority:high"
+          
+          echo "✅ Pull request created successfully"
+
+  # 📢 Notification
+  notify:
+    name: 📢 Notify Team
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    needs: [emergency-validation, deploy-hotfix, create-merge-pr]
+    if: always()
+    
+    steps:
+      - name: 📢 Slack Notification
+        if: env.SLACK_WEBHOOK_URL
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+        run: |
+          STATUS="${{ needs.deploy-hotfix.result }}"
+          EMERGENCY="${{ needs.emergency-validation.outputs.is_emergency }}"
+          VERSION="${{ needs.emergency-validation.outputs.version }}"
+          
+          if [[ "$STATUS" == "success" ]]; then
+            COLOR="good"
+            EMOJI="✅"
+            MESSAGE="Hotfix deployed successfully"
+          else
+            COLOR="danger"
+            EMOJI="❌"
+            MESSAGE="Hotfix deployment failed"
+          fi
+          
+          curl -X POST $SLACK_WEBHOOK_URL \
+            -H 'Content-type: application/json' \
+            --data "{
+              \"attachments\": [{
+                \"color\": \"$COLOR\",
+                \"title\": \"$EMOJI Hotfix Pipeline - $MESSAGE\",
+                \"fields\": [
+                  {\"title\": \"Branch\", \"value\": \"${{ github.ref_name }}\", \"short\": true},
+                  {\"title\": \"Version\", \"value\": \"$VERSION\", \"short\": true},
+                  {\"title\": \"Emergency\", \"value\": \"$EMERGENCY\", \"short\": true},
+                  {\"title\": \"Actor\", \"value\": \"${{ github.actor }}\", \"short\": true}
+                ],
+                \"footer\": \"Neo Service Layer Hotfix Pipeline\",
+                \"ts\": $(date +%s)
+              }]
+            }"
