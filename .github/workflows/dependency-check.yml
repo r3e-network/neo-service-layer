@@ -146,7 +146,7 @@ jobs:
         
         # Check for vulnerable NuGet packages
         echo "🔍 Checking for vulnerable NuGet packages..."
-        if dotnet list package --vulnerable --include-transitive > vulnerable-packages.txt 2>&1; then
+        if dotnet list NeoServiceLayer.sln package --vulnerable --include-transitive > vulnerable-packages.txt 2>&1; then
           if grep -q "has the following vulnerable packages" vulnerable-packages.txt; then
             echo "❌ Vulnerable packages detected:"
             cat vulnerable-packages.txt
@@ -161,7 +161,7 @@ jobs:
         
         # Check for deprecated packages
         echo "🔍 Checking for deprecated packages..."
-        if dotnet list package --deprecated > deprecated-packages.txt 2>&1; then
+        if dotnet list NeoServiceLayer.sln package --deprecated > deprecated-packages.txt 2>&1; then
           if grep -q "has the following deprecated packages" deprecated-packages.txt; then
             echo "⚠️ Deprecated packages detected:"
             cat deprecated-packages.txt
@@ -172,7 +172,7 @@ jobs:
         
         # Check for outdated packages
         echo "🔍 Checking for outdated packages..."
-        if dotnet list package --outdated > outdated-packages.txt 2>&1; then
+        if dotnet list NeoServiceLayer.sln package --outdated > outdated-packages.txt 2>&1; then
           if grep -q "has the following updates" outdated-packages.txt; then
             echo "📦 Outdated packages detected:"
             cat outdated-packages.txt

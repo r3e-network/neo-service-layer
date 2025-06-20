@@ -151,7 +151,7 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: 📦 Restore dependencies
-      run: dotnet restore
+      run: dotnet restore NeoServiceLayer.sln
 
     - name: 🏗️ Build release binaries
       env:
@@ -225,14 +225,14 @@ jobs:
           ${{ runner.os }}-nuget-
 
     - name: 📦 Restore dependencies
-      run: dotnet restore
+      run: dotnet restore NeoServiceLayer.sln
 
     - name: 🏗️ Build solution
       env:
         VERSION: ${{ needs.validate-release.outputs.version }}
       run: |
         VERSION_NUMBER=${VERSION#v}  # Remove 'v' prefix
-        dotnet build --configuration Release --no-restore \
+        dotnet build NeoServiceLayer.sln --configuration Release --no-restore \
           --property:Version=${VERSION_NUMBER} \
           --property:AssemblyVersion=${VERSION_NUMBER} \
           --property:FileVersion=${VERSION_NUMBER}

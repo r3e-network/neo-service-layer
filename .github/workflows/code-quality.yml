@@ -72,19 +72,19 @@ jobs:
     - name: 📦 Restore dependencies
       run: |
         echo "::group::Restoring dependencies"
-        dotnet restore --verbosity minimal
+        dotnet restore NeoServiceLayer.sln --verbosity minimal
         echo "::endgroup::"
 
     - name: 🏗️ Build solution
       run: |
         echo "::group::Building solution"
-        dotnet build --configuration Release --no-restore --verbosity minimal
+        dotnet build NeoServiceLayer.sln --configuration Release --no-restore --verbosity minimal
         echo "::endgroup::"
 
     - name: 📊 Run tests with coverage
       run: |
         echo "::group::Running tests with coverage collection"
-        dotnet test \
+        dotnet test NeoServiceLayer.sln \
           --configuration Release \
           --no-build \
           --verbosity minimal \

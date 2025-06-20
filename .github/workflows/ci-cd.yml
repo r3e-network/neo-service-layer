@@ -122,7 +122,7 @@ jobs:
     - name: 📦 Restore dependencies
       run: |
         echo "::group::Restoring .NET dependencies"
-        dotnet restore --verbosity minimal
+        dotnet restore NeoServiceLayer.sln --verbosity minimal
         echo "::endgroup::"
         
         echo "::group::Installing Solidity dependencies"
@@ -142,7 +142,7 @@ jobs:
     - name: 🏗️ Build solution
       run: |
         echo "::group::Building solution (${{ matrix.configuration }})"
-        dotnet build \
+        dotnet build NeoServiceLayer.sln \
           --configuration ${{ matrix.configuration }} \
           --no-restore \
           --verbosity minimal \
@@ -154,7 +154,7 @@ jobs:
       if: ${{ !github.event.inputs.skip_tests }}
       run: |
         echo "::group::Running unit tests (${{ matrix.configuration }})"
-        dotnet test \
+        dotnet test NeoServiceLayer.sln \
           --configuration ${{ matrix.configuration }} \
           --no-build \
           --verbosity minimal \
@@ -280,7 +280,7 @@ jobs:
     - name: 🔍 Run dependency vulnerability scan
       run: |
         echo "::group::Dependency Security Scan"
-        dotnet list package --vulnerable --include-transitive 2>&1 | tee vulnerability-scan.txt
+        dotnet list NeoServiceLayer.sln package --vulnerable --include-transitive 2>&1 | tee vulnerability-scan.txt
         
         if grep -i "critical\|high" vulnerability-scan.txt; then
           echo "❌ Critical or High vulnerabilities found!"
@@ -391,8 +391,8 @@ jobs:
 
     - name: 📦 Restore and build
       run: |
-        dotnet restore
-        dotnet build --configuration Release --no-restore
+        dotnet restore NeoServiceLayer.sln
+        dotnet build NeoServiceLayer.sln --configuration Release --no-restore
 
     - name: 🏃‍♂️ Run performance tests
       run: |

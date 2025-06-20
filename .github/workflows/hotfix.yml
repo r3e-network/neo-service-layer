@@ -85,15 +85,15 @@ jobs:
             ${{ runner.os }}-nuget-
       
       - name: 🔄 Restore Dependencies
-        run: dotnet restore
+        run: dotnet restore NeoServiceLayer.sln
       
       - name: 🏗️ Build (Release)
-        run: dotnet build --configuration Release --no-restore
+        run: dotnet build NeoServiceLayer.sln --configuration Release --no-restore
       
       - name: 🧪 Run Critical Tests
         run: |
           echo "🧪 Running critical tests only..."
-          dotnet test --configuration Release --no-build \
+          dotnet test NeoServiceLayer.sln --configuration Release --no-build \
             --filter "Category=Critical|Category=Security" \
             --logger "trx;LogFileName=critical-tests.trx" \
             --results-directory ./test-results
@@ -125,7 +125,7 @@ jobs:
       - name: 🛡️ Security Scan
         run: |
           echo "🛡️ Running security scan..."
-          dotnet list package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
+          dotnet list NeoServiceLayer.sln package --vulnerable --include-transitive 2>&1 | tee security-scan.txt
           
           if grep -i "critical\|high" security-scan.txt; then
             echo "❌ Critical/High vulnerabilities found!"
