@@ -43,7 +43,7 @@ tempfile = "3.0"
 
 # Optional machine learning support
 candle-core = { version = "0.3", optional = true }
-candle-nn = { version = "0.3", optional = true }
+candle-nn = { version = "0.9", optional = true }
 
 [features]
 default = ["ml"]
