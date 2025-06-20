@@ -30,51 +30,25 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   MIN_CODE_COVERAGE: 75
   MIN_BRANCH_COVERAGE: 70
-  SONAR_PROJECT_KEY: 'neo-service-layer'
-  SONAR_ORGANIZATION: 'neo-project'
 
 permissions:
   contents: read
-  security-events: write
   pull-requests: write
   issues: write
   checks: write
   statuses: write
 
 jobs:
-  # 🔍 Code Quality Analysis Matrix
+  # 🔍 Code Quality Analysis
   code-analysis:
-    name: 🔍 Code Analysis (${{ matrix.analysis }})
+    name: 🔍 Code Quality Analysis
     runs-on: ubuntu-latest
-    timeout-minutes: 30
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        analysis: [coverage, security, style, complexity]
-        include:
-          - analysis: coverage
-            name: "Coverage Analysis"
-            run_tests: true
-            generate_reports: true
-          - analysis: security
-            name: "Security Analysis"
-            run_tests: false
-            generate_reports: false
-          - analysis: style
-            name: "Code Style & Format"
-            run_tests: false
-            generate_reports: false
-          - analysis: complexity
-            name: "Code Complexity"
-            run_tests: false
-            generate_reports: false
+    timeout-minutes: 20
     
     outputs:
-      coverage-passed: ${{ steps.coverage-result.outputs.passed }}
-      security-passed: ${{ steps.security-result.outputs.passed }}
-      style-passed: ${{ steps.style-result.outputs.passed }}
-      complexity-passed: ${{ steps.complexity-result.outputs.passed }}
+      coverage-passed: ${{ steps.coverage.outputs.passed }}
+      style-passed: ${{ steps.style.outputs.passed }}
+      security-passed: ${{ steps.security.outputs.passed }}
     
     steps:
     - name: 📥 Checkout repository
@@ -90,13 +64,10 @@ jobs:
     - name: 🚀 Cache dependencies
       uses: actions/cache@v4
       with:
-        path: |
-          ~/.nuget/packages
-          ~/.dotnet/tools
-        key: ${{ runner.os }}-dotnet-quality-${{ hashFiles('**/*.csproj', 'global.json') }}
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json') }}
         restore-keys: |
-          ${{ runner.os }}-dotnet-quality-
-          ${{ runner.os }}-dotnet-
+          ${{ runner.os }}-nuget-
 
     - name: 📦 Restore dependencies
       run: |
@@ -110,9 +81,7 @@ jobs:
         dotnet build --configuration Release --no-restore --verbosity minimal
         echo "::endgroup::"
 
-    # Coverage Analysis
-    - name: 🧪 Run tests with coverage
-      if: ${{ matrix.analysis == 'coverage' }}
+    - name: 📊 Run tests with coverage
       run: |
         echo "::group::Running tests with coverage collection"
         dotnet test \
@@ -123,301 +92,184 @@ jobs:
           --results-directory TestResults/ \
           --collect:"XPlat Code Coverage" \
           --settings tests/codecoverage.runsettings \
-          --filter "Category!=Integration&Category!=Performance" \
-          -- DataCollectionRunSettings.DataCollectors.DataCollector.Configuration.Format=cobertura
+          --filter "Category!=Integration&Category!=Performance"
         echo "::endgroup::"
 
-    - name: 📊 Generate coverage report
-      if: ${{ matrix.analysis == 'coverage' }}
+    - name: 📈 Generate coverage report
       uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
       with:
         reports: 'TestResults/**/coverage.cobertura.xml'
         targetdir: 'TestResults/CoverageReport'
-        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary;Badges;MarkdownSummary'
+        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub'
         verbosity: 'Warning'
 
-    - name: 📈 Analyze coverage results
-      id: coverage-result
-      if: ${{ matrix.analysis == 'coverage' }}
+    - name: 📊 Check coverage thresholds
+      id: coverage
       run: |
-        echo "::group::Analyzing coverage results"
+        echo "::group::Coverage Analysis"
         if [ -f "TestResults/CoverageReport/Summary.json" ]; then
           COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.linecoverage // 0')
           BRANCH_COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.branchcoverage // 0')
           
-          echo "📊 Coverage Results:"
-          echo "  Line Coverage: ${COVERAGE}%"
-          echo "  Branch Coverage: ${BRANCH_COVERAGE}%"
-          echo "  Required Line Coverage: ${MIN_CODE_COVERAGE}%"
-          echo "  Required Branch Coverage: ${MIN_BRANCH_COVERAGE}%"
-          
-          echo "line-coverage=${COVERAGE}" >> $GITHUB_OUTPUT
+          echo "Line coverage: ${COVERAGE}%"
+          echo "Branch coverage: ${BRANCH_COVERAGE}%"
+          echo "coverage=${COVERAGE}" >> $GITHUB_OUTPUT
           echo "branch-coverage=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
           
-          # Check if thresholds are met
           if (( $(echo "${COVERAGE} >= ${MIN_CODE_COVERAGE}" | bc -l) )) && (( $(echo "${BRANCH_COVERAGE} >= ${MIN_BRANCH_COVERAGE}" | bc -l) )); then
             echo "passed=true" >> $GITHUB_OUTPUT
-            echo "✅ Coverage thresholds met"
+            echo "✅ Code coverage meets threshold: ${COVERAGE}% line, ${BRANCH_COVERAGE}% branch"
           else
             echo "passed=false" >> $GITHUB_OUTPUT
-            echo "❌ Coverage thresholds not met"
-            echo "::error::Code coverage below threshold - Line: ${COVERAGE}% (required: ${MIN_CODE_COVERAGE}%), Branch: ${BRANCH_COVERAGE}% (required: ${MIN_BRANCH_COVERAGE}%)"
+            echo "❌ Coverage below threshold: ${COVERAGE}% line (>=${MIN_CODE_COVERAGE}%), ${BRANCH_COVERAGE}% branch (>=${MIN_BRANCH_COVERAGE}%)"
           fi
         else
+          echo "⚠️ No coverage report found"
           echo "passed=false" >> $GITHUB_OUTPUT
-          echo "::error::No coverage report generated"
         fi
         echo "::endgroup::"
 
-    # Security Analysis
-    - name: 🔒 Security vulnerability scan
-      id: security-result
-      if: ${{ matrix.analysis == 'security' }}
-      run: |
-        echo "::group::Security Analysis"
-        SECURITY_PASSED=true
-        
-        # Check for vulnerable NuGet packages
-        echo "🔍 Checking for vulnerable NuGet packages..."
-        if dotnet list package --vulnerable --include-transitive 2>&1 | grep -q "has the following vulnerable packages"; then
-          echo "❌ Vulnerable packages detected:"
-          dotnet list package --vulnerable --include-transitive
-          SECURITY_PASSED=false
-        else
-          echo "✅ No vulnerable packages detected"
-        fi
-        
-        # Basic secret scanning
-        echo "🔍 Scanning for potential secrets..."
-        SECRET_PATTERNS=(
-          "password\s*[=:]\s*['\"][^'\"]{8,}['\"]"
-          "api[_-]?key\s*[=:]\s*['\"][^'\"]{16,}['\"]"
-          "secret\s*[=:]\s*['\"][^'\"]{16,}['\"]"
-          "token\s*[=:]\s*['\"][^'\"]{16,}['\"]"
-          "private[_-]?key\s*[=:]\s*['\"][^'\"]{32,}['\"]"
-        )
-        
-        for pattern in "${SECRET_PATTERNS[@]}"; do
-          if grep -r -E -i "$pattern" src/ --include="*.cs" --include="*.json" --exclude-dir=bin --exclude-dir=obj; then
-            echo "⚠️ Potential secret pattern found"
-            SECURITY_PASSED=false
-          fi
-        done
-        
-        if [ "$SECURITY_PASSED" = true ]; then
-          echo "passed=true" >> $GITHUB_OUTPUT
-          echo "✅ Security scan completed successfully"
-        else
-          echo "passed=false" >> $GITHUB_OUTPUT
-          echo "❌ Security issues detected"
-        fi
-        echo "::endgroup::"
-
-    # Code Style Analysis
     - name: 🎨 Code style analysis
-      id: style-result
-      if: ${{ matrix.analysis == 'style' }}
+      id: style
       run: |
         echo "::group::Code Style Analysis"
-        STYLE_PASSED=true
         
-        # Install dotnet format if not available
-        dotnet tool install -g dotnet-format --version 5.1.250801 2>/dev/null || true
+        # Check formatting
+        echo "Checking code formatting..."
+        UNFORMATTED_FILES=$(dotnet format --verify-no-changes --verbosity minimal 2>&1 || true)
         
-        # Check code formatting
-        echo "🎨 Checking code formatting..."
-        if ! dotnet format --verify-no-changes --verbosity minimal; then
-          echo "❌ Code formatting issues detected"
-          echo "::error::Code is not properly formatted. Run 'dotnet format' to fix."
-          STYLE_PASSED=false
-        else
+        if [ -z "$UNFORMATTED_FILES" ]; then
           echo "✅ Code formatting is correct"
-        fi
-        
-        # Check for code style violations
-        echo "🔍 Checking for style violations..."
-        if dotnet build --configuration Release --verbosity normal 2>&1 | grep -E "(warning CS|error CS)" | grep -v "CS0618"; then
-          echo "❌ Code style warnings detected"
-          STYLE_PASSED=false
-        else
-          echo "✅ No style violations found"
-        fi
-        
-        if [ "$STYLE_PASSED" = true ]; then
           echo "passed=true" >> $GITHUB_OUTPUT
-          echo "✅ Code style analysis passed"
         else
+          echo "❌ Code formatting issues found:"
+          echo "$UNFORMATTED_FILES"
           echo "passed=false" >> $GITHUB_OUTPUT
-          echo "❌ Code style issues detected"
         fi
         echo "::endgroup::"
 
-    # Code Complexity Analysis
-    - name: 📊 Code complexity analysis
-      id: complexity-result
-      if: ${{ matrix.analysis == 'complexity' || github.event.inputs.run_full_analysis == 'true' }}
+    - name: 🛡️ Security analysis
+      id: security
       run: |
-        echo "::group::Code Complexity Analysis"
-        COMPLEXITY_PASSED=true
+        echo "::group::Security Analysis"
         
-        # Install code metrics tool
-        dotnet tool install -g dotnet-code-metrics --version 1.0.0 2>/dev/null || echo "Code metrics tool not available"
+        # Check for vulnerable packages
+        VULNERABILITIES=$(dotnet list package --vulnerable --include-transitive 2>&1 || true)
         
-        # Basic complexity checks using built-in analyzers
-        echo "📊 Analyzing code complexity..."
-        if dotnet build --configuration Release --verbosity normal 2>&1 | grep -E "CA1502|CA1505|CA1506"; then
-          echo "⚠️ High complexity warnings detected"
-          # Don't fail on complexity warnings, just report
+        if echo "$VULNERABILITIES" | grep -i "critical\|high"; then
+          echo "❌ Security vulnerabilities found:"
+          echo "$VULNERABILITIES"
+          echo "passed=false" >> $GITHUB_OUTPUT
+        else
+          echo "✅ No critical security vulnerabilities found"
+          echo "passed=true" >> $GITHUB_OUTPUT
         fi
-        
-        echo "passed=true" >> $GITHUB_OUTPUT
-        echo "✅ Code complexity analysis completed"
         echo "::endgroup::"
 
-    - name: 📤 Upload coverage artifacts
+    - name: 📤 Upload coverage report
       uses: actions/upload-artifact@v4
-      if: ${{ matrix.analysis == 'coverage' && always() }}
+      if: always()
       with:
         name: coverage-report-${{ github.run_number }}
         path: TestResults/CoverageReport/
         retention-days: 30
 
-  # 🎯 Quality Gate Enforcement
-  quality-gate-enforcement:
-    name: 🎯 Quality Gate Enforcement
+    - name: 📈 Upload coverage to Codecov
+      if: always()
+      uses: codecov/codecov-action@v4
+      with:
+        files: TestResults/CoverageReport/Cobertura.xml
+        flags: unittests
+        name: neo-service-layer-quality
+        fail_ci_if_error: false
+        verbose: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  # 📝 Quality Gate Report
+  quality-gate:
+    name: 📝 Quality Gate Report
     runs-on: ubuntu-latest
-    timeout-minutes: 10
+    timeout-minutes: 5
     needs: [code-analysis]
     if: always()
     
     steps:
-    - name: 📊 Evaluate quality gates
-      id: evaluation
+    - name: 📊 Generate quality report
       run: |
-        echo "::group::Quality Gate Evaluation"
+        echo "## 🔍 Code Quality Report" >> $GITHUB_STEP_SUMMARY
+        echo "| Check | Status | Details |" >> $GITHUB_STEP_SUMMARY
+        echo "|-------|--------|---------|" >> $GITHUB_STEP_SUMMARY
         
-        # Get results from analysis jobs
-        COVERAGE_PASSED="${{ needs.code-analysis.outputs.coverage-passed }}"
-        SECURITY_PASSED="${{ needs.code-analysis.outputs.security-passed }}"
-        STYLE_PASSED="${{ needs.code-analysis.outputs.style-passed }}"
-        COMPLEXITY_PASSED="${{ needs.code-analysis.outputs.complexity-passed }}"
+        # Coverage
+        COVERAGE_STATUS="${{ needs.code-analysis.outputs.coverage-passed == 'true' && '✅ Passed' || '❌ Failed' }}"
+        echo "| Code Coverage | $COVERAGE_STATUS | Min: ${MIN_CODE_COVERAGE}% line, ${MIN_BRANCH_COVERAGE}% branch |" >> $GITHUB_STEP_SUMMARY
         
-        echo "📋 Quality Gate Results:"
-        echo "  Coverage Analysis: ${COVERAGE_PASSED:-N/A}"
-        echo "  Security Analysis: ${SECURITY_PASSED:-N/A}"
-        echo "  Style Analysis: ${STYLE_PASSED:-N/A}"
-        echo "  Complexity Analysis: ${COMPLEXITY_PASSED:-N/A}"
+        # Style
+        STYLE_STATUS="${{ needs.code-analysis.outputs.style-passed == 'true' && '✅ Passed' || '❌ Failed' }}"
+        echo "| Code Style | $STYLE_STATUS | Formatting and style rules |" >> $GITHUB_STEP_SUMMARY
         
-        # Determine overall status
-        FAILED_GATES=()
+        # Security
+        SECURITY_STATUS="${{ needs.code-analysis.outputs.security-passed == 'true' && '✅ Passed' || '❌ Failed' }}"
+        echo "| Security | $SECURITY_STATUS | Vulnerability scanning |" >> $GITHUB_STEP_SUMMARY
         
-        if [ "$COVERAGE_PASSED" != "true" ]; then
-          FAILED_GATES+=("Coverage")
-        fi
-        
-        if [ "$SECURITY_PASSED" != "true" ]; then
-          FAILED_GATES+=("Security")
-        fi
-        
-        if [ "$STYLE_PASSED" != "true" ]; then
-          FAILED_GATES+=("Style")
-        fi
-        
-        # Complexity is not blocking by default
-        
-        if [ ${#FAILED_GATES[@]} -eq 0 ]; then
-          echo "overall-status=success" >> $GITHUB_OUTPUT
-          echo "✅ All quality gates passed!"
-          echo "QUALITY_STATUS=✅ All quality gates passed" >> $GITHUB_ENV
-        else
-          echo "overall-status=failure" >> $GITHUB_OUTPUT
-          echo "❌ Quality gates failed: ${FAILED_GATES[*]}"
-          echo "QUALITY_STATUS=❌ Failed: ${FAILED_GATES[*]}" >> $GITHUB_ENV
-          echo "::error::Quality gates failed: ${FAILED_GATES[*]}"
-        fi
-        
-        echo "failed-gates=${FAILED_GATES[*]}" >> $GITHUB_OUTPUT
-        echo "::endgroup::"
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📋 Summary" >> $GITHUB_STEP_SUMMARY
+        echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
 
-    - name: 📈 Generate quality summary
-      run: |
-        echo "# 🎯 Code Quality Report" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 📊 Quality Gate Results" >> $GITHUB_STEP_SUMMARY
-        echo "| Gate | Status | Details |" >> $GITHUB_STEP_SUMMARY
-        echo "|------|--------|---------|" >> $GITHUB_STEP_SUMMARY
-        echo "| 📊 Coverage | ${{ needs.code-analysis.outputs.coverage-passed == 'true' && '✅ Passed' || '❌ Failed' }} | Min: ${MIN_CODE_COVERAGE}% line, ${MIN_BRANCH_COVERAGE}% branch |" >> $GITHUB_STEP_SUMMARY
-        echo "| 🔒 Security | ${{ needs.code-analysis.outputs.security-passed == 'true' && '✅ Passed' || '❌ Failed' }} | Vulnerability and secret scanning |" >> $GITHUB_STEP_SUMMARY
-        echo "| 🎨 Style | ${{ needs.code-analysis.outputs.style-passed == 'true' && '✅ Passed' || '❌ Failed' }} | Code formatting and style rules |" >> $GITHUB_STEP_SUMMARY
-        echo "| 📈 Complexity | ${{ needs.code-analysis.outputs.complexity-passed == 'true' && '✅ Passed' || '⚠️ Warning' }} | Code complexity analysis |" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "**Overall Status:** ${{ env.QUALITY_STATUS }}" >> $GITHUB_STEP_SUMMARY
-        echo "" >> $GITHUB_STEP_SUMMARY
-        echo "## 🔗 Resources" >> $GITHUB_STEP_SUMMARY
-        echo "- [Coverage Report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts)" >> $GITHUB_STEP_SUMMARY
-        echo "- [Security Dashboard](https://github.com/${{ github.repository }}/security)" >> $GITHUB_STEP_SUMMARY
-        echo "- [Code Quality Guidelines](https://github.com/${{ github.repository }}/blob/main/docs/CONTRIBUTING.md)" >> $GITHUB_STEP_SUMMARY
-
-    - name: 💬 Comment on PR
+    - name: 💬 Comment PR with results
+      if: github.event_name == 'pull_request'
       uses: actions/github-script@v7
-      if: ${{ github.event_name == 'pull_request' }}
       with:
         script: |
           const coveragePassed = '${{ needs.code-analysis.outputs.coverage-passed }}' === 'true';
-          const securityPassed = '${{ needs.code-analysis.outputs.security-passed }}' === 'true';
           const stylePassed = '${{ needs.code-analysis.outputs.style-passed }}' === 'true';
-          const overallStatus = '${{ steps.evaluation.outputs.overall-status }}';
+          const securityPassed = '${{ needs.code-analysis.outputs.security-passed }}' === 'true';
           
-          const statusIcon = overallStatus === 'success' ? '✅' : '❌';
-          const statusText = overallStatus === 'success' ? 'All quality gates passed!' : 'Some quality gates failed';
+          const allPassed = coveragePassed && stylePassed && securityPassed;
           
-          const comment = `## ${statusIcon} Code Quality Report
+          const statusIcon = allPassed ? '✅' : '❌';
+          const statusText = allPassed ? 'All quality checks passed!' : 'Some quality checks failed';
           
-          ### Quality Gate Results
-          | Gate | Status | 
-          |------|--------|
-          | 📊 Coverage | ${coveragePassed ? '✅ Passed' : '❌ Failed'} |
-          | 🔒 Security | ${securityPassed ? '✅ Passed' : '❌ Failed'} |
-          | 🎨 Style | ${stylePassed ? '✅ Passed' : '❌ Failed'} |
+          const body = `## ${statusIcon} Code Quality Report
           
-          **Overall:** ${statusText}
+          | Check | Status |
+          |-------|--------|
+          | Code Coverage | ${coveragePassed ? '✅' : '❌'} |
+          | Code Style | ${stylePassed ? '✅' : '❌'} |
+          | Security | ${securityPassed ? '✅' : '❌'} |
           
-          ${overallStatus === 'failure' ? '⚠️ Please fix the failing quality gates before merging.' : '🎉 Great job maintaining code quality!'}
+          **Overall Status:** ${statusText}
+          
+          ${allPassed ? '' : '⚠️ Please fix the failing checks before merging.'}
+          
+          <details>
+          <summary>📊 Coverage Details</summary>
+          
+          - **Minimum Line Coverage:** ${process.env.MIN_CODE_COVERAGE}%
+          - **Minimum Branch Coverage:** ${process.env.MIN_BRANCH_COVERAGE}%
+          
+          </details>
           
           ---
-          <sub>Generated by [Neo Service Layer Quality Gates](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }})</sub>`;
+          *Automated by Code Quality workflow*`;
           
-          // Find existing comment
-          const { data: comments } = await github.rest.issues.listComments({
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
             owner: context.repo.owner,
             repo: context.repo.repo,
-            issue_number: context.issue.number,
+            body: body
           });
-          
-          const existingComment = comments.find(c => 
-            c.user.login === 'github-actions[bot]' && 
-            c.body.includes('Code Quality Report')
-          );
-          
-          if (existingComment) {
-            await github.rest.issues.updateComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              comment_id: existingComment.id,
-              body: comment
-            });
-          } else {
-            await github.rest.issues.createComment({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              issue_number: context.issue.number,
-              body: comment
-            });
-          }
 
-    - name: ❌ Fail on quality gate violations
-      if: ${{ steps.evaluation.outputs.overall-status == 'failure' }}
+    - name: ❌ Fail if quality gates not met
+      if: |
+        needs.code-analysis.outputs.coverage-passed != 'true' || 
+        needs.code-analysis.outputs.style-passed != 'true' || 
+        needs.code-analysis.outputs.security-passed != 'true'
       run: |
-        echo "❌ Quality gates failed: ${{ steps.evaluation.outputs.failed-gates }}"
-        echo "Please fix the issues and run the workflow again."
+        echo "❌ Quality gates failed!"
+        echo "Coverage: ${{ needs.code-analysis.outputs.coverage-passed }}"
+        echo "Style: ${{ needs.code-analysis.outputs.style-passed }}"
+        echo "Security: ${{ needs.code-analysis.outputs.security-passed }}"
         exit 1

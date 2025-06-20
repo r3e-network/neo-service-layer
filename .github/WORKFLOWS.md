@@ -19,7 +19,7 @@ The Neo Service Layer uses a comprehensive GitHub Actions setup with 4 main work
   - 🐳 Docker multi-arch builds with security scanning
   - 🚀 Automated deployments to staging/production
   - 📊 Performance benchmarking
-  - 🔍 Security scanning (CodeQL, container scanning)
+  - 🔍 Security scanning (dependency and container scanning)
 
 ### 🔍 **Code Quality Gate** (`code-quality.yml`)
 **Triggers:** Pull Requests, Push to main branches
@@ -29,7 +29,6 @@ The Neo Service Layer uses a comprehensive GitHub Actions setup with 4 main work
   - 📈 Code coverage analysis (75% line, 70% branch minimum)
   - 🛡️ Security vulnerability scanning
   - 🎨 Code style and formatting validation
-  - 🔍 Static analysis and complexity checks
   - 💬 Automated PR comments with quality metrics
   - ❌ Fails builds that don't meet quality gates
 
@@ -50,11 +49,11 @@ The Neo Service Layer uses a comprehensive GitHub Actions setup with 4 main work
 - **Purpose:** Continuous security monitoring
 - **Duration:** ~10-15 minutes
 - **Features:**
-  - 🔍 OWASP dependency check across all ecosystems
+  - 🔍 OWASP dependency check across all ecosystems (.NET, Node.js, Rust)
   - 🚨 Automated security issue creation
   - 📧 Slack security alerts
   - 🔒 PR blocking for critical vulnerabilities
-  - 📊 Comprehensive vulnerability reporting
+  - 📊 Comprehensive vulnerability reporting with SARIF
 
 ## 🔧 Workflow Configuration
 
