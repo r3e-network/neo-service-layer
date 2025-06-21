@@ -4,7 +4,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using NeoServiceLayer.Core.Http;
 using Moq.Protected;
-using ItExpr = Moq.It;
+using ItExpr = Moq.Protected.ItExpr;
 
 namespace NeoServiceLayer.Core.Tests.Http;
 
