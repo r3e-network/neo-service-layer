@@ -192,8 +192,8 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
                         SecretId = secret.Name,
                         Name = nameTag ?? secret.Name,
                         Description = secret.Description ?? "Synced from AWS Secrets Manager",
-                        CreatedAt = secret.CreatedDate ?? DateTime.UtcNow,
-                        UpdatedAt = secret.LastChangedDate ?? DateTime.UtcNow,
+                        CreatedAt = secret.CreatedDate,
+                        UpdatedAt = secret.LastChangedDate,
                         Tags = secret.Tags?.ToDictionary(t => t.Key, t => t.Value) ?? new Dictionary<string, string>()
                     };
 

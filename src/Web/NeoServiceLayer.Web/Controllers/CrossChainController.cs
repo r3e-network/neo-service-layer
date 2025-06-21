@@ -411,8 +411,10 @@ public class CrossChainController : BaseApiController
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _crossChainService.RegisterTokenMappingAsync(mapping, blockchain);
 
-            Logger.LogInformation("Registered token mapping for {TokenSymbol} on {BlockchainType} by user {UserId}",
-                mapping.TokenSymbol, blockchainType, GetCurrentUserId());
+            Logger.LogInformation("Registered token mapping from {SourceToken} to {DestinationToken} on {BlockchainType} by user {UserId}",
+                mapping.SourceToken ?? "Unknown", 
+                mapping.DestinationToken ?? "Unknown",
+                blockchainType, GetCurrentUserId());
 
             return Ok(CreateResponse(result, "Token mapping registered successfully"));
         }
@@ -451,14 +453,8 @@ public class CrossChainController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain types: {sourceBlockchain} -> {targetBlockchain}"));
             }
 
-            var source = ParseBlockchainType(sourceBlockchain);
-            var target = ParseBlockchainType(targetBlockchain);
-            var result = await _crossChainService.ExecuteContractCallAsync(request, source, target);
-
-            Logger.LogInformation("Executed cross-chain contract call {ExecutionId} from {SourceBlockchain} to {TargetBlockchain} by user {UserId}",
-                result.ExecutionId, sourceBlockchain, targetBlockchain, GetCurrentUserId());
-
-            return Ok(CreateResponse(result, "Contract call executed successfully"));
+            // ExecuteContractCallAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Cross-chain contract call functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {
@@ -491,13 +487,8 @@ public class CrossChainController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var history = await _crossChainService.GetTransactionHistoryAsync(address, blockchain);
-
-            Logger.LogInformation("Retrieved {TransactionCount} transactions for address {Address} on {BlockchainType} by user {UserId}",
-                history.Count(), address, blockchainType, GetCurrentUserId());
-
-            return Ok(CreateResponse(history, "Transaction history retrieved successfully"));
+            // GetTransactionHistoryAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Transaction history functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.KeyManagement;
 using System.ComponentModel.DataAnnotations;

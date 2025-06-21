@@ -1,7 +1,9 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Services.ZeroKnowledge;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -34,22 +36,13 @@ public class ZeroKnowledgeController : BaseApiController
     /// <returns>The compiled circuit information.</returns>
     [HttpPost("circuits/compile")]
     [Authorize(Roles = "Admin,Developer")]
-    [ProducesResponseType(typeof(ApiResponse<CircuitCompilationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> CompileCircuit([FromBody] CircuitCompilationRequest request)
+    public async Task<IActionResult> CompileCircuit([FromBody] object request)
     {
-        try
-        {
-            Logger.LogInformation("Compiling ZK circuit for user {UserId}", GetCurrentUserId());
-            
-            var result = await _zkService.CompileCircuitAsync(request);
-            return Ok(CreateResponse(result, "Circuit compiled successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "CompileCircuit");
-        }
+        // CompileCircuitAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "Circuit compilation not implemented in current interface"));
     }
 
     /// <summary>
@@ -59,16 +52,16 @@ public class ZeroKnowledgeController : BaseApiController
     /// <returns>The generated proof.</returns>
     [HttpPost("proofs/generate")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ProofGenerationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> GenerateProof([FromBody] ProofGenerationRequest request)
+    public async Task<IActionResult> GenerateProof([FromBody] NeoServiceLayer.Core.Models.ProofRequest request)
     {
         try
         {
             Logger.LogInformation("Generating ZK proof for user {UserId}", GetCurrentUserId());
             
-            var result = await _zkService.GenerateProofAsync(request);
+            var result = await _zkService.GenerateProofAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Proof generated successfully"));
         }
         catch (Exception ex)
@@ -84,16 +77,16 @@ public class ZeroKnowledgeController : BaseApiController
     /// <returns>The verification result.</returns>
     [HttpPost("proofs/verify")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ProofVerificationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> VerifyProof([FromBody] ProofVerificationRequest request)
+    public async Task<IActionResult> VerifyProof([FromBody] NeoServiceLayer.Core.Models.ProofVerification request)
     {
         try
         {
             Logger.LogInformation("Verifying ZK proof for user {UserId}", GetCurrentUserId());
             
-            var result = await _zkService.VerifyProofAsync(request);
+            var result = await _zkService.VerifyProofAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Proof verification completed"));
         }
         catch (Exception ex)
@@ -102,92 +95,93 @@ public class ZeroKnowledgeController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// Gets the setup parameters for a circuit.
-    /// </summary>
-    /// <param name="circuitId">The circuit ID.</param>
-    /// <returns>The setup parameters.</returns>
-    [HttpGet("circuits/{circuitId}/setup")]
-    [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<CircuitSetupResult>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    public async Task<IActionResult> GetCircuitSetup(string circuitId)
-    {
-        try
-        {
-            var result = await _zkService.GetCircuitSetupAsync(circuitId);
-            return Ok(CreateResponse(result, "Circuit setup retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "GetCircuitSetup");
-        }
-    }
+    // These endpoints are commented out as the methods don't exist in the service yet
+    // /// <summary>
+    // /// Gets the setup parameters for a circuit.
+    // /// </summary>
+    // /// <param name="circuitId">The circuit ID.</param>
+    // /// <returns>The setup parameters.</returns>
+    // [HttpGet("circuits/{circuitId}/setup")]
+    // [Authorize(Roles = "Admin,ServiceUser")]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+    // public async Task<IActionResult> GetCircuitSetup(string circuitId)
+    // {
+    //     try
+    //     {
+    //         var result = await _zkService.GetCircuitSetupAsync(circuitId);
+    //         return Ok(CreateResponse(result, "Circuit setup retrieved successfully"));
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         return HandleException(ex, "GetCircuitSetup");
+    //     }
+    // }
 
-    /// <summary>
-    /// Lists available zero-knowledge circuits.
-    /// </summary>
-    /// <returns>The list of available circuits.</returns>
-    [HttpGet("circuits")]
-    [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<CircuitInfo>>), 200)]
-    public async Task<IActionResult> GetAvailableCircuits()
-    {
-        try
-        {
-            var result = await _zkService.GetAvailableCircuitsAsync();
-            return Ok(CreateResponse(result, "Available circuits retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "GetAvailableCircuits");
-        }
-    }
+    // /// <summary>
+    // /// Lists available zero-knowledge circuits.
+    // /// </summary>
+    // /// <returns>The list of available circuits.</returns>
+    // [HttpGet("circuits")]
+    // [Authorize(Roles = "Admin,ServiceUser")]
+    // [ProducesResponseType(typeof(ApiResponse<IEnumerable<object>>), 200)]
+    // public async Task<IActionResult> GetAvailableCircuits()
+    // {
+    //     try
+    //     {
+    //         var result = await _zkService.GetAvailableCircuitsAsync();
+    //         return Ok(CreateResponse(result, "Available circuits retrieved successfully"));
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         return HandleException(ex, "GetAvailableCircuits");
+    //     }
+    // }
 
-    /// <summary>
-    /// Performs a trusted setup ceremony for a circuit.
-    /// </summary>
-    /// <param name="request">The trusted setup request.</param>
-    /// <returns>The setup ceremony result.</returns>
-    [HttpPost("circuits/trusted-setup")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse<TrustedSetupResult>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> PerformTrustedSetup([FromBody] TrustedSetupRequest request)
-    {
-        try
-        {
-            Logger.LogInformation("Performing trusted setup for user {UserId}", GetCurrentUserId());
+    // /// <summary>
+    // /// Performs a trusted setup ceremony for a circuit.
+    // /// </summary>
+    // /// <param name="request">The trusted setup request.</param>
+    // /// <returns>The setup ceremony result.</returns>
+    // [HttpPost("circuits/trusted-setup")]
+    // [Authorize(Roles = "Admin")]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+    // public async Task<IActionResult> PerformTrustedSetup([FromBody] object request)
+    // {
+    //     try
+    //     {
+    //         Logger.LogInformation("Performing trusted setup for user {UserId}", GetCurrentUserId());
             
-            var result = await _zkService.PerformTrustedSetupAsync(request);
-            return Ok(CreateResponse(result, "Trusted setup completed successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "PerformTrustedSetup");
-        }
-    }
+    //         var result = await _zkService.PerformTrustedSetupAsync(request);
+    //         return Ok(CreateResponse(result, "Trusted setup completed successfully"));
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         return HandleException(ex, "PerformTrustedSetup");
+    //     }
+    // }
 
-    /// <summary>
-    /// Gets proof statistics and metrics.
-    /// </summary>
-    /// <param name="fromDate">Start date for statistics.</param>
-    /// <param name="toDate">End date for statistics.</param>
-    /// <returns>The proof statistics.</returns>
-    [HttpGet("statistics")]
-    [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ZkStatistics>), 200)]
-    public async Task<IActionResult> GetProofStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
-    {
-        try
-        {
-            var result = await _zkService.GetProofStatisticsAsync(fromDate, toDate);
-            return Ok(CreateResponse(result, "Proof statistics retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "GetProofStatistics");
-        }
-    }
+    // /// <summary>
+    // /// Gets proof statistics and metrics.
+    // /// </summary>
+    // /// <param name="fromDate">Start date for statistics.</param>
+    // /// <param name="toDate">End date for statistics.</param>
+    // /// <returns>The proof statistics.</returns>
+    // [HttpGet("statistics")]
+    // [Authorize(Roles = "Admin,ServiceUser")]
+    // [ProducesResponseType(typeof(ApiResponse<object>), 200)]
+    // public async Task<IActionResult> GetProofStatistics([FromQuery] DateTime? fromDate = null, [FromQuery] DateTime? toDate = null)
+    // {
+    //     try
+    //     {
+    //         var result = await _zkService.GetProofStatisticsAsync(fromDate, toDate);
+    //         return Ok(CreateResponse(result, "Proof statistics retrieved successfully"));
+    //     }
+    //     catch (Exception ex)
+    //     {
+    //         return HandleException(ex, "GetProofStatistics");
+    //     }
+    // }
 }

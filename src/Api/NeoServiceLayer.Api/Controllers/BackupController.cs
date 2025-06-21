@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Backup.Models;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -34,7 +36,7 @@ public class BackupController : BaseApiController
     /// <returns>The backup job details.</returns>
     [HttpPost]
     [Authorize(Roles = "Admin,BackupUser")]
-    [ProducesResponseType(typeof(ApiResponse<BackupJobResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> CreateBackup([FromBody] CreateBackupRequest request)
@@ -43,7 +45,7 @@ public class BackupController : BaseApiController
         {
             Logger.LogInformation("Creating backup job for user {UserId}", GetCurrentUserId());
             
-            var result = await _backupService.CreateBackupAsync(request);
+            var result = await _backupService.CreateBackupAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Backup job created successfully"));
         }
         catch (Exception ex)
@@ -59,13 +61,13 @@ public class BackupController : BaseApiController
     /// <returns>The backup job status.</returns>
     [HttpGet("{jobId}/status")]
     [Authorize(Roles = "Admin,BackupUser")]
-    [ProducesResponseType(typeof(ApiResponse<BackupStatusResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> GetBackupStatus(string jobId)
     {
         try
         {
-            var result = await _backupService.GetBackupStatusAsync(jobId);
+            var result = await _backupService.GetBackupStatusAsync(new BackupStatusRequest { BackupId = jobId }, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Backup status retrieved successfully"));
         }
         catch (Exception ex)
@@ -82,25 +84,14 @@ public class BackupController : BaseApiController
     /// <returns>The list of backup jobs.</returns>
     [HttpGet]
     [Authorize(Roles = "Admin,BackupUser")]
-    [ProducesResponseType(typeof(PaginatedResponse<BackupJobSummary>), 200)]
+    [ProducesResponseType(typeof(PaginatedResponse<object>), 200)]
     public async Task<IActionResult> GetBackups([FromQuery] int page = 1, [FromQuery] int pageSize = 20)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var result = await _backupService.GetBackupsAsync(userId, page, pageSize);
-            
-            return Ok(new PaginatedResponse<BackupJobSummary>
-            {
-                Success = true,
-                Data = result.Items,
-                Message = "Backup jobs retrieved successfully",
-                Timestamp = DateTime.UtcNow,
-                Page = page,
-                PageSize = pageSize,
-                TotalItems = result.TotalCount,
-                TotalPages = (int)Math.Ceiling((double)result.TotalCount / pageSize)
-            });
+            // GetBackupsAsync method doesn't exist - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Get backups operation not yet implemented", false));
         }
         catch (Exception ex)
         {
@@ -115,7 +106,7 @@ public class BackupController : BaseApiController
     /// <returns>The restore job details.</returns>
     [HttpPost("restore")]
     [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse<RestoreJobResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> RestoreBackup([FromBody] RestoreBackupRequest request)
@@ -124,7 +115,7 @@ public class BackupController : BaseApiController
         {
             Logger.LogInformation("Initiating restore operation for user {UserId}", GetCurrentUserId());
             
-            var result = await _backupService.RestoreBackupAsync(request);
+            var result = await _backupService.RestoreBackupAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Restore operation initiated successfully"));
         }
         catch (Exception ex)
@@ -146,7 +137,7 @@ public class BackupController : BaseApiController
     {
         try
         {
-            await _backupService.DeleteBackupAsync(backupId);
+            await _backupService.DeleteBackupAsync(new DeleteBackupRequest { BackupId = backupId }, BlockchainType.NeoN3);
             return Ok(CreateResponse<object>(null, "Backup deleted successfully"));
         }
         catch (Exception ex)

@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Text;
 using System.Threading.RateLimiting;
 using Microsoft.Extensions.DependencyInjection;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
@@ -130,7 +131,7 @@ builder.Services.AddSwaggerGen(c =>
     c.OrderActionsBy(api => $"{api.ActionDescriptor.RouteValues["controller"]}_{api.ActionDescriptor.RouteValues["action"]}");
     
     // Add operation filters for better documentation
-    c.EnableAnnotations();
+    // c.EnableAnnotations(); // Method not available in this Swagger version
     
     // Custom schema IDs to avoid conflicts
     c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
@@ -293,3 +294,6 @@ finally
 {
     Log.CloseAndFlush();
 }
+
+// Make Program accessible for integration tests
+public partial class Program { }

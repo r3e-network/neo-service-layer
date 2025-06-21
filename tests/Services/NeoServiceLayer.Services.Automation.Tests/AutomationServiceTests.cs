@@ -16,7 +16,7 @@ public class AutomationServiceTests : TestBase
     public AutomationServiceTests()
     {
         _loggerMock = new Mock<ILogger<AutomationService>>();
-        _service = new AutomationService(_loggerMock.Object, MockEnclaveWrapper.Object);
+        _service = new AutomationService(_loggerMock.Object, MockEnclaveManager.Object);
     }
 
     [Fact]
@@ -24,8 +24,8 @@ public class AutomationServiceTests : TestBase
     {
         // Act & Assert
         _service.Should().NotBeNull();
-        _service.ServiceName.Should().Be("AutomationService");
-        _service.Description.Should().Be("Smart automation and scheduled task execution");
+        _service.Name.Should().Be("AutomationService");
+        _service.Description.Should().Be("Smart contract automation and scheduling service");
         _service.Version.Should().Be("1.0.0");
     }
 
@@ -261,7 +261,7 @@ public class AutomationServiceTests : TestBase
         await _service.StartAsync();
 
         // Assert
-        _service.IsInitialized.Should().BeTrue();
+        _service.IsEnclaveInitialized.Should().BeTrue();
         _service.IsRunning.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
@@ -294,6 +294,6 @@ public class AutomationServiceTests : TestBase
     public void Service_ShouldHaveCorrectCapabilities()
     {
         // Act & Assert
-        _service.HasCapability<IAutomationService>().Should().BeTrue();
+        _service.Capabilities.Should().Contain(typeof(IAutomationService));
     }
 }

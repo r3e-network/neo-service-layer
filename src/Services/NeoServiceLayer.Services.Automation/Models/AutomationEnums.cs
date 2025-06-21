@@ -125,5 +125,66 @@ public enum AutomationTriggerType
     /// <summary>
     /// Price trigger that executes when price conditions are met.
     /// </summary>
-    Price = 7
+    Price = 7,
+
+    /// <summary>
+    /// Schedule trigger that executes based on a defined schedule.
+    /// </summary>
+    Schedule = 8
+}
+
+/// <summary>
+/// Represents the type of action for an automation.
+/// </summary>
+public enum AutomationActionType
+{
+    /// <summary>
+    /// Smart contract action that executes a smart contract method.
+    /// </summary>
+    SmartContract = 0,
+
+    /// <summary>
+    /// HTTP webhook action that sends HTTP requests.
+    /// </summary>
+    HttpWebhook = 1,
+
+    /// <summary>
+    /// Email notification action.
+    /// </summary>
+    EmailNotification = 2,
+
+    /// <summary>
+    /// SMS notification action.
+    /// </summary>
+    SmsNotification = 3,
+
+    /// <summary>
+    /// Database update action.
+    /// </summary>
+    DatabaseUpdate = 4,
+
+    /// <summary>
+    /// File system operation action.
+    /// </summary>
+    FileSystemOperation = 5,
+
+    /// <summary>
+    /// Custom script execution action.
+    /// </summary>
+    CustomScript = 6,
+
+    /// <summary>
+    /// Multi-action that executes multiple actions in sequence.
+    /// </summary>
+    MultiAction = 7,
+
+    /// <summary>
+    /// Token transfer action.
+    /// </summary>
+    TokenTransfer = 8,
+
+    /// <summary>
+    /// NFT minting action.
+    /// </summary>
+    NftMint = 9
 } 

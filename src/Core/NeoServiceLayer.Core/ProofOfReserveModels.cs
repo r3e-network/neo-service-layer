@@ -67,7 +67,11 @@ public class AssetRegistrationRequest
 
 public class ReserveUpdateRequest
 {
+    public string AssetId { get; set; } = string.Empty;
     public string AssetSymbol { get; set; } = string.Empty;
+    public decimal NewReserveAmount { get; set; }
+    public string UpdateReason { get; set; } = string.Empty;
+    public string AuditorSignature { get; set; } = string.Empty;
     public string[] NewReserveAddresses { get; set; } = Array.Empty<string>();
     public string[] ReserveAddresses { get; set; } = Array.Empty<string>();
     public decimal[] ReserveBalances { get; set; } = Array.Empty<decimal>();
@@ -75,7 +79,6 @@ public class ReserveUpdateRequest
     public bool ForceSnapshot { get; set; }
     public string AuditSource { get; set; } = string.Empty;
     public DateTime AuditTimestamp { get; set; } = DateTime.UtcNow;
-    public string AuditSignature { get; set; } = string.Empty;
     public object AuditData { get; set; } = new();
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
@@ -419,4 +422,97 @@ public class ReserveStatusInfo
     /// Gets or sets compliance notes.
     /// </summary>
     public string ComplianceNotes { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Represents a proof generation request.
+/// </summary>
+public class ProofGenerationRequest
+{
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the proof type.
+    /// </summary>
+    public ProofType ProofType { get; set; } = ProofType.MerkleProof;
+
+    /// <summary>
+    /// Gets or sets whether to include transaction history.
+    /// </summary>
+    public bool IncludeTransactionHistory { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to include signatures.
+    /// </summary>
+    public bool IncludeSignatures { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional proof parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
+}
+
+/// <summary>
+/// Represents audit report request.
+/// </summary>
+public class AuditReportRequest
+{
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the from date.
+    /// </summary>
+    public DateTime FromDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the to date.
+    /// </summary>
+    public DateTime ToDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to include transaction details.
+    /// </summary>
+    public bool IncludeTransactionDetails { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to include compliance check.
+    /// </summary>
+    public bool IncludeComplianceCheck { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
+}
+
+/// <summary>
+/// Represents proof type.
+/// </summary>
+public enum ProofType
+{
+    /// <summary>
+    /// Basic proof.
+    /// </summary>
+    Basic,
+
+    /// <summary>
+    /// Merkle proof.
+    /// </summary>
+    MerkleProof,
+
+    /// <summary>
+    /// Zero-knowledge proof.
+    /// </summary>
+    ZeroKnowledge,
+
+    /// <summary>
+    /// Cryptographic proof.
+    /// </summary>
+    Cryptographic
 }

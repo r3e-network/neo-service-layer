@@ -10,6 +10,11 @@ namespace NeoServiceLayer.Core.Models;
 public class FraudDetectionRequest
 {
     /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the transaction data to analyze.
     /// </summary>
     [Required]
@@ -24,6 +29,11 @@ public class FraudDetectionRequest
     /// Gets or sets the detection sensitivity level.
     /// </summary>
     public DetectionSensitivity Sensitivity { get; set; } = DetectionSensitivity.Standard;
+
+    /// <summary>
+    /// Gets or sets the detection threshold.
+    /// </summary>
+    public double Threshold { get; set; } = 0.8;
 
     /// <summary>
     /// Gets or sets whether to include historical analysis.

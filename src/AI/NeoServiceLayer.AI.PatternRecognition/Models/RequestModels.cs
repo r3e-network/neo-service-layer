@@ -136,6 +136,31 @@ public class RiskAssessmentRequest
     /// Gets or sets the user context for the assessment.
     /// </summary>
     public Dictionary<string, object> UserContext { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the transaction amount.
+    /// </summary>
+    public decimal Amount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sender address.
+    /// </summary>
+    public string SenderAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the receiver address.
+    /// </summary>
+    public string ReceiverAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk factors dictionary.
+    /// </summary>
+    public Dictionary<string, double> RiskFactors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the mitigating factors dictionary.
+    /// </summary>
+    public Dictionary<string, bool> MitigatingFactors { get; set; } = new();
 }
 
 /// <summary>
@@ -150,10 +175,30 @@ public class BehaviorAnalysisRequest
     public string Address { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the analysis window.
+    /// </summary>
+    public TimeSpan AnalysisWindow { get; set; } = TimeSpan.FromDays(30);
+
+    /// <summary>
     /// Gets or sets the transaction history.
     /// </summary>
     [Required]
     public List<Dictionary<string, object>> TransactionHistory { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the transaction data.
+    /// </summary>
+    public List<Dictionary<string, object>> TransactionData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether to include network analysis.
+    /// </summary>
+    public bool IncludeNetworkAnalysis { get; set; }
 
     /// <summary>
     /// Gets or sets the analysis time range.

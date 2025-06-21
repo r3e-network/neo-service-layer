@@ -16,8 +16,9 @@ namespace NeoServiceLayer.Advanced.FairOrdering;
 public interface IFairOrderingService : IEnclaveService, IBlockchainService
 {
     Task<string> CreateOrderingPoolAsync(FairOrderingModels.OrderingPoolConfig config, BlockchainType blockchainType);
-    Task<string> SubmitFairTransactionAsync(FairTransactionRequest request, BlockchainType blockchainType);
-    Task<FairnessAnalysisResult> AnalyzeFairnessRiskAsync(TransactionAnalysisRequest request, BlockchainType blockchainType);
+    Task<string> SubmitFairTransactionAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType);
+    Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType);
+    Task<FairOrderingModels.MevProtectionResult> AnalyzeMevRiskAsync(FairOrderingModels.MevAnalysisRequest request, BlockchainType blockchainType);
     Task<string> SubmitTransactionAsync(FairOrderingModels.TransactionSubmission submission, BlockchainType blockchainType);
     Task<FairOrderingModels.FairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType);
     Task<IEnumerable<FairOrderingModels.OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType);
@@ -80,7 +81,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubmitFairTransactionAsync(FairTransactionRequest request, BlockchainType blockchainType)
+    public async Task<string> SubmitFairTransactionAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -93,7 +94,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairnessAnalysisResult> AnalyzeFairnessRiskAsync(TransactionAnalysisRequest request, BlockchainType blockchainType)
+    public async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 

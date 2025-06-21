@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -27,7 +28,7 @@ public class HealthController : BaseApiController
     public HealthController(
         HealthCheckService healthCheckService,
         IHealthService? healthService,
-        ILogger<HealthController> logger)
+        ILogger<HealthController> logger) : base(logger)
     {
         _healthCheckService = healthCheckService ?? throw new ArgumentNullException(nameof(healthCheckService));
         _healthService = healthService;

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Web.Models;
 using System.Reflection;
 
@@ -442,8 +443,8 @@ public class ServiceMonitoringController : BaseApiController
 
             // Get real aggregated metrics from all services
             var healthyServices = await GetHealthyServiceCount(serviceNames);
-            var systemMetrics = await GetAggregatedSystemMetrics(serviceNames);
-            var blockchainData = await GetRealBlockchainData();
+            dynamic systemMetrics = await GetAggregatedSystemMetrics(serviceNames);
+            dynamic blockchainData = await GetRealBlockchainData();
 
             var overview = new
             {
@@ -472,7 +473,7 @@ public class ServiceMonitoringController : BaseApiController
             };
 
             Logger.LogInformation("Retrieved real system overview - {HealthyServices}/{TotalServices} services healthy, Neo N3: Block {NeoN3Height}, Neo X: Block {NeoXHeight}", 
-                healthyServices, serviceNames.Count, blockchainData.NeoN3.BlockHeight, blockchainData.NeoX.BlockHeight);
+                healthyServices, serviceNames.Count, (long)blockchainData.NeoN3.BlockHeight, (long)blockchainData.NeoX.BlockHeight);
 
             return Ok(CreateResponse(overview, "System overview retrieved successfully"));
         }
@@ -818,18 +819,20 @@ public class ServiceMonitoringController : BaseApiController
         try
         {
             // Get Neo N3 data
-            var neoN3Client = blockchainClientFactory.GetClient(BlockchainType.NeoN3);
+            var neoN3Client = blockchainClientFactory.CreateClient(BlockchainType.NeoN3);
             var neoN3Stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var neoN3Block = await neoN3Client.GetLatestBlockAsync();
+            var neoN3BlockHeight = await neoN3Client.GetBlockHeightAsync();
+            var neoN3Block = await neoN3Client.GetBlockAsync(neoN3BlockHeight);
             neoN3Stopwatch.Stop();
-            var neoN3Peers = await neoN3Client.GetPeersAsync();
+            var neoN3Peers = 0; // Peer information not available in current interface
 
             // Get Neo X data
-            var neoXClient = blockchainClientFactory.GetClient(BlockchainType.NeoX);
+            var neoXClient = blockchainClientFactory.CreateClient(BlockchainType.NeoX);
             var neoXStopwatch = System.Diagnostics.Stopwatch.StartNew();
-            var neoXBlock = await neoXClient.GetLatestBlockAsync();
+            var neoXBlockHeight = await neoXClient.GetBlockHeightAsync();
+            var neoXBlock = await neoXClient.GetBlockAsync(neoXBlockHeight);
             neoXStopwatch.Stop();
-            var neoXPeers = await neoXClient.GetPeersAsync();
+            var neoXPeers = 0; // Peer information not available in current interface
 
             return new
             {
@@ -838,16 +841,16 @@ public class ServiceMonitoringController : BaseApiController
                     IsConnected = true,
                     BlockHeight = neoN3Block.Height,
                     ResponseTime = (int)neoN3Stopwatch.ElapsedMilliseconds,
-                    PeerCount = neoN3Peers.Count
+                    PeerCount = neoN3Peers
                 },
                 NeoX = new
                 {
                     IsConnected = true,
                     BlockHeight = neoXBlock.Height,
                     ResponseTime = (int)neoXStopwatch.ElapsedMilliseconds,
-                    PeerCount = neoXPeers.Count
+                    PeerCount = neoXPeers
                 },
-                TotalTransactions = neoN3Block.TotalTransactions + neoXBlock.TotalTransactions,
+                TotalTransactions = neoN3Block.Transactions.Count + neoXBlock.Transactions.Count,
                 ActiveWallets = await GetActiveWalletCount()
             };
         }

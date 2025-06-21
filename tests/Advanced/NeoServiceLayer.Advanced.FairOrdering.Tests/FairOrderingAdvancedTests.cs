@@ -8,6 +8,8 @@ using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
 using FluentAssertions;
 using AutoFixture;
+using Moq;
+using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Tests;
 
@@ -47,7 +49,8 @@ public class FairOrderingAdvancedTests : IDisposable
 
     private async Task InitializeServiceAsync()
     {
-        await _service.StartAsync(CancellationToken.None);
+        await _service.InitializeAsync();
+        await _service.StartAsync();
     }
 
     #region Ordering Pool Management Tests
@@ -125,7 +128,7 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task AnalyzeFairnessRiskAsync_HighValueTransaction_DetectsRisk()
     {
         // Arrange
-        var request = new TransactionAnalysisRequest
+        var request = new FairOrderingModels.TransactionAnalysisRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -153,7 +156,7 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task AnalyzeFairnessRiskAsync_SuspiciousGasPattern_DetectsFrontRunning()
     {
         // Arrange
-        var request = new TransactionAnalysisRequest
+        var request = new FairOrderingModels.TransactionAnalysisRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -186,8 +189,8 @@ public class FairOrderingAdvancedTests : IDisposable
             FunctionSignature = "swapExactTokensForTokens",
             Parameters = new Dictionary<string, object>
             {
-                ["amountIn"] = 100000000000000000000, // 100 tokens
-                ["amountOutMin"] = 95000000000000000000, // 95 tokens min
+                ["amountIn"] = 1000000000000000000UL, // 1 token (18 decimals)
+                ["amountOutMin"] = 950000000000000000UL, // 0.95 tokens min
                 ["path"] = new[] { "0xtoken1", "0xtoken2" },
                 ["deadline"] = DateTimeOffset.UtcNow.AddMinutes(20).ToUnixTimeSeconds()
             },
@@ -205,7 +208,7 @@ public class FairOrderingAdvancedTests : IDisposable
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
         result.MevRiskScore.Should().BeGreaterThan(0.5);
-        result.RiskLevel.Should().BeOneOf(RiskLevel.Medium, RiskLevel.High);
+        result.RiskLevel.Should().BeOneOf(FairOrderingModels.RiskLevel.Medium, FairOrderingModels.RiskLevel.High);
         result.DetectedThreats.Should().NotBeEmpty();
         result.DetectedThreats.Should().Contain(t => t.Contains("arbitrage") || t.Contains("sandwich"));
         result.ProtectionStrategies.Should().NotBeEmpty();
@@ -219,7 +222,7 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task SubmitFairTransactionAsync_WithProtection_ProcessesCorrectly()
     {
         // Arrange
-        var request = new FairTransactionRequest
+        var request = new FairOrderingModels.FairTransactionRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -241,23 +244,23 @@ public class FairOrderingAdvancedTests : IDisposable
     }
 
     [Theory]
-    [InlineData(ProtectionLevel.None, 0.001m)]
-    [InlineData(ProtectionLevel.Basic, 0.005m)]
-    [InlineData(ProtectionLevel.Standard, 0.010m)]
-    [InlineData(ProtectionLevel.High, 0.015m)]
-    [InlineData(ProtectionLevel.Maximum, 0.020m)]
+    [InlineData(0, 0.001)] // ProtectionLevel.None
+    [InlineData(1, 0.005)] // ProtectionLevel.Basic
+    [InlineData(2, 0.010)] // ProtectionLevel.Standard
+    [InlineData(3, 0.015)] // ProtectionLevel.High
+    [InlineData(4, 0.020)] // ProtectionLevel.Maximum
     public async Task SubmitFairTransactionAsync_VariousProtectionLevels_AppliesCorrectFees(
-        ProtectionLevel protectionLevel, decimal expectedMinFee)
+        int protectionLevelValue, double expectedMinFee)
     {
         // Arrange
-        var request = new FairTransactionRequest
+        var request = new FairOrderingModels.FairTransactionRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
             Value = 100000m,
             Data = "0xa9059cbb",
             GasLimit = 100000,
-            ProtectionLevel = protectionLevel,
+            ProtectionLevel = (ProtectionLevel)protectionLevelValue,
             MaxSlippage = 0.01m
         };
 
@@ -390,7 +393,7 @@ public class FairOrderingAdvancedTests : IDisposable
         // Arrange
         const int analysisCount = 50;
         var requests = Enumerable.Range(0, analysisCount)
-            .Select(i => new TransactionAnalysisRequest
+            .Select(i => new FairOrderingModels.TransactionAnalysisRequest
             {
                 From = $"0x{i:D40}",
                 To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -440,9 +443,12 @@ public class FairOrderingAdvancedTests : IDisposable
     private void SetupEnclaveManager()
     {
         _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+        _mockEnclaveManager.Setup(x => x.InitializeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockEnclaveManager.Setup(x => x.InitializeEnclaveAsync()).ReturnsAsync(true);
         _mockEnclaveManager.Setup(x => x.StorageStoreDataAsync(
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("success");
     }
 
     private async Task SubmitTestTransactions(int count)

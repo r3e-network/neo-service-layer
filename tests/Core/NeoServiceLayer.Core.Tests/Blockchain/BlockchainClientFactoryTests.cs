@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Infrastructure.Blockchain;
+using InfraBlockchain = NeoServiceLayer.Infrastructure;
 
 namespace NeoServiceLayer.Core.Tests.Blockchain;
 
@@ -157,7 +157,7 @@ public class BlockchainClientFactoryTests
     public void IsClientTypeRegistered_WithUnregisteredType_ShouldReturnFalse()
     {
         // Arrange
-        var blockchainType = BlockchainType.Bitcoin;
+        var blockchainType = BlockchainType.NeoN3;
         _factoryMock.Setup(x => x.IsClientTypeRegistered(blockchainType))
                    .Returns(false);
 
@@ -192,7 +192,7 @@ public class BlockchainClientFactoryTests
     public void BlockchainConfiguration_ShouldSupportCustomValues()
     {
         // Arrange
-        var expectedType = BlockchainType.Ethereum;
+        var expectedType = BlockchainType.NeoX;
         var expectedEndpoint = "https://mainnet.infura.io/v3/test";
         var expectedApiKey = "test-api-key-123";
         var expectedTimeout = TimeSpan.FromMinutes(2);

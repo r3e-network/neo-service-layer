@@ -1,7 +1,6 @@
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NeoServiceLayer.Infrastructure;
@@ -9,10 +8,10 @@ using Serilog;
 using System.Reflection;
 using System.Security.Claims;
 using System.Text;
-
 using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
+using Asp.Versioning;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.AI.Prediction;
@@ -176,19 +175,19 @@ builder.Services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagement
 builder.Services.AddScoped<NeoServiceLayer.Services.Randomness.IRandomnessService, NeoServiceLayer.Services.Randomness.RandomnessService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Oracle.IOracleService, NeoServiceLayer.Services.Oracle.OracleService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Storage.IStorageService, NeoServiceLayer.Services.Storage.StorageService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Voting.IVotingService, NeoServiceLayer.Services.Voting.VotingService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService, NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService>();
+builder.Services.AddScoped<NeoServiceLayer.Core.IVotingService, NeoServiceLayer.Services.Voting.VotingService>();
+builder.Services.AddScoped<NeoServiceLayer.Core.IZeroKnowledgeService, NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Backup.IBackupService, NeoServiceLayer.Services.Backup.BackupService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Health.IHealthService, NeoServiceLayer.Services.Health.HealthService>();
+builder.Services.AddScoped<NeoServiceLayer.Core.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
+builder.Services.AddScoped<NeoServiceLayer.Core.IHealthService, NeoServiceLayer.Services.Health.HealthService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService, NeoServiceLayer.Services.Monitoring.MonitoringService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService, NeoServiceLayer.Services.Notification.NotificationService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService, NeoServiceLayer.Services.AbstractAccount.AbstractAccountService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Configuration.IConfigurationService, NeoServiceLayer.Services.Configuration.ConfigurationService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
+builder.Services.AddScoped<NeoServiceLayer.Core.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
 builder.Services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
 
 // Register AI Services

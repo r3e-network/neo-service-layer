@@ -54,6 +54,36 @@ public class PatternAnalysisResult
     /// Gets or sets the pattern type that was analyzed.
     /// </summary>
     public PatternRecognitionType PatternType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of patterns found.
+    /// </summary>
+    public int PatternsFound { get; set; }
+
+    /// <summary>
+    /// Gets or sets the confidence score.
+    /// </summary>
+    public double ConfidenceScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the analysis metrics.
+    /// </summary>
+    public Dictionary<string, double> AnalysisMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the temporal analysis results.
+    /// </summary>
+    public Dictionary<string, object> TemporalAnalysis { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the network analysis results.
+    /// </summary>
+    public Dictionary<string, object> NetworkAnalysis { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the processing metrics.
+    /// </summary>
+    public Dictionary<string, double> ProcessingMetrics { get; set; } = new();
 }
 
 /// <summary>
@@ -241,6 +271,16 @@ public class RiskAssessmentResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk breakdown by category.
+    /// </summary>
+    public Dictionary<string, double> RiskBreakdown { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the mitigating factors.
+    /// </summary>
+    public Dictionary<string, double> MitigatingFactors { get; set; } = new();
 }
 
 /// <summary>
@@ -292,6 +332,46 @@ public class BehaviorAnalysisResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the user ID associated with the behavior analysis.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the overall behavior score.
+    /// </summary>
+    public double BehaviorScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this is a new user profile.
+    /// </summary>
+    public bool IsNewUserProfile { get; set; }
+
+    /// <summary>
+    /// Gets or sets the behavior patterns detected.
+    /// </summary>
+    public List<string> BehaviorPatterns { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk factors identified.
+    /// </summary>
+    public List<string> RiskFactors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the deviation from the normal profile.
+    /// </summary>
+    public double DeviationFromProfile { get; set; }
+
+    /// <summary>
+    /// Gets or sets the recommendations based on the analysis.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the alert level based on the analysis.
+    /// </summary>
+    public AlertLevel AlertLevel { get; set; }
 }
 
 /// <summary>
@@ -308,6 +388,11 @@ public class FraudDetectionResult
     /// Gets or sets the transaction ID.
     /// </summary>
     public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the fraud score.

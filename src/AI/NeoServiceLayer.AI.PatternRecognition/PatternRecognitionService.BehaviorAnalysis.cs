@@ -10,29 +10,6 @@ namespace NeoServiceLayer.AI.PatternRecognition;
 /// </summary>
 public partial class PatternRecognitionService
 {
-    /// <summary>
-    /// Analyzes behavior patterns for an entity.
-    /// </summary>
-    private async Task<BehaviorProfile> AnalyzeBehaviorInEnclaveAsync(BehaviorAnalysisRequest request)
-    {
-        await Task.Delay(100); // Simulate enclave processing time
-
-        // Perform actual behavior analysis using pattern recognition algorithms
-
-        // Analyze transaction patterns over time
-        var transactionPatterns = AnalyzeTransactionPatterns(request);
-
-        // Identify behavioral characteristics
-        var behaviorCharacteristics = IdentifyBehaviorCharacteristics(transactionPatterns);
-
-        // Compare against normal behavior patterns
-        var normalityScore = CompareAgainstNormalPatterns(behaviorCharacteristics);
-
-        // Generate a comprehensive behavior profile
-        var profile = GenerateBehaviorProfile(request, transactionPatterns, behaviorCharacteristics, normalityScore);
-
-        return profile;
-    }
 
     /// <summary>
     /// Analyzes transaction patterns from behavior analysis request.

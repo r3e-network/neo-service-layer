@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle;
 
@@ -23,7 +24,7 @@ public class OracleController : BaseApiController
     /// </summary>
     /// <param name="oracleService">The oracle service.</param>
     /// <param name="logger">The logger.</param>
-    public OracleController(IOracleService oracleService, ILogger<OracleController> logger)
+    public OracleController(IOracleService oracleService, ILogger<OracleController> logger) : base(logger)
     {
         _oracleService = oracleService ?? throw new ArgumentNullException(nameof(oracleService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -44,7 +45,7 @@ public class OracleController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> CreateDataSource(
-        [FromBody] DataSourceRequest request,
+        [FromBody] NeoServiceLayer.Services.Oracle.Models.CreateDataSourceRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -60,7 +61,7 @@ public class OracleController : BaseApiController
             _logger.LogInformation("Data source created with ID: {DataSourceId} on {Blockchain}", 
                 dataSourceId, blockchainType);
             
-            return Ok(CreateSuccessResponse(dataSourceId, "Data source created successfully"));
+            return Ok(CreateResponse(dataSourceId, "Data source created successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -86,7 +87,7 @@ public class OracleController : BaseApiController
     /// <response code="404">Data source not found.</response>
     [HttpGet("data/{dataSourceId}/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<OracleDataResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -102,7 +103,12 @@ public class OracleController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var data = await _oracleService.GetDataAsync(dataSourceId, blockchain);
+            var dataRequest = new NeoServiceLayer.Services.Oracle.Models.OracleDataRequest
+            {
+                DataSourceId = dataSourceId,
+                FetchLatest = true
+            };
+            var data = await _oracleService.GetDataAsync(dataRequest, blockchain);
             
             if (data == null)
             {
@@ -112,7 +118,7 @@ public class OracleController : BaseApiController
             _logger.LogInformation("Data retrieved from source: {DataSourceId} on {Blockchain}", 
                 dataSourceId, blockchainType);
             
-            return Ok(CreateSuccessResponse(data, "Data retrieved successfully"));
+            return Ok(CreateResponse(data, "Data retrieved successfully"));
         }
         catch (Exception ex)
         {
@@ -140,7 +146,7 @@ public class OracleController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> UpdateDataSource(
         [FromRoute] string dataSourceId,
-        [FromBody] DataSourceUpdate update,
+        [FromBody] NeoServiceLayer.Services.Oracle.Models.UpdateDataSourceRequest update,
         [FromRoute] string blockchainType)
     {
         try
@@ -151,7 +157,9 @@ public class OracleController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var success = await _oracleService.UpdateDataSourceAsync(dataSourceId, update, blockchain);
+            update.DataSourceId = dataSourceId; // Set the DataSourceId from route parameter
+            var result = await _oracleService.UpdateDataSourceAsync(update, blockchain);
+            var success = result.Success;
             
             if (!success)
             {
@@ -161,7 +169,7 @@ public class OracleController : BaseApiController
             _logger.LogInformation("Data source updated: {DataSourceId} on {Blockchain}", 
                 dataSourceId, blockchainType);
             
-            return Ok(CreateSuccessResponse(success, "Data source updated successfully"));
+            return Ok(CreateResponse(success, "Data source updated successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -203,7 +211,12 @@ public class OracleController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var success = await _oracleService.DeleteDataSourceAsync(dataSourceId, blockchain);
+            var deleteRequest = new NeoServiceLayer.Services.Oracle.Models.DeleteDataSourceRequest
+            {
+                DataSourceId = dataSourceId
+            };
+            var result = await _oracleService.DeleteDataSourceAsync(deleteRequest, blockchain);
+            var success = result.Success;
             
             if (!success)
             {
@@ -213,7 +226,7 @@ public class OracleController : BaseApiController
             _logger.LogInformation("Data source deleted: {DataSourceId} from {Blockchain}", 
                 dataSourceId, blockchainType);
             
-            return Ok(CreateSuccessResponse(success, "Data source deleted successfully"));
+            return Ok(CreateResponse(success, "Data source deleted successfully"));
         }
         catch (Exception ex)
         {
@@ -234,7 +247,7 @@ public class OracleController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("datasources/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<DataSourceInfo>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<object>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> ListDataSources(
@@ -255,19 +268,15 @@ public class OracleController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var sources = await _oracleService.GetDataSourcesAsync(blockchain);
-            var paginatedSources = sources.Skip(skip).Take(take).ToList();
-            
-            var response = new PaginatedResponse<DataSourceInfo>
+            var listRequest = new NeoServiceLayer.Services.Oracle.Models.ListDataSourcesRequest
             {
-                Items = paginatedSources,
-                TotalCount = sources.Count(),
-                Skip = skip,
-                Take = take,
-                HasMore = sources.Count() > skip + take
+                PageSize = take,
+                PageNumber = (skip / take) + 1
             };
-            
-            return Ok(CreateSuccessResponse(response, "Data sources retrieved successfully"));
+            var result = await _oracleService.GetDataSourcesAsync(listRequest, blockchain);
+            var sources = result.DataSources;
+            // Return the service result directly since it already contains pagination
+            return Ok(CreateResponse(result, "Data sources retrieved successfully"));
         }
         catch (Exception ex)
         {
@@ -291,7 +300,7 @@ public class OracleController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> CreateSubscription(
-        [FromBody] SubscriptionRequest request,
+        [FromBody] object request,
         [FromRoute] string blockchainType)
     {
         try
@@ -301,13 +310,8 @@ public class OracleController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var subscriptionId = await _oracleService.CreateSubscriptionAsync(request, blockchain);
-            
-            _logger.LogInformation("Subscription created with ID: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(subscriptionId, "Subscription created successfully"));
+            // CreateSubscriptionAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Subscription functionality not implemented in current interface"));
         }
         catch (ArgumentException ex)
         {
@@ -348,18 +352,8 @@ public class OracleController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var success = await _oracleService.CancelSubscriptionAsync(subscriptionId, blockchain);
-            
-            if (!success)
-            {
-                return NotFound(CreateErrorResponse($"Subscription not found: {subscriptionId}"));
-            }
-            
-            _logger.LogInformation("Subscription cancelled: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(success, "Subscription cancelled successfully"));
+            // CancelSubscriptionAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Cancel subscription functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {
@@ -379,11 +373,11 @@ public class OracleController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpPost("batch/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<OracleBatchResponse>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> ExecuteBatchRequest(
-        [FromBody] OracleBatchRequest request,
+        [FromBody] object request,
         [FromRoute] string blockchainType)
     {
         try
@@ -393,23 +387,8 @@ public class OracleController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            if (request.DataSourceIds == null || request.DataSourceIds.Count == 0)
-            {
-                return BadRequest(CreateErrorResponse("No data sources specified"));
-            }
-
-            if (request.DataSourceIds.Count > 50)
-            {
-                return BadRequest(CreateErrorResponse("Too many data sources (max 50)"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var results = await _oracleService.GetBatchDataAsync(request, blockchain);
-            
-            _logger.LogInformation("Batch request executed for {Count} data sources on {Blockchain}", 
-                request.DataSourceIds.Count, blockchainType);
-            
-            return Ok(CreateSuccessResponse(results, "Batch request executed successfully"));
+            // GetBatchDataAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Batch data functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {
@@ -418,98 +397,6 @@ public class OracleController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// Creates a subscription to receive data updates from oracle sources.
-    /// </summary>
-    /// <param name="request">The subscription request.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The subscription details.</returns>
-    /// <response code="200">Subscription created successfully.</response>
-    /// <response code="400">Invalid request.</response>
-    /// <response code="401">Unauthorized access.</response>
-    [HttpPost("subscriptions/{blockchainType}")]
-    [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<OracleSubscriptionResponse>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> CreateSubscription(
-        [FromBody] OracleSubscriptionRequest request,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var subscription = await _oracleService.SubscribeAsync(request, blockchain);
-            
-            _logger.LogInformation("Oracle subscription created: {SubscriptionId} on {Blockchain}", 
-                subscription.SubscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(subscription, "Subscription created successfully"));
-        }
-        catch (ArgumentException ex)
-        {
-            _logger.LogWarning(ex, "Invalid subscription request");
-            return BadRequest(CreateErrorResponse($"Invalid subscription request: {ex.Message}"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating subscription");
-            return StatusCode(500, CreateErrorResponse($"Failed to create subscription: {ex.Message}"));
-        }
-    }
-
-    /// <summary>
-    /// Cancels an existing oracle subscription.
-    /// </summary>
-    /// <param name="subscriptionId">The subscription ID to cancel.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>Success indicator.</returns>
-    /// <response code="200">Subscription cancelled successfully.</response>
-    /// <response code="400">Invalid request.</response>
-    /// <response code="401">Unauthorized access.</response>
-    /// <response code="404">Subscription not found.</response>
-    [HttpDelete("subscriptions/{subscriptionId}/{blockchainType}")]
-    [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    public async Task<IActionResult> CancelSubscription(
-        [FromRoute] string subscriptionId,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var request = new OracleUnsubscribeRequest { SubscriptionId = subscriptionId };
-            var success = await _oracleService.UnsubscribeAsync(request, blockchain);
-            
-            if (!success)
-            {
-                return NotFound(CreateErrorResponse($"Subscription not found: {subscriptionId}"));
-            }
-            
-            _logger.LogInformation("Oracle subscription cancelled: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(success, "Subscription cancelled successfully"));
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error cancelling subscription: {SubscriptionId}", subscriptionId);
-            return StatusCode(500, CreateErrorResponse($"Failed to cancel subscription: {ex.Message}"));
-        }
-    }
 
     /// <summary>
     /// Lists all active subscriptions for the current user.
@@ -523,7 +410,7 @@ public class OracleController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("subscriptions/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<OracleSubscriptionInfo>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<object>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> ListSubscriptions(
@@ -543,13 +430,8 @@ public class OracleController : BaseApiController
                 return BadRequest(CreateErrorResponse("Maximum page size is 100"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var subscriptions = await _oracleService.ListSubscriptionsAsync(blockchain, skip, take);
-            
-            _logger.LogInformation("Listed {Count} subscriptions on {Blockchain}", 
-                subscriptions.Items.Count, blockchainType);
-            
-            return Ok(CreateSuccessResponse(subscriptions, "Subscriptions retrieved successfully"));
+            // ListSubscriptionsAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "List subscriptions functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {

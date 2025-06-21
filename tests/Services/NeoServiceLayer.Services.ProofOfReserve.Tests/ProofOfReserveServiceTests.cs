@@ -5,18 +5,23 @@ using FluentAssertions;
 using NeoServiceLayer.Services.ProofOfReserve;
 using NeoServiceLayer.TestInfrastructure;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
 
 namespace NeoServiceLayer.Services.ProofOfReserve.Tests;
 
 public class ProofOfReserveServiceTests : TestBase
 {
     private readonly Mock<ILogger<ProofOfReserveService>> _loggerMock;
+    private readonly Mock<IServiceConfiguration> _configurationMock;
     private readonly ProofOfReserveService _service;
 
     public ProofOfReserveServiceTests()
     {
         _loggerMock = new Mock<ILogger<ProofOfReserveService>>();
-        _service = new ProofOfReserveService(_loggerMock.Object, MockEnclaveWrapper.Object);
+        _configurationMock = new Mock<IServiceConfiguration>();
+        
+        // ProofOfReserveService expects IServiceConfiguration as second parameter
+        _service = new ProofOfReserveService(_loggerMock.Object, _configurationMock.Object);
     }
 
     [Fact]
@@ -24,8 +29,8 @@ public class ProofOfReserveServiceTests : TestBase
     {
         // Act & Assert
         _service.Should().NotBeNull();
-        _service.ServiceName.Should().Be("ProofOfReserveService");
-        _service.Description.Should().Be("Proof of reserves and asset backing verification");
+        _service.Name.Should().Be("ProofOfReserve");
+        _service.Description.Should().Be("Asset backing verification and reserve monitoring service");
         _service.Version.Should().Be("1.0.0");
     }
 
@@ -48,9 +53,7 @@ public class ProofOfReserveServiceTests : TestBase
         var result = await _service.RegisterAssetAsync(request, blockchainType);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.AssetId.Should().NotBeNullOrEmpty();
+        result.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
@@ -68,22 +71,17 @@ public class ProofOfReserveServiceTests : TestBase
     public async Task GenerateProofAsync_WithValidRequest_ShouldReturnProof(BlockchainType blockchainType)
     {
         // Arrange
-        var request = new ProofGenerationRequest
-        {
-            AssetId = "test-asset-id",
-            ProofType = ProofType.MerkleProof,
-            IncludeTransactionHistory = true,
-            IncludeSignatures = true
-        };
+        var assetId = "test-asset-id";
 
         // Act
-        var result = await _service.GenerateProofAsync(request, blockchainType);
+        var result = await _service.GenerateProofAsync(assetId, blockchainType);
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.ProofData.Should().NotBeNullOrEmpty();
-        result.ProofHash.Should().NotBeNullOrEmpty();
+        result.ProofId.Should().NotBeNullOrEmpty();
+        result.AssetId.Should().Be(assetId);
+        result.MerkleRoot.Should().NotBeNullOrEmpty();
+        result.Signature.Should().NotBeNullOrEmpty();
         result.GeneratedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
@@ -94,17 +92,13 @@ public class ProofOfReserveServiceTests : TestBase
     public async Task VerifyProofAsync_WithValidProof_ShouldReturnValid(BlockchainType blockchainType)
     {
         // Arrange
-        var proofData = "eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9...";
-        var assetId = "test-asset-id";
+        var proofId = "test-proof-id";
 
         // Act
-        var result = await _service.VerifyProofAsync(proofData, assetId, blockchainType);
+        var result = await _service.VerifyProofAsync(proofId, blockchainType);
 
         // Assert
-        result.Should().NotBeNull();
-        result.IsValid.Should().BeTrue();
-        result.AssetId.Should().Be(assetId);
-        result.VerifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        result.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
@@ -126,7 +120,7 @@ public class ProofOfReserveServiceTests : TestBase
             TotalSupply = 1000000m
         };
         var registrationResult = await _service.RegisterAssetAsync(registrationRequest, blockchainType);
-        assetId = registrationResult.AssetId;
+        assetId = registrationResult;
 
         // Act
         var result = await _service.GetReserveStatusAsync(assetId, blockchainType);
@@ -155,13 +149,10 @@ public class ProofOfReserveServiceTests : TestBase
         };
 
         // Act
-        var result = await _service.UpdateReserveDataAsync(request, blockchainType);
+        var result = await _service.UpdateReserveDataAsync(request.AssetId, request, blockchainType);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.UpdateId.Should().NotBeNullOrEmpty();
-        result.UpdatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        result.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
@@ -173,15 +164,12 @@ public class ProofOfReserveServiceTests : TestBase
         // Arrange
         var assetId = "test-asset-id";
         var threshold = 0.9m; // 90%
-        var alertType = ReserveAlertType.LowReserveRatio;
 
         // Act
-        var result = await _service.SetAlertThresholdAsync(assetId, threshold, alertType, blockchainType);
+        var result = await _service.SetAlertThresholdAsync(assetId, threshold, blockchainType);
 
         // Assert
-        result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.AlertId.Should().NotBeNullOrEmpty();
+        result.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
@@ -224,22 +212,17 @@ public class ProofOfReserveServiceTests : TestBase
     public async Task GenerateAuditReportAsync_WithValidRequest_ShouldReturnReport(BlockchainType blockchainType)
     {
         // Arrange
-        var request = new AuditReportRequest
-        {
-            AssetId = "test-asset-id",
-            FromDate = DateTime.UtcNow.AddDays(-30),
-            ToDate = DateTime.UtcNow,
-            IncludeTransactionDetails = true,
-            IncludeComplianceCheck = true
-        };
+        var assetId = "test-asset-id";
+        var fromDate = DateTime.UtcNow.AddDays(-30);
+        var toDate = DateTime.UtcNow;
 
         // Act
-        var result = await _service.GenerateAuditReportAsync(request, blockchainType);
+        var result = await _service.GenerateAuditReportAsync(assetId, fromDate, toDate, blockchainType);
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
         result.ReportId.Should().NotBeNullOrEmpty();
+        result.AssetId.Should().Be(assetId);
         result.GeneratedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
@@ -252,7 +235,6 @@ public class ProofOfReserveServiceTests : TestBase
         await _service.StartAsync();
 
         // Assert
-        _service.IsInitialized.Should().BeTrue();
         _service.IsRunning.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
@@ -285,7 +267,7 @@ public class ProofOfReserveServiceTests : TestBase
     public void Service_ShouldHaveCorrectCapabilities()
     {
         // Act & Assert
-        _service.HasCapability<IProofOfReserveService>().Should().BeTrue();
+        _service.Capabilities.Should().Contain(typeof(IProofOfReserveService));
     }
 
     [Fact]

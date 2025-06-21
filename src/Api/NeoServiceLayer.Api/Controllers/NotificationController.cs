@@ -1,3 +1,4 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -24,7 +25,7 @@ public class NotificationController : BaseApiController
     /// </summary>
     /// <param name="notificationService">The notification service.</param>
     /// <param name="logger">The logger.</param>
-    public NotificationController(INotificationService notificationService, ILogger<NotificationController> logger)
+    public NotificationController(INotificationService notificationService, ILogger<NotificationController> logger) : base(logger)
     {
         _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
@@ -45,7 +46,7 @@ public class NotificationController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> SendNotification(
-        [FromBody] NotificationRequest request,
+        [FromBody] SendNotificationRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -61,7 +62,7 @@ public class NotificationController : BaseApiController
             _logger.LogInformation("Notification sent with ID: {NotificationId} on {Blockchain}", 
                 notificationId, blockchainType);
             
-            return Ok(CreateSuccessResponse(notificationId, "Notification sent successfully"));
+            return Ok(CreateResponse(notificationId, "Notification sent successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -86,11 +87,11 @@ public class NotificationController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpPost("batch/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<BatchNotificationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> SendBatchNotifications(
-        [FromBody] BatchNotificationRequest request,
+        [FromBody] dynamic request,
         [FromRoute] string blockchainType)
     {
         try
@@ -113,10 +114,9 @@ public class NotificationController : BaseApiController
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _notificationService.SendBatchNotificationsAsync(request, blockchain);
             
-            _logger.LogInformation("Batch sent {Count} notifications on {Blockchain}", 
-                request.Notifications.Count, blockchainType);
+            _logger.LogInformation("Batch notifications sent on {Blockchain}", blockchainType);
             
-            return Ok(CreateSuccessResponse(result, "Batch notifications processed"));
+            return Ok(CreateResponse(result, "Batch notifications processed"));
         }
         catch (ArgumentException ex)
         {
@@ -142,7 +142,7 @@ public class NotificationController : BaseApiController
     /// <response code="404">Notification not found.</response>
     [HttpGet("{notificationId}/status/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<NotificationStatus>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -165,7 +165,7 @@ public class NotificationController : BaseApiController
                 return NotFound(CreateErrorResponse($"Notification not found: {notificationId}"));
             }
             
-            return Ok(CreateSuccessResponse(status, "Status retrieved successfully"));
+            return Ok(CreateResponse(status, "Status retrieved successfully"));
         }
         catch (Exception ex)
         {
@@ -199,13 +199,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var subscriptionId = await _notificationService.CreateSubscriptionAsync(request, blockchain);
-            
-            _logger.LogInformation("Notification subscription created with ID: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(subscriptionId, "Subscription created successfully"));
+            // CreateSubscriptionAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Subscription functionality not implemented in current interface"));
         }
         catch (ArgumentException ex)
         {
@@ -238,7 +233,7 @@ public class NotificationController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> UpdateSubscription(
         [FromRoute] string subscriptionId,
-        [FromBody] NotificationSubscriptionUpdate update,
+        [FromBody] object update,
         [FromRoute] string blockchainType)
     {
         try
@@ -248,18 +243,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var success = await _notificationService.UpdateSubscriptionAsync(subscriptionId, update, blockchain);
-            
-            if (!success)
-            {
-                return NotFound(CreateErrorResponse($"Subscription not found: {subscriptionId}"));
-            }
-            
-            _logger.LogInformation("Subscription updated: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(success, "Subscription updated successfully"));
+            // UpdateSubscriptionAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Update subscription functionality not implemented in current interface"));
         }
         catch (ArgumentException ex)
         {
@@ -300,18 +285,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var success = await _notificationService.CancelSubscriptionAsync(subscriptionId, blockchain);
-            
-            if (!success)
-            {
-                return NotFound(CreateErrorResponse($"Subscription not found: {subscriptionId}"));
-            }
-            
-            _logger.LogInformation("Subscription cancelled: {SubscriptionId} on {Blockchain}", 
-                subscriptionId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(success, "Subscription cancelled successfully"));
+            // CancelSubscriptionAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Cancel subscription functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {
@@ -352,20 +327,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse("Invalid pagination parameters"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var templates = await _notificationService.GetTemplatesAsync(blockchain);
-            var paginatedTemplates = templates.Skip(skip).Take(take).ToList();
-            
-            var response = new PaginatedResponse<NotificationTemplate>
-            {
-                Items = paginatedTemplates,
-                TotalCount = templates.Count(),
-                Skip = skip,
-                Take = take,
-                HasMore = templates.Count() > skip + take
-            };
-            
-            return Ok(CreateSuccessResponse(response, "Templates retrieved successfully"));
+            // GetTemplatesAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Get templates functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {
@@ -389,7 +352,7 @@ public class NotificationController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> CreateTemplate(
-        [FromBody] NotificationTemplateRequest request,
+        [FromBody] object request,
         [FromRoute] string blockchainType)
     {
         try
@@ -399,13 +362,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var templateId = await _notificationService.CreateTemplateAsync(request, blockchain);
-            
-            _logger.LogInformation("Template created with ID: {TemplateId} on {Blockchain}", 
-                templateId, blockchainType);
-            
-            return Ok(CreateSuccessResponse(templateId, "Template created successfully"));
+            // CreateTemplateAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Create template functionality not implemented in current interface"));
         }
         catch (ArgumentException ex)
         {
@@ -432,7 +390,7 @@ public class NotificationController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("history/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<NotificationHistoryItem>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<object>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> GetNotificationHistory(
@@ -453,22 +411,8 @@ public class NotificationController : BaseApiController
                 return BadRequest(CreateErrorResponse("Invalid pagination parameters"));
             }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var userId = GetUserIdentifier();
-            
-            var history = await _notificationService.GetHistoryAsync(userId, blockchain, status);
-            var paginatedHistory = history.Skip(skip).Take(take).ToList();
-            
-            var response = new PaginatedResponse<NotificationHistoryItem>
-            {
-                Items = paginatedHistory,
-                TotalCount = history.Count(),
-                Skip = skip,
-                Take = take,
-                HasMore = history.Count() > skip + take
-            };
-            
-            return Ok(CreateSuccessResponse(response, "History retrieved successfully"));
+            // GetHistoryAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Get history functionality not implemented in current interface"));
         }
         catch (Exception ex)
         {

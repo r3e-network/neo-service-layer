@@ -2,6 +2,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using System.Collections.Concurrent;
+using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
@@ -97,7 +98,7 @@ public partial class FairOrderingService
     /// <param name="request">The fair transaction request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The transaction ID.</returns>
-    private async Task<string> SubmitFairTransactionWithResilienceAsync(FairTransactionRequest request, BlockchainType blockchainType)
+    private async Task<string> SubmitFairTransactionWithResilienceAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"SubmitTransaction_{blockchainType}", 5, TimeSpan.FromMinutes(1));
         
@@ -123,7 +124,7 @@ public partial class FairOrderingService
     /// <param name="request">The fair transaction request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The transaction ID.</returns>
-    private async Task<string> SubmitFairTransactionInternalAsync(FairTransactionRequest request, BlockchainType blockchainType)
+    private async Task<string> SubmitFairTransactionInternalAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
     {
         return await ExecuteInEnclaveAsync(async () =>
         {
@@ -152,7 +153,7 @@ public partial class FairOrderingService
                 Value = request.Value,
                 Data = System.Text.Encoding.UTF8.GetBytes(request.Data ?? string.Empty),
                 GasLimit = request.GasLimit,
-                ProtectionLevel = request.ProtectionLevel,
+                ProtectionLevel = request.ProtectionLevel.ToString(),
                 MaxSlippage = request.MaxSlippage,
                 ExecuteAfter = request.ExecuteAfter,
                 ExecuteBefore = request.ExecuteBefore,
@@ -176,7 +177,7 @@ public partial class FairOrderingService
     /// <param name="request">The transaction analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The fairness analysis result.</returns>
-    private async Task<FairnessAnalysisResult> AnalyzeFairnessRiskWithResilienceAsync(TransactionAnalysisRequest request, BlockchainType blockchainType)
+    private async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"FairnessAnalysis_{blockchainType}", 3, TimeSpan.FromMinutes(2));
         
@@ -202,7 +203,7 @@ public partial class FairOrderingService
     /// <param name="request">The transaction analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The fairness analysis result.</returns>
-    private async Task<FairnessAnalysisResult> AnalyzeFairnessRiskInternalAsync(TransactionAnalysisRequest request, BlockchainType blockchainType)
+    private async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskInternalAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         return await ExecuteInEnclaveAsync(async () =>
         {
@@ -226,7 +227,7 @@ public partial class FairOrderingService
                 string riskLevel = "Low";
 
                 // Analyze transaction value and patterns
-                if (request.Value > 1000000m) // Large transaction
+                if (request.Value >= 1000000m) // Large transaction
                 {
                     riskFactors.Add("Large transaction value detected");
                     estimatedMev += request.Value * 0.001m; // 0.1% potential MEV
@@ -275,14 +276,12 @@ public partial class FairOrderingService
                 // Calculate protection fee based on risk and value
                 decimal protectionFee = CalculateProtectionFee(request.Value, estimatedMev, riskLevel);
 
-                var result = new FairnessAnalysisResult
+                var result = new FairOrderingModels.FairnessRiskAnalysisResult
                 {
-                    TransactionHash = !string.IsNullOrEmpty(request.TransactionData) ?
-                        ComputeTransactionHash(request.TransactionData) : string.Empty,
                     RiskLevel = riskLevel,
                     EstimatedMEV = estimatedMev,
-                    DetectedRisks = riskFactors.Count > 0 ? riskFactors.ToArray() : new[] { "No significant risks detected" },
-                    Recommendations = recommendations.Count > 0 ? recommendations.ToArray() : new[] { "Transaction appears fair" },
+                    DetectedRisks = riskFactors.Count > 0 ? riskFactors : new List<string> { "No significant risks detected" },
+                    Recommendations = recommendations.Count > 0 ? recommendations : new List<string> { "Transaction appears fair" },
                     ProtectionFee = protectionFee,
                     AnalyzedAt = DateTime.UtcNow
                 };
@@ -296,13 +295,12 @@ public partial class FairOrderingService
             {
                 Logger.LogError(ex, "Failed to analyze fairness risk {AnalysisId}", analysisId);
 
-                return new FairnessAnalysisResult
+                return new FairOrderingModels.FairnessRiskAnalysisResult
                 {
-                    TransactionHash = string.Empty,
                     RiskLevel = "Error",
                     EstimatedMEV = 0.0m,
-                    DetectedRisks = new[] { $"Analysis failed: {ex.Message}" },
-                    Recommendations = new[] { "Unable to analyze transaction - proceed with caution" },
+                    DetectedRisks = new List<string> { $"Analysis failed: {ex.Message}" },
+                    Recommendations = new List<string> { "Unable to analyze transaction - proceed with caution" },
                     ProtectionFee = 0.0m,
                     AnalyzedAt = DateTime.UtcNow
                 };
@@ -351,7 +349,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Gas analysis result.</returns>
-    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsWithResilienceAsync(TransactionAnalysisRequest request)
+    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request)
     {
         return await ResilienceHelper.ExecuteWithRetryAsync(
             async () => await AnalyzeGasPatternsAsync(request),
@@ -366,7 +364,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Contract analysis result.</returns>
-    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionWithResilienceAsync(TransactionAnalysisRequest request)
+    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request)
     {
         return await ResilienceHelper.ExecuteWithRetryAsync(
             async () => await AnalyzeContractInteractionAsync(request),

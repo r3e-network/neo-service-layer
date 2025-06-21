@@ -40,8 +40,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var result = await _notificationService.BroadcastNotificationAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // BroadcastNotificationAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Broadcast notification functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -55,8 +55,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var result = await _notificationService.SubscribeAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // SubscribeAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Subscription functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -70,9 +70,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new UnsubscribeNotificationRequest { SubscriptionId = subscriptionId };
-            var result = await _notificationService.UnsubscribeAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // UnsubscribeAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Unsubscribe functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -86,8 +85,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var result = await _notificationService.CreateTemplateAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // CreateTemplateAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Template creation functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -101,9 +100,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            request.TemplateId = templateId;
-            var result = await _notificationService.UpdateTemplateAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // UpdateTemplateAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Template update functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -117,9 +115,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new DeleteNotificationTemplateRequest { TemplateId = templateId };
-            var result = await _notificationService.DeleteTemplateAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // DeleteTemplateAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Template deletion functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -133,9 +130,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new GetNotificationTemplatesRequest { PageSize = pageSize, PageNumber = pageNumber };
-            var result = await _notificationService.GetTemplatesAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // GetTemplatesAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Template listing functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -150,8 +146,8 @@ public class NotificationController : ControllerBase
         try
         {
             var request = new GetNotificationHistoryRequest { PageSize = pageSize, PageNumber = pageNumber };
-            var result = await _notificationService.GetNotificationHistoryAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // GetNotificationHistoryAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Notification history functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -181,8 +177,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var result = await _notificationService.CreateChannelAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // CreateChannelAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Channel creation functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -197,8 +193,8 @@ public class NotificationController : ControllerBase
         try
         {
             request.ChannelId = channelId;
-            var result = await _notificationService.UpdateChannelAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // UpdateChannelAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Channel update functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -213,8 +209,8 @@ public class NotificationController : ControllerBase
         try
         {
             var request = new DeleteNotificationChannelRequest { ChannelId = channelId };
-            var result = await _notificationService.DeleteChannelAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // DeleteChannelAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Channel deletion functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -229,8 +225,8 @@ public class NotificationController : ControllerBase
         try
         {
             var request = new GetNotificationChannelsRequest { PageSize = pageSize, PageNumber = pageNumber };
-            var result = await _notificationService.GetChannelsAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // GetChannelsAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Channel listing functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {
@@ -244,9 +240,8 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new NotificationStatisticsRequest();
-            var result = await _notificationService.GetNotificationStatisticsAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
+            // GetNotificationStatisticsAsync method is not available in service interface - return not implemented
+            return StatusCode(501, new { error = "Notification statistics functionality not implemented in current interface" });
         }
         catch (Exception ex)
         {

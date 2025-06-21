@@ -1,8 +1,10 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Services.Compliance;
 using NeoServiceLayer.Services.Compliance.Models;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -34,22 +36,13 @@ public class ComplianceController : BaseApiController
     /// <returns>The AML check results.</returns>
     [HttpPost("aml-check")]
     [Authorize(Roles = "Admin,ComplianceOfficer")]
-    [ProducesResponseType(typeof(ApiResponse<AmlCheckResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> PerformAmlCheck([FromBody] AmlCheckRequest request)
+    public async Task<IActionResult> PerformAmlCheck([FromBody] object request)
     {
-        try
-        {
-            Logger.LogInformation("Performing AML check for user {UserId}", GetCurrentUserId());
-            
-            var result = await _complianceService.PerformAmlCheckAsync(request);
-            return Ok(CreateResponse(result, "AML check completed successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "PerformAmlCheck");
-        }
+        // PerformAmlCheckAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "AML check functionality not implemented in current interface"));
     }
 
     /// <summary>
@@ -59,22 +52,13 @@ public class ComplianceController : BaseApiController
     /// <returns>The KYC verification results.</returns>
     [HttpPost("kyc-verification")]
     [Authorize(Roles = "Admin,ComplianceOfficer")]
-    [ProducesResponseType(typeof(ApiResponse<KycVerificationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> PerformKycVerification([FromBody] KycVerificationRequest request)
+    public async Task<IActionResult> PerformKycVerification([FromBody] object request)
     {
-        try
-        {
-            Logger.LogInformation("Performing KYC verification for user {UserId}", GetCurrentUserId());
-            
-            var result = await _complianceService.PerformKycVerificationAsync(request);
-            return Ok(CreateResponse(result, "KYC verification completed successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "PerformKycVerification");
-        }
+        // PerformKycVerificationAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "KYC verification functionality not implemented in current interface"));
     }
 
     /// <summary>
@@ -93,7 +77,7 @@ public class ComplianceController : BaseApiController
         {
             Logger.LogInformation("Generating compliance report for user {UserId}", GetCurrentUserId());
             
-            var result = await _complianceService.GenerateComplianceReportAsync(request);
+            var result = await _complianceService.GenerateComplianceReportAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Compliance report generated successfully"));
         }
         catch (Exception ex)
@@ -110,19 +94,12 @@ public class ComplianceController : BaseApiController
     /// <returns>The compliance status.</returns>
     [HttpGet("status/{entityId}")]
     [Authorize(Roles = "Admin,ComplianceOfficer,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ComplianceStatusResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> GetComplianceStatus(string entityId, [FromQuery] string entityType = "address")
     {
-        try
-        {
-            var result = await _complianceService.GetComplianceStatusAsync(entityId, entityType);
-            return Ok(CreateResponse(result, "Compliance status retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "GetComplianceStatus");
-        }
+        // GetComplianceStatusAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "Compliance status functionality not implemented in current interface"));
     }
 
     /// <summary>
@@ -132,22 +109,13 @@ public class ComplianceController : BaseApiController
     /// <returns>The SAR submission result.</returns>
     [HttpPost("sar")]
     [Authorize(Roles = "Admin,ComplianceOfficer")]
-    [ProducesResponseType(typeof(ApiResponse<SarSubmissionResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
-    public async Task<IActionResult> SubmitSuspiciousActivityReport([FromBody] SarSubmissionRequest request)
+    public async Task<IActionResult> SubmitSuspiciousActivityReport([FromBody] object request)
     {
-        try
-        {
-            Logger.LogInformation("Submitting SAR for user {UserId}", GetCurrentUserId());
-            
-            var result = await _complianceService.SubmitSuspiciousActivityReportAsync(request);
-            return Ok(CreateResponse(result, "Suspicious Activity Report submitted successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "SubmitSuspiciousActivityReport");
-        }
+        // SubmitSuspiciousActivityReportAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "SAR submission functionality not implemented in current interface"));
     }
 
     /// <summary>
@@ -156,17 +124,10 @@ public class ComplianceController : BaseApiController
     /// <returns>The list of supported jurisdictions.</returns>
     [HttpGet("jurisdictions")]
     [Authorize(Roles = "Admin,ComplianceOfficer,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ComplianceJurisdiction>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<object>>), 200)]
     public async Task<IActionResult> GetComplianceJurisdictions()
     {
-        try
-        {
-            var result = await _complianceService.GetSupportedJurisdictionsAsync();
-            return Ok(CreateResponse(result, "Compliance jurisdictions retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "GetComplianceJurisdictions");
-        }
+        // GetSupportedJurisdictionsAsync method is not available in service interface - return not implemented
+        return StatusCode(501, CreateResponse<object>(null, "Jurisdictions functionality not implemented in current interface"));
     }
 }

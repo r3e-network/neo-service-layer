@@ -55,6 +55,16 @@ public class CastVoteRequest
     /// Gets or sets the voting weight.
     /// </summary>
     public decimal VotingWeight { get; set; }
+
+    /// <summary>
+    /// Gets or sets the session ID.
+    /// </summary>
+    public string SessionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the voter ID.
+    /// </summary>
+    public string VoterId { get; set; } = string.Empty;
 }
 
 /// <summary>

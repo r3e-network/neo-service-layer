@@ -47,6 +47,21 @@
     <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.PatternRecognition\NeoServiceLayer.AI.PatternRecognition.csproj" />
     <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.Prediction\NeoServiceLayer.AI.Prediction.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Automation\NeoServiceLayer.Services.Automation.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Backup\NeoServiceLayer.Services.Backup.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compliance\NeoServiceLayer.Services.Compliance.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Monitoring\NeoServiceLayer.Services.Monitoring.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Oracle\NeoServiceLayer.Services.Oracle.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ProofOfReserve\NeoServiceLayer.Services.ProofOfReserve.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Voting\NeoServiceLayer.Services.Voting.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ZeroKnowledge\NeoServiceLayer.Services.ZeroKnowledge.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Notification\NeoServiceLayer.Services.Notification.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
+    <ProjectReference Include="..\..\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
+    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>
 
 </Project>

@@ -220,9 +220,17 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
             // Try to list secrets to test connectivity
             var secrets = _secretClient!.GetPropertiesOfSecretsAsync(cancellationToken);
-            await foreach (var _ in secrets.Take(1))
+            var enumerator = secrets.GetAsyncEnumerator(cancellationToken);
+            try
             {
-                break;
+                if (await enumerator.MoveNextAsync())
+                {
+                    // Successfully connected - we can list at least one secret
+                }
+            }
+            finally
+            {
+                await enumerator.DisposeAsync();
             }
 
             _logger.LogDebug("Azure Key Vault connection test successful");

@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
 using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.AI.Prediction;
@@ -85,7 +86,7 @@ public class PredictionController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> AnalyzeSentiment(
-        [FromBody] NeoServiceLayer.Core.SentimentAnalysisRequest request,
+        [FromBody] NeoServiceLayer.Core.Models.SentimentAnalysisRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -98,8 +99,8 @@ public class PredictionController : BaseApiController
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _predictionService.AnalyzeSentimentAsync(request, blockchain);
 
-            Logger.LogInformation("Sentiment analysis completed for user {UserId} on {BlockchainType}. Sentiment: {Sentiment}",
-                GetCurrentUserId(), blockchainType, result.OverallSentiment);
+            Logger.LogInformation("Sentiment analysis completed for user {UserId} on {BlockchainType}. Confidence: {Confidence}",
+                GetCurrentUserId(), blockchainType, result.Confidence);
 
             return Ok(CreateResponse(result, "Sentiment analysis completed successfully"));
         }
@@ -202,7 +203,7 @@ public class PredictionController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> RegisterModel(
-        [FromBody] NeoServiceLayer.Core.ModelRegistration registration,
+        [FromBody] NeoServiceLayer.Core.Models.ModelRegistration registration,
         [FromRoute] string blockchainType)
     {
         try

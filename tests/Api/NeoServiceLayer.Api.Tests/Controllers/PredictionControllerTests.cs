@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.AI.Prediction.Models;
 using System.Security.Claims;
@@ -17,13 +16,13 @@ namespace NeoServiceLayer.Api.Tests.Controllers;
 /// </summary>
 public class PredictionControllerTests
 {
-    private readonly Mock<IPredictionService> _predictionServiceMock;
+    private readonly Mock<AI.Prediction.IPredictionService> _predictionServiceMock;
     private readonly Mock<ILogger<PredictionController>> _loggerMock;
     private readonly PredictionController _controller;
 
     public PredictionControllerTests()
     {
-        _predictionServiceMock = new Mock<IPredictionService>();
+        _predictionServiceMock = new Mock<AI.Prediction.IPredictionService>();
         _loggerMock = new Mock<ILogger<PredictionController>>();
         _controller = new PredictionController(_predictionServiceMock.Object, _loggerMock.Object);
 
@@ -51,14 +50,14 @@ public class PredictionControllerTests
     public async Task Predict_WithValidRequest_ReturnsOkResult()
     {
         // Arrange
-        var request = new PredictionRequest
+        var request = new Core.Models.PredictionRequest
         {
             ModelId = "model-123",
             InputData = new Dictionary<string, object> { { "price", 100 }, { "volume", 1000 } },
             Parameters = new Dictionary<string, object>()
         };
 
-        var expectedResult = new PredictionResult
+        var expectedResult = new Core.Models.PredictionResult
         {
             PredictionId = "prediction-123",
             ModelId = "model-123",
@@ -77,7 +76,7 @@ public class PredictionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<ApiResponse<PredictionResult>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<Core.Models.PredictionResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedResult, response.Data);
         Assert.Equal("Prediction completed successfully", response.Message);
@@ -89,7 +88,7 @@ public class PredictionControllerTests
     public async Task Predict_WithInvalidBlockchainType_ReturnsBadRequest()
     {
         // Arrange
-        var request = new PredictionRequest();
+        var request = new Core.Models.PredictionRequest();
 
         // Act
         var result = await _controller.Predict(request, "InvalidChain");
@@ -105,9 +104,9 @@ public class PredictionControllerTests
     public async Task Predict_WithServiceException_ReturnsInternalServerError()
     {
         // Arrange
-        var request = new PredictionRequest();
+        var request = new Core.Models.PredictionRequest();
         _predictionServiceMock
-            .Setup(s => s.PredictAsync(It.IsAny<PredictionRequest>(), It.IsAny<BlockchainType>()))
+            .Setup(s => s.PredictAsync(It.IsAny<Core.Models.PredictionRequest>(), It.IsAny<BlockchainType>()))
             .ThrowsAsync(new InvalidOperationException("Service error"));
 
         // Act
@@ -128,27 +127,22 @@ public class PredictionControllerTests
     public async Task AnalyzeSentiment_WithValidRequest_ReturnsOkResult()
     {
         // Arrange
-        var request = new SentimentAnalysisRequest
+        var request = new Core.Models.SentimentAnalysisRequest
         {
             Text = "This is a great investment opportunity!",
-            Source = "social_media",
             Language = "en",
-            Context = new Dictionary<string, object>()
+            IncludeDetailedAnalysis = true,
+            Parameters = new Dictionary<string, object> { { "source", "social_media" } }
         };
 
-        var expectedResult = new SentimentResult
+        var expectedResult = new Core.Models.SentimentResult
         {
-            Sentiment = new SentimentScore
-            {
-                Overall = SentimentType.Positive,
-                Positive = 0.85,
-                Negative = 0.10,
-                Neutral = 0.05,
-                Compound = 0.75
-            },
+            AnalysisId = "sentiment-123",
+            SentimentScore = 0.75, // Positive sentiment
+            Label = Core.Models.SentimentLabel.Positive,
             Confidence = 0.90,
-            Emotions = new Dictionary<string, double> { { "joy", 0.8 }, { "trust", 0.7 } },
-            KeyPhrases = new List<string> { "great investment", "opportunity" },
+            DetailedSentiment = new Dictionary<string, double> { { "joy", 0.8 }, { "trust", 0.7 } },
+            // KeyPhrases = new List<string> { "great investment", "opportunity" }, // Property doesn't exist
             AnalyzedAt = DateTime.UtcNow
         };
 
@@ -161,7 +155,7 @@ public class PredictionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<ApiResponse<SentimentResult>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<Core.Models.SentimentResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedResult, response.Data);
         Assert.Equal("Sentiment analysis completed successfully", response.Message);
@@ -279,16 +273,14 @@ public class PredictionControllerTests
     public async Task RegisterModel_WithValidRegistration_ReturnsOkResult()
     {
         // Arrange
-        var registration = new ModelRegistration
+        var registration = new Core.Models.ModelRegistration
         {
-            ModelDefinition = new PredictionModelDefinition
-            {
-                Name = "Registered Model",
-                PredictionType = PredictionType.TimeSeries
-            },
-            TrainingData = new byte[] { 1, 2, 3, 4, 5 },
-            ValidationData = new byte[] { 6, 7, 8, 9, 10 },
-            Metadata = new Dictionary<string, object> { { "version", "1.0" } }
+            Name = "Registered Model",
+            Type = "TimeSeries",
+            Version = "1.0",
+            ModelData = new byte[] { 1, 2, 3, 4, 5 },
+            Configuration = new Dictionary<string, object> { { "version", "1.0" } },
+            Description = "Test registered model"
         };
 
         var expectedModelId = "registered-model-123";
@@ -395,9 +387,9 @@ public class PredictionControllerTests
     {
         // Arrange
         var modelId = "model-123";
-        var expectedHistory = new List<PredictionResult>
+        var expectedHistory = new List<Core.Models.PredictionResult>
         {
-            new PredictionResult
+            new Core.Models.PredictionResult
             {
                 PredictionId = "pred-1",
                 ModelId = modelId,
@@ -405,7 +397,7 @@ public class PredictionControllerTests
                 Confidence = 0.85,
                 PredictedAt = DateTime.UtcNow.AddHours(-1)
             },
-            new PredictionResult
+            new Core.Models.PredictionResult
             {
                 PredictionId = "pred-2",
                 ModelId = modelId,
@@ -424,7 +416,7 @@ public class PredictionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<PaginatedResponse<PredictionResult>>(okResult.Value);
+        var response = Assert.IsType<PaginatedResponse<Core.Models.PredictionResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedHistory, response.Data);
         Assert.Equal("Prediction history retrieved successfully", response.Message);

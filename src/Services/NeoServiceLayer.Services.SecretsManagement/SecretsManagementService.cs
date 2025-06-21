@@ -244,7 +244,7 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Retrieving secret {SecretId} version {Version} from enclave", secretId, version ?? "latest");
+            Logger.LogDebug("Retrieving secret {SecretId} version {Version} from enclave", secretId, version?.ToString() ?? "latest");
 
             // Prepare the request
             var request = new

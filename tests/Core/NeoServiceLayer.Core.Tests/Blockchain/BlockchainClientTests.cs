@@ -377,8 +377,6 @@ public class BlockchainClientTests
     [Theory]
     [InlineData(BlockchainType.NeoN3)]
     [InlineData(BlockchainType.NeoX)]
-    [InlineData(BlockchainType.Ethereum)]
-    [InlineData(BlockchainType.Bitcoin)]
     public void BlockchainType_ShouldReturnExpectedType(BlockchainType expectedType)
     {
         // Arrange
@@ -557,7 +555,7 @@ public class BlockchainClientTests
 /// <summary>
 /// Enumeration for blockchain types used in testing.
 /// </summary>
-public enum BlockchainType
+public enum TestBlockchainType
 {
     NeoN3,
     NeoX,

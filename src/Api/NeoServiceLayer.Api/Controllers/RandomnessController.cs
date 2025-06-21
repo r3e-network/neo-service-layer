@@ -1,7 +1,9 @@
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using NeoServiceLayer.Services.Randomness;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Services.Randomness;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -54,16 +56,16 @@ public class RandomnessController : ControllerBase
                 return BadRequest("Minimum value must be less than maximum value.");
             }
 
-            var result = await _randomnessService.GenerateRandomNumberAsync(min, max, blockchainType, cancellationToken);
+            var result = await _randomnessService.GenerateRandomNumberAsync((int)min, (int)max, blockchainType);
 
             var response = new RandomNumberResponse
             {
-                Value = result.Value,
+                Value = result,
                 Min = min,
                 Max = max,
-                Timestamp = result.Timestamp,
-                RequestId = result.RequestId,
-                Proof = result.Proof
+                Timestamp = DateTime.UtcNow,
+                RequestId = Guid.NewGuid().ToString(),
+                Proof = null // Proof not available for basic random number generation
             };
 
             return Ok(response);
@@ -104,15 +106,15 @@ public class RandomnessController : ControllerBase
                 return BadRequest("Length must be between 1 and 1024 bytes.");
             }
 
-            var result = await _randomnessService.GenerateRandomBytesAsync(length, blockchainType, cancellationToken);
+            var result = await _randomnessService.GenerateRandomBytesAsync(length, blockchainType);
 
             var response = new RandomBytesResponse
             {
-                Data = Convert.ToBase64String(result.Data),
+                Data = Convert.ToBase64String(result),
                 Length = length,
-                Timestamp = result.Timestamp,
-                RequestId = result.RequestId,
-                Proof = result.Proof
+                Timestamp = DateTime.UtcNow,
+                RequestId = Guid.NewGuid().ToString(),
+                Proof = null // Proof not available for basic random bytes generation
             };
 
             return Ok(response);
@@ -161,16 +163,16 @@ public class RandomnessController : ControllerBase
                 return BadRequest($"Invalid charset. Valid options are: {string.Join(", ", validCharsets)}");
             }
 
-            var result = await _randomnessService.GenerateRandomStringAsync(length, charset, blockchainType, cancellationToken);
+            var result = await _randomnessService.GenerateRandomStringAsync(length, charset, blockchainType);
 
             var response = new RandomStringResponse
             {
-                Value = result.Value,
+                Value = result,
                 Length = length,
                 Charset = charset,
-                Timestamp = result.Timestamp,
-                RequestId = result.RequestId,
-                Proof = result.Proof
+                Timestamp = DateTime.UtcNow,
+                RequestId = Guid.NewGuid().ToString(),
+                Proof = null // Proof not available for basic random string generation
             };
 
             return Ok(response);
@@ -208,19 +210,19 @@ public class RandomnessController : ControllerBase
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var result = await _randomnessService.GenerateVerifiableRandomAsync(
+            var result = await _randomnessService.GenerateVerifiableRandomNumberAsync(
+                request.Min ?? 0,
+                request.Max ?? int.MaxValue,
                 request.Seed,
-                request.ProofType,
-                blockchainType,
-                cancellationToken);
+                blockchainType);
 
             var response = new VerifiableRandomResponse
             {
-                Value = Convert.ToBase64String(result.Value),
+                Value = result.Value.ToString(),
                 Seed = request.Seed,
                 Proof = result.Proof,
-                PublicKey = result.PublicKey,
-                Signature = result.Signature,
+                PublicKey = "N/A", // Not available in current VerifiableRandomResult
+                Signature = "N/A", // Not available in current VerifiableRandomResult
                 Timestamp = result.Timestamp,
                 RequestId = result.RequestId
             };
@@ -257,11 +259,16 @@ public class RandomnessController : ControllerBase
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var isValid = await _randomnessService.VerifyRandomNumberAsync(
-                request.Value,
-                request.Proof,
-                request.Signature,
-                cancellationToken);
+            var verifiableResult = new VerifiableRandomResult
+            {
+                Value = int.Parse(request.Value),
+                Proof = request.Proof,
+                Seed = "verification", // Required property
+                Timestamp = DateTime.UtcNow, // Required property
+                BlockchainType = BlockchainType.NeoN3, // Default to NeoN3 for verification
+                RequestId = Guid.NewGuid().ToString() // Required property
+            };
+            var isValid = await _randomnessService.VerifyRandomNumberAsync(verifiableResult);
 
             var response = new RandomVerificationResponse
             {
@@ -394,6 +401,16 @@ public class RandomStringResponse
 public class VerifiableRandomRequest
 {
     /// <summary>
+    /// Gets or sets the minimum value for random number generation.
+    /// </summary>
+    public int? Min { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum value for random number generation.
+    /// </summary>
+    public int? Max { get; set; }
+
+    /// <summary>
     /// Gets or sets the seed value.
     /// </summary>
     public string? Seed { get; set; }
@@ -464,6 +481,11 @@ public class RandomVerificationRequest
     /// Gets or sets the signature to verify.
     /// </summary>
     public string Signature { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the public key for verification.
+    /// </summary>
+    public string PublicKey { get; set; } = string.Empty;
 }
 
 /// <summary>

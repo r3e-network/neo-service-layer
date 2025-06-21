@@ -1,11 +1,12 @@
-using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
-using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
+using NeoServiceLayer.Core;
 using PatternModels = NeoServiceLayer.AI.PatternRecognition.Models;
 using System.ComponentModel.DataAnnotations;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.Api.Controllers;
 

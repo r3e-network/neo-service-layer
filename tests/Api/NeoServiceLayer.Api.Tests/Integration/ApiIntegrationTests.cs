@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Api;
+using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using System.Net.Http.Headers;
@@ -117,7 +118,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         if (response.IsSuccessStatusCode)
         {
             var responseContent = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<ApiResponse<KeyMetadata>>(responseContent, _jsonOptions);
+            var result = JsonSerializer.Deserialize<ApiResponse<Services.KeyManagement.KeyMetadata>>(responseContent, _jsonOptions);
             
             Assert.NotNull(result);
             Assert.True(result.Success);
@@ -144,7 +145,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         if (response.IsSuccessStatusCode)
         {
             var content = await response.Content.ReadAsStringAsync();
-            var result = JsonSerializer.Deserialize<PaginatedResponse<KeyMetadata>>(content, _jsonOptions);
+            var result = JsonSerializer.Deserialize<PaginatedResponse<Services.KeyManagement.KeyMetadata>>(content, _jsonOptions);
             
             Assert.NotNull(result);
             Assert.True(result.Success);

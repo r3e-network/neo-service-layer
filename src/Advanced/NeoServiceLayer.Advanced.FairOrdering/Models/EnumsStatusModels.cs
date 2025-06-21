@@ -105,7 +105,22 @@ public enum OrderingAlgorithm
     /// <summary>
     /// MEV-resistant ordering.
     /// </summary>
-    MevResistant
+    MevResistant,
+
+    /// <summary>
+    /// Priority-based ordering algorithm.
+    /// </summary>
+    PriorityBasedOrdering,
+
+    /// <summary>
+    /// Fair sequencing algorithm.
+    /// </summary>
+    FairSequencing,
+
+    /// <summary>
+    /// Randomized ordering algorithm.
+    /// </summary>
+    RandomizedOrdering
 }
 
 /// <summary>
@@ -114,9 +129,19 @@ public enum OrderingAlgorithm
 public enum FairnessLevel
 {
     /// <summary>
+    /// Low fairness level.
+    /// </summary>
+    Low,
+
+    /// <summary>
     /// Basic fairness level.
     /// </summary>
     Basic,
+
+    /// <summary>
+    /// Medium fairness level.
+    /// </summary>
+    Medium,
 
     /// <summary>
     /// Standard fairness level.
@@ -430,4 +455,40 @@ public enum ProtectionMechanism
     /// Private mempool protection.
     /// </summary>
     PrivateMempool
+}
+
+/// <summary>
+/// Represents protection level for security measures.
+/// </summary>
+public enum ProtectionLevel
+{
+    /// <summary>
+    /// No protection applied.
+    /// </summary>
+    None,
+
+    /// <summary>
+    /// Basic protection level.
+    /// </summary>
+    Basic,
+
+    /// <summary>
+    /// Standard protection level.
+    /// </summary>
+    Standard,
+
+    /// <summary>
+    /// Enhanced protection level.
+    /// </summary>
+    Enhanced,
+
+    /// <summary>
+    /// High protection level.
+    /// </summary>
+    High,
+
+    /// <summary>
+    /// Maximum protection level.
+    /// </summary>
+    Maximum
 }

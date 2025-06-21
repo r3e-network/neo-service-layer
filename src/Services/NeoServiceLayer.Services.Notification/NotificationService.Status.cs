@@ -67,6 +67,131 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
+    public async Task<object?> GetNotificationStatusAsync(string notificationId, BlockchainType blockchainType)
+    {
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        try
+        {
+            lock (_cacheLock)
+            {
+                if (_notificationHistory.TryGetValue(notificationId, out var notification))
+                {
+                    return new
+                    {
+                        NotificationId = notificationId,
+                        Status = notification.Status.ToString(),
+                        DeliveryAttempts = 1,
+                        LastAttemptAt = notification.SentAt,
+                        NextRetryAt = notification.Status == DeliveryStatus.Failed ? DateTime.UtcNow.AddMinutes(5) : (DateTime?)null,
+                        Details = new
+                        {
+                            Channel = notification.Channel.ToString(),
+                            Recipient = notification.Metadata.GetValueOrDefault("recipient", "unknown").ToString() ?? "unknown",
+                            SentAt = notification.SentAt,
+                            DeliveredAt = notification.DeliveredAt,
+                            DeliveryResponse = notification.Success ? "Success" : notification.ErrorMessage,
+                            Metadata = notification.Metadata
+                        },
+                        Success = true
+                    };
+                }
+            }
+
+            return new
+            {
+                NotificationId = notificationId,
+                Success = false,
+                ErrorMessage = "Notification not found"
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get notification status for {NotificationId}", notificationId);
+            return new
+            {
+                NotificationId = notificationId,
+                Success = false,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<object?> GetNotificationStatusAsync(object request, BlockchainType blockchainType)
+    {
+        // Try to extract NotificationId from the request object
+        try
+        {
+            var notificationId = GetNotificationIdFromRequest(request);
+            if (string.IsNullOrEmpty(notificationId))
+            {
+                return new
+                {
+                    Success = false,
+                    ErrorMessage = "NotificationId is required"
+                };
+            }
+
+            return await GetNotificationStatusAsync(notificationId, blockchainType);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get notification status from request object");
+            return new
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            };
+        }
+    }
+
+    /// <summary>
+    /// Sends a batch of notifications - not implemented.
+    /// </summary>
+    public async Task<object> SendBatchNotificationsAsync(object request, BlockchainType blockchainType)
+    {
+        Logger.LogWarning("SendBatchNotificationsAsync is not implemented");
+        await Task.CompletedTask;
+        
+        return new
+        {
+            Success = false,
+            ErrorMessage = "Batch notifications are not currently implemented",
+            NotImplemented = true
+        };
+    }
+
+    /// <summary>
+    /// Extracts notification ID from various request object types.
+    /// </summary>
+    private string? GetNotificationIdFromRequest(object request)
+    {
+        if (request == null) return null;
+
+        // Try to get NotificationId property using reflection
+        var requestType = request.GetType();
+        var notificationIdProperty = requestType.GetProperty("NotificationId");
+        
+        if (notificationIdProperty != null && notificationIdProperty.PropertyType == typeof(string))
+        {
+            return notificationIdProperty.GetValue(request) as string;
+        }
+
+        // Try other common property names
+        var idProperty = requestType.GetProperty("Id");
+        if (idProperty != null && idProperty.PropertyType == typeof(string))
+        {
+            return idProperty.GetValue(request) as string;
+        }
+
+        return null;
+    }
+
+    /// <inheritdoc/>
     public async Task<NotificationHistoryResult> GetNotificationHistoryAsync(NotificationHistoryRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);

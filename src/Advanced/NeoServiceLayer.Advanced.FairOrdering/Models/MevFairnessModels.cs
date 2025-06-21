@@ -95,10 +95,24 @@ public class MevAnalysisRequest
     public string TransactionHash { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the transaction type.
+    /// </summary>
+    public string TransactionType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the contract address.
+    /// </summary>
+    public string ContractAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the function signature.
+    /// </summary>
+    public string FunctionSignature { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the transaction to analyze.
     /// </summary>
-    [Required]
-    public PendingTransaction Transaction { get; set; } = new();
+    public PendingTransaction? Transaction { get; set; }
 
     /// <summary>
     /// Gets or sets the pool context.
@@ -114,6 +128,11 @@ public class MevAnalysisRequest
     /// Gets or sets additional analysis parameters.
     /// </summary>
     public Dictionary<string, object> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the mempool context.
+    /// </summary>
+    public Dictionary<string, object> MemPoolContext { get; set; } = new();
 }
 
 /// <summary>
@@ -325,4 +344,161 @@ public class BatchStatistics
     /// Gets or sets the statistics generation timestamp.
     /// </summary>
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Represents a transaction analysis request for fair ordering.
+/// </summary>
+public class TransactionAnalysisRequest
+{
+    /// <summary>
+    /// Gets or sets the sender address.
+    /// </summary>
+    [Required]
+    public string From { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recipient address.
+    /// </summary>
+    [Required]
+    public string To { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction value.
+    /// </summary>
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction data.
+    /// </summary>
+    public string TransactionData { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the gas price.
+    /// </summary>
+    public long GasPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the gas limit.
+    /// </summary>
+    public long GasLimit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the analysis depth.
+    /// </summary>
+    public MevAnalysisDepth Depth { get; set; } = MevAnalysisDepth.Standard;
+
+    /// <summary>
+    /// Gets or sets whether to include MEV analysis.
+    /// </summary>
+    public bool IncludeMevAnalysis { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets additional analysis parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a fair transaction request for submission.
+/// </summary>
+public class FairTransactionRequest
+{
+    /// <summary>
+    /// Gets or sets the sender address.
+    /// </summary>
+    [Required]
+    public string From { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recipient address.
+    /// </summary>
+    [Required]
+    public string To { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction value.
+    /// </summary>
+    public decimal Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction data.
+    /// </summary>
+    public string Data { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the gas limit.
+    /// </summary>
+    public long GasLimit { get; set; }
+
+    /// <summary>
+    /// Gets or sets the protection level.
+    /// </summary>
+    public ProtectionLevel ProtectionLevel { get; set; } = ProtectionLevel.Standard;
+
+    /// <summary>
+    /// Gets or sets the maximum slippage tolerance.
+    /// </summary>
+    public decimal MaxSlippage { get; set; } = 0.005m;
+
+    /// <summary>
+    /// Gets or sets the earliest execution time.
+    /// </summary>
+    public DateTime? ExecuteAfter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the latest execution time.
+    /// </summary>
+    public DateTime? ExecuteBefore { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to use MEV protection.
+    /// </summary>
+    public bool UseMevProtection { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets additional preferences.
+    /// </summary>
+    public Dictionary<string, object> Preferences { get; set; } = new();
+}
+
+/// <summary>
+/// Represents a fairness risk analysis result.
+/// </summary>
+public class FairnessRiskAnalysisResult
+{
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = "Low";
+
+    /// <summary>
+    /// Gets or sets the estimated MEV.
+    /// </summary>
+    public decimal EstimatedMEV { get; set; }
+
+    /// <summary>
+    /// Gets or sets the detected risks.
+    /// </summary>
+    public List<string> DetectedRisks { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the protection fee.
+    /// </summary>
+    public decimal ProtectionFee { get; set; }
+
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the analysis timestamp.
+    /// </summary>
+    public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
 }

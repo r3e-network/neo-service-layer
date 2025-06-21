@@ -70,18 +70,19 @@ public abstract class TestBase
         MockEnclaveManager.Setup(x => x.GenerateRandomAsync(It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(42);
         
-        // Setup encryption/decryption
-        MockEnclaveManager.Setup(x => x.EncryptAsync(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .ReturnsAsync((byte[] data, byte[] key) => data.Concat(new byte[] { 0xFF }).ToArray());
+        // Setup encryption/decryption using KMS methods
+        MockEnclaveManager.Setup(x => x.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string keyId, string dataHex, string algorithm) => dataHex + "FF");
         
-        MockEnclaveManager.Setup(x => x.DecryptAsync(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .ReturnsAsync((byte[] data, byte[] key) => data.Take(data.Length - 1).ToArray());
+        MockEnclaveManager.Setup(x => x.KmsDecryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string keyId, string encryptedDataHex, string algorithm) => 
+                encryptedDataHex.Length > 2 ? encryptedDataHex.Substring(0, encryptedDataHex.Length - 2) : encryptedDataHex);
         
-        // Setup signing/verification
-        MockEnclaveManager.Setup(x => x.SignAsync(It.IsAny<byte[]>(), It.IsAny<byte[]>()))
-            .ReturnsAsync(new byte[] { 0x01, 0x02, 0x03, 0x04 });
+        // Setup signing/verification using KMS methods
+        MockEnclaveManager.Setup(x => x.KmsSignDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("01020304");
         
-        MockEnclaveManager.Setup(x => x.VerifyAsync(It.IsAny<byte[]>(), It.IsAny<byte[]>(), It.IsAny<byte[]>()))
+        MockEnclaveManager.Setup(x => x.KmsVerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
     }
 

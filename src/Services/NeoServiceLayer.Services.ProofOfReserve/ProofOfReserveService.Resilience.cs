@@ -330,14 +330,14 @@ public partial class ProofOfReserveService
             var asset = GetMonitoredAsset(assetId);
 
             // Verify audit signature if provided with resilience
-            if (!string.IsNullOrEmpty(reserveData.AuditSignature))
+            if (!string.IsNullOrEmpty(reserveData.AuditorSignature))
             {
                 var auditVerificationSuccessful = await ProofOfReserveResilienceHelper.ExecuteEnclaveOperationAsync(
                     async () =>
                     {
                         var auditData = System.Text.Json.JsonSerializer.Serialize(reserveData.AuditData);
                         var auditHash = await ComputeHashAsync(System.Text.Encoding.UTF8.GetBytes(auditData));
-                        var auditSignature = Convert.FromBase64String(reserveData.AuditSignature);
+                        var auditSignature = Convert.FromBase64String(reserveData.AuditorSignature);
                         return await VerifyAuditSignatureAsync(auditHash, auditSignature);
                     },
                     Logger,

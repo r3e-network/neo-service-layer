@@ -3,6 +3,8 @@ using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using NeoServiceLayer.Core.Http;
+using Moq.Protected;
+using ItExpr = Moq.It;
 
 namespace NeoServiceLayer.Core.Tests.Http;
 

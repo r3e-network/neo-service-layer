@@ -9,55 +9,6 @@ namespace NeoServiceLayer.AI.PatternRecognition;
 /// </summary>
 public partial class PatternRecognitionService
 {
-    /// <summary>
-    /// Trains a pattern model in the enclave.
-    /// </summary>
-    /// <param name="definition">The pattern model definition.</param>
-    /// <returns>The trained model data.</returns>
-    private async Task<byte[]> TrainPatternModelInEnclaveAsync(PatternModelDefinition definition)
-    {
-        // Generate training data based on the model definition
-        var trainingData = GenerateTrainingDataForModel(definition);
-
-        // Determine the AI model type based on pattern recognition type
-        string modelType = definition.PatternType switch
-        {
-            PatternRecognitionType.FraudDetection => "anomaly_detection",
-            PatternRecognitionType.BehavioralAnalysis => "pattern_classification",
-            PatternRecognitionType.AnomalyDetection => "anomaly_detection",
-            PatternRecognitionType.Classification => "classification",
-            PatternRecognitionType.ClusteringAnalysis => "clustering",
-            PatternRecognitionType.Regression => "regression",
-            _ => "linear_regression"
-        };
-
-        // Train the model using real AI in the enclave
-        string modelId = $"pattern_model_{Guid.NewGuid():N}";
-        string trainingResult = await TrainAIModelInEnclaveAsync(
-            modelId,
-            modelType,
-            trainingData,
-            JsonSerializer.Serialize(new { algorithm = definition.Algorithm }));
-
-        var result = JsonSerializer.Deserialize<JsonElement>(trainingResult);
-        if (!result.TryGetProperty("success", out var success) || !success.GetBoolean())
-        {
-            throw new InvalidOperationException("Failed to train pattern recognition model in enclave");
-        }
-
-        // Store the model ID for later use
-        var modelMetadata = new Dictionary<string, object>
-        {
-            ["enclave_model_id"] = modelId,
-            ["model_type"] = modelType,
-            ["algorithm"] = definition.Algorithm,
-            ["trained_at"] = DateTime.UtcNow,
-            ["pattern_type"] = definition.PatternType.ToString(),
-            ["accuracy"] = result.TryGetProperty("accuracy", out var acc) ? acc.GetDouble() : 0.0
-        };
-
-        return JsonSerializer.SerializeToUtf8Bytes(modelMetadata);
-    }
 
     /// <summary>
     /// Generates training data for a pattern model.

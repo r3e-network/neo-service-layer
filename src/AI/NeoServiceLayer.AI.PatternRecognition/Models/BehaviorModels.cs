@@ -99,6 +99,26 @@ public class BehaviorProfile
     /// Gets or sets when the profile was last updated.
     /// </summary>
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the transaction patterns.
+    /// </summary>
+    public Dictionary<string, object> TransactionPatterns { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk tolerance.
+    /// </summary>
+    public double RiskTolerance { get; set; }
+
+    /// <summary>
+    /// Gets or sets the behavior metrics.
+    /// </summary>
+    public Dictionary<string, double> BehaviorMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the typical time pattern.
+    /// </summary>
+    public string TypicalTimePattern { get; set; } = string.Empty;
 }
 
 /// <summary>

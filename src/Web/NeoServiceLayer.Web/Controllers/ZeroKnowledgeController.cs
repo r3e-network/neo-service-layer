@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
 
@@ -25,7 +26,17 @@ public class ZeroKnowledgeController : ControllerBase
     {
         try
         {
-            var result = await _zeroKnowledgeService.GenerateProofAsync(request, BlockchainType.NeoN3);
+            // Convert to Core model
+            var coreRequest = new NeoServiceLayer.Core.ProofRequest
+            {
+                CircuitId = request.CircuitId,
+                PrivateInputs = request.PrivateInputs.ToDictionary(x => x.Key, x => (object)x.Value),
+                PublicInputs = request.PublicInputs.ToDictionary(x => x.Key, x => (object)x.Value),
+                ProofSystem = "groth16", // Use ProofSystem instead of ProofType
+                Parameters = new Dictionary<string, object>()
+            };
+
+            var result = await _zeroKnowledgeService.GenerateProofAsync(coreRequest, BlockchainType.NeoN3);
             return Ok(result);
         }
         catch (Exception ex)
@@ -40,7 +51,16 @@ public class ZeroKnowledgeController : ControllerBase
     {
         try
         {
-            var result = await _zeroKnowledgeService.VerifyProofAsync(request, BlockchainType.NeoN3);
+            // Convert to Core model
+            var coreRequest = new NeoServiceLayer.Core.ProofVerification
+            {
+                Proof = request.ProofData, // Use Proof instead of ProofData
+                PublicSignals = request.PublicInputs.Select(x => x.Value.ToString() ?? "").ToArray(), // Use PublicSignals instead of PublicInputs
+                CircuitId = request.CircuitId,
+                VerificationKey = "default-key" // Provide default VerificationKey
+            };
+
+            var result = await _zeroKnowledgeService.VerifyProofAsync(coreRequest, BlockchainType.NeoN3);
             return Ok(result);
         }
         catch (Exception ex)
@@ -53,168 +73,67 @@ public class ZeroKnowledgeController : ControllerBase
     [HttpPost("circuit/compile")]
     public async Task<IActionResult> CompileCircuit([FromBody] CompileCircuitRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.CompileCircuitAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error compiling circuit");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        // Method not available in interface - return not implemented
+        return StatusCode(501, new { error = "Circuit compilation not implemented in current interface" });
     }
 
     [HttpPost("commitment/create")]
-    public async Task<IActionResult> CreateCommitment([FromBody] CreateCommitmentRequest request)
+    public Task<IActionResult> CreateCommitment([FromBody] CreateCommitmentRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.CreateCommitmentAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating commitment");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "CreateCommitment not implemented in current interface" }));
     }
 
     [HttpPost("commitment/reveal")]
-    public async Task<IActionResult> RevealCommitment([FromBody] RevealCommitmentRequest request)
+    public Task<IActionResult> RevealCommitment([FromBody] RevealCommitmentRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.RevealCommitmentAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error revealing commitment");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "RevealCommitment not implemented in current interface" }));
     }
 
     [HttpPost("merkle-tree/create")]
-    public async Task<IActionResult> CreateMerkleTree([FromBody] CreateMerkleTreeRequest request)
+    public Task<IActionResult> CreateMerkleTree([FromBody] CreateMerkleTreeRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.CreateMerkleTreeAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating merkle tree");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "CreateMerkleTree not implemented in current interface" }));
     }
 
     [HttpPost("merkle-tree/proof")]
-    public async Task<IActionResult> GenerateMerkleProof([FromBody] GenerateMerkleProofRequest request)
+    public Task<IActionResult> GenerateMerkleProof([FromBody] GenerateMerkleProofRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.GenerateMerkleProofAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating merkle proof");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "GenerateMerkleProof not implemented in current interface" }));
     }
 
     [HttpPost("range-proof/create")]
-    public async Task<IActionResult> CreateRangeProof([FromBody] CreateRangeProofRequest request)
+    public Task<IActionResult> CreateRangeProof([FromBody] CreateRangeProofRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.CreateRangeProofAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error creating range proof");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "CreateRangeProof not implemented in current interface" }));
     }
 
     [HttpPost("bulletproof/generate")]
-    public async Task<IActionResult> GenerateBulletproof([FromBody] GenerateBulletproofRequest request)
+    public Task<IActionResult> GenerateBulletproof([FromBody] GenerateBulletproofRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.GenerateBulletproofAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error generating bulletproof");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "GenerateBulletproof not implemented in current interface" }));
     }
 
     [HttpGet("proof/{proofId}")]
-    public async Task<IActionResult> GetProof(string proofId)
+    public Task<IActionResult> GetProof(string proofId)
     {
-        try
-        {
-            var request = new GetProofRequest { ProofId = proofId };
-            var result = await _zeroKnowledgeService.GetProofAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting proof");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "GetProof not implemented in current interface" }));
     }
 
     [HttpGet("circuit/{circuitId}")]
-    public async Task<IActionResult> GetCircuit(string circuitId)
+    public Task<IActionResult> GetCircuit(string circuitId)
     {
-        try
-        {
-            var request = new GetCircuitRequest { CircuitId = circuitId };
-            var result = await _zeroKnowledgeService.GetCircuitAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting circuit");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "GetCircuit not implemented in current interface" }));
     }
 
     [HttpPost("batch-verify")]
-    public async Task<IActionResult> BatchVerifyProofs([FromBody] BatchVerifyProofsRequest request)
+    public Task<IActionResult> BatchVerifyProofs([FromBody] BatchVerifyProofsRequest request)
     {
-        try
-        {
-            var result = await _zeroKnowledgeService.BatchVerifyProofsAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error batch verifying proofs");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "BatchVerifyProofs not implemented in current interface" }));
     }
 
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetZkStatistics()
+    public Task<IActionResult> GetZkStatistics()
     {
-        try
-        {
-            var request = new ZkStatisticsRequest();
-            var result = await _zeroKnowledgeService.GetZkStatisticsAsync(request, BlockchainType.NeoN3);
-            return Ok(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error getting ZK statistics");
-            return StatusCode(500, new { error = ex.Message });
-        }
+        return Task.FromResult<IActionResult>(StatusCode(501, new { error = "GetZkStatistics not implemented in current interface" }));
     }
 } 

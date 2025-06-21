@@ -409,8 +409,14 @@ public partial class PatternRecognitionService
         // Preprocess input data for the model
         var preprocessedData = await PreprocessInputsAsync(inputData, AIModelType.Classification);
 
-        // Run classification inference
-        var inferenceResult = await RunClassificationInferenceAsync(model, preprocessedData);
+        // Run classification inference  
+        var aiModel = new AIModel 
+        {
+            ModelId = model.Id ?? model.ModelId,
+            Type = AIModelType.Classification,
+            Accuracy = model.Accuracy
+        };
+        var inferenceResult = await RunClassificationInferenceAsync(aiModel, preprocessedData);
 
         // Extract classification from predictions
         if (inferenceResult.Predictions.TryGetValue("class", out var classification))

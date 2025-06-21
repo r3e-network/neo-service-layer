@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -18,9 +19,10 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     /// Initializes a new instance of the <see cref="AutomationService"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
+    /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
-    public AutomationService(ILogger<AutomationService> logger, IServiceConfiguration? configuration = null)
-        : base("AutomationService", "Smart contract automation and scheduling service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+    public AutomationService(ILogger<AutomationService> logger, IEnclaveManager? enclaveManager = null, IServiceConfiguration? configuration = null)
+        : base("AutomationService", "Smart contract automation and scheduling service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
 
@@ -36,6 +38,96 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     /// Gets the service configuration.
     /// </summary>
     protected IServiceConfiguration? Configuration { get; }
+
+    /// <inheritdoc/>
+    public async Task<CreateAutomationResponse> CreateAutomationAsync(CreateAutomationRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
+            {
+                var automationId = Guid.NewGuid().ToString();
+                var job = new AutomationJob
+                {
+                    Id = automationId,
+                    Name = request.Name,
+                    Description = request.Description,
+                    OwnerAddress = request.OwnerAddress ?? string.Empty,
+                    TargetContract = string.Empty, // Will be parsed from ActionConfiguration
+                    TargetMethod = string.Empty, // Will be parsed from ActionConfiguration
+                    Parameters = new Dictionary<string, object>(), // Will be parsed from ActionConfiguration
+                    Trigger = new AutomationTrigger
+                    {
+                        Type = request.TriggerType,
+                        Schedule = request.TriggerType == AutomationTriggerType.Schedule || request.TriggerType == AutomationTriggerType.Time
+                            ? request.TriggerConfiguration 
+                            : null,
+                        EventType = request.TriggerType == AutomationTriggerType.Event
+                            ? request.TriggerConfiguration
+                            : null,
+                        Configuration = new Dictionary<string, object>()
+                    },
+                    Conditions = Array.Empty<AutomationCondition>(),
+                    Status = AutomationJobStatus.Created,
+                    CreatedAt = DateTime.UtcNow,
+                    IsEnabled = request.IsActive,
+                    ExpiresAt = request.ExpiresAt
+                };
+
+                // Parse action configuration
+                if (request.ActionType == AutomationActionType.SmartContract)
+                {
+                    // Parse smart contract details from ActionConfiguration JSON
+                    // For now, use placeholder values
+                    job.TargetContract = "0x1234567890abcdef";
+                    job.TargetMethod = "execute";
+                }
+
+                // Calculate next execution time
+                job.NextExecution = CalculateNextExecution(job.Trigger);
+
+                lock (_jobsLock)
+                {
+                    _jobs[automationId] = job;
+                    _executionHistory[automationId] = new List<AutomationExecution>();
+                }
+
+                // Activate the job if enabled
+                if (job.IsEnabled)
+                {
+                    job.Status = AutomationJobStatus.Active;
+                }
+
+                await Task.CompletedTask; // Ensure async operation
+                Logger.LogInformation("Created automation {AutomationId} for {ActionType} on {Blockchain}",
+                    automationId, request.ActionType, blockchainType);
+
+                return new CreateAutomationResponse
+                {
+                    Success = true,
+                    AutomationId = automationId,
+                    CreatedAt = job.CreatedAt
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to create automation on {Blockchain}", blockchainType);
+                return new CreateAutomationResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    CreatedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
 
     /// <inheritdoc/>
     public async Task<string> CreateJobAsync(AutomationJobRequest request, BlockchainType blockchainType)
@@ -955,6 +1047,569 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     {
         await Task.Delay(25); // Simulate script evaluation
         return script.Contains("true"); // Mock script result
+    }
+
+    /// <inheritdoc/>
+    public async Task<UpdateAutomationResponse> UpdateAutomationAsync(UpdateAutomationRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
+            {
+                lock (_jobsLock)
+                {
+                    if (_jobs.TryGetValue(request.AutomationId, out var job))
+                    {
+                        // Update job properties (only if provided)
+                        if (request.Name != null) job.Name = request.Name;
+                        if (request.Description != null) job.Description = request.Description;
+                        if (request.IsActive.HasValue) job.IsEnabled = request.IsActive.Value;
+                        if (request.ExpiresAt.HasValue) job.ExpiresAt = request.ExpiresAt;
+
+                        // Update status based on enabled state
+                        if (job.IsEnabled && job.Status == AutomationJobStatus.Paused)
+                        {
+                            job.Status = AutomationJobStatus.Active;
+                        }
+                        else if (!job.IsEnabled && job.Status == AutomationJobStatus.Active)
+                        {
+                            job.Status = AutomationJobStatus.Paused;
+                        }
+
+                        Logger.LogInformation("Updated automation {AutomationId} on {Blockchain}", request.AutomationId, blockchainType);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Automation {request.AutomationId} not found", nameof(request.AutomationId));
+                    }
+                }
+
+                await Task.CompletedTask;
+                return new UpdateAutomationResponse
+                {
+                    Success = true,
+                    UpdatedAt = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to update automation {AutomationId} on {Blockchain}", request.AutomationId, blockchainType);
+                return new UpdateAutomationResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    UpdatedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<DeleteAutomationResponse> DeleteAutomationAsync(string automationId, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(automationId);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
+            {
+                lock (_jobsLock)
+                {
+                    if (_jobs.Remove(automationId))
+                    {
+                        _executionHistory.Remove(automationId);
+                        Logger.LogInformation("Deleted automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Automation {automationId} not found", nameof(automationId));
+                    }
+                }
+
+                await Task.CompletedTask;
+                return new DeleteAutomationResponse
+                {
+                    Success = true,
+                    DeletedAt = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to delete automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                return new DeleteAutomationResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    DeletedAt = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<IEnumerable<AutomationInfo>> GetAutomationsAsync(AutomationFilter filter, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(filter);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        List<AutomationInfo> automations;
+        lock (_jobsLock)
+        {
+            var query = _jobs.Values.AsEnumerable();
+
+            // Apply filters
+            if (filter.IsActive.HasValue)
+            {
+                query = query.Where(j => j.IsEnabled == filter.IsActive.Value);
+            }
+
+            if (filter.TriggerType.HasValue)
+            {
+                query = query.Where(j => j.Trigger.Type == filter.TriggerType.Value);
+            }
+
+            if (!string.IsNullOrEmpty(filter.OwnerAddress))
+            {
+                query = query.Where(j => j.OwnerAddress.Equals(filter.OwnerAddress, StringComparison.OrdinalIgnoreCase));
+            }
+
+            if (!string.IsNullOrEmpty(filter.NamePattern))
+            {
+                query = query.Where(j => j.Name.Contains(filter.NamePattern, StringComparison.OrdinalIgnoreCase));
+            }
+
+            // Apply pagination
+            automations = query
+                .Skip(filter.PageIndex * filter.PageSize)
+                .Take(filter.PageSize)
+                .Select(j => new AutomationInfo
+                {
+                    AutomationId = j.Id,
+                    Name = j.Name,
+                    Description = j.Description,
+                    TriggerType = j.Trigger.Type,
+                    TriggerConfiguration = j.Trigger.Schedule ?? "{}",
+                    ActionType = AutomationActionType.SmartContract,
+                    ActionConfiguration = "{}",
+                    IsActive = j.IsEnabled,
+                    OwnerAddress = j.OwnerAddress,
+                    CreatedAt = j.CreatedAt,
+                    UpdatedAt = null,
+                    ExpiresAt = j.ExpiresAt,
+                    LastExecutedAt = j.LastExecuted,
+                    NextExecutionAt = j.NextExecution,
+                    ExecutionCount = j.ExecutionCount,
+                    Status = j.Status
+                })
+                .ToList();
+        }
+
+        await Task.CompletedTask;
+        return automations;
+    }
+
+    /// <inheritdoc/>
+    public async Task<AutomationInfo> GetAutomationAsync(string automationId, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(automationId);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        AutomationJob? job;
+        lock (_jobsLock)
+        {
+            _jobs.TryGetValue(automationId, out job);
+        }
+
+        if (job == null)
+        {
+            throw new ArgumentException($"Automation {automationId} not found", nameof(automationId));
+        }
+
+        await Task.CompletedTask;
+        return new AutomationInfo
+        {
+            AutomationId = job.Id,
+            Name = job.Name,
+            Description = job.Description,
+            TriggerType = job.Trigger.Type,
+            TriggerConfiguration = job.Trigger.Schedule ?? "{}",
+            ActionType = AutomationActionType.SmartContract,
+            ActionConfiguration = "{}",
+            IsActive = job.IsEnabled,
+            OwnerAddress = job.OwnerAddress,
+            CreatedAt = job.CreatedAt,
+            UpdatedAt = null,
+            ExpiresAt = job.ExpiresAt,
+            LastExecutedAt = job.LastExecuted,
+            NextExecutionAt = job.NextExecution,
+            ExecutionCount = job.ExecutionCount,
+            Status = job.Status
+        };
+    }
+
+    /// <inheritdoc/>
+    public async Task<ExecutionResult> ExecuteAutomationAsync(string automationId, ExecutionContext context, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(automationId);
+        ArgumentNullException.ThrowIfNull(context);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var startTime = DateTime.UtcNow;
+            AutomationJob? job;
+            
+            lock (_jobsLock)
+            {
+                _jobs.TryGetValue(automationId, out job);
+            }
+
+            if (job == null)
+            {
+                return new ExecutionResult
+                {
+                    Success = false,
+                    ErrorMessage = $"Automation {automationId} not found",
+                    ExecutedAt = startTime,
+                    DurationMs = 0,
+                    Status = AutomationExecutionStatus.Failed
+                };
+            }
+
+            // Execute the job
+            await ExecuteJobAsync(job);
+
+            var endTime = DateTime.UtcNow;
+            return new ExecutionResult
+            {
+                Success = true,
+                ExecutionId = Guid.NewGuid().ToString(),
+                ExecutedAt = startTime,
+                DurationMs = (long)(endTime - startTime).TotalMilliseconds,
+                TransactionHash = Guid.NewGuid().ToString(),
+                Status = AutomationExecutionStatus.Completed
+            };
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<ExecutionHistoryResponse> GetExecutionHistoryAsync(ExecutionHistoryRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        try
+        {
+            List<AutomationExecution> history;
+            lock (_jobsLock)
+            {
+                if (!_executionHistory.TryGetValue(request.AutomationId, out var allHistory))
+                {
+                    history = new List<AutomationExecution>();
+                }
+                else
+                {
+                    var query = allHistory.AsEnumerable();
+
+                    // Apply filters
+                    if (request.FromDate.HasValue)
+                    {
+                        query = query.Where(e => e.ExecutedAt >= request.FromDate.Value);
+                    }
+
+                    if (request.ToDate.HasValue)
+                    {
+                        query = query.Where(e => e.ExecutedAt <= request.ToDate.Value);
+                    }
+
+                    if (request.Status.HasValue)
+                    {
+                        query = query.Where(e => e.Status == request.Status.Value);
+                    }
+
+                    // Apply pagination
+                    var totalCount = query.Count();
+                    history = query
+                        .OrderByDescending(e => e.ExecutedAt)
+                        .Skip(request.PageIndex * request.PageSize)
+                        .Take(request.PageSize)
+                        .ToList();
+
+                    return new ExecutionHistoryResponse
+                    {
+                        Success = true,
+                        Executions = history,
+                        TotalCount = totalCount,
+                        PageSize = request.PageSize,
+                        PageIndex = request.PageIndex
+                    };
+                }
+            }
+
+            await Task.CompletedTask;
+            return new ExecutionHistoryResponse
+            {
+                Success = true,
+                Executions = history,
+                TotalCount = history.Count,
+                PageSize = request.PageSize,
+                PageIndex = request.PageIndex
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get execution history for {AutomationId} on {Blockchain}", request.AutomationId, blockchainType);
+            return new ExecutionHistoryResponse
+            {
+                Success = false,
+                ErrorMessage = ex.Message,
+                Executions = new List<AutomationExecution>(),
+                TotalCount = 0,
+                PageSize = request.PageSize,
+                PageIndex = request.PageIndex
+            };
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<PauseResumeResponse> PauseAutomationAsync(string automationId, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(automationId);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
+            {
+                AutomationJobStatus? newStatus = null;
+                lock (_jobsLock)
+                {
+                    if (_jobs.TryGetValue(automationId, out var job))
+                    {
+                        if (job.Status == AutomationJobStatus.Active)
+                        {
+                            job.Status = AutomationJobStatus.Paused;
+                            job.IsEnabled = false;
+                            newStatus = job.Status;
+
+                            Logger.LogInformation("Paused automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Automation {automationId} is not in a state that can be paused");
+                        }
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Automation {automationId} not found", nameof(automationId));
+                    }
+                }
+
+                await Task.CompletedTask;
+                return new PauseResumeResponse
+                {
+                    Success = true,
+                    CurrentStatus = newStatus,
+                    OperationTime = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to pause automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                return new PauseResumeResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    OperationTime = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<PauseResumeResponse> ResumeAutomationAsync(string automationId, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(automationId);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            try
+            {
+                AutomationJobStatus? newStatus = null;
+                lock (_jobsLock)
+                {
+                    if (_jobs.TryGetValue(automationId, out var job))
+                    {
+                        if (job.Status == AutomationJobStatus.Paused)
+                        {
+                            job.Status = AutomationJobStatus.Active;
+                            job.IsEnabled = true;
+                            job.NextExecution = CalculateNextExecution(job.Trigger);
+                            newStatus = job.Status;
+
+                            Logger.LogInformation("Resumed automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                        }
+                        else
+                        {
+                            throw new InvalidOperationException($"Automation {automationId} is not in a state that can be resumed");
+                        }
+                    }
+                    else
+                    {
+                        throw new ArgumentException($"Automation {automationId} not found", nameof(automationId));
+                    }
+                }
+
+                await Task.CompletedTask;
+                return new PauseResumeResponse
+                {
+                    Success = true,
+                    CurrentStatus = newStatus,
+                    OperationTime = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to resume automation {AutomationId} on {Blockchain}", automationId, blockchainType);
+                return new PauseResumeResponse
+                {
+                    Success = false,
+                    ErrorMessage = ex.Message,
+                    OperationTime = DateTime.UtcNow
+                };
+            }
+        });
+    }
+
+    /// <inheritdoc/>
+    public async Task<ValidationResponse> ValidateAutomationAsync(ValidationRequest request, BlockchainType blockchainType)
+    {
+        ArgumentNullException.ThrowIfNull(request);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        return await ExecuteInEnclaveAsync(async () =>
+        {
+            var response = new ValidationResponse { IsValid = true };
+
+            // Validate trigger configuration
+            try
+            {
+                switch (request.TriggerType)
+                {
+                    case AutomationTriggerType.Schedule:
+                    case AutomationTriggerType.Time:
+                        // Validate cron expression
+                        if (string.IsNullOrWhiteSpace(request.TriggerConfiguration))
+                        {
+                            response.ValidationErrors.Add("Schedule trigger requires a valid cron expression");
+                            response.IsValid = false;
+                        }
+                        else
+                        {
+                            try
+                            {
+                                var nextExecution = ParseCronExpression(request.TriggerConfiguration);
+                                response.Metadata["NextExecution"] = nextExecution.ToString("O");
+                            }
+                            catch
+                            {
+                                response.ValidationErrors.Add("Invalid cron expression format");
+                                response.IsValid = false;
+                            }
+                        }
+                        break;
+
+                    case AutomationTriggerType.Event:
+                        if (string.IsNullOrWhiteSpace(request.TriggerConfiguration))
+                        {
+                            response.ValidationErrors.Add("Event trigger requires event configuration");
+                            response.IsValid = false;
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.ValidationErrors.Add($"Invalid trigger configuration: {ex.Message}");
+                response.IsValid = false;
+            }
+
+            // Validate action configuration
+            try
+            {
+                switch (request.ActionType)
+                {
+                    case AutomationActionType.SmartContract:
+                        if (string.IsNullOrWhiteSpace(request.ActionConfiguration))
+                        {
+                            response.ValidationErrors.Add("Smart contract action requires configuration");
+                            response.IsValid = false;
+                        }
+                        // Additional validation for contract address, method, etc.
+                        break;
+
+                    case AutomationActionType.HttpWebhook:
+                        if (string.IsNullOrWhiteSpace(request.ActionConfiguration))
+                        {
+                            response.ValidationErrors.Add("HTTP webhook action requires URL configuration");
+                            response.IsValid = false;
+                        }
+                        break;
+                }
+            }
+            catch (Exception ex)
+            {
+                response.ValidationErrors.Add($"Invalid action configuration: {ex.Message}");
+                response.IsValid = false;
+            }
+
+            await Task.CompletedTask;
+            Logger.LogDebug("Validated automation configuration: IsValid={IsValid}, Errors={ErrorCount}", 
+                response.IsValid, response.ValidationErrors.Count);
+
+            return response;
+        });
     }
 
     /// <inheritdoc/>

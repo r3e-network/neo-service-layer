@@ -92,13 +92,13 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Gas analysis result.</returns>
-    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsAsync(TransactionAnalysisRequest request)
+    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsAsync(FairOrderingModels.TransactionAnalysisRequest request)
     {
         await Task.Delay(50); // Simulate analysis
 
         // Simple heuristic: high gas price indicates potential MEV target
-        var averageGasPrice = 20m; // Simulated average
-        var gasPrice = request.Context.ContainsKey("GasPrice") ? Convert.ToDecimal(request.Context["GasPrice"]) : 0m;
+        var averageGasPrice = 20000000000m; // Simulated average (20 Gwei)
+        var gasPrice = (decimal)request.GasPrice;
         var isHighPriority = gasPrice > averageGasPrice * 1.5m;
         var mevExposure = isHighPriority ? request.Value * 0.002m : 0m;
 
@@ -110,7 +110,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Timing analysis result.</returns>
-    private (bool IsSuspicious, string Reason) AnalyzeTransactionTiming(TransactionAnalysisRequest request)
+    private (bool IsSuspicious, string Reason) AnalyzeTransactionTiming(FairOrderingModels.TransactionAnalysisRequest request)
     {
         // Simple heuristic: transactions submitted at exact intervals might be suspicious
         var now = DateTime.UtcNow;
@@ -140,7 +140,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Contract analysis result.</returns>
-    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionAsync(TransactionAnalysisRequest request)
+    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionAsync(FairOrderingModels.TransactionAnalysisRequest request)
     {
         await Task.Delay(100); // Simulate analysis
 
@@ -215,16 +215,51 @@ public partial class FairOrderingService
         var riskScore = 0.0;
 
         // Analyze transaction for MEV opportunities
-        if (request.Transaction.Value > 10000m)
+        // Check if we have a transaction directly or need to analyze based on context
+        if (request.Transaction != null)
         {
-            threats.Add("Large transaction value - sandwich attack risk");
-            riskScore += 0.3;
-        }
+            if (request.Transaction.Value > 10000m)
+            {
+                threats.Add("Large transaction value - sandwich attack risk");
+                riskScore += 0.3;
+            }
 
-        if (request.Transaction.GasPrice > 50m)
+            if (request.Transaction.GasPrice > 50m)
+            {
+                threats.Add("High gas price - front-running target");
+                riskScore += 0.4;
+            }
+        }
+        else
         {
-            threats.Add("High gas price - front-running target");
-            riskScore += 0.4;
+            // Analyze based on transaction type and parameters
+            if (request.TransactionType == "DEX_SWAP")
+            {
+                threats.Add("DEX swap detected - arbitrage opportunity");
+                riskScore += 0.4;
+
+                // Check for large amounts
+                if (request.Parameters.ContainsKey("amountIn"))
+                {
+                    var amountIn = Convert.ToUInt64(request.Parameters["amountIn"]);
+                    if (amountIn > 500000000000000000UL) // 0.5 tokens
+                    {
+                        threats.Add("Large swap amount - sandwich attack risk");
+                        riskScore += 0.2;
+                    }
+                }
+            }
+
+            // Check mempool context
+            if (request.MemPoolContext.ContainsKey("gas_price_percentile"))
+            {
+                var gasPercentile = Convert.ToInt32(request.MemPoolContext["gas_price_percentile"]);
+                if (gasPercentile > 80)
+                {
+                    threats.Add("High gas price percentile - front-running target");
+                    riskScore += 0.1;
+                }
+            }
         }
 
         if (request.PoolContext.Count > 10)

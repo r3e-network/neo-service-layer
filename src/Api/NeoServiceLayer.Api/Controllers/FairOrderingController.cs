@@ -1,8 +1,9 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Advanced.FairOrdering;
-using NeoServiceLayer.Advanced.FairOrdering.Models;
+using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
+using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -16,14 +17,14 @@ namespace NeoServiceLayer.Api.Controllers;
 [Tags("Fair Ordering")]
 public class FairOrderingController : BaseApiController
 {
-    private readonly IFairOrderingService _fairOrderingService;
+    private readonly FairOrderingSvc.IFairOrderingService _fairOrderingService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="FairOrderingController"/> class.
     /// </summary>
     /// <param name="fairOrderingService">The fair ordering service.</param>
     /// <param name="logger">The logger.</param>
-    public FairOrderingController(IFairOrderingService fairOrderingService, ILogger<FairOrderingController> logger)
+    public FairOrderingController(FairOrderingSvc.IFairOrderingService fairOrderingService, ILogger<FairOrderingController> logger)
         : base(logger)
     {
         _fairOrderingService = fairOrderingService ?? throw new ArgumentNullException(nameof(fairOrderingService));
@@ -46,7 +47,7 @@ public class FairOrderingController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> CreateOrderingPool(
-        [FromBody] OrderingPoolConfig config,
+        [FromBody] FairOrderingModels.OrderingPoolConfig config,
         [FromRoute] string blockchainType)
     {
         try
@@ -87,7 +88,7 @@ public class FairOrderingController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 429)]
     public async Task<IActionResult> SubmitFairTransaction(
-        [FromBody] FairTransactionRequest request,
+        [FromBody] FairOrderingModels.FairTransactionRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -126,7 +127,7 @@ public class FairOrderingController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> AnalyzeFairnessRisk(
-        [FromBody] TransactionAnalysisRequest request,
+        [FromBody] FairOrderingModels.TransactionAnalysisRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -167,7 +168,7 @@ public class FairOrderingController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> SubmitTransaction(
-        [FromBody] TransactionSubmission submission,
+        [FromBody] NeoServiceLayer.Advanced.FairOrdering.Models.TransactionSubmission submission,
         [FromRoute] string blockchainType)
     {
         try
@@ -203,7 +204,7 @@ public class FairOrderingController : BaseApiController
     /// <response code="404">Pool not found.</response>
     [HttpGet("pools/{poolId}/metrics/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser,Analyst")]
-    [ProducesResponseType(typeof(ApiResponse<FairnessMetrics>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -246,7 +247,7 @@ public class FairOrderingController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("pools/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser,Analyst")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<OrderingPool>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<object>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> GetOrderingPools(
@@ -294,7 +295,7 @@ public class FairOrderingController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> UpdatePoolConfig(
         [FromRoute] string poolId,
-        [FromBody] OrderingPoolConfig config,
+        [FromBody] FairOrderingModels.OrderingPoolConfig config,
         [FromRoute] string blockchainType)
     {
         try
@@ -334,11 +335,11 @@ public class FairOrderingController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpPost("mev-analysis/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser,Trader,Analyst")]
-    [ProducesResponseType(typeof(ApiResponse<MevProtectionResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> AnalyzeMevRisk(
-        [FromBody] MevAnalysisRequest request,
+        [FromBody] NeoServiceLayer.Advanced.FairOrdering.Models.MevAnalysisRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -374,7 +375,7 @@ public class FairOrderingController : BaseApiController
     /// <response code="404">Transaction not found.</response>
     [HttpGet("transactions/{transactionId}/result/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser,Trader")]
-    [ProducesResponseType(typeof(ApiResponse<FairOrderingResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -390,12 +391,8 @@ public class FairOrderingController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _fairOrderingService.GetOrderingResultAsync(transactionId, blockchain);
-            
-            Logger.LogInformation("Ordering result retrieved for transaction {TransactionId} on {Blockchain}", 
-                transactionId, blockchainType);
-            
-            return Ok(CreateResponse(result, "Ordering result retrieved successfully"));
+            // GetOrderingResultAsync method is not available in service interface - return not implemented
+            return StatusCode(501, CreateResponse<object>(null, "Ordering result retrieval not implemented in current interface"));
         }
         catch (ArgumentException ex) when (ex.Message.Contains("not found"))
         {

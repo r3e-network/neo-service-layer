@@ -4,18 +4,24 @@ using Xunit;
 using FluentAssertions;
 using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.TestInfrastructure;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Monitoring.Tests;
 
 public class MonitoringServiceTests : TestBase
 {
     private readonly Mock<ILogger<MonitoringService>> _loggerMock;
+    private readonly Mock<IServiceConfiguration> _configurationMock;
     private readonly MonitoringService _service;
 
     public MonitoringServiceTests()
     {
         _loggerMock = new Mock<ILogger<MonitoringService>>();
-        _service = new MonitoringService(_loggerMock.Object, MockEnclaveWrapper.Object);
+        _configurationMock = new Mock<IServiceConfiguration>();
+        
+        // MonitoringService expects IEnclaveManager as second parameter
+        _service = new MonitoringService(_loggerMock.Object, MockEnclaveManager.Object, _configurationMock.Object);
     }
 
     [Fact]

@@ -100,6 +100,32 @@ public enum RiskLevel
 }
 
 /// <summary>
+/// Represents alert levels.
+/// </summary>
+public enum AlertLevel
+{
+    /// <summary>
+    /// Low alert level.
+    /// </summary>
+    Low,
+
+    /// <summary>
+    /// Medium alert level.
+    /// </summary>
+    Medium,
+
+    /// <summary>
+    /// High alert level.
+    /// </summary>
+    High,
+
+    /// <summary>
+    /// Critical alert level.
+    /// </summary>
+    Critical
+}
+
+/// <summary>
 /// Represents anomaly types.
 /// </summary>
 public enum AnomalyType
@@ -159,6 +185,11 @@ public class PatternModel : AIModel
     /// Gets or sets the pattern type.
     /// </summary>
     public PatternRecognitionType PatternType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the model type.
+    /// </summary>
+    public string ModelType { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the detection threshold.
@@ -250,6 +281,16 @@ public class PatternModelDefinition : AIModelDefinition
     /// Gets or sets the model version.
     /// </summary>
     public new string Version { get; set; } = "1.0.0";
+
+    /// <summary>
+    /// Gets or sets the model type.
+    /// </summary>
+    public string ModelType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the configuration parameters.
+    /// </summary>
+    public Dictionary<string, object> Configuration { get; set; } = new();
 }
 
 /// <summary>

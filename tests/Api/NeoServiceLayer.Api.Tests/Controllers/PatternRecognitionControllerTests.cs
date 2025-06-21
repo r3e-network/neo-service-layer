@@ -4,7 +4,6 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using System.Security.Claims;
@@ -17,13 +16,13 @@ namespace NeoServiceLayer.Api.Tests.Controllers;
 /// </summary>
 public class PatternRecognitionControllerTests
 {
-    private readonly Mock<IPatternRecognitionService> _patternRecognitionServiceMock;
+    private readonly Mock<AI.PatternRecognition.IPatternRecognitionService> _patternRecognitionServiceMock;
     private readonly Mock<ILogger<PatternRecognitionController>> _loggerMock;
     private readonly PatternRecognitionController _controller;
 
     public PatternRecognitionControllerTests()
     {
-        _patternRecognitionServiceMock = new Mock<IPatternRecognitionService>();
+        _patternRecognitionServiceMock = new Mock<AI.PatternRecognition.IPatternRecognitionService>();
         _loggerMock = new Mock<ILogger<PatternRecognitionController>>();
         _controller = new PatternRecognitionController(_patternRecognitionServiceMock.Object, _loggerMock.Object);
 
@@ -51,19 +50,22 @@ public class PatternRecognitionControllerTests
     public async Task DetectFraud_WithValidRequest_ReturnsOkResult()
     {
         // Arrange
-        var request = new FraudDetectionRequest
+        var request = new AI.PatternRecognition.Models.FraudDetectionRequest
         {
+            TransactionId = "test-tx-123",
             TransactionData = new Dictionary<string, object> { { "amount", 1000 } },
-            Sensitivity = DetectionSensitivity.Standard
+            Amount = 1000,
+            Parameters = new Dictionary<string, object> { { "Sensitivity", "Standard" } }
         };
 
-        var expectedResult = new FraudDetectionResult
+        var expectedResult = new AI.PatternRecognition.Models.FraudDetectionResult
         {
             DetectionId = "fraud-123",
-            RiskScore = 0.75,
+            TransactionId = "test-tx-123",
+            FraudScore = 0.75,
             IsFraudulent = true,
-            Confidence = 0.85,
-            DetectedPatterns = new List<FraudPattern>(),
+            RiskLevel = AI.PatternRecognition.Models.RiskLevel.Medium,
+            RiskFactors = new Dictionary<string, double> { { "confidence", 0.85 } },
             DetectedAt = DateTime.UtcNow
         };
 
@@ -76,7 +78,7 @@ public class PatternRecognitionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<ApiResponse<FraudDetectionResult>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<AI.PatternRecognition.Models.FraudDetectionResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedResult, response.Data);
         Assert.Equal("Fraud detection completed successfully", response.Message);
@@ -88,7 +90,7 @@ public class PatternRecognitionControllerTests
     public async Task DetectFraud_WithInvalidBlockchainType_ReturnsBadRequest()
     {
         // Arrange
-        var request = new FraudDetectionRequest();
+        var request = new AI.PatternRecognition.Models.FraudDetectionRequest();
 
         // Act
         var result = await _controller.DetectFraud(request, "InvalidChain");
@@ -104,9 +106,9 @@ public class PatternRecognitionControllerTests
     public async Task DetectFraud_WithServiceException_ReturnsInternalServerError()
     {
         // Arrange
-        var request = new FraudDetectionRequest();
+        var request = new AI.PatternRecognition.Models.FraudDetectionRequest();
         _patternRecognitionServiceMock
-            .Setup(s => s.DetectFraudAsync(It.IsAny<FraudDetectionRequest>(), It.IsAny<BlockchainType>()))
+            .Setup(s => s.DetectFraudAsync(It.IsAny<AI.PatternRecognition.Models.FraudDetectionRequest>(), It.IsAny<BlockchainType>()))
             .ThrowsAsync(new InvalidOperationException("Service error"));
 
         // Act
@@ -129,9 +131,9 @@ public class PatternRecognitionControllerTests
         // Arrange
         var request = new PatternAnalysisRequest
         {
-            Data = new Dictionary<string, object> { { "transactions", new[] { 1, 2, 3 } } },
-            AnalysisType = PatternAnalysisType.General,
-            MinimumConfidence = 0.7
+            ModelId = "test-pattern-model",
+            InputData = new Dictionary<string, object> { { "transactions", new[] { 1, 2, 3 } } },
+            Parameters = new Dictionary<string, object> { { "MinimumConfidence", 0.7 }, { "AnalysisType", "General" } }
         };
 
         var expectedResult = new PatternAnalysisResult
@@ -141,13 +143,13 @@ public class PatternRecognitionControllerTests
             {
                 new DetectedPattern
                 {
-                    PatternId = "pattern-1",
+                    Id = "pattern-1",
                     Name = "Frequency Pattern",
-                    Type = PatternType.Frequency,
+                    Type = AI.PatternRecognition.Models.PatternRecognitionType.FraudDetection, // Use correct enum
                     Confidence = 0.85
                 }
             },
-            OverallScore = 0.8,
+            // OverallScore = 0.8, // Property doesn't exist
             Confidence = 0.85,
             AnalyzedAt = DateTime.UtcNow
         };
@@ -180,19 +182,19 @@ public class PatternRecognitionControllerTests
         var request = new BehaviorAnalysisRequest
         {
             UserId = "user-123",
-            BehaviorData = new Dictionary<string, object> { { "loginFrequency", 5 } },
+            // BehaviorData property doesn't exist
             AnalysisWindow = TimeSpan.FromDays(30),
-            CompareWithBaseline = true
+            // CompareWithBaseline property doesn't exist
         };
 
         var expectedResult = new BehaviorAnalysisResult
         {
             AnalysisId = "behavior-123",
-            UserId = "user-123",
-            BehaviorScore = 0.7,
-            RiskLevel = RiskLevel.Medium,
-            BehaviorPatterns = new List<BehaviorPattern>(),
-            Anomalies = new List<BehaviorAnomaly>(),
+            Address = "user-123", // No UserId property, using Address instead
+            RiskScore = 0.7, // No BehaviorScore property, using RiskScore instead
+            RiskLevel = AI.PatternRecognition.Models.RiskLevel.Medium,
+            // BehaviorPatterns = new List<BehaviorPattern>(), // Property doesn't exist
+            // Anomalies = new List<BehaviorAnomaly>(), // Property doesn't exist
             AnalyzedAt = DateTime.UtcNow
         };
 
@@ -221,24 +223,22 @@ public class PatternRecognitionControllerTests
     public async Task AssessRisk_WithValidRequest_ReturnsOkResult()
     {
         // Arrange
-        var request = new RiskAssessmentRequest
+        var request = new AI.PatternRecognition.Models.RiskAssessmentRequest
         {
+            TransactionId = "tx-123",
             EntityId = "entity-123",
-            EntityType = EntityType.User,
-            AssessmentData = new Dictionary<string, object> { { "transactionCount", 10 } },
-            RiskFactors = new List<RiskFactor> { RiskFactor.TransactionFrequency },
-            IncludeHistoricalData = true
+            EntityType = "User",
+            TransactionData = new Dictionary<string, object> { { "transactionCount", 10 } },
+            HistoricalData = new Dictionary<string, object> { { "previousTransactions", 100 } }
         };
 
-        var expectedResult = new RiskAssessmentResult
+        var expectedResult = new AI.PatternRecognition.Models.RiskAssessmentResult
         {
             AssessmentId = "risk-123",
             EntityId = "entity-123",
             RiskScore = 0.6,
-            RiskLevel = RiskLevel.Medium,
-            RiskFactorScores = new Dictionary<RiskFactor, double> { { RiskFactor.TransactionFrequency, 0.6 } },
-            IdentifiedRisks = new List<IdentifiedRisk>(),
-            Recommendations = new List<RiskMitigation>(),
+            RiskLevel = AI.PatternRecognition.Models.RiskLevel.Medium,
+            // RiskFactorScores, IdentifiedRisks, and Recommendations properties don't exist
             Confidence = 0.8,
             AssessedAt = DateTime.UtcNow
         };
@@ -252,7 +252,7 @@ public class PatternRecognitionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<ApiResponse<RiskAssessmentResult>>(okResult.Value);
+        var response = Assert.IsType<ApiResponse<AI.PatternRecognition.Models.RiskAssessmentResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedResult, response.Data);
         Assert.Equal("Risk assessment completed successfully", response.Message);
@@ -272,13 +272,8 @@ public class PatternRecognitionControllerTests
         {
             Name = "Test Model",
             Description = "Test pattern recognition model",
-            ModelType = ModelType.Classification,
-            Configuration = new Dictionary<string, object>(),
-            TrainingRequirements = new TrainingDataRequirements
-            {
-                MinimumSampleSize = 1000,
-                RequiredFields = new List<string> { "amount", "timestamp" }
-            }
+            ModelType = "Classification",
+            Configuration = new Dictionary<string, object>()
         };
 
         var expectedModelId = "model-123";
@@ -310,16 +305,18 @@ public class PatternRecognitionControllerTests
             {
                 ModelId = "model-1",
                 Name = "Test Model 1",
-                ModelType = ModelType.Classification,
-                Status = ModelStatus.Ready,
+                ModelType = "Classification", // Use string instead of enum
+                PatternType = PatternRecognitionType.FraudDetection,
+                IsActive = true, // Status property doesn't exist
                 CreatedAt = DateTime.UtcNow
             },
             new PatternModel
             {
                 ModelId = "model-2",
                 Name = "Test Model 2",
-                ModelType = ModelType.AnomalyDetection,
-                Status = ModelStatus.Training,
+                ModelType = "AnomalyDetection", // Use string instead of enum
+                PatternType = PatternRecognitionType.AnomalyDetection,
+                IsActive = true, // Status property doesn't exist
                 CreatedAt = DateTime.UtcNow
             }
         };
@@ -350,10 +347,12 @@ public class PatternRecognitionControllerTests
         {
             ModelId = modelId,
             Name = "Test Model",
-            ModelType = ModelType.Classification,
-            Status = ModelStatus.Ready,
+            ModelType = "Classification", // Use string instead of enum
+            PatternType = PatternRecognitionType.FraudDetection,
+            IsActive = true, // Status property doesn't exist
             CreatedAt = DateTime.UtcNow,
-            AccuracyMetrics = new Dictionary<string, double> { { "accuracy", 0.95 } }
+            // AccuracyMetrics = new Dictionary<string, double> { { "accuracy", 0.95 } } // Property doesn't exist
+            Accuracy = 0.95
         };
 
         _patternRecognitionServiceMock
@@ -454,19 +453,19 @@ public class PatternRecognitionControllerTests
     {
         // Arrange
         var userId = "user-123";
-        var expectedHistory = new List<FraudDetectionResult>
+        var expectedHistory = new List<AI.PatternRecognition.Models.FraudDetectionResult>
         {
-            new FraudDetectionResult
+            new AI.PatternRecognition.Models.FraudDetectionResult
             {
                 DetectionId = "fraud-1",
-                RiskScore = 0.8,
+                FraudScore = 0.8,
                 IsFraudulent = true,
                 DetectedAt = DateTime.UtcNow.AddDays(-1)
             },
-            new FraudDetectionResult
+            new AI.PatternRecognition.Models.FraudDetectionResult
             {
                 DetectionId = "fraud-2",
-                RiskScore = 0.3,
+                FraudScore = 0.3,
                 IsFraudulent = false,
                 DetectedAt = DateTime.UtcNow.AddDays(-2)
             }
@@ -481,7 +480,7 @@ public class PatternRecognitionControllerTests
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
-        var response = Assert.IsType<PaginatedResponse<FraudDetectionResult>>(okResult.Value);
+        var response = Assert.IsType<PaginatedResponse<AI.PatternRecognition.Models.FraudDetectionResult>>(okResult.Value);
         Assert.True(response.Success);
         Assert.Equal(expectedHistory, response.Data);
         Assert.Equal("Fraud detection history retrieved successfully", response.Message);
@@ -528,9 +527,9 @@ public class PatternRecognitionControllerTests
             UserId = userId,
             CreatedAt = DateTime.UtcNow.AddDays(-30),
             LastUpdated = DateTime.UtcNow,
-            Baselines = new Dictionary<BehaviorType, BehaviorBaseline>(),
-            LearnedPatterns = new List<BehaviorPattern>(),
-            RiskFactors = new Dictionary<string, double> { { "loginFrequency", 0.5 } }
+            // Baselines = new Dictionary<BehaviorType, BehaviorBaseline>(), // Property doesn't exist
+            // LearnedPatterns = new List<BehaviorPattern>(), // Property doesn't exist
+            BehaviorMetrics = new Dictionary<string, double> { { "loginFrequency", 0.5 } }
         };
 
         _patternRecognitionServiceMock
@@ -558,7 +557,7 @@ public class PatternRecognitionControllerTests
         var profile = new BehaviorProfile
         {
             UserId = userId,
-            RiskFactors = new Dictionary<string, double> { { "newFactor", 0.7 } }
+            BehaviorMetrics = new Dictionary<string, double> { { "newFactor", 0.7 } }
         };
 
         _patternRecognitionServiceMock

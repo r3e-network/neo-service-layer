@@ -113,6 +113,16 @@ public class OrderingPoolConfig
     /// Gets or sets whether MEV protection is enabled.
     /// </summary>
     public bool MevProtectionEnabled { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the maximum slippage tolerance (as a decimal, e.g., 0.01 = 1%).
+    /// </summary>
+    public decimal MaxSlippage { get; set; } = 0.005m;
+
+    /// <summary>
+    /// Gets or sets additional configuration parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
 }
 
 /// <summary>
