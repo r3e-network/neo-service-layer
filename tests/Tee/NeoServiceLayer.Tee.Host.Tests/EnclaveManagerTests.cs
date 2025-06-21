@@ -22,10 +22,10 @@ public class EnclaveManagerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<EnclaveManager>>();
-        var enclaveWrapperLoggerMock = new Mock<ILogger<EnclaveWrapper>>();
+        var enclaveWrapperMock = new Mock<IEnclaveWrapper>();
 
         // Act
-        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperLoggerMock.Object);
+        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperMock.Object);
 
         // Assert
         Assert.NotNull(enclaveManager);
@@ -37,8 +37,8 @@ public class EnclaveManagerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<EnclaveManager>>();
-        var enclaveWrapperLoggerMock = new Mock<ILogger<EnclaveWrapper>>();
-        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperLoggerMock.Object);
+        var enclaveWrapperMock = new Mock<IEnclaveWrapper>();
+        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperMock.Object);
 
         // Use reflection to set the _disposed field to true to avoid calling the native methods
         var disposedField = typeof(EnclaveManager).GetField("_disposed", BindingFlags.Instance | BindingFlags.NonPublic);
@@ -54,8 +54,8 @@ public class EnclaveManagerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<EnclaveManager>>();
-        var enclaveWrapperLoggerMock = new Mock<ILogger<EnclaveWrapper>>();
-        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperLoggerMock.Object);
+        var enclaveWrapperMock = new Mock<IEnclaveWrapper>();
+        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperMock.Object);
         int length = 32;
         string seed = "test-seed";
 
@@ -74,8 +74,8 @@ public class EnclaveManagerTests
     {
         // Arrange
         var loggerMock = new Mock<ILogger<EnclaveManager>>();
-        var enclaveWrapperLoggerMock = new Mock<ILogger<EnclaveWrapper>>();
-        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperLoggerMock.Object);
+        var enclaveWrapperMock = new Mock<IEnclaveWrapper>();
+        var enclaveManager = new EnclaveManager(loggerMock.Object, enclaveWrapperMock.Object);
         int length = 32;
         string seed1 = "test-seed-1";
         string seed2 = "test-seed-2";

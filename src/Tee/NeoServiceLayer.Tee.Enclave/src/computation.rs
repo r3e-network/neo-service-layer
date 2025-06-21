@@ -878,8 +878,8 @@ fn get_current_memory_usage() -> usize {
         }
     }
     
-    // Fallback: use heap size estimation
-    std::alloc::System.alloc(std::alloc::Layout::new::<u8>()) as usize
+    // Fallback: use conservative memory estimate
+    16 * 1024 * 1024 // 16MB default estimate
 }
 
 /// Get current CPU time (platform-specific implementation)

@@ -4,6 +4,7 @@ using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
 
 namespace NeoServiceLayer.Services.Health.Tests;
@@ -14,14 +15,16 @@ namespace NeoServiceLayer.Services.Health.Tests;
 public class HealthServiceTests : IDisposable
 {
     private readonly Mock<ILogger<HealthService>> _mockLogger;
+    private readonly Mock<IEnclaveManager> _mockEnclaveManager;
     private readonly Mock<IStorageService> _mockStorageService;
     private readonly HealthService _healthService;
 
     public HealthServiceTests()
     {
         _mockLogger = new Mock<ILogger<HealthService>>();
+        _mockEnclaveManager = new Mock<IEnclaveManager>();
         _mockStorageService = new Mock<IStorageService>();
-        _healthService = new HealthService(_mockLogger.Object, _mockStorageService.Object);
+        _healthService = new HealthService(_mockLogger.Object, _mockEnclaveManager.Object, _mockStorageService.Object);
 
         // Initialize the service and enclave
         _healthService.InitializeAsync().Wait();

@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Oracle.Configuration;
 
@@ -69,22 +71,22 @@ public class OracleServiceDependencies
     /// <summary>
     /// Gets or sets the enclave manager.
     /// </summary>
-    public required IEnclaveManager EnclaveManager { get; set; }
+    public IEnclaveManager? EnclaveManager { get; set; }
 
     /// <summary>
     /// Gets or sets the blockchain client factory.
     /// </summary>
-    public required IBlockchainClientFactory BlockchainClientFactory { get; set; }
+    public IBlockchainClientFactory? BlockchainClientFactory { get; set; }
 
     /// <summary>
     /// Gets or sets the HTTP client service.
     /// </summary>
-    public required IHttpClientService HttpClientService { get; set; }
+    public IHttpClientService? HttpClientService { get; set; }
 
     /// <summary>
     /// Gets or sets the logger.
     /// </summary>
-    public required ILogger<OracleService> Logger { get; set; }
+    public ILogger<OracleService>? Logger { get; set; }
 }
 
 /// <summary>

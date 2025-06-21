@@ -640,6 +640,79 @@ public class TestEnclaveWrapper : IEnclaveWrapper
     }
 
     /// <summary>
+    /// Gets an attestation report from the enclave.
+    /// </summary>
+    /// <returns>The attestation report as a byte array.</returns>
+    public string GetAttestationReport()
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // Return mock attestation report
+        return $"{{\"mock_attestation\": true, \"timestamp\": {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}}}";
+    }
+
+    /// <summary>
+    /// Seals data using the enclave's sealing mechanism.
+    /// </summary>
+    /// <param name="data">The data to seal.</param>
+    /// <returns>The sealed data.</returns>
+    public byte[] SealData(byte[] data)
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // Mock sealing by adding a simple prefix
+        var sealedData = new byte[data.Length + 8];
+        var prefix = System.Text.Encoding.UTF8.GetBytes("SEALED:");
+        Array.Copy(prefix, 0, sealedData, 0, prefix.Length);
+        Array.Copy(data, 0, sealedData, prefix.Length, data.Length);
+        return sealedData;
+    }
+
+    /// <summary>
+    /// Unseals data using the enclave's unsealing mechanism.
+    /// </summary>
+    /// <param name="sealedData">The sealed data to unseal.</param>
+    /// <returns>The unsealed data.</returns>
+    public byte[] UnsealData(byte[] sealedData)
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // Mock unsealing by removing the prefix
+        var prefix = System.Text.Encoding.UTF8.GetBytes("SEALED:");
+        if (sealedData.Length < prefix.Length)
+        {
+            throw new EnclaveException("Invalid sealed data.");
+        }
+
+        var unsealedData = new byte[sealedData.Length - prefix.Length];
+        Array.Copy(sealedData, prefix.Length, unsealedData, 0, unsealedData.Length);
+        return unsealedData;
+    }
+
+    /// <summary>
+    /// Gets the trusted time from the enclave.
+    /// </summary>
+    /// <returns>The trusted time as a Unix timestamp.</returns>
+    public long GetTrustedTime()
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+
+    /// <summary>
     /// Disposes the enclave wrapper.
     /// </summary>
     public void Dispose()

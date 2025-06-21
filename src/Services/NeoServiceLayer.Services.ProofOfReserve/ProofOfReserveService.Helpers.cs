@@ -453,11 +453,11 @@ Neo Service Layer Team
     private async Task<decimal[]> FetchReserveBalancesAsync(string[] reserveAddresses, BlockchainType blockchainType)
     {
         var balances = new decimal[reserveAddresses.Length];
-        var (_, _, cachingEnabled) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
         for (int i = 0; i < reserveAddresses.Length; i++)
         {
-            if (cachingEnabled && _cacheHelper != null)
+            if (cachingEnabled > 0 && _cacheHelper != null)
             {
                 balances[i] = await GetBlockchainBalanceWithCachingAsync(reserveAddresses[i], blockchainType);
             }

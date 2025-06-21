@@ -27,6 +27,31 @@ public class PredictionModel : AIModel
     /// Gets or sets the feature importance scores.
     /// </summary>
     public Dictionary<string, double> FeatureImportance { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the model ID.
+    /// </summary>
+    public string ModelId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the model type.
+    /// </summary>
+    public string ModelType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the accuracy.
+    /// </summary>
+    public double Accuracy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the training data size.
+    /// </summary>
+    public int TrainingDataSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the model was last updated.
+    /// </summary>
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -54,6 +79,31 @@ public class PredictionModelDefinition : AIModelDefinition
     /// Gets or sets the validation strategy.
     /// </summary>
     public ValidationStrategy ValidationStrategy { get; set; } = ValidationStrategy.CrossValidation;
+
+    /// <summary>
+    /// Gets or sets the model type.
+    /// </summary>
+    public string ModelType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the algorithm.
+    /// </summary>
+    public string Algorithm { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the features.
+    /// </summary>
+    public List<string> Features { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the configuration.
+    /// </summary>
+    public Dictionary<string, object> Configuration { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the hyper parameters.
+    /// </summary>
+    public Dictionary<string, object> HyperParameters { get; set; } = new();
 }
 
 /// <summary>
@@ -165,7 +215,7 @@ public enum ValidationStrategy
 }
 
 /// <summary>
-/// Represents sentiment analysis request.
+/// Represents sentiment analysis request (service-specific).
 /// </summary>
 public class SentimentAnalysisRequest
 {
@@ -189,6 +239,67 @@ public class SentimentAnalysisRequest
     /// Gets or sets additional context.
     /// </summary>
     public Dictionary<string, object> Context { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the symbol.
+    /// </summary>
+    public string Symbol { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the news data.
+    /// </summary>
+    public List<string> NewsData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the social media data.
+    /// </summary>
+    public List<string> SocialMediaData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether to include market sentiment.
+    /// </summary>
+    public bool IncludeMarketSentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the analysis depth.
+    /// </summary>
+    public SentimentAnalysisDepth AnalysisDepth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time window.
+    /// </summary>
+    public TimeSpan TimeWindow { get; set; }
+
+    /// <summary>
+    /// Gets or sets the language filters.
+    /// </summary>
+    public string[] LanguageFilters { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the source weights.
+    /// </summary>
+    public Dictionary<string, double> SourceWeights { get; set; } = new();
+}
+
+/// <summary>
+/// Represents sentiment analysis depth.
+/// </summary>
+public enum SentimentAnalysisDepth
+{
+    /// <summary>
+    /// Basic analysis.
+    /// </summary>
+    Basic,
+    
+    /// <summary>
+    /// Standard analysis.
+    /// </summary>
+    Standard,
+    
+    /// <summary>
+    /// Comprehensive analysis.
+    /// </summary>
+    Comprehensive
 }
 
 /// <summary>
@@ -220,6 +331,175 @@ public class SentimentResult
     /// Gets or sets the analysis timestamp.
     /// </summary>
     public DateTime AnalyzedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the overall sentiment.
+    /// </summary>
+    public SentimentType OverallSentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sentiment score value.
+    /// </summary>
+    public double SentimentScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the news sentiment.
+    /// </summary>
+    public double NewsSentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the social media sentiment.
+    /// </summary>
+    public double SocialMediaSentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the market sentiment.
+    /// </summary>
+    public double MarketSentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sentiment trends.
+    /// </summary>
+    public List<SentimentTrend> SentimentTrends { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the keywords.
+    /// </summary>
+    public List<KeywordSentiment> Keywords { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the emotional analysis.
+    /// </summary>
+    public EmotionalAnalysis? EmotionalAnalysis { get; set; }
+
+    /// <summary>
+    /// Gets or sets the influencer sentiment.
+    /// </summary>
+    public List<InfluencerSentiment> InfluencerSentiment { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk indicators.
+    /// </summary>
+    public List<string> RiskIndicators { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the source reliability.
+    /// </summary>
+    public Dictionary<string, double> SourceReliability { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the conflicting signals.
+    /// </summary>
+    public List<string> ConflictingSignals { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the trending topics.
+    /// </summary>
+    public List<string> TrendingTopics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the viral content.
+    /// </summary>
+    public List<string> ViralContent { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the influence metrics.
+    /// </summary>
+    public Dictionary<string, double> InfluenceMetrics { get; set; } = new();
+}
+
+/// <summary>
+/// Represents sentiment trend.
+/// </summary>
+public class SentimentTrend
+{
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sentiment value.
+    /// </summary>
+    public double SentimentValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the volume.
+    /// </summary>
+    public int Volume { get; set; }
+}
+
+/// <summary>
+/// Represents keyword sentiment.
+/// </summary>
+public class KeywordSentiment
+{
+    /// <summary>
+    /// Gets or sets the keyword.
+    /// </summary>
+    public string Keyword { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the sentiment.
+    /// </summary>
+    public SentimentType Sentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the frequency.
+    /// </summary>
+    public int Frequency { get; set; }
+}
+
+/// <summary>
+/// Represents emotional analysis.
+/// </summary>
+public class EmotionalAnalysis
+{
+    /// <summary>
+    /// Gets or sets the fear level.
+    /// </summary>
+    public double Fear { get; set; }
+
+    /// <summary>
+    /// Gets or sets the greed level.
+    /// </summary>
+    public double Greed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the optimism level.
+    /// </summary>
+    public double Optimism { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pessimism level.
+    /// </summary>
+    public double Pessimism { get; set; }
+}
+
+/// <summary>
+/// Represents influencer sentiment.
+/// </summary>
+public class InfluencerSentiment
+{
+    /// <summary>
+    /// Gets or sets the influencer name.
+    /// </summary>
+    public string InfluencerName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the sentiment.
+    /// </summary>
+    public SentimentType Sentiment { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reach.
+    /// </summary>
+    public int Reach { get; set; }
+
+    /// <summary>
+    /// Gets or sets the influence score.
+    /// </summary>
+    public double InfluenceScore { get; set; }
 }
 
 /// <summary>
@@ -280,6 +560,27 @@ public enum SentimentType
 }
 
 /// <summary>
+/// Represents forecast time horizon.
+/// </summary>
+public enum ForecastTimeHorizon
+{
+    /// <summary>
+    /// Short term forecast (hours).
+    /// </summary>
+    ShortTerm,
+    
+    /// <summary>
+    /// Medium term forecast (days).
+    /// </summary>
+    MediumTerm,
+    
+    /// <summary>
+    /// Long term forecast (weeks/months).
+    /// </summary>
+    LongTerm
+}
+
+/// <summary>
 /// Represents market forecast request.
 /// </summary>
 public class MarketForecastRequest
@@ -309,6 +610,36 @@ public class MarketForecastRequest
     /// Gets or sets the confidence level.
     /// </summary>
     public double ConfidenceLevel { get; set; } = 0.95;
+
+    /// <summary>
+    /// Gets or sets the symbol.
+    /// </summary>
+    public string Symbol { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the time horizon.
+    /// </summary>
+    public ForecastTimeHorizon TimeHorizon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the current price.
+    /// </summary>
+    public decimal CurrentPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets the market data.
+    /// </summary>
+    public Dictionary<string, object> MarketData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the technical indicators.
+    /// </summary>
+    public Dictionary<string, double> TechnicalIndicators { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk parameters.
+    /// </summary>
+    public Dictionary<string, double> RiskParameters { get; set; } = new();
 }
 
 /// <summary>
@@ -340,6 +671,123 @@ public class MarketForecast
     /// Gets or sets the forecast timestamp.
     /// </summary>
     public DateTime ForecastedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the symbol.
+    /// </summary>
+    public string Symbol { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the predicted prices.
+    /// </summary>
+    public List<PriceForecast> PredictedPrices { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the overall trend.
+    /// </summary>
+    public MarketTrend OverallTrend { get; set; }
+
+    /// <summary>
+    /// Gets or sets the confidence level.
+    /// </summary>
+    public double ConfidenceLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the price targets.
+    /// </summary>
+    public Dictionary<string, decimal> PriceTargets { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk factors.
+    /// </summary>
+    public List<string> RiskFactors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the support levels.
+    /// </summary>
+    public List<decimal> SupportLevels { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the resistance levels.
+    /// </summary>
+    public List<decimal> ResistanceLevels { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the market indicators.
+    /// </summary>
+    public Dictionary<string, double> MarketIndicators { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the time horizon.
+    /// </summary>
+    public ForecastTimeHorizon TimeHorizon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the forecast metrics.
+    /// </summary>
+    public Dictionary<string, double> ForecastMetrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the volatility metrics.
+    /// </summary>
+    public VolatilityMetrics? VolatilityMetrics { get; set; }
+
+    /// <summary>
+    /// Gets or sets the trading recommendations.
+    /// </summary>
+    public List<string> TradingRecommendations { get; set; } = new();
+}
+
+/// <summary>
+/// Represents market trend.
+/// </summary>
+public enum MarketTrend
+{
+    /// <summary>
+    /// Bullish trend.
+    /// </summary>
+    Bullish,
+    
+    /// <summary>
+    /// Bearish trend.
+    /// </summary>
+    Bearish,
+    
+    /// <summary>
+    /// Neutral trend.
+    /// </summary>
+    Neutral,
+    
+    /// <summary>
+    /// Volatile market.
+    /// </summary>
+    Volatile
+}
+
+/// <summary>
+/// Represents volatility metrics.
+/// </summary>
+public class VolatilityMetrics
+{
+    /// <summary>
+    /// Gets or sets the Value at Risk.
+    /// </summary>
+    public double VaR { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expected shortfall.
+    /// </summary>
+    public double ExpectedShortfall { get; set; }
+
+    /// <summary>
+    /// Gets or sets the standard deviation.
+    /// </summary>
+    public double StandardDeviation { get; set; }
+
+    /// <summary>
+    /// Gets or sets the beta.
+    /// </summary>
+    public double Beta { get; set; }
 }
 
 /// <summary>
@@ -486,4 +934,107 @@ public class PredictionAnalysisResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Represents validation result for prediction accuracy.
+/// </summary>
+public class ValidationResult
+{
+    /// <summary>
+    /// Gets or sets the mean absolute error.
+    /// </summary>
+    public double MeanAbsoluteError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the root mean square error.
+    /// </summary>
+    public double RootMeanSquareError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mean absolute percentage error.
+    /// </summary>
+    public double MeanAbsolutePercentageError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the R2 score.
+    /// </summary>
+    public double R2Score { get; set; }
+
+    /// <summary>
+    /// Gets or sets the prediction intervals.
+    /// </summary>
+    public Dictionary<string, (double Lower, double Upper)> PredictionIntervals { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the outlier detection results.
+    /// </summary>
+    public List<string> OutlierDetection { get; set; } = new();
+}
+
+/// <summary>
+/// Represents backtest result.
+/// </summary>
+public class BacktestResult
+{
+    /// <summary>
+    /// Gets or sets the total trades.
+    /// </summary>
+    public int TotalTrades { get; set; }
+
+    /// <summary>
+    /// Gets or sets the win rate.
+    /// </summary>
+    public double WinRate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the Sharpe ratio.
+    /// </summary>
+    public double SharpeRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum drawdown.
+    /// </summary>
+    public double MaxDrawdown { get; set; }
+
+    /// <summary>
+    /// Gets or sets the profit factor.
+    /// </summary>
+    public double ProfitFactor { get; set; }
+
+    /// <summary>
+    /// Gets or sets the monthly returns.
+    /// </summary>
+    public List<double> MonthlyReturns { get; set; } = new();
+}
+
+/// <summary>
+/// Represents uncertainty assessment result.
+/// </summary>
+public class UncertaintyResult
+{
+    /// <summary>
+    /// Gets or sets the prediction intervals.
+    /// </summary>
+    public Dictionary<string, (double Lower, double Upper)> PredictionIntervals { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the epistemic uncertainty.
+    /// </summary>
+    public double EpistemicUncertainty { get; set; }
+
+    /// <summary>
+    /// Gets or sets the aleatoric uncertainty.
+    /// </summary>
+    public double AleatoricUncertainty { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total uncertainty.
+    /// </summary>
+    public double TotalUncertainty { get; set; }
+
+    /// <summary>
+    /// Gets or sets the confidence bounds.
+    /// </summary>
+    public Dictionary<string, double> ConfidenceBounds { get; set; } = new();
 }

@@ -119,9 +119,9 @@ public class NeoXClientTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Height.Should().Be(blockHeight);
-        result.Hash.Should().Be(expectedBlock.hash);
-        result.PreviousHash.Should().Be(expectedBlock.parentHash);
-        result.Transactions.Should().HaveCount(expectedBlock.transactions.Length);
+        result.Hash.Should().Be(((dynamic)expectedBlock).hash);
+        result.PreviousHash.Should().Be(((dynamic)expectedBlock).parentHash);
+        result.Transactions.Should().HaveCount(((dynamic)expectedBlock).transactions.Length);
         VerifyLoggerCalled(LogLevel.Debug, $"Getting block at height {blockHeight}");
     }
 

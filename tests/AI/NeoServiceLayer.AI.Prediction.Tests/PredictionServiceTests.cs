@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using IConfigurationSection = Microsoft.Extensions.Configuration.IConfigurationSection;
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
 

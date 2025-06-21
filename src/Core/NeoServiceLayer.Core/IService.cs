@@ -126,7 +126,7 @@ public interface IPredictionService : IEnclaveService, IBlockchainService
     /// <param name="request">The prediction request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The prediction result.</returns>
-    Task<PredictionResult> PredictAsync(PredictionRequest request, BlockchainType blockchainType);
+    Task<Models.PredictionResult> PredictAsync(Models.PredictionRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Analyzes sentiment from text data.
@@ -134,7 +134,7 @@ public interface IPredictionService : IEnclaveService, IBlockchainService
     /// <param name="request">The sentiment analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The sentiment analysis result.</returns>
-    Task<SentimentResult> AnalyzeSentimentAsync(SentimentAnalysisRequest request, BlockchainType blockchainType);
+    Task<Models.SentimentResult> AnalyzeSentimentAsync(Models.SentimentAnalysisRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Registers a new prediction model.
@@ -142,7 +142,7 @@ public interface IPredictionService : IEnclaveService, IBlockchainService
     /// <param name="registration">The model registration details.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The model ID.</returns>
-    Task<string> RegisterModelAsync(ModelRegistration registration, BlockchainType blockchainType);
+    Task<string> RegisterModelAsync(Models.ModelRegistration registration, BlockchainType blockchainType);
 }
 
 /// <summary>

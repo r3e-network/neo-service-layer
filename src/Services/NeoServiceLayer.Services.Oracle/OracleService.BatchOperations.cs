@@ -47,7 +47,8 @@ public partial class OracleService
             // Get blockchain data for verification
             var client = _blockchainClientFactory.CreateClient(blockchainType);
             var blockHeight = await client.GetBlockHeightAsync();
-            var blockHash = await client.GetBlockHashAsync(blockHeight);
+            var block = await client.GetBlockAsync(blockHeight);
+            var blockHash = block.Hash;
 
             // Process each request
             var responses = new List<OracleResponse>();

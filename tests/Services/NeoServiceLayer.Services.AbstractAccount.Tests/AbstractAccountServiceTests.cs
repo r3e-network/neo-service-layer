@@ -17,7 +17,7 @@ public class AbstractAccountServiceTests : TestBase
     public AbstractAccountServiceTests()
     {
         _loggerMock = new Mock<ILogger<AbstractAccountService>>();
-        _service = new AbstractAccountService(_loggerMock.Object, MockEnclaveWrapper.Object);
+        _service = new AbstractAccountService(_loggerMock.Object, MockEnclaveManager.Object);
     }
 
     [Fact]
@@ -25,7 +25,7 @@ public class AbstractAccountServiceTests : TestBase
     {
         // Act & Assert
         _service.Should().NotBeNull();
-        _service.ServiceName.Should().Be("AbstractAccountService");
+        _service.Name.Should().Be("AbstractAccountService");
         _service.Description.Should().Be("Account abstraction and smart wallet functionality");
         _service.Version.Should().Be("1.0.0");
     }
@@ -39,9 +39,11 @@ public class AbstractAccountServiceTests : TestBase
         var request = new CreateAccountRequest
         {
             OwnerPublicKey = "03c663ba46afa8349f020eb9e8f9e1dc1c8e877b9d239e9110d1fdd7152e7c59dd",
-            GuardianAddresses = new[] { GenerateTestAddress(blockchainType) },
-            RequiredConfirmations = 1,
-            SessionKeyDuration = TimeSpan.FromHours(24)
+            InitialGuardians = new[] { GenerateTestAddress(blockchainType) },
+            RecoveryThreshold = 1,
+            EnableGaslessTransactions = true,
+            AccountName = "Test Account",
+            InitialBalance = 0
         };
 
         // Act
@@ -51,7 +53,7 @@ public class AbstractAccountServiceTests : TestBase
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
         result.AccountId.Should().NotBeNullOrEmpty();
-        result.Address.Should().NotBeNullOrEmpty();
+        result.AccountAddress.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
     }
 
@@ -86,7 +88,7 @@ public class AbstractAccountServiceTests : TestBase
         var request = new ExecuteTransactionRequest
         {
             AccountId = "test-account-id",
-            To = GenerateTestAddress(blockchainType),
+            ToAddress = GenerateTestAddress(blockchainType),
             Value = 1.5m,
             Data = "0x1234",
             GasLimit = 21000
@@ -111,17 +113,19 @@ public class AbstractAccountServiceTests : TestBase
         var request = new BatchTransactionRequest
         {
             AccountId = "test-account-id",
-            Transactions = new[]
+            Transactions = new List<ExecuteTransactionRequest>
             {
-                new TransactionRequest
+                new ExecuteTransactionRequest
                 {
-                    To = GenerateTestAddress(blockchainType),
+                    AccountId = "test-account-id",
+                    ToAddress = GenerateTestAddress(blockchainType),
                     Value = 1.0m,
                     Data = "0x1234"
                 },
-                new TransactionRequest
+                new ExecuteTransactionRequest
                 {
-                    To = GenerateTestAddress(blockchainType),
+                    AccountId = "test-account-id",
+                    ToAddress = GenerateTestAddress(blockchainType),
                     Value = 2.0m,
                     Data = "0x5678"
                 }
@@ -133,9 +137,9 @@ public class AbstractAccountServiceTests : TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
-        result.TransactionHashes.Should().HaveCount(2);
-        result.TransactionHashes.Should().OnlyContain(hash => !string.IsNullOrEmpty(hash));
+        result.AllSuccessful.Should().BeTrue();
+        result.Results.Should().HaveCount(2);
+        result.Results.Should().OnlyContain(r => r.Success);
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
     }
 
@@ -149,8 +153,7 @@ public class AbstractAccountServiceTests : TestBase
         {
             AccountId = "test-account-id",
             GuardianAddress = GenerateTestAddress(blockchainType),
-            GuardianName = "Emergency Guardian",
-            RequiredConfirmations = 2
+            GuardianName = "Emergency Guardian"
         };
 
         // Act
@@ -173,14 +176,7 @@ public class AbstractAccountServiceTests : TestBase
         {
             AccountId = "test-account-id",
             NewOwnerPublicKey = "02c663ba46afa8349f020eb9e8f9e1dc1c8e877b9d239e9110d1fdd7152e7c59dd",
-            GuardianSignatures = new[]
-            {
-                new GuardianSignature
-                {
-                    GuardianAddress = GenerateTestAddress(blockchainType),
-                    Signature = "signature1"
-                }
-            }
+            Reason = "Test recovery"
         };
 
         // Act
@@ -202,17 +198,19 @@ public class AbstractAccountServiceTests : TestBase
         var request = new CompleteRecoveryRequest
         {
             RecoveryId = "test-recovery-id",
-            GuardianSignatures = new[]
+            GuardianSignatures = new List<GuardianSignature>
             {
                 new GuardianSignature
                 {
                     GuardianAddress = GenerateTestAddress(blockchainType),
-                    Signature = "signature1"
+                    Signature = "signature1",
+                    SignedAt = DateTime.UtcNow
                 },
                 new GuardianSignature
                 {
                     GuardianAddress = GenerateTestAddress(blockchainType),
-                    Signature = "signature2"
+                    Signature = "signature2",
+                    SignedAt = DateTime.UtcNow
                 }
             }
         };
@@ -236,9 +234,16 @@ public class AbstractAccountServiceTests : TestBase
         var request = new CreateSessionKeyRequest
         {
             AccountId = "test-account-id",
-            Duration = TimeSpan.FromHours(24),
-            Permissions = new[] { "transfer", "approve" },
-            SpendingLimit = 1000m
+            Permissions = new SessionKeyPermissions
+            {
+                MaxTransactionValue = 1000m,
+                AllowedContracts = new List<string> { GenerateTestAddress(blockchainType) },
+                AllowedFunctions = new List<string> { "transfer", "approve" },
+                MaxTransactionsPerDay = 100,
+                AllowGaslessTransactions = true
+            },
+            ExpiresAt = DateTime.UtcNow.AddHours(24),
+            Name = "Test Session Key"
         };
 
         // Act
@@ -288,7 +293,7 @@ public class AbstractAccountServiceTests : TestBase
         // Assert
         result.Should().NotBeNull();
         result.AccountId.Should().Be(accountId);
-        result.Address.Should().NotBeNullOrEmpty();
+        result.AccountAddress.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
     }
 
@@ -301,10 +306,10 @@ public class AbstractAccountServiceTests : TestBase
         var request = new TransactionHistoryRequest
         {
             AccountId = "test-account-id",
-            PageSize = 10,
-            PageIndex = 0,
-            FromDate = DateTime.UtcNow.AddDays(-30),
-            ToDate = DateTime.UtcNow
+            Limit = 10,
+            Offset = 0,
+            StartDate = DateTime.UtcNow.AddDays(-30),
+            EndDate = DateTime.UtcNow
         };
 
         // Act
@@ -312,7 +317,6 @@ public class AbstractAccountServiceTests : TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result.Success.Should().BeTrue();
         result.Transactions.Should().NotBeNull();
         result.TotalCount.Should().BeGreaterOrEqualTo(0);
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
@@ -326,7 +330,7 @@ public class AbstractAccountServiceTests : TestBase
         await _service.StartAsync();
 
         // Assert
-        _service.IsInitialized.Should().BeTrue();
+        _service.IsEnclaveInitialized.Should().BeTrue();
         _service.IsRunning.Should().BeTrue();
         VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
@@ -359,6 +363,6 @@ public class AbstractAccountServiceTests : TestBase
     public void Service_ShouldHaveCorrectCapabilities()
     {
         // Act & Assert
-        _service.HasCapability<IAbstractAccountService>().Should().BeTrue();
+        _service.Capabilities.Should().Contain(typeof(IAbstractAccountService));
     }
 }

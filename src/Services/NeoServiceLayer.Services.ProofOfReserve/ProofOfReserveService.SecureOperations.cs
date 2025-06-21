@@ -29,7 +29,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "RegisterAsset");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<string>.Failure(
+                return SecureOperationResult<string>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -39,7 +39,7 @@ public partial class ProofOfReserveService
                 !ValidateInputSafety(request.AssetName, nameof(request.AssetName)) ||
                 !ValidateInputSafety(request.Owner, nameof(request.Owner)))
             {
-                return SecureOperationResult<string>.Failure(
+                return SecureOperationResult<string>.CreateFailure(
                     "Invalid input parameters detected",
                     "INVALID_INPUT");
             }
@@ -52,7 +52,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<string>.Failure(
+                return SecureOperationResult<string>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -63,12 +63,12 @@ public partial class ProofOfReserveService
             Logger.LogInformation("Asset {AssetId} registered securely by client {ClientId}", 
                 assetId, securityContext.ClientId);
 
-            return SecureOperationResult<string>.Success(assetId);
+            return SecureOperationResult<string>.CreateSuccess(assetId);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in secure asset registration for client {ClientId}", securityContext.ClientId);
-            return SecureOperationResult<string>.Failure(
+            return SecureOperationResult<string>.CreateFailure(
                 "Internal error during asset registration",
                 "INTERNAL_ERROR");
         }
@@ -95,7 +95,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "GenerateProof");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<Core.ProofOfReserve>.Failure(
+                return SecureOperationResult<Core.ProofOfReserve>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -103,7 +103,7 @@ public partial class ProofOfReserveService
             // Validate input safety
             if (!ValidateInputSafety(assetId, nameof(assetId)))
             {
-                return SecureOperationResult<Core.ProofOfReserve>.Failure(
+                return SecureOperationResult<Core.ProofOfReserve>.CreateFailure(
                     "Invalid asset ID parameter",
                     "INVALID_INPUT");
             }
@@ -114,7 +114,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<Core.ProofOfReserve>.Failure(
+                return SecureOperationResult<Core.ProofOfReserve>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -125,13 +125,13 @@ public partial class ProofOfReserveService
             Logger.LogInformation("Proof {ProofId} generated securely for asset {AssetId} by client {ClientId}", 
                 proof.ProofId, assetId, securityContext.ClientId);
 
-            return SecureOperationResult<Core.ProofOfReserve>.Success(proof);
+            return SecureOperationResult<Core.ProofOfReserve>.CreateSuccess(proof);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in secure proof generation for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<Core.ProofOfReserve>.Failure(
+            return SecureOperationResult<Core.ProofOfReserve>.CreateFailure(
                 "Internal error during proof generation",
                 "INTERNAL_ERROR");
         }
@@ -161,7 +161,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "UpdateReserveData");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -170,7 +170,7 @@ public partial class ProofOfReserveService
             if (!ValidateInputSafety(assetId, nameof(assetId)) ||
                 !ValidateInputSafety(reserveData.AuditSource, nameof(reserveData.AuditSource)))
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     "Invalid input parameters detected",
                     "INVALID_INPUT");
             }
@@ -180,7 +180,7 @@ public partial class ProofOfReserveService
             {
                 if (!ValidateInputSafety(address, "ReserveAddress"))
                 {
-                    return SecureOperationResult<bool>.Failure(
+                    return SecureOperationResult<bool>.CreateFailure(
                         "Invalid reserve address detected",
                         "INVALID_ADDRESS");
                 }
@@ -193,7 +193,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -204,13 +204,13 @@ public partial class ProofOfReserveService
             Logger.LogInformation("Reserve data updated securely for asset {AssetId} by client {ClientId}: {Success}", 
                 assetId, securityContext.ClientId, success);
 
-            return SecureOperationResult<bool>.Success(success);
+            return SecureOperationResult<bool>.CreateSuccess(success);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error in secure reserve data update for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<bool>.Failure(
+            return SecureOperationResult<bool>.CreateFailure(
                 "Internal error during reserve data update",
                 "INTERNAL_ERROR");
         }
@@ -237,7 +237,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "GetReserveStatus");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<ReserveStatusInfo>.Failure(
+                return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -245,7 +245,7 @@ public partial class ProofOfReserveService
             // Validate input safety
             if (!ValidateInputSafety(assetId, nameof(assetId)))
             {
-                return SecureOperationResult<ReserveStatusInfo>.Failure(
+                return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                     "Invalid asset ID parameter",
                     "INVALID_INPUT");
             }
@@ -256,7 +256,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<ReserveStatusInfo>.Failure(
+                return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -267,12 +267,12 @@ public partial class ProofOfReserveService
             Logger.LogDebug("Reserve status retrieved securely for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
 
-            return SecureOperationResult<ReserveStatusInfo>.Success(statusInfo);
+            return SecureOperationResult<ReserveStatusInfo>.CreateSuccess(statusInfo);
         }
         catch (ArgumentException ex)
         {
             Logger.LogWarning(ex, "Asset {AssetId} not found for client {ClientId}", assetId, securityContext.ClientId);
-            return SecureOperationResult<ReserveStatusInfo>.Failure(
+            return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                 "Asset not found",
                 "ASSET_NOT_FOUND");
         }
@@ -280,7 +280,7 @@ public partial class ProofOfReserveService
         {
             Logger.LogError(ex, "Error getting reserve status for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<ReserveStatusInfo>.Failure(
+            return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                 "Internal error retrieving reserve status",
                 "INTERNAL_ERROR");
         }
@@ -311,7 +311,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "GenerateAuditReport");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<AuditReport>.Failure(
+                return SecureOperationResult<AuditReport>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -319,7 +319,7 @@ public partial class ProofOfReserveService
             // Validate input safety
             if (!ValidateInputSafety(assetId, nameof(assetId)))
             {
-                return SecureOperationResult<AuditReport>.Failure(
+                return SecureOperationResult<AuditReport>.CreateFailure(
                     "Invalid asset ID parameter",
                     "INVALID_INPUT");
             }
@@ -327,7 +327,7 @@ public partial class ProofOfReserveService
             // Validate date range
             if (from > to)
             {
-                return SecureOperationResult<AuditReport>.Failure(
+                return SecureOperationResult<AuditReport>.CreateFailure(
                     "Invalid date range: start date must be before end date",
                     "INVALID_DATE_RANGE");
             }
@@ -335,7 +335,7 @@ public partial class ProofOfReserveService
             // Limit audit report time range (max 1 year)
             if ((to - from).TotalDays > 365)
             {
-                return SecureOperationResult<AuditReport>.Failure(
+                return SecureOperationResult<AuditReport>.CreateFailure(
                     "Audit report time range cannot exceed 365 days",
                     "DATE_RANGE_TOO_LARGE");
             }
@@ -346,7 +346,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<AuditReport>.Failure(
+                return SecureOperationResult<AuditReport>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -357,13 +357,13 @@ public partial class ProofOfReserveService
             Logger.LogInformation("Audit report {ReportId} generated securely for asset {AssetId} by client {ClientId}", 
                 auditReport.ReportId, assetId, securityContext.ClientId);
 
-            return SecureOperationResult<AuditReport>.Success(auditReport);
+            return SecureOperationResult<AuditReport>.CreateSuccess(auditReport);
         }
         catch (ArgumentException ex)
         {
             Logger.LogWarning(ex, "Asset {AssetId} not found for audit report by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<AuditReport>.Failure(
+            return SecureOperationResult<AuditReport>.CreateFailure(
                 "Asset not found",
                 "ASSET_NOT_FOUND");
         }
@@ -371,7 +371,7 @@ public partial class ProofOfReserveService
         {
             Logger.LogError(ex, "Error generating audit report for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<AuditReport>.Failure(
+            return SecureOperationResult<AuditReport>.CreateFailure(
                 "Internal error generating audit report",
                 "INTERNAL_ERROR");
         }
@@ -400,7 +400,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "SetAlertThreshold");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -408,7 +408,7 @@ public partial class ProofOfReserveService
             // Validate input safety
             if (!ValidateInputSafety(assetId, nameof(assetId)))
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     "Invalid asset ID parameter",
                     "INVALID_INPUT");
             }
@@ -416,7 +416,7 @@ public partial class ProofOfReserveService
             // Validate threshold range
             if (threshold < 0 || threshold > 10)
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     "Alert threshold must be between 0 and 10",
                     "INVALID_THRESHOLD");
             }
@@ -427,7 +427,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<bool>.Failure(
+                return SecureOperationResult<bool>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -438,13 +438,13 @@ public partial class ProofOfReserveService
             Logger.LogInformation("Alert threshold {Threshold} set securely for asset {AssetId} by client {ClientId}", 
                 threshold, assetId, securityContext.ClientId);
 
-            return SecureOperationResult<bool>.Success(success);
+            return SecureOperationResult<bool>.CreateSuccess(success);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error setting alert threshold for asset {AssetId} by client {ClientId}", 
                 assetId, securityContext.ClientId);
-            return SecureOperationResult<bool>.Failure(
+            return SecureOperationResult<bool>.CreateFailure(
                 "Internal error setting alert threshold",
                 "INTERNAL_ERROR");
         }
@@ -468,7 +468,7 @@ public partial class ProofOfReserveService
             var securityValidation = await ValidateSecurityContextAsync(securityContext, "GetActiveAlerts");
             if (!securityValidation.IsValid)
             {
-                return SecureOperationResult<IEnumerable<ReserveAlert>>.Failure(
+                return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateFailure(
                     securityValidation.ErrorMessage ?? "Security validation failed",
                     securityValidation.ErrorCode ?? "SECURITY_ERROR");
             }
@@ -476,7 +476,7 @@ public partial class ProofOfReserveService
             // Check blockchain support
             if (!SupportsBlockchain(blockchainType))
             {
-                return SecureOperationResult<IEnumerable<ReserveAlert>>.Failure(
+                return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateFailure(
                     $"Blockchain {blockchainType} is not supported",
                     "UNSUPPORTED_BLOCKCHAIN");
             }
@@ -487,13 +487,13 @@ public partial class ProofOfReserveService
             Logger.LogDebug("Active alerts retrieved securely for {Blockchain} by client {ClientId}", 
                 blockchainType, securityContext.ClientId);
 
-            return SecureOperationResult<IEnumerable<ReserveAlert>>.Success(alerts);
+            return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateSuccess(alerts);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error getting active alerts for {Blockchain} by client {ClientId}", 
                 blockchainType, securityContext.ClientId);
-            return SecureOperationResult<IEnumerable<ReserveAlert>>.Failure(
+            return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateFailure(
                 "Internal error retrieving active alerts",
                 "INTERNAL_ERROR");
         }

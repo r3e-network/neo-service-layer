@@ -376,7 +376,8 @@ impl AccountService {
         
         // Convert to base58
         while num > zero {
-            let (quotient, remainder) = num.div_rem(&base);
+            let remainder = &num % &base;
+            let quotient = &num / &base;
             let remainder_u8 = remainder.to_bytes_be()[0];
             result.push(BASE58_ALPHABET[remainder_u8 as usize]);
             num = quotient;

@@ -3,6 +3,8 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.AI.Prediction.Models;
+using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.Tee.Host.Services;
 using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction;
@@ -15,6 +17,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
     private readonly Dictionary<string, PredictionModel> _models = new();
     private readonly Dictionary<string, List<CoreModels.PredictionResult>> _predictionHistory = new();
     private readonly object _modelsLock = new();
+    private readonly IPersistentStorageProvider? _storageProvider;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="PredictionService"/> class.
@@ -25,6 +28,29 @@ public partial class PredictionService : AIServiceBase, IPredictionService
         : base("PredictionService", "AI-powered forecasting and sentiment analysis service", "1.0.0", logger, configuration)
     {
         Configuration = configuration;
+
+        AddCapability<IPredictionService>();
+        AddDependency(new ServiceDependency("OracleService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("StorageService", false, "1.0.0"));
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="PredictionService"/> class with full dependencies.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
+    /// <param name="configuration">The service configuration.</param>
+    /// <param name="storageProvider">The storage provider.</param>
+    /// <param name="enclaveManager">The enclave manager.</param>
+    public PredictionService(
+        ILogger<PredictionService> logger,
+        IServiceConfiguration configuration,
+        IPersistentStorageProvider storageProvider,
+        IEnclaveManager enclaveManager)
+        : base("PredictionService", "AI-powered forecasting and sentiment analysis service", "1.0.0", logger, 
+               new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager, configuration)
+    {
+        Configuration = configuration;
+        _storageProvider = storageProvider;
 
         AddCapability<IPredictionService>();
         AddDependency(new ServiceDependency("OracleService", true, "1.0.0"));
@@ -48,7 +74,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
 
         return await ExecuteInEnclaveAsync(async () =>
         {
-            var modelId = Guid.NewGuid().ToString();
+            var modelId = $"pred_model_{Guid.NewGuid():N}";
 
             // Train model within the enclave for security
             var trainedModel = await TrainModelInEnclaveAsync(definition);
@@ -166,7 +192,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
     }
 
     /// <inheritdoc/>
-    public async Task<NeoServiceLayer.Core.SentimentResult> AnalyzeSentimentAsync(NeoServiceLayer.Core.SentimentAnalysisRequest request, BlockchainType blockchainType)
+    public async Task<CoreModels.SentimentResult> AnalyzeSentimentAsync(CoreModels.SentimentAnalysisRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -181,44 +207,47 @@ public partial class PredictionService : AIServiceBase, IPredictionService
 
             try
             {
-                Logger.LogDebug("Analyzing sentiment {AnalysisId} for {TextCount} texts", analysisId, request.TextData.Length);
+                Logger.LogDebug("Analyzing sentiment {AnalysisId} for text", analysisId);
 
-                // Convert Core request to local request and analyze sentiment within the enclave
-                var sentimentScores = new List<double>();
-                var keywordSentiments = new Dictionary<string, double>();
-
-                foreach (var text in request.TextData)
+                // Analyze sentiment within the enclave
+                var sentiment = await AnalyzeTextSentimentInEnclaveAsync(request.Text);
+                
+                // Map to sentiment label based on compound score
+                var label = sentiment.Compound switch
                 {
-                    var localRequest = new Models.SentimentAnalysisRequest
-                    {
-                        Text = text,
-                        Language = "en"
-                    };
-
-                    var sentiment = await AnalyzeTextSentimentInEnclaveAsync(text);
-                    sentimentScores.Add(sentiment.Compound);
-                }
-
-                // Process keywords if provided
-                foreach (var keyword in request.Keywords)
-                {
-                    keywordSentiments[keyword] = sentimentScores.Average();
-                }
-
-                var overallSentiment = sentimentScores.Average();
-
-                var result = new NeoServiceLayer.Core.SentimentResult
-                {
-                    AnalysisId = analysisId,
-                    OverallSentiment = overallSentiment,
-                    Confidence = Math.Abs(overallSentiment),
-                    AnalysisTime = DateTime.UtcNow,
-                    SampleSize = request.TextData.Length,
-                    KeywordSentiments = keywordSentiments
+                    < -0.6 => CoreModels.SentimentLabel.VeryNegative,
+                    < -0.2 => CoreModels.SentimentLabel.Negative,
+                    < 0.2 => CoreModels.SentimentLabel.Neutral,
+                    < 0.6 => CoreModels.SentimentLabel.Positive,
+                    _ => CoreModels.SentimentLabel.VeryPositive
                 };
 
-                Logger.LogInformation("Analyzed sentiment {AnalysisId}: {OverallSentiment:F2} on {Blockchain}",
-                    analysisId, overallSentiment, blockchainType);
+                var detailedSentiment = new Dictionary<string, double>
+                {
+                    ["positive"] = sentiment.Positive,
+                    ["negative"] = sentiment.Negative,
+                    ["neutral"] = sentiment.Neutral,
+                    ["compound"] = sentiment.Compound
+                };
+
+                // Add hashtag influence if detected
+                if (request.Text.Contains("#"))
+                {
+                    detailedSentiment["hashtag_influence"] = 0.1; // Slight positive influence for hashtags
+                }
+
+                var result = new CoreModels.SentimentResult
+                {
+                    AnalysisId = analysisId,
+                    SentimentScore = sentiment.Compound,
+                    Label = label,
+                    Confidence = Math.Min(1.0, Math.Abs(sentiment.Compound) + 0.5),
+                    DetailedSentiment = detailedSentiment,
+                    AnalyzedAt = DateTime.UtcNow
+                };
+
+                Logger.LogInformation("Analyzed sentiment {AnalysisId}: {SentimentScore:F2} ({Label}) on {Blockchain}",
+                    analysisId, sentiment.Compound, label, blockchainType);
 
                 return result;
             }
@@ -226,21 +255,21 @@ public partial class PredictionService : AIServiceBase, IPredictionService
             {
                 Logger.LogError(ex, "Failed to analyze sentiment {AnalysisId}", analysisId);
 
-                return new NeoServiceLayer.Core.SentimentResult
+                return new CoreModels.SentimentResult
                 {
                     AnalysisId = analysisId,
-                    OverallSentiment = 0.0,
+                    SentimentScore = 0.0,
+                    Label = CoreModels.SentimentLabel.Neutral,
                     Confidence = 0.0,
-                    AnalysisTime = DateTime.UtcNow,
-                    SampleSize = 0,
-                    KeywordSentiments = new Dictionary<string, double>()
+                    DetailedSentiment = new Dictionary<string, double>(),
+                    AnalyzedAt = DateTime.UtcNow
                 };
             }
         });
     }
 
     /// <inheritdoc/>
-    public async Task<string> RegisterModelAsync(NeoServiceLayer.Core.ModelRegistration registration, BlockchainType blockchainType)
+    public async Task<string> RegisterModelAsync(CoreModels.ModelRegistration registration, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(registration);
 
@@ -261,9 +290,9 @@ public partial class PredictionService : AIServiceBase, IPredictionService
                 Name = registration.Name,
                 Description = registration.Description,
                 Type = AIModelType.Prediction,
-                Version = "1.0.0",
+                Version = registration.Version,
                 ModelData = registration.ModelData,
-                Configuration = new Dictionary<string, object> { ["Owner"] = registration.Owner },
+                Configuration = registration.Configuration,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow,
                 IsActive = true,

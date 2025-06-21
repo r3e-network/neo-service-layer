@@ -1,18 +1,18 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Infrastructure;
+// No alias needed - will use fully qualified names
 using System.Net.Http;
 
-namespace NeoServiceLayer.Tests.Infrastructure;
+namespace NeoServiceLayer.TestInfrastructure;
 
 /// <summary>
 /// Mock blockchain client factory for testing purposes.
 /// This class provides a test implementation that wraps the production factory.
 /// </summary>
-public class MockBlockchainClientFactory : IBlockchainClientFactory
+public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlockchainClientFactory
 {
-    private readonly ProductionBlockchainClientFactory _productionFactory;
+    private readonly ILoggerFactory _loggerFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="MockBlockchainClientFactory"/> class.
@@ -20,20 +20,7 @@ public class MockBlockchainClientFactory : IBlockchainClientFactory
     /// <param name="loggerFactory">The logger factory.</param>
     public MockBlockchainClientFactory(ILoggerFactory loggerFactory)
     {
-        // Create a default configuration and HTTP client for testing
-        var configuration = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string>
-            {
-                ["Blockchain:NeoN3:RpcEndpoint"] = "http://localhost:20332",
-                ["Blockchain:NeoX:RpcEndpoint"] = "http://localhost:30332",
-                ["Blockchain:NeoN3:NetworkMagic"] = "1951352142",
-                ["Blockchain:NeoX:NetworkMagic"] = "1313235324"
-            })
-            .Build();
-        
-        var httpClient = new HttpClient();
-        
-        _productionFactory = new ProductionBlockchainClientFactory(loggerFactory, configuration, httpClient);
+        _loggerFactory = loggerFactory;
     }
 
     /// <summary>
@@ -44,31 +31,32 @@ public class MockBlockchainClientFactory : IBlockchainClientFactory
     /// <param name="httpClient">Custom HTTP client for testing.</param>
     public MockBlockchainClientFactory(ILoggerFactory loggerFactory, IConfiguration configuration, HttpClient httpClient)
     {
-        _productionFactory = new ProductionBlockchainClientFactory(loggerFactory, configuration, httpClient);
+        _loggerFactory = loggerFactory;
     }
 
     /// <inheritdoc/>
-    public IBlockchainClient CreateClient(BlockchainType blockchainType)
+    public NeoServiceLayer.Infrastructure.IBlockchainClient CreateClient(BlockchainType blockchainType)
     {
-        return _productionFactory.CreateClient(blockchainType);
+        // Return a mock client that implements Infrastructure interface
+        return new MockInfrastructureBlockchainClient(_loggerFactory.CreateLogger<MockInfrastructureBlockchainClient>(), blockchainType);
     }
 
     /// <inheritdoc/>
-    public Task<IBlockchainClient> CreateClientAsync(BlockchainType blockchainType)
+    public Task<NeoServiceLayer.Infrastructure.IBlockchainClient> CreateClientAsync(BlockchainType blockchainType)
     {
-        return _productionFactory.CreateClientAsync(blockchainType);
+        return Task.FromResult(CreateClient(blockchainType));
     }
 
     /// <inheritdoc/>
     public bool SupportsBlockchain(BlockchainType blockchainType)
     {
-        return _productionFactory.SupportsBlockchain(blockchainType);
+        return blockchainType == BlockchainType.NeoN3 || blockchainType == BlockchainType.NeoX;
     }
 
     /// <inheritdoc/>
     public IEnumerable<BlockchainType> GetSupportedBlockchains()
     {
-        return _productionFactory.GetSupportedBlockchains();
+        return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
     }
 
     /// <inheritdoc/>
@@ -80,13 +68,13 @@ public class MockBlockchainClientFactory : IBlockchainClientFactory
     /// <inheritdoc/>
     public Task<bool> ValidateConnectionAsync(BlockchainType blockchainType)
     {
-        return _productionFactory.ValidateConnectionAsync(blockchainType);
+        return Task.FromResult(SupportsBlockchain(blockchainType));
     }
 
     /// <inheritdoc/>
     public Task<bool> ValidateConnectionAsync(BlockchainType blockchainType, CancellationToken cancellationToken = default)
     {
-        return _productionFactory.ValidateConnectionAsync(blockchainType, cancellationToken);
+        return Task.FromResult(SupportsBlockchain(blockchainType));
     }
 
     /// <summary>
@@ -94,14 +82,15 @@ public class MockBlockchainClientFactory : IBlockchainClientFactory
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The blockchain client.</returns>
-    public IBlockchainClient GetMockClient(BlockchainType blockchainType)
+    public NeoServiceLayer.Core.IBlockchainClient GetMockClient(BlockchainType blockchainType)
     {
-        return CreateClient(blockchainType);
+        // Return as Core interface for backward compatibility
+        return new MockBlockchainClient(_loggerFactory.CreateLogger<MockBlockchainClient>(), blockchainType);
     }
 
     /// <inheritdoc/>
     public void Dispose()
     {
-        _productionFactory?.Dispose();
+        // Nothing to dispose in mock implementation
     }
 } 

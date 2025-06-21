@@ -60,7 +60,7 @@ pub struct ValidationMetrics {
 }
 
 /// Training configuration
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TrainingConfig {
     pub max_epochs: u32,
     pub learning_rate: f64,
@@ -1330,11 +1330,11 @@ fn train_naive_bayes(data: &[f64], config: &TrainingConfig) -> Result<TrainingRe
 
     // Flatten parameters for storage
     let mut parameters = Vec::new();
-    parameters.extend(class_priors);
-    for class_means in feature_means {
+    parameters.extend(class_priors.clone());
+    for class_means in feature_means.clone() {
         parameters.extend(class_means);
     }
-    for class_vars in feature_vars {
+    for class_vars in feature_vars.clone() {
         parameters.extend(class_vars);
     }
 

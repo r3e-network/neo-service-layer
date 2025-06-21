@@ -26,10 +26,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
+    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
     <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
   </ItemGroup>
 
 </Project>

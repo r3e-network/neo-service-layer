@@ -1,7 +1,9 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Security;
+using NeoServiceLayer.ServiceFramework;
 using System.Runtime.CompilerServices;
+using System.Security;
 
 namespace NeoServiceLayer.ServiceFramework.Security;
 
@@ -13,7 +15,8 @@ public abstract class SecurityAwareServiceBase : ServiceBase
     protected readonly ISecurityLogger SecurityLogger;
     private readonly string _serviceName;
 
-    protected SecurityAwareServiceBase(ILogger logger, ISecurityLogger securityLogger) : base(logger)
+    protected SecurityAwareServiceBase(ILogger logger, ISecurityLogger securityLogger) 
+        : base("SecurityAware", "1.0", "Security-aware service base", logger)
     {
         SecurityLogger = securityLogger ?? throw new ArgumentNullException(nameof(securityLogger));
         _serviceName = GetType().Name;
@@ -208,14 +211,14 @@ public abstract class SecurityAwareServiceBase : ServiceBase
                 LogSuspiciousActivity("Potential XSS attempt detected in input validation", 
                     SuspiciousActivityType.XssAttempt, clientId);
             }
-            else if (error?.Contains("sql", StringComparison.OrdinalIgnoreCase) ?? false ||
-                     error?.Contains("'; ", StringComparison.OrdinalIgnoreCase) ?? false)
+            else if ((error?.Contains("sql", StringComparison.OrdinalIgnoreCase) ?? false) ||
+                     (error?.Contains("'; ", StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 LogSuspiciousActivity("Potential SQL injection attempt detected in input validation", 
                     SuspiciousActivityType.SqlInjection, clientId);
             }
-            else if (error?.Contains("../", StringComparison.OrdinalIgnoreCase) ?? false ||
-                     error?.Contains("..\\", StringComparison.OrdinalIgnoreCase) ?? false)
+            else if ((error?.Contains("../", StringComparison.OrdinalIgnoreCase) ?? false) ||
+                     (error?.Contains("..\\", StringComparison.OrdinalIgnoreCase) ?? false))
             {
                 LogSuspiciousActivity("Potential path traversal attempt detected in input validation", 
                     SuspiciousActivityType.PathTraversal, clientId);

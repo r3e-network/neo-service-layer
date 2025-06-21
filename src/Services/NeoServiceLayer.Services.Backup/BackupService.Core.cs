@@ -1,7 +1,10 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Backup.Models;
+using System.Net.Http;
+using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Backup;
 
@@ -13,10 +16,14 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
     private readonly Dictionary<string, BackupJob> _activeJobs = new();
     private readonly Dictionary<string, BackupSchedule> _schedules = new();
     private readonly object _jobsLock = new();
+    private readonly IBlockchainClientFactory _blockchainClientFactory;
+    private readonly IHttpClientService _httpClientService;
 
-    public BackupService(ILogger<BackupService> logger)
+    public BackupService(ILogger<BackupService> logger, IBlockchainClientFactory blockchainClientFactory, IHttpClientService httpClientService)
         : base("Backup", "Data Backup and Recovery Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
+        _blockchainClientFactory = blockchainClientFactory ?? throw new ArgumentNullException(nameof(blockchainClientFactory));
+        _httpClientService = httpClientService ?? throw new ArgumentNullException(nameof(httpClientService));
         // Add capabilities
         AddCapability<IBackupService>();
         

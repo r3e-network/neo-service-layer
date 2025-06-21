@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using System.Net;
 using System.Net.Sockets;
+using System.Security;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -315,13 +316,7 @@ public static class ProofOfReserveResilienceHelper
             InvalidOperationException ex when ex.Message.Contains("proof") && ex.Message.Contains("generation") && ex.Message.Contains("failed") => true,
             InvalidOperationException ex when ex.Message.Contains("reserve") && ex.Message.Contains("data") && ex.Message.Contains("unavailable") => true,
             
-            // Explicitly non-retriable exceptions
-            ArgumentException => false,
-            ArgumentNullException => false,
-            NotSupportedException => false,
-            UnauthorizedAccessException => false,
-            SecurityException => false,
-            
+            // Default: non-retriable
             _ => false
         };
     }

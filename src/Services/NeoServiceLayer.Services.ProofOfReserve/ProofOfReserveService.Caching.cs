@@ -32,9 +32,9 @@ public partial class ProofOfReserveService
     /// <param name="memoryCache">The memory cache instance.</param>
     public void InitializeCache(IMemoryCache memoryCache)
     {
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
         
-        if (cachingEnabled && memoryCache != null)
+        if (cachingEnabled > 0 && memoryCache != null)
         {
             // Create a logger for the cache helper
             var cacheLogger = new CacheHelperLogger(Logger);
@@ -62,15 +62,15 @@ public partial class ProofOfReserveService
             assetId, 
             blockchainType);
 
-        var (cachingEnabled, _, cacheExpiration) = GetPerformanceSettings();
+        var (cachingEnabled, _, cacheExpiration, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => GetReserveStatusInternalAsync(assetId, blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.ReserveStatus,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await GetReserveStatusInternalAsync(assetId, blockchainType);
@@ -126,15 +126,15 @@ public partial class ProofOfReserveService
             assetId, 
             blockchainType);
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => GetReserveHealthInternalAsync(assetId, blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.HealthStatus,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await GetReserveHealthInternalAsync(assetId, blockchainType);
@@ -180,15 +180,15 @@ public partial class ProofOfReserveService
             ProofOfReserveCacheHelper.CacheKeys.Alerts, 
             blockchainType);
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => GetActiveAlertsInternalAsync(blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.Alerts,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await GetActiveAlertsInternalAsync(blockchainType);
@@ -251,15 +251,15 @@ public partial class ProofOfReserveService
             address, 
             blockchainType);
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => QueryAddressBalanceAsync(address, blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.BlockchainBalance,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await QueryAddressBalanceAsync(address, blockchainType);
@@ -286,15 +286,15 @@ public partial class ProofOfReserveService
             to.ToString("yyyy-MM-dd"), 
             blockchainType);
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.ReserveSnapshot,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType);
@@ -348,15 +348,15 @@ public partial class ProofOfReserveService
             to.ToString("yyyy-MM-dd"), 
             blockchainType);
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => GenerateAuditReportInternalAsync(assetId, from, to, blockchainType),
                 ProofOfReserveCacheHelper.CacheExpirations.AuditReport,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return await GenerateAuditReportInternalAsync(assetId, from, to, blockchainType);
@@ -410,15 +410,15 @@ public partial class ProofOfReserveService
     {
         var cacheKey = ProofOfReserveCacheHelper.CacheKeys.ConfigSummary;
 
-        var (cachingEnabled, _, _) = GetPerformanceSettings();
+        var (cachingEnabled, _, _, _) = GetPerformanceSettings();
 
-        if (_cacheHelper != null && cachingEnabled)
+        if (_cacheHelper != null && cachingEnabled > 0)
         {
             return await _cacheHelper.GetOrCreateAsync(
                 cacheKey,
                 () => Task.FromResult(GetConfigurationSummary()),
                 ProofOfReserveCacheHelper.CacheExpirations.ConfigSummary,
-                cachingEnabled);
+                cachingEnabled > 0);
         }
 
         return GetConfigurationSummary();

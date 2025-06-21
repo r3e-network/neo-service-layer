@@ -35,7 +35,7 @@ public class VotingStorageHelperTests
             {
                 Id = "strategy1",
                 Name = "Test Strategy",
-                StrategyType = VotingStrategyType.OnlyActive,
+                StrategyType = VotingStrategyType.StabilityFocused,
                 IsActive = true,
                 Rules = new VotingRules
                 {
@@ -68,7 +68,7 @@ public class VotingStorageHelperTests
             {
                 Id = "strategy1",
                 Name = "Test Strategy",
-                StrategyType = VotingStrategyType.OnlyActive,
+                StrategyType = VotingStrategyType.StabilityFocused,
                 IsActive = true,
                 Rules = new VotingRules
                 {
@@ -186,9 +186,9 @@ public class VotingStorageHelperTests
                 StrategyId = "strategy1",
                 VoterAddress = "voter1",
                 Success = true,
-                VotedCandidates = new[] { "candidate1", "candidate2" },
+                SelectedCandidates = new[] { "candidate1", "candidate2" },
                 TransactionHash = "0x123456",
-                GasUsed = 1000000
+                ExecutionDetails = new Dictionary<string, object> { ["GasUsed"] = 1000000 }
             }
         };
 
@@ -218,9 +218,9 @@ public class VotingStorageHelperTests
                 StrategyId = "strategy1",
                 VoterAddress = "voter1",
                 Success = true,
-                VotedCandidates = new[] { "candidate1", "candidate2" },
+                SelectedCandidates = new[] { "candidate1", "candidate2" },
                 TransactionHash = "0x123456",
-                GasUsed = 1000000
+                ExecutionDetails = new Dictionary<string, object> { ["GasUsed"] = 1000000 }
             }
         };
 

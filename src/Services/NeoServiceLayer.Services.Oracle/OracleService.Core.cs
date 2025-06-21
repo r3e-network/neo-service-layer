@@ -6,6 +6,8 @@ using NeoServiceLayer.Services.Oracle.Models;
 using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
+using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
+using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -156,7 +158,8 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             // Get blockchain data for verification within enclave
             var client = _blockchainClientFactory.CreateClient(blockchainType);
             var blockHeight = await client.GetBlockHeightAsync();
-            var blockHash = await client.GetBlockHashAsync(blockHeight);
+            var block = await client.GetBlockAsync(blockHeight);
+            var blockHash = block.Hash;
 
             string result;
             try

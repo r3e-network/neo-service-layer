@@ -4,6 +4,7 @@ using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Voting;
+using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
 
 namespace NeoServiceLayer.Services.Voting.Tests;
@@ -14,14 +15,16 @@ namespace NeoServiceLayer.Services.Voting.Tests;
 public class VotingServiceTests : IDisposable
 {
     private readonly Mock<ILogger<VotingService>> _mockLogger;
+    private readonly Mock<IEnclaveManager> _mockEnclaveManager;
     private readonly Mock<IStorageService> _mockStorageService;
     private readonly VotingService _votingService;
 
     public VotingServiceTests()
     {
         _mockLogger = new Mock<ILogger<VotingService>>();
+        _mockEnclaveManager = new Mock<IEnclaveManager>();
         _mockStorageService = new Mock<IStorageService>();
-        _votingService = new VotingService(_mockLogger.Object, _mockStorageService.Object);
+        _votingService = new VotingService(_mockLogger.Object, _mockEnclaveManager.Object, _mockStorageService.Object);
 
         // Initialize the enclave for testing
         _votingService.InitializeEnclaveAsync().Wait();
@@ -36,7 +39,7 @@ public class VotingServiceTests : IDisposable
             Name = "Test Strategy",
             Description = "Test voting strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.OnlyActive,
+            StrategyType = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules
             {
                 MaxCandidates = 21,
@@ -86,7 +89,7 @@ public class VotingServiceTests : IDisposable
         {
             Name = "Test Strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.OnlyActive,
+            StrategyType = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules { MaxCandidates = 5 }
         };
 
@@ -120,7 +123,7 @@ public class VotingServiceTests : IDisposable
         {
             Name = "Test Strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.Top21
+            StrategyType = VotingStrategyType.Automatic
         };
 
         _mockStorageService.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>(), It.IsAny<BlockchainType>()))
@@ -135,7 +138,7 @@ public class VotingServiceTests : IDisposable
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
         result.First().Name.Should().Be("Test Strategy");
-        result.First().StrategyType.Should().Be(VotingStrategyType.Top21);
+        result.First().StrategyType.Should().Be(VotingStrategyType.Automatic);
     }
 
     [Fact]
@@ -231,8 +234,7 @@ public class VotingServiceTests : IDisposable
         // Arrange
         var preferences = new VotingPreferences
         {
-            PreferredStrategy = VotingStrategyType.Balanced,
-            Rules = new VotingRules { MaxCandidates = 10 }
+            Priority = VotingPriority.Stability
         };
 
         // Act
@@ -242,7 +244,6 @@ public class VotingServiceTests : IDisposable
         result.Should().NotBeNull();
         result.RecommendedCandidates.Should().NotBeNull();
         result.ConfidenceScore.Should().BeInRange(0, 1);
-        result.RiskAssessment.Should().NotBeNull();
     }
 
     [Fact]

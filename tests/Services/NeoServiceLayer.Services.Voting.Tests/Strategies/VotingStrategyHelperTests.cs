@@ -35,7 +35,7 @@ public class VotingStrategyHelperTests
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.OnlyActive,
+            StrategyType = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules
             {
                 MaxCandidates = 21
@@ -70,7 +70,7 @@ public class VotingStrategyHelperTests
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.Top21,
+            StrategyType = VotingStrategyType.Automatic,
             Rules = new VotingRules
             {
                 MaxCandidates = 21
@@ -130,7 +130,7 @@ public class VotingStrategyHelperTests
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.ConditionalVoting,
+            StrategyType = VotingStrategyType.Conditional,
             PreferredCandidates = new[] { "addr1", "addr3" },
             FallbackCandidates = new[] { "addr2" },
             Rules = new VotingRules
@@ -205,7 +205,7 @@ public class VotingStrategyHelperTests
     public void GenerateRecommendationReasoning_OnlyActiveStrategy_ReturnsCorrectReasoning()
     {
         // Act
-        var result = _strategyHelper.GenerateRecommendationReasoning(VotingStrategyType.OnlyActive, 15);
+        var result = _strategyHelper.GenerateRecommendationReasoning(VotingStrategyType.StabilityFocused, 15);
 
         // Assert
         result.Should().NotBeNullOrEmpty();
@@ -225,10 +225,7 @@ public class VotingStrategyHelperTests
 
         var preferences = new VotingPreferences
         {
-            Rules = new VotingRules
-            {
-                OnlyConsensusNodes = true
-            }
+            PreferConsensusNodes = true
         };
 
         // Act

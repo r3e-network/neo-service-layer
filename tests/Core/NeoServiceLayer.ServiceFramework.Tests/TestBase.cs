@@ -4,7 +4,9 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
-using NeoServiceLayer.Tests.Infrastructure;
+using NeoServiceLayer.TestInfrastructure;
+using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
+using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.ServiceFramework.Tests;
 
@@ -91,9 +93,9 @@ public abstract class TestBase
         
         // Setup blockchain client operations
         MockBlockchainClient.Setup(x => x.GetBlockHeightAsync()).ReturnsAsync(1000);
-        MockBlockchainClient.Setup(x => x.GetBlockHashAsync(It.IsAny<uint>()))
+        MockBlockchainClient.Setup(x => x.GetBlockHashAsync(It.IsAny<long>()))
             .ReturnsAsync("0x1234567890abcdef");
-        MockBlockchainClient.Setup(x => x.SendTransactionAsync(It.IsAny<string>()))
+        MockBlockchainClient.Setup(x => x.SendTransactionAsync(It.IsAny<Transaction>()))
             .ReturnsAsync("0xabcdef1234567890");
     }
 

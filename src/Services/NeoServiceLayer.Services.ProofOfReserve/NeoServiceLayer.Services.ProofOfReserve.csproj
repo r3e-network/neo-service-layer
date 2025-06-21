@@ -9,7 +9,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Infrastructure\NeoServiceLayer.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

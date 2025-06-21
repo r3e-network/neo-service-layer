@@ -1,8 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::collections::HashMap;
-use std::ffi::{CStr, CString};
-use std::os::raw::{c_char, c_int, c_void};
+use std::ffi::CStr;
+use std::os::raw::{c_char, c_int};
 use std::ptr;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
@@ -79,6 +78,15 @@ impl EncaveConfig {
         }
         
         Ok(())
+    }
+    
+    pub fn get_number(&self, key: &str) -> Result<usize> {
+        match key {
+            "computation.max_concurrent_jobs" => Ok(self.max_threads),
+            "ai.max_model_size_mb" => Ok(1024), // Default 1GB
+            "ai.max_training_data_mb" => Ok(512), // Default 512MB
+            _ => Err(anyhow::anyhow!("Unknown config key: {}", key))
+        }
     }
 }
 

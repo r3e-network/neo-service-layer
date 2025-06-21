@@ -10,15 +10,17 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="9.0.0" />
     <PackageReference Include="Microsoft.Extensions.Logging" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.1" />
     <PackageReference Include="Moq" Version="4.20.72" />
     <PackageReference Include="FluentAssertions" Version="7.0.0" />
     <PackageReference Include="xunit.abstractions" Version="2.0.3" />
+    <PackageReference Include="Bogus" Version="35.6.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\src\Core\NeoServiceLayer.Infrastructure\NeoServiceLayer.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
 </Project>

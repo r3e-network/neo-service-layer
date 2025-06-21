@@ -451,7 +451,7 @@ public partial class ProofOfReserveService
     {
         var circuitBreaker = GetOrCreateCircuitBreaker("ProofStorage", 5, TimeSpan.FromMinutes(1));
 
-        await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
+        await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync<bool>(
             async () =>
             {
                 try
@@ -468,6 +468,7 @@ public partial class ProofOfReserveService
                     }
 
                     Logger.LogDebug("Stored proof {ProofId} securely", proof.ProofId);
+                    return true;
                 }
                 catch (Exception ex)
                 {

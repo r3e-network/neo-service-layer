@@ -1,8 +1,12 @@
+using NeoServiceLayer.Core;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using Moq;
+using Xunit;
+using FluentAssertions;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge.Tests;
 
@@ -15,7 +19,6 @@ public class ZeroKnowledgeServiceTests : IDisposable
     private readonly Mock<ILogger<ZeroKnowledgeService>> _mockLogger;
     private readonly Mock<IConfiguration> _mockConfiguration;
     private readonly Mock<IEnclaveManager> _mockEnclaveManager;
-    private readonly Mock<IServiceRegistry> _mockServiceRegistry;
     private readonly ZeroKnowledgeService _service;
 
     public ZeroKnowledgeServiceTests()
@@ -23,16 +26,13 @@ public class ZeroKnowledgeServiceTests : IDisposable
         _mockLogger = new Mock<ILogger<ZeroKnowledgeService>>();
         _mockConfiguration = new Mock<IConfiguration>();
         _mockEnclaveManager = new Mock<IEnclaveManager>();
-        _mockServiceRegistry = new Mock<IServiceRegistry>();
 
         SetupConfiguration();
         SetupEnclaveManager();
 
         _service = new ZeroKnowledgeService(
             _mockLogger.Object,
-            _mockConfiguration.Object,
-            _mockEnclaveManager.Object,
-            _mockServiceRegistry.Object);
+            null);
     }
 
     #region Service Lifecycle Tests
@@ -43,7 +43,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
     public async Task StartAsync_ValidConfiguration_InitializesSuccessfully()
     {
         // Act
-        await _service.StartAsync(CancellationToken.None);
+        await _service.StartAsync();
 
         // Assert
         _service.IsRunning.Should().BeTrue();
@@ -56,10 +56,10 @@ public class ZeroKnowledgeServiceTests : IDisposable
     public async Task StopAsync_RunningService_StopsSuccessfully()
     {
         // Arrange
-        await _service.StartAsync(CancellationToken.None);
+        await _service.StartAsync();
 
         // Act
-        await _service.StopAsync(CancellationToken.None);
+        await _service.StopAsync();
 
         // Assert
         _service.IsRunning.Should().BeFalse();
@@ -84,7 +84,16 @@ public class ZeroKnowledgeServiceTests : IDisposable
             }";
 
         // Act
-        var result = await _service.CompileCircuitAsync(circuitId, circuitDefinition);
+        var circuitDef = new ZkCircuitDefinition
+        {
+            Name = circuitId,
+            Type = ZkCircuitType.Computation,
+            Description = "Test circuit",
+            Constraints = new[] { circuitDefinition },
+            InputSchema = new Dictionary<string, object> { ["public_input"] = "uint256" },
+            OutputSchema = new Dictionary<string, object> { ["private_input"] = "uint256" }
+        };
+        var result = await _service.CompileCircuitAsync(circuitDef, BlockchainType.NeoN3);
 
         // Assert
         result.Should().Be(circuitId);
@@ -107,7 +116,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _service.CompileCircuitAsync(circuitId, invalidCircuitDefinition));
+            _service.CompileCircuitAsync(new ZkCircuitDefinition { Name = circuitId, Type = ZkCircuitType.Computation, Description = "Invalid", Constraints = new[] { invalidCircuitDefinition } }, BlockchainType.NeoN3));
         
         exception.Message.Should().Contain("Invalid circuit definition");
     }
@@ -121,7 +130,8 @@ public class ZeroKnowledgeServiceTests : IDisposable
     public async Task CompileCircuitAsync_VariousCircuitTypes_CompilesSuccessfully(string circuitId, string circuitDefinition)
     {
         // Act
-        var result = await _service.CompileCircuitAsync(circuitId, circuitDefinition);
+        var circuitDef = new ZkCircuitDefinition { Name = circuitId, Type = ZkCircuitType.Computation, Description = "Test", Constraints = new[] { circuitDefinition } };
+        var result = await _service.CompileCircuitAsync(circuitDef, BlockchainType.NeoN3);
 
         // Assert
         result.Should().Be(circuitId);
@@ -145,11 +155,12 @@ public class ZeroKnowledgeServiceTests : IDisposable
         SetupCircuitStorage(circuit);
 
         // Act
-        var proof = await _service.GenerateProofAsync(circuit, inputs, witnesses);
+        var proof = await _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = inputs, PrivateInputs = witnesses }, BlockchainType.NeoN3);
 
         // Assert
         proof.Should().NotBeNull();
-        proof.Length.Should().BeGreaterThan(0);
+        proof.ProofData.Length.Should().BeGreaterThan(0);
+        var originalInputs = new Dictionary<string, object> { ["public_input"] = 25 };
         VerifyLoggerCalled(LogLevel.Information, "Generated ZK proof for circuit");
     }
 
@@ -167,7 +178,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
-            _service.GenerateProofAsync(circuit, inputs, invalidWitnesses));
+            _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = inputs, PrivateInputs = invalidWitnesses }, BlockchainType.NeoN3));
         
         exception.Message.Should().Contain("Invalid witnesses");
     }
@@ -188,7 +199,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            _service.GenerateProofAsync(nonExistentCircuit, inputs, witnesses));
+            _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = nonExistentCircuit.Id, PublicInputs = inputs, PrivateInputs = witnesses }, BlockchainType.NeoN3));
         
         exception.Message.Should().Contain("Circuit not found");
     }
@@ -209,10 +220,10 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         SetupCircuitStorage(circuit);
 
-        var proof = await _service.GenerateProofAsync(circuit, inputs, witnesses);
+        var proof = await _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = inputs, PrivateInputs = witnesses }, BlockchainType.NeoN3);
 
         // Act
-        var isValid = await _service.VerifyProofAsync(circuit, proof, inputs);
+        var isValid = await _service.VerifyProofAsync(new NeoServiceLayer.Core.Models.ProofVerification { CircuitId = circuit.Id, ProofData = proof.ProofData, PublicInputs = inputs }, BlockchainType.NeoN3);
 
         // Assert
         isValid.Should().BeTrue();
@@ -232,7 +243,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         SetupCircuitStorage(circuit);
 
         // Act
-        var isValid = await _service.VerifyProofAsync(circuit, invalidProof, inputs);
+        var isValid = await _service.VerifyProofAsync(new NeoServiceLayer.Core.Models.ProofVerification { CircuitId = circuit.Id, ProofData = invalidProof, PublicInputs = inputs }, BlockchainType.NeoN3);
 
         // Assert
         isValid.Should().BeFalse();
@@ -252,10 +263,10 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         SetupCircuitStorage(circuit);
 
-        var proof = await _service.GenerateProofAsync(circuit, originalInputs, witnesses);
+        var proof = await _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = originalInputs, PrivateInputs = witnesses }, BlockchainType.NeoN3);
 
         // Act
-        var isValid = await _service.VerifyProofAsync(circuit, proof, tamperedInputs);
+        var isValid = await _service.VerifyProofAsync(new NeoServiceLayer.Core.Models.ProofVerification { CircuitId = circuit.Id, ProofData = proof.ProofData, PublicInputs = tamperedInputs }, BlockchainType.NeoN3);
 
         // Assert
         isValid.Should().BeFalse();
@@ -274,7 +285,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         // Arrange
         var circuit = CreateTestCircuit();
         const int proofCount = 10;
-        var tasks = new List<Task<byte[]>>();
+        var tasks = new List<Task<NeoServiceLayer.Core.Models.ProofResult>>();
 
         SetupCircuitStorage(circuit);
 
@@ -285,7 +296,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         {
             var inputs = new Dictionary<string, object> { ["public_input"] = (i + 1) * (i + 1) };
             var witnesses = new Dictionary<string, object> { ["private_input"] = i + 1 };
-            tasks.Add(_service.GenerateProofAsync(circuit, inputs, witnesses));
+            tasks.Add(_service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = inputs, PrivateInputs = witnesses }, BlockchainType.NeoN3));
         }
 
         var proofs = await Task.WhenAll(tasks);
@@ -303,7 +314,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
     private void SetupConfiguration()
     {
-        var configSection = new Mock<IConfigurationSection>();
+        var configSection = new Mock<Microsoft.Extensions.Configuration.IConfigurationSection>();
         configSection.Setup(x => x.Value).Returns("test_value");
         
         _mockConfiguration
@@ -315,7 +326,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
     {
         _mockEnclaveManager
             .Setup(x => x.StorageStoreDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .Returns(Task.CompletedTask);
+            .ReturnsAsync("mock-storage-id");
     }
 
     private void SetupCircuitStorage(Circuit circuit)

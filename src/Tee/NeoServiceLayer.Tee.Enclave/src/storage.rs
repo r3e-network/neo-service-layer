@@ -10,6 +10,9 @@ use flate2::{Compression, read::GzDecoder, write::GzEncoder};
 use lz4_flex::{compress_prepend_size, decompress_size_prepended};
 use sha2::{Sha256, Digest};
 use log::{info, warn, error, debug};
+use ring::{aead, digest as ring_digest, rand};
+use ring::rand::SecureRandom;
+use ring::aead::BoundKey;
 
 use crate::EncaveConfig;
 
@@ -242,11 +245,11 @@ impl StorageService {
         
         let mut index = self.index.write().map_err(|_| anyhow!("Lock poisoned"))?;
         
+        let file_path = index.key_to_path.get(key)
+            .ok_or_else(|| anyhow!("File path for key '{}' not found", key))?.clone();
+        
         let metadata = index.metadata.get_mut(key)
             .ok_or_else(|| anyhow!("Key '{}' not found", key))?;
-        
-        let file_path = index.key_to_path.get(key)
-            .ok_or_else(|| anyhow!("File path for key '{}' not found", key))?;
         
         // Read encrypted data from file
         let encrypted_data = fs::read(file_path)?;
@@ -401,25 +404,22 @@ impl StorageService {
         // Use ring for AES-256-GCM encryption
         use ring::{aead, rand::SecureRandom};
         
-        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &key)?;
-        let sealing_key = aead::SealingKey::new(unbound_key, aead::Nonce::assume_unique_for_key([0u8; 12]));
-        
         let mut nonce = [0u8; 12];
         ring::rand::SystemRandom::new().fill(&mut nonce)?;
         
         let mut in_out = data.to_vec();
-        let tag = aead::seal_in_place_detached(
-            &sealing_key,
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &key)?;
+        let less_safe_key = aead::LessSafeKey::new(unbound_key);
+        let _encrypted_result = less_safe_key.seal_in_place_append_tag(
             aead::Nonce::assume_unique_for_key(nonce),
             aead::Aad::empty(),
             &mut in_out,
         )?;
         
-        // Combine nonce + ciphertext + tag
-        let mut result = Vec::with_capacity(12 + in_out.len() + 16);
+        // Combine nonce + ciphertext_with_tag
+        let mut result = Vec::with_capacity(12 + in_out.len());
         result.extend_from_slice(&nonce);
         result.extend_from_slice(&in_out);
-        result.extend_from_slice(tag.as_ref());
         
         Ok(result)
     }
@@ -435,15 +435,13 @@ impl StorageService {
         
         use ring::aead;
         
-        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &key)?;
-        let opening_key = aead::OpeningKey::new(unbound_key, aead::Nonce::assume_unique_for_key([0u8; 12]));
-        
         let nonce = &encrypted_data[0..12];
         let ciphertext_and_tag = &encrypted_data[12..];
         
         let mut in_out = ciphertext_and_tag.to_vec();
-        let plaintext = aead::open_in_place(
-            &opening_key,
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, &key)?;
+        let less_safe_key = aead::LessSafeKey::new(unbound_key);
+        let plaintext = less_safe_key.open_in_place(
             aead::Nonce::try_assume_unique_for_key(nonce)?,
             aead::Aad::empty(),
             &mut in_out,
@@ -717,7 +715,7 @@ impl StorageService {
         let used_space = self.calculate_used_space()?;
         
         // Conservative estimates for Occlum environment
-        let total_space = 10 * 1024 * 1024 * 1024; // 10GB default for Occlum
+        let total_space: u64 = 10 * 1024 * 1024 * 1024; // 10GB default for Occlum
         let available_space = total_space.saturating_sub(used_space);
         
         Ok(OcclumFilesystemStats {
@@ -823,7 +821,7 @@ impl StorageService {
         }
         
         if let Some(tiny_files) = stats.files_by_size.get("tiny") {
-            if *tiny_files > stats.file_count / 4 {
+            if *tiny_files > (stats.file_count as u32) / 4 {
                 info!("Recommendation: Consider file consolidation - {} tiny files", tiny_files);
             }
         }
@@ -1004,5 +1002,4 @@ struct StorageOptimizationResults {
     compression_improved: u32,
     files_archived: u32,
     optimization_time_ms: u64,
-}
 } 

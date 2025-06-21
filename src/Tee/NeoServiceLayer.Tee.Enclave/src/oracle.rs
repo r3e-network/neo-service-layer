@@ -60,6 +60,10 @@ impl OracleService {
             timeout_duration: Duration::from_secs(config.network_timeout_seconds),
             allowed_domains,
             request_count: std::sync::atomic::AtomicU64::new(0),
+            response_cache: Arc::new(RwLock::new(HashMap::new())),
+            rate_limiter: Arc::new(RwLock::new(HashMap::new())),
+            max_response_size: 1024 * 1024, // 1MB default
+            ssl_verification: true,
         })
     }
     

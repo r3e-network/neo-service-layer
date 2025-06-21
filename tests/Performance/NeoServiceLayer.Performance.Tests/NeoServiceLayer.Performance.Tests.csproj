@@ -25,8 +25,10 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
     <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Infrastructure\NeoServiceLayer.Infrastructure.csproj" />
-    <ProjectReference Include="..\Tee\NeoServiceLayer.Tee.Enclave.Tests\NeoServiceLayer.Tee.Enclave.Tests.csproj" />
+    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
   </ItemGroup>
 
   <ItemGroup>

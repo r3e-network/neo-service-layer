@@ -52,22 +52,26 @@ pub struct SgxHmacSha256Context {
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct SgxEccStateHandle {
     _private: [u8; 8], // Handle pointer
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct SgxEc256PrivateKey {
     r: [u8; 32],
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct SgxEc256PublicKey {
     gx: [u8; 32],
     gy: [u8; 32],
 }
 
 #[repr(C)]
+#[derive(Copy, Clone)]
 pub struct SgxEc256Signature {
     x: [u8; 32],
     y: [u8; 32],
@@ -247,7 +251,7 @@ pub extern "C" fn occlum_derive_key(
         // HKDF-Expand phase: OKM = HMAC-Hash(PRK, info || counter)
         let hash_len = 32usize; // SHA-256 output length
         let n = (derived_key_len + hash_len - 1) / hash_len; // Ceiling division
-        let mut t = Vec::new();
+        let mut t: Vec<u8> = Vec::new();
         
         for counter in 1..=n {
             let mut ctx = std::mem::zeroed::<SgxHmacSha256Context>();
@@ -620,5 +624,4 @@ pub extern "C" fn occlum_generate_neo_address(
     }
     
     SGX_SUCCESS as c_int
-} 
 } 

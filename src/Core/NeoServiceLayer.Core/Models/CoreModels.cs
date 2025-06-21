@@ -539,6 +539,26 @@ public class PredictionRequest
     /// Gets or sets the prediction horizon.
     /// </summary>
     public TimeSpan? PredictionHorizon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the symbol for the prediction.
+    /// </summary>
+    public string Symbol { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the time horizon in hours.
+    /// </summary>
+    public int TimeHorizon { get; set; }
+
+    /// <summary>
+    /// Gets or sets the features for prediction.
+    /// </summary>
+    public Dictionary<string, object> Features { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the confidence level.
+    /// </summary>
+    public double ConfidenceLevel { get; set; } = 0.95;
 }
 
 /// <summary>
@@ -585,6 +605,71 @@ public class PredictionResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the predicted values array.
+    /// </summary>
+    public List<double> PredictedValues { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the confidence degradation over time.
+    /// </summary>
+    public List<double> ConfidenceDegradation { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the accuracy score.
+    /// </summary>
+    public double Accuracy { get; set; }
+
+    /// <summary>
+    /// Gets or sets the predicted value.
+    /// </summary>
+    public double PredictedValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the actual value.
+    /// </summary>
+    public double ActualValue { get; set; }
+
+    /// <summary>
+    /// Gets or sets the feature importance scores.
+    /// </summary>
+    public Dictionary<string, double> FeatureImportance { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the data sources used.
+    /// </summary>
+    public List<string> DataSources { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the model ensemble information.
+    /// </summary>
+    public List<string> ModelEnsemble { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the ensemble weights.
+    /// </summary>
+    public Dictionary<string, double> EnsembleWeights { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets individual predictions from ensemble models.
+    /// </summary>
+    public Dictionary<string, dynamic> IndividualPredictions { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the ensemble uncertainty.
+    /// </summary>
+    public double EnsembleUncertainty { get; set; }
+
+    /// <summary>
+    /// Gets or sets the processing time.
+    /// </summary>
+    public TimeSpan ProcessingTime { get; set; }
 }
 
 /// <summary>

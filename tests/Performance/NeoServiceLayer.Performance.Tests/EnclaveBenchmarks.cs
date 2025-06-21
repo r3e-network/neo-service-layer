@@ -1,4 +1,5 @@
 using BenchmarkDotNet.Attributes;
+using NUnit.Framework;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
@@ -7,6 +8,7 @@ using BenchmarkDotNet.Running;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Tee.Enclave;
 using System.Text;
@@ -39,13 +41,15 @@ public class EnclaveBenchmarks
     private byte[] _xlargeData = null!;    // 1 MB
     
     // Pre-sealed data for unsealing benchmarks
-    private SealedData _sealedSmallData = null!;
-    private SealedData _sealedMediumData = null!;
-    private SealedData _sealedLargeData = null!;
+    private byte[] _encryptedSmallData = null!;
+    private byte[] _encryptedMediumData = null!;
+    private byte[] _encryptedLargeData = null!;
+    private byte[] _encryptionKey = null!;
     
     // Crypto test data
     private byte[] _hashData = null!;
-    private SignatureResult _signatureResult = null!;
+    private byte[] _signatureResult = null!;
+    private byte[] _signingKey = null!;
     
     // JavaScript test scripts
     private string _simpleScript = null!;
@@ -101,21 +105,13 @@ public class EnclaveBenchmarks
         
         var config = new EnclaveConfig
         {
-            SGXMode = "SIM",
-            EnableDebug = false, // Release mode for benchmarking
-            Cryptography = new CryptographyConfig
-            {
-                EncryptionAlgorithm = EncryptionAlgorithm,
-                SigningAlgorithm = SigningAlgorithm
-            },
-            Performance = new PerformanceConfig
-            {
-                EnableMetrics = false,
-                EnableBenchmarking = true
-            }
+            SgxMode = "SIM",
+            DebugMode = false, // Release mode for benchmarking
+            MaxThreads = 4,
+            MemoryLimitMb = 256
         };
 
-        return await newEnclaveWrapper.InitializeAsync(config);
+        return newEnclaveWrapper.Initialize();
     }
 
     #endregion
@@ -123,66 +119,65 @@ public class EnclaveBenchmarks
     #region Data Sealing Benchmarks
 
     [Benchmark]
-    [Category("Sealing")]
-    public async Task<SealedData> BenchmarkDataSealing()
+    [Category("Encryption")]
+    public async Task<byte[]> BenchmarkDataEncryption()
     {
         var testData = GenerateTestData(DataSize);
-        var keyId = $"benchmark-key-{DataSize}";
         
-        return await _enclaveWrapper.SealDataAsync(testData, keyId);
+        return await Task.Run(() => _enclaveWrapper.Encrypt(testData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Sealing")]
-    public async Task<SealedData> BenchmarkDataSealing_256B()
+    [Category("Encryption")]
+    public async Task<byte[]> BenchmarkDataEncryption_256B()
     {
-        return await _enclaveWrapper.SealDataAsync(_smallData, "benchmark-key-256");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_smallData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Sealing")]
-    public async Task<SealedData> BenchmarkDataSealing_4KB()
+    [Category("Encryption")]
+    public async Task<byte[]> BenchmarkDataEncryption_4KB()
     {
-        return await _enclaveWrapper.SealDataAsync(_mediumData, "benchmark-key-4KB");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_mediumData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Sealing")]
-    public async Task<SealedData> BenchmarkDataSealing_64KB()
+    [Category("Encryption")]
+    public async Task<byte[]> BenchmarkDataEncryption_64KB()
     {
-        return await _enclaveWrapper.SealDataAsync(_largeData, "benchmark-key-64KB");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_largeData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Sealing")]
-    public async Task<SealedData> BenchmarkDataSealing_1MB()
+    [Category("Encryption")]
+    public async Task<byte[]> BenchmarkDataEncryption_1MB()
     {
-        return await _enclaveWrapper.SealDataAsync(_xlargeData, "benchmark-key-1MB");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_xlargeData, _encryptionKey));
     }
 
     #endregion
 
-    #region Data Unsealing Benchmarks
+    #region Data Decryption Benchmarks
 
     [Benchmark]
-    [Category("Unsealing")]
-    public async Task<byte[]> BenchmarkDataUnsealing_256B()
+    [Category("Decryption")]
+    public async Task<byte[]> BenchmarkDataDecryption_256B()
     {
-        return await _enclaveWrapper.UnsealDataAsync(_sealedSmallData, "benchmark-key-256");
+        return await Task.Run(() => _enclaveWrapper.Decrypt(_encryptedSmallData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Unsealing")]
-    public async Task<byte[]> BenchmarkDataUnsealing_4KB()
+    [Category("Decryption")]
+    public async Task<byte[]> BenchmarkDataDecryption_4KB()
     {
-        return await _enclaveWrapper.UnsealDataAsync(_sealedMediumData, "benchmark-key-4KB");
+        return await Task.Run(() => _enclaveWrapper.Decrypt(_encryptedMediumData, _encryptionKey));
     }
 
     [Benchmark]
-    [Category("Unsealing")]
-    public async Task<byte[]> BenchmarkDataUnsealing_64KB()
+    [Category("Decryption")]
+    public async Task<byte[]> BenchmarkDataDecryption_64KB()
     {
-        return await _enclaveWrapper.UnsealDataAsync(_sealedLargeData, "benchmark-key-64KB");
+        return await Task.Run(() => _enclaveWrapper.Decrypt(_encryptedLargeData, _encryptionKey));
     }
 
     #endregion
@@ -191,61 +186,61 @@ public class EnclaveBenchmarks
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<SignatureResult> BenchmarkSignatureGeneration()
+    public async Task<byte[]> BenchmarkSignatureGeneration()
     {
-        return await _enclaveWrapper.SignDataAsync(_hashData, "crypto-benchmark-key");
+        return await Task.Run(() => _enclaveWrapper.Sign(_hashData, _signingKey));
     }
 
     [Benchmark]
     [Category("Cryptography")]
     public async Task<bool> BenchmarkSignatureVerification()
     {
-        return await _enclaveWrapper.VerifySignatureAsync(
+        return await Task.Run(() => _enclaveWrapper.Verify(
             _hashData, 
-            _signatureResult.Signature, 
-            _signatureResult.PublicKey);
+            _signatureResult, 
+            _signingKey));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<EncryptionResult> BenchmarkEncryption_256B()
+    public async Task<byte[]> BenchmarkEncryption_256B()
     {
-        return await _enclaveWrapper.EncryptDataAsync(_smallData, "encryption-benchmark-key");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_smallData, _encryptionKey));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<EncryptionResult> BenchmarkEncryption_4KB()
+    public async Task<byte[]> BenchmarkEncryption_4KB()
     {
-        return await _enclaveWrapper.EncryptDataAsync(_mediumData, "encryption-benchmark-key");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_mediumData, _encryptionKey));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<EncryptionResult> BenchmarkEncryption_64KB()
+    public async Task<byte[]> BenchmarkEncryption_64KB()
     {
-        return await _enclaveWrapper.EncryptDataAsync(_largeData, "encryption-benchmark-key");
+        return await Task.Run(() => _enclaveWrapper.Encrypt(_largeData, _encryptionKey));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<HashResult> BenchmarkHashGeneration_256B()
+    public async Task<byte[]> BenchmarkRandomGeneration_256B()
     {
-        return await _enclaveWrapper.GenerateHashAsync(_smallData, "SHA-256");
+        return await Task.Run(() => _enclaveWrapper.GenerateRandomBytes(256));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<HashResult> BenchmarkHashGeneration_4KB()
+    public async Task<byte[]> BenchmarkRandomGeneration_4KB()
     {
-        return await _enclaveWrapper.GenerateHashAsync(_mediumData, "SHA-256");
+        return await Task.Run(() => _enclaveWrapper.GenerateRandomBytes(4096));
     }
 
     [Benchmark]
     [Category("Cryptography")]
-    public async Task<HashResult> BenchmarkHashGeneration_64KB()
+    public async Task<byte[]> BenchmarkRandomGeneration_64KB()
     {
-        return await _enclaveWrapper.GenerateHashAsync(_largeData, "SHA-256");
+        return await Task.Run(() => _enclaveWrapper.GenerateRandomBytes(65536));
     }
 
     #endregion
@@ -254,140 +249,63 @@ public class EnclaveBenchmarks
 
     [Benchmark]
     [Category("JavaScript")]
-    public async Task<JavaScriptExecutionResult> BenchmarkJavaScript_Simple()
+    public async Task<string> BenchmarkJavaScript_Simple()
     {
-        var context = new JavaScriptContext
-        {
-            Input = new { value = 42 },
-            Timeout = TimeSpan.FromSeconds(1),
-            MemoryLimit = 16 * 1024 * 1024, // 16MB
-            SecurityConstraints = new JavaScriptSecurityConstraints
-            {
-                DisallowNetworking = true,
-                DisallowFileSystem = true,
-                DisallowProcessExecution = true
-            }
-        };
-
-        return await _enclaveWrapper.ExecuteJavaScriptAsync(_simpleScript, context);
+        var input = JsonSerializer.Serialize(new { value = 42 });
+        return await Task.Run(() => _enclaveWrapper.ExecuteJavaScript(_simpleScript, input));
     }
 
     [Benchmark]
     [Category("JavaScript")]
-    public async Task<JavaScriptExecutionResult> BenchmarkJavaScript_Mathematical()
+    public async Task<string> BenchmarkJavaScript_Mathematical()
     {
-        var context = new JavaScriptContext
-        {
-            Input = new { iterations = 1000 },
-            Timeout = TimeSpan.FromSeconds(5),
-            MemoryLimit = 32 * 1024 * 1024, // 32MB
-            SecurityConstraints = new JavaScriptSecurityConstraints
-            {
-                DisallowNetworking = true,
-                DisallowFileSystem = true,
-                DisallowProcessExecution = true
-            }
-        };
-
-        return await _enclaveWrapper.ExecuteJavaScriptAsync(_mathScript, context);
+        var input = JsonSerializer.Serialize(new { iterations = 1000 });
+        return await Task.Run(() => _enclaveWrapper.ExecuteJavaScript(_mathScript, input));
     }
 
     [Benchmark]
     [Category("JavaScript")]
-    public async Task<JavaScriptExecutionResult> BenchmarkJavaScript_Complex()
+    public async Task<string> BenchmarkJavaScript_Complex()
     {
-        var context = new JavaScriptContext
-        {
-            Input = new { n = 25, data = Enumerable.Range(1, 1000).ToArray() },
-            Timeout = TimeSpan.FromSeconds(10),
-            MemoryLimit = 64 * 1024 * 1024, // 64MB
-            SecurityConstraints = new JavaScriptSecurityConstraints
-            {
-                DisallowNetworking = true,
-                DisallowFileSystem = true,
-                DisallowProcessExecution = true
-            }
-        };
-
-        return await _enclaveWrapper.ExecuteJavaScriptAsync(_complexScript, context);
+        var input = JsonSerializer.Serialize(new { n = 25, data = Enumerable.Range(1, 1000).ToArray() });
+        return await Task.Run(() => _enclaveWrapper.ExecuteJavaScript(_complexScript, input));
     }
 
     #endregion
 
-    #region Storage Benchmarks
+    #region Key Management Benchmarks
 
     [Benchmark]
-    [Category("Storage")]
-    public async Task<bool> BenchmarkSecureStorage_Store()
+    [Category("KeyManagement")]
+    public async Task<string> BenchmarkKeyGeneration()
     {
-        var storageKey = $"storage-benchmark-{DataSize}";
-        var testData = GenerateTestData(DataSize);
-        
-        return await _enclaveWrapper.StoreSecureDataAsync(storageKey, testData);
-    }
-
-    [Benchmark]
-    [Category("Storage")]
-    public async Task<byte[]?> BenchmarkSecureStorage_Retrieve()
-    {
-        var storageKey = $"storage-benchmark-{DataSize}";
-        return await _enclaveWrapper.RetrieveSecureDataAsync(storageKey);
+        var keyId = $"key-{Guid.NewGuid()}";
+        return await Task.Run(() => _enclaveWrapper.GenerateKey(keyId, "Secp256k1", "Sign,Verify", false, "Test key"));
     }
 
     #endregion
 
-    #region Attestation Benchmarks
+    #region Oracle Benchmarks
 
     [Benchmark]
-    [Category("Attestation")]
-    public async Task<AttestationResult> BenchmarkAttestationGeneration()
+    [Category("Oracle")]
+    public async Task<string> BenchmarkOracleDataFetch()
     {
-        return await _enclaveWrapper.GetAttestationAsync();
-    }
-
-    [Benchmark]
-    [Category("Attestation")]
-    public async Task<bool> BenchmarkAttestationVerification()
-    {
-        var attestation = await _enclaveWrapper.GetAttestationAsync();
-        return await _enclaveWrapper.VerifyAttestationAsync(attestation);
+        var url = "https://api.example.com/data";
+        return await Task.Run(() => _enclaveWrapper.FetchOracleData(url));
     }
 
     #endregion
 
-    #region Network Benchmarks
+    #region Blockchain Operations Benchmarks
 
     [Benchmark]
-    [Category("Network")]
-    public async Task<HttpResponseData> BenchmarkSecureHttpRequest_Small()
+    [Category("Blockchain")]
+    public async Task<string> BenchmarkAbstractAccountTransaction()
     {
-        var request = new HttpRequestData
-        {
-            Url = "https://httpbin.org/json",
-            Method = "GET",
-            Timeout = TimeSpan.FromSeconds(30),
-            MaxResponseSize = 1024 * 1024 // 1MB
-        };
-
-        return await _enclaveWrapper.MakeSecureHttpRequestAsync(request);
-    }
-
-    [Benchmark]
-    [Category("Network")]
-    public async Task<HttpResponseData> BenchmarkSecureHttpRequest_POST()
-    {
-        var requestData = JsonSerializer.Serialize(new { message = "benchmark test", size = DataSize });
-        var request = new HttpRequestData
-        {
-            Url = "https://httpbin.org/post",
-            Method = "POST",
-            Body = Encoding.UTF8.GetBytes(requestData),
-            Headers = new Dictionary<string, string> { ["Content-Type"] = "application/json" },
-            Timeout = TimeSpan.FromSeconds(30),
-            MaxResponseSize = 1024 * 1024 // 1MB
-        };
-
-        return await _enclaveWrapper.MakeSecureHttpRequestAsync(request);
+        var accountId = "test-account-123";
+        var transactionData = JsonSerializer.Serialize(new { to = "0x1234", value = "1000", data = "0x" });
+        return await Task.Run(() => _enclaveWrapper.SignAbstractAccountTransaction(accountId, transactionData));
     }
 
     #endregion
@@ -435,21 +353,11 @@ public class EnclaveBenchmarks
         // Initialize enclave once for all benchmarks
         var config = new EnclaveConfig
         {
-            SGXMode = "SIM",
-            EnableDebug = false,
-            Cryptography = new CryptographyConfig
-            {
-                EncryptionAlgorithm = EncryptionAlgorithm,
-                SigningAlgorithm = SigningAlgorithm
-            },
-            Performance = new PerformanceConfig
-            {
-                EnableMetrics = false,
-                EnableBenchmarking = true
-            }
+            SgxMode = "SIM",
+            DebugMode = false
         };
 
-        var initResult = await _enclaveWrapper.InitializeAsync(config);
+        var initResult = _enclaveWrapper.Initialize();
         if (!initResult)
         {
             throw new InvalidOperationException("Failed to initialize enclave for benchmarking");
@@ -467,14 +375,16 @@ public class EnclaveBenchmarks
 
     private async Task PrepareSealedData()
     {
-        _sealedSmallData = await _enclaveWrapper.SealDataAsync(_smallData, "benchmark-key-256");
-        _sealedMediumData = await _enclaveWrapper.SealDataAsync(_mediumData, "benchmark-key-4KB");
-        _sealedLargeData = await _enclaveWrapper.SealDataAsync(_largeData, "benchmark-key-64KB");
+        _encryptionKey = await Task.Run(() => _enclaveWrapper.GenerateRandomBytes(32)); // 256-bit key
+        _encryptedSmallData = await Task.Run(() => _enclaveWrapper.Encrypt(_smallData, _encryptionKey));
+        _encryptedMediumData = await Task.Run(() => _enclaveWrapper.Encrypt(_mediumData, _encryptionKey));
+        _encryptedLargeData = await Task.Run(() => _enclaveWrapper.Encrypt(_largeData, _encryptionKey));
     }
 
     private async Task PrepareCryptoData()
     {
-        _signatureResult = await _enclaveWrapper.SignDataAsync(_hashData, "crypto-benchmark-key");
+        _signingKey = await Task.Run(() => _enclaveWrapper.GenerateRandomBytes(32));
+        _signatureResult = await Task.Run(() => _enclaveWrapper.Sign(_hashData, _signingKey));
     }
 
     private void InitializeJavaScriptScripts()
@@ -548,7 +458,7 @@ public class BenchmarkConfiguration
 /// </summary>
 public class BenchmarkProgram
 {
-    public static void Main(string[] args)
+    public static void RunBenchmarks(string[] args)
     {
         var config = ManualConfig.Create(DefaultConfig.Instance)
             .WithOptions(ConfigOptions.DisableOptimizationsValidator);

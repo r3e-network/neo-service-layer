@@ -1,9 +1,11 @@
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+// No alias needed - will use fully qualified names
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 
-namespace NeoServiceLayer.Tests.Infrastructure;
+namespace NeoServiceLayer.TestInfrastructure;
 
 /// <summary>
 /// Test configuration and setup utilities.
@@ -57,21 +59,19 @@ public static class TestConfiguration
     /// <summary>
     /// Creates test blockchain configuration.
     /// </summary>
-    public static BlockchainConfiguration CreateTestBlockchainConfig()
+    public static NeoServiceLayer.Infrastructure.BlockchainConfiguration CreateTestBlockchainConfig()
     {
-        return new BlockchainConfiguration
+        return new NeoServiceLayer.Infrastructure.BlockchainConfiguration
         {
             NeoN3 = new NeoN3Configuration
             {
                 RpcUrl = "http://localhost:20332",
-                NetworkMagic = 860833102,
-                AddressVersion = 0x35
+                NetworkMagic = 860833102
             },
             NeoX = new NeoXConfiguration
             {
                 RpcUrl = "http://localhost:8545",
-                ChainId = 12227332,
-                NetworkName = "NeoX TestNet"
+                ChainId = 12227332
             }
         };
     }

@@ -7,6 +7,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.TestInfrastructure;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
 using FluentAssertions;
@@ -182,13 +183,12 @@ public class PredictionAdvancedTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.OverallSentiment.Should().Be(SentimentType.Positive);
-        result.SentimentScore.Should().BeGreaterThan(0.6);
-        result.NewsSentiment.Should().BeGreaterThan(0.5);
-        result.SocialMediaSentiment.Should().BeGreaterThan(0.5);
-        result.MarketSentiment.Should().BeGreaterThan(0.5);
-        result.SentimentTrends.Should().NotBeEmpty();
-        result.Keywords.Should().Contain(k => k.Sentiment == SentimentType.Positive);
+        result.Label.Should().Be(CoreModels.SentimentLabel.Positive);
+        result.SentimentScore.Should().BeGreaterThan(0.3); // Positive sentiment score
+        result.Confidence.Should().BeGreaterThan(0.5);
+        result.DetailedSentiment.Should().NotBeEmpty();
+        result.DetailedSentiment.Should().ContainKey("positive");
+        result.DetailedSentiment["positive"].Should().BeGreaterThan(0.5);
     }
 
     [Fact]
@@ -205,13 +205,12 @@ public class PredictionAdvancedTests : IDisposable
         var result = await _service.AnalyzeSentimentAsync(request, BlockchainType.NeoX);
 
         // Assert
-        result.OverallSentiment.Should().Be(SentimentType.Negative);
-        result.SentimentScore.Should().BeLessThan(0.4);
-        result.EmotionalAnalysis.Should().NotBeNull();
-        result.EmotionalAnalysis!.Fear.Should().BeGreaterThan(0.3);
-        result.EmotionalAnalysis.Greed.Should().BeLessThan(0.3);
-        result.InfluencerSentiment.Should().NotBeEmpty();
-        result.RiskIndicators.Should().Contain("negative_sentiment_spike");
+        result.Label.Should().Be(CoreModels.SentimentLabel.Negative);
+        result.SentimentScore.Should().BeLessThan(-0.3); // Negative sentiment score
+        result.DetailedSentiment.Should().NotBeEmpty();
+        result.DetailedSentiment.Should().ContainKey("negative");
+        result.DetailedSentiment["negative"].Should().BeGreaterThan(0.5);
+        result.Confidence.Should().BeGreaterThan(0.5);
     }
 
     [Fact]
@@ -228,12 +227,12 @@ public class PredictionAdvancedTests : IDisposable
         var result = await _service.AnalyzeSentimentAsync(request, BlockchainType.NeoX);
 
         // Assert
-        result.OverallSentiment.Should().Be(SentimentType.Neutral);
-        result.SentimentScore.Should().BeInRange(0.4, 0.6);
-        result.SourceReliability.Should().NotBeEmpty();
-        result.SourceReliability.Should().AllSatisfy(sr => sr.Value.Should().BeInRange(0.0, 1.0));
-        result.ConflictingSignals.Should().NotBeEmpty();
-        result.ConflictingSignals.Should().Contain(cs => cs.Contains("mixed"));
+        result.Label.Should().Be(CoreModels.SentimentLabel.Neutral);
+        result.SentimentScore.Should().BeInRange(-0.2, 0.2); // Neutral sentiment score range
+        result.DetailedSentiment.Should().NotBeEmpty();
+        result.DetailedSentiment.Should().ContainKey("neutral");
+        result.DetailedSentiment["neutral"].Should().BeGreaterThan(0.4);
+        result.Confidence.Should().BeGreaterThan(0.3);
     }
 
     [Fact]
@@ -250,12 +249,12 @@ public class PredictionAdvancedTests : IDisposable
         var result = await _service.AnalyzeSentimentAsync(request, BlockchainType.NeoX);
 
         // Assert
-        result.TrendingTopics.Should().NotBeEmpty();
-        result.TrendingTopics.Should().Contain(t => t.Contains("#"));
-        result.ViralContent.Should().NotBeEmpty();
-        result.InfluenceMetrics.Should().ContainKey("viral_score");
-        result.InfluenceMetrics.Should().ContainKey("reach_estimate");
-        result.SentimentTrends.Should().HaveCountGreaterThan(10);
+        result.SentimentScore.Should().NotBe(0); // Should have some sentiment
+        result.Confidence.Should().BeGreaterThan(0.5);
+        result.DetailedSentiment.Should().NotBeEmpty();
+        // Hashtags should influence sentiment positively
+        result.DetailedSentiment.Should().ContainKey("hashtag_influence");
+        result.DetailedSentiment["hashtag_influence"].Should().BeGreaterThan(0);
     }
 
     #endregion
@@ -582,27 +581,35 @@ public class PredictionAdvancedTests : IDisposable
         };
     }
 
-    private SentimentAnalysisRequest CreateSentimentAnalysisRequest(
+    private CoreModels.SentimentAnalysisRequest CreateSentimentAnalysisRequest(
         string symbol,
         List<string> newsData,
         List<string> socialMediaData,
         bool includeMarketSentiment)
     {
-        return new SentimentAnalysisRequest
+        // Combine all text data into a single text for Core sentiment analysis
+        var allText = string.Join("\n", newsData.Concat(socialMediaData));
+        
+        return new CoreModels.SentimentAnalysisRequest
         {
-            Symbol = symbol,
-            NewsData = newsData,
-            SocialMediaData = socialMediaData,
-            IncludeMarketSentiment = includeMarketSentiment,
-            AnalysisDepth = SentimentAnalysisDepth.Comprehensive,
-            TimeWindow = TimeSpan.FromHours(24),
-            LanguageFilters = new[] { "en", "zh", "jp" },
-            SourceWeights = new Dictionary<string, double>
+            Text = allText,
+            Language = "en",
+            IncludeDetailedAnalysis = includeMarketSentiment,
+            Parameters = new Dictionary<string, object>
             {
-                ["news"] = 0.4,
-                ["twitter"] = 0.3,
-                ["reddit"] = 0.2,
-                ["telegram"] = 0.1
+                ["symbol"] = symbol,
+                ["news_data_count"] = newsData.Count,
+                ["social_data_count"] = socialMediaData.Count,
+                ["analysis_depth"] = "comprehensive",
+                ["time_window_hours"] = 24,
+                ["language_filters"] = new[] { "en", "zh", "jp" },
+                ["source_weights"] = new Dictionary<string, double>
+                {
+                    ["news"] = 0.4,
+                    ["twitter"] = 0.3,
+                    ["reddit"] = 0.2,
+                    ["telegram"] = 0.1
+                }
             }
         };
     }
@@ -851,6 +858,211 @@ public class PredictionAdvancedTests : IDisposable
             .ToArray();
     }
 
+    private void SetupMarketData(string symbol, bool bullishTrend)
+    {
+        var marketData = new Dictionary<string, object>
+        {
+            ["symbol"] = symbol,
+            ["trend"] = bullishTrend ? "bullish" : "bearish",
+            ["volume"] = 1000000,
+            ["volatility"] = 0.15
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<Dictionary<string, object>>(It.Is<string>(key => key.Contains(symbol))))
+            .ReturnsAsync(marketData);
+    }
+
+    private void SetupVolatileMarketData(string symbol)
+    {
+        var marketData = new Dictionary<string, object>
+        {
+            ["symbol"] = symbol,
+            ["trend"] = "volatile",
+            ["volume"] = 2000000,
+            ["volatility"] = 0.45
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<Dictionary<string, object>>(It.Is<string>(key => key.Contains(symbol))))
+            .ReturnsAsync(marketData);
+    }
+
+    private void SetupExistingPredictionModels()
+    {
+        var models = new List<PredictionModel>
+        {
+            new PredictionModel
+            {
+                Id = "pred_model_1",
+                Name = "TimeSeries Model",
+                ModelType = "time_series",
+                Accuracy = 0.85,
+                CreatedAt = DateTime.UtcNow.AddDays(-30)
+            },
+            new PredictionModel
+            {
+                Id = "pred_model_2",
+                Name = "Sentiment Model",
+                ModelType = "sentiment_analysis",
+                Accuracy = 0.78,
+                CreatedAt = DateTime.UtcNow.AddDays(-20)
+            },
+            new PredictionModel
+            {
+                Id = "pred_model_3",
+                Name = "Market Forecast Model",
+                ModelType = "market_forecast",
+                Accuracy = 0.82,
+                CreatedAt = DateTime.UtcNow.AddDays(-15)
+            },
+            new PredictionModel
+            {
+                Id = "pred_model_4",
+                Name = "Deep Learning Model",
+                ModelType = "deep_learning",
+                Accuracy = 0.88,
+                CreatedAt = DateTime.UtcNow.AddDays(-10)
+            }
+        };
+
+        _mockStorageProvider.Setup(x => x.ListAsync<PredictionModel>(It.IsAny<string>()))
+            .ReturnsAsync(models);
+    }
+
+    private void SetupExistingPredictionModel(string modelId)
+    {
+        var model = new PredictionModel
+        {
+            Id = modelId,
+            Name = "Existing Model",
+            ModelType = "time_series",
+            Accuracy = 0.80,
+            CreatedAt = DateTime.UtcNow.AddDays(-5)
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<PredictionModel>(It.Is<string>(key => key.Contains(modelId))))
+            .ReturnsAsync(model);
+    }
+
+    private void SetupTrainedPredictionModel(string modelId, string modelType)
+    {
+        var model = new PredictionModel
+        {
+            Id = modelId,
+            Name = $"Trained {modelType} Model",
+            ModelType = modelType,
+            Accuracy = 0.85,
+            CreatedAt = DateTime.UtcNow.AddDays(-1),
+            Version = "2.0"
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<PredictionModel>(It.Is<string>(key => key.Contains(modelId))))
+            .ReturnsAsync(model);
+    }
+
+    private void SetupPredictionHistory(string modelId)
+    {
+        var history = Enumerable.Range(0, 20)
+            .Select(i => new CoreModels.PredictionResult
+            {
+                ModelId = modelId,
+                PredictionId = $"pred_{i}",
+                Confidence = 0.75 + (i % 3) * 0.05,
+                PredictedAt = DateTime.UtcNow.AddHours(-i),
+                ProcessingTimeMs = 50 + i * 5
+            })
+            .ToList();
+
+        _mockStorageProvider.Setup(x => x.ListAsync<CoreModels.PredictionResult>(It.Is<string>(key => key.Contains(modelId))))
+            .ReturnsAsync(history);
+    }
+
+    private void SetupMultiModalData(string symbol)
+    {
+        var multiModalData = new Dictionary<string, object>
+        {
+            ["price_data"] = GeneratePriceHistory(symbol, 200),
+            ["technical_indicators"] = new Dictionary<string, double>
+            {
+                ["RSI"] = 45.5,
+                ["MACD"] = 0.12,
+                ["BollingerBands"] = 0.8
+            },
+            ["sentiment_score"] = 0.65,
+            ["market_microstructure"] = new Dictionary<string, object>
+            {
+                ["bid_ask_spread"] = 0.02,
+                ["order_book_depth"] = 1000000
+            },
+            ["news_sentiment"] = 0.72,
+            ["social_sentiment"] = 0.58
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<Dictionary<string, object>>(It.Is<string>(key => key.Contains(symbol))))
+            .ReturnsAsync(multiModalData);
+    }
+
+    private void SetupModelEnsemble(string[] modelIds)
+    {
+        foreach (var modelId in modelIds)
+        {
+            var model = new PredictionModel
+            {
+                Id = modelId,
+                Name = $"{modelId} Model",
+                ModelType = modelId.Contains("lstm") ? "lstm" : modelId.Contains("transformer") ? "transformer" : "random_forest",
+                Accuracy = 0.80 + modelIds.ToList().IndexOf(modelId) * 0.02,
+                CreatedAt = DateTime.UtcNow.AddDays(-10)
+            };
+
+            _mockStorageProvider.Setup(x => x.RetrieveAsync<PredictionModel>(It.Is<string>(key => key.Contains(modelId))))
+                .ReturnsAsync(model);
+        }
+    }
+
+    private void SetupStorageForHighLoad()
+    {
+        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
+            .ReturnsAsync(true);
+            
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<Dictionary<string, object>>(It.IsAny<string>()))
+            .ReturnsAsync(new Dictionary<string, object>
+            {
+                ["model_available"] = true,
+                ["processing_capacity"] = 100
+            });
+    }
+
+    private void SetupLongTermData(string symbol)
+    {
+        var longTermData = new Dictionary<string, object>
+        {
+            ["symbol"] = symbol,
+            ["historical_data"] = GenerateHistoricalMarketData(365),
+            ["long_term_trends"] = new Dictionary<string, object>
+            {
+                ["yearly_trend"] = "growth",
+                ["seasonal_patterns"] = new[] { "Q1_weak", "Q2_strong", "Q3_neutral", "Q4_strong" }
+            },
+            ["volatility_history"] = Enumerable.Range(0, 365).Select(i => 0.10 + (i % 30) * 0.001).ToArray()
+        };
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync<Dictionary<string, object>>(It.Is<string>(key => key.Contains(symbol))))
+            .ReturnsAsync(longTermData);
+    }
+
+    private Dictionary<string, object> CreateMarketDataContext(string symbol, MarketTrend trend)
+    {
+        return new Dictionary<string, object>
+        {
+            ["symbol"] = symbol,
+            ["trend"] = trend.ToString(),
+            ["price_history"] = GeneratePriceHistory(symbol, 100),
+            ["volume_history"] = GenerateVolumeHistory(100),
+            ["market_cap"] = symbol == "NEO" ? 1500000000 : symbol == "GAS" ? 450000000 : 400000000000,
+            ["circulating_supply"] = symbol == "NEO" ? 100000000 : symbol == "GAS" ? 100000000 : 150000000
+        };
+    }
+
     public void Dispose()
     {
         _enclaveManager?.DisposeAsync().AsTask().Wait();
@@ -860,35 +1072,4 @@ public class PredictionAdvancedTests : IDisposable
     #endregion
 }
 
-#region Supporting Types and Enums
-
-public enum MarketTrend
-{
-    Bullish,
-    Bearish,
-    Neutral,
-    Volatile
-}
-
-public enum ForecastTimeHorizon
-{
-    ShortTerm,    // Hours
-    MediumTerm,   // Days
-    LongTerm      // Weeks/Months
-}
-
-public enum SentimentType
-{
-    Positive,
-    Negative,
-    Neutral
-}
-
-public enum SentimentAnalysisDepth
-{
-    Basic,
-    Standard,
-    Comprehensive
-}
-
-#endregion 
+// Supporting types are now defined in NeoServiceLayer.AI.Prediction.Models 

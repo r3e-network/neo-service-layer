@@ -1,11 +1,11 @@
 use anyhow::{Result, anyhow};
-use ring::{aead, digest, hmac, pbkdf2, rand, signature};
+use ring::aead;
 use ring::rand::{SecureRandom, SystemRandom};
+use ring::aead::BoundKey;
 use secp256k1::{Secp256k1, SecretKey, PublicKey, Message, ecdsa::Signature};
-use ed25519_dalek::{Keypair, Signer, Verifier};
+use ed25519_dalek::{SigningKey, Signer, Verifier, VerifyingKey, Signature as Ed25519Signature};
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use std::num::NonZeroU32;
 use std::sync::{Arc, RwLock};
 use sha2::{Sha256, Digest};
 use log::{info, warn, error, debug};
@@ -165,8 +165,8 @@ impl CryptoService {
                 let mut seed = [0u8; 32];
                 self.rng.fill(&mut seed)?;
                 
-                let keypair = Keypair::from_bytes(&seed)?;
-                let public_key_bytes = keypair.public.to_bytes().to_vec();
+                let keypair = SigningKey::from_bytes(&seed);
+                let public_key_bytes = keypair.verifying_key().to_bytes().to_vec();
                 let private_key_bytes = keypair.to_bytes().to_vec();
                 
                 key_store.asymmetric_keys.insert(
@@ -201,27 +201,25 @@ impl CryptoService {
             return Err(anyhow!("AES-256 key must be 32 bytes"));
         }
         
-        let sealing_key = aead::SealingKey::new(
-            aead::UnboundKey::new(&aead::AES_256_GCM, key)?,
-            aead::Nonce::assume_unique_for_key([0u8; 12])
-        );
-        
         let mut nonce = [0u8; 12];
         self.rng.fill(&mut nonce)?;
         
         let mut in_out = data.to_vec();
-        let tag = aead::seal_in_place_detached(
-            &sealing_key,
+        // For ring 0.17, we need to use seal_in_place_append_tag
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, key)?;
+        let less_safe_key = aead::LessSafeKey::new(unbound_key);
+        let encrypted_result = less_safe_key.seal_in_place_append_tag(
             aead::Nonce::assume_unique_for_key(nonce),
             aead::Aad::empty(),
             &mut in_out,
         )?;
         
-        // Combine nonce + ciphertext + tag
-        let mut result = Vec::with_capacity(12 + in_out.len() + 16);
+        // The tag is already appended to in_out by seal_in_place_append_tag
+        
+        // Combine nonce + ciphertext_with_tag
+        let mut result = Vec::with_capacity(12 + in_out.len());
         result.extend_from_slice(&nonce);
         result.extend_from_slice(&in_out);
-        result.extend_from_slice(tag.as_ref());
         
         debug!("Encrypted {} bytes with AES-256-GCM", data.len());
         Ok(result)
@@ -237,17 +235,13 @@ impl CryptoService {
             return Err(anyhow!("Encrypted data too short"));
         }
         
-        let opening_key = aead::OpeningKey::new(
-            aead::UnboundKey::new(&aead::AES_256_GCM, key)?,
-            aead::Nonce::assume_unique_for_key([0u8; 12])
-        );
-        
         let nonce = &encrypted_data[0..12];
         let ciphertext_and_tag = &encrypted_data[12..];
         
         let mut in_out = ciphertext_and_tag.to_vec();
-        let plaintext = aead::open_in_place(
-            &opening_key,
+        let unbound_key = aead::UnboundKey::new(&aead::AES_256_GCM, key)?;
+        let less_safe_key = aead::LessSafeKey::new(unbound_key);
+        let plaintext = less_safe_key.open_in_place(
             aead::Nonce::try_assume_unique_for_key(nonce)?,
             aead::Aad::empty(),
             &mut in_out,
@@ -285,7 +279,12 @@ impl CryptoService {
                 let (private_key_bytes, _) = key_store.asymmetric_keys.get(key_id)
                     .ok_or_else(|| anyhow!("Private key '{}' not found", key_id))?;
                 
-                let keypair = Keypair::from_bytes(private_key_bytes)?;
+                if private_key_bytes.len() != 32 {
+                    return Err(anyhow!("Invalid key length for Ed25519"));
+                }
+                let mut key_bytes = [0u8; 32];
+                key_bytes.copy_from_slice(&private_key_bytes[..32]);
+                let keypair = SigningKey::from_bytes(&key_bytes);
                 let signature = keypair.sign(data);
                 
                 debug!("Signed {} bytes with Ed25519 key '{}'", data.len(), key_id);
@@ -324,8 +323,20 @@ impl CryptoService {
                 let (_, public_key_bytes) = key_store.asymmetric_keys.get(key_id)
                     .ok_or_else(|| anyhow!("Public key '{}' not found", key_id))?;
                 
-                let public_key = ed25519_dalek::PublicKey::from_bytes(public_key_bytes)?;
-                let signature = ed25519_dalek::Signature::from_bytes(signature)?;
+                if public_key_bytes.len() != 32 {
+                    return Err(anyhow!("Invalid public key length for Ed25519"));
+                }
+                let mut public_key_array = [0u8; 32];
+                public_key_array.copy_from_slice(&public_key_bytes[..32]);
+                let public_key = VerifyingKey::from_bytes(&public_key_array)
+                    .map_err(|e| anyhow!("Invalid Ed25519 public key: {}", e))?;
+                
+                if signature.len() != 64 {
+                    return Err(anyhow!("Invalid signature length for Ed25519"));
+                }
+                let mut signature_array = [0u8; 64];
+                signature_array.copy_from_slice(&signature[..64]);
+                let signature = Ed25519Signature::from_bytes(&signature_array);
                 
                 let is_valid = public_key.verify(data, &signature).is_ok();
                 debug!("Verified signature for {} bytes with Ed25519 key '{}': {}", data.len(), key_id, is_valid);

@@ -234,9 +234,9 @@ public static class ResilienceHelper
             InvalidOperationException ex when ex.Message.Contains("connection") => true,
             InvalidOperationException ex when ex.Message.Contains("timeout") => true,
             
-            // Explicitly non-retriable exceptions
-            ArgumentException => false,
+            // Explicitly non-retriable exceptions (order matters - most specific first)
             ArgumentNullException => false,
+            ArgumentException => false,
             NotSupportedException => false,
             UnauthorizedAccessException => false,
             

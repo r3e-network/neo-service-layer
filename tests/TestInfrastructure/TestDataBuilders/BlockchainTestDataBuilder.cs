@@ -33,7 +33,7 @@ public class BlockchainTestDataBuilder
     /// </summary>
     public string GenerateNeoXAddress()
     {
-        return $"0x{_faker.Random.Hexadecimal(40, false)}";
+        return $"0x{_faker.Random.Hexadecimal(40)}";
     }
 
     /// <summary>
@@ -71,10 +71,7 @@ public class BlockchainTestDataBuilder
             Data = GenerateTransactionData(),
             BlockHash = GenerateBlockHash(),
             BlockHeight = _faker.Random.Long(1, 10000000),
-            Timestamp = timestamp ?? _faker.Date.RecentOffset(30),
-            GasLimit = _faker.Random.Long(21000, 500000),
-            GasPrice = _faker.Random.Decimal(1, 100),
-            Nonce = _faker.Random.Long(0, 1000000)
+            Timestamp = (timestamp ?? _faker.Date.RecentOffset(30)).DateTime
         };
     }
 
@@ -125,7 +122,6 @@ public class BlockchainTestDataBuilder
     {
         var transaction = GenerateTransaction(blockchainType);
         transaction.Data = GenerateDexSwapData();
-        transaction.GasLimit = 300000; // Higher gas for DEX operations
         transaction.Value = _faker.Random.Decimal(1000, 100000);
         return transaction;
     }
@@ -152,16 +148,9 @@ public class BlockchainTestDataBuilder
         {
             Hash = hash ?? GenerateBlockHash(),
             Height = blockHeight,
-            Timestamp = timestamp ?? _faker.Date.RecentOffset(7),
+            Timestamp = (timestamp ?? _faker.Date.RecentOffset(7)).DateTime,
             PreviousHash = GenerateBlockHash(),
-            MerkleRoot = GenerateMerkleRoot(),
-            Transactions = transactions,
-            TransactionCount = transactions.Count,
-            Size = CalculateBlockSize(transactions),
-            GasUsed = transactions.Sum(t => t.GasLimit),
-            GasLimit = 10000000,
-            Difficulty = _faker.Random.Long(1000000, 9999999999),
-            Nonce = _faker.Random.Long(0, 999999999999)
+            Transactions = transactions
         };
     }
 
@@ -215,8 +204,7 @@ public class BlockchainTestDataBuilder
             TransactionHash = GenerateTransactionHash(),
             BlockHash = GenerateBlockHash(),
             BlockHeight = _faker.Random.Long(1, 10000000),
-            Timestamp = _faker.Date.RecentOffset(7),
-            LogIndex = _faker.Random.Int(0, 100)
+            Timestamp = _faker.Date.RecentOffset(7).DateTime
         };
     }
 
@@ -338,17 +326,17 @@ public class BlockchainTestDataBuilder
 
     private string GenerateTransactionHash()
     {
-        return $"0x{_faker.Random.Hexadecimal(64, false)}";
+        return $"0x{_faker.Random.Hexadecimal(64)}";
     }
 
     private string GenerateBlockHash()
     {
-        return $"0x{_faker.Random.Hexadecimal(64, false)}";
+        return $"0x{_faker.Random.Hexadecimal(64)}";
     }
 
     private string GenerateMerkleRoot()
     {
-        return $"0x{_faker.Random.Hexadecimal(64, false)}";
+        return $"0x{_faker.Random.Hexadecimal(64)}";
     }
 
     private decimal GenerateRealisticAmount()
@@ -364,18 +352,18 @@ public class BlockchainTestDataBuilder
             "0x23b872dd", // transferFrom
             "0x7ff36ab5"  // swapExactETHForTokens
         );
-        var parameterData = _faker.Random.Hexadecimal(128, false);
+        var parameterData = _faker.Random.Hexadecimal(128);
         return $"{methodSignature}{parameterData}";
     }
 
     private string GenerateDexSwapData()
     {
-        return $"0x7ff36ab5{_faker.Random.Hexadecimal(256, false)}";
+        return $"0x7ff36ab5{_faker.Random.Hexadecimal(256)}";
     }
 
     private string GenerateEventData()
     {
-        return $"0x{_faker.Random.Hexadecimal(128, false)}";
+        return $"0x{_faker.Random.Hexadecimal(128)}";
     }
 
     private Dictionary<string, object> GenerateEventParameters()

@@ -1,7 +1,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Blockchain;
 
 namespace NeoServiceLayer.Core.Tests.Blockchain;
 
