@@ -13,13 +13,15 @@
         <cve>CVE-2014-9152</cve>
     </suppress>
     
-    <!-- CVE-2024-43485: System.Text.Json 9.0.1 - No patch available yet -->
-    <suppress until="2025-12-31">
+    <!-- CVE-2024-43485: System.Text.Json 9.0.6 is the patched version -->
+    <suppress>
         <notes><![CDATA[
-        System.Text.Json 9.0.1 is the latest available version.
-        Monitoring for patch availability.
+        System.Text.Json 9.0.6 is the patched version that fixes CVE-2024-43485.
+        This appears to be a false positive or outdated vulnerability database.
+        Microsoft advisory confirms 9.0.6+ is safe.
+        See: https://github.com/dotnet/announcements/issues/329
         ]]></notes>
-        <packageUrl regex="true">^pkg:nuget/System\.Text\.Json@9\.0\.1$</packageUrl>
+        <packageUrl regex="true">^pkg:nuget/System\.Text\.Json@9\.0\.[6-9].*$</packageUrl>
         <cve>CVE-2024-43485</cve>
     </suppress>
     

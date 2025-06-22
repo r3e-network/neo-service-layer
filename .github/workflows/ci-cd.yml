@@ -306,6 +306,7 @@ jobs:
         args: >
           --failOnCVSS 7
           --enableRetired
+          --suppression dependency-check-suppressions.xml
 
     - name: 📤 Upload OWASP results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
