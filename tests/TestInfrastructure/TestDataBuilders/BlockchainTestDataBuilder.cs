@@ -25,7 +25,18 @@ public class BlockchainTestDataBuilder
     /// </summary>
     public string GenerateNeoN3Address()
     {
-        return $"N{_faker.Random.AlphaNumeric(33)}";
+        // Generate a valid-looking Neo N3 address using base58 characters
+        // Base58 excludes 0, O, I, and l
+        const string base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        var addressChars = new char[33];
+        
+        for (int i = 0; i < 33; i++)
+        {
+            addressChars[i] = base58Chars[_faker.Random.Int(0, base58Chars.Length - 1)];
+        }
+        
+        // Neo N3 addresses start with 'N'
+        return $"N{new string(addressChars)}";
     }
 
     /// <summary>

@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
+using Nethereum.JsonRpc.Client;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 // Type aliases to resolve ambiguity
@@ -64,10 +65,31 @@ public class NeoXClient : IBlockchainClient, IDisposable
             var blockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
             return (long)blockNumber.Value;
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while getting block height from {RpcUrl}", _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while getting block height from {RpcUrl}", _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while getting block height from {RpcUrl}", _rpcUrl);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get block height from {RpcUrl}", _rpcUrl);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to get block height: {ex.Message}", ex);
         }
     }
 
@@ -88,10 +110,31 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             return await ConvertToBlockAsync(block);
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get block at height {Height} from {RpcUrl}", height, _rpcUrl);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to get block at height {height}: {ex.Message}", ex);
         }
     }
 
@@ -111,10 +154,31 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             return await ConvertToBlockAsync(block);
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to get block with hash {hash}: {ex.Message}", ex);
         }
     }
 
@@ -136,10 +200,31 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             return ConvertToTransaction(transaction, receipt);
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to get transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to get transaction with hash {hash}: {ex.Message}", ex);
         }
     }
 
@@ -166,11 +251,35 @@ public class NeoXClient : IBlockchainClient, IDisposable
             _logger.LogInformation("Transaction sent successfully with hash: {TxHash}", txHash);
             return txHash;
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while sending transaction from {Sender} to {Recipient}",
+                transaction.Sender, transaction.Recipient);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while sending transaction from {Sender} to {Recipient}",
+                transaction.Sender, transaction.Recipient);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while sending transaction from {Sender} to {Recipient}",
+                transaction.Sender, transaction.Recipient);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}",
                 transaction.Sender, transaction.Recipient);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to send transaction: {ex.Message}", ex);
         }
     }
 
@@ -347,10 +456,31 @@ public class NeoXClient : IBlockchainClient, IDisposable
             _logger.LogDebug("Contract method call successful for {Method} on {ContractAddress}", method, contractAddress);
             return result;
         }
+        catch (RpcResponseException ex)
+        {
+            _logger.LogError(ex, "RPC error response while calling contract method {Method} on {ContractAddress}", method, contractAddress);
+            throw new InvalidOperationException($"RPC Error: {ex.RpcError.Message}", ex);
+        }
+        catch (RpcClientUnknownException ex)
+        {
+            _logger.LogError(ex, "RPC client error while calling contract method {Method} on {ContractAddress}", method, contractAddress);
+            throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+        }
+        catch (HttpRequestException ex)
+        {
+            _logger.LogError(ex, "HTTP request error while calling contract method {Method} on {ContractAddress}", method, contractAddress);
+            throw;
+        }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to call contract method {Method} on {ContractAddress}", method, contractAddress);
-            throw;
+            // Check if this is an RPC error by looking for specific patterns in the message
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+                ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
+            }
+            throw new InvalidOperationException($"Failed to call contract method {method}: {ex.Message}", ex);
         }
     }
 

@@ -27,8 +27,10 @@
   </ItemGroup>
 
   <ItemGroup>
+    <ProjectReference Include="..\..\Common\NeoServiceLayer.Tests.Common.csproj" />
     <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
     <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
     <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
     <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />

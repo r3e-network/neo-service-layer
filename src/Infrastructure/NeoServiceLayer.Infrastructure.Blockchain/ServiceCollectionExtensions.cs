@@ -186,7 +186,7 @@ public static class ServiceCollectionExtensions
         // services.AddFairOrderingService(configuration);
 
         // Register TEE services
-        // services.AddTeeServices(configuration);
+        services.AddTeeServices(configuration);
 
         return services;
     }

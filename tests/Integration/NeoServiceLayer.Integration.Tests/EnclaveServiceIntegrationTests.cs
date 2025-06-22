@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.Tests.Common;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
@@ -21,35 +22,11 @@ public class EnclaveServiceIntegrationTests : IDisposable
 
     public EnclaveServiceIntegrationTests()
     {
-        // Set up test configuration
-        var configurationBuilder = new ConfigurationBuilder()
-            .AddInMemoryCollection(new Dictionary<string, string?>
-            {
-                ["Tee:EnclaveType"] = "SGX",
-                ["Tee:AttestationServiceUrl"] = "https://test-attestation.example.com",
-                ["Tee:EnableRemoteAttestation"] = "false",
-                ["Enclave:SGXMode"] = "SIM",
-                ["Enclave:EnableDebug"] = "true",
-                ["Enclave:OcclumVersion"] = "0.29.6",
-                ["Enclave:Cryptography:EncryptionAlgorithm"] = "AES-256-GCM",
-                ["Enclave:Cryptography:SigningAlgorithm"] = "secp256k1",
-                ["Enclave:Cryptography:KeySize"] = "256",
-                ["Enclave:Cryptography:EnableHardwareRNG"] = "true",
-                ["Enclave:Storage:EnableCompression"] = "true",
-                ["Enclave:Storage:EnableIntegrityCheck"] = "true",
-                ["Enclave:Network:MaxConnections"] = "100",
-                ["Enclave:Network:RequestTimeout"] = "00:00:30",
-                ["Enclave:JavaScript:MaxExecutionTime"] = "00:00:05",
-                ["Enclave:JavaScript:MaxMemoryUsage"] = "67108864",
-                ["Enclave:Performance:EnableMetrics"] = "true"
-            });
+        // Set up test environment
+        TestConfiguration.SetupTestEnvironment();
 
-        _configuration = configurationBuilder.Build();
-
-        // Set environment variables for SGX simulation mode
-        Environment.SetEnvironmentVariable("SGX_MODE", "SIM");
-        Environment.SetEnvironmentVariable("SGX_DEBUG", "1");
-        Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Development");
+        // Get test configuration
+        _configuration = TestConfiguration.CreateTestConfiguration();
 
         // Build service collection
         var services = new ServiceCollection();

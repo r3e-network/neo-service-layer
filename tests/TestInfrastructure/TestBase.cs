@@ -161,10 +161,27 @@ public abstract class TestBase
     {
         return blockchainType switch
         {
-            BlockchainType.NeoN3 => $"N{Guid.NewGuid().ToString("N")[..33]}",
+            BlockchainType.NeoN3 => GenerateNeoN3Address(),
             BlockchainType.NeoX => $"0x{Guid.NewGuid().ToString("N")[..40]}",
             _ => throw new NotSupportedException($"Blockchain type {blockchainType} not supported")
         };
+    }
+
+    private static string GenerateNeoN3Address()
+    {
+        // Generate a valid-looking Neo N3 address using base58 characters
+        // Base58 excludes 0, O, I, and l
+        const string base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
+        var random = new Random();
+        var addressChars = new char[33];
+        
+        for (int i = 0; i < 33; i++)
+        {
+            addressChars[i] = base58Chars[random.Next(base58Chars.Length)];
+        }
+        
+        // Neo N3 addresses start with 'N'
+        return $"N{new string(addressChars)}";
     }
 
     /// <summary>

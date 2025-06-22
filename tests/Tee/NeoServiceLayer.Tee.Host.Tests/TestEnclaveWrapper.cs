@@ -264,7 +264,8 @@ public class TestEnclaveWrapper : IEnclaveWrapper
             ""exportable"": {exportable.ToString().ToLowerInvariant()},
             ""description"": ""{description}"",
             ""createdAt"": ""{timestamp}"",
-            ""publicKeyHex"": ""{publicKeyHex}""
+            ""publicKeyHex"": ""{publicKeyHex}"",
+            ""enclaveGenerated"": true
         }}";
     }
 
@@ -379,6 +380,13 @@ public class TestEnclaveWrapper : IEnclaveWrapper
         return $@"{{
             ""success"": true,
             ""key"": ""{key}"",
+            ""size"": {data.Length},
+            ""encryptedSize"": {data.Length + 32},
+            ""compressed"": {(compress ? "true" : "false")},
+            ""encrypted"": true,
+            ""timestamp"": {timestamp},
+            ""enclave"": true,
+            ""enclaveSecured"": true,
             ""metadata"": {{
                 ""key"": ""{key}"",
                 ""size"": {data.Length},
@@ -650,8 +658,17 @@ public class TestEnclaveWrapper : IEnclaveWrapper
             throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
         }
 
-        // Return mock attestation report
-        return $"{{\"mock_attestation\": true, \"timestamp\": {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}}}";
+        // Return mock attestation report with expected fields
+        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+        return $@"{{
+            ""mock_attestation"": true,
+            ""timestamp"": {timestamp},
+            ""mr_enclave"": ""{"0123456789abcdef" + "0123456789abcdef" + "0123456789abcdef" + "0123456789abcdef"}"",
+            ""mr_signer"": ""{"fedcba9876543210" + "fedcba9876543210" + "fedcba9876543210" + "fedcba9876543210"}"",
+            ""simulation_mode"": true,
+            ""report_data"": ""mock_report_data"",
+            ""quote_status"": ""OK""
+        }}";
     }
 
     /// <summary>

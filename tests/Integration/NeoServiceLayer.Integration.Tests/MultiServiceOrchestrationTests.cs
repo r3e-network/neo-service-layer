@@ -99,7 +99,11 @@ public class MultiServiceOrchestrationTests : IDisposable
         {
             AssetSymbol = "USDC",
             AssetName = "USD Coin",
-            ReserveAddresses = new[] { "0xreserve1", "0xreserve2", "0xreserve3" },
+            ReserveAddresses = new[] { 
+                "0x1234567890123456789012345678901234567890",
+                "0x2345678901234567890123456789012345678901",
+                "0x3456789012345678901234567890123456789012"
+            },
             MinReserveRatio = 1.0m,
             TotalSupply = 10000000m,
             MonitoringFrequencyMinutes = 60 // Fixed property name
