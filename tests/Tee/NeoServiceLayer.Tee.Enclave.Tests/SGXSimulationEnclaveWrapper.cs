@@ -29,7 +29,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests;
 /// - GDPR, SOX, and regulatory compliance support
 /// - Performance optimized for high-volume operations
 /// </summary>
-public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
+public class SGXSimulationEnclaveWrapper : NeoServiceLayer.Tee.Enclave.IEnclaveWrapper
 {
     private bool _initialized;
     private bool _disposed;
@@ -462,9 +462,8 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     /// </summary>
     /// <param name="modelId">Model identifier.</param>
     /// <param name="inputData">Input data for prediction.</param>
-    /// <param name="metadata">Output metadata.</param>
-    /// <returns>Predictions.</returns>
-    public double[] PredictWithAIModel(string modelId, double[] inputData, out string metadata)
+    /// <returns>Tuple containing predictions and metadata.</returns>
+    public (double[] predictions, string metadata) PredictWithAIModel(string modelId, double[] inputData)
     {
         EnsureInitialized();
 
@@ -489,8 +488,8 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             attestation = _attestationReport.Substring(0, 32)
         };
 
-        metadata = JsonSerializer.Serialize(metadataObj);
-        return predictions;
+        var metadata = JsonSerializer.Serialize(metadataObj);
+        return (predictions, metadata);
     }
 
     /// <summary>

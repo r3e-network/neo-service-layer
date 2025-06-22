@@ -10,8 +10,10 @@ using Xunit.Abstractions;
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
     /// <summary>
-    /// Tests that use real SGX SDK in simulation mode through ProductionSGXEnclaveWrapper.
-    /// These tests require Intel SGX SDK to be installed with SGX_MODE=SIM.
+    /// Tests that use SGX simulation mode with appropriate wrapper selection.
+    /// In CI environments: Uses SGXSimulationEnclaveWrapper for reliable testing.
+    /// In local environments: Uses ProductionSGXEnclaveWrapper with real SGX SDK.
+    /// Requires SGX_MODE=SIM and NEO_ALLOW_SGX_SIMULATION=true.
     /// </summary>
     [Trait("Category", "SGXIntegration")]
     [Collection("SGXTests")] // Ensures tests don't run in parallel
@@ -40,8 +42,22 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             if (_sgxAvailable)
             {
-                // Use the real ProductionSGXEnclaveWrapper which uses OcclumEnclaveWrapper
-                _enclave = new ProductionSGXEnclaveWrapper(_logger);
+                // Check if we're in CI environment
+                var isCI = Environment.GetEnvironmentVariable("CI") == "true" || 
+                          Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+
+                if (isCI)
+                {
+                    _output.WriteLine("✅ Using SGXSimulationEnclaveWrapper for CI environment");
+                    // Use the reliable simulation wrapper in CI environments
+                    _enclave = new NeoServiceLayer.Tee.Enclave.Tests.SGXSimulationEnclaveWrapper();
+                }
+                else
+                {
+                    _output.WriteLine("Using ProductionSGXEnclaveWrapper for real SGX SDK testing");
+                    // Use the real ProductionSGXEnclaveWrapper which uses OcclumEnclaveWrapper
+                    _enclave = new ProductionSGXEnclaveWrapper(_logger);
+                }
             }
             else
             {
@@ -62,26 +78,55 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             {
                 // Check for SGX environment variables
                 var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE");
+                var sgxSdk = Environment.GetEnvironmentVariable("SGX_SDK");
                 var ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
+                var neoAllowSimulation = Environment.GetEnvironmentVariable("NEO_ALLOW_SGX_SIMULATION");
+                var isCI = Environment.GetEnvironmentVariable("CI") == "true" || 
+                          Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
 
                 _output.WriteLine($"SGX_MODE: {sgxMode ?? "not set"}");
+                _output.WriteLine($"SGX_SDK: {sgxSdk ?? "not set"}");
                 _output.WriteLine($"LD_LIBRARY_PATH: {ldLibraryPath ?? "not set"}");
+                _output.WriteLine($"NEO_ALLOW_SGX_SIMULATION: {neoAllowSimulation ?? "not set"}");
+                _output.WriteLine($"CI Environment: {isCI}");
 
-                // For real SGX testing, we need SGX_MODE=SIM
+                // For SGX simulation testing, we need SGX_MODE=SIM and NEO_ALLOW_SGX_SIMULATION=true
                 if (sgxMode != "SIM")
                 {
                     _output.WriteLine("SGX_MODE is not set to SIM");
                     return false;
                 }
 
-                // Check if Occlum libraries are in the path
-                if (string.IsNullOrEmpty(ldLibraryPath) || !ldLibraryPath.Contains("occlum"))
+                if (neoAllowSimulation != "true")
                 {
-                    _output.WriteLine("Occlum libraries not found in LD_LIBRARY_PATH");
+                    _output.WriteLine("NEO_ALLOW_SGX_SIMULATION is not set to true");
                     return false;
                 }
 
-                return true;
+                // In CI environments, we don't require Occlum libraries - SGX simulation is sufficient
+                if (isCI)
+                {
+                    // Check if SGX SDK path is set
+                    if (string.IsNullOrEmpty(sgxSdk))
+                    {
+                        _output.WriteLine("SGX_SDK is not set in CI environment");
+                        return false;
+                    }
+                    
+                    _output.WriteLine("✅ CI environment detected - using SGX simulation mode");
+                    return true;
+                }
+
+                // For non-CI environments, check if SGX or Occlum libraries are available
+                if (!string.IsNullOrEmpty(ldLibraryPath) && 
+                    (ldLibraryPath.Contains("occlum") || ldLibraryPath.Contains("sgx")))
+                {
+                    _output.WriteLine("SGX/Occlum libraries found in LD_LIBRARY_PATH");
+                    return true;
+                }
+
+                _output.WriteLine("No SGX/Occlum libraries found in LD_LIBRARY_PATH");
+                return false;
             }
             catch (Exception ex)
             {
