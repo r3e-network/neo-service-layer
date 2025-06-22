@@ -184,7 +184,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Act
             var trainingResult = _enclave.TrainAIModel(modelId, "linear_regression", trainingData, "{}");
-            var predictions = _enclave.PredictWithAIModel(modelId, inputData, out string metadata);
+            var (predictions, metadata) = _enclave.PredictWithAIModel(modelId, inputData);
 
             // Assert
             trainingResult.Should().NotBeNullOrEmpty();

@@ -365,7 +365,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Act
             var trainingResult = _enclave.TrainAIModel(modelId, "linear_regression", trainingData, "{}");
-            var predictions = _enclave.PredictWithAIModel(modelId, testInput, out string metadata);
+            var (predictions, metadata) = _enclave.PredictWithAIModel(modelId, testInput);
 
             // Assert
             trainingResult.Should().NotBeNullOrEmpty();
@@ -392,7 +392,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Act & Assert
             var exception = Assert.Throws<KeyNotFoundException>(() =>
-                _enclave.PredictWithAIModel(nonExistentModel, input, out _));
+                _enclave.PredictWithAIModel(nonExistentModel, input));
 
             exception.Message.Should().Contain("not found");
             _output.WriteLine("✅ Prediction without training properly fails");

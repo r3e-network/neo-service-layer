@@ -460,8 +460,8 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var lowRiskInput = new double[] { 0.1, 0.15, 0.12 };
             var highRiskInput = new double[] { 0.85, 0.9, 0.88 };
 
-            var lowRiskPredictions = _enclave.PredictWithAIModel(modelId, lowRiskInput, out string lowRiskMetadata);
-            var highRiskPredictions = _enclave.PredictWithAIModel(modelId, highRiskInput, out string highRiskMetadata);
+            var (lowRiskPredictions, lowRiskMetadata) = _enclave.PredictWithAIModel(modelId, lowRiskInput);
+            var (highRiskPredictions, highRiskMetadata) = _enclave.PredictWithAIModel(modelId, highRiskInput);
 
             // Assert
             trainingResult.Should().NotBeNullOrEmpty();
