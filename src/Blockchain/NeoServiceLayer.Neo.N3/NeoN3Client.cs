@@ -62,6 +62,11 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     /// <inheritdoc/>
     public async Task<Block> GetBlockAsync(long height)
     {
+        if (height < 0)
+        {
+            throw new ArgumentException("Block height cannot be negative", nameof(height));
+        }
+
         try
         {
             _logger.LogDebug("Getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
@@ -79,6 +84,11 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     /// <inheritdoc/>
     public async Task<Block> GetBlockAsync(string hash)
     {
+        if (string.IsNullOrEmpty(hash))
+        {
+            throw new ArgumentException("Block hash cannot be null or empty", nameof(hash));
+        }
+
         try
         {
             _logger.LogDebug("Getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
@@ -285,7 +295,19 @@ public class NeoN3Client : IBlockchainClient, IDisposable
             var script = BuildInvocationScript(contractAddress, method, args);
             var response = await CallRpcMethodAsync<JsonElement>("sendrawtransaction", script);
 
-            return response.GetProperty("hash").GetString() ?? throw new InvalidOperationException("No transaction hash returned");
+            // Handle both string response and object with hash property
+            if (response.ValueKind == JsonValueKind.String)
+            {
+                return response.GetString() ?? throw new InvalidOperationException("No transaction hash returned");
+            }
+            else if (response.ValueKind == JsonValueKind.Object && response.TryGetProperty("hash", out var hashProp))
+            {
+                return hashProp.GetString() ?? throw new InvalidOperationException("No transaction hash returned");
+            }
+            else
+            {
+                throw new InvalidOperationException("Unexpected response format from sendrawtransaction");
+            }
         }
         catch (Exception ex)
         {
@@ -375,7 +397,13 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     /// </summary>
     private string ExtractSenderFromTransaction(JsonElement txData)
     {
-        // Neo N3 transactions have signers array
+        // Check for sender field first (preferred)
+        if (txData.TryGetProperty("sender", out var sender))
+        {
+            return sender.GetString() ?? "Unknown";
+        }
+        
+        // Fall back to signers array if sender field not present
         if (txData.TryGetProperty("signers", out var signers) && signers.GetArrayLength() > 0)
         {
             return signers[0].GetProperty("account").GetString() ?? "Unknown";

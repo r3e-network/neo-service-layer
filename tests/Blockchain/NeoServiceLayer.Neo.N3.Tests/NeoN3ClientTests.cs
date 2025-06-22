@@ -38,6 +38,7 @@ public class NeoN3ClientTests : IDisposable
     {
         // Arrange
         const long expectedHeight = 12345;
+        const long blockCount = expectedHeight + 1; // getblockcount returns count, height = count - 1
         _mockServer
             .Given(Request.Create().WithPath("/").UsingPost())
             .RespondWith(Response.Create()
@@ -47,7 +48,7 @@ public class NeoN3ClientTests : IDisposable
                 {
                     jsonrpc = "2.0",
                     id = 1,
-                    result = expectedHeight
+                    result = blockCount
                 })));
 
         // Act
