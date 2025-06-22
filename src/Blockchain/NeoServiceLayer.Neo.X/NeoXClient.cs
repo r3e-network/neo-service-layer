@@ -72,6 +72,12 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while getting block height from {RpcUrl}", _rpcUrl);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while getting block height from {RpcUrl}", _rpcUrl);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
         }
@@ -117,6 +123,12 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while getting block at height {Height} from {RpcUrl}", height, _rpcUrl);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
         }
@@ -161,6 +173,12 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
         }
@@ -207,6 +225,12 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
         }
@@ -259,6 +283,13 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while sending transaction from {Sender} to {Recipient}",
+                    transaction.Sender, transaction.Recipient);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while sending transaction from {Sender} to {Recipient}",
                 transaction.Sender, transaction.Recipient);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -463,6 +494,12 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
         catch (RpcClientUnknownException ex)
         {
+            // Check if this wraps an HttpRequestException and re-throw it
+            if (ex.InnerException is HttpRequestException httpEx)
+            {
+                _logger.LogError(httpEx, "HTTP request error while calling contract method {Method} on {ContractAddress}", method, contractAddress);
+                throw httpEx;
+            }
             _logger.LogError(ex, "RPC client error while calling contract method {Method} on {ContractAddress}", method, contractAddress);
             throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
         }

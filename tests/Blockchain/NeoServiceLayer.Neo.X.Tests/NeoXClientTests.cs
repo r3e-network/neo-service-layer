@@ -334,7 +334,7 @@ public class NeoXClientTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<HttpRequestException>(() => _client.GetBlockAsync(100L));
         exception.Should().NotBeNull();
-        VerifyLoggerCalled(LogLevel.Error, "Failed to get block at height");
+        VerifyLoggerCalled(LogLevel.Error, "HTTP request error while getting block at height");
     }
 
     #endregion
