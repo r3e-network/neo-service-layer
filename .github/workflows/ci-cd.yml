@@ -28,6 +28,7 @@ env:
   IMAGE_NAME: ${{ github.repository }}
   COVERAGE_THRESHOLD: 75
   BRANCH_COVERAGE_THRESHOLD: 70
+  NEO_ALLOW_SGX_SIMULATION: true
 
 jobs:
   # 🏗️ Build and Test Matrix Job
@@ -154,6 +155,8 @@ jobs:
       if: ${{ !github.event.inputs.skip_tests }}
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        NEO_ALLOW_SGX_SIMULATION: true
+        SGX_MODE: SIM
       run: |
         echo "::group::Running unit tests (${{ matrix.configuration }})"
         dotnet test NeoServiceLayer.sln \
@@ -172,6 +175,7 @@ jobs:
         SGX_MODE: SIM
         TEST_ENVIRONMENT: CI
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        NEO_ALLOW_SGX_SIMULATION: true
       run: |
         echo "::group::Running integration tests"
         dotnet test tests/Integration/ \
@@ -401,6 +405,8 @@ jobs:
     - name: 🏃‍♂️ Run performance tests
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        NEO_ALLOW_SGX_SIMULATION: true
+        SGX_MODE: SIM
       run: |
         echo "::group::Performance Tests"
         dotnet test tests/Performance/ \

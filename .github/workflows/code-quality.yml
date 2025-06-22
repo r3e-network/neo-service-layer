@@ -30,6 +30,7 @@ env:
   DOTNET_CLI_TELEMETRY_OPTOUT: true
   MIN_CODE_COVERAGE: 75
   MIN_BRANCH_COVERAGE: 70
+  NEO_ALLOW_SGX_SIMULATION: true
 
 permissions:
   contents: read
