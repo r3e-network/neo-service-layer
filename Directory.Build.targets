@@ -110,7 +110,7 @@
   </Target>
 
   <!-- Occlum Build Target -->
-  <Target Name="BuildOcclumImage" AfterTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND Exists('$(MSBuildProjectDirectory)/Dockerfile.occlum')">
+  <Target Name="BuildOcclumImage" AfterTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND Exists('$(MSBuildProjectDirectory)/Dockerfile.occlum') AND '$(IsCI)' != 'true'">
     <Message Text="Building Occlum LibOS image..." Importance="high" />
     
     <!-- Build Occlum Docker image -->
@@ -120,6 +120,11 @@
           ContinueOnError="true" />
     
     <Message Text="Occlum LibOS image build completed" Importance="normal" />
+  </Target>
+
+  <!-- Skip Occlum Build in CI -->
+  <Target Name="SkipOcclumImageInCI" AfterTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND '$(IsCI)' == 'true'">
+    <Message Text="Skipping Occlum LibOS image build in CI environment" Importance="normal" />
   </Target>
 
   <!-- Generate SGX Enclave Metadata -->
