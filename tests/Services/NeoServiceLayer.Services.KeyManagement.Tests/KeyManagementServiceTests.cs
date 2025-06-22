@@ -31,29 +31,31 @@ public class KeyManagementServiceTests
 
         _enclaveManagerMock
             .Setup(e => e.KmsGenerateKeyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
-            .ReturnsAsync(JsonSerializer.Serialize(new KeyMetadata
-            {
-                KeyId = "test-key",
-                KeyType = "Secp256k1",
-                KeyUsage = "Sign,Verify",
-                Exportable = false,
-                Description = "Test key",
-                CreatedAt = DateTime.UtcNow,
-                PublicKeyHex = "0x0123456789abcdef"
-            }));
+            .ReturnsAsync((string keyId, string keyType, string keyUsage, bool exportable, string description) =>
+                JsonSerializer.Serialize(new KeyMetadata
+                {
+                    KeyId = keyId,
+                    KeyType = keyType,
+                    KeyUsage = keyUsage,
+                    Exportable = exportable,
+                    Description = description,
+                    CreatedAt = DateTime.UtcNow,
+                    PublicKeyHex = "0x0123456789abcdef"
+                }));
 
         _enclaveManagerMock
             .Setup(e => e.KmsGetKeyMetadataAsync(It.IsAny<string>()))
-            .ReturnsAsync(JsonSerializer.Serialize(new KeyMetadata
-            {
-                KeyId = "test-key",
-                KeyType = "Secp256k1",
-                KeyUsage = "Sign,Verify",
-                Exportable = false,
-                Description = "Test key",
-                CreatedAt = DateTime.UtcNow,
-                PublicKeyHex = "0x0123456789abcdef"
-            }));
+            .ReturnsAsync((string keyId) =>
+                JsonSerializer.Serialize(new KeyMetadata
+                {
+                    KeyId = keyId,
+                    KeyType = "Secp256k1",
+                    KeyUsage = keyId == "encrypt-test-key" ? "encryption,decryption" : "signing,verification",
+                    Exportable = false,
+                    Description = "Test key",
+                    CreatedAt = DateTime.UtcNow,
+                    PublicKeyHex = "0x0123456789abcdef"
+                }));
 
         _enclaveManagerMock
             .Setup(e => e.KmsListKeysAsync(It.IsAny<int>(), It.IsAny<int>()))
@@ -63,7 +65,7 @@ public class KeyManagementServiceTests
                 {
                     KeyId = "test-key",
                     KeyType = "Secp256k1",
-                    KeyUsage = "Sign,Verify",
+                    KeyUsage = "signing,verification",
                     Exportable = false,
                     Description = "Test key",
                     CreatedAt = DateTime.UtcNow,
@@ -90,6 +92,7 @@ public class KeyManagementServiceTests
         _enclaveManagerMock
             .Setup(e => e.KmsDeleteKeyAsync(It.IsAny<string>()))
             .ReturnsAsync(true);
+
 
         _service = new KeyManagementService(_enclaveManagerMock.Object, _configurationMock.Object, _loggerMock.Object);
     }
@@ -143,7 +146,7 @@ public class KeyManagementServiceTests
         var result = await _service.GenerateKeyAsync(
             "test-key",
             "Secp256k1",
-            "Sign,Verify",
+            "signing,verification",
             false,
             "Test key",
             BlockchainType.NeoN3);
@@ -151,14 +154,14 @@ public class KeyManagementServiceTests
         // Assert
         Assert.Equal("test-key", result.KeyId);
         Assert.Equal("Secp256k1", result.KeyType);
-        Assert.Equal("Sign,Verify", result.KeyUsage);
+        Assert.Equal("signing,verification", result.KeyUsage);
         Assert.False(result.Exportable);
         Assert.Equal("Test key", result.Description);
         Assert.Equal("0x0123456789abcdef", result.PublicKeyHex);
         _enclaveManagerMock.Verify(e => e.KmsGenerateKeyAsync(
             "test-key",
             "Secp256k1",
-            "Sign,Verify",
+            "signing,verification",
             false,
             "Test key"), Times.Once);
     }
@@ -178,7 +181,7 @@ public class KeyManagementServiceTests
         // Assert
         Assert.Equal("test-key", result.KeyId);
         Assert.Equal("Secp256k1", result.KeyType);
-        Assert.Equal("Sign,Verify", result.KeyUsage);
+        Assert.Equal("signing,verification", result.KeyUsage);
         Assert.False(result.Exportable);
         Assert.Equal("Test key", result.Description);
         Assert.Equal("0x0123456789abcdef", result.PublicKeyHex);
@@ -210,6 +213,15 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
+        
+        // Create the key first
+        await _service.GenerateKeyAsync(
+            "test-key",
+            "Secp256k1",
+            "signing,verification",
+            false,
+            "Test key",
+            BlockchainType.NeoN3);
 
         // Act
         var result = await _service.SignDataAsync(
@@ -256,10 +268,19 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
+        
+        // Create the key first
+        await _service.GenerateKeyAsync(
+            "encrypt-test-key",
+            "Secp256k1",
+            "encryption,decryption",
+            false,
+            "Test key",
+            BlockchainType.NeoN3);
 
         // Act
         var result = await _service.EncryptDataAsync(
-            "test-key",
+            "encrypt-test-key",
             "0123456789abcdef",
             "ECIES",
             BlockchainType.NeoN3);
@@ -267,7 +288,7 @@ public class KeyManagementServiceTests
         // Assert
         Assert.Equal("0123456789abcdef", result);
         _enclaveManagerMock.Verify(e => e.KmsEncryptDataAsync(
-            "test-key",
+            "encrypt-test-key",
             "0123456789abcdef",
             "ECIES"), Times.Once);
     }
@@ -278,10 +299,19 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
+        
+        // Create the key first
+        await _service.GenerateKeyAsync(
+            "encrypt-test-key",
+            "Secp256k1",
+            "encryption,decryption",
+            false,
+            "Test key",
+            BlockchainType.NeoN3);
 
         // Act
         var result = await _service.DecryptDataAsync(
-            "test-key",
+            "encrypt-test-key",
             "0123456789abcdef",
             "ECIES",
             BlockchainType.NeoN3);
@@ -289,7 +319,7 @@ public class KeyManagementServiceTests
         // Assert
         Assert.Equal("0123456789abcdef", result);
         _enclaveManagerMock.Verify(e => e.KmsDecryptDataAsync(
-            "test-key",
+            "encrypt-test-key",
             "0123456789abcdef",
             "ECIES"), Times.Once);
     }

@@ -65,6 +65,15 @@ public class OracleServiceTests
         _blockchainClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<BlockchainType>()))
             .Returns(_blockchainClientMock.Object);
         _blockchainClientMock.Setup(c => c.GetBlockHeightAsync()).ReturnsAsync(1000L);
+        _blockchainClientMock.Setup(c => c.GetBlockAsync(It.IsAny<long>()))
+            .ReturnsAsync(new Block
+            {
+                Hash = "0x123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef01",
+                Height = 1000L,
+                Timestamp = DateTime.UtcNow,
+                PreviousHash = "0x0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef00",
+                Transactions = new List<Transaction>()
+            });
 
         _configurationMock.Setup(c => c.GetValue(It.IsAny<string>(), It.IsAny<string>()))
             .Returns<string, string>((key, defaultValue) => defaultValue);
@@ -74,9 +83,19 @@ public class OracleServiceTests
         {
             Content = new StringContent("{\"test\": \"data\"}")
         };
-        // Remove the problematic setup that causes expression tree error
-        // _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
-        //     .ReturnsAsync(mockResponse);
+        
+        // Setup GetAsync overloads (only setup the actual interface methods)
+        _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"result\": \"success\"}")
+            });
+            
+        _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new StringContent("{\"result\": \"success\"}")
+            });
 
         _service = new OracleService(
             _configurationMock.Object,
