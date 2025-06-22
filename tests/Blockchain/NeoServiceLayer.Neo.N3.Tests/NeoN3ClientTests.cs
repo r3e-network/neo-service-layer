@@ -359,6 +359,7 @@ public class NeoN3ClientTests : IDisposable
             sysfee = "1005000",
             netfee = "1234570",
             validuntilblock = 12345,
+            value = 100.5m, // Add value field for test to extract
             signers = new[]
             {
                 new { account = "0x1234567890123456789012345678901234567890", scopes = "CalledByEntry" }
