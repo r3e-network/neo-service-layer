@@ -30,8 +30,14 @@
              Text="SGX SDK not found at $(SGX_SDK). Install Intel SGX SDK or set SGX_SDK environment variable. Continuing with simulation mode..." />
   </Target>
 
+  <!-- Check CI Environment (used by multiple targets) -->
+  <PropertyGroup Condition="'$(IsCI)' == ''">
+    <IsCI Condition="'$(CI)' == 'true' OR '$(TEST_ENVIRONMENT)' == 'CI'">true</IsCI>
+    <IsCI Condition="'$(IsCI)' == ''">false</IsCI>
+  </PropertyGroup>
+
   <!-- Build Rust Enclave Components -->
-  <Target Name="BuildRustEnclave" BeforeTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND Exists('$(MSBuildProjectDirectory)/Cargo.toml')">
+  <Target Name="BuildRustEnclave" BeforeTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND Exists('$(MSBuildProjectDirectory)/Cargo.toml') AND '$(IsCI)' != 'true'">
     <Message Text="Building Rust enclave components..." Importance="high" />
     
     <!-- Set Rust environment variables -->
@@ -50,17 +56,18 @@
     <Message Text="Rust enclave build completed" Importance="normal" />
   </Target>
 
+  <!-- Skip Rust Build in CI -->
+  <Target Name="SkipRustBuildInCI" BeforeTargets="Build" Condition="'$(EnableOcclumSupport)' == 'true' AND $(MSBuildProjectName.Contains('Enclave')) AND '$(IsCI)' == 'true'">
+    <Message Text="Skipping Rust enclave build in CI environment (simulation mode)" Importance="normal" />
+  </Target>
+
   <!-- Copy Native Libraries -->
   <Target Name="CopyNativeLibraries" AfterTargets="Build" Condition="'$(EnableTEESupport)' == 'true' AND ($(MSBuildProjectName.Contains('Tee')) OR $(MSBuildProjectName.Contains('Enclave')))">
     
-    <!-- Check if we're in CI environment -->
-    <PropertyGroup>
-      <IsCI Condition="'$(CI)' == 'true' OR '$(TEST_ENVIRONMENT)' == 'CI'">true</IsCI>
-      <IsCI Condition="'$(IsCI)' == ''">false</IsCI>
-    </PropertyGroup>
-    
     <Message Text="Copying native libraries for TEE support..." Importance="normal" />
     <Message Text="CI Environment detected: $(IsCI)" Importance="normal" Condition="'$(IsCI)' == 'true'" />
+    <Message Text="SGX Library Path: $(SGXLibraryPath)" Importance="normal" />
+    <Message Text="Environment Variables - CI: $(CI), TEST_ENVIRONMENT: $(TEST_ENVIRONMENT)" Importance="normal" />
     
     <!-- Create native libraries directory -->
     <MakeDir Directories="$(OutputPath)runtimes/$(RuntimeIdentifier)/native" />
@@ -98,6 +105,7 @@
     <Copy SourceFiles="@(SGXNativeLibraries)" 
           DestinationFolder="$(OutputPath)runtimes/$(RuntimeIdentifier)/native" 
           SkipUnchangedFiles="true" 
+          ContinueOnError="true"
           Condition="@(SGXNativeLibraries->Count()) > 0" />
     
     <Copy SourceFiles="@(EnclaveLibraries)" 

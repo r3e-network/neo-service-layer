@@ -133,6 +133,8 @@ jobs:
         echo "SGX_MODE=SIM" >> $GITHUB_ENV
         echo "SGX_SDK=/opt/intel/sgxsdk" >> $GITHUB_ENV
         echo "SGX_DEBUG=1" >> $GITHUB_ENV
+        echo "CI=true" >> $GITHUB_ENV
+        echo "TEST_ENVIRONMENT=CI" >> $GITHUB_ENV
         
         # Create SGX SDK directory structure (needed for simulation)
         sudo mkdir -p /opt/intel/sgxsdk/lib64
@@ -146,14 +148,17 @@ jobs:
           sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
         fi
         
-        # Create mock SGX library files for CI simulation (if they don't exist)
-        if [ ! -f /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so ]; then
-          echo "Creating mock SGX simulation libraries for CI"
-          sudo touch /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
-          sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service_sim.so
-          sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service.so
-          sudo chmod 644 /opt/intel/sgxsdk/lib64/*.so
-        fi
+        # Create mock SGX library files for CI simulation
+        echo "Creating mock SGX simulation libraries for CI"
+        sudo touch /opt/intel/sgxsdk/lib64/libsgx_urts.so
+        sudo touch /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
+        sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service.so
+        sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service_sim.so
+        sudo chmod 644 /opt/intel/sgxsdk/lib64/*.so
+        
+        # Verify mock files were created
+        ls -la /opt/intel/sgxsdk/lib64/
+        echo "Mock SGX libraries created successfully"
         
         # Set library path for SGX simulation
         echo "LD_LIBRARY_PATH=/opt/intel/sgxsdk/lib64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV
