@@ -88,7 +88,7 @@ public partial class FairOrderingService
             Logger.LogInformation("Created ordering pool {PoolId} ({Name}) with algorithm {Algorithm} on {Blockchain}",
                 poolId, config.Name, config.OrderingAlgorithm, blockchainType);
 
-            return poolId;
+            return Task.FromResult(poolId);
         });
     }
 

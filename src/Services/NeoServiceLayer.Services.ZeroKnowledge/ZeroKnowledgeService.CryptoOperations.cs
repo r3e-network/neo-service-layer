@@ -8,8 +8,8 @@ namespace NeoServiceLayer.Services.ZeroKnowledge;
 /// </summary>
 public partial class ZeroKnowledgeService
 {
-    // Abstract method implementations for CryptographicServiceBase
-    protected override Task GenerateKeyInEnclaveAsync(CryptoKeyInfo keyInfo)
+    // Key generation operations for cryptographic functionality
+    protected Task GenerateKeyInEnclaveAsync(CryptoKeyInfo keyInfo)
     {
         // Generate actual cryptographic keys using secure random number generation
         using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
