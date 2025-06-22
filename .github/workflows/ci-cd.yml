@@ -152,6 +152,8 @@ jobs:
 
     - name: 🧪 Run unit tests  
       if: ${{ !github.event.inputs.skip_tests }}
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         echo "::group::Running unit tests (${{ matrix.configuration }})"
         dotnet test NeoServiceLayer.sln \
@@ -169,6 +171,7 @@ jobs:
       env:
         SGX_MODE: SIM
         TEST_ENVIRONMENT: CI
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         echo "::group::Running integration tests"
         dotnet test tests/Integration/ \
@@ -395,6 +398,8 @@ jobs:
         dotnet build NeoServiceLayer.sln --configuration Release --no-restore
 
     - name: 🏃‍♂️ Run performance tests
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
       run: |
         echo "::group::Performance Tests"
         dotnet test tests/Performance/ \

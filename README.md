@@ -331,6 +331,24 @@ dotnet test --filter Category=Performance
 - **Performance Tests**: Load testing and benchmarks
 - **Security Tests**: Enclave and cryptographic validation
 
+### 🔑 CI/CD Configuration
+
+For GitHub Actions CI/CD to work properly, you need to set up the following secret:
+
+1. Go to your repository on GitHub
+2. Navigate to **Settings** > **Secrets and variables** > **Actions**
+3. Click **New repository secret**
+4. Add the following secret:
+   - **Name**: `JWT_SECRET_KEY`
+   - **Value**: A strong, randomly generated secret key (e.g., 64+ characters)
+
+Example of generating a strong secret:
+```bash
+openssl rand -base64 64
+```
+
+This secret is required for JWT authentication in tests and the application.
+
 ## 🔒 Security Features
 
 - **Intel SGX**: Hardware-based trusted execution environment
