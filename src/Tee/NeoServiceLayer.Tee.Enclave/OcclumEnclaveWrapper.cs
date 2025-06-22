@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -30,7 +30,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
     public OcclumEnclaveWrapper(ILogger<OcclumEnclaveWrapper> logger, AttestationService? attestationService = null)
     {
         ArgumentNullException.ThrowIfNull(logger);
-        
+
         _logger = logger;
         _attestationService = attestationService;
         _disposed = false;
@@ -61,12 +61,12 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
 
                 // Check if we're running in a real SGX environment with custom libraries
                 _useCustomLibraries = CheckCustomLibrariesAvailable();
-                
+
                 if (_useCustomLibraries)
                 {
                     // Use real custom Neo Service enclave libraries
                     _logger.LogInformation("Using custom Neo Service enclave libraries");
-                    
+
                     string configJson = """
                     {
                         "storage_path": "/var/lib/neo-service-layer/enclave",
@@ -86,15 +86,15 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 {
                     // Check if simulation mode is explicitly allowed
                     bool allowSimulation = Environment.GetEnvironmentVariable("NEO_ALLOW_SGX_SIMULATION") == "true";
-                    
+
                     if (!allowSimulation)
                     {
                         _logger.LogError("SGX hardware mode required but custom libraries not available. Set NEO_ALLOW_SGX_SIMULATION=true to allow simulation mode.");
                         throw new InvalidOperationException("SGX hardware mode required but not available. Simulation mode is disabled for security.");
                     }
-                    
+
                     _logger.LogWarning("SGX SIMULATION MODE IS ENABLED. This is NOT secure for production use!");
-                    
+
                     // Initialize using real SGX SDK in simulation mode
                     var sgxResult = InitializeSGXSimulation();
                     if (!sgxResult)
@@ -104,7 +104,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 }
 
                 _initialized = true;
-                _logger.LogInformation("Occlum LibOS enclave initialized successfully in {Mode} mode", 
+                _logger.LogInformation("Occlum LibOS enclave initialized successfully in {Mode} mode",
                     _useCustomLibraries ? "production" : "SGX simulation");
                 return true;
             }
@@ -149,13 +149,13 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
 
             // Generate attestation report
             var report = await _attestationService.GenerateAttestationReportAsync(userData ?? Array.Empty<byte>());
-            
+
             // Serialize the report for verification
             var reportJson = JsonSerializer.Serialize(report);
-            
+
             // Verify the attestation report
             var verificationResult = await _attestationService.VerifyAttestationAsync(reportJson);
-            
+
             if (verificationResult.IsValid)
             {
                 _logger.LogInformation("Enclave attestation verification successful - enclave is trusted");
@@ -220,10 +220,10 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for JavaScript execution
                 _logger.LogDebug("Executing JavaScript using SGX simulation fallback");
-                
+
                 // Try to execute JavaScript-like operations for common test cases
                 object executionResult = "Simulated JavaScript execution result";
-                
+
                 // Handle common test patterns
                 if (functionCode.Contains("add") && functionCode.Contains("return a + b"))
                 {
@@ -242,7 +242,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                         try
                         {
                             var argsDoc = JsonDocument.Parse(args);
-                            if (argsDoc.RootElement.TryGetProperty("a", out var aProp) && 
+                            if (argsDoc.RootElement.TryGetProperty("a", out var aProp) &&
                                 argsDoc.RootElement.TryGetProperty("b", out var bProp) &&
                                 aProp.TryGetInt32(out int a) && bProp.TryGetInt32(out int b))
                             {
@@ -271,7 +271,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 {
                     executionResult = new { sum = 8, product = 15 };
                 }
-                
+
                 var result = new
                 {
                     success = true,
@@ -282,7 +282,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     sgxMode = "SIM",
                     enclaveSecured = true
                 };
-                
+
                 string output = JsonSerializer.Serialize(result);
                 _logger.LogDebug("JavaScript execution completed using SGX simulation. Result length: {Length}", output.Length);
                 return output;
@@ -326,13 +326,13 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using cryptographically secure RNG
                 _logger.LogDebug("Generating random number using SGX simulation fallback");
-                
+
                 // Use cryptographically secure random number generator
                 int range = max - min;
                 byte[] randomBytes = RandomNumberGenerator.GetBytes(4);
                 int randomInt = BitConverter.ToInt32(randomBytes, 0);
                 int randomValue = min + Math.Abs(randomInt % range);
-                
+
                 _logger.LogDebug("Generated random number using SGX simulation: {Value} (range: {Min}-{Max})", randomValue, min, max);
                 return randomValue;
             }
@@ -374,11 +374,11 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using cryptographically secure RNG
                 _logger.LogDebug("Generating {Length} random bytes using SGX simulation fallback", length);
-                
+
                 // Use the real .NET cryptographically secure random number generator
                 // This provides proper randomness even in simulation mode
                 byte[] randomBytes = RandomNumberGenerator.GetBytes(length);
-                
+
                 _logger.LogDebug("Generated {Length} random bytes using cryptographically secure RNG", length);
                 return randomBytes;
             }
@@ -491,11 +491,11 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for secure storage
                 _logger.LogDebug("Storing data using SGX simulation fallback");
-                
+
                 // Simulate secure storage with encryption
                 var encKey = Encoding.UTF8.GetBytes(encryptionKey.PadRight(32, '0')[..32]);
                 var encryptedData = Encrypt(data, encKey);
-                
+
                 // Store in simulated secure storage (in-memory for testing)
                 var storageKey = $"sgx_storage_{key}";
                 var storageDir = GetSecureStoragePath();
@@ -503,10 +503,10 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 {
                     Directory.CreateDirectory(storageDir);
                 }
-                
+
                 var filePath = Path.Combine(storageDir, Convert.ToBase64String(Encoding.UTF8.GetBytes(storageKey)).Replace('/', '_'));
                 File.WriteAllBytes(filePath, encryptedData);
-                
+
                 var metadata = new
                 {
                     success = true,
@@ -519,7 +519,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     sgxMode = "SIM",
                     hash = Convert.ToBase64String(SHA256.HashData(data))
                 };
-                
+
                 string result = JsonSerializer.Serialize(metadata);
                 _logger.LogDebug("Data stored successfully using SGX simulation. Key: {Key}, Size: {Size} bytes", key, data.Length);
                 return result;
@@ -580,21 +580,21 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for data retrieval
                 _logger.LogDebug("Retrieving data using SGX simulation fallback");
-                
+
                 // Retrieve from simulated secure storage
                 var storageKey = $"sgx_storage_{key}";
                 var storageDir = GetSecureStoragePath();
                 var filePath = Path.Combine(storageDir, Convert.ToBase64String(Encoding.UTF8.GetBytes(storageKey)).Replace('/', '_'));
-                
+
                 if (!File.Exists(filePath))
                 {
                     throw new KeyNotFoundException($"Data not found for key: {key}");
                 }
-                
+
                 var encryptedData = File.ReadAllBytes(filePath);
                 var encKey = Encoding.UTF8.GetBytes(encryptionKey.PadRight(32, '0')[..32]);
                 var decryptedData = Decrypt(encryptedData, encKey);
-                
+
                 _logger.LogDebug("Data retrieved successfully using SGX simulation. Key: {Key}, Size: {Size} bytes", key, decryptedData.Length);
                 return decryptedData;
             }
@@ -650,7 +650,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             OcclumNativeApi.ThrowIfError(result, "Data access");
 
             string output = OcclumNativeApi.BytesToString(resultBuffer, (int)actualLength);
-            _logger.LogDebug("Data retrieved successfully. Source: {DataSource}, Path: {DataPath}, Size: {Size} bytes", 
+            _logger.LogDebug("Data retrieved successfully. Source: {DataSource}, Path: {DataPath}, Size: {Size} bytes",
                 dataSource, dataPath, actualLength);
             return output;
         }
@@ -690,7 +690,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Use real custom Neo Service enclave libraries
                 _logger.LogDebug("Using custom libraries for key generation");
-                
+
                 // Create key generation parameters
                 var keyData = new
                 {
@@ -728,7 +728,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode implementation
                 _logger.LogDebug("Using SGX simulation fallback for key generation");
-                
+
                 // Generate key using real cryptographic operations but without custom libraries
                 var keyData = new
                 {
@@ -792,7 +792,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             OcclumNativeApi.ThrowIfError(result, "Computation execution");
 
             string output = OcclumNativeApi.BytesToString(resultBuffer, (int)actualLength);
-            _logger.LogDebug("Computation executed successfully. ID: {ComputationId}, Result size: {Size} bytes", 
+            _logger.LogDebug("Computation executed successfully. ID: {ComputationId}, Result size: {Size} bytes",
                 computationId, actualLength);
             return output;
         }
@@ -936,7 +936,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             OcclumNativeApi.ThrowIfError(result, "AI model training");
 
             string output = OcclumNativeApi.BytesToString(resultBuffer, (int)actualLength);
-            _logger.LogInformation("AI model trained successfully. ModelId: {ModelId}, Type: {ModelType}, Data points: {DataPoints}", 
+            _logger.LogInformation("AI model trained successfully. ModelId: {ModelId}, Type: {ModelType}, Data points: {DataPoints}",
                 modelId, modelType, trainingData.Length);
             return output;
         }
@@ -996,7 +996,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
 
             string metadata = OcclumNativeApi.BytesToString(metadataBuffer, (int)actualMetadataLength);
 
-            _logger.LogDebug("AI model prediction completed. ModelId: {ModelId}, Input size: {InputSize}, Output size: {OutputSize}", 
+            _logger.LogDebug("AI model prediction completed. ModelId: {ModelId}, Input size: {InputSize}, Output size: {OutputSize}",
                 modelId, inputData.Length, actualPredictionsLength);
             return (actualPredictions, metadata);
         }
@@ -1053,7 +1053,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for abstract account creation
                 _logger.LogDebug("Creating abstract account using SGX simulation fallback");
-                
+
                 // Generate a simulated account creation result
                 var accountResult = new
                 {
@@ -1066,7 +1066,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     sgxMode = "SIM",
                     accountData = JsonDocument.Parse(accountData).RootElement
                 };
-                
+
                 string result = JsonSerializer.Serialize(accountResult);
                 _logger.LogInformation("Abstract account created successfully using SGX simulation. AccountId: {AccountId}", accountId);
                 return result;
@@ -1125,12 +1125,12 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for transaction signing
                 _logger.LogDebug("Signing transaction using SGX simulation fallback");
-                
+
                 // Generate a simulated transaction signing result
                 var txData = JsonDocument.Parse(transactionData);
                 var signature = Convert.ToHexString(GenerateRandomBytes(64));
                 var txHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(transactionData)));
-                
+
                 var signedTransaction = new
                 {
                     success = true,
@@ -1142,7 +1142,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     enclaveSecured = true,
                     sgxMode = "SIM"
                 };
-                
+
                 string result = JsonSerializer.Serialize(signedTransaction);
                 _logger.LogDebug("Transaction signed successfully using SGX simulation. AccountId: {AccountId}", accountId);
                 return result;
@@ -1244,20 +1244,20 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using real AES encryption
                 _logger.LogDebug("Encrypting data using SGX simulation fallback");
-                
+
                 using var aes = Aes.Create();
                 aes.Key = key;
                 aes.GenerateIV();
-                
+
                 using var encryptor = aes.CreateEncryptor();
                 byte[] encrypted = encryptor.TransformFinalBlock(data, 0, data.Length);
-                
+
                 // Prepend IV to encrypted data for decryption
                 byte[] result = new byte[aes.IV.Length + encrypted.Length];
                 Array.Copy(aes.IV, 0, result, 0, aes.IV.Length);
                 Array.Copy(encrypted, 0, result, aes.IV.Length, encrypted.Length);
-                
-                _logger.LogDebug("Data encrypted successfully using AES simulation. Original size: {OriginalSize}, Encrypted size: {EncryptedSize}", 
+
+                _logger.LogDebug("Data encrypted successfully using AES simulation. Original size: {OriginalSize}, Encrypted size: {EncryptedSize}",
                     data.Length, result.Length);
                 return result;
             }
@@ -1325,27 +1325,27 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using real AES decryption
                 _logger.LogDebug("Decrypting data using SGX simulation fallback");
-                
+
                 if (data.Length < 16) // AES block size
                 {
                     throw new ArgumentException("Encrypted data is too short", nameof(data));
                 }
-                
+
                 // Extract IV from the beginning of the data
                 byte[] iv = new byte[16];
                 Array.Copy(data, 0, iv, 0, 16);
-                
+
                 byte[] ciphertext = new byte[data.Length - 16];
                 Array.Copy(data, 16, ciphertext, 0, ciphertext.Length);
-                
+
                 using var aes = Aes.Create();
                 aes.Key = key;
                 aes.IV = iv;
-                
+
                 using var decryptor = aes.CreateDecryptor();
                 byte[] result = decryptor.TransformFinalBlock(ciphertext, 0, ciphertext.Length);
-                
-                _logger.LogDebug("Data decrypted successfully using AES simulation. Encrypted size: {EncryptedSize}, Decrypted size: {DecryptedSize}", 
+
+                _logger.LogDebug("Data decrypted successfully using AES simulation. Encrypted size: {EncryptedSize}, Decrypted size: {DecryptedSize}",
                     data.Length, result.Length);
                 return result;
             }
@@ -1402,7 +1402,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 byte[] actualSignature = new byte[(int)actualLength];
                 Array.Copy(signature, actualSignature, (int)actualLength);
 
-                _logger.LogDebug("Data signed successfully using custom libraries. Data size: {DataSize}, Signature size: {SignatureSize}", 
+                _logger.LogDebug("Data signed successfully using custom libraries. Data size: {DataSize}, Signature size: {SignatureSize}",
                     data.Length, actualLength);
                 return actualSignature;
             }
@@ -1410,12 +1410,12 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using HMAC-SHA256 for signing
                 _logger.LogDebug("Signing data using SGX simulation fallback");
-                
+
                 // Use HMAC-SHA256 as a simulation of digital signing
                 using var hmac = new HMACSHA256(key.Length >= 32 ? key[..32] : key.Concat(new byte[32 - key.Length]).ToArray());
                 byte[] signature = hmac.ComputeHash(data);
-                
-                _logger.LogDebug("Data signed successfully using HMAC-SHA256 simulation. Data size: {DataSize}, Signature size: {SignatureSize}", 
+
+                _logger.LogDebug("Data signed successfully using HMAC-SHA256 simulation. Data size: {DataSize}, Signature size: {SignatureSize}",
                     data.Length, signature.Length);
                 return signature;
             }
@@ -1473,7 +1473,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
 
                 if (result != OcclumNativeApi.OCCLUM_SUCCESS)
                 {
-                    _logger.LogWarning("Signature verification failed with error: {Error}", 
+                    _logger.LogWarning("Signature verification failed with error: {Error}",
                         OcclumNativeApi.GetErrorDescription(result));
                     return false;
                 }
@@ -1486,11 +1486,11 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode using HMAC-SHA256 verification
                 _logger.LogDebug("Verifying signature using SGX simulation fallback");
-                
+
                 // Verify using HMAC-SHA256 simulation
                 using var hmac = new HMACSHA256(key.Length >= 32 ? key[..32] : key.Concat(new byte[32 - key.Length]).ToArray());
                 byte[] computedSignature = hmac.ComputeHash(data);
-                
+
                 bool verified = signature.SequenceEqual(computedSignature);
                 _logger.LogDebug("Signature verification completed using HMAC-SHA256 simulation. Result: {Verified}", verified);
                 return verified;
@@ -1503,9 +1503,9 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
         }
     }
 
-/// <summary>
+    /// <summary>
     /// Gets the attestation report from the Occlum enclave.
-/// </summary>
+    /// </summary>
     /// <returns>Attestation report as JSON string.</returns>
     public string GetAttestationReport()
     {
@@ -1517,11 +1517,11 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Use real custom Neo Service enclave libraries
                 _logger.LogInformation("Generating attestation report using custom libraries...");
-                
+
                 // In production, this would call the actual Occlum/SGX attestation API
                 // For now, check if we're in hardware mode
                 bool isHardwareMode = Environment.GetEnvironmentVariable("SGX_MODE") == "HW";
-                
+
                 if (isHardwareMode)
                 {
                     // In production hardware mode, we would call:
@@ -1529,7 +1529,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     // For now, log a warning
                     _logger.LogWarning("Hardware attestation not fully implemented. Using simulated attestation.");
                 }
-                
+
                 // Generate attestation report structure
                 var attestation = new
                 {
@@ -1564,7 +1564,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             {
                 // Fallback to SGX simulation mode for attestation report
                 _logger.LogInformation("Generating attestation report using SGX simulation fallback...");
-                
+
                 // Generate realistic attestation report for SGX simulation mode
                 var attestation = new
                 {
@@ -1629,7 +1629,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             Array.Copy(sealingKey, 0, sealedData, 0, 32);
             Array.Copy(encryptedData, 0, sealedData, 32, encryptedData.Length);
 
-            _logger.LogDebug("Data sealed successfully. Original size: {OriginalSize}, Sealed size: {SealedSize}", 
+            _logger.LogDebug("Data sealed successfully. Original size: {OriginalSize}, Sealed size: {SealedSize}",
                 data.Length, sealedData.Length);
             return sealedData;
         }
@@ -1671,7 +1671,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
             // Decrypt to get original data
             byte[] originalData = Decrypt(encryptedData, sealingKey);
 
-            _logger.LogDebug("Data unsealed successfully. Sealed size: {SealedSize}, Original size: {OriginalSize}", 
+            _logger.LogDebug("Data unsealed successfully. Sealed size: {SealedSize}, Original size: {OriginalSize}",
                 sealedData.Length, originalData.Length);
             return originalData;
         }
@@ -1770,7 +1770,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 _logger.LogDebug("Custom Neo Service enclave library found");
                 return true;
             }
-            
+
             _logger.LogDebug("Custom Neo Service enclave library not found, falling back to SGX simulation");
             return false;
         }
@@ -1808,17 +1808,17 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
         try
         {
             _logger.LogInformation("Initializing SGX simulation mode with real SGX SDK");
-            
+
             // Check if SGX environment is properly set up
             var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE");
             var sgxSdk = Environment.GetEnvironmentVariable("SGX_SDK");
-            
+
             _logger.LogInformation("SGX Environment - Mode: {Mode}, SDK: {Sdk}", sgxMode ?? "not set", sgxSdk ?? "not set");
-            
+
             if (sgxMode == "SIM" && !string.IsNullOrEmpty(sgxSdk))
             {
                 _logger.LogInformation("SGX simulation environment detected - using real SGX SDK");
-                
+
                 // Create necessary directories for SGX simulation
                 var storageDir = GetSecureStoragePath();
                 if (!Directory.Exists(storageDir))
@@ -1826,7 +1826,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                     Directory.CreateDirectory(storageDir);
                     _logger.LogDebug("Created storage directory: {Directory}", storageDir);
                 }
-                
+
                 // Initialize basic SGX simulation state
                 // Note: This is using real SGX SDK in simulation mode, not pure mocking
                 _logger.LogInformation("SGX simulation initialized successfully with real SDK");
@@ -1882,4 +1882,4 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
     {
         Dispose(false);
     }
-} 
+}

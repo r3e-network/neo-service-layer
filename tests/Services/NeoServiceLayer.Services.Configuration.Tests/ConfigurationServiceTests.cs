@@ -1,11 +1,11 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
-using NeoServiceLayer.Services.Configuration;
-using NeoServiceLayer.TestInfrastructure;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.TestInfrastructure;
+using Xunit;
 
 namespace NeoServiceLayer.Services.Configuration.Tests;
 
@@ -19,7 +19,7 @@ public class ConfigurationServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<ConfigurationService>>();
         _configurationMock = new Mock<IServiceConfiguration>();
-        
+
         // ConfigurationService expects IEnclaveManager, not IEnclaveWrapper
         _service = new ConfigurationService(_loggerMock.Object, MockEnclaveManager.Object, _configurationMock.Object);
     }

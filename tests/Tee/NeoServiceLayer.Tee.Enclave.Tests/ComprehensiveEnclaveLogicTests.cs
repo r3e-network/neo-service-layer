@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
@@ -51,9 +51,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         public void EnclaveLogic_OperationWithoutInitialization_ShouldThrowException()
         {
             // Act & Assert
-            var exception = Assert.Throws<InvalidOperationException>(() => 
+            var exception = Assert.Throws<InvalidOperationException>(() =>
                 _enclave.GenerateRandomBytes(32));
-            
+
             exception.Message.Should().Contain("not initialized");
             _output.WriteLine("✅ Operations without initialization properly throw exceptions");
         }
@@ -66,9 +66,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _enclave.Dispose();
 
             // Act & Assert
-            var exception = Assert.Throws<ObjectDisposedException>(() => 
+            var exception = Assert.Throws<ObjectDisposedException>(() =>
                 _enclave.GenerateRandomBytes(32));
-            
+
             exception.ObjectName.Should().Contain("SGXSimulationEnclaveWrapper");
             _output.WriteLine("✅ Disposed enclave operations properly throw exceptions");
         }
@@ -125,13 +125,13 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var maxFrequency = byteFrequency.Values.Max();
             var minFrequency = byteFrequency.Values.Min();
             var frequencyRatio = (double)maxFrequency / minFrequency;
-            
+
             // For simulation mode, we just warn if entropy is poor but don't fail
             if (frequencyRatio > 10.0)
             {
                 _output.WriteLine($"⚠️ Warning: Poor entropy detected (frequency ratio: {frequencyRatio:F2})");
             }
-            
+
             _output.WriteLine($"✅ Random bytes show acceptable entropy for simulation (frequency ratio: {frequencyRatio:F2})");
         }
 
@@ -145,9 +145,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _enclave.Initialize();
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => 
+            var exception = Assert.Throws<ArgumentException>(() =>
                 _enclave.GenerateRandomBytes(invalidLength));
-            
+
             exception.Message.Should().Contain("Length must be");
             _output.WriteLine($"✅ Invalid length {invalidLength} properly rejected");
         }
@@ -185,7 +185,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Act
             var signature1 = _enclave.Sign(message, key);
             var signature2 = _enclave.Sign(message, key);
-            
+
             var verify1 = _enclave.Verify(message, signature1, key);
             var verify2 = _enclave.Verify(message, signature2, key);
             var crossVerify1 = _enclave.Verify(message, signature1, key);
@@ -260,7 +260,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
                 var storeJson = JsonDocument.Parse(storeResult);
                 storeJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-                
+
                 _output.WriteLine($"✅ Secure storage works for {testName} data (compressed: {compress})");
             }
         }
@@ -278,7 +278,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Act
             _enclave.StoreData(key, data1, encKey);
             var retrieved1 = _enclave.RetrieveData(key, encKey);
-            
+
             _enclave.StoreData(key, data2, encKey); // Overwrite
             var retrieved2 = _enclave.RetrieveData(key, encKey);
 
@@ -303,9 +303,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _enclave.StoreData(storageKey, data, correctKey);
 
             // Assert
-            var exception = Assert.Throws<UnauthorizedAccessException>(() => 
+            var exception = Assert.Throws<UnauthorizedAccessException>(() =>
                 _enclave.RetrieveData(storageKey, wrongKey));
-            
+
             _output.WriteLine("✅ Storage retrieval with wrong key properly fails");
         }
 
@@ -391,9 +391,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var input = new double[] { 1.0, 2.0 };
 
             // Act & Assert
-            var exception = Assert.Throws<KeyNotFoundException>(() => 
+            var exception = Assert.Throws<KeyNotFoundException>(() =>
                 _enclave.PredictWithAIModel(nonExistentModel, input, out _));
-            
+
             exception.Message.Should().Contain("not found");
             _output.WriteLine("✅ Prediction without training properly fails");
         }
@@ -442,10 +442,10 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var nonExistentAccount = "non-existent-account";
 
             // Act & Assert
-            var guardianException = Assert.Throws<KeyNotFoundException>(() => 
+            var guardianException = Assert.Throws<KeyNotFoundException>(() =>
                 _enclave.AddAbstractAccountGuardian(nonExistentAccount, "{}"));
-            
-            var signException = Assert.Throws<KeyNotFoundException>(() => 
+
+            var signException = Assert.Throws<KeyNotFoundException>(() =>
                 _enclave.SignAbstractAccountTransaction(nonExistentAccount, "{}"));
 
             guardianException.Message.Should().Contain("not found");
@@ -513,7 +513,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                 var key = _enclave.GenerateRandomBytes(32);
                 var encrypted = _enclave.Encrypt(largeData, key);
                 var decrypted = _enclave.Decrypt(encrypted, key);
-                
+
                 var storageKey = $"large-data-{size}";
                 _enclave.StoreData(storageKey, largeData, "large-key");
                 var retrieved = _enclave.RetrieveData(storageKey, "large-key");
@@ -525,7 +525,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                 decrypted.Should().Equal(largeData);
                 retrieved.Should().Equal(largeData);
                 duration.TotalSeconds.Should().BeLessThan(5, $"Operations on {size} bytes should complete within 5 seconds");
-                
+
                 _output.WriteLine($"✅ Large data operations ({size} bytes) completed in {duration.TotalMilliseconds:F2}ms");
             }
         }
@@ -547,9 +547,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var data = Encoding.UTF8.GetBytes("test data");
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => 
+            var exception = Assert.Throws<ArgumentException>(() =>
                 _enclave.StoreData(storageKey!, data, encryptionKey!));
-            
+
             exception.Message.Should().Contain("cannot be null or empty");
             _output.WriteLine($"✅ Invalid storage inputs properly rejected: key='{storageKey ?? "null"}', encKey='{encryptionKey ?? "null"}'");
         }
@@ -592,7 +592,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Assert
             attestationReport.Should().NotBeNullOrEmpty();
             var reportJson = JsonDocument.Parse(attestationReport);
-            
+
             // Verify required SGX report fields
             reportJson.RootElement.TryGetProperty("version", out _).Should().BeTrue();
             reportJson.RootElement.TryGetProperty("mr_enclave", out _).Should().BeTrue();
@@ -631,7 +631,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                     sealedData.Should().NotEqual(originalData);
                     sealedData.Length.Should().BeGreaterThan(originalData.Length);
                 }
-                
+
                 _output.WriteLine($"✅ Data sealing/unsealing works for {originalData.Length} bytes");
             }
         }
@@ -653,7 +653,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Assert
             for (int i = 1; i < timestamps.Count; i++)
             {
-                timestamps[i].Should().BeGreaterThanOrEqualTo(timestamps[i - 1], 
+                timestamps[i].Should().BeGreaterThanOrEqualTo(timestamps[i - 1],
                     "Trusted time should be monotonic");
             }
 
@@ -664,4 +664,4 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
         #endregion
     }
-} 
+}

@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.AbstractAccount.Models;
@@ -268,4 +268,4 @@ public class AbstractAccountController : BaseApiController
             return HandleException(ex, "CreateSessionKey");
         }
     }
-} 
+}

@@ -1,5 +1,5 @@
+﻿using System.Text.Json;
 using NeoServiceLayer.Core;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Core.Tests.Blockchain;
 
@@ -41,7 +41,7 @@ public class BlockchainClientTests
         // Arrange
         var blockHeight = 999999L;
         var expectedBlock = CreateTestBlock(blockHeight);
-        
+
         _blockchainClientMock.Setup(x => x.GetBlockAsync(blockHeight))
                             .ReturnsAsync(expectedBlock);
 
@@ -62,7 +62,7 @@ public class BlockchainClientTests
         // Arrange
         var blockHash = "0x1234567890abcdef1234567890abcdef12345678";
         var expectedBlock = CreateTestBlock(999999L, blockHash);
-        
+
         _blockchainClientMock.Setup(x => x.GetBlockAsync(blockHash))
                             .ReturnsAsync(expectedBlock);
 
@@ -114,7 +114,7 @@ public class BlockchainClientTests
         // Arrange
         var txHash = "0xabcdef1234567890abcdef1234567890abcdef12";
         var expectedTransaction = CreateTestTransaction(txHash);
-        
+
         _blockchainClientMock.Setup(x => x.GetTransactionAsync(txHash))
                             .ReturnsAsync(expectedTransaction);
 
@@ -136,7 +136,7 @@ public class BlockchainClientTests
         // Arrange
         var transaction = CreateTestTransaction();
         var expectedTxHash = "0x" + new string('a', 64);
-        
+
         _blockchainClientMock.Setup(x => x.SendTransactionAsync(transaction))
                             .ReturnsAsync(expectedTxHash);
 
@@ -186,7 +186,7 @@ public class BlockchainClientTests
         // Arrange
         var expectedSubscriptionId = Guid.NewGuid().ToString();
         var callbackInvoked = false;
-        
+
         Func<Block, Task> callback = async (block) =>
         {
             callbackInvoked = true;
@@ -225,7 +225,7 @@ public class BlockchainClientTests
     {
         // Arrange
         var expectedSubscriptionId = Guid.NewGuid().ToString();
-        
+
         Func<Transaction, Task> callback = async (tx) => await Task.CompletedTask;
 
         _blockchainClientMock.Setup(x => x.SubscribeToTransactionsAsync(callback))
@@ -281,7 +281,7 @@ public class BlockchainClientTests
         var contractAddress = "0x1234567890abcdef1234567890abcdef12345678";
         var eventName = "Transfer";
         var expectedSubscriptionId = Guid.NewGuid().ToString();
-        
+
         Func<ContractEvent, Task> callback = async (evt) => await Task.CompletedTask;
 
         _blockchainClientMock.Setup(x => x.SubscribeToContractEventsAsync(contractAddress, eventName, callback))
@@ -561,4 +561,4 @@ public enum TestBlockchainType
     NeoX,
     Ethereum,
     Bitcoin
-} 
+}

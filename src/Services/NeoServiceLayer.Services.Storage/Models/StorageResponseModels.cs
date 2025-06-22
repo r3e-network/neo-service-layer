@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Storage.Models;
+﻿namespace NeoServiceLayer.Services.Storage.Models;
 
 /// <summary>
 /// Response from storing data.
@@ -446,4 +446,4 @@ public class StorageListItem
     /// Gets or sets the metadata if requested.
     /// </summary>
     public StorageMetadata? Metadata { get; set; }
-} 
+}

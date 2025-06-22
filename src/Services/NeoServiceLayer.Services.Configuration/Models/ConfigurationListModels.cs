@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Configuration.Models;
 

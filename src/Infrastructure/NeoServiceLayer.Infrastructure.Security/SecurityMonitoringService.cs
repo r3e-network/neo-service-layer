@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
@@ -239,7 +239,7 @@ public class SecurityMonitoringConfiguration
     public TimeSpan AlertCooldownPeriod { get; set; } = TimeSpan.FromMinutes(30);
     public bool EnableNotifications { get; set; } = true;
     public string[] SecurityNotificationRecipients { get; set; } = Array.Empty<string>();
-    
+
     // Threat detection thresholds
     public int BruteForceThreshold { get; set; } = 5;
     public int RateLimitAbuseThreshold { get; set; } = 10;
@@ -331,8 +331,8 @@ public class BruteForceDetector : SecurityThreatDetector
             var threat = new SecurityThreat
             {
                 ThreatType = ThreatType.BruteForce,
-                Severity = group.Count() >= Configuration.BruteForceThreshold * 2 
-                    ? ThreatSeverity.High 
+                Severity = group.Count() >= Configuration.BruteForceThreshold * 2
+                    ? ThreatSeverity.High
                     : ThreatSeverity.Medium,
                 Description = $"Possible brute force attack detected with {group.Count()} failed authentication attempts",
                 ClientId = group.First().Metadata?.ClientId,

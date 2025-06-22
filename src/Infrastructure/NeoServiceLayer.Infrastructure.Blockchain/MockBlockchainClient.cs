@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using System.Net.Http;
+﻿using System.Net.Http;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -58,7 +58,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return JsonSerializer.Serialize(response.Result);
@@ -98,7 +98,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null && decimal.TryParse(response.Result.ToString(), out var fee))
             {
                 return fee / 100000000m; // Convert from NeoGAS smallest unit
@@ -129,16 +129,16 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 var balanceData = JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(response.Result));
-                
+
                 if (balanceData.TryGetProperty("balance", out var balances))
                 {
                     foreach (var balance in balances.EnumerateArray())
                     {
-                        if (balance.TryGetProperty("assethash", out var hash) && 
+                        if (balance.TryGetProperty("assethash", out var hash) &&
                             hash.GetString() == assetId &&
                             balance.TryGetProperty("amount", out var amount))
                         {
@@ -175,7 +175,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return ParseBlockFromJsonElement(JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(response.Result)));
@@ -205,7 +205,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return ParseBlockFromJsonElement(JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(response.Result)));
@@ -235,7 +235,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return response.Result.ToString() ?? throw new InvalidOperationException("Invalid block hash response");
@@ -265,7 +265,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null && long.TryParse(response.Result.ToString(), out var height))
             {
                 return height - 1; // Neo returns block count, we want latest block height
@@ -296,7 +296,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             // Neo has a fixed gas price model, return standard price
             return _blockchainType == BlockchainType.NeoN3 ? 0.00001m : 0.000001m;
         }
@@ -322,7 +322,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return ParseTransactionFromJsonElement(JsonSerializer.Deserialize<JsonElement>(JsonSerializer.Serialize(response.Result)));
@@ -359,7 +359,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 // In production, this would create and broadcast a transaction
@@ -405,7 +405,7 @@ public class NeoBlockchainClient : IBlockchainClient
             };
 
             var response = await SendJsonRpcRequestAsync(request);
-            
+
             if (response?.Result != null)
             {
                 return response.Result.ToString() ?? transaction.Hash;
@@ -425,12 +425,12 @@ public class NeoBlockchainClient : IBlockchainClient
     {
         string subscriptionId = Guid.NewGuid().ToString();
         _logger.LogInformation("Subscribing to blocks with subscription ID {SubscriptionId} on {BlockchainType}", subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             _blockSubscriptions[subscriptionId] = callback;
         }
-        
+
         // In production, this would establish WebSocket connection for real-time updates
         return Task.FromResult(subscriptionId);
     }
@@ -439,7 +439,7 @@ public class NeoBlockchainClient : IBlockchainClient
     public Task<bool> UnsubscribeFromBlocksAsync(string subscriptionId)
     {
         _logger.LogInformation("Unsubscribing from blocks with subscription ID {SubscriptionId} on {BlockchainType}", subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             return Task.FromResult(_blockSubscriptions.Remove(subscriptionId));
@@ -451,12 +451,12 @@ public class NeoBlockchainClient : IBlockchainClient
     {
         string subscriptionId = Guid.NewGuid().ToString();
         _logger.LogInformation("Subscribing to transactions with subscription ID {SubscriptionId} on {BlockchainType}", subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             _transactionSubscriptions[subscriptionId] = callback;
         }
-        
+
         return Task.FromResult(subscriptionId);
     }
 
@@ -464,7 +464,7 @@ public class NeoBlockchainClient : IBlockchainClient
     public Task<bool> UnsubscribeFromTransactionsAsync(string subscriptionId)
     {
         _logger.LogInformation("Unsubscribing from transactions with subscription ID {SubscriptionId} on {BlockchainType}", subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             return Task.FromResult(_transactionSubscriptions.Remove(subscriptionId));
@@ -475,14 +475,14 @@ public class NeoBlockchainClient : IBlockchainClient
     public Task<string> SubscribeToContractEventsAsync(string contractAddress, string eventName, Func<ContractEvent, Task> callback)
     {
         string subscriptionId = Guid.NewGuid().ToString();
-        _logger.LogInformation("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} on {BlockchainType}", 
+        _logger.LogInformation("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} on {BlockchainType}",
             contractAddress, eventName, subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             _contractEventSubscriptions[subscriptionId] = (contractAddress, eventName, callback);
         }
-        
+
         return Task.FromResult(subscriptionId);
     }
 
@@ -490,7 +490,7 @@ public class NeoBlockchainClient : IBlockchainClient
     public Task<bool> UnsubscribeFromContractEventsAsync(string subscriptionId)
     {
         _logger.LogInformation("Unsubscribing from contract events with subscription ID {SubscriptionId} on {BlockchainType}", subscriptionId, _blockchainType);
-        
+
         lock (_subscriptionsLock)
         {
             return Task.FromResult(_contractEventSubscriptions.Remove(subscriptionId));
@@ -508,10 +508,10 @@ public class NeoBlockchainClient : IBlockchainClient
         {
             var jsonContent = JsonSerializer.Serialize(request);
             var content = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            
+
             var response = await _httpClient.PostAsync(_rpcEndpoint, content);
             response.EnsureSuccessStatusCode();
-            
+
             var responseContent = await response.Content.ReadAsStringAsync();
             return JsonSerializer.Deserialize<JsonRpcResponse>(responseContent);
         }
@@ -544,26 +544,26 @@ public class NeoBlockchainClient : IBlockchainClient
     private Block ParseBlockFromJsonElement(JsonElement element)
     {
         var block = new Block();
-        
+
         if (element.TryGetProperty("hash", out var hash))
             block.Hash = hash.GetString() ?? "";
-            
+
         if (element.TryGetProperty("index", out var index))
             block.Height = index.GetInt64();
-            
+
         if (element.TryGetProperty("time", out var time))
             block.Timestamp = DateTimeOffset.FromUnixTimeMilliseconds(time.GetInt64()).DateTime;
-            
+
         if (element.TryGetProperty("previousblockhash", out var prevHash))
             block.PreviousHash = prevHash.GetString() ?? "";
-            
+
         if (element.TryGetProperty("tx", out var transactions))
         {
             block.Transactions = transactions.EnumerateArray()
                 .Select(ParseTransactionFromJsonElement)
                 .ToList();
         }
-        
+
         return block;
     }
 
@@ -573,22 +573,22 @@ public class NeoBlockchainClient : IBlockchainClient
     private Transaction ParseTransactionFromJsonElement(JsonElement element)
     {
         var transaction = new Transaction();
-        
+
         if (element.TryGetProperty("hash", out var hash))
             transaction.Hash = hash.GetString() ?? "";
-            
+
         if (element.TryGetProperty("sender", out var sender))
             transaction.Sender = sender.GetString() ?? "";
-            
+
         if (element.TryGetProperty("size", out var size))
             transaction.Data = $"Transaction size: {size.GetInt32()} bytes";
-            
+
         if (element.TryGetProperty("blocktime", out var time))
             transaction.Timestamp = DateTimeOffset.FromUnixTimeSeconds(time.GetInt64()).DateTime;
-            
+
         if (element.TryGetProperty("blockhash", out var blockHash))
             transaction.BlockHash = blockHash.GetString() ?? "";
-            
+
         return transaction;
     }
 }

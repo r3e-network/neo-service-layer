@@ -1,13 +1,13 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Hosting;
-using Xunit;
+﻿using System.Text;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Text;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -53,13 +53,13 @@ public class EnclaveServiceIntegrationTests : IDisposable
 
         // Build service collection
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        
+
         // Add configuration
         services.AddSingleton(_configuration);
-        
+
         // Add Neo Service Layer (which should include TEE services)
         services.AddNeoServiceLayer(_configuration);
 
@@ -196,28 +196,28 @@ public class EnclaveServiceIntegrationTests : IDisposable
         // Arrange
         var enclaveWrapper = _serviceProvider.GetRequiredService<IEnclaveWrapper>();
         var enclaveManager = _serviceProvider.GetRequiredService<EnclaveManager>();
-        
+
         await InitializeEnclaveAsync(enclaveWrapper);
 
         // Act & Assert - Test complete workflow
-        
+
         // 1. Initialize enclave manager
         await enclaveManager.InitializeEnclaveAsync();
-        
+
         // 2. Seal some data
         var testData = Encoding.UTF8.GetBytes("Integration test data");
         var sealedData = enclaveWrapper.SealData(testData); // Method is synchronous and takes only data
-        
+
         // 3. Generate a signature
         var signingKey = new byte[] { 0x01, 0x02, 0x03 }; // Mock key for testing
         var signature = enclaveWrapper.Sign(testData, signingKey);
-        
+
         // 4. Verify signature
         var isValid = enclaveWrapper.Verify(testData, signature, signingKey);
-        
+
         // 5. Unseal data
         var unsealedData = enclaveWrapper.UnsealData(sealedData); // Method is synchronous
-        
+
         // 6. Get attestation
         var attestationReport = enclaveWrapper.GetAttestationReport();
 
@@ -227,7 +227,7 @@ public class EnclaveServiceIntegrationTests : IDisposable
         isValid.Should().BeTrue();
         unsealedData.Should().Equal(testData);
         attestationReport.Should().NotBeNull();
-        
+
         // 7. Destroy enclave manager
         await enclaveManager.DestroyEnclaveAsync();
     }
@@ -277,7 +277,7 @@ public class EnclaveServiceIntegrationTests : IDisposable
         {
             throw new InvalidOperationException("Failed to initialize enclave for testing");
         }
-        
+
         await Task.CompletedTask; // Keep method async for compatibility
     }
-} 
+}

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -66,4 +66,4 @@ public class AutomationTrigger
     /// Gets or sets additional trigger configuration.
     /// </summary>
     public Dictionary<string, object>? Configuration { get; set; }
-} 
+}

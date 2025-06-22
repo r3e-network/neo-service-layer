@@ -1,19 +1,19 @@
+﻿using System.Diagnostics;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.Randomness;
-using NeoServiceLayer.Services.Oracle;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.AbstractAccount.Models;
-using NeoServiceLayer.Services.Storage.Models;
+using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Services.Randomness;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Services.Storage.Models;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Diagnostics;
-using System.Text.Json;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -32,7 +32,7 @@ public class PerformanceIntegrationTests : IDisposable
     public PerformanceIntegrationTests()
     {
         var services = new ServiceCollection();
-        
+
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
@@ -40,15 +40,15 @@ public class PerformanceIntegrationTests : IDisposable
         services.AddSingleton<IOracleService, OracleService>();
         services.AddSingleton<IAbstractAccountService, AbstractAccountService>();
         services.AddSingleton<IStorageService, StorageService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         _randomnessService = _serviceProvider.GetRequiredService<IRandomnessService>();
         _oracleService = _serviceProvider.GetRequiredService<IOracleService>();
         _abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         _storageService = _serviceProvider.GetRequiredService<IStorageService>();
         _logger = _serviceProvider.GetRequiredService<ILogger<PerformanceIntegrationTests>>();
-        
+
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
 
@@ -87,7 +87,7 @@ public class PerformanceIntegrationTests : IDisposable
         // Performance assertions
         var totalNumbers = requestCount * numbersPerRequest;
         var numbersPerSecond = totalNumbers / stopwatch.Elapsed.TotalSeconds;
-        
+
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(30));
         numbersPerSecond.Should().BeGreaterThan(100); // At least 100 numbers per second
 
@@ -129,7 +129,7 @@ public class PerformanceIntegrationTests : IDisposable
 
         // Performance assertions
         var accountsPerSecond = accountCount / stopwatch.Elapsed.TotalSeconds;
-        
+
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(60));
         accountsPerSecond.Should().BeGreaterThan(1); // At least 1 account per second
 
@@ -174,7 +174,7 @@ public class PerformanceIntegrationTests : IDisposable
         // Performance assertions
         var totalDataMB = (storageOperations * dataSize) / (1024.0 * 1024.0);
         var throughputMBps = totalDataMB / stopwatch.Elapsed.TotalSeconds;
-        
+
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(120));
         throughputMBps.Should().BeGreaterThan(0.1); // At least 0.1 MB/s
 
@@ -254,7 +254,7 @@ public class PerformanceIntegrationTests : IDisposable
         // Performance assertions
         var totalOperations = operationsPerType * 4;
         var operationsPerSecond = totalOperations / stopwatch.Elapsed.TotalSeconds;
-        
+
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromMinutes(5));
         operationsPerSecond.Should().BeGreaterThan(1); // At least 1 operation per second
 
@@ -318,7 +318,7 @@ public class PerformanceIntegrationTests : IDisposable
 
         // Performance assertions
         var transactionsPerSecond = transactionCount / stopwatch.Elapsed.TotalSeconds;
-        
+
         stopwatch.Elapsed.Should().BeLessThan(TimeSpan.FromSeconds(60));
         transactionsPerSecond.Should().BeGreaterThan(1); // At least 1 transaction per second
         batchResult.TotalGasUsed.Should().BeGreaterThan(0);

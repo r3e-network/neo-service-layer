@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Tee.Host.Services;
-using System.Security.Cryptography;
+﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -42,9 +42,9 @@ public static class EnclaveSecurityHelpers
         try
         {
             logger.LogDebug("Executing secure operation: {OperationName}", operationName);
-            
+
             var result = await operation();
-            
+
             logger.LogDebug("Secure operation completed successfully: {OperationName}", operationName);
             return result;
         }
@@ -85,7 +85,7 @@ public static class EnclaveSecurityHelpers
             {
                 // Encode sensitive data as base64 for safe transport to enclave
                 var encodedData = Convert.ToBase64String(Encoding.UTF8.GetBytes(sensitiveData));
-                
+
                 // Create a secure processing script with encoded data
                 var secureScript = $@"
                     (function() {{
@@ -223,15 +223,15 @@ public static class EnclaveSecurityHelpers
             async () =>
             {
                 var computedChecksum = await ComputeSecureHashAsync(enclaveManager, data, algorithm, logger);
-                
+
                 var isValid = string.Equals(computedChecksum, expectedChecksum, StringComparison.OrdinalIgnoreCase);
-                
+
                 if (!isValid)
                 {
                     logger.LogWarning("Data integrity validation failed. Expected: {Expected}, Computed: {Computed}",
                         expectedChecksum, computedChecksum);
                 }
-                
+
                 return isValid;
             },
             "ValidateDataIntegrity",
@@ -261,7 +261,7 @@ public static class EnclaveSecurityHelpers
             async () =>
             {
                 var encodedInput = Convert.ToBase64String(Encoding.UTF8.GetBytes(input));
-                
+
                 var sanitizationScript = sanitizationType switch
                 {
                     SanitizationType.HtmlEncode => $@"
@@ -274,25 +274,25 @@ public static class EnclaveSecurityHelpers
                                 .replace(/'/g, '&#39;')
                                 .replace(/\x22/g, '&quot;');
                         }})()",
-                    
+
                     SanitizationType.SqlEscape => $@"
                         (function() {{
                             const input = atob('{encodedInput}');
                             return input.replace(/'/g, """""").replace(/\x00/g, '\\0');
                         }})()",
-                    
+
                     SanitizationType.JsonEscape => $@"
                         (function() {{
                             const input = atob('{encodedInput}');
                             return JSON.stringify(input).slice(1, -1);
                         }})()",
-                    
+
                     SanitizationType.Alphanumeric => $@"
                         (function() {{
                             const input = atob('{encodedInput}');
                             return input.replace(/[^a-zA-Z0-9]/g, '');
                         }})()",
-                    
+
                     _ => throw new ArgumentException($"Unsupported sanitization type: {sanitizationType}")
                 };
 
@@ -343,7 +343,7 @@ public static class EnclaveSecurityHelpers
                 // Generate a secure signature for the audit entry
                 var entryData = JsonSerializer.Serialize(auditEntry);
                 var signature = await ComputeSecureHashAsync(enclaveManager, entryData, "SHA256", logger);
-                
+
                 auditEntry.Signature = signature;
                 auditEntry.Metadata["enclave_processed"] = true;
                 auditEntry.Metadata["signature_algorithm"] = "SHA256";
@@ -406,13 +406,13 @@ public enum SanitizationType
 {
     /// <summary>HTML encoding to prevent XSS attacks.</summary>
     HtmlEncode,
-    
+
     /// <summary>SQL escaping to prevent SQL injection.</summary>
     SqlEscape,
-    
+
     /// <summary>JSON escaping for safe JSON serialization.</summary>
     JsonEscape,
-    
+
     /// <summary>Allow only alphanumeric characters.</summary>
     Alphanumeric
 }
@@ -424,22 +424,22 @@ public class SecureAuditEntry
 {
     /// <summary>Gets or sets the unique identifier for the audit entry.</summary>
     public string Id { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the timestamp when the operation occurred.</summary>
     public DateTime Timestamp { get; set; }
-    
+
     /// <summary>Gets or sets the operation that was performed.</summary>
     public string Operation { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the user ID who performed the operation.</summary>
     public string UserId { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets the resource ID that was accessed.</summary>
     public string ResourceId { get; set; } = string.Empty;
-    
+
     /// <summary>Gets or sets additional metadata for the audit entry.</summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
-    
+
     /// <summary>Gets or sets the secure signature of the audit entry.</summary>
     public string Signature { get; set; } = string.Empty;
-} 
+}

@@ -1,9 +1,9 @@
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
 using NeoServiceLayer.Core;
-using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
 using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
+using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -59,10 +59,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var poolId = await _fairOrderingService.CreateOrderingPoolAsync(config, blockchain);
-            
-            Logger.LogInformation("Ordering pool created successfully with ID: {PoolId} on {Blockchain}", 
+
+            Logger.LogInformation("Ordering pool created successfully with ID: {PoolId} on {Blockchain}",
                 poolId, blockchainType);
-            
+
             return Ok(CreateResponse(poolId, "Ordering pool created successfully"));
         }
         catch (Exception ex)
@@ -100,10 +100,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var transactionId = await _fairOrderingService.SubmitFairTransactionAsync(request, blockchain);
-            
-            Logger.LogInformation("Fair transaction submitted successfully with ID: {TransactionId} on {Blockchain}", 
+
+            Logger.LogInformation("Fair transaction submitted successfully with ID: {TransactionId} on {Blockchain}",
                 transactionId, blockchainType);
-            
+
             return Ok(CreateResponse(transactionId, "Transaction submitted for fair ordering"));
         }
         catch (Exception ex)
@@ -139,10 +139,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _fairOrderingService.AnalyzeFairnessRiskAsync(request, blockchain);
-            
-            Logger.LogInformation("Fairness analysis completed for transaction: Risk level {RiskLevel}, MEV {EstimatedMev:F4}", 
+
+            Logger.LogInformation("Fairness analysis completed for transaction: Risk level {RiskLevel}, MEV {EstimatedMev:F4}",
                 result.RiskLevel, result.EstimatedMEV);
-            
+
             return Ok(CreateResponse(result, "Fairness analysis completed"));
         }
         catch (Exception ex)
@@ -180,10 +180,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var submissionId = await _fairOrderingService.SubmitTransactionAsync(submission, blockchain);
-            
-            Logger.LogInformation("Transaction submitted to ordering pool with ID: {SubmissionId} on {Blockchain}", 
+
+            Logger.LogInformation("Transaction submitted to ordering pool with ID: {SubmissionId} on {Blockchain}",
                 submissionId, blockchainType);
-            
+
             return Ok(CreateResponse(submissionId, "Transaction submitted to ordering pool"));
         }
         catch (Exception ex)
@@ -221,10 +221,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var metrics = await _fairOrderingService.GetFairnessMetricsAsync(poolId, blockchain);
-            
-            Logger.LogInformation("Fairness metrics retrieved for pool {PoolId} on {Blockchain}", 
+
+            Logger.LogInformation("Fairness metrics retrieved for pool {PoolId} on {Blockchain}",
                 poolId, blockchainType);
-            
+
             return Ok(CreateResponse(metrics, "Fairness metrics retrieved successfully"));
         }
         catch (ArgumentException ex) when (ex.Message.Contains("not found"))
@@ -262,10 +262,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var pools = await _fairOrderingService.GetOrderingPoolsAsync(blockchain);
-            
-            Logger.LogInformation("Retrieved {PoolCount} ordering pools for {Blockchain}", 
+
+            Logger.LogInformation("Retrieved {PoolCount} ordering pools for {Blockchain}",
                 pools.Count(), blockchainType);
-            
+
             return Ok(CreateResponse(pools, "Ordering pools retrieved successfully"));
         }
         catch (Exception ex)
@@ -307,15 +307,15 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var success = await _fairOrderingService.UpdatePoolConfigAsync(poolId, config, blockchain);
-            
+
             if (!success)
             {
                 return NotFound(CreateErrorResponse($"Pool not found: {poolId}"));
             }
-            
-            Logger.LogInformation("Pool configuration updated successfully for {PoolId} on {Blockchain}", 
+
+            Logger.LogInformation("Pool configuration updated successfully for {PoolId} on {Blockchain}",
                 poolId, blockchainType);
-            
+
             return Ok(CreateResponse(success, "Pool configuration updated successfully"));
         }
         catch (Exception ex)
@@ -351,10 +351,10 @@ public class FairOrderingController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _fairOrderingService.AnalyzeMevRiskAsync(request, blockchain);
-            
-            Logger.LogInformation("MEV analysis completed for transaction {TransactionHash}: Risk score {RiskScore:F3}", 
+
+            Logger.LogInformation("MEV analysis completed for transaction {TransactionHash}: Risk score {RiskScore:F3}",
                 request.TransactionHash, result.MevRiskScore);
-            
+
             return Ok(CreateResponse(result, "MEV analysis completed"));
         }
         catch (Exception ex)
@@ -419,7 +419,7 @@ public class FairOrderingController : BaseApiController
         try
         {
             var health = await _fairOrderingService.GetHealthAsync();
-            
+
             var healthInfo = new
             {
                 Status = health.ToString(),
@@ -428,7 +428,7 @@ public class FairOrderingController : BaseApiController
                 Version = _fairOrderingService.Version,
                 CheckedAt = DateTime.UtcNow
             };
-            
+
             return Ok(CreateResponse(healthInfo, "Health status retrieved successfully"));
         }
         catch (Exception ex)

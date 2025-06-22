@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
+using NeoServiceLayer.Core;
 using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
@@ -307,7 +307,7 @@ public partial class FairOrderingService
     /// <param name="transactions">Transactions to order.</param>
     /// <returns>Ordered transactions.</returns>
     private async Task<List<FairOrderingModels.PendingTransaction>> OrderTransactionsInEnclaveAsync(
-        FairOrderingModels.OrderingPool pool, 
+        FairOrderingModels.OrderingPool pool,
         List<FairOrderingModels.PendingTransaction> transactions)
     {
         await Task.Delay(100); // Simulate enclave ordering
@@ -359,7 +359,7 @@ public partial class FairOrderingService
         // Simple fairness metric based on position and timing
         var timeFairness = 1.0 - (DateTime.UtcNow - transaction.SubmittedAt).TotalSeconds / 300.0; // 5 minute window
         var positionFairness = 1.0 - (double)finalPosition / totalTransactions;
-        
+
         return Math.Max(0.0, Math.Min(1.0, (timeFairness + positionFairness) / 2.0));
     }
 
@@ -437,4 +437,4 @@ public partial class FairOrderingService
         var efficiency = totalTransactions / totalTime;
         return Math.Min(1.0, efficiency / 100.0); // Normalize to 0-1 scale (100 TPS = 1.0)
     }
-} 
+}

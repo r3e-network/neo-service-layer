@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -66,7 +66,7 @@ public class AIController : BaseApiController
                 Timestamp = DateTime.UtcNow,
                 Factors = new[] { "market_sentiment", "volume_analysis", "technical_indicators" }
             };
-            
+
             Logger.LogInformation("Generated prediction for {AssetSymbol} using {ModelType} for user {UserId}",
                 request.AssetSymbol, request.ModelType, GetCurrentUserId());
 
@@ -112,7 +112,7 @@ public class AIController : BaseApiController
                 AnalyzedInEnclave = request.UseEnclave,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("Analyzed pattern using {AnalysisType} for user {UserId}",
                 request.AnalysisType, GetCurrentUserId());
 
@@ -164,7 +164,7 @@ public class AIController : BaseApiController
                     LastTrained = DateTime.UtcNow.AddDays(-3)
                 }
             };
-            
+
             return Ok(CreateResponse(models, "Models retrieved successfully"));
         }
         catch (Exception ex)
@@ -501,4 +501,4 @@ public class ModelTrainingResult
     public DateTime Timestamp { get; set; }
 }
 
-#endregion 
+#endregion

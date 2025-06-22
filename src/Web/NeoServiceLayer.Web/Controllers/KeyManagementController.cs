@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.KeyManagement;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Web.Controllers;
 

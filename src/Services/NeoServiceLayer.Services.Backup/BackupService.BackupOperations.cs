@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup.Models;
 
@@ -238,13 +238,13 @@ public partial class BackupService
             await gzipStream.WriteAsync(data.AsMemory(0, data.Length));
             await gzipStream.FlushAsync();
         }
-        
+
         var compressed = output.ToArray();
         var compressionRatio = (double)compressed.Length / data.Length;
-        
+
         Logger.LogInformation("GZip compression: {OriginalSize} -> {CompressedSize} bytes (ratio: {Ratio:P2})",
             data.Length, compressed.Length, compressionRatio);
-            
+
         return compressed;
     }
 
@@ -260,18 +260,18 @@ public partial class BackupService
         {
             var entry = zip.CreateEntry("backup.dat", System.IO.Compression.CompressionLevel.SmallestSize);
             entry.LastWriteTime = DateTimeOffset.UtcNow;
-            
+
             using var entryStream = entry.Open();
             await entryStream.WriteAsync(data.AsMemory(0, data.Length));
             await entryStream.FlushAsync();
         }
-        
+
         var compressed = output.ToArray();
         var compressionRatio = (double)compressed.Length / data.Length;
-        
+
         Logger.LogInformation("ZIP compression: {OriginalSize} -> {CompressedSize} bytes (ratio: {Ratio:P2})",
             data.Length, compressed.Length, compressionRatio);
-            
+
         return compressed;
     }
 
@@ -288,13 +288,13 @@ public partial class BackupService
             await deflateStream.WriteAsync(data.AsMemory(0, data.Length));
             await deflateStream.FlushAsync();
         }
-        
+
         var compressed = output.ToArray();
         var compressionRatio = (double)compressed.Length / data.Length;
-        
+
         Logger.LogInformation("Deflate compression: {OriginalSize} -> {CompressedSize} bytes (ratio: {Ratio:P2})",
             data.Length, compressed.Length, compressionRatio);
-            
+
         return compressed;
     }
 
@@ -311,13 +311,13 @@ public partial class BackupService
             await brotliStream.WriteAsync(data.AsMemory(0, data.Length));
             await brotliStream.FlushAsync();
         }
-        
+
         var compressed = output.ToArray();
         var compressionRatio = (double)compressed.Length / data.Length;
-        
+
         Logger.LogInformation("Brotli compression: {OriginalSize} -> {CompressedSize} bytes (ratio: {Ratio:P2})",
             data.Length, compressed.Length, compressionRatio);
-            
+
         return compressed;
     }
 
@@ -395,7 +395,7 @@ public partial class BackupService
 
         // In production, this would store to actual storage backends
         var storageType = request.StorageLocation ?? "local";
-        
+
         return storageType.ToLowerInvariant() switch
         {
             "local" => $"file://backups/{backupId}.bak",
@@ -602,7 +602,7 @@ public partial class BackupService
 
             var finalEncryptedData = finalStream.ToArray();
 
-            Logger.LogDebug("Data encrypted securely with authentication: {OriginalSize} -> {EncryptedSize} bytes", 
+            Logger.LogDebug("Data encrypted securely with authentication: {OriginalSize} -> {EncryptedSize} bytes",
                 data.Length, finalEncryptedData.Length);
 
             return finalEncryptedData;
@@ -625,12 +625,12 @@ public partial class BackupService
     private async Task<string> StoreToSecureStorageBackendAsync(string backupId, byte[] data, BackupRequest request)
     {
         var baseLocation = await StoreToStorageBackendAsync(backupId, data, request);
-        
+
         // Add security metadata to the storage location
         var secureLocation = $"{baseLocation}?secure=true&checksum={ComputeChecksum(data)[..16]}";
-        
+
         Logger.LogDebug("Stored backup to secure storage: {SecureLocation}", secureLocation);
-        
+
         return secureLocation;
     }
 
@@ -647,7 +647,7 @@ public partial class BackupService
         {
             // Simulate storage verification
             await Task.Delay(50);
-            
+
             var checksum = ComputeChecksum(originalData);
             Logger.LogDebug("Storage integrity verified for backup {BackupId} at {StorageLocation} with checksum {Checksum}",
                 backupId, storageLocation, checksum[..16] + "...");

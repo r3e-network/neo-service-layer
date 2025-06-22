@@ -1,14 +1,14 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.Randomness;
-using NeoServiceLayer.Services.Oracle;
 using NeoServiceLayer.Services.AbstractAccount;
+using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Services.Randomness;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
@@ -27,21 +27,21 @@ public class SmartContractIntegrationTests : IDisposable
     public SmartContractIntegrationTests()
     {
         var services = new ServiceCollection();
-        
+
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
         services.AddSingleton<IRandomnessService, RandomnessService>();
         services.AddSingleton<IOracleService, OracleService>();
         services.AddSingleton<IAbstractAccountService, AbstractAccountService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         _randomnessService = _serviceProvider.GetRequiredService<IRandomnessService>();
         _oracleService = _serviceProvider.GetRequiredService<IOracleService>();
         _abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         _logger = _serviceProvider.GetRequiredService<ILogger<SmartContractIntegrationTests>>();
-        
+
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
 

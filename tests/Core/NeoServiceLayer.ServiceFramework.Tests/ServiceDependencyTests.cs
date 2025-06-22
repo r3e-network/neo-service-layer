@@ -1,5 +1,5 @@
+﻿using Moq;
 using NeoServiceLayer.Core;
-using Moq;
 using Xunit;
 
 namespace NeoServiceLayer.ServiceFramework.Tests;

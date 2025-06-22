@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.AI.PatternRecognition.Models;
+﻿namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
 /// <summary>
 /// Represents classification statistics.

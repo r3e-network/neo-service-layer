@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Tee.Enclave;
+﻿namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
 /// Interface for enclave storage services.
@@ -36,4 +36,4 @@ public interface IEnclaveStorageService
     /// <param name="key">The storage key.</param>
     /// <returns>Metadata as JSON string.</returns>
     Task<string> GetMetadataAsync(string key);
-} 
+}

@@ -1,11 +1,11 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.Core;
 using CoreModels = NeoServiceLayer.Core.Models;
-using NeoServiceLayer.AI.Prediction;
 using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -449,4 +449,4 @@ public class PredictionController : BaseApiController
             return HandleException(ex, "DeleteModel");
         }
     }
-} 
+}

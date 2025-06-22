@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -106,4 +106,4 @@ public class AutomationJob
     /// Gets or sets the maximum number of retries allowed.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
-} 
+}

@@ -1,19 +1,19 @@
+﻿using System.Text.Json;
+using AutoFixture;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.AI.Prediction.Models;
-using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
-using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Enclave;
-using NeoServiceLayer.TestInfrastructure;
+using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
+using NeoServiceLayer.TestInfrastructure;
 using Xunit;
-using FluentAssertions;
-using AutoFixture;
-using System.Text.Json;
 using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
@@ -277,7 +277,7 @@ public class PredictionAdvancedTests : IDisposable
         // Assert
         modelId.Should().NotBeNullOrEmpty();
         modelId.Should().StartWith("pred_model_");
-        
+
         _mockStorageProvider.Verify(x => x.StoreAsync(
             It.Is<string>(key => key.Contains("prediction_model") && key.Contains(modelId)),
             It.IsAny<byte[]>(),
@@ -529,7 +529,7 @@ public class PredictionAdvancedTests : IDisposable
         result.PredictedValues.Should().HaveCount(8760);
         result.Confidence.Should().BeGreaterThan(0.3); // Lower confidence for long-term predictions
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(45000); // 45 seconds max
-        
+
         // Verify degradation handling
         result.ConfidenceDegradation.Should().NotBeEmpty();
         result.ConfidenceDegradation.First().Should().BeGreaterThan(result.ConfidenceDegradation.Last());
@@ -592,7 +592,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         // Combine all text data into a single text for Core sentiment analysis
         var allText = string.Join("\n", newsData.Concat(socialMediaData));
-        
+
         return new CoreModels.SentimentAnalysisRequest
         {
             Text = allText,
@@ -812,7 +812,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         var random = new Random(42);
         var basePrice = 10.0;
-        
+
         return Enumerable.Range(0, count)
             .Select(i =>
             {
@@ -833,7 +833,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         var random = new Random(42);
         var basePrice = 15.0;
-        
+
         return Enumerable.Range(0, days)
             .Select(i =>
             {
@@ -856,7 +856,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         var random = new Random(symbol.GetHashCode());
         var basePrice = symbol == "NEO" ? 15.0m : symbol == "GAS" ? 4.5m : 2500.0m;
-        
+
         return Enumerable.Range(0, count)
             .Select(i => Math.Max(0.01m, basePrice + (decimal)(random.NextDouble() - 0.5) * basePrice * 0.1m))
             .ToArray();
@@ -1037,7 +1037,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
             .ReturnsAsync(true);
-            
+
         _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
             {

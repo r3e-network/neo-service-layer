@@ -1,6 +1,6 @@
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle;
 
@@ -57,10 +57,10 @@ public class OracleController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var dataSourceId = await _oracleService.CreateDataSourceAsync(request, blockchain);
-            
-            _logger.LogInformation("Data source created with ID: {DataSourceId} on {Blockchain}", 
+
+            _logger.LogInformation("Data source created with ID: {DataSourceId} on {Blockchain}",
                 dataSourceId, blockchainType);
-            
+
             return Ok(CreateResponse(dataSourceId, "Data source created successfully"));
         }
         catch (ArgumentException ex)
@@ -109,15 +109,15 @@ public class OracleController : BaseApiController
                 FetchLatest = true
             };
             var data = await _oracleService.GetDataAsync(dataRequest, blockchain);
-            
+
             if (data == null)
             {
                 return NotFound(CreateErrorResponse($"Data source not found: {dataSourceId}"));
             }
-            
-            _logger.LogInformation("Data retrieved from source: {DataSourceId} on {Blockchain}", 
+
+            _logger.LogInformation("Data retrieved from source: {DataSourceId} on {Blockchain}",
                 dataSourceId, blockchainType);
-            
+
             return Ok(CreateResponse(data, "Data retrieved successfully"));
         }
         catch (Exception ex)
@@ -160,15 +160,15 @@ public class OracleController : BaseApiController
             update.DataSourceId = dataSourceId; // Set the DataSourceId from route parameter
             var result = await _oracleService.UpdateDataSourceAsync(update, blockchain);
             var success = result.Success;
-            
+
             if (!success)
             {
                 return NotFound(CreateErrorResponse($"Data source not found: {dataSourceId}"));
             }
-            
-            _logger.LogInformation("Data source updated: {DataSourceId} on {Blockchain}", 
+
+            _logger.LogInformation("Data source updated: {DataSourceId} on {Blockchain}",
                 dataSourceId, blockchainType);
-            
+
             return Ok(CreateResponse(success, "Data source updated successfully"));
         }
         catch (ArgumentException ex)
@@ -217,15 +217,15 @@ public class OracleController : BaseApiController
             };
             var result = await _oracleService.DeleteDataSourceAsync(deleteRequest, blockchain);
             var success = result.Success;
-            
+
             if (!success)
             {
                 return NotFound(CreateErrorResponse($"Data source not found: {dataSourceId}"));
             }
-            
-            _logger.LogInformation("Data source deleted: {DataSourceId} from {Blockchain}", 
+
+            _logger.LogInformation("Data source deleted: {DataSourceId} from {Blockchain}",
                 dataSourceId, blockchainType);
-            
+
             return Ok(CreateResponse(success, "Data source deleted successfully"));
         }
         catch (Exception ex)

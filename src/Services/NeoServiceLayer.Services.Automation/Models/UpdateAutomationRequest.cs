@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Automation;
+﻿namespace NeoServiceLayer.Services.Automation;
 
 /// <summary>
 /// Request model for updating an automation.

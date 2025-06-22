@@ -1,11 +1,11 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
-using NeoServiceLayer.Services.Monitoring;
-using NeoServiceLayer.TestInfrastructure;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.TestInfrastructure;
+using Xunit;
 
 namespace NeoServiceLayer.Services.Monitoring.Tests;
 
@@ -19,7 +19,7 @@ public class MonitoringServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<MonitoringService>>();
         _configurationMock = new Mock<IServiceConfiguration>();
-        
+
         // MonitoringService expects IEnclaveManager as second parameter
         _service = new MonitoringService(_loggerMock.Object, MockEnclaveManager.Object, _configurationMock.Object);
     }

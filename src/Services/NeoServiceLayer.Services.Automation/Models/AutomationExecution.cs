@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Automation;
+﻿namespace NeoServiceLayer.Services.Automation;
 
 /// <summary>
 /// Represents the execution of an automation job.
@@ -69,4 +69,4 @@ public class AutomationExecution
     /// Gets or sets additional metadata for the execution.
     /// </summary>
     public Dictionary<string, object>? Metadata { get; set; }
-} 
+}

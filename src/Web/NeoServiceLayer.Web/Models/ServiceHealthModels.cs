@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Web.Models;
 
@@ -439,4 +439,4 @@ public enum LogLevel
     /// Critical level.
     /// </summary>
     Critical
-} 
+}

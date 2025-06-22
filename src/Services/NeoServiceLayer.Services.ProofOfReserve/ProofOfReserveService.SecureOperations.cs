@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
@@ -16,8 +16,8 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>The asset ID.</returns>
     public async Task<SecureOperationResult<string>> RegisterAssetSecureAsync(
-        AssetRegistrationRequest request, 
-        BlockchainType blockchainType, 
+        AssetRegistrationRequest request,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentNullException.ThrowIfNull(request);
@@ -60,7 +60,7 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var assetId = await RegisterAssetWithResilienceAsync(request, blockchainType);
 
-            Logger.LogInformation("Asset {AssetId} registered securely by client {ClientId}", 
+            Logger.LogInformation("Asset {AssetId} registered securely by client {ClientId}",
                 assetId, securityContext.ClientId);
 
             return SecureOperationResult<string>.CreateSuccess(assetId);
@@ -82,8 +82,8 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>The proof of reserve.</returns>
     public async Task<SecureOperationResult<Core.ProofOfReserve>> GenerateProofSecureAsync(
-        string assetId, 
-        BlockchainType blockchainType, 
+        string assetId,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
@@ -122,14 +122,14 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var proof = await GenerateProofWithResilienceAsync(assetId, blockchainType);
 
-            Logger.LogInformation("Proof {ProofId} generated securely for asset {AssetId} by client {ClientId}", 
+            Logger.LogInformation("Proof {ProofId} generated securely for asset {AssetId} by client {ClientId}",
                 proof.ProofId, assetId, securityContext.ClientId);
 
             return SecureOperationResult<Core.ProofOfReserve>.CreateSuccess(proof);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error in secure proof generation for asset {AssetId} by client {ClientId}", 
+            Logger.LogError(ex, "Error in secure proof generation for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<Core.ProofOfReserve>.CreateFailure(
                 "Internal error during proof generation",
@@ -146,9 +146,9 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>True if update was successful.</returns>
     public async Task<SecureOperationResult<bool>> UpdateReserveDataSecureAsync(
-        string assetId, 
-        ReserveUpdateRequest reserveData, 
-        BlockchainType blockchainType, 
+        string assetId,
+        ReserveUpdateRequest reserveData,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
@@ -201,14 +201,14 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var success = await UpdateReserveDataWithResilienceAsync(assetId, reserveData, blockchainType);
 
-            Logger.LogInformation("Reserve data updated securely for asset {AssetId} by client {ClientId}: {Success}", 
+            Logger.LogInformation("Reserve data updated securely for asset {AssetId} by client {ClientId}: {Success}",
                 assetId, securityContext.ClientId, success);
 
             return SecureOperationResult<bool>.CreateSuccess(success);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error in secure reserve data update for asset {AssetId} by client {ClientId}", 
+            Logger.LogError(ex, "Error in secure reserve data update for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<bool>.CreateFailure(
                 "Internal error during reserve data update",
@@ -224,8 +224,8 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>The reserve status info.</returns>
     public async Task<SecureOperationResult<ReserveStatusInfo>> GetReserveStatusSecureAsync(
-        string assetId, 
-        BlockchainType blockchainType, 
+        string assetId,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
@@ -264,7 +264,7 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var statusInfo = await GetReserveStatusWithCachingAsync(assetId, blockchainType);
 
-            Logger.LogDebug("Reserve status retrieved securely for asset {AssetId} by client {ClientId}", 
+            Logger.LogDebug("Reserve status retrieved securely for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
 
             return SecureOperationResult<ReserveStatusInfo>.CreateSuccess(statusInfo);
@@ -278,7 +278,7 @@ public partial class ProofOfReserveService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error getting reserve status for asset {AssetId} by client {ClientId}", 
+            Logger.LogError(ex, "Error getting reserve status for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<ReserveStatusInfo>.CreateFailure(
                 "Internal error retrieving reserve status",
@@ -296,10 +296,10 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>The audit report.</returns>
     public async Task<SecureOperationResult<AuditReport>> GenerateAuditReportSecureAsync(
-        string assetId, 
-        DateTime from, 
-        DateTime to, 
-        BlockchainType blockchainType, 
+        string assetId,
+        DateTime from,
+        DateTime to,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
@@ -354,14 +354,14 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var auditReport = await GenerateAuditReportWithCachingAsync(assetId, from, to, blockchainType);
 
-            Logger.LogInformation("Audit report {ReportId} generated securely for asset {AssetId} by client {ClientId}", 
+            Logger.LogInformation("Audit report {ReportId} generated securely for asset {AssetId} by client {ClientId}",
                 auditReport.ReportId, assetId, securityContext.ClientId);
 
             return SecureOperationResult<AuditReport>.CreateSuccess(auditReport);
         }
         catch (ArgumentException ex)
         {
-            Logger.LogWarning(ex, "Asset {AssetId} not found for audit report by client {ClientId}", 
+            Logger.LogWarning(ex, "Asset {AssetId} not found for audit report by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<AuditReport>.CreateFailure(
                 "Asset not found",
@@ -369,7 +369,7 @@ public partial class ProofOfReserveService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error generating audit report for asset {AssetId} by client {ClientId}", 
+            Logger.LogError(ex, "Error generating audit report for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<AuditReport>.CreateFailure(
                 "Internal error generating audit report",
@@ -386,9 +386,9 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>True if the threshold was set successfully.</returns>
     public async Task<SecureOperationResult<bool>> SetAlertThresholdSecureAsync(
-        string assetId, 
-        decimal threshold, 
-        BlockchainType blockchainType, 
+        string assetId,
+        decimal threshold,
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
@@ -435,14 +435,14 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var success = await SetAlertThresholdAsync(assetId, threshold, blockchainType);
 
-            Logger.LogInformation("Alert threshold {Threshold} set securely for asset {AssetId} by client {ClientId}", 
+            Logger.LogInformation("Alert threshold {Threshold} set securely for asset {AssetId} by client {ClientId}",
                 threshold, assetId, securityContext.ClientId);
 
             return SecureOperationResult<bool>.CreateSuccess(success);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error setting alert threshold for asset {AssetId} by client {ClientId}", 
+            Logger.LogError(ex, "Error setting alert threshold for asset {AssetId} by client {ClientId}",
                 assetId, securityContext.ClientId);
             return SecureOperationResult<bool>.CreateFailure(
                 "Internal error setting alert threshold",
@@ -457,7 +457,7 @@ public partial class ProofOfReserveService
     /// <param name="securityContext">The security context.</param>
     /// <returns>The active alerts.</returns>
     public async Task<SecureOperationResult<IEnumerable<ReserveAlert>>> GetActiveAlertsSecureAsync(
-        BlockchainType blockchainType, 
+        BlockchainType blockchainType,
         SecurityContext securityContext)
     {
         ArgumentNullException.ThrowIfNull(securityContext);
@@ -484,14 +484,14 @@ public partial class ProofOfReserveService
             // Execute the secure operation
             var alerts = await GetActiveAlertsWithCachingAsync(blockchainType);
 
-            Logger.LogDebug("Active alerts retrieved securely for {Blockchain} by client {ClientId}", 
+            Logger.LogDebug("Active alerts retrieved securely for {Blockchain} by client {ClientId}",
                 blockchainType, securityContext.ClientId);
 
             return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateSuccess(alerts);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error getting active alerts for {Blockchain} by client {ClientId}", 
+            Logger.LogError(ex, "Error getting active alerts for {Blockchain} by client {ClientId}",
                 blockchainType, securityContext.ClientId);
             return SecureOperationResult<IEnumerable<ReserveAlert>>.CreateFailure(
                 "Internal error retrieving active alerts",

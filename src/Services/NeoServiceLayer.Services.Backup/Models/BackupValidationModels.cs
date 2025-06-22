@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Validation type enumeration.
@@ -178,10 +178,10 @@ public class BackupValidationResult
     /// <summary>
     /// Gets or sets when the validation was performed (alias for ValidationTime).
     /// </summary>
-    public DateTime ValidatedAt 
-    { 
-        get => ValidationTime; 
-        set => ValidationTime = value; 
+    public DateTime ValidatedAt
+    {
+        get => ValidationTime;
+        set => ValidationTime = value;
     }
 
     /// <summary>

@@ -1,8 +1,8 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.AI.PatternRecognition.Models;
-using System.Text.Json;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -410,7 +410,7 @@ public partial class PatternRecognitionService
         var preprocessedData = await PreprocessInputsAsync(inputData, AIModelType.Classification);
 
         // Run classification inference  
-        var aiModel = new AIModel 
+        var aiModel = new AIModel
         {
             ModelId = model.Id ?? model.ModelId,
             Type = AIModelType.Classification,

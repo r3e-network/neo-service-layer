@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 // Sentiment Analysis Models
 public class SentimentAnalysisRequest

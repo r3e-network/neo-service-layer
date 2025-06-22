@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -19,7 +19,7 @@ public class EnclaveStorageService : IEnclaveStorageService
     {
         ArgumentNullException.ThrowIfNull(enclaveWrapper);
         ArgumentNullException.ThrowIfNull(logger);
-        
+
         _enclaveWrapper = enclaveWrapper;
         _logger = logger;
     }
@@ -91,4 +91,4 @@ public class EnclaveStorageService : IEnclaveStorageService
             throw;
         }
     }
-} 
+}

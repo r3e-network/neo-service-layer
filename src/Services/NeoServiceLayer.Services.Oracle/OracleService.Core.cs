@@ -1,11 +1,11 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.Oracle.Models;
-using NeoServiceLayer.Services.Oracle.Configuration;
-using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Oracle.Configuration;
+using NeoServiceLayer.Services.Oracle.Models;
+using NeoServiceLayer.Tee.Host.Services;
 using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
@@ -47,7 +47,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         ArgumentNullException.ThrowIfNull(enclaveManager);
         ArgumentNullException.ThrowIfNull(blockchainClientFactory);
         ArgumentNullException.ThrowIfNull(httpClientService);
-        
+
         _configuration = configuration;
         _enclaveManager = enclaveManager;
         _blockchainClientFactory = blockchainClientFactory;
@@ -56,7 +56,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         _successCount = 0;
         _failureCount = 0;
         _lastRequestTime = DateTime.MinValue;
-        
+
         InitializeService();
     }
 
@@ -72,7 +72,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     {
         ArgumentNullException.ThrowIfNull(dependencies);
         ArgumentNullException.ThrowIfNull(options);
-        
+
         _configuration = options.Configuration ?? throw new ArgumentException("Configuration is required", nameof(options));
         _enclaveManager = dependencies.EnclaveManager;
         _blockchainClientFactory = dependencies.BlockchainClientFactory;
@@ -81,7 +81,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         _successCount = 0;
         _failureCount = 0;
         _lastRequestTime = DateTime.MinValue;
-        
+
         InitializeService();
     }
 
@@ -179,7 +179,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             catch (Exception enclaveEx)
             {
                 Logger.LogWarning(enclaveEx, "Primary enclave data fetch failed, attempting fallback");
-                
+
                 // Try the simpler GetDataAsync method as fallback
                 try
                 {
@@ -508,7 +508,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
             var enhancedData = System.Text.Json.JsonSerializer.Serialize(metadata);
 
-            Logger.LogDebug("Added integrity metadata to oracle data: hash={DataHash}, block={BlockHeight}", 
+            Logger.LogDebug("Added integrity metadata to oracle data: hash={DataHash}, block={BlockHeight}",
                 dataHashHex[..16] + "...", blockHeight);
 
             return enhancedData;

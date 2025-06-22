@@ -1,7 +1,7 @@
+﻿using System.Text.RegularExpressions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Notification.Models;
-using System.Text.RegularExpressions;
 
 namespace NeoServiceLayer.Services.Notification;
 

@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Voting;
 using NeoServiceLayer.Services.Voting.Models;
@@ -32,7 +32,7 @@ public class VotingController : ControllerBase
 
     // All other methods are commented out as they call non-existent service methods
     // TODO: Implement the actual voting service methods and uncomment these endpoints
-    
+
     /*
     [HttpPost("proposal")]
     public async Task<IActionResult> CreateProposal([FromBody] CreateProposalRequest request)

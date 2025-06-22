@@ -1,7 +1,7 @@
-using NeoServiceLayer.Api.Controllers;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Net;
 using System.Text.Json;
+using NeoServiceLayer.Api.Controllers;
 
 namespace NeoServiceLayer.Api.Middleware;
 
@@ -58,7 +58,7 @@ public class ErrorHandlingMiddleware
         // Log the exception with full context
         _logger.LogError(exception,
             "Unhandled middleware exception. CorrelationId: {CorrelationId}, User: {UserId}, Method: {Method}, Path: {Path}, Query: {Query}, RemoteIP: {RemoteIP}",
-            correlationId, userId, context.Request.Method, context.Request.Path, 
+            correlationId, userId, context.Request.Method, context.Request.Path,
             context.Request.QueryString, context.Connection.RemoteIpAddress);
 
         // Ensure response hasn't started

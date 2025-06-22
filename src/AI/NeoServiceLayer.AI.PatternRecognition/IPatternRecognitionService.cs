@@ -1,5 +1,5 @@
+﻿using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.AI.PatternRecognition.Models;
 using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition;

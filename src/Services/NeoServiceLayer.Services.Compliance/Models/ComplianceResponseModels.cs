@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Compliance.Models;
+﻿namespace NeoServiceLayer.Services.Compliance.Models;
 
 /// <summary>
 /// Result model for compliance check operations.
@@ -661,4 +661,4 @@ public class ComplianceRule
     /// Gets or sets the last modified by user.
     /// </summary>
     public string LastModifiedBy { get; set; } = string.Empty;
-} 
+}

@@ -1,8 +1,8 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.AI.PatternRecognition.Models;
-using System.Text.Json;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 

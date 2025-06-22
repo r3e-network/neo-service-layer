@@ -1,9 +1,9 @@
+﻿using System.Runtime.CompilerServices;
+using System.Security;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.ServiceFramework;
-using System.Runtime.CompilerServices;
-using System.Security;
 
 namespace NeoServiceLayer.ServiceFramework.Security;
 
@@ -15,7 +15,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
     protected readonly ISecurityLogger SecurityLogger;
     private readonly string _serviceName;
 
-    protected SecurityAwareServiceBase(ILogger logger, ISecurityLogger securityLogger) 
+    protected SecurityAwareServiceBase(ILogger logger, ISecurityLogger securityLogger)
         : base("SecurityAware", "1.0", "Security-aware service base", logger)
     {
         SecurityLogger = securityLogger ?? throw new ArgumentNullException(nameof(securityLogger));
@@ -25,7 +25,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
     /// <summary>
     /// Logs a security event with service context.
     /// </summary>
-    protected void LogSecurityEvent(SecurityEventType eventType, string message, 
+    protected void LogSecurityEvent(SecurityEventType eventType, string message,
         string? clientId = null, Dictionary<string, object>? additionalData = null,
         [CallerMemberName] string? operationName = null)
     {
@@ -74,7 +74,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         }
         else
         {
-            LogSecurityEvent(SecurityEventType.Authorization, 
+            LogSecurityEvent(SecurityEventType.Authorization,
                 $"Authorization granted for user {userId} to {action} on {resource}", clientId);
         }
     }
@@ -153,8 +153,8 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         {
             ServiceName = _serviceName,
             ClientId = clientId,
-            AdditionalData = recordCount.HasValue 
-                ? new Dictionary<string, object> { ["RecordCount"] = recordCount.Value } 
+            AdditionalData = recordCount.HasValue
+                ? new Dictionary<string, object> { ["RecordCount"] = recordCount.Value }
                 : null
         };
 
@@ -199,28 +199,28 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         string validationType, string? clientId = null)
     {
         var (isValid, error) = validator(input);
-        
+
         if (!isValid)
         {
-            LogValidationFailure(validationType, error ?? "Validation failed", 
+            LogValidationFailure(validationType, error ?? "Validation failed",
                 new Dictionary<string, object> { ["Input"] = input?.ToString() ?? "null" }, clientId);
-            
+
             // Check for potential security threats in validation failures
             if (error?.Contains("script", StringComparison.OrdinalIgnoreCase) ?? false)
             {
-                LogSuspiciousActivity("Potential XSS attempt detected in input validation", 
+                LogSuspiciousActivity("Potential XSS attempt detected in input validation",
                     SuspiciousActivityType.XssAttempt, clientId);
             }
             else if ((error?.Contains("sql", StringComparison.OrdinalIgnoreCase) ?? false) ||
                      (error?.Contains("'; ", StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                LogSuspiciousActivity("Potential SQL injection attempt detected in input validation", 
+                LogSuspiciousActivity("Potential SQL injection attempt detected in input validation",
                     SuspiciousActivityType.SqlInjection, clientId);
             }
             else if ((error?.Contains("../", StringComparison.OrdinalIgnoreCase) ?? false) ||
                      (error?.Contains("..\\", StringComparison.OrdinalIgnoreCase) ?? false))
             {
-                LogSuspiciousActivity("Potential path traversal attempt detected in input validation", 
+                LogSuspiciousActivity("Potential path traversal attempt detected in input validation",
                     SuspiciousActivityType.PathTraversal, clientId);
             }
         }
@@ -239,18 +239,18 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         [CallerMemberName] string? operationName = null)
     {
         var startTime = DateTime.UtcNow;
-        
+
         try
         {
-            Logger.LogDebug("Starting secure operation: {Operation} for user {UserId}", 
+            Logger.LogDebug("Starting secure operation: {Operation} for user {UserId}",
                 operationDescription, userId ?? "Unknown");
-            
+
             var result = await operation();
-            
+
             var duration = DateTime.UtcNow - startTime;
-            Logger.LogInformation("Secure operation completed: {Operation} in {Duration}ms", 
+            Logger.LogInformation("Secure operation completed: {Operation} in {Duration}ms",
                 operationDescription, duration.TotalMilliseconds);
-            
+
             return result;
         }
         catch (UnauthorizedAccessException ex)
@@ -261,7 +261,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         }
         catch (SecurityException ex)
         {
-            LogSecurityEvent(SecurityEventType.SecurityViolation, 
+            LogSecurityEvent(SecurityEventType.SecurityViolation,
                 $"Security violation in {operationDescription}: {ex.Message}", clientId);
             Logger.LogError(ex, "Security violation in operation: {Operation}", operationDescription);
             throw;
@@ -269,7 +269,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
         catch (Exception ex)
         {
             var duration = DateTime.UtcNow - startTime;
-            Logger.LogError(ex, "Operation failed: {Operation} after {Duration}ms", 
+            Logger.LogError(ex, "Operation failed: {Operation} after {Duration}ms",
                 operationDescription, duration.TotalMilliseconds);
             throw;
         }
@@ -278,7 +278,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
     /// <summary>
     /// Checks rate limit with security logging.
     /// </summary>
-    protected async Task<bool> CheckRateLimitAsync(string clientId, string operation, 
+    protected async Task<bool> CheckRateLimitAsync(string clientId, string operation,
         Func<Task<(bool allowed, int attemptCount)>> rateLimitCheck)
     {
         var (allowed, attemptCount) = await rateLimitCheck();

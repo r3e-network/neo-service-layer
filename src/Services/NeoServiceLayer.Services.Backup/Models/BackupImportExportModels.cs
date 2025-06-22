@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Export destination type enumeration.
@@ -131,10 +131,10 @@ public class ExportBackupRequest
     /// <summary>
     /// Gets or sets the export format (alias for Format).
     /// </summary>
-    public ExportFormat ExportFormat 
-    { 
-        get => Format; 
-        set => Format = value; 
+    public ExportFormat ExportFormat
+    {
+        get => Format;
+        set => Format = value;
     }
 
     /// <summary>
@@ -238,10 +238,10 @@ public class BackupExportResult
     /// <summary>
     /// Gets or sets the export path (alias for ExportLocation).
     /// </summary>
-    public string ExportPath 
-    { 
-        get => ExportLocation; 
-        set => ExportLocation = value; 
+    public string ExportPath
+    {
+        get => ExportLocation;
+        set => ExportLocation = value;
     }
 
     /// <summary>
@@ -262,10 +262,10 @@ public class BackupExportResult
     /// <summary>
     /// Gets or sets when the export was completed (alias for CompletionTime).
     /// </summary>
-    public DateTime? ExportedAt 
-    { 
-        get => CompletionTime; 
-        set => CompletionTime = value; 
+    public DateTime? ExportedAt
+    {
+        get => CompletionTime;
+        set => CompletionTime = value;
     }
 
     /// <summary>
@@ -390,10 +390,10 @@ public class BackupImportResult
     /// <summary>
     /// Gets or sets the backup ID (alias for ImportedBackupId).
     /// </summary>
-    public string BackupId 
-    { 
-        get => ImportedBackupId; 
-        set => ImportedBackupId = value; 
+    public string BackupId
+    {
+        get => ImportedBackupId;
+        set => ImportedBackupId = value;
     }
 
     /// <summary>
@@ -424,10 +424,10 @@ public class BackupImportResult
     /// <summary>
     /// Gets or sets when the import was completed (alias for CompletionTime).
     /// </summary>
-    public DateTime? ImportedAt 
-    { 
-        get => CompletionTime; 
-        set => CompletionTime = value; 
+    public DateTime? ImportedAt
+    {
+        get => CompletionTime;
+        set => CompletionTime = value;
     }
 
     /// <summary>

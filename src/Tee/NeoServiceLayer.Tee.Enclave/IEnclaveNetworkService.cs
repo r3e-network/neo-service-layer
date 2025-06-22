@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Tee.Enclave;
+﻿namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
 /// Interface for enclave network services.
@@ -27,4 +27,4 @@ public interface IEnclaveNetworkService
     /// </summary>
     /// <returns>Network statistics as JSON string.</returns>
     Task<string> GetNetworkStatsAsync();
-} 
+}

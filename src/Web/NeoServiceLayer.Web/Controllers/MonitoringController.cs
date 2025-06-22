@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Services.Monitoring.Models;
@@ -381,4 +381,4 @@ public class MonitoringController : BaseApiController
             return HandleException(ex, "StopMonitoring");
         }
     }
-} 
+}

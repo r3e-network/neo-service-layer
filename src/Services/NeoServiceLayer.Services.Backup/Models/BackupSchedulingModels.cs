@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Schedule type enumeration.
@@ -151,10 +151,10 @@ public class ScheduledBackupResult
     /// <summary>
     /// Gets or sets the next run time (alias for NextExecutionTime).
     /// </summary>
-    public DateTime? NextRunTime 
-    { 
-        get => NextExecutionTime; 
-        set => NextExecutionTime = value; 
+    public DateTime? NextRunTime
+    {
+        get => NextExecutionTime;
+        set => NextExecutionTime = value;
     }
 
     /// <summary>
@@ -212,10 +212,10 @@ public class BackupStatisticsResult
     /// <summary>
     /// Gets or sets the statistics (alias for Overall).
     /// </summary>
-    public OverallStatistics Statistics 
-    { 
-        get => Overall; 
-        set => Overall = value; 
+    public OverallStatistics Statistics
+    {
+        get => Overall;
+        set => Overall = value;
     }
 
     /// <summary>

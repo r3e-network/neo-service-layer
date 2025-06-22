@@ -1,6 +1,6 @@
+﻿using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.AI.Prediction.Models;
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -80,19 +80,19 @@ public partial class PredictionService
 
         // 1. Lexicon-based analysis with weighted sentiment dictionaries
         var lexiconScores = await AnalyzeLexiconBasedSentimentAsync(words);
-        
+
         // 2. N-gram pattern analysis for context-aware sentiment
         var ngramScores = await AnalyzeNgramPatternsAsync(preprocessedText);
-        
+
         // 3. Syntactic dependency analysis for more accurate sentiment
         var syntacticScores = await AnalyzeSyntacticDependencyAsync(preprocessedText);
-        
+
         // 4. Domain-specific financial sentiment analysis
         var financialScores = await AnalyzeFinancialSentimentAsync(words);
-        
+
         // 5. Ensemble weighted combination with confidence scoring
         var ensembleScores = CombineEnsembleScores(lexiconScores, ngramScores, syntacticScores, financialScores);
-        
+
         return ensembleScores;
     }
 
@@ -102,7 +102,7 @@ public partial class PredictionService
     private async Task<SentimentScores> AnalyzeLexiconBasedSentimentAsync(string[] words)
     {
         await Task.CompletedTask;
-        
+
         // Advanced sentiment lexicons with weighted scores
         var positiveLexicon = new Dictionary<string, double> {
             // Financial/Market terms
@@ -146,12 +146,12 @@ public partial class PredictionService
             double modifier = 1.0;
 
             // Check for negation in previous 2 words
-            if (i > 0 && IsNegation(words[i-1])) modifier *= -0.8;
-            if (i > 1 && IsNegation(words[i-2])) modifier *= -0.6;
+            if (i > 0 && IsNegation(words[i - 1])) modifier *= -0.8;
+            if (i > 1 && IsNegation(words[i - 2])) modifier *= -0.6;
 
             // Check for intensity modifiers
-            if (i > 0 && IsIntensifier(words[i-1])) modifier *= 1.5;
-            if (i > 0 && IsDiminisher(words[i-1])) modifier *= 0.5;
+            if (i > 0 && IsIntensifier(words[i - 1])) modifier *= 1.5;
+            if (i > 0 && IsDiminisher(words[i - 1])) modifier *= 0.5;
 
             if (positiveLexicon.TryGetValue(word, out var posWeight))
             {
@@ -182,14 +182,14 @@ public partial class PredictionService
             Neutral = Math.Max(0, neutralScore / totalWeight)
         };
     }
-    
+
     /// <summary>
     /// Analyzes sentiment using N-gram patterns for context awareness
     /// </summary>
     private async Task<SentimentScores> AnalyzeNgramPatternsAsync(string text)
     {
         await Task.CompletedTask;
-        
+
         var words = text.Split(' ', StringSplitOptions.RemoveEmptyEntries);
         double positiveScore = 0.0, negativeScore = 0.0, neutralScore = 0.0;
         int totalNgrams = 0;
@@ -197,7 +197,7 @@ public partial class PredictionService
         // Analyze bigrams for context
         for (int i = 0; i < words.Length - 1; i++)
         {
-            var bigram = $"{words[i].ToLowerInvariant()} {words[i+1].ToLowerInvariant()}";
+            var bigram = $"{words[i].ToLowerInvariant()} {words[i + 1].ToLowerInvariant()}";
             var score = AnalyzeBigramSentiment(bigram);
             positiveScore += score.Positive;
             negativeScore += score.Negative;
@@ -208,7 +208,7 @@ public partial class PredictionService
         // Analyze trigrams for deeper context
         for (int i = 0; i < words.Length - 2; i++)
         {
-            var trigram = $"{words[i].ToLowerInvariant()} {words[i+1].ToLowerInvariant()} {words[i+2].ToLowerInvariant()}";
+            var trigram = $"{words[i].ToLowerInvariant()} {words[i + 1].ToLowerInvariant()} {words[i + 2].ToLowerInvariant()}";
             var score = AnalyzeTrigramSentiment(trigram);
             positiveScore += score.Positive * 1.2; // Weight trigrams higher
             negativeScore += score.Negative * 1.2;
@@ -231,14 +231,14 @@ public partial class PredictionService
             Neutral = neutralScore / total
         };
     }
-    
+
     /// <summary>
     /// Analyzes sentiment using syntactic dependency patterns
     /// </summary>
     private async Task<SentimentScores> AnalyzeSyntacticDependencyAsync(string text)
     {
         await Task.CompletedTask;
-        
+
         // Simplified syntactic analysis - in production this would use NLP libraries
         var sentences = text.Split('.', '!', '?', ';');
         double totalPositive = 0.0, totalNegative = 0.0, totalNeutral = 0.0;
@@ -247,7 +247,7 @@ public partial class PredictionService
         foreach (var sentence in sentences)
         {
             if (string.IsNullOrWhiteSpace(sentence)) continue;
-            
+
             var sentenceScore = AnalyzeSentenceSyntax(sentence.Trim());
             totalPositive += sentenceScore.Positive;
             totalNegative += sentenceScore.Negative;
@@ -267,14 +267,14 @@ public partial class PredictionService
             Neutral = totalNeutral / sentenceCount
         };
     }
-    
+
     /// <summary>
     /// Analyzes sentiment specifically for financial domain context
     /// </summary>
     private async Task<SentimentScores> AnalyzeFinancialSentimentAsync(string[] words)
     {
         await Task.CompletedTask;
-        
+
         // Financial domain-specific sentiment patterns
         var financialBullishPatterns = new Dictionary<string, double> {
             {"institutional buying", 0.9}, {"strong fundamentals", 0.8}, {"technical breakout", 0.8},
@@ -323,27 +323,27 @@ public partial class PredictionService
             Neutral = total > 0 ? 0.0 : 1.0
         };
     }
-    
+
     /// <summary>
     /// Combines multiple sentiment analysis methods using ensemble weighting
     /// </summary>
     private SentimentScores CombineEnsembleScores(params SentimentScores[] scores)
     {
         var weights = new[] { 0.3, 0.25, 0.25, 0.2 }; // Lexicon, N-gram, Syntactic, Financial
-        
+
         double totalPositive = 0.0, totalNegative = 0.0, totalNeutral = 0.0;
-        
+
         for (int i = 0; i < scores.Length && i < weights.Length; i++)
         {
             totalPositive += scores[i].Positive * weights[i];
             totalNegative += scores[i].Negative * weights[i];
             totalNeutral += scores[i].Neutral * weights[i];
         }
-        
+
         // Normalize to sum to 1.0
         var total = totalPositive + totalNegative + totalNeutral;
         if (total == 0) total = 1.0;
-        
+
         return new SentimentScores
         {
             Positive = totalPositive / total,
@@ -353,15 +353,15 @@ public partial class PredictionService
     }
 
     // Helper methods for linguistic analysis
-    private bool IsNegation(string word) => 
+    private bool IsNegation(string word) =>
         new[] { "not", "no", "never", "none", "nothing", "neither", "nor", "cannot", "can't", "won't", "don't", "doesn't", "didn't", "isn't", "aren't", "wasn't", "weren't" }
         .Contains(word.ToLowerInvariant());
 
-    private bool IsIntensifier(string word) => 
+    private bool IsIntensifier(string word) =>
         new[] { "very", "extremely", "highly", "really", "quite", "absolutely", "completely", "totally", "incredibly", "amazingly" }
         .Contains(word.ToLowerInvariant());
 
-    private bool IsDiminisher(string word) => 
+    private bool IsDiminisher(string word) =>
         new[] { "slightly", "somewhat", "barely", "hardly", "scarcely", "little", "bit" }
         .Contains(word.ToLowerInvariant());
 
@@ -370,12 +370,12 @@ public partial class PredictionService
         // Known sentiment bigrams
         var positiveBigrams = new[] { "very good", "really great", "extremely positive", "highly recommended", "strong buy", "bull market", "upward trend" };
         var negativeBigrams = new[] { "very bad", "really terrible", "extremely negative", "highly risky", "strong sell", "bear market", "downward trend" };
-        
+
         if (positiveBigrams.Contains(bigram))
             return new SentimentScores { Positive = 0.8, Negative = 0.1, Neutral = 0.1 };
         if (negativeBigrams.Contains(bigram))
             return new SentimentScores { Positive = 0.1, Negative = 0.8, Neutral = 0.1 };
-        
+
         return new SentimentScores { Positive = 0.0, Negative = 0.0, Neutral = 0.0 };
     }
 
@@ -384,12 +384,12 @@ public partial class PredictionService
         // Known sentiment trigrams
         var positivePatterns = new[] { "looking very good", "really strong fundamentals", "extremely bullish sentiment" };
         var negativePatterns = new[] { "looking very bad", "really weak fundamentals", "extremely bearish sentiment" };
-        
+
         if (positivePatterns.Any(p => trigram.Contains(p)))
             return new SentimentScores { Positive = 0.9, Negative = 0.05, Neutral = 0.05 };
         if (negativePatterns.Any(p => trigram.Contains(p)))
             return new SentimentScores { Positive = 0.05, Negative = 0.9, Neutral = 0.05 };
-        
+
         return new SentimentScores { Positive = 0.0, Negative = 0.0, Neutral = 0.0 };
     }
 
@@ -397,19 +397,19 @@ public partial class PredictionService
     {
         // Simplified syntactic analysis - looks for subject-verb-object patterns
         var words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         // Look for positive/negative verbs and their objects
         var positiveVerbs = new[] { "rise", "increase", "improve", "gain", "grow", "surge", "rally" };
         var negativeVerbs = new[] { "fall", "decrease", "decline", "lose", "drop", "crash", "plummet" };
-        
+
         var hasPositiveVerb = words.Any(w => positiveVerbs.Contains(w.ToLowerInvariant()));
         var hasNegativeVerb = words.Any(w => negativeVerbs.Contains(w.ToLowerInvariant()));
-        
+
         if (hasPositiveVerb && !hasNegativeVerb)
             return new SentimentScores { Positive = 0.7, Negative = 0.1, Neutral = 0.2 };
         if (hasNegativeVerb && !hasPositiveVerb)
             return new SentimentScores { Positive = 0.1, Negative = 0.7, Neutral = 0.2 };
-        
+
         return new SentimentScores { Positive = 0.33, Negative = 0.33, Neutral = 0.34 };
     }
 

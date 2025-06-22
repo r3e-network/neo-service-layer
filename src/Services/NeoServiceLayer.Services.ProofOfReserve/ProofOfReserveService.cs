@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
@@ -25,7 +25,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// <param name="configuration">The service configuration.</param>
     /// <param name="configurationService">The configuration service.</param>
     public ProofOfReserveService(
-        ILogger<ProofOfReserveService> logger, 
+        ILogger<ProofOfReserveService> logger,
         IServiceConfiguration? configuration = null,
         ProofOfReserveConfigurationService? configurationService = null)
         : base("ProofOfReserve", "Asset backing verification and reserve monitoring service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })

@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Web.Models;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -48,7 +48,7 @@ public class DemoController : BaseApiController
             Fingerprint = GenerateRandomHex(20)
         };
 
-        Logger.LogInformation("Simulated key generation for {KeyId} on {Blockchain}", 
+        Logger.LogInformation("Simulated key generation for {KeyId} on {Blockchain}",
             request.KeyId, blockchainType);
 
         return Ok(CreateResponse(result, "Key generated successfully"));
@@ -79,7 +79,7 @@ public class DemoController : BaseApiController
             },
             new
             {
-                KeyId = "key_demo_002", 
+                KeyId = "key_demo_002",
                 KeyType = "Ed25519",
                 KeyUsage = "Encryption",
                 Created = DateTime.UtcNow.AddDays(-3),
@@ -182,7 +182,7 @@ public class DemoController : BaseApiController
             Services = new
             {
                 KeyManagement = "Online",
-                Randomness = "Online", 
+                Randomness = "Online",
                 SGXEnclave = "Active",
                 Database = "Connected",
                 Cache = "Available"

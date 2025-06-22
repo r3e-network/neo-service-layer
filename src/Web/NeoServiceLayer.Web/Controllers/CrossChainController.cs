@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.CrossChain.Models;
 
@@ -412,7 +412,7 @@ public class CrossChainController : BaseApiController
             var result = await _crossChainService.RegisterTokenMappingAsync(mapping, blockchain);
 
             Logger.LogInformation("Registered token mapping from {SourceToken} to {DestinationToken} on {BlockchainType} by user {UserId}",
-                mapping.SourceToken ?? "Unknown", 
+                mapping.SourceToken ?? "Unknown",
                 mapping.DestinationToken ?? "Unknown",
                 blockchainType, GetCurrentUserId());
 
@@ -495,4 +495,4 @@ public class CrossChainController : BaseApiController
             return HandleException(ex, "GetTransactionHistory");
         }
     }
-} 
+}

@@ -1,5 +1,5 @@
+﻿using System.Text.Json;
 using System.Text.RegularExpressions;
-using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;

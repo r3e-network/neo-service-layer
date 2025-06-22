@@ -1,4 +1,4 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using NeoServiceLayer.Shared.Utilities;
 using Xunit;
 
@@ -688,4 +688,4 @@ public class GuardTests
     }
 
     #endregion
-} 
+}

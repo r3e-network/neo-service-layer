@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Compliance.Models;
 
@@ -587,4 +587,4 @@ public class RequestCertificationRequest
     /// Gets or sets the contact information.
     /// </summary>
     public ContactInformation? ContactInfo { get; set; }
-} 
+}

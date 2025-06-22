@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
@@ -25,19 +25,19 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         public RealSGXSimulationTests(ITestOutputHelper output)
         {
             _output = output;
-            
+
             // Create a logger that outputs to xUnit test output
             var loggerFactory = LoggerFactory.Create(builder =>
             {
                 builder.AddProvider(new XUnitLoggerProvider(output));
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
-            
+
             _logger = loggerFactory.CreateLogger<ProductionSGXEnclaveWrapper>();
-            
+
             // Check if SGX SDK is available
             _sgxAvailable = CheckSGXAvailability();
-            
+
             if (_sgxAvailable)
             {
                 // Use the real ProductionSGXEnclaveWrapper which uses OcclumEnclaveWrapper
@@ -63,24 +63,24 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                 // Check for SGX environment variables
                 var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE");
                 var ldLibraryPath = Environment.GetEnvironmentVariable("LD_LIBRARY_PATH");
-                
+
                 _output.WriteLine($"SGX_MODE: {sgxMode ?? "not set"}");
                 _output.WriteLine($"LD_LIBRARY_PATH: {ldLibraryPath ?? "not set"}");
-                
+
                 // For real SGX testing, we need SGX_MODE=SIM
                 if (sgxMode != "SIM")
                 {
                     _output.WriteLine("SGX_MODE is not set to SIM");
                     return false;
                 }
-                
+
                 // Check if Occlum libraries are in the path
                 if (string.IsNullOrEmpty(ldLibraryPath) || !ldLibraryPath.Contains("occlum"))
                 {
                     _output.WriteLine("Occlum libraries not found in LD_LIBRARY_PATH");
                     return false;
                 }
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -254,7 +254,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Assert
             attestationReport.Should().NotBeNullOrEmpty();
             var reportJson = JsonDocument.Parse(attestationReport);
-            
+
             // In simulation mode, these fields should still be present
             reportJson.RootElement.TryGetProperty("mr_enclave", out _).Should().BeTrue();
             reportJson.RootElement.TryGetProperty("mr_signer", out _).Should().BeTrue();

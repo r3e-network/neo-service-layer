@@ -1,6 +1,6 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 

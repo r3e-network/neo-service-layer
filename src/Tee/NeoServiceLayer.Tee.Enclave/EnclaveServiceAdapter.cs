@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 
@@ -60,7 +60,7 @@ public class EnclaveServiceAdapter : IEnclaveService
             _logger.LogInformation("Initializing enclave service...");
             IsEnclaveInitialized = _enclaveWrapper.Initialize();
             IsRunning = IsEnclaveInitialized;
-            
+
             if (IsRunning)
             {
                 _logger.LogInformation("Enclave service initialized successfully");
@@ -69,7 +69,7 @@ public class EnclaveServiceAdapter : IEnclaveService
             {
                 _logger.LogError("Failed to initialize enclave service");
             }
-            
+
             return await Task.FromResult(IsRunning);
         }
         catch (Exception ex)
@@ -86,7 +86,7 @@ public class EnclaveServiceAdapter : IEnclaveService
         {
             _logger.LogInformation("Initializing enclave...");
             IsEnclaveInitialized = _enclaveWrapper.Initialize();
-            
+
             if (IsEnclaveInitialized)
             {
                 _logger.LogInformation("Enclave initialized successfully");
@@ -95,7 +95,7 @@ public class EnclaveServiceAdapter : IEnclaveService
             {
                 _logger.LogError("Failed to initialize enclave");
             }
-            
+
             return await Task.FromResult(IsEnclaveInitialized);
         }
         catch (Exception ex)
@@ -111,14 +111,14 @@ public class EnclaveServiceAdapter : IEnclaveService
         try
         {
             _logger.LogInformation("Starting enclave service...");
-            
+
             if (!IsEnclaveInitialized)
             {
                 IsEnclaveInitialized = _enclaveWrapper.Initialize();
             }
-            
+
             IsRunning = IsEnclaveInitialized;
-            
+
             if (IsRunning)
             {
                 _logger.LogInformation("Enclave service started successfully");
@@ -127,7 +127,7 @@ public class EnclaveServiceAdapter : IEnclaveService
             {
                 _logger.LogError("Failed to start enclave service");
             }
-            
+
             return await Task.FromResult(IsRunning);
         }
         catch (Exception ex)
@@ -197,4 +197,4 @@ public class EnclaveServiceAdapter : IEnclaveService
         // Enclave service has no external dependencies
         return await Task.FromResult(true);
     }
-} 
+}

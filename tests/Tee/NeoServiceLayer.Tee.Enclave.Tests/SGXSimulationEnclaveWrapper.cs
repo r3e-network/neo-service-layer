@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Cryptography;
@@ -42,7 +42,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     private readonly AesCcm _aes;
     private byte[] _enclaveIdentity;
     private string _attestationReport;
-    
+
     /// <summary>
     /// Initializes a new instance of the <see cref="SGXSimulationEnclaveWrapper"/> class.
     /// </summary>
@@ -50,16 +50,16 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     {
         _initialized = false;
         _disposed = false;
-        
+
         // Initialize AES with a random key for simulation
         byte[] aesKey = new byte[32];
         RandomNumberGenerator.Fill(aesKey);
         _aes = new AesCcm(aesKey);
-        
+
         // Generate mock enclave identity
         _enclaveIdentity = new byte[32];
         RandomNumberGenerator.Fill(_enclaveIdentity);
-        
+
         // Initialize attestation report as empty - will be generated when needed
         _attestationReport = string.Empty;
     }
@@ -74,7 +74,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         {
             if (_disposed)
                 throw new ObjectDisposedException(nameof(SGXSimulationEnclaveWrapper));
-                
+
             if (_initialized)
                 return true;
 
@@ -82,13 +82,13 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             {
                 // Simulate enclave initialization
                 _initialized = true;
-                
+
                 // Generate attestation report after initialization
                 if (string.IsNullOrEmpty(_attestationReport))
                 {
                     _attestationReport = GenerateMockAttestationReport();
                 }
-                
+
                 return true;
             }
             catch
@@ -107,7 +107,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string ExecuteJavaScript(string functionCode, string args)
     {
         EnsureInitialized();
-        
+
         // Simulate JavaScript execution with basic function parsing
         var result = new
         {
@@ -116,7 +116,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             executionTime = Random.Shared.Next(1, 100),
             enclaveId = Convert.ToHexString(_enclaveIdentity)
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -129,7 +129,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string GetData(string dataSource, string dataPath)
     {
         EnsureInitialized();
-        
+
         var result = new
         {
             success = true,
@@ -139,7 +139,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             path = dataPath,
             attestation = _attestationReport.Substring(0, 64) // Truncated for simulation
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -152,15 +152,15 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public int GenerateRandom(int min, int max)
     {
         EnsureInitialized();
-        
+
         if (min >= max)
             throw new ArgumentException("Min must be less than max");
-            
+
         using var rng = RandomNumberGenerator.Create();
         byte[] randomBytes = new byte[4];
         rng.GetBytes(randomBytes);
         uint randomValue = BitConverter.ToUInt32(randomBytes);
-        
+
         return (int)(randomValue % (max - min + 1)) + min;
     }
 
@@ -172,12 +172,12 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] GenerateRandomBytes(int length)
     {
         EnsureInitialized();
-        
+
         if (length <= 0)
             throw new ArgumentException("Length must be positive", nameof(length));
         if (length > 1048576) // 1MB limit
             throw new ArgumentException("Length must be between 1 and 1MB", nameof(length));
-            
+
         byte[] randomBytes = new byte[length];
         RandomNumberGenerator.Fill(randomBytes);
         return randomBytes;
@@ -195,7 +195,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string GenerateKey(string keyId, string keyType, string keyUsage, bool exportable, string description)
     {
         EnsureInitialized();
-        
+
         var keyMetadata = new
         {
             keyId,
@@ -210,10 +210,10 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveGenerated = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         // Store key in secure storage (simulation)
         _secureStorage[$"key_{keyId}"] = Encoding.UTF8.GetBytes(JsonSerializer.Serialize(keyMetadata));
-        
+
         return JsonSerializer.Serialize(keyMetadata);
     }
 
@@ -228,7 +228,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string FetchOracleData(string url, string? headers = null, string? processingScript = null, string? outputFormat = "json")
     {
         EnsureInitialized();
-        
+
         var result = new
         {
             success = true,
@@ -241,7 +241,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             attestation = _attestationReport.Substring(0, 32),
             teeVerified = true
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -255,11 +255,11 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string ExecuteComputation(string computationId, string computationCode, string parameters)
     {
         EnsureInitialized();
-        
+
         var startTime = DateTimeOffset.UtcNow;
         var computationResult = SimulateComputation(computationCode, parameters);
         var endTime = DateTimeOffset.UtcNow;
-        
+
         var result = new
         {
             computationId,
@@ -272,7 +272,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             attestation = _attestationReport.Substring(0, 32),
             secureExecution = true
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -287,24 +287,24 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string StoreData(string key, byte[] data, string encryptionKey, bool compress = false)
     {
         EnsureInitialized();
-        
+
         if (string.IsNullOrEmpty(key))
             throw new ArgumentException("Key cannot be null or empty", nameof(key));
         if (data == null)
             throw new ArgumentNullException(nameof(data));
         if (string.IsNullOrEmpty(encryptionKey))
             throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptionKey));
-            
+
         // Simulate encryption with key validation
         var encryptedData = SimulateEncryptionWithValidation(data, encryptionKey);
-        
+
         // Store in secure storage
         _secureStorage[key] = encryptedData;
-        
+
         // Store key validation info
         var keyHash = ComputeChecksum(Encoding.UTF8.GetBytes(encryptionKey));
         _secureStorage[$"{key}_keyinfo"] = Encoding.UTF8.GetBytes(keyHash);
-        
+
         var result = new
         {
             success = true,
@@ -319,7 +319,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveSecured = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -332,28 +332,28 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] RetrieveData(string key, string encryptionKey)
     {
         EnsureInitialized();
-        
+
         if (string.IsNullOrEmpty(key))
             throw new ArgumentException("Key cannot be null or empty", nameof(key));
         if (string.IsNullOrEmpty(encryptionKey))
             throw new ArgumentException("Encryption key cannot be null or empty", nameof(encryptionKey));
-            
+
         if (!_secureStorage.TryGetValue(key, out var encryptedData))
             throw new KeyNotFoundException($"Data with key '{key}' not found in secure storage");
-        
+
         // Validate the decryption key if key info is stored
         if (_secureStorage.ContainsKey($"{key}_keyinfo"))
         {
             var storedKeyInfo = _secureStorage[$"{key}_keyinfo"];
             var storedKeyHash = Encoding.UTF8.GetString(storedKeyInfo);
             var providedKeyHash = ComputeChecksum(Encoding.UTF8.GetBytes(encryptionKey));
-            
+
             if (storedKeyHash != providedKeyHash)
             {
                 throw new UnauthorizedAccessException($"Invalid decryption key for storage key '{key}'");
             }
         }
-            
+
         // Simulate decryption
         return SimulateDecryption(encryptedData, encryptionKey);
     }
@@ -366,9 +366,9 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string DeleteData(string key)
     {
         EnsureInitialized();
-        
+
         bool existed = _secureStorage.TryRemove(key, out _);
-        
+
         var result = new
         {
             success = true,
@@ -378,7 +378,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             timestamp = DateTimeOffset.UtcNow.ToString("O"),
             enclaveSecured = true
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -390,10 +390,10 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string GetStorageMetadata(string key)
     {
         EnsureInitialized();
-        
+
         if (!_secureStorage.ContainsKey(key))
             throw new KeyNotFoundException($"Data with key '{key}' not found");
-            
+
         var data = _secureStorage[key];
         var result = new
         {
@@ -406,7 +406,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             encrypted = true,
             enclaveSecured = true
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -421,9 +421,9 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string TrainAIModel(string modelId, string modelType, double[] trainingData, string parameters = "{}")
     {
         EnsureInitialized();
-        
+
         var startTime = DateTimeOffset.UtcNow;
-        
+
         // Simulate model training
         var modelMetadata = new
         {
@@ -440,9 +440,9 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveTrained = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         _aiModels[modelId] = modelMetadata;
-        
+
         var result = new
         {
             success = true,
@@ -453,7 +453,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveTrained = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -467,17 +467,17 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public double[] PredictWithAIModel(string modelId, double[] inputData, out string metadata)
     {
         EnsureInitialized();
-        
+
         if (!_aiModels.ContainsKey(modelId))
             throw new KeyNotFoundException($"AI model '{modelId}' not found");
-            
+
         // Simulate predictions
         var predictions = new double[inputData.Length];
         for (int i = 0; i < inputData.Length; i++)
         {
             predictions[i] = inputData[i] * (1.0 + (Random.Shared.NextDouble() - 0.5) * 0.1);
         }
-        
+
         var metadataObj = new
         {
             modelId,
@@ -488,7 +488,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveSecured = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         metadata = JsonSerializer.Serialize(metadataObj);
         return predictions;
     }
@@ -502,7 +502,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string CreateAbstractAccount(string accountId, string accountData)
     {
         EnsureInitialized();
-        
+
         var account = new
         {
             accountId,
@@ -514,9 +514,9 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveGenerated = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         _abstractAccounts[accountId] = account;
-        
+
         var result = new
         {
             success = true,
@@ -526,7 +526,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveSecured = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -539,13 +539,13 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string SignAbstractAccountTransaction(string accountId, string transactionData)
     {
         EnsureInitialized();
-        
+
         if (!_abstractAccounts.ContainsKey(accountId))
             throw new KeyNotFoundException($"Abstract account '{accountId}' not found");
-            
+
         var signature = Convert.ToHexString(GenerateRandomBytes(64));
         var transactionHash = Convert.ToHexString(SHA256.HashData(Encoding.UTF8.GetBytes(transactionData)));
-        
+
         var result = new
         {
             success = true,
@@ -556,7 +556,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             enclaveSecured = true,
             attestation = _attestationReport.Substring(0, 32)
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -569,12 +569,12 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public string AddAbstractAccountGuardian(string accountId, string guardianData)
     {
         EnsureInitialized();
-        
+
         if (!_abstractAccounts.ContainsKey(accountId))
             throw new KeyNotFoundException($"Abstract account '{accountId}' not found");
-            
+
         var guardianId = Guid.NewGuid().ToString();
-        
+
         var result = new
         {
             success = true,
@@ -584,7 +584,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             addedAt = DateTimeOffset.UtcNow.ToString("O"),
             enclaveSecured = true
         };
-        
+
         return JsonSerializer.Serialize(result);
     }
 
@@ -597,10 +597,10 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] Encrypt(byte[] data, byte[] key)
     {
         EnsureInitialized();
-        
+
         if (data == null) throw new ArgumentNullException(nameof(data));
         if (key == null) throw new ArgumentNullException(nameof(key));
-        
+
         return SimulateEncryptionWithValidation(data, Convert.ToHexString(key));
     }
 
@@ -613,10 +613,10 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] Decrypt(byte[] data, byte[] key)
     {
         EnsureInitialized();
-        
+
         if (data == null) throw new ArgumentNullException(nameof(data));
         if (key == null) throw new ArgumentNullException(nameof(key));
-        
+
         // Use tampering detection for production-level security
         return SimulateDecryptionWithTamperDetection(data, Convert.ToHexString(key));
     }
@@ -630,20 +630,20 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] Sign(byte[] data, byte[] key)
     {
         EnsureInitialized();
-        
+
         if (data == null) throw new ArgumentNullException(nameof(data));
         if (key == null) throw new ArgumentNullException(nameof(key));
-        
+
         // Simulate RSA signing
         var hash = SHA256.HashData(data);
         var signature = new byte[256]; // RSA-2048 signature size
-        
+
         // Mix hash with key for deterministic but secure simulation
         for (int i = 0; i < signature.Length; i++)
         {
             signature[i] = (byte)((hash[i % hash.Length] + key[i % key.Length] + _enclaveIdentity[i % _enclaveIdentity.Length]) % 256);
         }
-        
+
         return signature;
     }
 
@@ -657,23 +657,23 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public bool Verify(byte[] data, byte[] signature, byte[] key)
     {
         EnsureInitialized();
-        
+
         if (data == null) throw new ArgumentNullException(nameof(data));
         if (signature == null) throw new ArgumentNullException(nameof(signature));
         if (key == null) throw new ArgumentNullException(nameof(key));
-        
+
         // Simulate verification by recreating signature
         var expectedSignature = Sign(data, key);
-        
+
         if (signature.Length != expectedSignature.Length)
             return false;
-            
+
         for (int i = 0; i < signature.Length; i++)
         {
             if (signature[i] != expectedSignature[i])
                 return false;
         }
-        
+
         return true;
     }
 
@@ -683,11 +683,11 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public void Dispose()
     {
         if (_disposed) return;
-        
+
         lock (_lock)
         {
             if (_disposed) return;
-            
+
             _initialized = false;
             _secureStorage.Clear();
             _aiModels.Clear();
@@ -696,7 +696,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             _aes?.Dispose();
             _disposed = true;
         }
-        
+
         GC.SuppressFinalize(this);
     }
 
@@ -719,11 +719,11 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         var measurementBytes = new byte[32];
         var nonceBytes = new byte[16];
         var signatureBytes = new byte[64];
-        
+
         RandomNumberGenerator.Fill(measurementBytes);
         RandomNumberGenerator.Fill(nonceBytes);
         RandomNumberGenerator.Fill(signatureBytes);
-        
+
         var report = new
         {
             version = 3,
@@ -758,7 +758,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             nonce = Convert.ToHexString(nonceBytes),
             signature = Convert.ToHexString(signatureBytes)
         };
-        
+
         return JsonSerializer.Serialize(report);
     }
 
@@ -777,7 +777,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         {
             return new[] { 1, 2, 3, 4, 5 };
         }
-        
+
         return new { success = true, executed = true, args };
     }
 
@@ -795,7 +795,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         {
             return new { open = Random.Shared.NextDouble() * 1000, high = Random.Shared.NextDouble() * 1100, low = Random.Shared.NextDouble() * 900, close = Random.Shared.NextDouble() * 1000 };
         }
-        
+
         return new { data = "generic_simulated_data", timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds() };
     }
 
@@ -814,7 +814,7 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         {
             return new[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 10 };
         }
-        
+
         return new { result = "computation_complete", value = Random.Shared.Next(1, 1000) };
     }
 
@@ -823,12 +823,12 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         // Simple XOR-based simulation encryption
         var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(encryptionKey));
         var encrypted = new byte[data.Length];
-        
+
         for (int i = 0; i < data.Length; i++)
         {
             encrypted[i] = (byte)(data[i] ^ keyBytes[i % keyBytes.Length]);
         }
-        
+
         return encrypted;
     }
 
@@ -837,12 +837,12 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
         // XOR is symmetric, so decryption is the same as encryption
         var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(encryptionKey));
         var decrypted = new byte[encryptedData.Length];
-        
+
         for (int i = 0; i < encryptedData.Length; i++)
         {
             decrypted[i] = (byte)(encryptedData[i] ^ keyBytes[i % keyBytes.Length]);
         }
-        
+
         return decrypted;
     }
 
@@ -850,21 +850,21 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     {
         // Calculate integrity hash before encryption
         var integrityHash = SHA256.HashData(data);
-        
+
         // Simple XOR-based simulation encryption
         var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(encryptionKey));
-        
+
         // Create encrypted data with integrity information
         var encryptedData = new byte[data.Length];
         for (int i = 0; i < data.Length; i++)
         {
             encryptedData[i] = (byte)(data[i] ^ keyBytes[i % keyBytes.Length]);
         }
-        
+
         // Store integrity hash in a separate storage for validation
         var integrityKey = $"integrity_{Convert.ToHexString(keyBytes)[..16]}";
         _secureStorage[integrityKey] = integrityHash;
-        
+
         return encryptedData;
     }
 
@@ -872,20 +872,20 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     {
         var keyBytes = SHA256.HashData(Encoding.UTF8.GetBytes(encryptionKey));
         var integrityKey = $"integrity_{Convert.ToHexString(keyBytes)[..16]}";
-        
+
         // Perform decryption
         var decrypted = new byte[encryptedData.Length];
         for (int i = 0; i < encryptedData.Length; i++)
         {
             decrypted[i] = (byte)(encryptedData[i] ^ keyBytes[i % keyBytes.Length]);
         }
-        
+
         // Check integrity if we have stored hash
         if (_secureStorage.ContainsKey(integrityKey))
         {
             var storedHash = _secureStorage[integrityKey];
             var actualHash = SHA256.HashData(decrypted);
-            
+
             if (!storedHash.SequenceEqual(actualHash))
             {
                 throw new System.Security.Cryptography.CryptographicException("Data integrity check failed - tampering detected");
@@ -898,13 +898,13 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
             var zeroCount = decrypted.Count(b => b == 0x00);
             var ffCount = decrypted.Count(b => b == 0xFF);
             var totalSuspicious = zeroCount + ffCount;
-            
+
             if (decrypted.Length > 0 && totalSuspicious > decrypted.Length * 0.25)
             {
                 throw new System.Security.Cryptography.CryptographicException("Data integrity check failed - suspicious pattern detected");
             }
         }
-        
+
         return decrypted;
     }
 
@@ -972,34 +972,34 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] SealData(byte[] data)
     {
         EnsureInitialized();
-        
+
         if (data == null)
             throw new ArgumentNullException(nameof(data));
-            
+
         // Simulate SGX sealing by adding a prefix and checksum
         var sealingKey = new byte[16];
         RandomNumberGenerator.Fill(sealingKey); // Use direct RandomNumberGenerator instead of GenerateRandomBytes
         var checksum = SHA256.HashData(data);
         var timestamp = BitConverter.GetBytes(DateTimeOffset.UtcNow.ToUnixTimeSeconds());
-        
+
         var sealedData = new byte[4 + sealingKey.Length + checksum.Length + timestamp.Length + data.Length];
         var offset = 0;
-        
+
         // Magic number for sealed data identification
         BitConverter.GetBytes(0x53475853).CopyTo(sealedData, offset); // "SGXS"
         offset += 4;
-        
+
         sealingKey.CopyTo(sealedData, offset);
         offset += sealingKey.Length;
-        
+
         checksum.CopyTo(sealedData, offset);
         offset += checksum.Length;
-        
+
         timestamp.CopyTo(sealedData, offset);
         offset += timestamp.Length;
-        
+
         data.CopyTo(sealedData, offset);
-        
+
         return sealedData;
     }
 
@@ -1011,41 +1011,41 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     public byte[] UnsealData(byte[] sealedData)
     {
         EnsureInitialized();
-        
+
         if (sealedData == null)
             throw new ArgumentNullException(nameof(sealedData));
-            
+
         if (sealedData.Length < 4 + 16 + 32 + 8) // Magic + key + checksum + timestamp
             throw new ArgumentException("Invalid sealed data format", nameof(sealedData));
-            
+
         // Verify magic number
         var magic = BitConverter.ToInt32(sealedData, 0);
         if (magic != 0x53475853) // "SGXS"
             throw new ArgumentException("Invalid sealed data magic number", nameof(sealedData));
-            
+
         var offset = 4;
-        
+
         // Skip sealing key
         offset += 16;
-        
+
         // Extract checksum
         var storedChecksum = new byte[32];
         Array.Copy(sealedData, offset, storedChecksum, 0, 32);
         offset += 32;
-        
+
         // Skip timestamp
         offset += 8;
-        
+
         // Extract original data
         var dataLength = sealedData.Length - offset;
         var data = new byte[dataLength];
         Array.Copy(sealedData, offset, data, 0, dataLength);
-        
+
         // Verify checksum
         var computedChecksum = SHA256.HashData(data);
         if (!storedChecksum.SequenceEqual(computedChecksum))
             throw new ArgumentException("Sealed data integrity check failed", nameof(sealedData));
-            
+
         return data;
     }
 
@@ -1060,4 +1060,4 @@ public class SGXSimulationEnclaveWrapper : IEnclaveWrapper
     }
 
     #endregion
-} 
+}

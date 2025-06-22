@@ -1,4 +1,4 @@
-using Bogus;
+﻿using Bogus;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 
@@ -140,8 +140,8 @@ public class BlockchainTestDataBuilder
         DateTime? timestamp = null)
     {
         var blockHeight = height ?? _faker.Random.Long(1, 10000000);
-        var transactions = transactionCount > 0 
-            ? GenerateTransactions(transactionCount) 
+        var transactions = transactionCount > 0
+            ? GenerateTransactions(transactionCount)
             : new List<Transaction>();
 
         return new Block
@@ -406,4 +406,4 @@ public enum MarketTrend
     Volatile
 }
 
-#endregion 
+#endregion

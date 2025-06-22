@@ -1,7 +1,7 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.Health.Storage;
 

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Infrastructure.Security;
@@ -59,7 +59,7 @@ public class SecurityLogger : ISecurityLogger
 
     public void RecordAuthenticationAttempt(string userId, bool success, string? reason = null, SecurityEventMetadata? metadata = null)
     {
-        var message = success 
+        var message = success
             ? $"Successful authentication for user {userId}"
             : $"Failed authentication for user {userId}" + (reason != null ? $": {reason}" : "");
 
@@ -200,13 +200,13 @@ public class SecurityLogger : ISecurityLogger
         }
 
         // Count specific event types
-        stats.SuccessfulAuthentications = relevantEvents.Count(e => 
-            e.EventType == SecurityEventType.Authentication && 
+        stats.SuccessfulAuthentications = relevantEvents.Count(e =>
+            e.EventType == SecurityEventType.Authentication &&
             e.Metadata?.AdditionalData?.ContainsKey("Success") == true &&
             (bool)(e.Metadata.AdditionalData["Success"] ?? false));
 
-        stats.FailedAuthentications = relevantEvents.Count(e => 
-            e.EventType == SecurityEventType.Authentication && 
+        stats.FailedAuthentications = relevantEvents.Count(e =>
+            e.EventType == SecurityEventType.Authentication &&
             e.Metadata?.AdditionalData?.ContainsKey("Success") == true &&
             !(bool)(e.Metadata.AdditionalData["Success"] ?? true));
 
@@ -282,7 +282,7 @@ public class SecurityLogger : ISecurityLogger
                 _clientLastActivity.TryRemove(clientId, out _);
             }
 
-            _logger.LogInformation("Cleaned up {EventCount} old security events and {ClientCount} inactive clients", 
+            _logger.LogInformation("Cleaned up {EventCount} old security events and {ClientCount} inactive clients",
                 eventsToRemove.Count, inactiveClients.Count);
         });
     }

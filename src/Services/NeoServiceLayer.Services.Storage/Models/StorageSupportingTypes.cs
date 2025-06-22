@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Storage.Models;
+﻿namespace NeoServiceLayer.Services.Storage.Models;
 
 /// <summary>
 /// Represents a date and time range.
@@ -411,4 +411,4 @@ public class StorageVersionEntry
     /// Gets or sets whether this version is the current active version.
     /// </summary>
     public bool IsCurrent { get; set; }
-} 
+}

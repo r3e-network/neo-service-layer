@@ -1,11 +1,11 @@
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Notification.Models;
-using System.Collections.Concurrent;
-using System.Text.Json;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.Services.Notification;
 
@@ -58,7 +58,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         // Initialize processing timer (process every 5 seconds)
         _processingTimer = new Timer(ProcessNotificationQueue, null, TimeSpan.FromSeconds(5), TimeSpan.FromSeconds(5));
 
-        Logger.LogInformation("Notification service initialized with {ChannelCount} enabled channels", 
+        Logger.LogInformation("Notification service initialized with {ChannelCount} enabled channels",
             _options.Value.EnabledChannels.Length);
     }
 
@@ -94,10 +94,10 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         try
         {
             Logger.LogInformation("Starting Notification Service...");
-            
+
             // Start processing notifications
             _lastProcessingTime = DateTime.UtcNow;
-            
+
             Logger.LogInformation("Notification Service started successfully");
             return Task.FromResult(true);
         }
@@ -114,13 +114,13 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         try
         {
             Logger.LogInformation("Stopping Notification Service...");
-            
+
             // Stop processing timer
             _processingTimer?.Dispose();
-            
+
             // Clear subscriptions
             _subscriptions.Clear();
-            
+
             Logger.LogInformation("Notification Service stopped successfully");
             return Task.FromResult(true);
         }
@@ -146,21 +146,21 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
         try
         {
-            Logger.LogDebug("Sending notification to {Recipient} via {Channel}", 
+            Logger.LogDebug("Sending notification to {Recipient} via {Channel}",
                 request.Recipient, request.Channel);
 
             var result = await ProcessNotificationAsync(request);
-            
+
             if (result.Success)
             {
                 Interlocked.Increment(ref _totalNotificationsSent);
-                Logger.LogInformation("Notification sent successfully to {Recipient} via {Channel}", 
+                Logger.LogInformation("Notification sent successfully to {Recipient} via {Channel}",
                     request.Recipient, request.Channel);
             }
             else
             {
                 Interlocked.Increment(ref _totalNotificationsFailed);
-                Logger.LogWarning("Failed to send notification to {Recipient} via {Channel}: {Error}", 
+                Logger.LogWarning("Failed to send notification to {Recipient} via {Channel}: {Error}",
                     request.Recipient, request.Channel, result.ErrorMessage);
             }
 
@@ -169,9 +169,9 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         catch (Exception ex)
         {
             Interlocked.Increment(ref _totalNotificationsFailed);
-            Logger.LogError(ex, "Error sending notification to {Recipient} via {Channel}", 
+            Logger.LogError(ex, "Error sending notification to {Recipient} via {Channel}",
                 request.Recipient, request.Channel);
-            
+
             return new NotificationResult
             {
                 NotificationId = Guid.NewGuid().ToString(),
@@ -205,14 +205,14 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
             _subscriptions[subscriptionId] = subscription;
 
-            Logger.LogInformation("Created notification subscription {SubscriptionId} for {Recipient}", 
+            Logger.LogInformation("Created notification subscription {SubscriptionId} for {Recipient}",
                 subscriptionId, subscription.Recipient);
 
             return subscriptionId;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error creating notification subscription for {Recipient}", 
+            Logger.LogError(ex, "Error creating notification subscription for {Recipient}",
                 subscription.Recipient);
             throw;
         }
@@ -234,10 +234,10 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         try
         {
             var removed = _subscriptions.TryRemove(subscriptionId, out var subscription);
-            
+
             if (removed && subscription != null)
             {
-                Logger.LogInformation("Removed notification subscription {SubscriptionId} for {Recipient}", 
+                Logger.LogInformation("Removed notification subscription {SubscriptionId} for {Recipient}",
                     subscriptionId, subscription.Recipient);
             }
             else
@@ -273,7 +273,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
                 .Where(s => s.Recipient.Equals(recipient, StringComparison.OrdinalIgnoreCase) && s.IsActive)
                 .ToList();
 
-            Logger.LogDebug("Found {Count} active subscriptions for {Recipient}", 
+            Logger.LogDebug("Found {Count} active subscriptions for {Recipient}",
                 subscriptions.Count, recipient);
 
             return Task.FromResult<IEnumerable<NotificationSubscription>>(subscriptions);
@@ -300,7 +300,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
         try
         {
-            Logger.LogInformation("Sending bulk notification to {RecipientCount} recipients", 
+            Logger.LogInformation("Sending bulk notification to {RecipientCount} recipients",
                 request.Recipients.Count);
 
             var tasks = new List<Task<NotificationResult>>();
@@ -331,14 +331,14 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             Interlocked.Add(ref _totalNotificationsSent, successCount);
             Interlocked.Add(ref _totalNotificationsFailed, failureCount);
 
-            Logger.LogInformation("Bulk notification completed: {SuccessCount} successful, {FailureCount} failed", 
+            Logger.LogInformation("Bulk notification completed: {SuccessCount} successful, {FailureCount} failed",
                 successCount, failureCount);
 
             return new NotificationResult
             {
                 NotificationId = batchId,
                 Success = successCount > 0,
-                Status = successCount == results.Length ? DeliveryStatus.Delivered : 
+                Status = successCount == results.Length ? DeliveryStatus.Delivered :
                          successCount > 0 ? DeliveryStatus.Pending : DeliveryStatus.Failed,
                 SentAt = DateTime.UtcNow
             };
@@ -418,8 +418,8 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             UpdateMetric("ActiveSubscriptions", _subscriptions.Count);
             UpdateMetric("QueuedNotifications", _notificationQueue.Count);
             UpdateMetric("LastProcessingTime", _lastProcessingTime.Ticks);
-            UpdateMetric("SuccessRate", _totalNotificationsSent + _totalNotificationsFailed > 0 
-                ? (double)_totalNotificationsSent / (_totalNotificationsSent + _totalNotificationsFailed) 
+            UpdateMetric("SuccessRate", _totalNotificationsSent + _totalNotificationsFailed > 0
+                ? (double)_totalNotificationsSent / (_totalNotificationsSent + _totalNotificationsFailed)
                 : 0.0);
 
             return Task.CompletedTask;
@@ -444,9 +444,9 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             Logger.LogDebug("Getting available notification channels for {Blockchain}", blockchainType);
 
             await Task.Delay(1); // Simulate async channel retrieval
-            
+
             var channels = new List<ChannelInfo>();
-            
+
             // Add enabled channels from configuration
             foreach (var channelName in _options.Value.EnabledChannels)
             {
@@ -513,7 +513,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             try
             {
                 Logger.LogDebug("Initializing notification channel: {Channel}", channel);
-                
+
                 // Channel-specific initialization would go here
                 switch (channel.ToLowerInvariant())
                 {
@@ -530,7 +530,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
                         Logger.LogWarning("Unknown notification channel: {Channel}", channel);
                         break;
                 }
-                
+
                 Logger.LogInformation("Notification channel {Channel} initialized successfully", channel);
             }
             catch (Exception ex)
@@ -576,7 +576,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     private async Task<NotificationResult> ProcessNotificationAsync(NotificationRequest request)
     {
         var notificationId = Guid.NewGuid().ToString();
-        
+
         try
         {
             // Validate request
@@ -604,7 +604,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error processing notification {NotificationId}", notificationId);
-            
+
             return new NotificationResult
             {
                 NotificationId = notificationId,
@@ -623,15 +623,15 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     {
         try
         {
-            Logger.LogDebug("Sending email notification {NotificationId} to {Recipient}", 
+            Logger.LogDebug("Sending email notification {NotificationId} to {Recipient}",
                 notificationId, request.Recipient);
 
             // Simulate email sending
             await Task.Delay(100); // Simulate network delay
-            
+
             // In production, this would integrate with an email service provider
             // like SendGrid, AWS SES, or Azure Communication Services
-            
+
             return new NotificationResult
             {
                 NotificationId = notificationId,
@@ -654,7 +654,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     {
         try
         {
-            Logger.LogDebug("Sending webhook notification {NotificationId} to {Recipient}", 
+            Logger.LogDebug("Sending webhook notification {NotificationId} to {Recipient}",
                 notificationId, request.Recipient);
 
             using var httpClient = _httpClientFactory.CreateClient();
@@ -698,15 +698,15 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     {
         try
         {
-            Logger.LogDebug("Sending SMS notification {NotificationId} to {Recipient}", 
+            Logger.LogDebug("Sending SMS notification {NotificationId} to {Recipient}",
                 notificationId, request.Recipient);
 
             // Simulate SMS sending
             await Task.Delay(200); // Simulate network delay
-            
+
             // In production, this would integrate with an SMS service provider
             // like Twilio, AWS SNS, or Azure Communication Services
-            
+
             return new NotificationResult
             {
                 NotificationId = notificationId,
@@ -776,7 +776,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             _processingTimer?.Dispose();
             _processingLock?.Dispose();
         }
-        
+
         base.Dispose(disposing);
     }
 }

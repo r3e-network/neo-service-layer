@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -40,7 +40,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _output.WriteLine("Using ProductionSGXEnclaveWrapper for real SGX SDK testing");
             var prodLogger = loggerFactory.CreateLogger<ProductionSGXEnclaveWrapper>();
             _enclave = new ProductionSGXEnclaveWrapper(prodLogger);
-            
+
             // Check if we're running in an SGX environment (real or simulated)
             _isRealSGXAvailable = CheckRealSGXAvailability();
         }
@@ -50,7 +50,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Check for SGX SDK environment variables
             var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE");
             var sgxSdk = Environment.GetEnvironmentVariable("SGX_SDK");
-            
+
             _output.WriteLine($"SGX_MODE: {sgxMode ?? "not set"}");
             _output.WriteLine($"SGX_SDK: {sgxSdk ?? "not set"}");
 
@@ -127,7 +127,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             report.Should().NotBeEmpty();
             _output.WriteLine($"✅ Attestation report generated");
             _output.WriteLine($"Report: {report}");
-            
+
             // In simulation mode, the report will be simulated but still valid
             if (_isRealSGXAvailable)
             {

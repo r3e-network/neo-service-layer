@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
@@ -18,10 +18,10 @@ public partial class ProofOfReserveService
     protected override async Task<bool> OnInitializeEnclaveAsync()
     {
         Logger.LogInformation("Initializing Proof of Reserve Service enclave");
-        
+
         // Initialize secure storage for private keys
         await Task.CompletedTask;
-        
+
         Logger.LogInformation("Proof of Reserve Service enclave initialized successfully");
         return true;
     }
@@ -33,14 +33,14 @@ public partial class ProofOfReserveService
     public void InitializeCache(IMemoryCache memoryCache)
     {
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
-        
+
         if (cachingEnabled > 0 && memoryCache != null)
         {
             // Create a logger for the cache helper
             var cacheLogger = new CacheHelperLogger(Logger);
-            
+
             _cacheHelper = new ProofOfReserveCacheHelper(memoryCache, cacheLogger);
-            
+
             Logger.LogInformation("Caching enabled for Proof of Reserve Service");
         }
         else
@@ -58,8 +58,8 @@ public partial class ProofOfReserveService
     private async Task<ReserveStatusInfo> GetReserveStatusWithCachingAsync(string assetId, BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.ReserveStatus, 
-            assetId, 
+            ProofOfReserveCacheHelper.CacheKeys.ReserveStatus,
+            assetId,
             blockchainType);
 
         var (cachingEnabled, _, cacheExpiration, _) = GetPerformanceSettings();
@@ -122,8 +122,8 @@ public partial class ProofOfReserveService
     private async Task<ReserveHealthStatus> GetReserveHealthWithCachingAsync(string assetId, BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.HealthStatus, 
-            assetId, 
+            ProofOfReserveCacheHelper.CacheKeys.HealthStatus,
+            assetId,
             blockchainType);
 
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
@@ -177,7 +177,7 @@ public partial class ProofOfReserveService
     private async Task<IEnumerable<ReserveAlert>> GetActiveAlertsWithCachingAsync(BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.Alerts, 
+            ProofOfReserveCacheHelper.CacheKeys.Alerts,
             blockchainType);
 
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
@@ -247,8 +247,8 @@ public partial class ProofOfReserveService
     private async Task<decimal> GetBlockchainBalanceWithCachingAsync(string address, BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.BlockchainBalance, 
-            address, 
+            ProofOfReserveCacheHelper.CacheKeys.BlockchainBalance,
+            address,
             blockchainType);
 
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
@@ -274,16 +274,16 @@ public partial class ProofOfReserveService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve snapshots.</returns>
     private async Task<ReserveSnapshot[]> GetReserveSnapshotsWithCachingAsync(
-        string assetId, 
-        DateTime from, 
-        DateTime to, 
+        string assetId,
+        DateTime from,
+        DateTime to,
         BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.ReserveSnapshot, 
-            assetId, 
-            from.ToString("yyyy-MM-dd"), 
-            to.ToString("yyyy-MM-dd"), 
+            ProofOfReserveCacheHelper.CacheKeys.ReserveSnapshot,
+            assetId,
+            from.ToString("yyyy-MM-dd"),
+            to.ToString("yyyy-MM-dd"),
             blockchainType);
 
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
@@ -309,9 +309,9 @@ public partial class ProofOfReserveService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve snapshots.</returns>
     private async Task<ReserveSnapshot[]> GetReserveSnapshotsInternalAsync(
-        string assetId, 
-        DateTime from, 
-        DateTime to, 
+        string assetId,
+        DateTime from,
+        DateTime to,
         BlockchainType blockchainType)
     {
         await Task.CompletedTask;
@@ -336,16 +336,16 @@ public partial class ProofOfReserveService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The audit report.</returns>
     private async Task<AuditReport> GenerateAuditReportWithCachingAsync(
-        string assetId, 
-        DateTime from, 
-        DateTime to, 
+        string assetId,
+        DateTime from,
+        DateTime to,
         BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-            ProofOfReserveCacheHelper.CacheKeys.AuditReport, 
-            assetId, 
-            from.ToString("yyyy-MM-dd"), 
-            to.ToString("yyyy-MM-dd"), 
+            ProofOfReserveCacheHelper.CacheKeys.AuditReport,
+            assetId,
+            from.ToString("yyyy-MM-dd"),
+            to.ToString("yyyy-MM-dd"),
             blockchainType);
 
         var (cachingEnabled, _, _, _) = GetPerformanceSettings();
@@ -371,9 +371,9 @@ public partial class ProofOfReserveService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The audit report.</returns>
     private async Task<AuditReport> GenerateAuditReportInternalAsync(
-        string assetId, 
-        DateTime from, 
-        DateTime to, 
+        string assetId,
+        DateTime from,
+        DateTime to,
         BlockchainType blockchainType)
     {
         var asset = GetMonitoredAsset(assetId);
@@ -445,12 +445,12 @@ public partial class ProofOfReserveService
         if (_cacheHelper != null)
         {
             _cacheHelper.Remove(ProofOfReserveCacheHelper.CacheKeys.ConfigSummary);
-            
+
             // Remove alert cache for all blockchains
             foreach (var blockchain in SupportedBlockchains)
             {
                 var alertsCacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
-                    ProofOfReserveCacheHelper.CacheKeys.Alerts, 
+                    ProofOfReserveCacheHelper.CacheKeys.Alerts,
                     blockchain);
                 _cacheHelper.Remove(alertsCacheKey);
             }
@@ -534,7 +534,7 @@ public partial class ProofOfReserveService
                 try
                 {
                     await GetConfigurationSummaryWithCachingAsync();
-                    
+
                     foreach (var blockchain in SupportedBlockchains)
                     {
                         await GetActiveAlertsWithCachingAsync(blockchain);

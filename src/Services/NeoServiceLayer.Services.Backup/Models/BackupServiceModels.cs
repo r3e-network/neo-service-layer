@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Backup.Models;
 
@@ -24,10 +24,10 @@ public class BackupRequest
     /// <summary>
     /// Gets or sets whether encryption is enabled.
     /// </summary>
-    public bool EncryptionEnabled 
-    { 
-        get => EncryptData; 
-        set => EncryptData = value; 
+    public bool EncryptionEnabled
+    {
+        get => EncryptData;
+        set => EncryptData = value;
     }
 
     /// <summary>
@@ -38,10 +38,10 @@ public class BackupRequest
     /// <summary>
     /// Gets or sets the storage location.
     /// </summary>
-    public string StorageLocation 
-    { 
-        get => DestinationPath; 
-        set => DestinationPath = value; 
+    public string StorageLocation
+    {
+        get => DestinationPath;
+        set => DestinationPath = value;
     }
 }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
@@ -226,4 +226,4 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _output.WriteLine($"   Sign result: {signResult}");
         }
     }
-} 
+}

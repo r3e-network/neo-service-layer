@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Web.Models;
-using System.Security.Claims;
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -98,7 +98,7 @@ public abstract class BaseApiController : ControllerBase
             NotSupportedException => BadRequest(CreateErrorResponse(ex.Message)),
             InvalidOperationException => BadRequest(CreateErrorResponse(ex.Message)),
             KeyNotFoundException => NotFound(CreateErrorResponse(ex.Message)),
-            _ => StatusCode(500, CreateErrorResponse("An internal error occurred", 
+            _ => StatusCode(500, CreateErrorResponse("An internal error occurred",
                 Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? ex.Message : null))
         };
     }
@@ -141,8 +141,8 @@ public abstract class BaseApiController : ControllerBase
         {
             var serviceName = GetType().Name.Replace("Controller", "");
             var healthStatus = await CheckServiceHealthAsync();
-            
-            Logger.LogInformation("Health check requested for {ServiceName} by {UserId}", 
+
+            Logger.LogInformation("Health check requested for {ServiceName} by {UserId}",
                 serviceName, GetCurrentUserId() ?? "anonymous");
 
             return Ok(healthStatus);
@@ -169,8 +169,8 @@ public abstract class BaseApiController : ControllerBase
         {
             var serviceName = GetType().Name.Replace("Controller", "");
             var status = await GetServiceStatusAsync();
-            
-            Logger.LogInformation("Status check requested for {ServiceName} by {UserId}", 
+
+            Logger.LogInformation("Status check requested for {ServiceName} by {UserId}",
                 serviceName, GetCurrentUserId());
 
             return Ok(CreateResponse(status, "Service status retrieved successfully"));
@@ -196,8 +196,8 @@ public abstract class BaseApiController : ControllerBase
         {
             var serviceName = GetType().Name.Replace("Controller", "");
             var metrics = await GetServiceMetricsAsync();
-            
-            Logger.LogInformation("Metrics requested for {ServiceName} by {UserId}", 
+
+            Logger.LogInformation("Metrics requested for {ServiceName} by {UserId}",
                 serviceName, GetCurrentUserId());
 
             return Ok(CreateResponse(metrics, "Service metrics retrieved successfully"));
@@ -223,8 +223,8 @@ public abstract class BaseApiController : ControllerBase
         {
             var serviceName = GetType().Name.Replace("Controller", "");
             var diagnostics = await RunServiceDiagnosticsAsync();
-            
-            Logger.LogInformation("Diagnostics run for {ServiceName} by {UserId}", 
+
+            Logger.LogInformation("Diagnostics run for {ServiceName} by {UserId}",
                 serviceName, GetCurrentUserId());
 
             return Ok(CreateResponse(diagnostics, "Service diagnostics completed successfully"));
@@ -242,13 +242,13 @@ public abstract class BaseApiController : ControllerBase
     protected virtual async Task<ServiceHealthStatus> CheckServiceHealthAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
-        
+
         // Get real system uptime
         var processUptime = DateTime.UtcNow - System.Diagnostics.Process.GetCurrentProcess().StartTime;
-        
+
         // Check real dependencies
         var dependencies = await CheckRealDependenciesAsync();
-        
+
         return new ServiceHealthStatus
         {
             ServiceName = serviceName,
@@ -267,12 +267,12 @@ public abstract class BaseApiController : ControllerBase
     protected virtual async Task<ServiceStatus> GetServiceStatusAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
-        
+
         // Get real system metrics
         var systemMetrics = await GetRealSystemMetricsAsync();
         var processMetrics = await GetProcessMetricsAsync();
         var configuration = await GetServiceConfigurationAsync();
-        
+
         return new ServiceStatus
         {
             ServiceName = serviceName,
@@ -300,12 +300,12 @@ public abstract class BaseApiController : ControllerBase
     protected virtual async Task<ServiceMetrics> GetServiceMetricsAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
-        
+
         // Get real performance metrics
         var performanceMetrics = await GetRealPerformanceMetricsAsync();
         var systemMetrics = await GetRealSystemMetricsAsync();
         var networkMetrics = await GetNetworkMetricsAsync();
-        
+
         return new ServiceMetrics
         {
             ServiceName = serviceName,
@@ -341,7 +341,7 @@ public abstract class BaseApiController : ControllerBase
     protected virtual async Task<DiagnosticResults> RunServiceDiagnosticsAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
-        
+
         // Run real diagnostic tests
         var testResults = new List<DiagnosticTest>();
         var overallHealthy = true;
@@ -384,11 +384,11 @@ public abstract class BaseApiController : ControllerBase
     }
 
     // Real metrics collection helper methods
-    
+
     protected virtual async Task<Dictionary<string, string>> CheckRealDependenciesAsync()
     {
         var dependencies = new Dictionary<string, string>();
-        
+
         // Check database connectivity
         try
         {
@@ -399,7 +399,7 @@ public abstract class BaseApiController : ControllerBase
         {
             dependencies["Database"] = "Disconnected";
         }
-        
+
         // Check SGX Enclave status
         try
         {
@@ -411,7 +411,7 @@ public abstract class BaseApiController : ControllerBase
         {
             dependencies["SGX Enclave"] = "Unavailable";
         }
-        
+
         // Check network connectivity
         try
         {
@@ -423,17 +423,17 @@ public abstract class BaseApiController : ControllerBase
         {
             dependencies["Network"] = "Unavailable";
         }
-        
+
         return dependencies;
     }
-    
+
     protected virtual string GetAssemblyVersion()
     {
         var assembly = System.Reflection.Assembly.GetExecutingAssembly();
         var version = assembly.GetName().Version;
         return version?.ToString() ?? "1.0.0";
     }
-    
+
     protected virtual async Task<(bool IsHealthy, double MemoryUsagePercent, double CpuUsagePercent, double MemoryUsageMB, double DiskUsagePercent)> GetRealSystemMetricsAsync()
     {
         try
@@ -441,21 +441,21 @@ public abstract class BaseApiController : ControllerBase
             var process = System.Diagnostics.Process.GetCurrentProcess();
             var totalMemory = GC.GetTotalMemory(false);
             var workingSet = Environment.WorkingSet;
-            
+
             // Memory usage
             var memoryUsageMB = workingSet / (1024.0 * 1024.0);
             var memoryUsagePercent = (double)workingSet / (16L * 1024 * 1024 * 1024) * 100; // Assume 16GB system
-            
+
             // CPU usage (simplified - would need performance counters for accuracy)
             var cpuUsagePercent = process.TotalProcessorTime.TotalMilliseconds / Environment.TickCount * 100;
             cpuUsagePercent = Math.Min(cpuUsagePercent, 100);
-            
+
             // Disk usage (simplified)
             var driveInfo = new DriveInfo(Path.GetPathRoot(Environment.CurrentDirectory));
             var diskUsagePercent = (double)(driveInfo.TotalSize - driveInfo.AvailableFreeSpace) / driveInfo.TotalSize * 100;
-            
+
             var isHealthy = memoryUsagePercent < 80 && cpuUsagePercent < 80 && diskUsagePercent < 90;
-            
+
             return (isHealthy, memoryUsagePercent, cpuUsagePercent, memoryUsageMB, diskUsagePercent);
         }
         catch
@@ -463,14 +463,14 @@ public abstract class BaseApiController : ControllerBase
             return (false, 0, 0, 0, 0);
         }
     }
-    
+
     protected virtual async Task<(TimeSpan Uptime, long RequestsToday, double SuccessRate, TimeSpan AverageResponseTime, int ActiveConnections, double ErrorRate, string LastError)> GetProcessMetricsAsync()
     {
         try
         {
             var process = System.Diagnostics.Process.GetCurrentProcess();
             var uptime = DateTime.UtcNow - process.StartTime;
-            
+
             // These would be tracked by actual metrics collection in production
             var requestsToday = 0L; // Would come from metrics store
             var successRate = 99.5; // Would come from metrics store
@@ -478,7 +478,7 @@ public abstract class BaseApiController : ControllerBase
             var activeConnections = process.Threads.Count; // Approximation
             var errorRate = 0.5; // Would come from metrics store
             string lastError = null; // Would come from error tracking
-            
+
             return (uptime, requestsToday, successRate, averageResponseTime, activeConnections, errorRate, lastError);
         }
         catch
@@ -486,7 +486,7 @@ public abstract class BaseApiController : ControllerBase
             return (TimeSpan.Zero, 0, 0, TimeSpan.Zero, 0, 100, "Failed to get process metrics");
         }
     }
-    
+
     protected virtual async Task<Dictionary<string, object>> GetServiceConfigurationAsync()
     {
         // Return actual service configuration
@@ -501,7 +501,7 @@ public abstract class BaseApiController : ControllerBase
             ["Is64BitProcess"] = Environment.Is64BitProcess
         };
     }
-    
+
     protected virtual async Task<(double RequestsPerSecond, TimeSpan AverageResponseTime, double ErrorRate, int ConcurrentUsers, double CacheHitRate, int DatabaseConnections, int QueueLength, double TotalRequestsProcessed, double OperationsPerSecond)> GetRealPerformanceMetricsAsync()
     {
         try
@@ -517,7 +517,7 @@ public abstract class BaseApiController : ControllerBase
             var queueLength = 0; // Would come from queue monitoring
             var totalRequestsProcessed = 10000.0; // Would come from metrics store
             var operationsPerSecond = 50.0; // Would come from metrics store
-            
+
             return (requestsPerSecond, averageResponseTime, errorRate, concurrentUsers, cacheHitRate, databaseConnections, queueLength, totalRequestsProcessed, operationsPerSecond);
         }
         catch
@@ -525,7 +525,7 @@ public abstract class BaseApiController : ControllerBase
             return (0, TimeSpan.Zero, 100, 0, 0, 0, 0, 0, 0);
         }
     }
-    
+
     protected virtual async Task<(double ThroughputMbps, double LatencyMs, double TotalBytesTransferred)> GetNetworkMetricsAsync()
     {
         try
@@ -534,7 +534,7 @@ public abstract class BaseApiController : ControllerBase
             var throughputMbps = 10.0; // Would come from network monitoring
             var latencyMs = 5.0; // Would come from network monitoring
             var totalBytesTransferred = 1000000.0; // Would come from network monitoring
-            
+
             return (throughputMbps, latencyMs, totalBytesTransferred);
         }
         catch
@@ -542,9 +542,9 @@ public abstract class BaseApiController : ControllerBase
             return (0, 0, 0);
         }
     }
-    
+
     // Real diagnostic test methods
-    
+
     protected virtual async Task<DiagnosticTest> RunDatabaseConnectivityTestAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -553,7 +553,7 @@ public abstract class BaseApiController : ControllerBase
             // This would be overridden in specific controllers with actual database tests
             await Task.Delay(50); // Simulate database check
             stopwatch.Stop();
-            
+
             return new DiagnosticTest
             {
                 Name = "Database Connectivity",
@@ -574,7 +574,7 @@ public abstract class BaseApiController : ControllerBase
             };
         }
     }
-    
+
     protected virtual async Task<DiagnosticTest> RunSgxEnclaveTestAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -583,7 +583,7 @@ public abstract class BaseApiController : ControllerBase
             var httpClient = new HttpClient();
             var response = await httpClient.GetAsync("/api/v1/enclave/health");
             stopwatch.Stop();
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return new DiagnosticTest
@@ -617,7 +617,7 @@ public abstract class BaseApiController : ControllerBase
             };
         }
     }
-    
+
     protected virtual async Task<DiagnosticTest> RunApiEndpointTestAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -626,7 +626,7 @@ public abstract class BaseApiController : ControllerBase
             var httpClient = new HttpClient();
             var response = await httpClient.GetAsync("/api/v1/health");
             stopwatch.Stop();
-            
+
             if (response.IsSuccessStatusCode)
             {
                 return new DiagnosticTest
@@ -660,7 +660,7 @@ public abstract class BaseApiController : ControllerBase
             };
         }
     }
-    
+
     protected virtual async Task<DiagnosticTest> RunPerformanceBenchmarkTestAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -669,19 +669,19 @@ public abstract class BaseApiController : ControllerBase
             // Simple performance benchmark
             var process = System.Diagnostics.Process.GetCurrentProcess();
             var memoryBefore = GC.GetTotalMemory(false);
-            
+
             // Simulate some work
             await Task.Delay(100);
-            
+
             var memoryAfter = GC.GetTotalMemory(false);
             stopwatch.Stop();
-            
+
             var responseTime = stopwatch.ElapsedMilliseconds;
             var memoryUsed = memoryAfter - memoryBefore;
-            
+
             var status = responseTime < 1000 ? "Passed" : "Warning";
             var details = $"Response time: {responseTime}ms, Memory delta: {memoryUsed} bytes";
-            
+
             return new DiagnosticTest
             {
                 Name = "Performance Benchmark",
@@ -702,7 +702,7 @@ public abstract class BaseApiController : ControllerBase
             };
         }
     }
-    
+
     protected virtual async Task<DiagnosticTest> RunBlockchainConnectivityTestAsync()
     {
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -711,14 +711,14 @@ public abstract class BaseApiController : ControllerBase
             // Test connectivity to configured blockchain endpoints
             using var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(10);
-            
+
             // Test Neo N3 connectivity
-            var neoN3Response = await httpClient.PostAsync("https://mainnet1.neo.coz.io:443", 
-                new StringContent("{\"jsonrpc\":\"2.0\",\"method\":\"getblockcount\",\"params\":[],\"id\":1}", 
+            var neoN3Response = await httpClient.PostAsync("https://mainnet1.neo.coz.io:443",
+                new StringContent("{\"jsonrpc\":\"2.0\",\"method\":\"getblockcount\",\"params\":[],\"id\":1}",
                 System.Text.Encoding.UTF8, "application/json"));
-            
+
             stopwatch.Stop();
-            
+
             if (neoN3Response.IsSuccessStatusCode)
             {
                 return new DiagnosticTest
@@ -752,14 +752,14 @@ public abstract class BaseApiController : ControllerBase
             };
         }
     }
-    
+
     protected virtual List<string> GenerateRecommendations(List<DiagnosticTest> testResults)
     {
         var recommendations = new List<string>();
-        
+
         var failedTests = testResults.Where(t => t.Status == "Failed").ToList();
         var warningTests = testResults.Where(t => t.Status == "Warning").ToList();
-        
+
         if (!failedTests.Any() && !warningTests.Any())
         {
             recommendations.Add("Service is operating within normal parameters");
@@ -773,17 +773,17 @@ public abstract class BaseApiController : ControllerBase
                 recommendations.Add($"Critical issues detected in: {string.Join(", ", failedTests.Select(t => t.Name))}");
                 recommendations.Add("Immediate investigation and remediation required");
             }
-            
+
             if (warningTests.Any())
             {
                 recommendations.Add($"Performance warnings in: {string.Join(", ", warningTests.Select(t => t.Name))}");
                 recommendations.Add("Monitor closely and consider optimization");
             }
-            
+
             recommendations.Add("Review service logs for additional details");
             recommendations.Add("Consider scaling resources if performance issues persist");
         }
-        
+
         return recommendations;
     }
 }
@@ -855,4 +855,4 @@ public class PaginatedResponse<T> : ApiResponse<IEnumerable<T>>
     /// Gets whether there is a previous page.
     /// </summary>
     public bool HasPreviousPage => Page > 1;
-} 
+}

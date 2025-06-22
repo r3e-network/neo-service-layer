@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 // Proof of Reserve Models
 public class ProofOfReserve

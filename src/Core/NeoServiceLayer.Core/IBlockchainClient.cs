@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 /// <summary>
 /// Interface for blockchain clients.

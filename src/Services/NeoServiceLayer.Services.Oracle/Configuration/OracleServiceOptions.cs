@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
@@ -166,7 +166,7 @@ public class OracleServiceBuilder
     {
         if (maxDataSources <= 0)
             throw new ArgumentException("Max data sources must be greater than zero", nameof(maxDataSources));
-        
+
         _options.MaxDataSources = maxDataSources;
         return this;
     }
@@ -180,7 +180,7 @@ public class OracleServiceBuilder
     {
         if (maxSubscriptions <= 0)
             throw new ArgumentException("Max subscriptions must be greater than zero", nameof(maxSubscriptions));
-        
+
         _options.MaxSubscriptions = maxSubscriptions;
         return this;
     }
@@ -194,7 +194,7 @@ public class OracleServiceBuilder
     {
         if (timeoutMs <= 0)
             throw new ArgumentException("Timeout must be greater than zero", nameof(timeoutMs));
-        
+
         _options.RequestTimeoutMs = timeoutMs;
         return this;
     }
@@ -242,7 +242,7 @@ public class OracleServiceBuilder
     {
         if (minutes <= 0)
             throw new ArgumentException("Cache expiration must be greater than zero", nameof(minutes));
-        
+
         _options.CacheExpirationMinutes = minutes;
         return this;
     }
@@ -256,7 +256,7 @@ public class OracleServiceBuilder
     {
         if (batchSize <= 0)
             throw new ArgumentException("Batch size must be greater than zero", nameof(batchSize));
-        
+
         _options.MaxBatchSize = batchSize;
         return this;
     }
@@ -270,7 +270,7 @@ public class OracleServiceBuilder
     {
         if (rateLimit <= 0)
             throw new ArgumentException("Rate limit must be greater than zero", nameof(rateLimit));
-        
+
         _options.RateLimitPerMinute = rateLimit;
         return this;
     }
@@ -308,13 +308,13 @@ public class OracleServiceBuilder
     {
         if (_dependencies.EnclaveManager == null)
             throw new InvalidOperationException("EnclaveManager dependency is required");
-        
+
         if (_dependencies.BlockchainClientFactory == null)
             throw new InvalidOperationException("BlockchainClientFactory dependency is required");
-        
+
         if (_dependencies.HttpClientService == null)
             throw new InvalidOperationException("HttpClientService dependency is required");
-        
+
         if (_dependencies.Logger == null)
             throw new InvalidOperationException("Logger dependency is required");
     }

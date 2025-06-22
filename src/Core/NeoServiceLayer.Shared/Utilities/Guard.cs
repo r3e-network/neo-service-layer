@@ -1,4 +1,4 @@
-using System.Diagnostics.CodeAnalysis;
+﻿using System.Diagnostics.CodeAnalysis;
 using System.Runtime.CompilerServices;
 
 namespace NeoServiceLayer.Shared.Utilities;
@@ -307,4 +307,4 @@ public static class Guard
 
         return argument;
     }
-} 
+}

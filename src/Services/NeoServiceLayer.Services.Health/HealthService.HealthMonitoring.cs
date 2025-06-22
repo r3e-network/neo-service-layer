@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Health;
@@ -317,10 +317,10 @@ public partial class HealthService
 
             // 3. Get blockchain state information
             var blockchainState = await GetBlockchainStateAsync(nodeAddress, blockchainType);
-            
+
             // 4. Get node-specific information
             var nodeInfo = await GetNodeInfoAsync(nodeAddress, blockchainType);
-            
+
             // 5. Calculate uptime based on historical data
             var uptimeData = await CalculateNodeUptimeAsync(nodeAddress);
 
@@ -334,7 +334,7 @@ public partial class HealthService
             healthData.PublicKey = nodeInfo.PublicKey;
             healthData.IsConsensusNode = nodeInfo.IsConsensusNode;
             healthData.ConsensusRank = nodeInfo.ConsensusRank;
-            
+
             healthData.Metrics = new HealthMetrics
             {
                 TotalRequests = systemMetrics.TotalRequests,
@@ -386,7 +386,7 @@ public partial class HealthService
     private async Task<NetworkTestResult> TestNetworkConnectivityAsync(string nodeAddress)
     {
         var startTime = DateTime.UtcNow;
-        
+
         try
         {
             // Parse node address to extract host and port
@@ -452,7 +452,7 @@ public partial class HealthService
             httpClient.Timeout = TimeSpan.FromSeconds(10);
 
             var rpcUrl = $"http://{nodeAddress}";
-            
+
             // Try a simple RPC call like getversion or getblockcount
             var rpcRequest = new
             {
@@ -466,12 +466,12 @@ public partial class HealthService
             var content = new System.Net.Http.StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(rpcUrl, content);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 var isValidJson = IsValidJsonResponse(responseContent);
-                
+
                 return new RpcHealthResult
                 {
                     IsResponding = isValidJson,
@@ -510,18 +510,18 @@ public partial class HealthService
             // Make real RPC calls to get actual blockchain state
             using var httpClient = new System.Net.Http.HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(10);
-            
+
             var rpcUrl = $"http://{nodeAddress}";
-            
+
             // Get latest block information
             var blockHeightResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getblockcount", new object[0]);
             var latestBlockResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getbestblockhash", new object[0]);
             var mempoolResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getrawmempool", new object[0]);
-            
+
             // Parse results
             var blockHeight = blockHeightResult?.GetProperty("result").GetInt64() ?? 0;
             var lastBlockHash = latestBlockResult?.GetProperty("result").GetString() ?? string.Empty;
-            
+
             // Get block timestamp
             var blockResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getblock", new object[] { lastBlockHash, true });
             var blockTime = DateTime.UtcNow;
@@ -533,7 +533,7 @@ public partial class HealthService
                     blockTime = DateTimeOffset.FromUnixTimeSeconds(unixTime).DateTime;
                 }
             }
-            
+
             // Get mempool size
             var mempoolSize = 0;
             if (mempoolResult != null && mempoolResult.Value.TryGetProperty("result", out var mempoolData))
@@ -543,7 +543,7 @@ public partial class HealthService
                     mempoolSize = mempoolData.GetArrayLength();
                 }
             }
-            
+
             return new BlockchainStateResult
             {
                 BlockHeight = blockHeight,
@@ -555,7 +555,7 @@ public partial class HealthService
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to get real blockchain state from {NodeAddress}, using fallback", nodeAddress);
-            
+
             // Fallback to reasonable defaults if RPC calls fail
             return blockchainType switch
             {
@@ -594,23 +594,23 @@ public partial class HealthService
             // Make real RPC calls to get actual node information
             using var httpClient = new System.Net.Http.HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(10);
-            
+
             var rpcUrl = $"http://{nodeAddress}";
-            
+
             // Get version information
             var versionResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getversion", new object[0]);
-            
+
             // Get connection count
             var connectionResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getconnectioncount", new object[0]);
-            
+
             // Get validators/consensus nodes information
             var validatorsResult = await MakeRpcCallAsync(httpClient, rpcUrl, "getvalidators", new object[0]);
-            
+
             // Parse version info
             string version = "3.6.0"; // Default
             string protocolVersion = blockchainType == BlockchainType.NeoN3 ? "3.6.0" : "1.0.0";
             string userAgent = string.Empty;
-            
+
             if (versionResult != null && versionResult.Value.TryGetProperty("result", out var versionData))
             {
                 if (versionData.TryGetProperty("useragent", out var userAgentProp))
@@ -623,50 +623,50 @@ public partial class HealthService
                         version = versionMatch.Groups[1].Value;
                     }
                 }
-                
+
                 if (versionData.TryGetProperty("protocol", out var protocolProp))
                 {
                     var protocolInfo = protocolProp.GetProperty("network");
                     protocolVersion = protocolInfo.GetString() ?? protocolVersion;
                 }
             }
-            
+
             // Parse connection count
             var connectionCount = 0;
             if (connectionResult != null && connectionResult.Value.TryGetProperty("result", out var connData))
             {
                 connectionCount = connData.GetInt32();
             }
-            
+
             // Check if this is a consensus node
             bool isConsensusNode = false;
             int consensusRank = 0;
             string publicKey = string.Empty;
-            
-                         if (validatorsResult != null && validatorsResult.Value.TryGetProperty("result", out var validatorsData))
-             {
-                 if (validatorsData.ValueKind == System.Text.Json.JsonValueKind.Array)
-                 {
-                     var validators = validatorsData.EnumerateArray().ToArray();
-                     for (int i = 0; i < validators.Length; i++)
-                     {
-                         var validator = validators[i];
-                         if (validator.TryGetProperty("publickey", out var pubKeyProp))
-                         {
-                             publicKey = pubKeyProp.GetString() ?? string.Empty;
-                             // In production, you would check if this node's public key matches
-                             // For now, assume first validator found is this node if it's a consensus node
-                             if (i == 0) // Simplified logic
-                             {
-                                 isConsensusNode = true;
-                                 consensusRank = i + 1;
-                                 break;
-                             }
-                         }
-                     }
-                 }
-             }
-            
+
+            if (validatorsResult != null && validatorsResult.Value.TryGetProperty("result", out var validatorsData))
+            {
+                if (validatorsData.ValueKind == System.Text.Json.JsonValueKind.Array)
+                {
+                    var validators = validatorsData.EnumerateArray().ToArray();
+                    for (int i = 0; i < validators.Length; i++)
+                    {
+                        var validator = validators[i];
+                        if (validator.TryGetProperty("publickey", out var pubKeyProp))
+                        {
+                            publicKey = pubKeyProp.GetString() ?? string.Empty;
+                            // In production, you would check if this node's public key matches
+                            // For now, assume first validator found is this node if it's a consensus node
+                            if (i == 0) // Simplified logic
+                            {
+                                isConsensusNode = true;
+                                consensusRank = i + 1;
+                                break;
+                            }
+                        }
+                    }
+                }
+            }
+
             // Check existing node data for consensus info
             lock (_nodesLock)
             {
@@ -683,13 +683,13 @@ public partial class HealthService
                     }
                 }
             }
-            
+
             // Generate public key if still empty
             if (string.IsNullOrEmpty(publicKey))
             {
                 publicKey = GetFallbackPublicKey(nodeAddress);
             }
-            
+
             return new NodeInfoResult
             {
                 PublicKey = publicKey,
@@ -703,12 +703,12 @@ public partial class HealthService
         catch (Exception ex)
         {
             Logger.LogWarning(ex, "Failed to get real node info from {NodeAddress}, using fallback", nodeAddress);
-            
+
             // Fallback to stored data or defaults
             bool isConsensusNode = false;
             int consensusRank = 0;
             string publicKey = GetFallbackPublicKey(nodeAddress);
-            
+
             lock (_nodesLock)
             {
                 if (_monitoredNodes.TryGetValue(nodeAddress, out var existingNode))
@@ -721,7 +721,7 @@ public partial class HealthService
                     }
                 }
             }
-            
+
             return new NodeInfoResult
             {
                 PublicKey = publicKey,
@@ -740,10 +740,10 @@ public partial class HealthService
     private async Task<UptimeResult> CalculateNodeUptimeAsync(string nodeAddress)
     {
         await Task.CompletedTask;
-        
+
         // In production, this would analyze historical uptime data
         // For now, calculate based on recent monitoring history
-        
+
         lock (_nodesLock)
         {
             if (_monitoredNodes.TryGetValue(nodeAddress, out var node))
@@ -755,7 +755,7 @@ public partial class HealthService
                     // Gradually adjust uptime based on current status
                     var adjustment = node.Status == NodeStatus.Online ? 0.1 : -0.5;
                     var newUptime = Math.Max(0, Math.Min(100, existingUptime + adjustment));
-                    
+
                     return new UptimeResult
                     {
                         UptimePercentage = newUptime,
@@ -765,7 +765,7 @@ public partial class HealthService
                 }
             }
         }
-        
+
         // Default for new nodes
         return new UptimeResult
         {
@@ -815,14 +815,14 @@ public partial class HealthService
             var content = new System.Net.Http.StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
             var response = await httpClient.PostAsync(rpcUrl, content);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
                 using var document = System.Text.Json.JsonDocument.Parse(responseContent);
                 return document.RootElement.Clone();
             }
-            
+
             return null;
         }
         catch (Exception ex)
@@ -843,12 +843,12 @@ public partial class HealthService
             BlockchainType.NeoX => 1_000_000, // Estimated Neo X block height
             _ => 100_000
         };
-        
+
         // Add estimated blocks based on time since base date
         var timeOffset = (DateTime.UtcNow - new DateTime(2024, 1, 1)).TotalSeconds;
         var blockTimeSeconds = blockchainType == BlockchainType.NeoN3 ? 15 : 2;
         var estimatedNewBlocks = (long)(timeOffset / blockTimeSeconds);
-        
+
         return baseHeight + estimatedNewBlocks;
     }
 

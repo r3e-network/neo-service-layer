@@ -1,7 +1,7 @@
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -130,7 +130,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         try
         {
             _logger.LogInformation("Manually reloading Proof of Reserve configuration");
-            
+
             var newConfiguration = LoadConfiguration();
             var validationResult = ValidateConfiguration(newConfiguration);
 
@@ -158,7 +158,7 @@ public class ProofOfReserveConfigurationService : IDisposable
     public ConfigurationSummary GetConfigurationSummary()
     {
         var config = Configuration;
-        
+
         return new ConfigurationSummary
         {
             Environment = config.Environment.Name,
@@ -290,7 +290,7 @@ public class ProofOfReserveConfigurationService : IDisposable
     private ProofOfReserveConfiguration LoadConfiguration()
     {
         var configuration = new ProofOfReserveConfiguration();
-        
+
         try
         {
             _configuration.GetSection(ProofOfReserveConfiguration.SectionName).Bind(configuration);
@@ -313,7 +313,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         try
         {
             _logger.LogInformation("Configuration change detected, reloading...");
-            
+
             var newConfiguration = LoadConfiguration();
             var validationResult = ValidateConfiguration(newConfiguration);
 
@@ -384,7 +384,7 @@ public class ProofOfReserveConfigurationService : IDisposable
     public void Dispose()
     {
         _configurationChangeToken?.Dispose();
-        
+
         lock (_configurationLock)
         {
             _changeCallbacks.Clear();

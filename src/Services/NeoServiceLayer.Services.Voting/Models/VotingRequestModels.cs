@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Voting.Models;
+﻿namespace NeoServiceLayer.Services.Voting.Models;
 
 /// <summary>
 /// Create proposal request.
@@ -266,4 +266,4 @@ public class VotingStatisticsRequest
     /// Gets or sets the end date for statistics.
     /// </summary>
     public DateTime? EndDate { get; set; }
-} 
+}

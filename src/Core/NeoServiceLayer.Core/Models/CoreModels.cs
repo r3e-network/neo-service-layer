@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -803,4 +803,4 @@ public class ModelRegistration
     public string Description { get; set; } = string.Empty;
 }
 
-#endregion 
+#endregion

@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -152,4 +152,4 @@ public interface IAutomationService : IService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The validation response.</returns>
     Task<ValidationResponse> ValidateAutomationAsync(ValidationRequest request, BlockchainType blockchainType);
-} 
+}

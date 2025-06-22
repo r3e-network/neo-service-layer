@@ -1,7 +1,7 @@
+﻿using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Net.Http;
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -86,14 +86,14 @@ public class ProductionBlockchainClientFactory : IBlockchainClientFactory
         try
         {
             var client = CreateClient(blockchainType);
-            
+
             // Test the connection by getting the current block height
             var height = await client.GetBlockHeightAsync();
-            
+
             var logger = _loggerFactory.CreateLogger<ProductionBlockchainClientFactory>();
-            logger.LogInformation("Successfully validated connection to {BlockchainType}. Current height: {Height}", 
+            logger.LogInformation("Successfully validated connection to {BlockchainType}. Current height: {Height}",
                 blockchainType, height);
-            
+
             return height >= 0;
         }
         catch (Exception ex)
@@ -113,8 +113,8 @@ public class ProductionBlockchainClientFactory : IBlockchainClientFactory
     {
         var logger = _loggerFactory.CreateLogger<NeoBlockchainClient>();
         var rpcEndpoint = GetRpcEndpoint(blockchainType);
-        
-        logger.LogInformation("Creating blockchain client for {BlockchainType} using endpoint {Endpoint}", 
+
+        logger.LogInformation("Creating blockchain client for {BlockchainType} using endpoint {Endpoint}",
             blockchainType, rpcEndpoint);
 
         return new NeoBlockchainClient(logger, blockchainType, _httpClient, rpcEndpoint);
@@ -135,7 +135,7 @@ public class ProductionBlockchainClientFactory : IBlockchainClientFactory
         };
 
         var endpoint = _configuration[configKey];
-        
+
         if (string.IsNullOrEmpty(endpoint))
         {
             // Use default endpoints if not configured
@@ -145,9 +145,9 @@ public class ProductionBlockchainClientFactory : IBlockchainClientFactory
                 BlockchainType.NeoX => GetDefaultNeoXEndpoint(),
                 _ => throw new NotSupportedException($"No default endpoint available for {blockchainType}")
             };
-            
+
             var logger = _loggerFactory.CreateLogger<ProductionBlockchainClientFactory>();
-            logger.LogWarning("No RPC endpoint configured for {BlockchainType}, using default: {Endpoint}", 
+            logger.LogWarning("No RPC endpoint configured for {BlockchainType}, using default: {Endpoint}",
                 blockchainType, endpoint);
         }
 

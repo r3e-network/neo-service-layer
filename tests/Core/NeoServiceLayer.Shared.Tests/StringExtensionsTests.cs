@@ -1,7 +1,7 @@
+﻿using System.Text;
+using System.Text.Json;
 using FluentAssertions;
 using NeoServiceLayer.Shared.Extensions;
-using System.Text;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests;
@@ -729,4 +729,4 @@ public class StringExtensionsTests
     }
 
     #endregion
-} 
+}

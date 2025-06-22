@@ -1,12 +1,12 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
-using NeoServiceLayer.Services.Storage;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Tee.Host.Services;
+using Xunit;
 
 namespace NeoServiceLayer.Services.Storage.Tests;
 
@@ -569,7 +569,7 @@ public class StorageServiceTests : IDisposable
 
         _mockEnclaveManager
             .Setup(x => x.StorageRetrieveDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string key, string encryptionKey, CancellationToken ct) => 
+            .ReturnsAsync((string key, string encryptionKey, CancellationToken ct) =>
                 Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("test_data_content")));
 
         _mockEnclaveManager

@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Voting.Models;
 
@@ -349,4 +349,4 @@ public class VotingStrategyResult
     /// Gets or sets execution metrics.
     /// </summary>
     public Dictionary<string, object> Metrics { get; set; } = new();
-} 
+}

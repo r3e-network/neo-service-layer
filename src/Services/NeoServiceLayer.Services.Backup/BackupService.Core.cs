@@ -1,9 +1,9 @@
+﻿using System.Net.Http;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Backup.Models;
-using System.Net.Http;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Backup;
@@ -26,7 +26,7 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
         _httpClientService = httpClientService ?? throw new ArgumentNullException(nameof(httpClientService));
         // Add capabilities
         AddCapability<IBackupService>();
-        
+
         // Add metadata
         SetMetadata("MaxActiveJobs", "10");
         SetMetadata("SupportedBlockchains", "NeoN3,NeoX");
@@ -92,7 +92,7 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
                 health = ServiceHealth.Degraded;
             }
 
-            Logger.LogDebug("Backup service health check: {ActiveJobs} active jobs, {Schedules} schedules", 
+            Logger.LogDebug("Backup service health check: {ActiveJobs} active jobs, {Schedules} schedules",
                 activeJobCount, scheduleCount);
 
             return Task.FromResult(health);

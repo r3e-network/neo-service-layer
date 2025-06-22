@@ -1,25 +1,16 @@
+﻿using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using System.Threading.RateLimiting;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using NeoServiceLayer.Infrastructure;
-using NeoServiceLayer.Api.Filters;
-using NeoServiceLayer.Api.Middleware;
-using Serilog;
-using System.Reflection;
-using System.Security.Claims;
-using System.Text;
-using System.Threading.RateLimiting;
-using Microsoft.Extensions.DependencyInjection;
-using Asp.Versioning;
-using NeoServiceLayer.Core;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Tee.Host.Services;
-// using NeoServiceLayer.Services.Randomness;
-// using NeoServiceLayer.Services.Oracle;
-using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.AI.PatternRecognition;
 // using NeoServiceLayer.Services.Compute;
 // using NeoServiceLayer.Services.Storage;
 // using NeoServiceLayer.Services.Compliance;
@@ -30,9 +21,18 @@ using NeoServiceLayer.Services.KeyManagement;
 // using NeoServiceLayer.Services.ProofOfReserve;
 // using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.AI.Prediction;
-using NeoServiceLayer.AI.PatternRecognition;
+using NeoServiceLayer.Api.Filters;
+using NeoServiceLayer.Api.Middleware;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 // using NeoServiceLayer.Advanced.FairOrdering;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
+// using NeoServiceLayer.Services.Randomness;
+// using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Tee.Host.Services;
+using Serilog;
 // using NeoServiceLayer.Services.Health;
 // using NeoServiceLayer.Services.Monitoring;
 // using NeoServiceLayer.Services.Configuration;
@@ -126,13 +126,13 @@ builder.Services.AddSwaggerGen(c =>
     // Group operations by tags
     c.DocInclusionPredicate((docName, apiDesc) => true);
     c.TagActionsBy(api => new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] });
-    
+
     // Order tags alphabetically
     c.OrderActionsBy(api => $"{api.ActionDescriptor.RouteValues["controller"]}_{api.ActionDescriptor.RouteValues["action"]}");
-    
+
     // Add operation filters for better documentation
     // c.EnableAnnotations(); // Method not available in this Swagger version
-    
+
     // Custom schema IDs to avoid conflicts
     c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
 });
@@ -219,19 +219,19 @@ builder.Services.AddRateLimiter(options =>
 // Add Health Checks
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "ready", "live" })
-    .AddCheck("database", () => 
+    .AddCheck("database", () =>
     {
         // Check database connectivity
         // This is a placeholder - in production, use AddNpgsql() or similar
         return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Database is accessible");
     }, tags: new[] { "ready", "database" })
-    .AddCheck("redis", () => 
+    .AddCheck("redis", () =>
     {
         // Check Redis connectivity
         // This is a placeholder - in production, use AddRedis() or similar
         return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Redis is accessible");
     }, tags: new[] { "ready", "cache" })
-    .AddCheck("sgx", () => 
+    .AddCheck("sgx", () =>
     {
         // Check SGX enclave status
         var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE") ?? "Unknown";

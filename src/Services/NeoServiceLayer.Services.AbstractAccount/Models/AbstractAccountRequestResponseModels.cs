@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.AbstractAccount.Models;
 
@@ -1151,4 +1151,4 @@ public class TransactionHistoryItem
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
-} 
+}

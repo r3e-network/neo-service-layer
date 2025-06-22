@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -19,9 +19,9 @@ public class ProductionSGXEnclaveWrapper : IEnclaveWrapper
     public ProductionSGXEnclaveWrapper(ILogger<ProductionSGXEnclaveWrapper> logger)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-        
+
         // Create an Occlum wrapper with the same logger type cast
-        var occlumLogger = logger as ILogger<OcclumEnclaveWrapper> ?? 
+        var occlumLogger = logger as ILogger<OcclumEnclaveWrapper> ??
                           new LoggerWrapper<OcclumEnclaveWrapper>(logger);
         _occlumWrapper = new OcclumEnclaveWrapper(occlumLogger);
         _disposed = false;
@@ -216,4 +216,4 @@ internal class LoggerWrapper<T> : ILogger<T>
     {
         _logger.Log(logLevel, eventId, state, exception, formatter);
     }
-} 
+}

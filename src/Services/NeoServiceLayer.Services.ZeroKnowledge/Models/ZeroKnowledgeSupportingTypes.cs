@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge.Models;
 
@@ -282,4 +282,4 @@ public enum HashFunction
     /// MiMC hash function.
     /// </summary>
     MiMC
-} 
+}

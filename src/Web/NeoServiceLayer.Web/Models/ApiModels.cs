@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Web.Models;
+﻿namespace NeoServiceLayer.Web.Models;
 
 /// <summary>
 /// Generic API response wrapper.

@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.ZeroKnowledge.Models;
+﻿namespace NeoServiceLayer.Services.ZeroKnowledge.Models;
 
 /// <summary>
 /// Parsed circuit representation.

@@ -1,8 +1,8 @@
+﻿// No alias needed - will use fully qualified names
+using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-// No alias needed - will use fully qualified names
-using System.Net.Http;
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -93,4 +93,4 @@ public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlock
     {
         // Nothing to dispose in mock implementation
     }
-} 
+}

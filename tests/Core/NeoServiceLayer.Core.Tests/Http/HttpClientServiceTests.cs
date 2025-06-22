@@ -1,9 +1,9 @@
-using System.Net;
+﻿using System.Net;
 using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
-using NeoServiceLayer.Core.Http;
 using Moq.Protected;
+using NeoServiceLayer.Core.Http;
 using ItExpr = Moq.Protected.ItExpr;
 
 namespace NeoServiceLayer.Core.Tests.Http;
@@ -238,8 +238,8 @@ public class HttpClientServiceTests : IDisposable
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri!.ToString() == requestUri && 
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.RequestUri!.ToString() == requestUri &&
                     req.Method == HttpMethod.Post),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
@@ -265,7 +265,7 @@ public class HttpClientServiceTests : IDisposable
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
+                ItExpr.Is<HttpRequestMessage>(req =>
                     req.RequestUri!.ToString() == requestUri &&
                     req.Method == HttpMethod.Post),
                 ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
@@ -297,8 +297,8 @@ public class HttpClientServiceTests : IDisposable
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
-                    req.RequestUri == requestUri && 
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.RequestUri == requestUri &&
                     req.Method == HttpMethod.Post),
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
@@ -324,7 +324,7 @@ public class HttpClientServiceTests : IDisposable
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => 
+                ItExpr.Is<HttpRequestMessage>(req =>
                     req.RequestUri == requestUri &&
                     req.Method == HttpMethod.Post),
                 ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
@@ -468,7 +468,7 @@ public class HttpClientServiceTests : IDisposable
         // Arrange
         using var realHttpClient = new HttpClient();
         using var service = new HttpClientService(realHttpClient);
-        
+
         // Note: This is a mock test since we can't make real HTTP calls in unit tests
         // In a real scenario, you'd use a test server or HttpClientFactory with DI
 
@@ -483,7 +483,7 @@ public class HttpClientServiceTests : IDisposable
         // Arrange
         var services = new ServiceCollection();
         services.AddHttpClient<IHttpClientService, HttpClientService>();
-        
+
         var serviceProvider = services.BuildServiceProvider();
 
         // Act
@@ -506,4 +506,4 @@ public class HttpClientServiceTests : IDisposable
     }
 
     #endregion
-} 
+}

@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 /// <summary>
 /// Interface for data feed services that provide external data to the blockchain.

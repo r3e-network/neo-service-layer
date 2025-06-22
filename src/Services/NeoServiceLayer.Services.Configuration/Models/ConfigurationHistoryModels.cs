@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Configuration.Models;
+﻿namespace NeoServiceLayer.Services.Configuration.Models;
 
 /// <summary>
 /// Get configuration history request.

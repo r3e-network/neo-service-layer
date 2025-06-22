@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.ServiceFramework;
+﻿namespace NeoServiceLayer.ServiceFramework;
 
 /// <summary>
 /// Interface for service configuration.

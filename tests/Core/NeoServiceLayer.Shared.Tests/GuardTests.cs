@@ -1,6 +1,6 @@
+﻿using System.ComponentModel;
 using FluentAssertions;
 using NeoServiceLayer.Shared.Utilities;
-using System.ComponentModel;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests;
@@ -258,7 +258,7 @@ public class GuardTests
     {
         // Act & Assert
         Guard.GreaterThanOrEqual(-5, -10).Should().Be(-5);
-        
+
         var action = () => Guard.GreaterThanOrEqual(-15, -10);
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -417,7 +417,7 @@ public class GuardTests
     {
         // Act & Assert
         Guard.InRange(15.5m, 10.0m, 20.0m).Should().Be(15.5m);
-        
+
         var action = () => Guard.InRange(25.1m, 10.0m, 20.0m);
         action.Should().Throw<ArgumentOutOfRangeException>();
     }
@@ -764,4 +764,4 @@ public class GuardTests
     }
 
     #endregion
-} 
+}

@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -278,7 +278,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
 
             _logger.LogWarning("IP address change detected for session {SessionId}: {OriginalIp} -> {CurrentIp}",
                 sessionId, session.IpAddress, ipAddress);
-            
+
             // For now, allow but log. In production, you might want to invalidate the session
         }
 
@@ -369,7 +369,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
         lock (_securityLock)
         {
             _statistics.AuthenticationAttempts.Add(attempt);
-            
+
             // Keep only last 100 attempts
             if (_statistics.AuthenticationAttempts.Count > 100)
             {
@@ -473,7 +473,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
     private List<AuthenticationAttempt> GetRecentAuthenticationAttempts(string ipAddress)
     {
         var cutoff = DateTime.UtcNow.AddMinutes(-15);
-        
+
         lock (_securityLock)
         {
             return _statistics.AuthenticationAttempts
@@ -490,7 +490,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
     private int GetRecentRateLimitViolations(string ipAddress)
     {
         var cutoff = DateTime.UtcNow.AddMinutes(-10);
-        
+
         lock (_securityLock)
         {
             return _statistics.SecurityEvents
@@ -520,7 +520,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
         lock (_securityLock)
         {
             _statistics.SecurityEvents.Add(securityEvent);
-            
+
             // Keep only last 200 events
             if (_statistics.SecurityEvents.Count > 200)
             {
@@ -629,7 +629,7 @@ public class RateLimitBucket
         lock (_lock)
         {
             var now = DateTime.UtcNow;
-            
+
             // Reset bucket if time window has passed
             if (now - LastReset >= Config.TimeWindow)
             {

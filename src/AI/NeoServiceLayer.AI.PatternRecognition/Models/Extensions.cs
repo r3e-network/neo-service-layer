@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.AI.PatternRecognition.Models;
+﻿namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
 /// <summary>
 /// Extension methods for various types used in pattern recognition.
@@ -18,7 +18,7 @@ public static class Extensions
         var hours = timeSpans.Select(ts => ts.TotalHours).ToArray();
         var average = hours.Average();
         var sumOfSquares = hours.Sum(h => Math.Pow(h - average, 2));
-        
+
         return Math.Sqrt(sumOfSquares / (hours.Length - 1));
     }
 
@@ -56,12 +56,12 @@ public static class Extensions
     public static bool SafeGetBoolean(this object? obj, bool defaultValue = false)
     {
         if (obj == null) return defaultValue;
-        
+
         if (obj is bool boolValue) return boolValue;
-        
+
         if (bool.TryParse(obj.ToString(), out var parsedBool))
             return parsedBool;
-            
+
         return defaultValue;
     }
 
@@ -74,12 +74,12 @@ public static class Extensions
     public static int SafeGetInt(this object? obj, int defaultValue = 0)
     {
         if (obj == null) return defaultValue;
-        
+
         if (obj is int intValue) return intValue;
-        
+
         if (int.TryParse(obj.ToString(), out var parsedInt))
             return parsedInt;
-            
+
         return defaultValue;
     }
 
@@ -92,12 +92,12 @@ public static class Extensions
     public static decimal SafeGetDecimal(this object? obj, decimal defaultValue = 0)
     {
         if (obj == null) return defaultValue;
-        
+
         if (obj is decimal decimalValue) return decimalValue;
-        
+
         if (decimal.TryParse(obj.ToString(), out var parsedDecimal))
             return parsedDecimal;
-            
+
         return defaultValue;
     }
 
@@ -110,12 +110,12 @@ public static class Extensions
     public static DateTime SafeGetDateTime(this object? obj, DateTime defaultValue = default)
     {
         if (obj == null) return defaultValue;
-        
+
         if (obj is DateTime dateTimeValue) return dateTimeValue;
-        
+
         if (DateTime.TryParse(obj.ToString(), out var parsedDateTime))
             return parsedDateTime;
-            
+
         return defaultValue;
     }
 }

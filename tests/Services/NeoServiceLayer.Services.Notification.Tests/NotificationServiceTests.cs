@@ -1,12 +1,12 @@
+﻿using System.Net.Http;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
-using System.Net.Http;
-using Xunit;
-using FluentAssertions;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.TestInfrastructure;
+using Xunit;
 
 namespace NeoServiceLayer.Services.Notification.Tests;
 
@@ -22,7 +22,7 @@ public class NotificationServiceTests : TestBase
         _loggerMock = new Mock<ILogger<NotificationService>>();
         _optionsMock = new Mock<IOptions<NotificationOptions>>();
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
-        
+
         // Setup default options
         var options = new NotificationOptions
         {
@@ -31,7 +31,7 @@ public class NotificationServiceTests : TestBase
             BatchSize = 100
         };
         _optionsMock.Setup(x => x.Value).Returns(options);
-        
+
         _service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
     }
 

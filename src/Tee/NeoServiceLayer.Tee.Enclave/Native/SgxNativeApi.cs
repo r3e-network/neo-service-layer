@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Runtime.InteropServices;
 
 namespace NeoServiceLayer.Tee.Enclave.Native
@@ -365,4 +365,4 @@ namespace NeoServiceLayer.Tee.Enclave.Native
             ErrorCode = errorCode;
         }
     }
-} 
+}

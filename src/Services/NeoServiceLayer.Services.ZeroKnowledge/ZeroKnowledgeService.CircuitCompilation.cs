@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.ZeroKnowledge.Models;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.ZeroKnowledge.Models;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -104,7 +104,7 @@ public partial class ZeroKnowledgeService
         // Store the compiled circuit securely
         var compiledCode = await SerializeCompiledCircuitAsync(definition, r1cs, keys);
 
-        Logger.LogInformation("Compiled circuit {CircuitName} in {ElapsedMs}ms", 
+        Logger.LogInformation("Compiled circuit {CircuitName} in {ElapsedMs}ms",
             definition.Name, (DateTime.UtcNow - startTime).TotalMilliseconds);
 
         return compiledCode;
@@ -339,7 +339,7 @@ public partial class ZeroKnowledgeService
     private double[][] GenerateConstraintMatrix(List<CircuitConstraint> constraints, string matrixType)
     {
         var matrix = new double[constraints.Count][];
-        
+
         for (int i = 0; i < constraints.Count; i++)
         {
             matrix[i] = GenerateConstraintRow(constraints[i], matrixType);
@@ -435,8 +435,8 @@ public partial class ZeroKnowledgeService
     /// <returns>True if it's a variable name.</returns>
     private bool IsVariableName(string token)
     {
-        return !string.IsNullOrEmpty(token) && 
-               char.IsLetter(token[0]) && 
+        return !string.IsNullOrEmpty(token) &&
+               char.IsLetter(token[0]) &&
                token.All(c => char.IsLetterOrDigit(c) || c == '_');
     }
 
@@ -450,11 +450,11 @@ public partial class ZeroKnowledgeService
     {
         // Simplified constraint row generation
         var row = new double[constraint.Variables.Count + 1]; // +1 for constant term
-        
+
         // Fill with random coefficients for demo
         using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         var bytes = new byte[8];
-        
+
         for (int i = 0; i < row.Length; i++)
         {
             rng.GetBytes(bytes);
@@ -512,4 +512,4 @@ public partial class ZeroKnowledgeService
         public ProvingKeys Keys { get; set; } = new();
         public DateTime CompiledAt { get; set; }
     }
-} 
+}

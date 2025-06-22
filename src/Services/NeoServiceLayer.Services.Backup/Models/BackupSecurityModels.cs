@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Compression algorithm enumeration.

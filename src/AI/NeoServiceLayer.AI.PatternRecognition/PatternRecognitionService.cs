@@ -1,14 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Infrastructure.Persistence;
-using NeoServiceLayer.Tee.Host.Services;
-using System.Text;
+﻿using System.Text;
 using System.Text.Json;
-using CoreModels = NeoServiceLayer.Core.Models;
-using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
-using static NeoServiceLayer.Core.Models.DetectionSensitivity;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Tee.Host.Services;
+using static NeoServiceLayer.Core.Models.DetectionSensitivity;
+using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -115,7 +115,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
                 // Convert Core request to AI request for enclave processing
                 var aiRequest = AIModels.FraudDetectionHelper.ConvertFromCore(request);
-                
+
                 // Perform fraud detection within the enclave
                 var fraudScore = await CalculateFraudScoreInEnclaveAsync(aiRequest);
                 var riskFactors = await AnalyzeRiskFactorsInEnclaveAsync(aiRequest);
@@ -889,15 +889,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 dataDict[$"row_{i}"] = request.Data[i];
             }
         }
-        
+
         var coreModelsRequest = new CoreModels.AnomalyDetectionRequest
         {
             Data = dataDict,
             Threshold = request.Threshold
         };
-        
+
         var result = await DetectAnomaliesAsync(coreModelsRequest, blockchainType);
-        
+
         // Convert CoreModels result to Core result
         return new Core.AnomalyDetectionResult
         {
@@ -927,7 +927,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             },
             Sensitivity = CoreModels.DetectionSensitivity.High
         };
-        
+
         // Add features if provided
         if (request.Features != null)
         {
@@ -936,9 +936,9 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 coreModelsRequest.TransactionData[kvp.Key] = kvp.Value;
             }
         }
-        
+
         var result = await DetectFraudAsync(coreModelsRequest, blockchainType);
-        
+
         // Convert CoreModels result to Core result
         return new Core.FraudDetectionResult
         {
@@ -972,15 +972,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 dataDict[$"feature_{i}"] = request.InputData[i];
             }
         }
-        
+
         var coreModelsRequest = new CoreModels.ClassificationRequest
         {
             Data = dataDict,
             ModelId = request.ModelId
         };
-        
+
         var result = await ClassifyDataAsync(coreModelsRequest, blockchainType);
-        
+
         // Convert CoreModels result to Core result
         return new Core.ClassificationResult
         {
@@ -1014,8 +1014,8 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     detectionId, request.DataPoints.Length);
 
                 // Get threshold from parameters or use default
-                var threshold = request.Parameters.TryGetValue("threshold", out var thresholdObj) 
-                    ? Convert.ToDouble(thresholdObj) 
+                var threshold = request.Parameters.TryGetValue("threshold", out var thresholdObj)
+                    ? Convert.ToDouble(thresholdObj)
                     : 0.95;
 
                 // Create Core request from AI request  
@@ -1200,21 +1200,21 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<string> ClassifyDataInEnclaveAsync(CoreModels.ClassificationRequest request)
     {
         await Task.Delay(150); // Simulate classification time
-        
+
         // In production, this would use real ML models within the enclave
         var dataSize = request.Data?.Count ?? 0;
         var hasModelId = !string.IsNullOrEmpty(request.ModelId);
-        
+
         // Simple classification logic based on data characteristics
         var classification = (dataSize, hasModelId) switch
         {
-            (> 20, true) => "high_complexity",
-            (> 10, true) => "medium_complexity", 
-            (> 5, _) => "low_complexity",
+            ( > 20, true) => "high_complexity",
+            ( > 10, true) => "medium_complexity",
+            ( > 5, _) => "low_complexity",
             (_, true) => "simple_with_model",
             _ => "simple"
         };
-        
+
         Logger.LogDebug("Classified data with {DataSize} fields as {Classification}", dataSize, classification);
         return classification;
     }
@@ -1227,9 +1227,9 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<CoreModels.Anomaly[]> DetectAnomaliesInEnclaveAsync(CoreModels.AnomalyDetectionRequest request)
     {
         await Task.Delay(200); // Simulate anomaly detection time
-        
+
         var anomalies = new List<CoreModels.Anomaly>();
-        
+
         // In production, this would use real anomaly detection algorithms
         if (request.Data?.Count > 10)
         {
@@ -1243,7 +1243,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 AffectedDataPoints = new List<string> { "data_volume" }
             });
         }
-        
+
         return anomalies.ToArray();
     }
 
@@ -1256,7 +1256,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<double> CalculateClassificationConfidenceAsync(string classification)
     {
         await Task.Delay(50); // Simulate confidence calculation
-        
+
         return classification switch
         {
             "High Risk" => 0.92,
@@ -1276,15 +1276,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private Dictionary<string, object> ConvertDataPointsToDictionary(double[] dataPoints, string[] featureNames)
     {
         var result = new Dictionary<string, object>();
-        
+
         for (int i = 0; i < dataPoints.Length; i++)
         {
-            var key = (featureNames?.Length > i && !string.IsNullOrEmpty(featureNames[i])) 
-                ? featureNames[i] 
+            var key = (featureNames?.Length > i && !string.IsNullOrEmpty(featureNames[i]))
+                ? featureNames[i]
                 : $"feature_{i}";
             result[key] = dataPoints[i];
         }
-        
+
         return result;
     }
 
@@ -1319,20 +1319,20 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private static decimal CalculateAverageAmount(List<Dictionary<string, object>> transactions)
     {
         if (transactions.Count == 0) return 0;
-        
+
         var total = 0m;
         var count = 0;
-        
+
         foreach (var tx in transactions)
         {
-            if (tx.TryGetValue("amount", out var amountObj) && 
+            if (tx.TryGetValue("amount", out var amountObj) &&
                 decimal.TryParse(amountObj?.ToString(), out var amount))
             {
                 total += amount;
                 count++;
             }
         }
-        
+
         return count > 0 ? total / count : 0;
     }
 
@@ -1345,7 +1345,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     {
         // Simple heuristic: check if transactions occur at unusual hours
         var unusualHours = 0;
-        
+
         foreach (var tx in transactions)
         {
             if (tx.TryGetValue("timestamp", out var timestampObj) &&
@@ -1358,7 +1358,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 }
             }
         }
-        
+
         return transactions.Count > 0 && (double)unusualHours / transactions.Count > 0.3;
     }
 
@@ -1371,7 +1371,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     {
         // Simple heuristic: check for repeated interactions with same addresses
         var addressCounts = new Dictionary<string, int>();
-        
+
         foreach (var tx in transactions)
         {
             if (tx.TryGetValue("to_address", out var toAddressObj))
@@ -1383,7 +1383,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 }
             }
         }
-        
+
         // Consider it suspicious if more than 50% of transactions go to the same address
         return addressCounts.Values.Any(count => count > transactions.Count * 0.5);
     }
@@ -1454,11 +1454,11 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<byte[]> TrainPatternModelInEnclaveAsync(AIModels.PatternModelDefinition definition)
     {
         await Task.Delay(500); // Simulate training time
-        
+
         // In production, this would perform actual pattern recognition model training within the enclave
-        Logger.LogDebug("Training pattern model {Name} of type {Type} within enclave", 
+        Logger.LogDebug("Training pattern model {Name} of type {Type} within enclave",
             definition.Name, definition.PatternType);
-        
+
         // Generate mock trained model data
         var modelSize = definition.PatternType switch
         {
@@ -1467,10 +1467,10 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             AIModels.PatternRecognitionType.BehavioralAnalysis => 10000,
             _ => 5000
         };
-        
+
         var trainedData = new byte[modelSize];
         Random.Shared.NextBytes(trainedData);
-        
+
         return trainedData;
     }
 
@@ -1482,10 +1482,10 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<double> CalculateFraudScoreInEnclaveAsync(AIModels.FraudDetectionRequest request)
     {
         await Task.Delay(150); // Simulate calculation time
-        
+
         // In production, this would use real ML models within the enclave
         var riskFactors = new List<double>();
-        
+
         // Amount-based risk scoring
         if (request.TransactionAmount > 0)
         {
@@ -1499,7 +1499,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             };
             riskFactors.Add(amountRisk);
         }
-        
+
         // Time-based risk scoring
         var hour = request.TransactionTime.Hour;
         var timeRisk = hour switch
@@ -1509,14 +1509,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             _ => 0.2
         };
         riskFactors.Add(timeRisk);
-        
+
         // Address reputation scoring (simplified)
         if (!string.IsNullOrEmpty(request.SenderAddress) || !string.IsNullOrEmpty(request.RecipientAddress))
         {
             var addressRisk = 0.3; // Simplified scoring
             riskFactors.Add(addressRisk);
         }
-        
+
         return riskFactors.Count > 0 ? riskFactors.Average() : 0.5;
     }
 
@@ -1528,24 +1528,24 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<Dictionary<string, double>> AnalyzeRiskFactorsInEnclaveAsync(AIModels.FraudDetectionRequest request)
     {
         await Task.Delay(100); // Simulate analysis time
-        
+
         var riskFactors = new Dictionary<string, double>();
-        
+
         // Analyze transaction amount
         if (request.TransactionAmount > 50000)
             riskFactors["high_amount"] = 0.8;
         else if (request.TransactionAmount > 10000)
             riskFactors["medium_amount"] = 0.5;
-        
+
         // Analyze transaction time
         var hour = request.TransactionTime.Hour;
         if (hour >= 2 && hour <= 5)
             riskFactors["unusual_time"] = 0.7;
-        
+
         // Analyze transaction data patterns
         if (request.TransactionData.Count > 10)
             riskFactors["complex_transaction"] = 0.4;
-        
+
         return riskFactors;
     }
 
@@ -1557,10 +1557,10 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     private async Task<AIModels.BehaviorProfile> AnalyzeBehaviorInEnclaveAsync(AIModels.BehaviorAnalysisRequest request)
     {
         await Task.Delay(200); // Simulate analysis time
-        
+
         // In production, this would perform comprehensive behavior analysis
         var transactionHistory = request.TransactionHistory ?? new List<Dictionary<string, object>>();
-        
+
         return new AIModels.BehaviorProfile
         {
             UserId = request.Address,

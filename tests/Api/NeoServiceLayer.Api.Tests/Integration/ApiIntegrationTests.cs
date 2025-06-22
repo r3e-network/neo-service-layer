@@ -1,3 +1,6 @@
+﻿using System.Net.Http.Headers;
+using System.Text;
+using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,9 +9,6 @@ using NeoServiceLayer.Api;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using System.Net.Http.Headers;
-using System.Text;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Api.Tests.Integration;
@@ -119,7 +119,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResponse<Services.KeyManagement.KeyMetadata>>(responseContent, _jsonOptions);
-            
+
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.NotNull(result.Data);
@@ -146,7 +146,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             var content = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<PaginatedResponse<Services.KeyManagement.KeyMetadata>>(content, _jsonOptions);
-            
+
             Assert.NotNull(result);
             Assert.True(result.Success);
             Assert.NotNull(result.Data);
@@ -154,7 +154,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         else
         {
             // Service might not be fully implemented yet
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented || 
+            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented ||
                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
         }
     }
@@ -191,7 +191,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResponse<object>>(responseContent, _jsonOptions);
-            
+
             Assert.NotNull(result);
             Assert.True(result.Success);
         }
@@ -199,7 +199,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             // Service might not be fully implemented yet
             var errorContent = await response.Content.ReadAsStringAsync();
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented || 
+            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented ||
                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
         }
     }
@@ -235,14 +235,14 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResponse<object>>(responseContent, _jsonOptions);
-            
+
             Assert.NotNull(result);
             Assert.True(result.Success);
         }
         else
         {
             // Service might not be fully implemented yet
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented || 
+            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented ||
                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
         }
     }
@@ -270,14 +270,14 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         {
             var responseContent = await response.Content.ReadAsStringAsync();
             var result = JsonSerializer.Deserialize<ApiResponse<object>>(responseContent, _jsonOptions);
-            
+
             Assert.NotNull(result);
             Assert.True(result.Success);
         }
         else
         {
             // Service might not be fully implemented yet
-            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented || 
+            Assert.True(response.StatusCode == System.Net.HttpStatusCode.NotImplemented ||
                        response.StatusCode == System.Net.HttpStatusCode.ServiceUnavailable);
         }
     }
@@ -294,10 +294,10 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
 
         // Assert
         Assert.Equal(System.Net.HttpStatusCode.BadRequest, response.StatusCode);
-        
+
         var content = await response.Content.ReadAsStringAsync();
         var result = JsonSerializer.Deserialize<ApiResponse<object>>(content, _jsonOptions);
-        
+
         Assert.NotNull(result);
         Assert.False(result.Success);
         Assert.Contains("Invalid blockchain type", result.Message);
@@ -339,7 +339,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
     {
         // Arrange
         var tasks = new List<Task<HttpResponseMessage>>();
-        
+
         // Act - Send multiple requests rapidly
         for (int i = 0; i < 25; i++)
         {
@@ -350,7 +350,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
 
         // Assert - At least some requests should be rate limited
         var rateLimitedResponses = responses.Count(r => r.StatusCode == System.Net.HttpStatusCode.TooManyRequests);
-        
+
         // Note: Rate limiting might not be enforced in test environment
         // This test verifies the rate limiting middleware is configured
         Assert.True(rateLimitedResponses >= 0);
@@ -372,7 +372,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         var response = await _client.SendAsync(request);
 
         // Assert
-        Assert.True(response.Headers.Contains("Access-Control-Allow-Origin") || 
+        Assert.True(response.Headers.Contains("Access-Control-Allow-Origin") ||
                    response.StatusCode == System.Net.HttpStatusCode.OK);
     }
 
@@ -390,7 +390,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
         {
             // Override services for testing
             // Add in-memory database or mock services as needed
-            
+
             // Configure test logging
             services.AddLogging(logging =>
             {
@@ -402,4 +402,4 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
         builder.UseEnvironment("Testing");
     }
-} 
+}

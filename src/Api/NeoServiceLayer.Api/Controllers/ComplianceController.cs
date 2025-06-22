@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
-using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Api.Controllers;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compliance;
 using NeoServiceLayer.Services.Compliance.Models;
-using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -76,7 +76,7 @@ public class ComplianceController : BaseApiController
         try
         {
             Logger.LogInformation("Generating compliance report for user {UserId}", GetCurrentUserId());
-            
+
             var result = await _complianceService.GenerateComplianceReportAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Compliance report generated successfully"));
         }

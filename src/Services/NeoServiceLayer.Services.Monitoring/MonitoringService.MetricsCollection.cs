@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
 
@@ -207,10 +207,10 @@ public partial class MonitoringService
     /// <returns>Array of service names.</returns>
     private string[] GetServicesForMetricsCollection()
     {
-        return new[] 
-        { 
-            "RandomnessService", 
-            "OracleService", 
+        return new[]
+        {
+            "RandomnessService",
+            "OracleService",
             "KeyManagementService",
             "ComputeService",
             "StorageService",
@@ -224,10 +224,10 @@ public partial class MonitoringService
     /// <returns>Array of metric names.</returns>
     private string[] GetStandardMetricNames()
     {
-        return new[] 
-        { 
-            "requests_per_second", 
-            "response_time_ms", 
+        return new[]
+        {
+            "requests_per_second",
+            "response_time_ms",
             "error_rate_percent",
             "cpu_usage_percent",
             "memory_usage_percent",
@@ -269,8 +269,8 @@ public partial class MonitoringService
             Value = value,
             Unit = unit,
             Timestamp = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object> 
-            { 
+            Metadata = new Dictionary<string, object>
+            {
                 ["collection_type"] = "automatic",
                 ["service"] = serviceName
             }
@@ -310,7 +310,7 @@ public partial class MonitoringService
         lock (_cacheLock)
         {
             return _metricsCache.ToDictionary(
-                kvp => kvp.Key, 
+                kvp => kvp.Key,
                 kvp => new List<ServiceMetric>(kvp.Value)
             );
         }

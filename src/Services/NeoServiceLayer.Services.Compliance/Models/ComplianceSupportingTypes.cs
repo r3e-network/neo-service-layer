@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Compliance.Models;
+﻿namespace NeoServiceLayer.Services.Compliance.Models;
 
 /// <summary>
 /// Represents a compliance condition for rules.
@@ -952,4 +952,4 @@ public enum LogLevel
     /// Critical level logging.
     /// </summary>
     Critical
-} 
+}

@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 // Service Interfaces
 public interface ICrossChainService : IEnclaveService, IBlockchainService

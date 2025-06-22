@@ -1,6 +1,6 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
-using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Services.Voting;
 using NeoServiceLayer.Services.Voting.Models;
@@ -44,7 +44,7 @@ public class VotingController : BaseApiController
     //     try
     //     {
     //         Logger.LogInformation("Creating voting session for user {UserId}", GetCurrentUserId());
-            
+
     //         var result = await _votingService.CreateVotingSessionAsync(request);
     //         return Ok(CreateResponse(result, "Voting session created successfully"));
     //     }
@@ -55,7 +55,7 @@ public class VotingController : BaseApiController
     // }
 
     // All methods are commented out as they don't exist in the service yet
-    
+
     /// <summary>
     /// Placeholder endpoint - VotingService methods need to be implemented.
     /// </summary>

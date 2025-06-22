@@ -1,4 +1,4 @@
-// src/Tee/NeoServiceLayer.Tee.Host/Services/IEnclaveManager.cs
+﻿// src/Tee/NeoServiceLayer.Tee.Host/Services/IEnclaveManager.cs
 // MODIFIED FILE
 
 using System;

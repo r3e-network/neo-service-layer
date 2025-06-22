@@ -1,5 +1,5 @@
+﻿using System.Text.Json;
 using NeoServiceLayer.Services.AbstractAccount.Models;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.AbstractAccount;
 

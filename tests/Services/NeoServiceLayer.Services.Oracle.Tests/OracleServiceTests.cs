@@ -1,16 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Net;
+using System.Net.Http;
+using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Net;
-using System.Net.Http;
-
+using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 // Use Infrastructure namespace for IBlockchainClientFactory and IBlockchainClient
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 
 namespace NeoServiceLayer.Services.Oracle.Tests;
 
@@ -43,17 +42,17 @@ public class OracleServiceTests
 
         // Setup KMS encryption mock - all overloads
         _enclaveManagerMock.Setup(e => e.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string keyId, string dataHex, string algorithm, CancellationToken ct) => 
+            .ReturnsAsync((string keyId, string dataHex, string algorithm, CancellationToken ct) =>
                 Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"encrypted_{dataHex}")));
 
         // Also setup the version without cancellation token
         _enclaveManagerMock.Setup(e => e.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((string keyId, string dataHex, string algorithm) => 
+            .ReturnsAsync((string keyId, string dataHex, string algorithm) =>
                 Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"encrypted_{dataHex}")));
 
         // Setup Oracle fetch method
         _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
-            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(),
             It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("{\"value\": 42, \"source\": \"test\", \"timestamp\": \"2024-01-01\"}");
 
@@ -78,14 +77,14 @@ public class OracleServiceTests
         {
             Content = new StringContent("{\"test\": \"data\"}")
         };
-        
+
         // Setup GetAsync overloads (only setup the actual interface methods)
         _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {
                 Content = new StringContent("{\"result\": \"success\"}")
             });
-            
+
         _httpClientServiceMock.Setup(h => h.GetAsync(It.IsAny<Uri>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK)
             {

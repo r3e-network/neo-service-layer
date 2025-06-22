@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
+﻿using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Text.Json;
-using System.IO.Compression;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Infrastructure.Persistence;
 
@@ -26,7 +26,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     {
         ArgumentNullException.ThrowIfNull(storagePath);
         ArgumentNullException.ThrowIfNull(logger);
-        
+
         _storagePath = storagePath;
         _logger = logger;
     }
@@ -383,8 +383,8 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 // Copy all data files and metadata
                 var dataFiles = Directory.GetFiles(_storagePath, "*.dat", SearchOption.TopDirectoryOnly);
                 var metadataDir = Path.Combine(_storagePath, ".metadata");
-                var metadataFiles = Directory.Exists(metadataDir) 
-                    ? Directory.GetFiles(metadataDir, "*.json", SearchOption.TopDirectoryOnly) 
+                var metadataFiles = Directory.Exists(metadataDir)
+                    ? Directory.GetFiles(metadataDir, "*.json", SearchOption.TopDirectoryOnly)
                     : Array.Empty<string>();
 
                 // Create backup structure
@@ -492,7 +492,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
                 var manifestJson = await File.ReadAllTextAsync(manifestPath);
                 var manifest = JsonSerializer.Deserialize<JsonDocument>(manifestJson);
-                
+
                 if (manifest?.RootElement.GetProperty("Provider").GetString() != ProviderName)
                 {
                     throw new InvalidOperationException($"Invalid backup file: provider mismatch. Expected {ProviderName}");
@@ -798,7 +798,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     {
         // In production SGX environment, use SGX sealing key derivation
         // For simulation/development, use PBKDF2 with secure parameters
-        
+
         try
         {
             // Try to get SGX-sealed master key first
@@ -816,19 +816,19 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         }
 
         // Fallback: Use PBKDF2 with high iteration count and proper salt
-        var masterPassword = Environment.GetEnvironmentVariable("ENCLAVE_MASTER_KEY") 
+        var masterPassword = Environment.GetEnvironmentVariable("ENCLAVE_MASTER_KEY")
             ?? throw new InvalidOperationException("No encryption key source available. Set ENCLAVE_MASTER_KEY or SGX_SEALED_STORAGE_KEY.");
-        
+
         // Use a fixed salt derived from the storage path for consistency
         var saltSource = $"neo-storage-{_storagePath}-v2";
         var salt = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(saltSource));
-        
+
         using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
             masterPassword,
             salt,
             600000, // 600,000 iterations (OWASP 2023 recommendation)
             System.Security.Cryptography.HashAlgorithmName.SHA256);
-        
+
         return pbkdf2.GetBytes(32); // 256-bit key
     }
 
@@ -842,10 +842,10 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         // In production, this would use SGX unseal operations
         // For simulation, use HKDF for proper key derivation
         var sealedBytes = Convert.FromBase64String(sealedKey);
-        
+
         var info = System.Text.Encoding.UTF8.GetBytes("neo-storage-encryption-v1");
         var salt = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(_storagePath));
-        
+
         return System.Security.Cryptography.HKDF.DeriveKey(
             System.Security.Cryptography.HashAlgorithmName.SHA256,
             sealedBytes,

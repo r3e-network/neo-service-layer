@@ -1,7 +1,7 @@
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
-using System.Collections.Concurrent;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -34,7 +34,7 @@ public partial class ProofOfReserveService
     private async Task<string> RegisterAssetWithResilienceAsync(AssetRegistrationRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"RegisterAsset_{blockchainType}", 3, TimeSpan.FromMinutes(2));
-        
+
         var result = await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -52,7 +52,7 @@ public partial class ProofOfReserveService
 
         // Invalidate cache after successful asset registration
         InvalidateGlobalCache();
-        
+
         return result;
     }
 
@@ -108,7 +108,7 @@ public partial class ProofOfReserveService
     private async Task<Core.ProofOfReserve> GenerateProofWithResilienceAsync(string assetId, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"GenerateProof_{blockchainType}", 3, TimeSpan.FromMinutes(3));
-        
+
         return await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -201,7 +201,7 @@ public partial class ProofOfReserveService
     private async Task<bool> VerifyProofWithResilienceAsync(string proofId, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"VerifyProof_{blockchainType}", 3, TimeSpan.FromMinutes(1));
-        
+
         return await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -299,7 +299,7 @@ public partial class ProofOfReserveService
     private async Task<bool> UpdateReserveDataWithResilienceAsync(string assetId, ReserveUpdateRequest reserveData, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"UpdateReserveData_{blockchainType}", 5, TimeSpan.FromMinutes(1));
-        
+
         return await ProofOfReserveResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -429,7 +429,7 @@ public partial class ProofOfReserveService
             };
 
             var updateSuccessful = await UpdateReserveDataWithResilienceAsync(assetId, updateRequest, blockchainType);
-            
+
             // Invalidate cache after successful update
             if (updateSuccessful)
             {
@@ -461,9 +461,9 @@ public partial class ProofOfReserveService
                         var storageKey = $"proof_{proof.ProofId}_{blockchainType}";
                         var proofJson = System.Text.Json.JsonSerializer.Serialize(proof);
                         await _enclaveManager.StorageStoreDataAsync(
-                            storageKey, 
-                            proofJson, 
-                            GetProofEncryptionKey(), 
+                            storageKey,
+                            proofJson,
+                            GetProofEncryptionKey(),
                             CancellationToken.None);
                     }
 
@@ -502,8 +502,8 @@ public partial class ProofOfReserveService
                     {
                         var storageKey = $"proof_{proofId}_{blockchainType}";
                         var proofJson = await _enclaveManager.StorageRetrieveDataAsync(
-                            storageKey, 
-                            GetProofEncryptionKey(), 
+                            storageKey,
+                            GetProofEncryptionKey(),
                             CancellationToken.None);
 
                         if (!string.IsNullOrEmpty(proofJson))
@@ -557,7 +557,7 @@ public partial class ProofOfReserveService
             {
                 circuitBreaker.Reset();
             }
-            
+
             Logger.LogInformation("All circuit breakers have been reset");
         }
     }

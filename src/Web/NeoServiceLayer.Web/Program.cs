@@ -1,22 +1,21 @@
+﻿using System.Reflection;
+using System.Security.Claims;
+using System.Text;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
-using NeoServiceLayer.Infrastructure;
-using Serilog;
-using System.Reflection;
-using System.Security.Claims;
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
-using NeoServiceLayer.Core;
-using NeoServiceLayer.ServiceFramework;
-using Asp.Versioning;
-using NeoServiceLayer.Tee.Host.Services;
-using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.AI.Prediction;
-
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Tee.Host.Services;
+using Serilog;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -312,4 +311,4 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
-} 
+}

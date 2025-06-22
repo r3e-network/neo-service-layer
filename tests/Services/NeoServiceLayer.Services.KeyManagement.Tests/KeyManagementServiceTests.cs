@@ -1,9 +1,9 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Services.KeyManagement.Tests;
@@ -213,7 +213,7 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        
+
         // Create the key first
         await _service.GenerateKeyAsync(
             "test-key",
@@ -268,7 +268,7 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        
+
         // Create the key first
         await _service.GenerateKeyAsync(
             "encrypt-test-key",
@@ -299,7 +299,7 @@ public class KeyManagementServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        
+
         // Create the key first
         await _service.GenerateKeyAsync(
             "encrypt-test-key",

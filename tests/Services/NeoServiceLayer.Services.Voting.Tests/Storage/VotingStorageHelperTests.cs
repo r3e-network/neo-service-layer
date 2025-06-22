@@ -1,10 +1,10 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Voting.Storage;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Services.Voting.Tests.Storage;

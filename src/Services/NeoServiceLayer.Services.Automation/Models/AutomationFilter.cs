@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Automation;
+﻿namespace NeoServiceLayer.Services.Automation;
 
 /// <summary>
 /// Filter model for querying automations.

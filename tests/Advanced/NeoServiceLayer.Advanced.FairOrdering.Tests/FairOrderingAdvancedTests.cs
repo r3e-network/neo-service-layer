@@ -1,14 +1,14 @@
+﻿using AutoFixture;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NeoServiceLayer.Advanced.FairOrdering;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
-using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
-using FluentAssertions;
-using AutoFixture;
-using Moq;
 using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Tests;
@@ -110,10 +110,10 @@ public class FairOrderingAdvancedTests : IDisposable
 
         // Assert
         poolId.Should().NotBeNullOrEmpty();
-        
+
         var pools = await _service.GetOrderingPoolsAsync(BlockchainType.NeoX);
         var createdPool = pools.First(p => p.Id == poolId);
-        
+
         createdPool.OrderingAlgorithm.Should().Be(algorithm);
         createdPool.BatchSize.Should().Be(batchSize);
         createdPool.MevProtectionEnabled.Should().Be(config.MevProtectionEnabled);
@@ -244,13 +244,13 @@ public class FairOrderingAdvancedTests : IDisposable
     }
 
     [Theory]
-    [InlineData(0, 0.001)] // ProtectionLevel.None
-    [InlineData(1, 0.005)] // ProtectionLevel.Basic
-    [InlineData(2, 0.010)] // ProtectionLevel.Standard
-    [InlineData(3, 0.015)] // ProtectionLevel.High
-    [InlineData(4, 0.020)] // ProtectionLevel.Maximum
+    [InlineData(0)] // ProtectionLevel.None
+    [InlineData(1)] // ProtectionLevel.Basic
+    [InlineData(2)] // ProtectionLevel.Standard
+    [InlineData(3)] // ProtectionLevel.High
+    [InlineData(4)] // ProtectionLevel.Maximum
     public async Task SubmitFairTransactionAsync_VariousProtectionLevels_AppliesCorrectFees(
-        int protectionLevelValue, double expectedMinFee)
+        int protectionLevelValue)
     {
         // Arrange
         var request = new FairOrderingModels.FairTransactionRequest
@@ -269,7 +269,7 @@ public class FairOrderingAdvancedTests : IDisposable
 
         // Assert
         transactionId.Should().NotBeNullOrEmpty();
-        
+
         // The protection fee should be calculated based on the protection level
         // This would be verified through the ordering result
     }
@@ -344,7 +344,7 @@ public class FairOrderingAdvancedTests : IDisposable
 
         var pools = await _service.GetOrderingPoolsAsync(BlockchainType.NeoX);
         var updatedPool = pools.First(p => p.Id == poolId);
-        
+
         updatedPool.Name.Should().Be(updatedConfig.Name);
         updatedPool.OrderingAlgorithm.Should().Be(updatedConfig.OrderingAlgorithm);
         updatedPool.BatchSize.Should().Be(updatedConfig.BatchSize);
@@ -478,4 +478,4 @@ public class FairOrderingAdvancedTests : IDisposable
     }
 
     #endregion
-} 
+}

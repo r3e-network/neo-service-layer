@@ -1,7 +1,7 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
-using System.Security.Claims;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -96,7 +96,7 @@ public abstract class BaseApiController : ControllerBase
             UnauthorizedAccessException => Unauthorized(CreateErrorResponse("Access denied")),
             NotSupportedException => BadRequest(CreateErrorResponse(ex.Message)),
             InvalidOperationException => BadRequest(CreateErrorResponse(ex.Message)),
-            _ => StatusCode(500, CreateErrorResponse("An internal error occurred", 
+            _ => StatusCode(500, CreateErrorResponse("An internal error occurred",
                 Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Development" ? ex.Message : null))
         };
     }
@@ -193,4 +193,4 @@ public class PaginatedResponse<T> : ApiResponse<IEnumerable<T>>
     /// Gets whether there is a previous page.
     /// </summary>
     public bool HasPreviousPage => Page > 1;
-} 
+}

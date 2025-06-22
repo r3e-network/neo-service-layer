@@ -1,12 +1,12 @@
-using NeoServiceLayer.Core;
+﻿using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Services.ZeroKnowledge;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Tee.Host.Services;
 using Moq;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.ZeroKnowledge;
+using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
-using FluentAssertions;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge.Tests;
 
@@ -117,7 +117,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _service.CompileCircuitAsync(new ZkCircuitDefinition { Name = circuitId, Type = ZkCircuitType.Computation, Description = "Invalid", Constraints = new[] { invalidCircuitDefinition } }, BlockchainType.NeoN3));
-        
+
         exception.Message.Should().Contain("Invalid circuit definition");
     }
 
@@ -179,7 +179,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
             _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = circuit.Id, PublicInputs = inputs, PrivateInputs = invalidWitnesses }, BlockchainType.NeoN3));
-        
+
         exception.Message.Should().Contain("Invalid witnesses");
     }
 
@@ -200,7 +200,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(() =>
             _service.GenerateProofAsync(new NeoServiceLayer.Core.Models.ProofRequest { CircuitId = nonExistentCircuit.Id, PublicInputs = inputs, PrivateInputs = witnesses }, BlockchainType.NeoN3));
-        
+
         exception.Message.Should().Contain("Circuit not found");
     }
 
@@ -316,7 +316,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
     {
         var configSection = new Mock<Microsoft.Extensions.Configuration.IConfigurationSection>();
         configSection.Setup(x => x.Value).Returns("test_value");
-        
+
         _mockConfiguration
             .Setup(x => x.GetSection(It.IsAny<string>()))
             .Returns(configSection.Object);

@@ -1,8 +1,8 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -47,7 +47,7 @@ public class MockInfrastructureBlockchainClient : MockBlockchainClient, NeoServi
     public async Task<decimal> GetBalanceAsync(string address, string assetId)
     {
         await Task.Delay(10); // Simulate network delay
-        
+
         if (_balances.TryGetValue(address, out var assets))
         {
             if (assets.TryGetValue(assetId, out var balance))
@@ -55,7 +55,7 @@ public class MockInfrastructureBlockchainClient : MockBlockchainClient, NeoServi
                 return balance;
             }
         }
-        
+
         return 0m;
     }
 
@@ -66,7 +66,7 @@ public class MockInfrastructureBlockchainClient : MockBlockchainClient, NeoServi
     public async Task<decimal> GetGasPriceAsync()
     {
         await Task.Delay(10); // Simulate network delay
-        
+
         // Return a mock gas price
         return BlockchainType switch
         {
@@ -84,11 +84,11 @@ public class MockInfrastructureBlockchainClient : MockBlockchainClient, NeoServi
     public async Task<decimal> EstimateGasAsync(Transaction transaction)
     {
         await Task.Delay(20); // Simulate network delay
-        
+
         // Simple gas estimation based on data size
         var baseGas = 21000m;
         var dataGas = string.IsNullOrEmpty(transaction.Data) ? 0m : transaction.Data.Length * 68m;
-        
+
         return baseGas + dataGas;
     }
 

@@ -1,4 +1,4 @@
-using System.Globalization;
+﻿using System.Globalization;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
@@ -161,7 +161,7 @@ public static class StringExtensions
         var start = value[..visibleStart];
         var end = value[^visibleEnd..];
         var middle = new string(maskChar, value.Length - visibleStart - visibleEnd);
-        
+
         return start + middle + end;
     }
 
@@ -365,4 +365,4 @@ public static class StringExtensions
             yield return value.Substring(i, Math.Min(chunkSize, value.Length - i));
         }
     }
-} 
+}

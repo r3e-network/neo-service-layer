@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Sort order enumeration.
@@ -412,10 +412,10 @@ public class BackupDeletionResult
     /// <summary>
     /// Gets or sets when the backup was deleted (alias for DeletionTime).
     /// </summary>
-    public DateTime DeletedAt 
-    { 
-        get => DeletionTime; 
-        set => DeletionTime = value; 
+    public DateTime DeletedAt
+    {
+        get => DeletionTime;
+        set => DeletionTime = value;
     }
 
     /// <summary>

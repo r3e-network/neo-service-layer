@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.EventSubscription;
 
@@ -374,4 +374,4 @@ public class EventSubscriptionController : BaseApiController
             return HandleException(ex, "TriggerTestEvent");
         }
     }
-} 
+}

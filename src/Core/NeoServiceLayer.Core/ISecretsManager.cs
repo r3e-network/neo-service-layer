@@ -1,4 +1,4 @@
-using System.Security;
+﻿using System.Security;
 
 namespace NeoServiceLayer.Core;
 

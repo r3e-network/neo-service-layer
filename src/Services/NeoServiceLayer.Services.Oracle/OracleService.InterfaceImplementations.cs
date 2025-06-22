@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle.Models;
 
@@ -114,7 +114,7 @@ public partial class OracleService
             try
             {
                 OracleSubscription? subscription = null;
-                
+
                 lock (_subscriptions)
                 {
                     if (_subscriptions.TryGetValue(request.SubscriptionId, out subscription))
@@ -184,7 +184,7 @@ public partial class OracleService
         return await ExecuteInEnclaveAsync(async () =>
         {
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 // Find the data source
@@ -207,10 +207,10 @@ public partial class OracleService
 
                 // Fetch data using existing GetDataAsync method
                 var data = await GetDataAsync(dataSource.Url, request.DataPath ?? string.Empty, blockchainType);
-                
+
                 // Calculate quality score based on data freshness and validation
                 var qualityScore = CalculateDataQualityScore(data, dataSource);
-                
+
                 // Generate cryptographic proof
                 var dataHash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(data));
                 var proof = Convert.ToBase64String(dataHash);
@@ -241,7 +241,7 @@ public partial class OracleService
             catch (Exception ex)
             {
                 Logger.LogError(ex, "Error retrieving data from source {DataSourceId}", request.DataSourceId);
-                
+
                 return new OracleDataResult
                 {
                     Success = false,
@@ -533,7 +533,7 @@ public partial class OracleService
         try
         {
             var allSubscriptions = new List<OracleSubscription>();
-            
+
             lock (_subscriptions)
             {
                 allSubscriptions.AddRange(_subscriptions.Values);
@@ -549,7 +549,7 @@ public partial class OracleService
 
             if (!string.IsNullOrEmpty(request.SearchQuery))
             {
-                filteredSubscriptions = filteredSubscriptions.Where(s => 
+                filteredSubscriptions = filteredSubscriptions.Where(s =>
                     s.Id.Contains(request.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                     s.FeedId.Contains(request.SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
@@ -557,7 +557,7 @@ public partial class OracleService
             var totalCount = filteredSubscriptions.Count();
 
             // Apply sorting
-            filteredSubscriptions = request.SortDirection.ToUpper() == "DESC" 
+            filteredSubscriptions = request.SortDirection.ToUpper() == "DESC"
                 ? filteredSubscriptions.OrderByDescending(s => s.CreatedAt)
                 : filteredSubscriptions.OrderBy(s => s.CreatedAt);
 
@@ -604,7 +604,7 @@ public partial class OracleService
         try
         {
             var allDataSources = new List<DataSource>();
-            
+
             lock (_dataSources)
             {
                 allDataSources.AddRange(_dataSources.Where(ds => ds.BlockchainType == blockchainType));
@@ -625,21 +625,21 @@ public partial class OracleService
 
             if (!string.IsNullOrEmpty(request.SearchQuery))
             {
-                filteredDataSources = filteredDataSources.Where(ds => 
+                filteredDataSources = filteredDataSources.Where(ds =>
                     ds.Name.Contains(request.SearchQuery, StringComparison.OrdinalIgnoreCase) ||
                     ds.Description.Contains(request.SearchQuery, StringComparison.OrdinalIgnoreCase));
             }
 
             if (request.Tags != null && request.Tags.Any())
             {
-                filteredDataSources = filteredDataSources.Where(ds => 
+                filteredDataSources = filteredDataSources.Where(ds =>
                     request.Tags.Any(tag => ds.Tags.Contains(tag, StringComparer.OrdinalIgnoreCase)));
             }
 
             var totalCount = filteredDataSources.Count();
 
             // Apply sorting
-            filteredDataSources = request.SortDirection.ToUpper() == "DESC" 
+            filteredDataSources = request.SortDirection.ToUpper() == "DESC"
                 ? filteredDataSources.OrderByDescending(ds => ds.CreatedAt)
                 : filteredDataSources.OrderBy(ds => ds.CreatedAt);
 
@@ -775,7 +775,7 @@ public partial class OracleService
         try
         {
             OracleSubscription? subscription = null;
-            
+
             lock (_subscriptions)
             {
                 _subscriptions.TryGetValue(request.SubscriptionId, out subscription);
@@ -803,8 +803,8 @@ public partial class OracleService
                     TotalUpdates = subscription.SuccessCount + subscription.FailureCount,
                     SuccessfulUpdates = subscription.SuccessCount,
                     FailedUpdates = subscription.FailureCount,
-                    SuccessRate = subscription.SuccessCount + subscription.FailureCount > 0 
-                        ? (double)subscription.SuccessCount / (subscription.SuccessCount + subscription.FailureCount) 
+                    SuccessRate = subscription.SuccessCount + subscription.FailureCount > 0
+                        ? (double)subscription.SuccessCount / (subscription.SuccessCount + subscription.FailureCount)
                         : 0,
                     AverageLatencyMs = 100, // This would be calculated from historical data
                     LastSuccessAt = subscription.LastUpdated,
@@ -852,7 +852,7 @@ public partial class OracleService
 
             // Reduce score based on data age
             var timeSinceLastAccess = DateTime.UtcNow - dataSource.LastAccessedAt;
-                            if (timeSinceLastAccess?.TotalMinutes > 5)
+            if (timeSinceLastAccess?.TotalMinutes > 5)
             {
                 score *= 0.9;
             }
@@ -906,4 +906,4 @@ public partial class OracleService
         // In production, this would derive from enclave identity
         return $"datasource-key-{dataSourceId[..8]}";
     }
-} 
+}

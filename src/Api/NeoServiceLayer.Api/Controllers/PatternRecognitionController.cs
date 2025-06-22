@@ -1,12 +1,12 @@
+﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
-using PatternModels = NeoServiceLayer.AI.PatternRecognition.Models;
-using System.ComponentModel.DataAnnotations;
 using CoreModels = NeoServiceLayer.Core.Models;
+using PatternModels = NeoServiceLayer.AI.PatternRecognition.Models;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -532,4 +532,4 @@ public class PatternRecognitionController : BaseApiController
             return HandleException(ex, "UpdateBehaviorProfile");
         }
     }
-} 
+}

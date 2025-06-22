@@ -1,8 +1,8 @@
+﻿using System.Net.Sockets;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Shared.Utilities;
-using System.Net.Sockets;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests.Utilities;
@@ -114,8 +114,8 @@ public class RetryHelperTests
 
         // Act
         await RetryHelper.ExecuteAsync(
-            action, 
-            maxRetries: 2, 
+            action,
+            maxRetries: 2,
             baseDelay: TimeSpan.FromMilliseconds(1),
             retryCondition: customCondition);
 
@@ -138,8 +138,8 @@ public class RetryHelperTests
 
         // Act
         await RetryHelper.ExecuteAsync(
-            action, 
-            maxRetries: 3, 
+            action,
+            maxRetries: 3,
             baseDelay: TimeSpan.FromMilliseconds(1),
             logger: _loggerMock.Object);
 
@@ -228,14 +228,14 @@ public class RetryHelperTests
 
         // Act
         await RetryHelper.ExecuteAsync(
-            action, 
-            maxRetries: 3, 
+            action,
+            maxRetries: 3,
             baseDelay: TimeSpan.FromMilliseconds(10),
             backoffMultiplier: 2.0);
 
         // Assert
         executionTimes.Should().HaveCount(4);
-        
+
         // Check that delays are increasing (approximately)
         var delay1 = executionTimes[1] - executionTimes[0];
         var delay2 = executionTimes[2] - executionTimes[1];
@@ -262,15 +262,15 @@ public class RetryHelperTests
 
         // Act
         await RetryHelper.ExecuteAsync(
-            action, 
-            maxRetries: 4, 
+            action,
+            maxRetries: 4,
             baseDelay: TimeSpan.FromMilliseconds(10),
             maxDelay: TimeSpan.FromMilliseconds(50),
             backoffMultiplier: 3.0);
 
         // Assert
         executionTimes.Should().HaveCount(5);
-        
+
         // Later delays should be capped at maxDelay
         var lastDelay = executionTimes[4] - executionTimes[3];
         lastDelay.Should().BeLessOrEqualTo(TimeSpan.FromMilliseconds(100)); // Allow some tolerance
@@ -397,7 +397,7 @@ public class RetryHelperTests
     {
         // Arrange
         var circuitBreaker = new CircuitBreaker(failureThreshold: 1, timeout: TimeSpan.FromSeconds(10));
-        
+
         // Force circuit to open
         try { circuitBreaker.RecordFailure(); } catch { }
         circuitBreaker.RecordFailure(); // Should open circuit
@@ -649,8 +649,8 @@ public class RetryHelperTests
 
         // Act
         await RetryHelper.ExecuteAsync(
-            action, 
-            maxRetries: 3, 
+            action,
+            maxRetries: 3,
             baseDelay: TimeSpan.FromTicks(1));
 
         // Assert
@@ -668,7 +668,7 @@ public class RetryHelperTests
             executionCount++;
             if (executionCount == 2)
                 cts.Cancel();
-            
+
             if (executionCount < 5)
                 throw new HttpRequestException("Transient error");
             return Task.CompletedTask;
@@ -693,4 +693,4 @@ public class RetryHelperTests
     }
 
     #endregion
-} 
+}

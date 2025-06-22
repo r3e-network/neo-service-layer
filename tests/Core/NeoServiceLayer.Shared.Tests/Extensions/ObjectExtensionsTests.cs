@@ -1,7 +1,7 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using FluentAssertions;
 using NeoServiceLayer.Shared.Extensions;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests.Extensions;
@@ -70,11 +70,11 @@ public class ObjectExtensionsTests
     public void DeepClone_WithValidObject_ShouldCreateDeepCopy()
     {
         // Arrange
-        var original = new TestModel 
-        { 
-            Name = "Original", 
-            Value = 42, 
-            NestedObject = new NestedModel { Id = 1, Description = "Nested" } 
+        var original = new TestModel
+        {
+            Name = "Original",
+            Value = 42,
+            NestedObject = new NestedModel { Id = 1, Description = "Nested" }
         };
 
         // Act
@@ -106,10 +106,10 @@ public class ObjectExtensionsTests
     public void DeepClone_ModifyingClone_ShouldNotAffectOriginal()
     {
         // Arrange
-        var original = new TestModel 
-        { 
-            Name = "Original", 
-            NestedObject = new NestedModel { Id = 1, Description = "Nested" } 
+        var original = new TestModel
+        {
+            Name = "Original",
+            NestedObject = new NestedModel { Id = 1, Description = "Nested" }
         };
 
         // Act
@@ -550,7 +550,7 @@ public class ObjectExtensionsTests
         var actionExecuted = false;
 
         // Act
-        var result = testObj.IfNotNull(obj => 
+        var result = testObj.IfNotNull(obj =>
         {
             actionExecuted = true;
             obj.Name = "Modified";
@@ -570,7 +570,7 @@ public class ObjectExtensionsTests
         var actionExecuted = false;
 
         // Act
-        var result = testObj.IfNotNull(obj => 
+        var result = testObj.IfNotNull(obj =>
         {
             actionExecuted = true;
             obj.Name = "Modified";
@@ -659,4 +659,4 @@ public class ObjectExtensionsTests
     }
 
     #endregion
-} 
+}

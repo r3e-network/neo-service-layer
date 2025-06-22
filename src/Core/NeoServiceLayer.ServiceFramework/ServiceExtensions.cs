@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
@@ -25,7 +25,7 @@ public static class ServiceRegistrationExtensions
     {
         services.Add(new ServiceDescriptor(typeof(TService), typeof(TImplementation), lifetime));
         services.Add(new ServiceDescriptor(typeof(TImplementation), typeof(TImplementation), lifetime));
-        
+
         return services;
     }
 
@@ -46,13 +46,13 @@ public static class ServiceRegistrationExtensions
         where TImplementation : class, TService
     {
         services.AddNeoServiceWithExtensions<TService, TImplementation>(lifetime);
-        
+
         // Register blockchain-specific configuration
         services.Configure<BlockchainServiceOptions<TService>>(options =>
         {
             options.SupportedBlockchains = supportedBlockchains;
         });
-        
+
         return services;
     }
 
@@ -73,13 +73,13 @@ public static class ServiceRegistrationExtensions
         where TImplementation : class, TService
     {
         services.AddNeoServiceWithExtensions<TService, TImplementation>(lifetime);
-        
+
         // Register enclave-specific configuration
         services.Configure<EnclaveServiceOptions<TService>>(options =>
         {
             options.EnclaveRequired = enclaveRequired;
         });
-        
+
         return services;
     }
 
@@ -100,12 +100,12 @@ public static class ServiceRegistrationExtensions
         where TImplementation : class, TService
     {
         services.AddNeoServiceWithExtensions<TService, TImplementation>(lifetime);
-        
+
         // Register health check
         var checkName = healthCheckName ?? typeof(TService).Name;
         services.AddHealthChecks()
             .AddCheck<ServiceHealthCheck<TService>>(checkName);
-        
+
         return services;
     }
 
@@ -135,7 +135,7 @@ public static class ServiceRegistrationExtensions
             {
                 services.Add(new ServiceDescriptor(interfaceType, serviceType, lifetime));
             }
-            
+
             services.Add(new ServiceDescriptor(serviceType, serviceType, lifetime));
         }
 
@@ -151,7 +151,7 @@ public static class ServiceRegistrationExtensions
     {
         services.AddSingleton<IServiceDependencyResolver, DefaultServiceDependencyResolver>();
         services.AddSingleton<IServiceLifecycleManager, DefaultServiceLifecycleManager>();
-        
+
         return services;
     }
 
@@ -163,7 +163,7 @@ public static class ServiceRegistrationExtensions
     public static IServiceCollection ValidateServiceRegistrations(this IServiceCollection services)
     {
         services.AddSingleton<IServiceValidator, DefaultServiceValidator>();
-        
+
         return services;
     }
 }
@@ -223,7 +223,7 @@ public class ServiceHealthCheck<TService> : Microsoft.Extensions.Diagnostics.Hea
         try
         {
             var health = await _service.GetHealthAsync();
-            
+
             return health switch
             {
                 ServiceHealth.Healthy => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy($"{typeof(TService).Name} is healthy"),
@@ -307,4 +307,4 @@ public class ServiceValidationResult
     /// Gets or sets validation warnings.
     /// </summary>
     public List<string> Warnings { get; set; } = new();
-} 
+}

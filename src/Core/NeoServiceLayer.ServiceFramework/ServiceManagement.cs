@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.ServiceFramework;
@@ -27,7 +27,7 @@ public class DefaultServiceDependencyResolver : IServiceDependencyResolver
             _logger.LogDebug("Resolving dependencies for service {ServiceName}", service.Name);
 
             var result = await service.ValidateDependenciesAsync(availableServices);
-            
+
             if (result)
             {
                 _logger.LogDebug("All dependencies resolved for service {ServiceName}", service.Name);
@@ -114,7 +114,7 @@ public class DefaultServiceLifecycleManager : IServiceLifecycleManager
                 }
             }
 
-            _logger.LogInformation("Started {StartedCount}/{TotalCount} services successfully", 
+            _logger.LogInformation("Started {StartedCount}/{TotalCount} services successfully",
                 startedServices.Count, serviceList.Count);
 
             return startedServices.Count == serviceList.Count;
@@ -122,10 +122,10 @@ public class DefaultServiceLifecycleManager : IServiceLifecycleManager
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error starting services");
-            
+
             // Stop any services that were started
             await StopServicesAsync(startedServices);
-            
+
             return false;
         }
     }
@@ -163,7 +163,7 @@ public class DefaultServiceLifecycleManager : IServiceLifecycleManager
                 }
             }
 
-            _logger.LogInformation("Stopped {StoppedCount}/{TotalCount} services", 
+            _logger.LogInformation("Stopped {StoppedCount}/{TotalCount} services",
                 stoppedCount, serviceList.Count);
 
             return stoppedCount == serviceList.Count;
@@ -309,4 +309,4 @@ public class DefaultServiceValidator : IServiceValidator
             }
         }
     }
-} 
+}

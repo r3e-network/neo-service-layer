@@ -1,4 +1,4 @@
-/*
+﻿/*
 // This test file needs significant refactoring to work with OcclumFileStorageProvider
 // Temporarily commented out to fix compilation errors
 

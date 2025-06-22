@@ -1,8 +1,8 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using NeoServiceLayer.Api.Controllers;
-using System.ComponentModel.DataAnnotations;
-using System.Net;
 
 namespace NeoServiceLayer.Api.Filters;
 
@@ -33,16 +33,16 @@ public class GlobalExceptionFilter : IExceptionFilter
         var userId = context.HttpContext.User?.Identity?.Name ?? "Anonymous";
 
         // Log the exception with context
-        _logger.LogError(exception, 
+        _logger.LogError(exception,
             "Unhandled exception occurred. User: {UserId}, Method: {Method}, Path: {Path}, Query: {Query}",
             userId, request.Method, request.Path, request.QueryString);
 
         // Create standardized error response
         var response = CreateErrorResponse(exception);
-        
+
         // Set the HTTP status code
         context.HttpContext.Response.StatusCode = GetStatusCode(exception);
-        
+
         // Set the result
         context.Result = new JsonResult(response)
         {

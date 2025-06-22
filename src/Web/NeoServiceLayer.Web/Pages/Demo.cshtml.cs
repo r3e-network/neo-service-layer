@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc.RazorPages;
+﻿using Microsoft.AspNetCore.Mvc.RazorPages;
 
 namespace NeoServiceLayer.Web.Pages
 {
@@ -15,4 +15,4 @@ namespace NeoServiceLayer.Web.Pages
             // Demo page loads successfully
         }
     }
-} 
+}

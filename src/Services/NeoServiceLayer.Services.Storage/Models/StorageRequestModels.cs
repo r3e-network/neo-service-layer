@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Storage.Models;
 
@@ -358,4 +358,4 @@ public class RollbackTransactionRequest
     /// Gets or sets the reason for rollback.
     /// </summary>
     public string? Reason { get; set; }
-} 
+}

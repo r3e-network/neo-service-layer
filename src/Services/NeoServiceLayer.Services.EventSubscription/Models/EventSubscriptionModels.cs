@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.EventSubscription;
+﻿namespace NeoServiceLayer.Services.EventSubscription;
 
 /// <summary>
 /// Event subscription service statistics.

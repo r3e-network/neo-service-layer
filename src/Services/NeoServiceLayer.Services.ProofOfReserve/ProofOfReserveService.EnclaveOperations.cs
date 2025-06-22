@@ -1,6 +1,6 @@
+﻿using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Security.Cryptography;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -22,7 +22,7 @@ public partial class ProofOfReserveService
             // In a real implementation, this would query the blockchain
             // For now, return a placeholder value based on the asset
             await Task.CompletedTask;
-            
+
             lock (_assetsLock)
             {
                 if (_monitoredAssets.TryGetValue(assetId, out var asset))
@@ -32,7 +32,7 @@ public partial class ProofOfReserveService
                     return Math.Abs(hash % 10000000) + 1000000; // Between 1M and 11M
                 }
             }
-            
+
             return 1000000m; // Default 1M supply
         }
         catch (Exception ex)
@@ -58,7 +58,7 @@ public partial class ProofOfReserveService
             }
 
             var leaves = new List<byte[]>();
-            
+
             // Create leaf nodes from address-balance pairs
             for (int i = 0; i < addresses.Length; i++)
             {
@@ -74,15 +74,15 @@ public partial class ProofOfReserveService
 
             // Build Merkle tree bottom-up
             var currentLevel = leaves;
-            
+
             while (currentLevel.Count > 1)
             {
                 var nextLevel = new List<byte[]>();
-                
+
                 for (int i = 0; i < currentLevel.Count; i += 2)
                 {
                     byte[] combined;
-                    
+
                     if (i + 1 < currentLevel.Count)
                     {
                         // Combine two nodes
@@ -93,10 +93,10 @@ public partial class ProofOfReserveService
                         // Odd number of nodes, duplicate the last one
                         combined = currentLevel[i].Concat(currentLevel[i]).ToArray();
                     }
-                    
+
                     nextLevel.Add(await ComputeHashAsync(combined));
                 }
-                
+
                 currentLevel = nextLevel;
             }
 
@@ -121,7 +121,7 @@ public partial class ProofOfReserveService
         try
         {
             var proofs = new string[addresses.Length];
-            
+
             for (int i = 0; i < addresses.Length; i++)
             {
                 var proofData = new
@@ -132,7 +132,7 @@ public partial class ProofOfReserveService
                     Index = i,
                     TotalAddresses = addresses.Length
                 };
-                
+
                 var proofJson = System.Text.Json.JsonSerializer.Serialize(proofData);
                 var proofHash = await ComputeHashAsync(System.Text.Encoding.UTF8.GetBytes(proofJson));
                 proofs[i] = Convert.ToBase64String(proofHash);
@@ -158,7 +158,7 @@ public partial class ProofOfReserveService
         try
         {
             await Task.CompletedTask;
-            
+
             using var sha256 = SHA256.Create();
             return sha256.ComputeHash(data);
         }
@@ -179,12 +179,12 @@ public partial class ProofOfReserveService
         try
         {
             await Task.CompletedTask;
-            
+
             // In a real implementation, this would use the enclave's private key
             // For now, create a deterministic signature based on the hash
             using var sha256 = SHA256.Create();
             var signatureData = sha256.ComputeHash(proofHash.Concat(System.Text.Encoding.UTF8.GetBytes("PROOF_SIGNATURE")).ToArray());
-            
+
             Logger.LogDebug("Generated proof signature");
             return signatureData;
         }
@@ -206,15 +206,15 @@ public partial class ProofOfReserveService
         try
         {
             await Task.CompletedTask;
-            
+
             // In a real implementation, this would verify using the public key
             // For now, recreate the expected signature and compare
             using var sha256 = SHA256.Create();
             var expectedSignature = sha256.ComputeHash(proofHash.Concat(System.Text.Encoding.UTF8.GetBytes("PROOF_SIGNATURE")).ToArray());
-            
+
             var isValid = signature.SequenceEqual(expectedSignature);
             Logger.LogDebug("Proof signature verification: {IsValid}", isValid);
-            
+
             return isValid;
         }
         catch (Exception ex)
@@ -235,15 +235,15 @@ public partial class ProofOfReserveService
         try
         {
             await Task.CompletedTask;
-            
+
             // In a real implementation, this would verify using the auditor's public key
             // For now, recreate the expected signature and compare
             using var sha256 = SHA256.Create();
             var expectedSignature = sha256.ComputeHash(auditHash.Concat(System.Text.Encoding.UTF8.GetBytes("AUDIT_SIGNATURE")).ToArray());
-            
+
             var isValid = signature.SequenceEqual(expectedSignature);
             Logger.LogDebug("Audit signature verification: {IsValid}", isValid);
-            
+
             return isValid;
         }
         catch (Exception ex)

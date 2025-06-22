@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Core;
+﻿namespace NeoServiceLayer.Core;
 
 // Cross-Chain Service Models
 public class CrossChainMessageRequest

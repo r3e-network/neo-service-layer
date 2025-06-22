@@ -1,9 +1,9 @@
+﻿using System.Diagnostics;
+using System.Net.NetworkInformation;
+using System.Text.Json;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
-using System.Diagnostics;
-using System.Net.NetworkInformation;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Api.HealthChecks;
 
@@ -36,7 +36,7 @@ public static class CustomHealthChecks
         {
             healthChecksBuilder.AddCheck<NeoN3RpcHealthCheck>("neo-n3-rpc", HealthStatus.Degraded, new[] { "blockchain", "neo-n3" });
         }
-        
+
         var neoXRpcUrl = configuration["Blockchain:NeoX:RpcUrl"];
         if (!string.IsNullOrEmpty(neoXRpcUrl))
         {
@@ -74,7 +74,7 @@ public class DatabaseHealthCheck : IHealthCheck
             // Simple connection test
             using var connection = new Npgsql.NpgsqlConnection(connectionString);
             await connection.OpenAsync(cancellationToken);
-            
+
             // Test query
             using var command = connection.CreateCommand();
             command.CommandText = "SELECT 1";
@@ -123,10 +123,10 @@ public class RedisHealthCheck : IHealthCheck
 
             using var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(connectionString);
             var database = redis.GetDatabase();
-            
+
             // Test ping
             var pingTime = await database.PingAsync();
-            
+
             // Test set/get
             var testKey = $"health_check_{Guid.NewGuid()}";
             await database.StringSetAsync(testKey, "test", TimeSpan.FromSeconds(10));
@@ -207,7 +207,7 @@ public class BlockchainHealthCheck : IHealthCheck
             }
 
             var message = string.Join("; ", messages);
-            return overallHealthy 
+            return overallHealthy
                 ? HealthCheckResult.Healthy($"Blockchain connectivity: {message}", results)
                 : HealthCheckResult.Degraded($"Partial blockchain connectivity: {message}", null, results);
         }
@@ -237,7 +237,7 @@ public class KeyManagementHealthCheck : IHealthCheck
         {
             // Test key management service availability
             // This would depend on your actual key management implementation
-            
+
             var data = new Dictionary<string, object>
             {
                 ["service"] = "key_management",
@@ -373,7 +373,7 @@ public class MemoryHealthCheck : IHealthCheck
             var process = Process.GetCurrentProcess();
             var workingSet = process.WorkingSet64;
             var privateMemory = process.PrivateMemorySize64;
-            
+
             // Get system memory info
             var gcMemory = GC.GetTotalMemory(false);
             var gen0Collections = GC.CollectionCount(0);
@@ -484,8 +484,8 @@ public class NeoN3RpcHealthCheck : IHealthCheck
 
             using var client = new HttpClient();
             var response = await client.GetAsync(rpcUrl, cancellationToken);
-            
-            return response.IsSuccessStatusCode 
+
+            return response.IsSuccessStatusCode
                 ? HealthCheckResult.Healthy("Neo N3 RPC is accessible")
                 : HealthCheckResult.Degraded($"Neo N3 RPC returned {response.StatusCode}");
         }
@@ -523,8 +523,8 @@ public class NeoXRpcHealthCheck : IHealthCheck
 
             using var client = new HttpClient();
             var response = await client.GetAsync(rpcUrl, cancellationToken);
-            
-            return response.IsSuccessStatusCode 
+
+            return response.IsSuccessStatusCode
                 ? HealthCheckResult.Healthy("Neo X RPC is accessible")
                 : HealthCheckResult.Degraded($"Neo X RPC returned {response.StatusCode}");
         }
@@ -534,4 +534,4 @@ public class NeoXRpcHealthCheck : IHealthCheck
             return HealthCheckResult.Degraded($"Neo X RPC check failed: {ex.Message}", ex);
         }
     }
-} 
+}

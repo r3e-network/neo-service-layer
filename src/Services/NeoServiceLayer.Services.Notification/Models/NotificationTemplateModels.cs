@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Notification.Models;
+﻿namespace NeoServiceLayer.Services.Notification.Models;
 
 /// <summary>
 /// Notification template.

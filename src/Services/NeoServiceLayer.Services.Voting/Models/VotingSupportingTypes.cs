@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Voting.Models;
 
@@ -1062,4 +1062,4 @@ public enum RiskLevel
     /// Critical risk.
     /// </summary>
     Critical
-} 
+}

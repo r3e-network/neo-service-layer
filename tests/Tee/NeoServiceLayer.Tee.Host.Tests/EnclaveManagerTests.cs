@@ -1,9 +1,9 @@
+﻿using System.Reflection;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Reflection;
-using System.Text;
 using Xunit;
 
 namespace NeoServiceLayer.Tee.Host.Tests;

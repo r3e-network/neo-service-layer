@@ -1,21 +1,21 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.ProofOfReserve;
-using AutomationSvc = NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.Monitoring;
-using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Notification;
-using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
+using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text.Json;
 using Xunit;
+using AutomationSvc = NeoServiceLayer.Services.Automation;
+using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -35,29 +35,29 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
     public MultiServiceOrchestrationTests_Simplified()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        
+
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Add core services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
         services.AddSingleton<IConfigurationService, ConfigurationService>();
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<INotificationService, NotificationService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         // Get service instances
         _logger = _serviceProvider.GetRequiredService<ILogger<MultiServiceOrchestrationTests_Simplified>>();
         _proofOfReserveService = _serviceProvider.GetRequiredService<IProofOfReserveService>();
         _configurationService = _serviceProvider.GetRequiredService<IConfigurationService>();
         _backupService = _serviceProvider.GetRequiredService<IBackupService>();
         _notificationService = _serviceProvider.GetRequiredService<INotificationService>();
-        
+
         // Initialize all services
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
@@ -65,12 +65,12 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
     private async Task InitializeServicesAsync()
     {
         _logger.LogInformation("Initializing services for simplified multi-service orchestration testing...");
-        
+
         await _proofOfReserveService.InitializeAsync();
         await _configurationService.InitializeAsync();
         await _backupService.InitializeAsync();
         await _notificationService.InitializeAsync();
-        
+
         _logger.LogInformation("All services initialized successfully");
     }
 

@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
+﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.KeyManagement;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -709,4 +709,4 @@ public class DecryptDataResponse
     public DateTime Timestamp { get; set; }
 }
 
-#endregion 
+#endregion

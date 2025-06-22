@@ -1,10 +1,10 @@
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Services.Monitoring.Models;
-using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -200,8 +200,8 @@ public class MonitoringController : ControllerBase
     {
         try
         {
-            var request = new Services.Monitoring.Models.PerformanceStatisticsRequest 
-            { 
+            var request = new Services.Monitoring.Models.PerformanceStatisticsRequest
+            {
                 // PerformanceStatisticsRequest doesn't have ServiceName/TimeRange properties
                 // Just use empty request
             };
@@ -301,8 +301,8 @@ public class MonitoringController : ControllerBase
     {
         try
         {
-            var request = new Services.Monitoring.Models.GetAlertsRequest 
-            { 
+            var request = new Services.Monitoring.Models.GetAlertsRequest
+            {
                 Severity = string.IsNullOrEmpty(severity) ? null : Enum.Parse<Services.Monitoring.Models.AlertSeverity>(severity, true)
             };
             var alertsResult = await _monitoringService.GetActiveAlertsAsync(request, blockchainType);
@@ -348,8 +348,8 @@ public class MonitoringController : ControllerBase
     {
         try
         {
-            var request = new Services.Monitoring.Models.GetLogsRequest 
-            { 
+            var request = new Services.Monitoring.Models.GetLogsRequest
+            {
                 ServiceName = "All",
                 Limit = limit
             };

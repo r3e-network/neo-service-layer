@@ -1,10 +1,10 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Security;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.SecretsManagement;
-using System.ComponentModel.DataAnnotations;
-using System.Security;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -104,7 +104,7 @@ public class SecretsController : ControllerBase
             _logger.LogInformation("Retrieving secret {SecretId} version {Version} for blockchain {BlockchainType}", secretId, version, blockchainType);
 
             var secret = await _secretsService.GetSecretAsync(secretId, version, blockchainType, cancellationToken);
-            
+
             if (secret == null)
             {
                 _logger.LogWarning("Secret {SecretId} not found", secretId);
@@ -151,7 +151,7 @@ public class SecretsController : ControllerBase
             _logger.LogInformation("Retrieving secret metadata {SecretId} version {Version} for blockchain {BlockchainType}", secretId, version, blockchainType);
 
             var metadata = await _secretsService.GetSecretMetadataAsync(secretId, version, blockchainType, cancellationToken);
-            
+
             if (metadata == null)
             {
                 _logger.LogWarning("Secret metadata {SecretId} not found", secretId);
@@ -286,7 +286,7 @@ public class SecretsController : ControllerBase
             _logger.LogInformation("Deleting secret {SecretId} for blockchain {BlockchainType}", secretId, blockchainType);
 
             var deleted = await _secretsService.DeleteSecretAsync(secretId, blockchainType, cancellationToken);
-            
+
             if (!deleted)
             {
                 _logger.LogWarning("Secret {SecretId} not found for deletion", secretId);
@@ -428,7 +428,7 @@ public class SecretsController : ControllerBase
 
         var tags = new Dictionary<string, string>();
         var pairs = tagsString.Split(',', StringSplitOptions.RemoveEmptyEntries);
-        
+
         foreach (var pair in pairs)
         {
             var keyValue = pair.Split('=', 2);

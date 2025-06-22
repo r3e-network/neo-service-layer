@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup.Models;
 
@@ -199,7 +199,7 @@ public partial class BackupService
             // Retrieve backup metadata first
             var metadataKey = $"backup_metadata_{backupId}";
             var metadataJson = await GetFromSecureStorageAsync(metadataKey);
-            
+
             if (string.IsNullOrEmpty(metadataJson))
             {
                 throw new InvalidOperationException($"Backup metadata for {backupId} not found");
@@ -214,7 +214,7 @@ public partial class BackupService
             // Retrieve backup data
             var dataKey = $"backup_data_{backupId}";
             var encryptedDataJson = await GetFromSecureStorageAsync(dataKey);
-            
+
             if (string.IsNullOrEmpty(encryptedDataJson))
             {
                 throw new InvalidOperationException($"Backup data for {backupId} not found");
@@ -338,7 +338,7 @@ public partial class BackupService
                     // Check if backup data still exists in storage
                     var backupDataKey = $"backup_data_{backup.BackupId}";
                     var exists = await CheckDataExistsInStorageAsync(backupDataKey);
-                    
+
                     if (exists)
                     {
                         validBackups.Add(backup);
@@ -355,14 +355,14 @@ public partial class BackupService
                 }
             }
 
-            Logger.LogDebug("Retrieved {Count} valid backups for {DataType} on {Blockchain}", 
+            Logger.LogDebug("Retrieved {Count} valid backups for {DataType} on {Blockchain}",
                 validBackups.Count, request.DataType, blockchainType);
 
             return validBackups.OrderByDescending(b => b.CreatedAt);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to retrieve backup list for {DataType} on {Blockchain}", 
+            Logger.LogError(ex, "Failed to retrieve backup list for {DataType} on {Blockchain}",
                 request.DataType, blockchainType);
             return Enumerable.Empty<BackupInfo>();
         }
@@ -429,17 +429,17 @@ public partial class BackupService
     {
         // Deserialize encrypted data
         var encryptedData = Convert.FromBase64String(encryptedDataJson);
-        
+
         // Decrypt using enclave cryptographic functions
         var decryptedDataString = await _enclaveManager.DecryptDataAsync(Convert.ToBase64String(encryptedData), GetBackupEncryptionKey());
         var decryptedData = Convert.FromBase64String(decryptedDataString);
-        
+
         // Decompress if compressed
         if (metadata.IsCompressed)
         {
             return await DecompressDataAsync(decryptedData, metadata.CompressionAlgorithm);
         }
-        
+
         return decryptedData;
     }
 
@@ -448,12 +448,12 @@ public partial class BackupService
         // Compute hash of backup data
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var computedHash = Convert.ToBase64String(sha256.ComputeHash(backupData));
-        
+
         if (computedHash != metadata.DataHash)
         {
             throw new InvalidOperationException($"Backup integrity check failed for {metadata.BackupId}");
         }
-        
+
         await Task.CompletedTask;
     }
 
@@ -503,11 +503,11 @@ public partial class BackupService
         {
             await gzipStream.CopyToAsync(output);
         }
-        
+
         var decompressed = output.ToArray();
         Logger.LogInformation("GZip decompression: {CompressedSize} -> {DecompressedSize} bytes",
             compressedData.Length, decompressed.Length);
-            
+
         return decompressed;
     }
 
@@ -518,22 +518,22 @@ public partial class BackupService
     {
         using var input = new MemoryStream(compressedData);
         using var zip = new System.IO.Compression.ZipArchive(input, System.IO.Compression.ZipArchiveMode.Read);
-        
+
         // Get the first entry (backup.dat)
         var entry = zip.Entries.FirstOrDefault();
         if (entry == null)
         {
             throw new InvalidDataException("ZIP archive contains no entries");
         }
-        
+
         using var entryStream = entry.Open();
         using var output = new MemoryStream();
         await entryStream.CopyToAsync(output);
-        
+
         var decompressed = output.ToArray();
         Logger.LogInformation("ZIP decompression: {CompressedSize} -> {DecompressedSize} bytes",
             compressedData.Length, decompressed.Length);
-            
+
         return decompressed;
     }
 
@@ -548,11 +548,11 @@ public partial class BackupService
         {
             await deflateStream.CopyToAsync(output);
         }
-        
+
         var decompressed = output.ToArray();
         Logger.LogInformation("Deflate decompression: {CompressedSize} -> {DecompressedSize} bytes",
             compressedData.Length, decompressed.Length);
-            
+
         return decompressed;
     }
 
@@ -567,11 +567,11 @@ public partial class BackupService
         {
             await brotliStream.CopyToAsync(output);
         }
-        
+
         var decompressed = output.ToArray();
         Logger.LogInformation("Brotli decompression: {CompressedSize} -> {DecompressedSize} bytes",
             compressedData.Length, decompressed.Length);
-            
+
         return decompressed;
     }
 

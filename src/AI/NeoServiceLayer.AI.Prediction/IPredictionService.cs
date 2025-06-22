@@ -1,5 +1,5 @@
+﻿using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.AI.Prediction.Models;
 using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction;

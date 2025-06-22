@@ -1,7 +1,7 @@
+﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
-using System.Diagnostics;
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -135,7 +135,7 @@ public partial class MonitoringService
         // For now, simulate health status with some variability
         var random = Random.Shared;
         var healthProbability = random.NextDouble();
-        
+
         var status = healthProbability switch
         {
             > 0.95 => HealthStatus.Unhealthy,
@@ -190,7 +190,7 @@ public partial class MonitoringService
                 _serviceHealthCache[serviceName] = healthStatus;
             }
 
-            Logger.LogDebug("Health check completed for service {ServiceName}: {Status}", 
+            Logger.LogDebug("Health check completed for service {ServiceName}: {Status}",
                 serviceName, healthStatus.Status);
 
             return healthStatus;

@@ -1,10 +1,10 @@
+﻿using System.Security;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Security;
-using System.Text.Json;
-using System.Text;
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -263,7 +263,7 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
 
             // Parse the result
             var secretData = JsonSerializer.Deserialize<JsonElement>(result);
-            
+
             var metadata = JsonSerializer.Deserialize<SecretMetadata>(secretData.GetProperty("metadata").GetRawText()) ??
                 throw new InvalidOperationException("Failed to deserialize secret metadata.");
 
@@ -729,7 +729,7 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
         var request = new { secretId = secretId };
         string jsonPayload = JsonSerializer.Serialize(request);
         string result = await _enclaveManager.CallEnclaveFunctionAsync("listSecretVersions", jsonPayload, cancellationToken);
-        
+
         return JsonSerializer.Deserialize<List<SecretMetadata>>(result) ?? new List<SecretMetadata>();
     }
 
@@ -740,30 +740,30 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
 
     async Task<byte[]> ISecretsManager.ExportSecretsAsync(IEnumerable<string>? secretIds, SecureString? encryptionKey, CancellationToken cancellationToken)
     {
-        var request = new 
-        { 
+        var request = new
+        {
             secretIds = secretIds?.ToArray(),
             encryptionKey = encryptionKey != null ? SecureStringToString(encryptionKey) : null
         };
-        
+
         string jsonPayload = JsonSerializer.Serialize(request);
         string result = await _enclaveManager.CallEnclaveFunctionAsync("exportSecrets", jsonPayload, cancellationToken);
-        
+
         return Convert.FromBase64String(result);
     }
 
     async Task<int> ISecretsManager.ImportSecretsAsync(byte[] backupData, SecureString decryptionKey, bool overwriteExisting, CancellationToken cancellationToken)
     {
-        var request = new 
-        { 
+        var request = new
+        {
             backupData = Convert.ToBase64String(backupData),
             decryptionKey = SecureStringToString(decryptionKey),
             overwriteExisting = overwriteExisting
         };
-        
+
         string jsonPayload = JsonSerializer.Serialize(request);
         string result = await _enclaveManager.CallEnclaveFunctionAsync("importSecrets", jsonPayload, cancellationToken);
-        
+
         return int.Parse(result);
     }
 
@@ -820,8 +820,8 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
     {
         try
         {
-            var request = new 
-            { 
+            var request = new
+            {
                 secretId = secretId,
                 lastAccessedAt = DateTime.UtcNow
             };
@@ -860,8 +860,8 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
                         externalSecret.SecretId,
                         externalSecret.Name,
                         value,
-                        new StoreSecretOptions 
-                        { 
+                        new StoreSecretOptions
+                        {
                             Description = $"Synced from {provider.ProviderType}",
                             Tags = externalSecret.Tags,
                             ContentType = externalSecret.ContentType,
@@ -869,7 +869,7 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
                         },
                         BlockchainType.NeoN3,
                         cancellationToken);
-                    
+
                     count++;
                 }
             }
@@ -886,11 +886,11 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
     {
         int count = 0;
         var localSecrets = await ListSecretsAsync(
-            new GetSecretsOptions { Limit = int.MaxValue }, 
-            BlockchainType.NeoN3, 
+            new GetSecretsOptions { Limit = int.MaxValue },
+            BlockchainType.NeoN3,
             cancellationToken);
 
-        var secretsToSync = secretIds != null 
+        var secretsToSync = secretIds != null
             ? localSecrets.Where(s => secretIds.Contains(s.SecretId))
             : localSecrets;
 

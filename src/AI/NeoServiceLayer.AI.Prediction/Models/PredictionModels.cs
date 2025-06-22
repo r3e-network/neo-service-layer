@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction.Models;
@@ -290,12 +290,12 @@ public enum SentimentAnalysisDepth
     /// Basic analysis.
     /// </summary>
     Basic,
-    
+
     /// <summary>
     /// Standard analysis.
     /// </summary>
     Standard,
-    
+
     /// <summary>
     /// Comprehensive analysis.
     /// </summary>
@@ -568,12 +568,12 @@ public enum ForecastTimeHorizon
     /// Short term forecast (hours).
     /// </summary>
     ShortTerm,
-    
+
     /// <summary>
     /// Medium term forecast (days).
     /// </summary>
     MediumTerm,
-    
+
     /// <summary>
     /// Long term forecast (weeks/months).
     /// </summary>
@@ -747,17 +747,17 @@ public enum MarketTrend
     /// Bullish trend.
     /// </summary>
     Bullish,
-    
+
     /// <summary>
     /// Bearish trend.
     /// </summary>
     Bearish,
-    
+
     /// <summary>
     /// Neutral trend.
     /// </summary>
     Neutral,
-    
+
     /// <summary>
     /// Volatile market.
     /// </summary>

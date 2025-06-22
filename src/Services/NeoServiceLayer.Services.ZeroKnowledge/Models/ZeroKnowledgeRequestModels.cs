@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge.Models;
@@ -537,4 +537,4 @@ public class ZkStatisticsRequest
     [Required]
     [StringLength(66)]
     public string RequesterIdentifier { get; set; } = string.Empty;
-} 
+}

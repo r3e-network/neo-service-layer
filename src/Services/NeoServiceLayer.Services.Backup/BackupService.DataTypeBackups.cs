@@ -1,8 +1,8 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.Backup.Models;
 using NeoServiceLayer.Infrastructure;
-using System.Text.Json;
+using NeoServiceLayer.Services.Backup.Models;
 using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
@@ -24,7 +24,7 @@ public partial class BackupService
         try
         {
             var client = _blockchainClientFactory.CreateClient(blockchainType);
-            
+
             // Get real blockchain state data
             var blockHeight = await client.GetBlockHeightAsync();
             var latestBlock = await client.GetBlockAsync(blockHeight);
@@ -54,9 +54,9 @@ public partial class BackupService
             };
 
             var json = JsonSerializer.Serialize(stateData, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Successfully backed up real blockchain state for {BlockchainType} at block {BlockHeight}", 
+            Logger.LogInformation("Successfully backed up real blockchain state for {BlockchainType} at block {BlockHeight}",
                 blockchainType, latestBlock.Height);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -83,7 +83,7 @@ public partial class BackupService
             var blockHeight = await client.GetBlockHeightAsync();
             var latestBlock = await client.GetBlockAsync(blockHeight);
             var startBlock = Math.Max(0, (int)blockHeight - 1000); // Last 1000 blocks
-            
+
             for (int height = startBlock; height <= blockHeight && transactions.Count < 5000; height++)
             {
                 try
@@ -125,9 +125,9 @@ public partial class BackupService
             };
 
             var json = JsonSerializer.Serialize(historyData, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Successfully backed up {TransactionCount} real transactions for {BlockchainType}", 
+            Logger.LogInformation("Successfully backed up {TransactionCount} real transactions for {BlockchainType}",
                 transactions.Count, blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -153,17 +153,19 @@ public partial class BackupService
             // Get real smart contracts data
             // Mock contract data since GetDeployedContractsAsync doesn't exist
             var contractHashes = new[] { "0x1234567890abcdef", "0xfedcba0987654321" };
-            
+
             foreach (var contractHash in contractHashes.Take(1000)) // Limit to 1000 contracts
             {
                 try
                 {
                     // Mock contract data since GetContractAsync doesn't exist
-                    var contract = new { 
+                    var contract = new
+                    {
                         Hash = contractHash,
-                        Manifest = new { 
-                            Name = "MockContract", 
-                            Author = "MockAuthor", 
+                        Manifest = new
+                        {
+                            Name = "MockContract",
+                            Author = "MockAuthor",
                             Version = "1.0.0",
                             Permissions = new object[0],
                             Groups = new object[0]
@@ -204,9 +206,9 @@ public partial class BackupService
             };
 
             var json = JsonSerializer.Serialize(contractsData, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Successfully backed up {ContractCount} real smart contracts for {BlockchainType}", 
+            Logger.LogInformation("Successfully backed up {ContractCount} real smart contracts for {BlockchainType}",
                 contracts.Count, blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -233,10 +235,10 @@ public partial class BackupService
             var blockHeight = await client.GetBlockHeightAsync();
             var latestBlock = await client.GetBlockAsync(blockHeight);
             var addressActivity = new Dictionary<string, object>();
-            
+
             // Analyze recent blocks to find active addresses
             var startBlock = Math.Max(0, (int)blockHeight - 100); // Last 100 blocks
-            
+
             for (int height = startBlock; height <= blockHeight; height++)
             {
                 try
@@ -252,7 +254,7 @@ public partial class BackupService
                                 // Mock balance and transaction count since methods don't exist
                                 var balance = 1.0m;
                                 var txCount = 1;
-                                
+
                                 addressActivity[tx.Sender] = new
                                 {
                                     Address = tx.Sender,
@@ -264,7 +266,7 @@ public partial class BackupService
                                 };
                             }
                         }
-                        
+
                         // Track recipient activity
                         if (!string.IsNullOrEmpty(tx.Recipient))
                         {
@@ -276,7 +278,7 @@ public partial class BackupService
                                     // Mock balance and transaction count since methods don't exist
                                     var balance = 1.0m;
                                     var txCount = 1;
-                                    
+
                                     addressActivity[recipient] = new
                                     {
                                         Address = recipient,
@@ -311,9 +313,9 @@ public partial class BackupService
             };
 
             var json = JsonSerializer.Serialize(userData, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Successfully backed up {UserCount} real user addresses for {BlockchainType}", 
+            Logger.LogInformation("Successfully backed up {UserCount} real user addresses for {BlockchainType}",
                 addressActivity.Count, blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -334,26 +336,28 @@ public partial class BackupService
         try
         {
             var client = _blockchainClientFactory.CreateClient(blockchainType);
-            
+
             // Get real network configuration
             // Mock network info since methods don't exist
-            var networkInfo = new { 
-                NetworkMagic = 860833102, 
+            var networkInfo = new
+            {
+                NetworkMagic = 860833102,
                 Protocol = "Neo/3.7.4",
                 TcpPort = 20333,
                 WebSocketPort = 20334,
                 UserAgent = "/Neo:3.7.4/",
                 Nonce = 12345
             };
-            var version = new { 
-                ClientVersion = "3.7.4", 
+            var version = new
+            {
+                ClientVersion = "3.7.4",
                 ProtocolVersion = 24,
                 RpcVersion = "2.15.3",
                 TcpPort = 20333,
                 WebSocketPort = 20334
             };
             var connectionCount = new { Max = 50, Current = 10 };
-            
+
             var configData = new
             {
                 BlockchainType = blockchainType.ToString(),
@@ -383,7 +387,7 @@ public partial class BackupService
 
             var json = JsonSerializer.Serialize(configData, new JsonSerializerOptions { WriteIndented = true });
             Logger.LogInformation("Successfully backed up real configuration for {BlockchainType}", blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -406,7 +410,7 @@ public partial class BackupService
             // Get real service health and metrics
             var services = await GetAllServiceStatuses();
             var metrics = await GetAggregatedServiceMetrics();
-            
+
             var serviceData = new
             {
                 BlockchainType = blockchainType.ToString(),
@@ -418,7 +422,7 @@ public partial class BackupService
 
             var json = JsonSerializer.Serialize(serviceData, new JsonSerializerOptions { WriteIndented = true });
             Logger.LogInformation("Successfully backed up real service data for {BlockchainType}", blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -440,7 +444,7 @@ public partial class BackupService
         {
             // Get real log data from the logging system
             var logs = await GetRecentLogEntries(10000); // Last 10,000 log entries
-            
+
             var logsData = new
             {
                 BlockchainType = blockchainType.ToString(),
@@ -450,9 +454,9 @@ public partial class BackupService
             };
 
             var json = JsonSerializer.Serialize(logsData, new JsonSerializerOptions { WriteIndented = true });
-            Logger.LogInformation("Successfully backed up {LogCount} real log entries for {BlockchainType}", 
+            Logger.LogInformation("Successfully backed up {LogCount} real log entries for {BlockchainType}",
                 logs.Count, blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -473,18 +477,19 @@ public partial class BackupService
         try
         {
             var client = _blockchainClientFactory.CreateClient(blockchainType);
-            
+
             // Get real generic blockchain data
             // Mock data since methods don't exist
-            var memPool = new { 
-                Count = 5, 
+            var memPool = new
+            {
+                Count = 5,
                 TxHashes = new[] { "0x123", "0x456" },
                 Transactions = new[] { "tx1", "tx2" },
                 TotalFees = 0.01m
             };
             var peers = new[] { "192.168.1.1:20333", "192.168.1.2:20333" };
             var version = new { Version = "3.7.4", Protocol = 24 };
-            
+
             var genericData = new
             {
                 DataType = request.DataType,
@@ -510,7 +515,7 @@ public partial class BackupService
 
             var json = JsonSerializer.Serialize(genericData, new JsonSerializerOptions { WriteIndented = true });
             Logger.LogInformation("Successfully backed up real generic data for {BlockchainType}", blockchainType);
-            
+
             return System.Text.Encoding.UTF8.GetBytes(json);
         }
         catch (Exception ex)
@@ -610,7 +615,7 @@ public partial class BackupService
         // Get real service statuses from health endpoints
         var services = new List<object>();
         var serviceNames = new[] { "OracleService", "StorageService", "ComputeService", "KeyManagementService" };
-        
+
         foreach (var serviceName in serviceNames)
         {
             try
@@ -618,7 +623,7 @@ public partial class BackupService
                 var response = await _httpClientService.GetAsync($"/api/v1/{serviceName.ToLower()}/health");
                 var status = response.IsSuccessStatusCode ? "Running" : "Error";
                 var uptime = response.IsSuccessStatusCode ? "99.9%" : "0%";
-                
+
                 services.Add(new { Name = serviceName, Status = status, Uptime = uptime });
             }
             catch
@@ -626,7 +631,7 @@ public partial class BackupService
                 services.Add(new { Name = serviceName, Status = "Unknown", Uptime = "0%" });
             }
         }
-        
+
         return services;
     }
 

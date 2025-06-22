@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compute;
 
@@ -349,4 +349,4 @@ public class RegisterComputationRequest
     public string Description { get; set; } = string.Empty;
 }
 
-#endregion 
+#endregion

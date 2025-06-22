@@ -1,10 +1,10 @@
-using Microsoft.Extensions.Caching.Memory;
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -119,7 +119,7 @@ public class ProofOfReserveCacheHelper : IDisposable
             // Execute factory method
             _logger.LogDebug("Cache miss, executing factory for key: {Key}", key);
             var startTime = DateTime.UtcNow;
-            
+
             try
             {
                 var value = await factory();
@@ -229,7 +229,7 @@ public class ProofOfReserveCacheHelper : IDisposable
         // Note: IMemoryCache doesn't provide a way to enumerate keys
         // In a production environment, you might want to use IDistributedCache
         // or maintain a separate index of cache keys
-        
+
         _logger.LogWarning("RemoveByPattern not fully implemented for MemoryCache: {Pattern}", pattern);
     }
 
@@ -304,7 +304,7 @@ public class ProofOfReserveCacheHelper : IDisposable
     public static string BuildCacheKey(string prefix, params object[] parameters)
     {
         var keyBuilder = new StringBuilder(prefix);
-        
+
         foreach (var param in parameters)
         {
             keyBuilder.Append(':');
@@ -357,10 +357,10 @@ public class ProofOfReserveCacheHelper : IDisposable
     {
         if (key.Contains(CacheKeys.HealthStatus) || key.Contains(CacheKeys.Alerts))
             return CacheItemPriority.High;
-        
+
         if (key.Contains(CacheKeys.ReserveStatus) || key.Contains(CacheKeys.AssetInfo))
             return CacheItemPriority.Normal;
-        
+
         if (key.Contains(CacheKeys.AuditReport) || key.Contains(CacheKeys.ConfigSummary))
             return CacheItemPriority.Low;
 

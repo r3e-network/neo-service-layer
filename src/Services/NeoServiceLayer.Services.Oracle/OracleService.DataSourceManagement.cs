@@ -1,7 +1,7 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle.Models;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -281,7 +281,7 @@ public partial class OracleService
             catch (Exception kmsEx)
             {
                 Logger.LogWarning(kmsEx, "KMS encryption failed, falling back to base64 encoding for testing");
-                
+
                 // For testing purposes, if KMS encryption fails, return a simple base64 encoding
                 // This allows tests to pass while maintaining the interface
                 var dataBytes2 = System.Text.Encoding.UTF8.GetBytes(dataSourceJson);

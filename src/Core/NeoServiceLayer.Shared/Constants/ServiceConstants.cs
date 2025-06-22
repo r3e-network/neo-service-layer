@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Shared.Constants;
+﻿namespace NeoServiceLayer.Shared.Constants;
 
 /// <summary>
 /// Global constants used across the Neo Service Layer.
@@ -44,7 +44,7 @@ public static class ServiceConstants
         public const string JwtClaimRoles = "roles";
         public const string JwtClaimPermissions = "permissions";
         public const string JwtClaimTenantId = "tenant_id";
-        
+
         // Role names
         public const string AdminRole = "Admin";
         public const string UserRole = "User";
@@ -65,7 +65,7 @@ public static class ServiceConstants
         public const string BlockchainPrefix = "blockchain:";
         public const string HealthPrefix = "health:";
         public const string MetricsPrefix = "metrics:";
-        
+
         // TTL in seconds
         public const int ShortTtl = 300;    // 5 minutes
         public const int MediumTtl = 1800;  // 30 minutes
@@ -82,13 +82,13 @@ public static class ServiceConstants
         public const string NeoX = "neo-x";
         public const string Bitcoin = "bitcoin";
         public const string Ethereum = "ethereum";
-        
+
         // Transaction statuses
         public const string TxStatusPending = "pending";
         public const string TxStatusConfirmed = "confirmed";
         public const string TxStatusFailed = "failed";
         public const string TxStatusCancelled = "cancelled";
-        
+
         // Gas settings
         public const decimal DefaultGasPrice = 0.00000001m;
         public const long DefaultGasLimit = 100000000L;
@@ -142,14 +142,14 @@ public static class ServiceConstants
         public const string Forbidden = "FORBIDDEN";
         public const string InternalError = "INTERNAL_ERROR";
         public const string ExternalServiceError = "EXTERNAL_SERVICE_ERROR";
-        
+
         // Blockchain errors
         public const string BlockchainConnectionError = "BLOCKCHAIN_CONNECTION_ERROR";
         public const string TransactionFailed = "TRANSACTION_FAILED";
         public const string InsufficientFunds = "INSUFFICIENT_FUNDS";
         public const string InvalidAddress = "INVALID_ADDRESS";
         public const string ContractExecutionError = "CONTRACT_EXECUTION_ERROR";
-        
+
         // Key management errors
         public const string KeyNotFound = "KEY_NOT_FOUND";
         public const string KeyGenerationFailed = "KEY_GENERATION_FAILED";
@@ -157,7 +157,7 @@ public static class ServiceConstants
         public const string VerificationFailed = "VERIFICATION_FAILED";
         public const string EncryptionFailed = "ENCRYPTION_FAILED";
         public const string DecryptionFailed = "DECRYPTION_FAILED";
-        
+
         // Service errors
         public const string ServiceUnavailable = "SERVICE_UNAVAILABLE";
         public const string ServiceTimeout = "SERVICE_TIMEOUT";
@@ -212,4 +212,4 @@ public static class ServiceConstants
         public const string PublicKey = @"^[0-9a-fA-F]{66}$";
         public const string PrivateKey = @"^[0-9a-fA-F]{64}$";
     }
-} 
+}

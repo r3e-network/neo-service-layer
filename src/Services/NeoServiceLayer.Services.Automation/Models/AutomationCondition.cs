@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -54,4 +54,4 @@ public class AutomationCondition
     /// Gets or sets a description of what this condition checks.
     /// </summary>
     public string? Description { get; set; }
-} 
+}

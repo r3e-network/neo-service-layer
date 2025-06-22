@@ -1,15 +1,15 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NeoServiceLayer.AI.Prediction;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using NeoServiceLayer.Infrastructure.Persistence;
-using NeoServiceLayer.Core;
-using Moq;
 using Xunit;
-using FluentAssertions;
-using IConfigurationSection = Microsoft.Extensions.Configuration.IConfigurationSection;
 using CoreModels = NeoServiceLayer.Core.Models;
+using IConfigurationSection = Microsoft.Extensions.Configuration.IConfigurationSection;
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
 
@@ -280,20 +280,20 @@ public class PredictionServiceTests : IDisposable
         _mockServiceConfiguration
             .Setup(x => x.GetValue<string>(It.IsAny<string>()))
             .Returns("test_value");
-        
+
         _mockServiceConfiguration
             .Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string key, string defaultValue) => defaultValue);
-            
+
         _mockServiceConfiguration
             .Setup(x => x.ContainsKey(It.IsAny<string>()))
             .Returns(true);
-            
+
         // Setup IPersistentStorageProvider mock
         _mockStorageProvider
             .Setup(x => x.IsInitialized)
             .Returns(true);
-            
+
         _mockStorageProvider
             .Setup(x => x.InitializeAsync())
             .ReturnsAsync(true);

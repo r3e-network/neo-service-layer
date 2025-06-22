@@ -1,12 +1,12 @@
+﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
-using NeoServiceLayer.Api.Controllers;
-using NeoServiceLayer.Core;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.AI.Prediction.Models;
-using System.Security.Claims;
+using NeoServiceLayer.Api.Controllers;
+using NeoServiceLayer.Core;
 using Xunit;
 
 namespace NeoServiceLayer.Api.Tests.Controllers;
@@ -546,4 +546,4 @@ public class PredictionControllerTests
     }
 
     #endregion
-} 
+}

@@ -1,9 +1,9 @@
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Asp.Versioning;
-using AutomationSvc = NeoServiceLayer.Services.Automation;
-using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
+using AutomationSvc = NeoServiceLayer.Services.Automation;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -59,14 +59,15 @@ public class AutomationController : ControllerBase
                 TriggerType = AutomationSvc.AutomationTriggerType.Schedule,
                 TriggerConfiguration = System.Text.Json.JsonSerializer.Serialize(request.Schedule),
                 ActionType = AutomationSvc.AutomationActionType.SmartContract,
-                ActionConfiguration = System.Text.Json.JsonSerializer.Serialize(new { 
+                ActionConfiguration = System.Text.Json.JsonSerializer.Serialize(new
+                {
                     ContractAddress = request.ContractAddress,
                     MethodName = request.MethodName,
                     Parameters = request.Parameters
                 }),
                 IsActive = true
             };
-            
+
             var result = await _automationService.CreateAutomationAsync(automationRequest, blockchainType);
 
             var response = new AutomationJobResponse
@@ -324,7 +325,7 @@ public class AutomationController : ControllerBase
                 Description = "Updated automation job",
                 IsEnabled = true
             };
-            
+
             var result = await _automationService.UpdateJobAsync(jobId, updateRequest, blockchainType);
 
             var response = new AutomationJobActionResponse

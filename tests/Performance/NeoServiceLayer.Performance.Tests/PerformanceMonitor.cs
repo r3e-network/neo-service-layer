@@ -1,4 +1,4 @@
-using System.Diagnostics;
+﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 
@@ -32,7 +32,7 @@ public class PerformanceMonitor : IDisposable
 
         if (_config.MonitoringIntervalMs > 0)
         {
-            _monitoringTimer = new Timer(CaptureResourceSnapshot, null, 
+            _monitoringTimer = new Timer(CaptureResourceSnapshot, null,
                 Timeout.Infinite, _config.MonitoringIntervalMs);
         }
     }
@@ -43,7 +43,7 @@ public class PerformanceMonitor : IDisposable
     public void StartMonitoring()
     {
         ThrowIfDisposed();
-        
+
         lock (_lockObject)
         {
             if (_isMonitoring)
@@ -51,8 +51,8 @@ public class PerformanceMonitor : IDisposable
 
             _snapshots.Clear();
             _isMonitoring = true;
-            
-            _logger?.LogInformation("Starting performance monitoring with {IntervalMs}ms interval", 
+
+            _logger?.LogInformation("Starting performance monitoring with {IntervalMs}ms interval",
                 _config.MonitoringIntervalMs);
 
             // Take initial snapshot
@@ -83,10 +83,10 @@ public class PerformanceMonitor : IDisposable
             CaptureResourceSnapshot(null);
 
             var stats = CalculateUsageStats();
-            
-            _logger?.LogInformation("Performance monitoring stopped. Collected {SnapshotCount} snapshots", 
+
+            _logger?.LogInformation("Performance monitoring stopped. Collected {SnapshotCount} snapshots",
                 _snapshots.Count);
-            
+
             return stats;
         }
     }
@@ -108,7 +108,7 @@ public class PerformanceMonitor : IDisposable
     public IReadOnlyList<ResourceSnapshot> GetSnapshots()
     {
         ThrowIfDisposed();
-        
+
         lock (_lockObject)
         {
             return _snapshots.ToArray();
@@ -123,11 +123,11 @@ public class PerformanceMonitor : IDisposable
         try
         {
             var snapshot = CaptureCurrentSnapshot();
-            
+
             lock (_lockObject)
             {
                 _snapshots.Add(snapshot);
-                
+
                 // Limit snapshot history to prevent memory issues
                 if (_snapshots.Count > 10000)
                 {
@@ -144,7 +144,7 @@ public class PerformanceMonitor : IDisposable
     private ResourceSnapshot CaptureCurrentSnapshot()
     {
         var timestamp = DateTime.UtcNow;
-        
+
         // Basic process metrics
         _currentProcess.Refresh();
         var workingSetMemoryMB = _currentProcess.WorkingSet64 / (1024.0 * 1024.0);
@@ -226,12 +226,12 @@ public class PerformanceMonitor : IDisposable
         {
             // Use PerformanceCounter for accurate CPU monitoring
             using var cpuCounter = new PerformanceCounter("Processor", "% Processor Time", "_Total");
-            
+
             // First call to NextValue() always returns 0, so we call it twice
             cpuCounter.NextValue();
             Thread.Sleep(10); // Minimal wait for accurate reading
             var cpuUsage = cpuCounter.NextValue();
-            
+
             return Math.Min(100.0, Math.Max(0.0, cpuUsage));
         }
         catch
@@ -255,7 +255,7 @@ public class PerformanceMonitor : IDisposable
 
             var statLines = File.ReadAllLines("/proc/stat");
             var cpuLine = statLines.FirstOrDefault(line => line.StartsWith("cpu "));
-            
+
             if (cpuLine == null)
             {
                 return GetProcessCpuUsage();
@@ -275,7 +275,7 @@ public class PerformanceMonitor : IDisposable
             // Calculate CPU usage percentage
             var activeTime = totalTime - idleTime;
             var cpuUsage = totalTime > 0 ? (double)activeTime / totalTime * 100.0 : 0.0;
-            
+
             return Math.Min(100.0, Math.Max(0.0, cpuUsage));
         }
         catch
@@ -293,17 +293,17 @@ public class PerformanceMonitor : IDisposable
         {
             var startTime = DateTime.UtcNow;
             var startCpuUsage = _currentProcess.TotalProcessorTime;
-            
+
             Thread.Sleep(10); // Minimal pause for measurement
-            
+
             _currentProcess.Refresh();
             var endTime = DateTime.UtcNow;
             var endCpuUsage = _currentProcess.TotalProcessorTime;
-            
+
             var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
             var totalMsPassed = (endTime - startTime).TotalMilliseconds;
             var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-            
+
             return Math.Min(100.0, Math.Max(0.0, cpuUsageTotal * 100.0));
         }
         catch
@@ -323,10 +323,10 @@ public class PerformanceMonitor : IDisposable
             var gcPressure = GC.GetTotalMemory(false) / (1024.0 * 1024.0); // MB
             var threadCount = _currentProcess.Threads.Count;
             var processorCount = Environment.ProcessorCount;
-            
+
             // Rough estimation based on thread utilization
             var estimatedUsage = Math.Min(100.0, (threadCount / (double)processorCount) * 25.0);
-            
+
             return estimatedUsage;
         }
         catch
@@ -383,7 +383,7 @@ public class PerformanceMonitor : IDisposable
             {
                 using var searcher = new System.Management.ManagementObjectSearcher("SELECT TotalPhysicalMemory FROM Win32_ComputerSystem");
                 using var collection = searcher.Get();
-                
+
                 foreach (System.Management.ManagementObject obj in collection)
                 {
                     var totalBytes = Convert.ToUInt64(obj["TotalPhysicalMemory"]);
@@ -426,10 +426,10 @@ public class PerformanceMonitor : IDisposable
                 }
             }
 
-            return new SystemMemoryInfo 
-            { 
-                TotalMemoryMB = totalMemoryMB, 
-                AvailableMemoryMB = availableMemoryMB 
+            return new SystemMemoryInfo
+            {
+                TotalMemoryMB = totalMemoryMB,
+                AvailableMemoryMB = availableMemoryMB
             };
         }
         catch (Exception ex)
@@ -482,13 +482,13 @@ public class PerformanceMonitor : IDisposable
             }
 
             var totalMB = memInfo.GetValueOrDefault("MemTotal", 0) / 1024.0;
-            var availableMB = memInfo.GetValueOrDefault("MemAvailable", 
+            var availableMB = memInfo.GetValueOrDefault("MemAvailable",
                                 memInfo.GetValueOrDefault("MemFree", 0)) / 1024.0;
 
-            return new SystemMemoryInfo 
-            { 
-                TotalMemoryMB = totalMB, 
-                AvailableMemoryMB = availableMB 
+            return new SystemMemoryInfo
+            {
+                TotalMemoryMB = totalMB,
+                AvailableMemoryMB = availableMB
             };
         }
         catch
@@ -502,11 +502,11 @@ public class PerformanceMonitor : IDisposable
         try
         {
             // Production-ready SGX memory usage detection with real SGX SDK integration
-            
+
             // 1. Check for SGX hardware support and driver availability
             var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE");
             var sgxSupported = CheckSgxHardwareSupport();
-            
+
             if (sgxMode == "SIM" || !sgxSupported)
             {
                 // In simulation mode or without hardware, provide simulated memory usage
@@ -559,7 +559,7 @@ public class PerformanceMonitor : IDisposable
 
                 // Check device files
                 var hasDeviceFile = sgxDevices.Any(device => File.Exists(device));
-                
+
                 // Check kernel modules
                 var hasKernelModule = false;
                 if (File.Exists("/proc/modules"))
@@ -569,7 +569,7 @@ public class PerformanceMonitor : IDisposable
                 }
 
                 var isSupported = hasDeviceFile || hasKernelModule;
-                _logger?.LogDebug("Linux SGX support check: DeviceFile={HasDeviceFile}, KernelModule={HasKernelModule}, Supported={IsSupported}", 
+                _logger?.LogDebug("Linux SGX support check: DeviceFile={HasDeviceFile}, KernelModule={HasKernelModule}, Supported={IsSupported}",
                     hasDeviceFile, hasKernelModule, isSupported);
 
                 return isSupported;
@@ -605,11 +605,11 @@ public class PerformanceMonitor : IDisposable
                 {
                     var version = sgxKey.GetValue("Version")?.ToString();
                     var installed = sgxKey.GetValue("Installed")?.ToString();
-                    
-                    sgxSupported = !string.IsNullOrEmpty(version) || 
+
+                    sgxSupported = !string.IsNullOrEmpty(version) ||
                                   (installed?.Equals("1", StringComparison.OrdinalIgnoreCase) == true);
-                    
-                    _logger?.LogDebug("Intel SGX registry check: Version={Version}, Installed={Installed}, Supported={Supported}", 
+
+                    _logger?.LogDebug("Intel SGX registry check: Version={Version}, Installed={Installed}, Supported={Supported}",
                         version, installed, sgxSupported);
                 }
             }
@@ -628,8 +628,8 @@ public class PerformanceMonitor : IDisposable
                     {
                         var imagePath = serviceKey.GetValue("ImagePath")?.ToString();
                         sgxSupported = !string.IsNullOrEmpty(imagePath);
-                        
-                        _logger?.LogDebug("SGX service check: ImagePath={ImagePath}, Supported={Supported}", 
+
+                        _logger?.LogDebug("SGX service check: ImagePath={ImagePath}, Supported={Supported}",
                             imagePath, sgxSupported);
                     }
                 }
@@ -649,8 +649,8 @@ public class PerformanceMonitor : IDisposable
                     {
                         var start = aesmKey.GetValue("Start")?.ToString();
                         sgxSupported = !string.IsNullOrEmpty(start);
-                        
-                        _logger?.LogDebug("AESM service check: Start={Start}, Supported={Supported}", 
+
+                        _logger?.LogDebug("AESM service check: Start={Start}, Supported={Supported}",
                             start, sgxSupported);
                     }
                 }
@@ -670,8 +670,8 @@ public class PerformanceMonitor : IDisposable
                     {
                         var version = dcapKey.GetValue("Version")?.ToString();
                         sgxSupported = !string.IsNullOrEmpty(version);
-                        
-                        _logger?.LogDebug("SGX DCAP check: Version={Version}, Supported={Supported}", 
+
+                        _logger?.LogDebug("SGX DCAP check: Version={Version}, Supported={Supported}",
                             version, sgxSupported);
                     }
                 }
@@ -691,8 +691,8 @@ public class PerformanceMonitor : IDisposable
                     {
                         var sdkPath = sdkKey.GetValue("SDKPath")?.ToString();
                         sgxSupported = !string.IsNullOrEmpty(sdkPath) && Directory.Exists(sdkPath);
-                        
-                        _logger?.LogDebug("Intel SGX SDK check: SDKPath={SDKPath}, Supported={Supported}", 
+
+                        _logger?.LogDebug("Intel SGX SDK check: SDKPath={SDKPath}, Supported={Supported}",
                             sdkPath, sgxSupported);
                     }
                 }
@@ -803,15 +803,15 @@ public class PerformanceMonitor : IDisposable
             {
                 var workingSetMb = _currentProcess.WorkingSet64 / (1024.0 * 1024.0);
                 var privateMemoryMb = _currentProcess.PrivateMemorySize64 / (1024.0 * 1024.0);
-                
+
                 // SGX enclaves typically use protected memory regions
                 // More sophisticated estimation based on memory layout
                 var memoryDifference = privateMemoryMb - workingSetMb;
                 var estimatedSgxMb = Math.Max(0, memoryDifference * 0.3); // 30% of difference
-                
+
                 // Add base estimate for enclave overhead
                 var baseEstimate = workingSetMb * 0.08; // 8% of working set
-                
+
                 sgxMemory = Math.Max(estimatedSgxMb, baseEstimate);
             }
 
@@ -833,7 +833,7 @@ public class PerformanceMonitor : IDisposable
         try
         {
             double sgxMemory = 0.0;
-            
+
             // Check for Intel SGX-specific performance counters
             var sgxCounterCategories = new[]
             {
@@ -850,7 +850,7 @@ public class PerformanceMonitor : IDisposable
                     {
                         var cat = new PerformanceCounterCategory(category);
                         var counters = cat.GetCounters();
-                        
+
                         foreach (var counter in counters)
                         {
                             try
@@ -897,15 +897,15 @@ public class PerformanceMonitor : IDisposable
             // Use Windows APIs to examine process memory regions
             // This would require P/Invoke to VirtualQuery and similar APIs
             // For now, use process working set analysis
-            
+
             var workingSetMb = _currentProcess.WorkingSet64 / (1024.0 * 1024.0);
             var pagedMemoryMb = _currentProcess.PagedMemorySize64 / (1024.0 * 1024.0);
             var virtualMemoryMb = _currentProcess.VirtualMemorySize64 / (1024.0 * 1024.0);
-            
+
             // Look for patterns indicating enclave memory usage
             // SGX enclaves often have specific virtual memory patterns
             var possibleEnclaveMemory = Math.Max(0, virtualMemoryMb - workingSetMb - pagedMemoryMb);
-            
+
             // Conservative estimate: 10% of the unexplained virtual memory
             return possibleEnclaveMemory * 0.1;
         }
@@ -923,12 +923,12 @@ public class PerformanceMonitor : IDisposable
         try
         {
             double sgxMemory = 0.0;
-            
+
             // Query WMI for SGX-related memory information
             using var searcher = new System.Management.ManagementObjectSearcher(
                 "SELECT * FROM Win32_Process WHERE ProcessId = " + _currentProcess.Id);
             using var collection = searcher.Get();
-            
+
             foreach (System.Management.ManagementObject obj in collection)
             {
                 try
@@ -936,16 +936,16 @@ public class PerformanceMonitor : IDisposable
                     var workingSetSize = Convert.ToUInt64(obj["WorkingSetSize"] ?? 0);
                     var privatePageCount = Convert.ToUInt64(obj["PrivatePageCount"] ?? 0);
                     var virtualSize = Convert.ToUInt64(obj["VirtualSize"] ?? 0);
-                    
+
                     // Estimate SGX memory based on memory layout patterns
                     var workingSetMb = workingSetSize / (1024.0 * 1024.0);
                     var privateMb = privatePageCount * 4096 / (1024.0 * 1024.0); // Assume 4KB pages
                     var virtualMb = virtualSize / (1024.0 * 1024.0);
-                    
+
                     // SGX memory estimation based on WMI data
                     var memoryGap = Math.Max(0, virtualMb - workingSetMb);
                     sgxMemory = memoryGap * 0.15; // 15% of the gap
-                    
+
                     break; // Only need first result
                 }
                 catch
@@ -953,7 +953,7 @@ public class PerformanceMonitor : IDisposable
                     continue;
                 }
             }
-            
+
             return sgxMemory;
         }
         catch
@@ -969,11 +969,11 @@ public class PerformanceMonitor : IDisposable
     {
         // Provide realistic simulated SGX memory usage for testing
         var workingSetMb = _currentProcess.WorkingSet64 / (1024.0 * 1024.0);
-        
+
         // Simulate 5-15% of working set as SGX memory with some variability
         var basePercentage = 0.08; // 8% base
         var variability = 0.04 * Math.Sin(DateTime.Now.Millisecond / 1000.0 * Math.PI); // ±4% variation
-        
+
         return workingSetMb * (basePercentage + variability);
     }
 
@@ -985,18 +985,18 @@ public class PerformanceMonitor : IDisposable
         try
         {
             double totalEpcMb = 0.0;
-            
+
             if (Directory.Exists(sysfsPath))
             {
                 // Look for EPC section information
                 var epcFiles = Directory.GetFiles(sysfsPath, "*epc*", SearchOption.AllDirectories);
-                
+
                 foreach (var file in epcFiles)
                 {
                     try
                     {
                         var content = File.ReadAllText(file);
-                        
+
                         // Parse EPC section sizes (format varies by kernel version)
                         if (content.Contains("size:") || content.Contains("Size:"))
                         {
@@ -1021,7 +1021,7 @@ public class PerformanceMonitor : IDisposable
                     }
                 }
             }
-            
+
             return totalEpcMb;
         }
         catch
@@ -1045,12 +1045,12 @@ public class PerformanceMonitor : IDisposable
 
             double enclaveMemoryMb = 0.0;
             var mapLines = File.ReadAllLines(mapsPath);
-            
+
             foreach (var line in mapLines)
             {
                 // Look for SGX enclave memory regions
                 // These typically have specific permission patterns or names
-                if (line.Contains("[sgx]") || line.Contains("enclave") || 
+                if (line.Contains("[sgx]") || line.Contains("enclave") ||
                     (line.Contains("---p") && line.Contains("00000000")))
                 {
                     // Parse memory range (format: start-end permissions ...)
@@ -1058,7 +1058,7 @@ public class PerformanceMonitor : IDisposable
                     if (parts.Length > 0)
                     {
                         var range = parts[0].Split('-');
-                        if (range.Length == 2 && 
+                        if (range.Length == 2 &&
                             long.TryParse(range[0], System.Globalization.NumberStyles.HexNumber, null, out var start) &&
                             long.TryParse(range[1], System.Globalization.NumberStyles.HexNumber, null, out var end))
                         {
@@ -1068,7 +1068,7 @@ public class PerformanceMonitor : IDisposable
                     }
                 }
             }
-            
+
             return enclaveMemoryMb;
         }
         catch
@@ -1091,19 +1091,19 @@ public class PerformanceMonitor : IDisposable
         // Calculate aggregated metrics
         stats.MaxCpuUsagePercent = _snapshots.Max(s => s.CpuUsagePercent);
         stats.AverageCpuUsagePercent = _snapshots.Average(s => s.CpuUsagePercent);
-        
+
         stats.MaxMemoryUsageMB = _snapshots.Max(s => s.WorkingSetMemoryMB);
         stats.AverageMemoryUsageMB = _snapshots.Average(s => s.WorkingSetMemoryMB);
-        
+
         stats.MaxSgxMemoryUsageMB = _snapshots.Max(s => s.SgxMemoryUsageMB);
         stats.AverageSgxMemoryUsageMB = _snapshots.Average(s => s.SgxMemoryUsageMB);
-        
+
         stats.MaxManagedMemoryMB = _snapshots.Max(s => s.ManagedMemoryMB);
         stats.AverageManagedMemoryMB = _snapshots.Average(s => s.ManagedMemoryMB);
-        
+
         stats.TotalGcCollections = _snapshots.Last().GcCollectionCount - _snapshots.First().GcCollectionCount;
         stats.MaxThreadCount = _snapshots.Max(s => s.ThreadCount);
-        
+
         return stats;
     }
 
@@ -1157,19 +1157,19 @@ public class ResourceUsageStats
 {
     public TimeSpan MonitoringDuration { get; set; }
     public int SnapshotCount { get; set; }
-    
+
     public double MaxCpuUsagePercent { get; set; }
     public double AverageCpuUsagePercent { get; set; }
-    
+
     public double MaxMemoryUsageMB { get; set; }
     public double AverageMemoryUsageMB { get; set; }
-    
+
     public double MaxSgxMemoryUsageMB { get; set; }
     public double AverageSgxMemoryUsageMB { get; set; }
-    
+
     public double MaxManagedMemoryMB { get; set; }
     public double AverageManagedMemoryMB { get; set; }
-    
+
     public int TotalGcCollections { get; set; }
     public int MaxThreadCount { get; set; }
 }
@@ -1181,4 +1181,4 @@ public class SystemMemoryInfo
 {
     public double TotalMemoryMB { get; set; }
     public double AvailableMemoryMB { get; set; }
-} 
+}

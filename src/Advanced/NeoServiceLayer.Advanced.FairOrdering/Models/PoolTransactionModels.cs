@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Models;

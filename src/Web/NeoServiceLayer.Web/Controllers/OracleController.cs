@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle;
 using NeoServiceLayer.Services.Oracle.Models;
@@ -176,4 +176,4 @@ public class OracleController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-} 
+}

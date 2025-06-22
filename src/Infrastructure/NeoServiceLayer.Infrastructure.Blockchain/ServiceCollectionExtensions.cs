@@ -1,12 +1,10 @@
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Tee.Enclave;
-using NeoServiceLayer.Tee.Host.Services;
 // Service dependencies commented out due to missing project references
 // using NeoServiceLayer.Services.KeyManagement;
 // using NeoServiceLayer.Services.Oracle;
@@ -30,6 +28,8 @@ using NeoServiceLayer.Tee.Host.Services;
 // using NeoServiceLayer.Services.Backup;
 // using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Infrastructure.Security;
+using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -48,19 +48,19 @@ public static class ServiceCollectionExtensions
     {
         // Register core infrastructure
         services.AddCoreInfrastructure(configuration);
-        
+
         // Register blockchain clients
         services.AddBlockchainClients(configuration);
-        
+
         // Register service layer components
         services.AddServiceLayerComponents(configuration);
-        
+
         // Register advanced features
         services.AddAdvancedFeatures(configuration);
-        
+
         // Register security logging and monitoring
         services.AddSecurityLogging(configuration);
-        
+
         return services;
     }
 
@@ -74,13 +74,13 @@ public static class ServiceCollectionExtensions
     {
         // Register HTTP client
         services.AddHttpClient();
-        
+
         // Register blockchain configuration
         services.Configure<BlockchainConfiguration>(configuration.GetSection("Blockchain"));
-        
+
         // Register blockchain client factory
         services.AddSingleton<IBlockchainClientFactory, BlockchainClientFactory>();
-        
+
         return services;
     }
 
@@ -113,58 +113,58 @@ public static class ServiceCollectionExtensions
     {
         // Note: Individual service registrations commented out due to missing project references
         // These should be added back when the corresponding service projects are included
-        
+
         // Register key management service
         // services.AddKeyManagementService(configuration);
-        
+
         // Register oracle service
         // services.AddOracleService(configuration);
-        
+
         // Register storage service
         // services.AddStorageService(configuration);
-        
+
         // Register voting service
         // services.AddVotingService(configuration);
-        
+
         // Register compliance service
         // services.AddComplianceService(configuration);
-        
+
         // Register cross-chain service
         // services.AddCrossChainService(configuration);
-        
+
         // Register automation service
         // services.AddAutomationService(configuration);
-        
+
         // Register health service
         // services.AddHealthService(configuration);
-        
+
         // Register monitoring service
         // services.AddMonitoringService(configuration);
-        
+
         // Register notification service
         // services.AddNotificationService(configuration);
-        
+
         // Register event subscription service
         // services.AddEventSubscriptionService(configuration);
-        
+
         // Register randomness service
         // services.AddRandomnessService(configuration);
-        
+
         // Register compute service
         // services.AddComputeService(configuration);
-        
+
         // Register proof of reserve service
         // services.AddProofOfReserveService(configuration);
-        
+
         // Register abstract account service
         // services.AddAbstractAccountService(configuration);
-        
+
         // Register backup service
         // services.AddBackupService(configuration);
-        
+
         // Register configuration service
         // services.AddConfigurationService(configuration);
-        
+
         return services;
     }
 
@@ -178,16 +178,16 @@ public static class ServiceCollectionExtensions
     {
         // Register AI services
         // services.AddAIServices(configuration);
-        
+
         // Register zero-knowledge services
         // services.AddZeroKnowledgeService(configuration);
-        
+
         // Register fair ordering service
         // services.AddFairOrderingService(configuration);
-        
+
         // Register TEE services
         // services.AddTeeServices(configuration);
-        
+
         return services;
     }
 
@@ -202,10 +202,10 @@ public static class ServiceCollectionExtensions
         // Configure key management options
         var keyManagementSection = configuration.GetSection("KeyManagement");
         services.Configure<KeyManagementOptions>(keyManagementSection);
-        
+
         // Register key management service
         // // services.AddSingleton<Services.KeyManagement.IKeyManagementService, Services.KeyManagement.KeyManagementService>();
-        
+
         return services;
     }
 
@@ -220,10 +220,10 @@ public static class ServiceCollectionExtensions
         // Configure oracle options
         var oracleSection = configuration.GetSection("Oracle");
         services.Configure<OracleOptions>(oracleSection);
-        
+
         // Register oracle service
         // services.AddSingleton<Services.Oracle.IOracleService, Services.Oracle.OracleService>();
-        
+
         return services;
     }
 
@@ -238,10 +238,10 @@ public static class ServiceCollectionExtensions
         // Configure storage options
         var storageSection = configuration.GetSection("Storage");
         services.Configure<StorageOptions>(storageSection);
-        
+
         // Register storage service
         // services.AddSingleton<Services.Storage.IStorageService, Services.Storage.StorageService>();
-        
+
         return services;
     }
 
@@ -256,10 +256,10 @@ public static class ServiceCollectionExtensions
         // Configure voting options
         var votingSection = configuration.GetSection("Voting");
         services.Configure<VotingOptions>(votingSection);
-        
+
         // Register voting service
         // services.AddSingleton<Core.IVotingService, Services.Voting.VotingService>();
-        
+
         return services;
     }
 
@@ -274,10 +274,10 @@ public static class ServiceCollectionExtensions
         // Configure compliance options
         var complianceSection = configuration.GetSection("Compliance");
         services.Configure<ComplianceOptions>(complianceSection);
-        
+
         // Register compliance service
         // services.AddSingleton<Services.Compliance.IComplianceService, Services.Compliance.ComplianceService>();
-        
+
         return services;
     }
 
@@ -292,10 +292,10 @@ public static class ServiceCollectionExtensions
         // Configure cross-chain options
         var crossChainSection = configuration.GetSection("CrossChain");
         services.Configure<CrossChainOptions>(crossChainSection);
-        
+
         // Register cross-chain service
         // services.AddSingleton<Core.ICrossChainService, Services.CrossChain.CrossChainService>();
-        
+
         return services;
     }
 
@@ -310,10 +310,10 @@ public static class ServiceCollectionExtensions
         // Configure automation options
         var automationSection = configuration.GetSection("Automation");
         services.Configure<AutomationOptions>(automationSection);
-        
+
         // Register automation service
         // services.AddSingleton<Services.Automation.IAutomationService, Services.Automation.AutomationService>();
-        
+
         return services;
     }
 
@@ -328,10 +328,10 @@ public static class ServiceCollectionExtensions
         // Configure health options
         var healthSection = configuration.GetSection("Health");
         services.Configure<HealthOptions>(healthSection);
-        
+
         // Register health service
         // services.AddSingleton<Core.IHealthService, Services.Health.HealthService>();
-        
+
         return services;
     }
 
@@ -346,10 +346,10 @@ public static class ServiceCollectionExtensions
         // Configure monitoring options
         var monitoringSection = configuration.GetSection("Monitoring");
         services.Configure<MonitoringOptions>(monitoringSection);
-        
+
         // Register monitoring service
         // services.AddSingleton<Services.Monitoring.IMonitoringService, Services.Monitoring.MonitoringService>();
-        
+
         return services;
     }
 
@@ -364,10 +364,10 @@ public static class ServiceCollectionExtensions
         // Configure notification options
         var notificationSection = configuration.GetSection("Notification");
         services.Configure<NotificationOptions>(notificationSection);
-        
+
         // Register notification service
         // services.AddSingleton<Services.Notification.INotificationService, Services.Notification.NotificationService>();
-        
+
         return services;
     }
 
@@ -382,10 +382,10 @@ public static class ServiceCollectionExtensions
         // Configure event subscription options
         var eventSubscriptionSection = configuration.GetSection("EventSubscription");
         services.Configure<EventSubscriptionOptions>(eventSubscriptionSection);
-        
+
         // Register event subscription service
         // services.AddSingleton<Services.EventSubscription.IEventSubscriptionService, Services.EventSubscription.EventSubscriptionService>();
-        
+
         return services;
     }
 
@@ -400,10 +400,10 @@ public static class ServiceCollectionExtensions
         // Configure randomness options
         var randomnessSection = configuration.GetSection("Randomness");
         services.Configure<RandomnessOptions>(randomnessSection);
-        
+
         // Register randomness service
         // services.AddSingleton<Services.Randomness.IRandomnessService, Services.Randomness.RandomnessService>();
-        
+
         return services;
     }
 
@@ -418,10 +418,10 @@ public static class ServiceCollectionExtensions
         // Configure compute options
         var computeSection = configuration.GetSection("Compute");
         services.Configure<ComputeOptions>(computeSection);
-        
+
         // Register compute service
         // services.AddSingleton<Services.Compute.IComputeService, Services.Compute.ComputeService>();
-        
+
         return services;
     }
 
@@ -436,10 +436,10 @@ public static class ServiceCollectionExtensions
         // Configure proof of reserve options
         var proofOfReserveSection = configuration.GetSection("ProofOfReserve");
         services.Configure<ProofOfReserveOptions>(proofOfReserveSection);
-        
+
         // Register proof of reserve service
         // services.AddSingleton<Core.IProofOfReserveService, Services.ProofOfReserve.ProofOfReserveService>();
-        
+
         return services;
     }
 
@@ -454,11 +454,11 @@ public static class ServiceCollectionExtensions
         // Configure AI options
         var aiSection = configuration.GetSection("AI");
         services.Configure<AIOptions>(aiSection);
-        
+
         // Register AI services
         // services.AddSingleton<AI.Prediction.IPredictionService, AI.Prediction.PredictionService>();
         // services.AddSingleton<AI.PatternRecognition.IPatternRecognitionService, AI.PatternRecognition.PatternRecognitionService>();
-        
+
         return services;
     }
 
@@ -473,10 +473,10 @@ public static class ServiceCollectionExtensions
         // Configure zero-knowledge options
         var zeroKnowledgeSection = configuration.GetSection("ZeroKnowledge");
         services.Configure<ZeroKnowledgeOptions>(zeroKnowledgeSection);
-        
+
         // Register zero-knowledge service
         // services.AddSingleton<Core.IZeroKnowledgeService, Services.ZeroKnowledge.ZeroKnowledgeService>();
-        
+
         return services;
     }
 
@@ -491,10 +491,10 @@ public static class ServiceCollectionExtensions
         // Configure fair ordering options
         var fairOrderingSection = configuration.GetSection("FairOrdering");
         services.Configure<FairOrderingOptions>(fairOrderingSection);
-        
+
         // Register fair ordering service
         // services.AddSingleton<Core.IFairOrderingService, Advanced.FairOrdering.FairOrderingService>();
-        
+
         return services;
     }
 
@@ -509,21 +509,21 @@ public static class ServiceCollectionExtensions
         // Configure TEE options
         var teeSection = configuration.GetSection("Tee");
         services.Configure<TeeOptions>(teeSection);
-        
+
         // Configure Enclave options
         var enclaveSection = configuration.GetSection("Enclave");
         services.Configure<EnclaveConfig>(enclaveSection);
-        
+
         // Register enclave services based on configuration
         var teeOptions = new TeeOptions();
         teeSection.Bind(teeOptions);
-        
+
         // Register the appropriate enclave wrapper based on configuration
         if (teeOptions.EnclaveType?.ToUpperInvariant() == "OCCLUM")
         {
             services.AddSingleton<IEnclaveWrapper, OcclumEnclaveWrapper>();
         }
-        else if (Environment.GetEnvironmentVariable("SGX_MODE") == "SIM" || 
+        else if (Environment.GetEnvironmentVariable("SGX_MODE") == "SIM" ||
                  Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") == "Development")
         {
             // Use production SGX wrapper in simulation mode for development/testing
@@ -534,26 +534,26 @@ public static class ServiceCollectionExtensions
             // Use full production implementation for hardware mode
             services.AddSingleton<IEnclaveWrapper, ProductionSGXEnclaveWrapper>();
         }
-        
+
         // Register enclave storage services
         services.AddScoped<IEnclaveStorageService, EnclaveStorageService>();
-        
+
         // Register enclave network services
         services.AddScoped<IEnclaveNetworkService, EnclaveNetworkService>();
-        
+
         // Register enclave manager for lifecycle management
         services.AddSingleton<EnclaveManager>();
-        
+
         // Register enclave-based services with adapter
         services.AddScoped<IEnclaveService, EnclaveServiceAdapter>();
-        
+
         // Register health check for enclave (temporarily commented out until health check package is added)
         // services.AddHealthChecks()
         //     .AddCheck<SGXHealthCheck>("sgx-enclave");
-        
+
         // Register background service for enclave management (temporarily commented out until implemented)
         // services.AddHostedService<EnclaveBackgroundService>();
-        
+
         return services;
     }
 
@@ -568,10 +568,10 @@ public static class ServiceCollectionExtensions
         // Configure abstract account options
         var abstractAccountSection = configuration.GetSection("AbstractAccount");
         services.Configure<AbstractAccountOptions>(abstractAccountSection);
-        
+
         // Register abstract account service
         // services.AddSingleton<Services.AbstractAccount.IAbstractAccountService, Services.AbstractAccount.AbstractAccountService>();
-        
+
         return services;
     }
 
@@ -586,10 +586,10 @@ public static class ServiceCollectionExtensions
         // Configure backup options
         var backupSection = configuration.GetSection("Backup");
         services.Configure<BackupOptions>(backupSection);
-        
+
         // Register backup service
         // services.AddSingleton<Services.Backup.IBackupService, Services.Backup.BackupService>();
-        
+
         return services;
     }
 
@@ -604,10 +604,10 @@ public static class ServiceCollectionExtensions
         // Configure configuration service options
         var configSection = configuration.GetSection("ConfigurationService");
         services.Configure<ConfigurationServiceOptions>(configSection);
-        
+
         // Register configuration service
         // services.AddSingleton<Services.Configuration.IConfigurationService, Services.Configuration.ConfigurationService>();
-        
+
         return services;
     }
 }

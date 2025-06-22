@@ -1,9 +1,9 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Services.EventSubscription.Tests;
@@ -28,7 +28,7 @@ public class EventSubscriptionServiceTests
         _enclaveManagerMock
             .Setup(e => e.InitializeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
-            
+
         _enclaveManagerMock
             .Setup(e => e.InitializeEnclaveAsync())
             .ReturnsAsync(true);

@@ -1,10 +1,10 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.TestInfrastructure;
-using NeoServiceLayer.ServiceFramework;
+using Xunit;
 
 namespace NeoServiceLayer.Services.CrossChain.Tests;
 
@@ -18,7 +18,7 @@ public class CrossChainServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<CrossChainService>>();
         _configurationMock = new Mock<IServiceConfiguration>();
-        
+
         // CrossChainService expects IServiceConfiguration as second parameter
         _service = new CrossChainService(_loggerMock.Object, _configurationMock.Object);
     }

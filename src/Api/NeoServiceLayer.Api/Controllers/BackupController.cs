@@ -1,10 +1,10 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
-using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Api.Controllers;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Backup.Models;
-using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -44,7 +44,7 @@ public class BackupController : BaseApiController
         try
         {
             Logger.LogInformation("Creating backup job for user {UserId}", GetCurrentUserId());
-            
+
             var result = await _backupService.CreateBackupAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Backup job created successfully"));
         }
@@ -114,7 +114,7 @@ public class BackupController : BaseApiController
         try
         {
             Logger.LogInformation("Initiating restore operation for user {UserId}", GetCurrentUserId());
-            
+
             var result = await _backupService.RestoreBackupAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Restore operation initiated successfully"));
         }

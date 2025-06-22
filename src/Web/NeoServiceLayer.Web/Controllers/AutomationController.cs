@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Automation;
 using AutomationService = NeoServiceLayer.Services.Automation;
@@ -340,4 +340,4 @@ public class AutomationController : BaseApiController
             return HandleException(ex, "GetExecutionHistory");
         }
     }
-} 
+}

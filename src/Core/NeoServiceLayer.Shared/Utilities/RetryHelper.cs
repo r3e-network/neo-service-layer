@@ -1,5 +1,5 @@
+﻿using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
-using System.Net.Sockets;
 
 namespace NeoServiceLayer.Shared.Utilities;
 
@@ -29,7 +29,7 @@ public static class RetryHelper
         ILogger? logger = null)
     {
         Guard.NotNull(action);
-        
+
         await ExecuteAsync(async () =>
         {
             await action();
@@ -81,7 +81,7 @@ public static class RetryHelper
                 attempt++;
 
                 var delay = CalculateDelay(attempt, baseDelay.Value, maxDelay.Value, backoffMultiplier);
-                
+
                 logger?.LogWarning(ex, "Attempt {Attempt} failed. Retrying in {Delay}ms. Error: {Error}",
                     attempt, delay.TotalMilliseconds, ex.Message);
 
@@ -105,7 +105,7 @@ public static class RetryHelper
     {
         Guard.NotNull(action);
         Guard.NotNull(circuitBreaker);
-        
+
         await ExecuteWithCircuitBreakerAsync(async () =>
         {
             await action();
@@ -234,7 +234,7 @@ public class CircuitBreaker
         lock (_lock)
         {
             _failureCount = 0;
-            
+
             if (_state == CircuitBreakerState.HalfOpen)
             {
                 _state = CircuitBreakerState.Closed;
@@ -318,4 +318,4 @@ public class CircuitBreakerOpenException : Exception
     public CircuitBreakerOpenException(string message, Exception innerException) : base(message, innerException)
     {
     }
-} 
+}

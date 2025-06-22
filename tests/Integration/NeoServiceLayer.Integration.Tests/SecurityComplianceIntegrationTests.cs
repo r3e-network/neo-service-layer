@@ -1,19 +1,19 @@
+﻿using System.Text;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.ProofOfReserve;
 using NeoServiceLayer.Services.Compliance;
 using NeoServiceLayer.Services.Compliance.Models;
 using NeoServiceLayer.Services.KeyManagement;
-using NeoServiceLayer.Services.ZeroKnowledge;
+using NeoServiceLayer.Services.ProofOfReserve;
 using NeoServiceLayer.Services.Voting;
+using NeoServiceLayer.Services.ZeroKnowledge;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
@@ -36,14 +36,14 @@ public class SecurityComplianceIntegrationTests : IDisposable
     public SecurityComplianceIntegrationTests()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(Microsoft.Extensions.Logging.LogLevel.Debug));
-        
+
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Add attestation service
         services.AddSingleton<AttestationService>(provider =>
         {
@@ -51,16 +51,16 @@ public class SecurityComplianceIntegrationTests : IDisposable
             var httpClient = new HttpClient();
             return new AttestationService(logger, httpClient, "https://test-attestation.intel.com", "test-api-key");
         });
-        
+
         // Add all services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
         services.AddSingleton<IComplianceService, ComplianceService>();
         services.AddSingleton<IKeyManagementService, KeyManagementService>();
         services.AddSingleton<IZeroKnowledgeService, ZeroKnowledgeService>();
         services.AddSingleton<IVotingService, VotingService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         // Get service instances
         _logger = _serviceProvider.GetRequiredService<ILogger<SecurityComplianceIntegrationTests>>();
         _proofOfReserveService = _serviceProvider.GetRequiredService<IProofOfReserveService>();
@@ -70,7 +70,7 @@ public class SecurityComplianceIntegrationTests : IDisposable
         _votingService = _serviceProvider.GetRequiredService<IVotingService>();
         _enclaveManager = _serviceProvider.GetRequiredService<IEnclaveManager>();
         _attestationService = _serviceProvider.GetRequiredService<AttestationService>();
-        
+
         // Initialize all services
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
@@ -78,14 +78,14 @@ public class SecurityComplianceIntegrationTests : IDisposable
     private async Task InitializeServicesAsync()
     {
         _logger.LogInformation("Initializing all services for security and compliance testing...");
-        
+
         await _enclaveManager.InitializeEnclaveAsync();
         await _proofOfReserveService.InitializeAsync();
         await _complianceService.InitializeAsync();
         await _keyManagementService.InitializeAsync();
         await _zeroKnowledgeService.InitializeAsync();
         await _votingService.InitializeAsync();
-        
+
         _logger.LogInformation("All services initialized successfully");
     }
 
@@ -109,7 +109,7 @@ public class SecurityComplianceIntegrationTests : IDisposable
         // Test skipped due to missing advanced compliance functionality
         await Task.CompletedTask;
     }
-    
+
     public void Dispose()
     {
         _serviceProvider?.Dispose();

@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Tee.Enclave;
+﻿namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
 /// Exception thrown when an enclave operation fails.
@@ -21,4 +21,4 @@ public class EnclaveException : Exception
     public EnclaveException(string message, Exception innerException) : base(message, innerException)
     {
     }
-} 
+}

@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Models;
@@ -125,4 +125,4 @@ public class FairTransaction
     /// Gets or sets additional transaction metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
-} 
+}

@@ -1,4 +1,4 @@
-// This file serves as a consolidated reference for all service models
+﻿// This file serves as a consolidated reference for all service models
 // The actual model definitions have been split into logical groups for better maintainability:
 //
 // - ServiceInterfaces.cs: Service interface definitions

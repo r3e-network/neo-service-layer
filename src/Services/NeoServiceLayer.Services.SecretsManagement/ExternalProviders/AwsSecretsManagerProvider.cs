@@ -1,9 +1,9 @@
+﻿using System.Security;
+using System.Text.Json;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Security;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -79,7 +79,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
             _logger.LogDebug("Storing secret {SecretId} in AWS Secrets Manager", secretId);
 
             var secretValue = SecureStringToString(value);
-            
+
             // Check if secret exists
             bool secretExists = await SecretExistsAsync(secretId, cancellationToken);
 
@@ -138,7 +138,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
             };
 
             var response = await _client!.GetSecretValueAsync(request, cancellationToken);
-            
+
             if (!string.IsNullOrEmpty(response.SecretString))
             {
                 return StringToSecureString(response.SecretString);
@@ -186,7 +186,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
                     }
 
                     var nameTag = secret.Tags?.FirstOrDefault(t => t.Key == "Name")?.Value;
-                    
+
                     var metadata = new SecretMetadata
                     {
                         SecretId = secret.Name,

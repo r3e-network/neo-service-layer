@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Backup.Models;
+﻿namespace NeoServiceLayer.Services.Backup.Models;
 
 /// <summary>
 /// Backup type enumeration.
@@ -305,37 +305,37 @@ public class BackupResult
     /// <summary>
     /// Gets or sets the storage location (alias for BackupLocation).
     /// </summary>
-    public string StorageLocation 
-    { 
-        get => BackupLocation; 
-        set => BackupLocation = value; 
+    public string StorageLocation
+    {
+        get => BackupLocation;
+        set => BackupLocation = value;
     }
 
     /// <summary>
     /// Gets or sets the backup size (alias for BackupSizeBytes).
     /// </summary>
-    public long BackupSize 
-    { 
-        get => BackupSizeBytes; 
-        set => BackupSizeBytes = value; 
+    public long BackupSize
+    {
+        get => BackupSizeBytes;
+        set => BackupSizeBytes = value;
     }
 
     /// <summary>
     /// Gets or sets the creation time (alias for StartTime).
     /// </summary>
-    public DateTime CreatedAt 
-    { 
-        get => StartTime; 
-        set => StartTime = value; 
+    public DateTime CreatedAt
+    {
+        get => StartTime;
+        set => StartTime = value;
     }
 
     /// <summary>
     /// Gets or sets the completion time (alias for CompletionTime).
     /// </summary>
-    public DateTime? CompletedAt 
-    { 
-        get => CompletionTime; 
-        set => CompletionTime = value; 
+    public DateTime? CompletedAt
+    {
+        get => CompletionTime;
+        set => CompletionTime = value;
     }
 
     /// <summary>

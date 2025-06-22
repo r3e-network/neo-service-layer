@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.SecretsManagement;
@@ -39,7 +39,7 @@ public static class SecretsManagementServiceExtensions
 
         // Register the main service
         services.AddSingleton<ISecretsManagementService, SecretsManagementService>();
-        services.AddSingleton<ISecretsManager>(provider => 
+        services.AddSingleton<ISecretsManager>(provider =>
             (ISecretsManager)provider.GetRequiredService<ISecretsManagementService>());
 
         return services;

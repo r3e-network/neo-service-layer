@@ -1,6 +1,6 @@
-using System.Text.Json;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using System.Reflection;
+using System.Text.Json;
 
 namespace NeoServiceLayer.Shared.Extensions;
 
@@ -156,7 +156,7 @@ public static class ObjectExtensions
     public static Dictionary<string, object?> ToDictionary(this object obj, bool includeNulls = true)
     {
         var properties = obj.GetProperties();
-        
+
         if (!includeNulls)
         {
             properties = properties.Where(kvp => kvp.Value != null)
@@ -188,7 +188,7 @@ public static class ObjectExtensions
                                .Where(p => p.CanRead);
         var destProps = destination.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                                   .Where(p => p.CanWrite)
-                                  .ToDictionary(p => p.Name, p => p, 
+                                  .ToDictionary(p => p.Name, p => p,
                                     ignoreCase ? StringComparer.OrdinalIgnoreCase : StringComparer.Ordinal);
 
         foreach (var sourceProp in sourceProps)
@@ -297,4 +297,4 @@ public static class ObjectExtensions
     {
         return obj != null ? func(obj) : default;
     }
-} 
+}

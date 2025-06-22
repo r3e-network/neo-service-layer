@@ -1,8 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -409,16 +409,16 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
         };
 
         var coreResult = await GenerateProofAsync(coreRequest, blockchainType);
-        
+
         // Convert back to interface result
         return new ProofResult
         {
             ProofId = coreResult.ProofId,
             Proof = System.Text.Encoding.UTF8.GetString(coreResult.ProofData),
-            PublicSignals = coreResult.PublicOutputs.ContainsKey("signals") ? 
+            PublicSignals = coreResult.PublicOutputs.ContainsKey("signals") ?
                 (string[])coreResult.PublicOutputs["signals"] : Array.Empty<string>(),
             GeneratedAt = coreResult.GeneratedAt,
-            VerificationKey = coreResult.Metadata.ContainsKey("verification_key") ? 
+            VerificationKey = coreResult.Metadata.ContainsKey("verification_key") ?
                 coreResult.Metadata["verification_key"].ToString() ?? "" : ""
         };
     }

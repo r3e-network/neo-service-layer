@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core.Models;
+﻿using NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
@@ -21,13 +21,13 @@ public static class HolidayHelper
 
         // New Year's Day
         if (month == 1 && day == 1) return true;
-        
+
         // Christmas Day
         if (month == 12 && day == 25) return true;
-        
+
         // Independence Day (US)
         if (month == 7 && day == 4) return true;
-        
+
         // Add more holidays as needed
         return false;
     }
@@ -113,7 +113,7 @@ public static class FraudDetectionExtensions
     public static double CalculateFraudScore(this Dictionary<string, double> riskFactors)
     {
         if (riskFactors.Count == 0) return 0.0;
-        
+
         return Math.Min(1.0, riskFactors.Values.Average());
     }
 
@@ -194,7 +194,7 @@ public static class FraudDetectionHelper
         };
 
         // Extract specific fields from transaction data
-        if (coreRequest.TransactionData.TryGetValue("amount", out var amountObj) 
+        if (coreRequest.TransactionData.TryGetValue("amount", out var amountObj)
             && decimal.TryParse(amountObj?.ToString(), out var amount))
         {
             aiRequest.TransactionAmount = amount;

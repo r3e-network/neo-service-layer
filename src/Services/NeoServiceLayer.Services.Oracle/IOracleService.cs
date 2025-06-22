@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle.Models;
 
 namespace NeoServiceLayer.Services.Oracle;

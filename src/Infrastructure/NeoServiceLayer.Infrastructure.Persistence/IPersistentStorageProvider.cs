@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Infrastructure.Persistence;
+﻿namespace NeoServiceLayer.Infrastructure.Persistence;
 
 /// <summary>
 /// Interface for persistent storage providers in the Neo Service Layer.

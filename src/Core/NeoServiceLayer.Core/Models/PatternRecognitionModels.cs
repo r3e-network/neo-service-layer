@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -373,4 +373,4 @@ public enum AnomalyType
     Collective
 }
 
-#endregion 
+#endregion

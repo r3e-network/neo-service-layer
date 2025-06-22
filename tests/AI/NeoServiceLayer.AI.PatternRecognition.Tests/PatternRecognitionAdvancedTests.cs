@@ -1,22 +1,22 @@
+﻿using System.Text.Json;
+using AutoFixture;
+using FluentAssertions;
+using FluentAssertions.Extensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
-using NeoServiceLayer.ServiceFramework;
-using CoreModels = NeoServiceLayer.Core;
-using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Storage;
-using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
-using FluentAssertions;
-using FluentAssertions.Extensions;
-using AutoFixture;
-using System.Text.Json;
+using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
+using CoreModels = NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.AI.PatternRecognition.Tests;
 
@@ -109,7 +109,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
     {
         // Arrange
         var userId = "suspicious_user_789";
-        var request = CreateBehaviorAnalysisRequest(userId, 
+        var request = CreateBehaviorAnalysisRequest(userId,
             isNewUser: false,
             transactionAmount: 50000m, // Much higher than usual
             transactionFrequency: 20,   // Much higher than usual
@@ -135,7 +135,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
     [InlineData(50, 25000, true, 0.7, 0.8)]     // High activity with timing issues, high risk
     [InlineData(100, 100000, true, 0.9, 0.95)]  // Very high activity, very high risk
     public async Task AnalyzeBehaviorAsync_VariousActivityLevels_ReturnsAppropriateRiskScores(
-        int transactionCount, decimal totalAmount, bool unusualTiming, 
+        int transactionCount, decimal totalAmount, bool unusualTiming,
         double minExpectedScore, double maxExpectedScore)
     {
         // Arrange
@@ -310,7 +310,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         // Assert
         modelId.Should().NotBeNullOrEmpty();
         modelId.Should().StartWith("model_");
-        
+
         // Verify model was stored
         _mockStorageProvider.Verify(x => x.StoreAsync(
             It.Is<string>(key => key.Contains("model") && key.Contains(modelId)),
@@ -332,7 +332,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         models.Should().HaveCountGreaterThan(2);
         models.Should().Contain(m => m.ModelType == "fraud_detection");
         models.Should().Contain(m => m.ModelType == "behavior_analysis");
-        models.Should().AllSatisfy(m => 
+        models.Should().AllSatisfy(m =>
         {
             m.ModelId.Should().NotBeNullOrEmpty();
             m.CreatedAt.Should().BeBefore(DateTime.UtcNow);
@@ -514,7 +514,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         results.Should().HaveCount(concurrentRequests);
         results.Should().AllSatisfy(r => r.Should().NotBeNull());
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(30000); // 30 seconds max
-        
+
         // Verify no exceptions occurred
         results.Should().AllSatisfy(r => r.DetectedAt.Should().BeAfter(DateTime.UtcNow.AddMinutes(-1)));
     }
@@ -565,7 +565,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
     }
 
     private BehaviorAnalysisRequest CreateBehaviorAnalysisRequest(
-        string userId, 
+        string userId,
         bool isNewUser = false,
         decimal transactionAmount = 1000m,
         int transactionFrequency = 5,
@@ -728,13 +728,13 @@ public class PatternRecognitionAdvancedTests : IDisposable
     private List<object> GenerateTestDataSet(int count, string distribution = "normal")
     {
         var random = new Random(42); // Fixed seed for reproducibility
-        
+
         return Enumerable.Range(0, count)
             .Select(i =>
             {
                 var baseAmount = distribution == "normal" ? 1000 : 5000;
                 var variance = distribution == "shifted" ? 2000 : 500;
-                
+
                 return new
                 {
                     Amount = baseAmount + (random.NextDouble() * variance),
@@ -779,10 +779,10 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
     private void SetupExistingModel(string modelId)
     {
-        var model = new PatternModel 
-        { 
-            ModelId = modelId, 
-            ModelType = "test_model", 
+        var model = new PatternModel
+        {
+            ModelId = modelId,
+            ModelType = "test_model",
             Version = "1.0",
             CreatedAt = DateTime.UtcNow.AddDays(-1)
         };
@@ -874,4 +874,4 @@ public enum AlertLevel
     Critical
 }
 
-#endregion 
+#endregion

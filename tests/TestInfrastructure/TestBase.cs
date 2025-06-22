@@ -1,14 +1,14 @@
-using Microsoft.Extensions.Logging;
-using Moq;
-using NeoServiceLayer.Tee.Host.Services;
-using NeoServiceLayer.Tee.Enclave;
-using NeoServiceLayer.Core;
-using NeoServiceLayer.Infrastructure;
-using System;
+﻿using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.Tee.Host.Services;
 using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 

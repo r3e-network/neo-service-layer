@@ -1,7 +1,7 @@
+﻿using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
 using FluentAssertions;
 using NeoServiceLayer.Shared.Extensions;
-using System.ComponentModel.DataAnnotations;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests;
@@ -17,14 +17,14 @@ public class ObjectExtensionsTests
     {
         [Required]
         public string Name { get; set; } = string.Empty;
-        
+
         [Range(0, 150)]
         public int Age { get; set; }
-        
+
         public string? Email { get; set; }
-        
+
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-        
+
         public List<string> Tags { get; set; } = new();
     }
 
@@ -41,7 +41,7 @@ public class ObjectExtensionsTests
     {
         [Required]
         public string RequiredField { get; set; } = string.Empty;
-        
+
         [Range(10, 100)]
         public int Number { get; set; }
     }
@@ -715,7 +715,7 @@ public class ObjectExtensionsTests
         properties.Should().ContainKey("Email");
         properties.Should().ContainKey("CreatedAt");
         properties.Should().ContainKey("Tags");
-        
+
         properties["Tags"].Should().BeOfType<List<string>>();
     }
 
@@ -724,7 +724,7 @@ public class ObjectExtensionsTests
     {
         // Note: This test verifies that the JSON-based deep clone handles circular references
         // by either throwing an exception or handling it gracefully
-        
+
         // Arrange
         var person = new TestPerson { Name = "Test" };
         // We can't easily create circular references with our test classes,
@@ -777,4 +777,4 @@ public class ObjectExtensionsTests
     }
 
     #endregion
-} 
+}

@@ -1,8 +1,8 @@
+﻿using System.Diagnostics;
+using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
-using System.Diagnostics;
-using System.Runtime.InteropServices;
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -115,7 +115,7 @@ public partial class MonitoringService
 
         try
         {
-            Logger.LogDebug("Calculating performance trend for service {ServiceName} over {TimeRange}", 
+            Logger.LogDebug("Calculating performance trend for service {ServiceName} over {TimeRange}",
                 serviceName, timeRange);
 
             var cutoffTime = DateTime.UtcNow - timeRange;
@@ -143,7 +143,7 @@ public partial class MonitoringService
             // Group metrics by time intervals
             var intervalMinutes = Math.Max(1, (int)(timeRange.TotalMinutes / 20)); // 20 data points max
             var groupedMetrics = metrics
-                .GroupBy(m => new DateTime(m.Timestamp.Year, m.Timestamp.Month, m.Timestamp.Day, 
+                .GroupBy(m => new DateTime(m.Timestamp.Year, m.Timestamp.Month, m.Timestamp.Day,
                     m.Timestamp.Hour, m.Timestamp.Minute / intervalMinutes * intervalMinutes, 0))
                 .OrderBy(g => g.Key)
                 .ToArray();
@@ -241,8 +241,8 @@ public partial class MonitoringService
             return TrendDirection.Improving;
 
         // Increasing request rate with stable performance is good
-        if (requestRateTrend == TrendDirection.Increasing && 
-            responseTimeTrend == TrendDirection.Stable && 
+        if (requestRateTrend == TrendDirection.Increasing &&
+            responseTimeTrend == TrendDirection.Stable &&
             errorRateTrend == TrendDirection.Stable)
             return TrendDirection.Improving;
 
@@ -288,7 +288,7 @@ public partial class MonitoringService
                 foreach (var serviceMetrics in _metricsCache.Values)
                 {
                     var recentMetrics = serviceMetrics.Where(m => m.Timestamp >= DateTime.UtcNow.AddHours(-1)).ToArray();
-                    
+
                     if (recentMetrics.Length > 0)
                     {
                         totalRequests += CalculateAverage(recentMetrics, "requests_per_second");
@@ -440,7 +440,7 @@ public partial class MonitoringService
     {
         var lines = await File.ReadAllLinesAsync("/proc/stat");
         var cpuLine = lines.FirstOrDefault(line => line.StartsWith("cpu "));
-        
+
         if (cpuLine == null)
         {
             return (0, 0);
@@ -470,17 +470,17 @@ public partial class MonitoringService
             using var currentProcess = Process.GetCurrentProcess();
             var startTime = DateTime.UtcNow;
             var startCpuUsage = currentProcess.TotalProcessorTime;
-            
+
             await Task.Delay(100);
-            
+
             currentProcess.Refresh();
             var endTime = DateTime.UtcNow;
             var endCpuUsage = currentProcess.TotalProcessorTime;
-            
+
             var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
             var totalMsPassed = (endTime - startTime).TotalMilliseconds;
             var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-            
+
             return Math.Min(100.0, Math.Max(0.0, cpuUsageTotal * 100.0));
         }
         catch
@@ -499,11 +499,11 @@ public partial class MonitoringService
             // Use GC memory pressure and process working set as indicators
             var gcMemory = GC.GetTotalMemory(false);
             var workingSet = Environment.WorkingSet;
-            
+
             // Estimate system memory usage based on process characteristics
             // This is a simplified approach using available .NET APIs
             var estimatedUsage = Math.Min(100.0, (double)workingSet / (1024 * 1024 * 1024) * 100); // As percentage of 1GB
-            
+
             await Task.CompletedTask;
             return Math.Max(10.0, estimatedUsage); // Minimum 10% to show some usage
         }
@@ -544,7 +544,7 @@ public partial class MonitoringService
 
             var totalKB = memInfo.GetValueOrDefault("MemTotal", 0);
             var availableKB = memInfo.GetValueOrDefault("MemAvailable", memInfo.GetValueOrDefault("MemFree", 0));
-            
+
             if (totalKB == 0)
             {
                 return await GetProcessMemoryUsageAsync();
@@ -552,7 +552,7 @@ public partial class MonitoringService
 
             var usedKB = totalKB - availableKB;
             var memoryUsage = (double)usedKB / totalKB * 100.0;
-            
+
             return Math.Min(100.0, Math.Max(0.0, memoryUsage));
         }
         catch
@@ -570,12 +570,12 @@ public partial class MonitoringService
         {
             using var currentProcess = Process.GetCurrentProcess();
             var workingSetMB = currentProcess.WorkingSet64 / (1024.0 * 1024.0);
-            
+
             // Estimate system memory and calculate percentage
             // This is a very rough estimate for fallback purposes
             var estimatedSystemMemoryMB = Math.Max(workingSetMB * 4, 1024); // At least 1GB
             var memoryUsage = (workingSetMB / estimatedSystemMemoryMB) * 100.0;
-            
+
             await Task.CompletedTask;
             return Math.Min(100.0, Math.Max(0.0, memoryUsage));
         }

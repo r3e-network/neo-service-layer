@@ -1,10 +1,10 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health.Storage;
 using NeoServiceLayer.Services.Storage;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Services.Health.Tests.Storage;

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -111,7 +111,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Act
             var ciphertext = _enclave.Encrypt(plaintext, key);
-            
+
             // Tamper with ciphertext more aggressively to ensure detection
             var tamperedCiphertext = (byte[])ciphertext.Clone();
             // Flip multiple bits to ensure detection
@@ -122,7 +122,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Assert
             var exception = Assert.Throws<System.Security.Cryptography.CryptographicException>(() => _enclave.Decrypt(tamperedCiphertext, key));
-            
+
             _output.WriteLine("✅ Encrypted data tampering is properly detected and rejected");
         }
 
@@ -211,7 +211,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Assert
             retrievedData.Should().Equal(piiBytes);
-            
+
             var storeJson = JsonDocument.Parse(storeResult);
             storeJson.RootElement.GetProperty("encrypted").GetBoolean().Should().BeTrue();
             storeJson.RootElement.GetProperty("enclaveSecured").GetBoolean().Should().BeTrue();
@@ -238,12 +238,12 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             for (int i = 0; i < operationCount; i++)
             {
                 var startTime = DateTime.UtcNow;
-                
+
                 var randomData = _enclave.GenerateRandomBytes(256);
                 var key = _enclave.GenerateRandomBytes(32);
                 var encrypted = _enclave.Encrypt(randomData, key);
                 var decrypted = _enclave.Decrypt(encrypted, key);
-                
+
                 var endTime = DateTime.UtcNow;
                 durations.Add(endTime - startTime);
 
@@ -279,7 +279,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                 var key = _enclave.GenerateRandomBytes(32);
                 var encrypted = _enclave.Encrypt(largeData, key);
                 var decrypted = _enclave.Decrypt(encrypted, key);
-                
+
                 // Store and retrieve to test storage memory
                 var storageKey = $"memory-test-{i}";
                 _enclave.StoreData(storageKey, largeData, "mem-key");
@@ -291,7 +291,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             GC.Collect();
             GC.WaitForPendingFinalizers();
             GC.Collect();
-            
+
             var finalMemory = GC.GetTotalMemory(false);
             var memoryIncrease = finalMemory - initialMemory;
             var memoryIncreaseKB = memoryIncrease / 1024.0;
@@ -455,11 +455,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
             // Act
             var trainingResult = _enclave.TrainAIModel(modelId, "risk_assessment", trainingData, parameters);
-            
+
             // Test predictions for various risk profiles
             var lowRiskInput = new double[] { 0.1, 0.15, 0.12 };
             var highRiskInput = new double[] { 0.85, 0.9, 0.88 };
-            
+
             var lowRiskPredictions = _enclave.PredictWithAIModel(modelId, lowRiskInput, out string lowRiskMetadata);
             var highRiskPredictions = _enclave.PredictWithAIModel(modelId, highRiskInput, out string highRiskMetadata);
 
@@ -477,7 +477,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             lowRiskMetadataJson.RootElement.TryGetProperty("enclaveSecured", out _).Should().BeTrue();
 
             // Risk predictions should be reasonable
-            lowRiskPredictions.Average().Should().BeLessThan(highRiskPredictions.Average(), 
+            lowRiskPredictions.Average().Should().BeLessThan(highRiskPredictions.Average(),
                 "Low risk inputs should produce lower risk predictions");
 
             _output.WriteLine("✅ Predictive analytics provides reliable ML inference");
@@ -523,7 +523,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Assert - Data should be completely removed
             foreach (var key in customerDataKeys)
             {
-                var exception = Assert.Throws<KeyNotFoundException>(() => 
+                var exception = Assert.Throws<KeyNotFoundException>(() =>
                     _enclave.RetrieveData(key, encryptionKey));
                 exception.Message.Should().Contain("not found");
             }
@@ -533,4 +533,4 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
 
         #endregion
     }
-} 
+}

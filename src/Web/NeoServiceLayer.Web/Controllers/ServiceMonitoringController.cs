@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.Reflection;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Web.Models;
-using System.Reflection;
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -237,20 +237,20 @@ public class ServiceMonitoringController : BaseApiController
             // Get real service status from health endpoints
             var httpClient = _httpClientFactory.CreateClient();
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
-            
+
             try
             {
                 var healthEndpoint = $"/api/v1/{serviceName.ToLower()}/health";
                 var response = await httpClient.GetAsync(healthEndpoint);
                 stopwatch.Stop();
-                
+
                 var responseTime = (int)stopwatch.ElapsedMilliseconds;
                 var isHealthy = response.IsSuccessStatusCode;
-                
+
                 // Get detailed metrics from service metrics endpoint
                 var metricsEndpoint = $"/api/v1/{serviceName.ToLower()}/metrics";
                 var metricsResponse = await httpClient.GetAsync(metricsEndpoint);
-                
+
                 object detailedMetrics = null;
                 if (metricsResponse.IsSuccessStatusCode)
                 {
@@ -268,7 +268,7 @@ public class ServiceMonitoringController : BaseApiController
 
                 // Calculate uptime from service start time (if available)
                 var uptime = await GetServiceUptime(serviceName);
-                
+
                 var status = new
                 {
                     serviceName = serviceName,
@@ -285,7 +285,7 @@ public class ServiceMonitoringController : BaseApiController
                     isConnectedToBlockchain = await CheckBlockchainConnectivity(serviceName)
                 };
 
-                Logger.LogInformation("Retrieved real status for service {ServiceName}: {Status} ({ResponseTime}ms)", 
+                Logger.LogInformation("Retrieved real status for service {ServiceName}: {Status} ({ResponseTime}ms)",
                     serviceName, status.status, responseTime);
 
                 return Ok(CreateResponse(status, "Service status retrieved successfully"));
@@ -293,7 +293,7 @@ public class ServiceMonitoringController : BaseApiController
             catch (HttpRequestException ex)
             {
                 Logger.LogWarning(ex, "Service {ServiceName} is unreachable", serviceName);
-                
+
                 var status = new
                 {
                     serviceName = serviceName,
@@ -472,7 +472,7 @@ public class ServiceMonitoringController : BaseApiController
                 }
             };
 
-            Logger.LogInformation("Retrieved real system overview - {HealthyServices}/{TotalServices} services healthy, Neo N3: Block {NeoN3Height}, Neo X: Block {NeoXHeight}", 
+            Logger.LogInformation("Retrieved real system overview - {HealthyServices}/{TotalServices} services healthy, Neo N3: Block {NeoN3Height}, Neo X: Block {NeoXHeight}",
                 healthyServices, serviceNames.Count, (long)blockchainData.NeoN3.BlockHeight, (long)blockchainData.NeoX.BlockHeight);
 
             return Ok(CreateResponse(overview, "System overview retrieved successfully"));
@@ -611,7 +611,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // Fallback to process uptime if service doesn't provide uptime endpoint
         }
-        
+
         // Return process uptime as fallback
         return DateTime.UtcNow - System.Diagnostics.Process.GetCurrentProcess().StartTime;
     }
@@ -636,7 +636,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // Service might not have metrics endpoint
         }
-        
+
         return 0.0; // Default to no errors if we can't get metrics
     }
 
@@ -660,7 +660,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // Service might not have metrics endpoint
         }
-        
+
         return 0.0; // Default if we can't get metrics
     }
 
@@ -684,7 +684,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // Service might not have metrics endpoint
         }
-        
+
         return 0; // Default if we can't get metrics
     }
 
@@ -708,7 +708,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // Service might not have metrics endpoint
         }
-        
+
         return 0; // Default if we can't get metrics
     }
 
@@ -768,7 +768,7 @@ public class ServiceMonitoringController : BaseApiController
                 {
                     var metricsJson = await response.Content.ReadAsStringAsync();
                     var metrics = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(metricsJson);
-                    
+
                     if (metrics != null)
                     {
                         if (metrics.TryGetValue("AverageResponseTime", out var responseTime))
@@ -884,7 +884,7 @@ public class ServiceMonitoringController : BaseApiController
         {
             // SGX service might not be available
         }
-        
+
         return "Unavailable";
     }
 
@@ -902,12 +902,12 @@ public class ServiceMonitoringController : BaseApiController
         };
 
         var breakdown = new Dictionary<string, object>();
-        
+
         foreach (var layer in layers)
         {
             var layerServices = layer.Value.Intersect(serviceNames, StringComparer.OrdinalIgnoreCase).ToList();
             var healthyCount = await GetHealthyServiceCount(layerServices);
-            
+
             breakdown[layer.Key] = new
             {
                 Total = layerServices.Count,
@@ -1044,4 +1044,4 @@ public class SystemOverview
     /// Gets or sets the service layers and their counts.
     /// </summary>
     public Dictionary<string, int> ServiceLayers { get; set; } = new();
-} 
+}

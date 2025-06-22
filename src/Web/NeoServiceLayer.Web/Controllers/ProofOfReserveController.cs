@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Web.Controllers;
@@ -458,4 +458,4 @@ public class ProofOfReserveController : BaseApiController
             return HandleException(ex, "GenerateAuditReport");
         }
     }
-} 
+}

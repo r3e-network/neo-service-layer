@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 // No alias needed - will use fully qualified names
@@ -42,7 +42,7 @@ public static class TestConfiguration
     public static IServiceCollection CreateTestServices()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder =>
         {
@@ -75,4 +75,4 @@ public static class TestConfiguration
             }
         };
     }
-} 
+}

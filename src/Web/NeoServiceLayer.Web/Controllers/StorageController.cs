@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Storage.Models;
@@ -32,7 +32,7 @@ public class StorageController : ControllerBase
 
     // All other methods are commented out as they call non-existent service methods or have parameter mismatches
     // TODO: Implement the actual storage service methods and uncomment these endpoints
-    
+
     /*
     [HttpPost("store")]
     public async Task<IActionResult> StoreData([FromBody] StoreDataRequest request)

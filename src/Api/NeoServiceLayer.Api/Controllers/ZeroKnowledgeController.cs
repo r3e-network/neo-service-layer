@@ -1,9 +1,9 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
-using Asp.Versioning;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Api.Controllers;
-using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -60,7 +60,7 @@ public class ZeroKnowledgeController : BaseApiController
         try
         {
             Logger.LogInformation("Generating ZK proof for user {UserId}", GetCurrentUserId());
-            
+
             var result = await _zkService.GenerateProofAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Proof generated successfully"));
         }
@@ -85,7 +85,7 @@ public class ZeroKnowledgeController : BaseApiController
         try
         {
             Logger.LogInformation("Verifying ZK proof for user {UserId}", GetCurrentUserId());
-            
+
             var result = await _zkService.VerifyProofAsync(request, BlockchainType.NeoN3);
             return Ok(CreateResponse(result, "Proof verification completed"));
         }
@@ -153,7 +153,7 @@ public class ZeroKnowledgeController : BaseApiController
     //     try
     //     {
     //         Logger.LogInformation("Performing trusted setup for user {UserId}", GetCurrentUserId());
-            
+
     //         var result = await _zkService.PerformTrustedSetupAsync(request);
     //         return Ok(CreateResponse(result, "Trusted setup completed successfully"));
     //     }

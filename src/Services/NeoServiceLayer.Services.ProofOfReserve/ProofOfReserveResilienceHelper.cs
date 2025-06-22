@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Logging;
-using System.Net;
+﻿using System.Net;
 using System.Net.Sockets;
 using System.Security;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -41,24 +41,24 @@ public static class ProofOfReserveResilienceHelper
             {
                 lastException = ex;
                 attempt++;
-                
+
                 var delayMs = (int)(delay.TotalMilliseconds * Math.Pow(2, attempt - 1));
                 var jitteredDelay = TimeSpan.FromMilliseconds(delayMs + Random.Shared.Next(0, delayMs / 4));
-                
-                logger.LogWarning(ex, "Attempt {Attempt}/{MaxRetries} failed for {Operation}. Retrying in {Delay}ms", 
+
+                logger.LogWarning(ex, "Attempt {Attempt}/{MaxRetries} failed for {Operation}. Retrying in {Delay}ms",
                     attempt, maxRetries, operationName, jitteredDelay.TotalMilliseconds);
-                
+
                 await Task.Delay(jitteredDelay);
             }
             catch (Exception ex)
             {
-                logger.LogError(ex, "Non-retriable exception in {Operation} on attempt {Attempt}", 
+                logger.LogError(ex, "Non-retriable exception in {Operation} on attempt {Attempt}",
                     operationName, attempt + 1);
                 throw;
             }
         }
 
-        logger.LogError(lastException, "All {MaxRetries} retry attempts failed for {Operation}", 
+        logger.LogError(lastException, "All {MaxRetries} retry attempts failed for {Operation}",
             maxRetries, operationName);
         throw lastException!;
     }
@@ -104,11 +104,11 @@ public static class ProofOfReserveResilienceHelper
         {
             if (DateTime.UtcNow < circuitBreaker.NextAttemptTime)
             {
-                logger.LogWarning("Circuit breaker is OPEN for {Operation}. Next attempt allowed at {NextAttempt}", 
+                logger.LogWarning("Circuit breaker is OPEN for {Operation}. Next attempt allowed at {NextAttempt}",
                     operationName, circuitBreaker.NextAttemptTime);
                 throw new InvalidOperationException($"Circuit breaker is open for {operationName}");
             }
-            
+
             // Transition to Half-Open state
             circuitBreaker.State = CircuitBreakerState.HalfOpen;
             logger.LogInformation("Circuit breaker transitioning to HALF-OPEN for {Operation}", operationName);
@@ -117,24 +117,24 @@ public static class ProofOfReserveResilienceHelper
         try
         {
             var result = await operation();
-            
+
             // Success - reset circuit breaker if it was half-open
             if (circuitBreaker.State == CircuitBreakerState.HalfOpen)
             {
                 circuitBreaker.Reset();
                 logger.LogInformation("Circuit breaker reset to CLOSED for {Operation}", operationName);
             }
-            
+
             return result;
         }
         catch (Exception ex)
         {
             // Record failure
             circuitBreaker.RecordFailure();
-            
-            logger.LogError(ex, "Operation {Operation} failed. Circuit breaker state: {State}, Failure count: {FailureCount}", 
+
+            logger.LogError(ex, "Operation {Operation} failed. Circuit breaker state: {State}, Failure count: {FailureCount}",
                 operationName, circuitBreaker.State, circuitBreaker.FailureCount);
-            
+
             throw;
         }
     }
@@ -181,14 +181,14 @@ public static class ProofOfReserveResilienceHelper
         string operationName = "operation")
     {
         using var cts = new CancellationTokenSource(timeout);
-        
+
         try
         {
             var operationTask = operation();
             var delayTask = Task.Delay(timeout, cts.Token);
-            
+
             var completedTask = await Task.WhenAny(operationTask, delayTask);
-            
+
             if (completedTask == operationTask)
             {
                 cts.Cancel(); // Cancel the delay task
@@ -196,14 +196,14 @@ public static class ProofOfReserveResilienceHelper
             }
             else
             {
-                logger.LogWarning("Operation {Operation} timed out after {Timeout}ms", 
+                logger.LogWarning("Operation {Operation} timed out after {Timeout}ms",
                     operationName, timeout.TotalMilliseconds);
                 throw new TimeoutException($"Operation {operationName} timed out after {timeout.TotalMilliseconds}ms");
             }
         }
         catch (OperationCanceledException) when (cts.Token.IsCancellationRequested)
         {
-            logger.LogWarning("Operation {Operation} was cancelled due to timeout after {Timeout}ms", 
+            logger.LogWarning("Operation {Operation} was cancelled due to timeout after {Timeout}ms",
                 operationName, timeout.TotalMilliseconds);
             throw new TimeoutException($"Operation {operationName} timed out");
         }
@@ -292,30 +292,30 @@ public static class ProofOfReserveResilienceHelper
             TaskCanceledException => true,
             SocketException => true,
             TimeoutException => true,
-            
+
             // Temporary failures
             InvalidOperationException ex when ex.Message.Contains("temporary") => true,
             InvalidOperationException ex when ex.Message.Contains("busy") => true,
             InvalidOperationException ex when ex.Message.Contains("unavailable") => true,
             InvalidOperationException ex when ex.Message.Contains("transient") => true,
-            
+
             // Blockchain-related temporary failures
             InvalidOperationException ex when ex.Message.Contains("node") && ex.Message.Contains("unavailable") => true,
             InvalidOperationException ex when ex.Message.Contains("network") && ex.Message.Contains("error") => true,
             InvalidOperationException ex when ex.Message.Contains("connection") => true,
-            
+
             // Enclave-related temporary failures
             InvalidOperationException ex when ex.Message.Contains("enclave") && ex.Message.Contains("busy") => true,
             InvalidOperationException ex when ex.Message.Contains("attestation") && ex.Message.Contains("failed") => true,
-            
+
             // Storage temporary failures
             InvalidOperationException ex when ex.Message.Contains("storage") && ex.Message.Contains("timeout") => true,
             InvalidOperationException ex when ex.Message.Contains("database") && ex.Message.Contains("busy") => true,
-            
+
             // Proof of Reserve specific failures
             InvalidOperationException ex when ex.Message.Contains("proof") && ex.Message.Contains("generation") && ex.Message.Contains("failed") => true,
             InvalidOperationException ex when ex.Message.Contains("reserve") && ex.Message.Contains("data") && ex.Message.Contains("unavailable") => true,
-            
+
             // Default: non-retriable
             _ => false
         };
@@ -330,7 +330,7 @@ public static class ProofOfReserveResilienceHelper
     {
         // Extract status code from exception message or data
         var message = httpException.Message.ToLowerInvariant();
-        
+
         return message.Contains("500") ||  // Internal Server Error
                message.Contains("502") ||  // Bad Gateway
                message.Contains("503") ||  // Service Unavailable
@@ -387,7 +387,7 @@ public class ProofOfReserveCircuitBreaker
         lock (_lock)
         {
             FailureCount++;
-            
+
             if (FailureCount >= _failureThreshold)
             {
                 State = CircuitBreakerState.Open;

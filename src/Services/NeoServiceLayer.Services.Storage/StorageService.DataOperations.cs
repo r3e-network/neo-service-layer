@@ -1,7 +1,7 @@
+﻿using System.Security.Cryptography;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Security.Cryptography;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -99,7 +99,7 @@ public partial class StorageService
                 catch (JsonException ex)
                 {
                     Logger.LogError(ex, "Failed to parse storage result as JSON. Result: '{StorageResult}'", storageResult);
-                    
+
                     // For testing purposes, if JSON parsing fails, assume success if result contains "success"
                     if (storageResult?.Contains("success", StringComparison.OrdinalIgnoreCase) == true)
                     {
@@ -146,10 +146,10 @@ public partial class StorageService
 
             RecordSuccess();
             UpdateMetric("TotalStoredBytes", _metadataCache.Values.Sum(m => m.SizeBytes));
-            
+
             Logger.LogInformation("Securely stored data with key {Key} in enclave - Size: {Size} bytes, Encrypted: {Encrypted}, Compressed: {Compressed}",
                 key, data.Length, isEncrypted, isCompressed);
-            
+
             return metadata;
         });
     }
@@ -208,10 +208,10 @@ public partial class StorageService
             // No additional processing needed since the enclave handles encryption/decryption internally
 
             RecordSuccess();
-            
+
             Logger.LogDebug("Securely retrieved data with key {Key} from enclave - Size: {Size} bytes, Encrypted: {Encrypted}",
                 key, retrievedData.Length, metadata.IsEncrypted);
-            
+
             return retrievedData;
         });
     }
@@ -281,7 +281,7 @@ public partial class StorageService
 
             var requestJson = JsonSerializer.Serialize(encryptionRequest);
             var encryptedResult = await _enclaveManager.ExecuteJavaScriptAsync($"encryptData('{requestJson}')");
-            
+
             if (string.IsNullOrEmpty(encryptedResult))
             {
                 throw new InvalidOperationException("Enclave encryption returned empty result");

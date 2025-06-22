@@ -1,18 +1,18 @@
+﻿using System.Text;
+using System.Text.Json;
 using BenchmarkDotNet.Attributes;
-using NUnit.Framework;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Diagnosers;
 using BenchmarkDotNet.Jobs;
 using BenchmarkDotNet.Order;
 using BenchmarkDotNet.Running;
-using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Tee.Enclave;
-using System.Text;
-using System.Text.Json;
+using NUnit.Framework;
 
 namespace NeoServiceLayer.Performance.Tests;
 
@@ -33,24 +33,24 @@ public class EnclaveBenchmarks
     private ServiceProvider _serviceProvider = null!;
     private IEnclaveWrapper _enclaveWrapper = null!;
     private BenchmarkConfiguration _benchmarkConfig = null!;
-    
+
     // Test data for different scenarios
     private byte[] _smallData = null!;     // 256 bytes
     private byte[] _mediumData = null!;    // 4 KB
     private byte[] _largeData = null!;     // 64 KB
     private byte[] _xlargeData = null!;    // 1 MB
-    
+
     // Pre-sealed data for unsealing benchmarks
     private byte[] _encryptedSmallData = null!;
     private byte[] _encryptedMediumData = null!;
     private byte[] _encryptedLargeData = null!;
     private byte[] _encryptionKey = null!;
-    
+
     // Crypto test data
     private byte[] _hashData = null!;
     private byte[] _signatureResult = null!;
     private byte[] _signingKey = null!;
-    
+
     // JavaScript test scripts
     private string _simpleScript = null!;
     private string _mathScript = null!;
@@ -102,7 +102,7 @@ public class EnclaveBenchmarks
         // Create a new enclave wrapper for initialization testing
         using var scope = _serviceProvider.CreateScope();
         var newEnclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
-        
+
         var config = new EnclaveConfig
         {
             SgxMode = "SIM",
@@ -123,7 +123,7 @@ public class EnclaveBenchmarks
     public async Task<byte[]> BenchmarkDataEncryption()
     {
         var testData = GenerateTestData(DataSize);
-        
+
         return await Task.Run(() => _enclaveWrapper.Encrypt(testData, _encryptionKey));
     }
 
@@ -196,8 +196,8 @@ public class EnclaveBenchmarks
     public async Task<bool> BenchmarkSignatureVerification()
     {
         return await Task.Run(() => _enclaveWrapper.Verify(
-            _hashData, 
-            _signatureResult, 
+            _hashData,
+            _signatureResult,
             _signingKey));
     }
 
@@ -390,7 +390,7 @@ public class EnclaveBenchmarks
     private void InitializeJavaScriptScripts()
     {
         _simpleScript = "function simple(input) { return input.value * 2; } simple(input);";
-        
+
         _mathScript = @"
 function mathematical(input) { 
     let result = 0;
@@ -465,4 +465,4 @@ public class BenchmarkProgram
 
         BenchmarkRunner.Run<EnclaveBenchmarks>(config, args);
     }
-} 
+}

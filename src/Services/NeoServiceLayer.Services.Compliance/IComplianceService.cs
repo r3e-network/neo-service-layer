@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compliance.Models;
 
 namespace NeoServiceLayer.Services.Compliance;

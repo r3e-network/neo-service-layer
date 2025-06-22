@@ -1,7 +1,7 @@
+﻿using System.Linq;
+using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.AI.Prediction.Models;
-using System.Linq;
 using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction;
@@ -39,7 +39,7 @@ public partial class PredictionService
             // Simulate validation metrics calculation
             var predictions = new List<double>();
             var actuals = new List<double>();
-            
+
             // Extract prediction and actual values from test data
             foreach (dynamic item in testData)
             {
@@ -103,7 +103,7 @@ public partial class PredictionService
             var trades = SimulateTrades(historicalData, lookbackDays);
             var winningTrades = trades.Count(t => t.Profit > 0);
             var totalTrades = trades.Count;
-            
+
             var returns = CalculateMonthlyReturns(trades);
             var sharpeRatio = CalculateSharpeRatio(returns);
             var maxDrawdown = CalculateMaxDrawdown(trades);
@@ -211,7 +211,7 @@ public partial class PredictionService
         var meanActual = actuals.Average();
         var ssTotal = actuals.Sum(a => Math.Pow(a - meanActual, 2));
         var ssResidual = predictions.Zip(actuals, (p, a) => Math.Pow(a - p, 2)).Sum();
-        
+
         return ssTotal == 0 ? 0 : 1 - (ssResidual / ssTotal);
     }
 
@@ -252,7 +252,7 @@ public partial class PredictionService
     {
         var trades = new List<Trade>();
         var random = Random.Shared;
-        
+
         // Simulate trades based on historical data
         for (int i = lookbackDays; i < historicalData.Count; i++)
         {
@@ -276,12 +276,12 @@ public partial class PredictionService
     private List<double> CalculateMonthlyReturns(List<Trade> trades)
     {
         var monthlyReturns = new List<double>();
-        
+
         if (!trades.Any())
             return monthlyReturns;
 
         var groupedByMonth = trades.GroupBy(t => new { t.TradeDate.Year, t.TradeDate.Month });
-        
+
         foreach (var month in groupedByMonth.OrderBy(g => g.Key.Year).ThenBy(g => g.Key.Month))
         {
             var monthlyProfit = month.Sum(t => t.Profit);
@@ -301,7 +301,7 @@ public partial class PredictionService
         var meanReturn = returns.Average();
         var stdReturn = Math.Sqrt(returns.Select(r => Math.Pow(r - meanReturn, 2)).Average());
         var riskFreeRate = 0.02 / 12; // 2% annual risk-free rate, monthly
-        
+
         return stdReturn == 0 ? 0 : (meanReturn - riskFreeRate) / stdReturn * Math.Sqrt(12); // Annualized
     }
 
@@ -312,7 +312,7 @@ public partial class PredictionService
 
         var cumulativeReturns = new List<double> { 0 };
         var runningProfit = 0.0;
-        
+
         foreach (var trade in trades.OrderBy(t => t.TradeDate))
         {
             runningProfit += trade.Profit;
@@ -321,12 +321,12 @@ public partial class PredictionService
 
         var maxDrawdown = 0.0;
         var peak = cumulativeReturns[0];
-        
+
         foreach (var value in cumulativeReturns)
         {
             if (value > peak)
                 peak = value;
-            
+
             var drawdown = peak > 0 ? (peak - value) / peak : 0;
             if (drawdown > maxDrawdown)
                 maxDrawdown = drawdown;
@@ -339,7 +339,7 @@ public partial class PredictionService
     {
         var grossProfit = trades.Where(t => t.Profit > 0).Sum(t => t.Profit);
         var grossLoss = Math.Abs(trades.Where(t => t.Profit < 0).Sum(t => t.Profit));
-        
+
         return grossLoss == 0 ? grossProfit > 0 ? double.PositiveInfinity : 0 : grossProfit / grossLoss;
     }
 

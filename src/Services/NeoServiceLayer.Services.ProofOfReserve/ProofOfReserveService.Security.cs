@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
@@ -21,7 +21,7 @@ public partial class ProofOfReserveService
         {
             var securityLogger = new SecurityHelperLogger(Logger);
             _securityHelper = new ProofOfReserveSecurityHelper(securityLogger);
-            
+
             Logger.LogInformation("Security features enabled for Proof of Reserve Service");
         }
         catch (Exception ex)
@@ -63,8 +63,8 @@ public partial class ProofOfReserveService
             if (!string.IsNullOrEmpty(context.SessionId))
             {
                 var sessionValid = _securityHelper.ValidateSecuritySession(
-                    context.SessionId, 
-                    context.ClientId, 
+                    context.SessionId,
+                    context.ClientId,
                     context.IpAddress);
 
                 if (!sessionValid)
@@ -79,8 +79,8 @@ public partial class ProofOfReserveService
             // Check rate limiting based on operation type
             var rateLimitConfig = GetRateLimitConfigForOperation(operation);
             var rateLimitPassed = _securityHelper.CheckRateLimit(
-                context.ClientId, 
-                operation, 
+                context.ClientId,
+                operation,
                 rateLimitConfig);
 
             if (!rateLimitPassed)
@@ -95,8 +95,8 @@ public partial class ProofOfReserveService
             if (IsWriteOperation(operation) && !string.IsNullOrEmpty(context.CsrfToken))
             {
                 var csrfValid = _securityHelper.ValidateCsrfToken(
-                    context.CsrfToken, 
-                    context.SessionId ?? "anonymous", 
+                    context.CsrfToken,
+                    context.SessionId ?? "anonymous",
                     context.ClientId);
 
                 if (!csrfValid)
@@ -134,7 +134,7 @@ public partial class ProofOfReserveService
                 return result;
             }
 
-            Logger.LogDebug("Security validation passed for operation {Operation} by client {ClientId}", 
+            Logger.LogDebug("Security validation passed for operation {Operation} by client {ClientId}",
                 operation, context.ClientId);
 
             result.IsValid = true;
@@ -144,7 +144,7 @@ public partial class ProofOfReserveService
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error during security validation for operation {Operation}", operation);
-            
+
             return new SecurityValidationResult
             {
                 IsValid = false,
@@ -163,8 +163,8 @@ public partial class ProofOfReserveService
     /// <param name="authenticationMethod">The authentication method used.</param>
     /// <returns>The session information.</returns>
     public async Task<SessionCreationResult> CreateAuthenticatedSessionAsync(
-        string clientId, 
-        string ipAddress, 
+        string clientId,
+        string ipAddress,
         string? userAgent = null,
         string authenticationMethod = "API_KEY")
     {
@@ -201,7 +201,7 @@ public partial class ProofOfReserveService
             // Generate CSRF token
             var csrfToken = _securityHelper.GenerateCsrfToken(sessionId, clientId);
 
-            Logger.LogInformation("Created authenticated session {SessionId} for client {ClientId}", 
+            Logger.LogInformation("Created authenticated session {SessionId} for client {ClientId}",
                 sessionId, clientId);
 
             return new SessionCreationResult
@@ -215,10 +215,10 @@ public partial class ProofOfReserveService
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error creating authenticated session for client {ClientId}", clientId);
-            
+
             // Record failed authentication
             _securityHelper.RecordAuthenticationAttempt(clientId, ipAddress, false, authenticationMethod);
-            
+
             return new SessionCreationResult
             {
                 Success = false,
@@ -341,7 +341,7 @@ public partial class ProofOfReserveService
                     // If operations are happening too frequently (less than 100ms apart)
                     if (timeSinceLastOperation < TimeSpan.FromMilliseconds(100))
                     {
-                        Logger.LogWarning("Potential timing attack detected for client {ClientId} on operation {Operation}", 
+                        Logger.LogWarning("Potential timing attack detected for client {ClientId} on operation {Operation}",
                             clientId, operation);
                         return true;
                     }
@@ -396,7 +396,7 @@ public partial class ProofOfReserveService
         {
             if (inputLower.Contains(pattern.ToLowerInvariant()))
             {
-                Logger.LogWarning("Potential injection attack detected in parameter {Parameter}: {Pattern}", 
+                Logger.LogWarning("Potential injection attack detected in parameter {Parameter}: {Pattern}",
                     parameterName, pattern);
                 return false;
             }

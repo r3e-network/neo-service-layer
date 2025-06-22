@@ -1,8 +1,8 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.KeyManagement;
 
@@ -176,7 +176,7 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             UpdateMetric("TotalKeysGenerated", _keyCache.Count);
 
-            Logger.LogInformation("Successfully generated key {KeyId} with public key {PublicKey} in enclave", 
+            Logger.LogInformation("Successfully generated key {KeyId} with public key {PublicKey} in enclave",
                 keyId, keyMetadata.PublicKeyHex[..16] + "...");
 
             return keyMetadata;

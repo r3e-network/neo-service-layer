@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -44,7 +44,7 @@ public class EnclaveNetworkService : IEnclaveNetworkService
         try
         {
             _logger.LogDebug("Validating endpoint: {Url}", url);
-            
+
             // Basic URL validation
             if (!Uri.TryCreate(url, UriKind.Absolute, out var uri))
             {
@@ -76,7 +76,7 @@ public class EnclaveNetworkService : IEnclaveNetworkService
         try
         {
             _logger.LogDebug("Getting network statistics");
-            
+
             // Create network statistics response
             var networkStats = new
             {
@@ -98,4 +98,4 @@ public class EnclaveNetworkService : IEnclaveNetworkService
             throw;
         }
     }
-} 
+}

@@ -1,4 +1,4 @@
-using NeoServiceLayer.Tee.Enclave;
+﻿using NeoServiceLayer.Tee.Enclave;
 
 namespace NeoServiceLayer.Tee.Host.Tests;
 

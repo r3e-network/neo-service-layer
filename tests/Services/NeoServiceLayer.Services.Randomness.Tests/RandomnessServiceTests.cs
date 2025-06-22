@@ -5,10 +5,9 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-
+using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 // Use Infrastructure namespace for IBlockchainClientFactory and IBlockchainClient
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 
 namespace NeoServiceLayer.Services.Randomness.Tests;
 

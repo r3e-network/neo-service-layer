@@ -1,5 +1,5 @@
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Hosting;
 
 namespace NeoServiceLayer.Infrastructure.Security;
@@ -18,7 +18,7 @@ public static class SecurityLoggingExtensions
         services.AddSingleton<ISecurityLogger, SecurityLogger>();
 
         // Register security monitoring configuration
-        var monitoringConfig = configuration.GetSection("Security:Monitoring").Get<SecurityMonitoringConfiguration>() 
+        var monitoringConfig = configuration.GetSection("Security:Monitoring").Get<SecurityMonitoringConfiguration>()
             ?? new SecurityMonitoringConfiguration();
         services.AddSingleton(monitoringConfig);
 
@@ -31,7 +31,7 @@ public static class SecurityLoggingExtensions
     /// <summary>
     /// Adds security logging with custom configuration.
     /// </summary>
-    public static IServiceCollection AddSecurityLogging(this IServiceCollection services, 
+    public static IServiceCollection AddSecurityLogging(this IServiceCollection services,
         Action<SecurityMonitoringConfiguration> configureOptions)
     {
         // Register security logger

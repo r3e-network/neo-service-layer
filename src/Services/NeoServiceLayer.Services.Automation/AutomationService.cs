@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
@@ -67,7 +67,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     {
                         Type = request.TriggerType,
                         Schedule = request.TriggerType == AutomationTriggerType.Schedule || request.TriggerType == AutomationTriggerType.Time
-                            ? request.TriggerConfiguration 
+                            ? request.TriggerConfiguration
                             : null,
                         EventType = request.TriggerType == AutomationTriggerType.Event
                             ? request.TriggerConfiguration
@@ -544,7 +544,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to parse cron expression: {Schedule}", schedule);
-            
+
             // Fallback: try to parse as simple minute interval
             if (int.TryParse(schedule, out var minutes))
             {
@@ -567,22 +567,22 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     private DateTime ParseCronExpression(string cronExpression)
     {
         var parts = cronExpression.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        
+
         // Support both 5-field and 6-field cron expressions
         bool hasSeconds = parts.Length == 6;
         int offset = hasSeconds ? 0 : 1;
-        
+
         if (parts.Length != 5 && parts.Length != 6)
         {
             throw new ArgumentException($"Invalid cron expression format. Expected 5 or 6 fields, got {parts.Length}");
         }
-        
+
         var now = DateTime.UtcNow;
         var nextRun = new DateTime(now.Year, now.Month, now.Day, now.Hour, now.Minute, hasSeconds ? now.Second : 0);
-        
+
         // Add one unit to start searching from the next possible time
         nextRun = hasSeconds ? nextRun.AddSeconds(1) : nextRun.AddMinutes(1);
-        
+
         // Parse cron fields
         var secondsField = hasSeconds ? parts[0] : "0";
         var minutesField = parts[1 - offset];
@@ -590,27 +590,27 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         var dayOfMonthField = parts[3 - offset];
         var monthField = parts[4 - offset];
         var dayOfWeekField = parts.Length > 5 - offset ? parts[5 - offset] : "*";
-        
+
         // Find next valid execution time (within 4 years to prevent infinite loops)
         var maxSearchDate = now.AddYears(4);
-        
+
         while (nextRun <= maxSearchDate)
         {
             if (IsValidDateTime(nextRun, secondsField, minutesField, hoursField, dayOfMonthField, monthField, dayOfWeekField))
             {
                 return nextRun;
             }
-            
+
             nextRun = hasSeconds ? nextRun.AddSeconds(1) : nextRun.AddMinutes(1);
         }
-        
+
         throw new ArgumentException($"No valid execution time found for cron expression: {cronExpression}");
     }
-    
+
     /// <summary>
     /// Checks if a given DateTime matches the cron expression fields.
     /// </summary>
-    private bool IsValidDateTime(DateTime dateTime, string seconds, string minutes, string hours, 
+    private bool IsValidDateTime(DateTime dateTime, string seconds, string minutes, string hours,
         string dayOfMonth, string month, string dayOfWeek)
     {
         return MatchesCronField(dateTime.Second, seconds, 0, 59) &&
@@ -620,7 +620,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                MatchesCronField(dateTime.Month, month, 1, 12) &&
                MatchesCronField((int)dateTime.DayOfWeek, dayOfWeek, 0, 6);
     }
-    
+
     /// <summary>
     /// Checks if a value matches a cron field specification.
     /// </summary>
@@ -630,7 +630,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         {
             return true;
         }
-        
+
         // Handle step values (e.g., */5, 0-30/5)
         if (cronField.Contains('/'))
         {
@@ -639,7 +639,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             {
                 var rangePart = stepParts[0];
                 var (rangeStart, rangeEnd) = ParseRange(rangePart, minValue, maxValue);
-                
+
                 if (value >= rangeStart && value <= rangeEnd)
                 {
                     return (value - rangeStart) % step == 0;
@@ -647,14 +647,14 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             }
             return false;
         }
-        
+
         // Handle ranges (e.g., 1-5)
         if (cronField.Contains('-'))
         {
             var (rangeStart, rangeEnd) = ParseRange(cronField, minValue, maxValue);
             return value >= rangeStart && value <= rangeEnd;
         }
-        
+
         // Handle lists (e.g., 1,3,5)
         if (cronField.Contains(','))
         {
@@ -665,7 +665,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                 {
                     return true;
                 }
-                
+
                 // Handle ranges within lists (e.g., 1,3-5,7)
                 if (val.Contains('-'))
                 {
@@ -678,16 +678,16 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             }
             return false;
         }
-        
+
         // Handle specific values
         if (int.TryParse(cronField, out var specificValue))
         {
             return value == specificValue;
         }
-        
+
         return false;
     }
-    
+
     /// <summary>
     /// Parses a range specification (e.g., "1-5", "*", "10").
     /// </summary>
@@ -697,23 +697,23 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         {
             return (minValue, maxValue);
         }
-        
+
         if (range.Contains('-'))
         {
             var parts = range.Split('-');
-            if (parts.Length == 2 && 
-                int.TryParse(parts[0].Trim(), out var start) && 
+            if (parts.Length == 2 &&
+                int.TryParse(parts[0].Trim(), out var start) &&
                 int.TryParse(parts[1].Trim(), out var end))
             {
                 return (Math.Max(start, minValue), Math.Min(end, maxValue));
             }
         }
-        
+
         if (int.TryParse(range, out var singleValue))
         {
             return (singleValue, singleValue);
         }
-        
+
         return (minValue, maxValue);
     }
 
@@ -779,7 +779,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             var field = condition.Parameters.GetValueOrDefault("field", "blockheight")?.ToString() ?? "blockheight";
             var operatorType = condition.Parameters.GetValueOrDefault("operator", "gt")?.ToString() ?? "gt";
             var value = condition.Parameters.GetValueOrDefault("value", "0")?.ToString() ?? "0";
-            
+
             var blockchainData = await GetBlockchainDataAsync(field);
             return EvaluateCondition(blockchainData, operatorType, value);
         });
@@ -818,11 +818,11 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     private async Task<bool> CheckTimeConditionAsync(AutomationCondition condition)
     {
         await Task.CompletedTask;
-        
+
         var field = condition.Parameters.GetValueOrDefault("field", "hour")?.ToString() ?? "hour";
         var operatorType = condition.Parameters.GetValueOrDefault("operator", "eq")?.ToString() ?? "eq";
         var value = condition.Parameters.GetValueOrDefault("value", "0")?.ToString() ?? "0";
-        
+
         var currentTime = DateTime.UtcNow;
         var timeValue = field.ToLowerInvariant() switch
         {
@@ -947,13 +947,13 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     private async Task<bool> CheckGenericConditionAsync(AutomationCondition condition)
     {
         await Task.CompletedTask;
-        
+
         // For generic conditions, just do basic string comparison
         var field = condition.Parameters?.GetValueOrDefault("field", "value")?.ToString() ?? "value";
         var operatorType = condition.Parameters?.GetValueOrDefault("operator", "eq")?.ToString() ?? "eq";
         var value = condition.Parameters?.GetValueOrDefault("value", "")?.ToString() ?? "";
         var actualValue = condition.Parameters?.GetValueOrDefault(field, "")?.ToString() ?? "";
-        
+
         return EvaluateCondition(actualValue, operatorType, value);
     }
 
@@ -993,7 +993,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         {
             return num1.CompareTo(num2);
         }
-        
+
         // Fallback to string comparison
         return string.Compare(value1, value2, StringComparison.OrdinalIgnoreCase);
     }
@@ -1282,7 +1282,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         {
             var startTime = DateTime.UtcNow;
             AutomationJob? job;
-            
+
             lock (_jobsLock)
             {
                 _jobs.TryGetValue(automationId, out job);
@@ -1605,7 +1605,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             }
 
             await Task.CompletedTask;
-            Logger.LogDebug("Validated automation configuration: IsValid={IsValid}, Errors={ErrorCount}", 
+            Logger.LogDebug("Validated automation configuration: IsValid={IsValid}, Errors={ErrorCount}",
                 response.IsValid, response.ValidationErrors.Count);
 
             return response;

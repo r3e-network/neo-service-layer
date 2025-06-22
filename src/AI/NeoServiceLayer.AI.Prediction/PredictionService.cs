@@ -1,9 +1,9 @@
 ﻿using Microsoft.Extensions.Logging;
+using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using CoreModels = NeoServiceLayer.Core.Models;
 
@@ -46,7 +46,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
         IServiceConfiguration configuration,
         IPersistentStorageProvider storageProvider,
         IEnclaveManager enclaveManager)
-        : base("PredictionService", "AI-powered forecasting and sentiment analysis service", "1.0.0", logger, 
+        : base("PredictionService", "AI-powered forecasting and sentiment analysis service", "1.0.0", logger,
                new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager, configuration)
     {
         Configuration = configuration;
@@ -211,7 +211,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
 
                 // Analyze sentiment within the enclave
                 var sentiment = await AnalyzeTextSentimentInEnclaveAsync(request.Text);
-                
+
                 // Map to sentiment label based on compound score
                 var label = sentiment.Compound switch
                 {

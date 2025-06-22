@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Services.Oracle.Models;
 
 namespace NeoServiceLayer.Services.Oracle.Models;

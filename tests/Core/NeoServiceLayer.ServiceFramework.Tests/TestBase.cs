@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.TestInfrastructure;
 using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
@@ -28,7 +28,7 @@ public abstract class TestBase
         MockEnclaveManager = new Mock<IEnclaveManager>();
         MockBlockchainClientFactory = new Mock<IBlockchainClientFactory>();
         MockBlockchainClient = new Mock<IBlockchainClient>();
-        
+
         SetupMockConfiguration();
         SetupMockEnclaveManager();
         SetupMockBlockchainClient();
@@ -44,7 +44,7 @@ public abstract class TestBase
         MockConfiguration.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string>())).Returns<string, string>((key, defaultValue) => defaultValue);
         MockConfiguration.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<int>())).Returns<string, int>((key, defaultValue) => defaultValue);
         MockConfiguration.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<bool>())).Returns<string, bool>((key, defaultValue) => defaultValue);
-        
+
         // Setup service-specific configuration
         MockConfiguration.Setup(x => x.GetValue("Oracle:MaxConcurrentRequests", "10")).Returns("10");
         MockConfiguration.Setup(x => x.GetValue("Oracle:DefaultTimeout", "30000")).Returns("30000");
@@ -57,31 +57,31 @@ public abstract class TestBase
         // Setup enclave manager to simulate successful initialization
         MockEnclaveManager.Setup(x => x.InitializeEnclaveAsync()).ReturnsAsync(true);
         MockEnclaveManager.Setup(x => x.DestroyEnclaveAsync()).ReturnsAsync(true);
-        
+
         // Setup JavaScript execution
         MockEnclaveManager.Setup(x => x.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("{\"result\": \"test_execution_result\"}");
-        
+
         // Setup data retrieval
         MockEnclaveManager.Setup(x => x.GetDataAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("{\"value\": 42, \"timestamp\": \"2025-01-22T10:00:00Z\"}");
-        
+
         // Setup random number generation
         MockEnclaveManager.Setup(x => x.GenerateRandomAsync(It.IsAny<int>(), It.IsAny<int>()))
             .ReturnsAsync(42);
-        
+
         // Setup encryption/decryption using KMS methods
         MockEnclaveManager.Setup(x => x.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((string keyId, string dataHex, string algorithm) => dataHex + "FF");
-        
+
         MockEnclaveManager.Setup(x => x.KmsDecryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((string keyId, string encryptedDataHex, string algorithm) => 
+            .ReturnsAsync((string keyId, string encryptedDataHex, string algorithm) =>
                 encryptedDataHex.Length > 2 ? encryptedDataHex.Substring(0, encryptedDataHex.Length - 2) : encryptedDataHex);
-        
+
         // Setup signing/verification using KMS methods
         MockEnclaveManager.Setup(x => x.KmsSignDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync("01020304");
-        
+
         MockEnclaveManager.Setup(x => x.KmsVerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
     }
@@ -91,7 +91,7 @@ public abstract class TestBase
         // Setup blockchain client factory
         MockBlockchainClientFactory.Setup(x => x.CreateClient(It.IsAny<BlockchainType>()))
             .Returns(MockBlockchainClient.Object);
-        
+
         // Setup blockchain client operations
         MockBlockchainClient.Setup(x => x.GetBlockHeightAsync()).ReturnsAsync(1000);
         MockBlockchainClient.Setup(x => x.GetBlockHashAsync(It.IsAny<long>()))

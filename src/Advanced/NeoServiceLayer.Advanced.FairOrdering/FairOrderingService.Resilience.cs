@@ -1,7 +1,7 @@
+﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
-using System.Collections.Concurrent;
+using NeoServiceLayer.Core;
 using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
@@ -35,7 +35,7 @@ public partial class FairOrderingService
     private async Task<string> CreateOrderingPoolWithResilienceAsync(OrderingPoolConfig config, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"CreatePool_{blockchainType}", 3, TimeSpan.FromMinutes(2));
-        
+
         return await ResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -101,7 +101,7 @@ public partial class FairOrderingService
     private async Task<string> SubmitFairTransactionWithResilienceAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"SubmitTransaction_{blockchainType}", 5, TimeSpan.FromMinutes(1));
-        
+
         return await ResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -180,7 +180,7 @@ public partial class FairOrderingService
     private async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"FairnessAnalysis_{blockchainType}", 3, TimeSpan.FromMinutes(2));
-        
+
         return await ResilienceHelper.ExecuteWithRetryAndCircuitBreakerAsync(
             async () =>
             {
@@ -406,7 +406,7 @@ public partial class FairOrderingService
             {
                 circuitBreaker.Reset();
             }
-            
+
             Logger.LogInformation("All circuit breakers have been reset");
         }
     }

@@ -1,4 +1,4 @@
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using InfraBlockchain = NeoServiceLayer.Infrastructure;
@@ -91,7 +91,7 @@ public class BlockchainClientFactoryTests
         // Arrange
         var blockchainType = BlockchainType.NeoN3;
         var expectedClient = CreateMockBlockchainClient(blockchainType);
-        
+
         _factoryMock.Setup(x => x.CreateClient(blockchainType, null))
                    .Returns(expectedClient.Object);
 
@@ -261,10 +261,10 @@ public class BlockchainClientFactoryTests
         // Arrange
         var services = new ServiceCollection();
         var expectedClient = CreateMockBlockchainClient(BlockchainType.NeoN3);
-        
+
         services.AddSingleton(_ => expectedClient.Object);
         services.AddSingleton(_factoryMock.Object);
-        
+
         var serviceProvider = services.BuildServiceProvider();
         _factoryMock.Setup(x => x.CreateClient(BlockchainType.NeoN3))
                    .Returns(expectedClient.Object);
@@ -284,7 +284,7 @@ public class BlockchainClientFactoryTests
         // Arrange
         var neoN3Client = CreateMockBlockchainClient(BlockchainType.NeoN3);
         var neoXClient = CreateMockBlockchainClient(BlockchainType.NeoX);
-        
+
         _factoryMock.Setup(x => x.CreateClient(BlockchainType.NeoN3))
                    .Returns(neoN3Client.Object);
         _factoryMock.Setup(x => x.CreateClient(BlockchainType.NeoX))
@@ -299,7 +299,7 @@ public class BlockchainClientFactoryTests
         client1.Should().NotBeNull();
         client2.Should().NotBeNull();
         client3.Should().NotBeNull();
-        
+
         client1.BlockchainType.Should().Be(BlockchainType.NeoN3);
         client2.BlockchainType.Should().Be(BlockchainType.NeoX);
         client3.BlockchainType.Should().Be(BlockchainType.NeoN3);
@@ -425,4 +425,4 @@ public interface IBlockchainClientFactory
     IBlockchainClient CreateClient(BlockchainType blockchainType, BlockchainConfiguration? configuration);
     void RegisterClientType(BlockchainType blockchainType, Type clientType);
     bool IsClientTypeRegistered(BlockchainType blockchainType);
-} 
+}

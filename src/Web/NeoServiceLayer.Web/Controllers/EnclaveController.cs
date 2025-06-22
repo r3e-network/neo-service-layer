@@ -1,8 +1,8 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Tee.Host.Services;
-using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -46,7 +46,7 @@ public class EnclaveController : BaseApiController
         try
         {
             var success = await _enclaveService.InitializeEnclaveAsync();
-            
+
             var result = new EnclaveInitializationResult
             {
                 Success = success,
@@ -56,7 +56,7 @@ public class EnclaveController : BaseApiController
                 Features = new[] { "random_generation", "encryption", "attestation", "javascript", "ai_operations" },
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("SGX Enclave initialized by user {UserId} in production mode: {ProductionMode}",
                 GetCurrentUserId(), request.ProductionMode);
 
@@ -98,7 +98,7 @@ public class EnclaveController : BaseApiController
             {
                 rng.GetBytes(randomBytes);
             }
-            
+
             var result = new RandomGenerationResult
             {
                 RandomHex = Convert.ToHexString(randomBytes),
@@ -107,7 +107,7 @@ public class EnclaveController : BaseApiController
                 Source = "sgx_hardware",
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("Generated {Length} random bytes for user {UserId}",
                 request.Length, GetCurrentUserId());
 
@@ -148,21 +148,21 @@ public class EnclaveController : BaseApiController
             var key = new byte[32]; // 256-bit key
             var iv = new byte[16];  // 128-bit IV
             var tag = new byte[16]; // 128-bit authentication tag
-            
+
             using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
                 rng.GetBytes(key);
                 rng.GetBytes(iv);
                 rng.GetBytes(tag); // Mock tag for demo
             }
-            
+
             // In production, this would use actual SGX encryption
             var encryptedBytes = new byte[dataBytes.Length];
             for (int i = 0; i < dataBytes.Length; i++)
             {
                 encryptedBytes[i] = (byte)(dataBytes[i] ^ key[i % key.Length]);
             }
-            
+
             var result = new EncryptionResult
             {
                 EncryptedHex = Convert.ToHexString(encryptedBytes),
@@ -171,7 +171,7 @@ public class EnclaveController : BaseApiController
                 Algorithm = request.Algorithm,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("Encrypted data using {Algorithm} for user {UserId}",
                 request.Algorithm, GetCurrentUserId());
 
@@ -210,7 +210,7 @@ public class EnclaveController : BaseApiController
                 rng.GetBytes(mrEnclave);
                 rng.GetBytes(mrSigner);
             }
-            
+
             var result = new AttestationResult
             {
                 Report = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("SGX_ATTESTATION_REPORT_PRODUCTION")),
@@ -220,7 +220,7 @@ public class EnclaveController : BaseApiController
                 ProductionMode = request.ProductionMode,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("Generated attestation report for user {UserId} in production mode: {ProductionMode}",
                 GetCurrentUserId(), request.ProductionMode);
 
@@ -258,12 +258,12 @@ public class EnclaveController : BaseApiController
 
             // Execute JavaScript in production SGX enclave
             var startTime = DateTime.UtcNow;
-            
+
             // In production, this would execute in actual SGX enclave
             // For now, we'll simulate secure execution
             var executionResult = "242"; // Result of the calculation
             var endTime = DateTime.UtcNow;
-            
+
             var result = new JavaScriptExecutionResult
             {
                 Result = executionResult,
@@ -272,7 +272,7 @@ public class EnclaveController : BaseApiController
                 ErrorMessage = null,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             Logger.LogInformation("Executed JavaScript in enclave for user {UserId}",
                 GetCurrentUserId());
 
@@ -603,4 +603,4 @@ public class EnclaveStatus
     public DateTime? LastOperation { get; set; }
 }
 
-#endregion 
+#endregion

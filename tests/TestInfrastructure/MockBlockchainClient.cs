@@ -1,9 +1,9 @@
-using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -48,7 +48,7 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<Block> GetBlockAsync(long height)
     {
         await Task.Delay(10); // Simulate network delay
-        
+
         if (_blocksByHeight.TryGetValue(height, out var block))
         {
             return block;
@@ -65,7 +65,7 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<Block> GetBlockAsync(string hash)
     {
         await Task.Delay(10); // Simulate network delay
-        
+
         if (_blocksByHash.TryGetValue(hash, out var block))
         {
             return block;
@@ -78,7 +78,7 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<Transaction> GetTransactionAsync(string hash)
     {
         await Task.Delay(10); // Simulate network delay
-        
+
         if (_transactions.TryGetValue(hash, out var tx))
         {
             return tx;
@@ -94,13 +94,13 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<string> SendTransactionAsync(Transaction transaction)
     {
         await Task.Delay(50); // Simulate network delay
-        
+
         var hash = transaction.Hash ?? GenerateHash();
         transaction.Hash = hash;
         _transactions[hash] = transaction;
-        
+
         _logger.LogDebug("Sent transaction {Hash}", hash);
-        
+
         // Notify transaction subscribers
         foreach (var callbacks in _transactionSubscriptions.Values)
         {
@@ -109,7 +109,7 @@ public class MockBlockchainClient : IBlockchainClient
                 await callback(transaction);
             }
         }
-        
+
         return hash;
     }
 
@@ -118,13 +118,13 @@ public class MockBlockchainClient : IBlockchainClient
     {
         await Task.Delay(10);
         var subscriptionId = Guid.NewGuid().ToString();
-        
+
         if (!_blockSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
             callbacks = new List<Func<Block, Task>>();
             _blockSubscriptions[subscriptionId] = callbacks;
         }
-        
+
         callbacks.Add(callback);
         return subscriptionId;
     }
@@ -141,13 +141,13 @@ public class MockBlockchainClient : IBlockchainClient
     {
         await Task.Delay(10);
         var subscriptionId = Guid.NewGuid().ToString();
-        
+
         if (!_transactionSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
             callbacks = new List<Func<Transaction, Task>>();
             _transactionSubscriptions[subscriptionId] = callbacks;
         }
-        
+
         callbacks.Add(callback);
         return subscriptionId;
     }
@@ -164,13 +164,13 @@ public class MockBlockchainClient : IBlockchainClient
     {
         await Task.Delay(10);
         var subscriptionId = $"{contractAddress}:{eventName}:{Guid.NewGuid()}";
-        
+
         if (!_eventSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
             callbacks = new List<Func<ContractEvent, Task>>();
             _eventSubscriptions[subscriptionId] = callbacks;
         }
-        
+
         callbacks.Add(callback);
         return subscriptionId;
     }
@@ -186,9 +186,9 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<string> CallContractMethodAsync(string contractAddress, string method, params object[] args)
     {
         await Task.Delay(20); // Simulate network delay
-        
+
         _logger.LogDebug("Calling contract {Address} method {Method}", contractAddress, method);
-        
+
         // Return mock response based on method
         return method switch
         {
@@ -205,7 +205,7 @@ public class MockBlockchainClient : IBlockchainClient
     public async Task<string> InvokeContractMethodAsync(string contractAddress, string method, params object[] args)
     {
         await Task.Delay(50); // Simulate network delay
-        
+
         var txHash = GenerateHash();
         var transaction = new Transaction
         {
@@ -217,11 +217,11 @@ public class MockBlockchainClient : IBlockchainClient
             Timestamp = DateTime.UtcNow,
             BlockHeight = _currentHeight
         };
-        
+
         _transactions[txHash] = transaction;
-        
+
         _logger.LogDebug("Invoked contract {Address} method {Method}, tx: {Hash}", contractAddress, method, txHash);
-        
+
         return txHash;
     }
 
@@ -242,7 +242,7 @@ public class MockBlockchainClient : IBlockchainClient
     {
         var transactions = new List<Transaction>();
         var txCount = Random.Shared.Next(1, 10);
-        
+
         for (int i = 0; i < txCount; i++)
         {
             var tx = GenerateMockTransaction();
@@ -250,7 +250,7 @@ public class MockBlockchainClient : IBlockchainClient
             transactions.Add(tx);
             _transactions[tx.Hash] = tx;
         }
-        
+
         return new Block
         {
             Hash = "0x" + GenerateHash(),

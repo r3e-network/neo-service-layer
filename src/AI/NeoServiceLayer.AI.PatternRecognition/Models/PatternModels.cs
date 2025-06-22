@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core.Models;
+﻿using NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.PatternRecognition.Models;
 

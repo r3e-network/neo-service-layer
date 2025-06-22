@@ -1,7 +1,7 @@
+﻿using System.Text;
+using System.Text.Json;
 using FluentAssertions;
 using NeoServiceLayer.Shared.Extensions;
-using System.Text;
-using System.Text.Json;
 using Xunit;
 
 namespace NeoServiceLayer.Shared.Tests.Extensions;
@@ -625,4 +625,4 @@ public class TestModel
 {
     public string Name { get; set; } = string.Empty;
     public int Value { get; set; }
-} 
+}

@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Tee.Enclave;
+﻿namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
 /// Configuration for SGX enclave settings.
@@ -41,4 +41,4 @@ public class EnclaveConfig
     /// Gets or sets the memory limit in MB.
     /// </summary>
     public long MemoryLimitMb { get; set; } = 512;
-} 
+}

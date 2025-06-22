@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compliance;
 using NeoServiceLayer.Services.Compliance.Models;
@@ -221,4 +221,4 @@ public class ComplianceController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
-} 
+}

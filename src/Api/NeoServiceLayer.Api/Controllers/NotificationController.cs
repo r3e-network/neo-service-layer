@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -58,10 +58,10 @@ public class NotificationController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var notificationId = await _notificationService.SendNotificationAsync(request, blockchain);
-            
-            _logger.LogInformation("Notification sent with ID: {NotificationId} on {Blockchain}", 
+
+            _logger.LogInformation("Notification sent with ID: {NotificationId} on {Blockchain}",
                 notificationId, blockchainType);
-            
+
             return Ok(CreateResponse(notificationId, "Notification sent successfully"));
         }
         catch (ArgumentException ex)
@@ -113,9 +113,9 @@ public class NotificationController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var result = await _notificationService.SendBatchNotificationsAsync(request, blockchain);
-            
+
             _logger.LogInformation("Batch notifications sent on {Blockchain}", blockchainType);
-            
+
             return Ok(CreateResponse(result, "Batch notifications processed"));
         }
         catch (ArgumentException ex)
@@ -159,12 +159,12 @@ public class NotificationController : BaseApiController
 
             var blockchain = ParseBlockchainType(blockchainType);
             var status = await _notificationService.GetNotificationStatusAsync(notificationId, blockchain);
-            
+
             if (status == null)
             {
                 return NotFound(CreateErrorResponse($"Notification not found: {notificationId}"));
             }
-            
+
             return Ok(CreateResponse(status, "Status retrieved successfully"));
         }
         catch (Exception ex)

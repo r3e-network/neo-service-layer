@@ -1,11 +1,11 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
-using NeoServiceLayer.Services.ProofOfReserve;
-using NeoServiceLayer.TestInfrastructure;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.TestInfrastructure;
+using Xunit;
 
 namespace NeoServiceLayer.Services.ProofOfReserve.Tests;
 
@@ -19,7 +19,7 @@ public class ProofOfReserveServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<ProofOfReserveService>>();
         _configurationMock = new Mock<IServiceConfiguration>();
-        
+
         // ProofOfReserveService expects IServiceConfiguration as second parameter
         _service = new ProofOfReserveService(_loggerMock.Object, _configurationMock.Object);
     }
@@ -61,7 +61,7 @@ public class ProofOfReserveServiceTests : TestBase
     public async Task RegisterAssetAsync_WithNullRequest_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _service.RegisterAssetAsync(null!, BlockchainType.NeoN3));
     }
 

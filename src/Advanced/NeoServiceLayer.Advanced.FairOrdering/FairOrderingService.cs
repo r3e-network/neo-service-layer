@@ -1,11 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
+﻿using System.Collections.Concurrent;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
-using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Collections.Concurrent;
+using CoreModels = NeoServiceLayer.Core.Models;
 using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
@@ -49,7 +49,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         _storageProvider = storageProvider;
 
         AddCapability<IFairOrderingService>();
-        
+
         // Initialize processing timer
         _processingTimer = new Timer(ProcessOrderingPools, null, TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(1));
 
@@ -119,7 +119,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         return await ExecuteInEnclaveAsync(async () =>
         {
             var submissionId = Guid.NewGuid().ToString();
-            
+
             // Use the first available pool or create a default one
             var pool = _orderingPools.Values.FirstOrDefault(p => p.Status == PoolStatus.Active);
             if (pool == null)

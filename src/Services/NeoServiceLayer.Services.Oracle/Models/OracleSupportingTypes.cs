@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Oracle.Models;
 
@@ -634,4 +634,4 @@ public enum DataFormat
     /// MessagePack format.
     /// </summary>
     MessagePack
-} 
+}

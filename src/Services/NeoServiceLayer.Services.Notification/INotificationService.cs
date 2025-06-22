@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Notification.Models;
 
@@ -47,4 +47,4 @@ public interface INotificationService : IService
     /// <param name="blockchainType">The target blockchain type.</param>
     /// <returns>The available channels.</returns>
     Task<AvailableChannelsResult> GetAvailableChannelsAsync(BlockchainType blockchainType);
-} 
+}

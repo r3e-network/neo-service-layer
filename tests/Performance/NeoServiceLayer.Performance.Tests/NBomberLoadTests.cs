@@ -1,18 +1,18 @@
-using NBomber.CSharp;
+﻿using System.Diagnostics;
+using System.Text;
+using System.Text.Json;
+using FluentAssertions;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBomber.Contracts;
 using NBomber.Contracts.Stats;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using NUnit.Framework;
-using FluentAssertions;
-using System.Text;
-using System.Diagnostics;
-using System.Text.Json;
-using NeoServiceLayer.Infrastructure.Persistence;
-using NeoServiceLayer.Infrastructure;
-using NeoServiceLayer.Tee.Enclave;
+using NBomber.CSharp;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.Tee.Enclave;
+using NUnit.Framework;
 
 namespace NeoServiceLayer.Performance.Tests;
 
@@ -100,7 +100,7 @@ public class NBomberLoadTests
             var keyId = $"load-test-key-{context.InvocationNumber}";
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 var sealedData = await Task.Run(() => enclaveWrapper.SealData(testData));
@@ -114,7 +114,7 @@ public class NBomberLoadTests
 
                 // Add custom metrics
                 context.Logger.Debug($"Sealed {dataSize} bytes in {stopwatch.ElapsedMilliseconds}ms");
-                
+
                 return Response.Ok(sizeBytes: dataSize);
             }
             catch (Exception ex)
@@ -162,7 +162,7 @@ public class NBomberLoadTests
             try
             {
                 var signature = await Task.Run(() => enclaveWrapper.Sign(testData, signingKey));
-                
+
                 if (signature == null || signature.Length == 0)
                 {
                     return Response.Fail(message: "Signature generation failed");
@@ -199,7 +199,7 @@ public class NBomberLoadTests
             {
                 // Generate signature first
                 var signature = await Task.Run(() => enclaveWrapper.Sign(testData, signingKey));
-                
+
                 // Verify signature
                 var isValid = await Task.Run(() => enclaveWrapper.Verify(
                     testData, signature, signingKey));
@@ -287,7 +287,7 @@ public class NBomberLoadTests
             try
             {
                 var result = await Task.Run(() => enclaveWrapper.ExecuteJavaScript(jsCode, JsonSerializer.Serialize(input)));
-                
+
                 if (string.IsNullOrEmpty(result))
                 {
                     return Response.Fail(message: "JavaScript execution returned empty result");
@@ -342,7 +342,7 @@ public class NBomberLoadTests
                 // Perform multiple operations to increase memory pressure
                 var sealedData = enclaveWrapper.SealData(testData);
                 var unsealedData = enclaveWrapper.UnsealData(sealedData);
-                
+
                 // Validate data integrity under stress
                 if (!testData.SequenceEqual(unsealedData))
                 {
@@ -423,7 +423,7 @@ public class NBomberLoadTests
                                        interval: TimeSpan.FromSeconds(1),
                                        during: TimeSpan.FromSeconds(burstConfig.BurstDurationSeconds))
             );
-            
+
             // Rest phase
             if (i < burstConfig.TotalBursts - 1) // Don't add rest after last burst
             {
@@ -492,7 +492,7 @@ public class NBomberLoadTests
         var configRoot = JsonSerializer.Deserialize<JsonElement>(configJson);
         var scenariosElement = configRoot.GetProperty("Scenarios");
         var scenarioElement = scenariosElement.GetProperty(scenarioName);
-        
+
         return JsonSerializer.Deserialize<ScenarioConfig>(scenarioElement.GetRawText())!;
     }
 
@@ -502,7 +502,7 @@ public class NBomberLoadTests
         var configRoot = JsonSerializer.Deserialize<JsonElement>(configJson);
         var stressElement = configRoot.GetProperty("StressTestScenarios");
         var testElement = stressElement.GetProperty(testName);
-        
+
         return JsonSerializer.Deserialize<StressTestConfig>(testElement.GetRawText())!;
     }
 
@@ -567,7 +567,7 @@ public class NBomberLoadTests
         var configJson = File.ReadAllText("load-test-config.json");
         var configRoot = JsonSerializer.Deserialize<JsonElement>(configJson);
         var thresholdsElement = configRoot.GetProperty("PerformanceThresholds");
-        
+
         return JsonSerializer.Deserialize<PerformanceThresholds>(thresholdsElement.GetRawText())!;
     }
 
@@ -626,4 +626,4 @@ public class PerformanceThresholds
     public double MinThroughputRps { get; set; } = 50;
 }
 
-#endregion 
+#endregion

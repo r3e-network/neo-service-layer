@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration.Models;
 
@@ -403,7 +403,7 @@ public partial class ConfigurationService
             ";
 
             var validationResult = await _enclaveManager.ExecuteJavaScriptAsync(validationScript);
-            
+
             if (validationResult?.ToString() != "true")
             {
                 throw new ArgumentException($"Configuration value validation failed for key {request.Key}");
@@ -429,7 +429,7 @@ public partial class ConfigurationService
         {
             var encryptionScript = $"encryptConfigurationValue('{Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(value))}')";
             var encryptedResult = await _enclaveManager.ExecuteJavaScriptAsync(encryptionScript);
-            
+
             return encryptedResult?.ToString() ?? throw new InvalidOperationException("Encryption failed");
         }
         catch (Exception ex)

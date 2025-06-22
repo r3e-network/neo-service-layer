@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -50,4 +50,4 @@ public class AutomationJobUpdate
     /// </summary>
     [Range(0, 10)]
     public int? MaxRetries { get; set; }
-} 
+}

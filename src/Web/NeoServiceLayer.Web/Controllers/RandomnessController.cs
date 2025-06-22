@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Randomness;
 
@@ -274,4 +274,4 @@ public class RandomnessController : BaseApiController
             return HandleException(ex, "VerifyRandomNumber");
         }
     }
-} 
+}

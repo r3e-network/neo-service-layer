@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Automation;
+﻿namespace NeoServiceLayer.Services.Automation;
 
 /// <summary>
 /// Represents the status of an automation job.
@@ -187,4 +187,4 @@ public enum AutomationActionType
     /// NFT minting action.
     /// </summary>
     NftMint = 9
-} 
+}

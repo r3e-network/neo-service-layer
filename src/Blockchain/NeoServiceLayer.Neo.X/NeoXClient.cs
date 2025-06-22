@@ -1,12 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Concurrent;
+using System.Numerics;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using Nethereum.Web3;
-using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
-using System.Collections.Concurrent;
-using System.Numerics;
-
+using Nethereum.RPC.Eth.DTOs;
+using Nethereum.Web3;
 // Type aliases to resolve ambiguity
 using CoreBlock = NeoServiceLayer.Core.Block;
 using CoreTransaction = NeoServiceLayer.Core.Transaction;
@@ -39,10 +38,10 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         _logger = logger;
         _rpcUrl = rpcUrl;
-        
+
         // Initialize Web3 with the provided HTTP client
         _web3 = new Web3(rpcUrl);
-        
+
         // Configure HTTP client timeout
         httpClient.Timeout = TimeSpan.FromSeconds(30);
 
@@ -81,7 +80,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             var blockNumber = new HexBigInteger(height);
             var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(blockNumber);
-            
+
             if (block == null)
             {
                 throw new InvalidOperationException($"Block at height {height} not found");
@@ -104,7 +103,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
             _logger.LogDebug("Getting block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
 
             var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByHash.SendRequestAsync(hash);
-            
+
             if (block == null)
             {
                 throw new InvalidOperationException($"Block with hash {hash} not found");
@@ -127,14 +126,14 @@ public class NeoXClient : IBlockchainClient, IDisposable
             _logger.LogDebug("Getting transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
 
             var transaction = await _web3.Eth.Transactions.GetTransactionByHash.SendRequestAsync(hash);
-            
+
             if (transaction == null)
             {
                 throw new InvalidOperationException($"Transaction with hash {hash} not found");
             }
 
             var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(hash);
-            
+
             return ConvertToTransaction(transaction, receipt);
         }
         catch (Exception ex)
@@ -149,7 +148,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Sending transaction from {Sender} to {Recipient} with value {Value} via {RpcUrl}", 
+            _logger.LogDebug("Sending transaction from {Sender} to {Recipient} with value {Value} via {RpcUrl}",
                 transaction.Sender, transaction.Recipient, transaction.Value, _rpcUrl);
 
             // Create transaction input
@@ -163,13 +162,13 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             // Send the transaction
             var txHash = await _web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
-            
+
             _logger.LogInformation("Transaction sent successfully with hash: {TxHash}", txHash);
             return txHash;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}", 
+            _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}",
                 transaction.Sender, transaction.Recipient);
             throw;
         }
@@ -181,7 +180,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to blocks with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Subscribing to blocks with subscription ID {SubscriptionId} via {RpcUrl}",
                 subscriptionId, _rpcUrl);
 
             _blockSubscriptions[subscriptionId] = callback;
@@ -201,11 +200,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from blocks with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Unsubscribing from blocks with subscription ID {SubscriptionId} via {RpcUrl}",
                 subscriptionId, _rpcUrl);
-            
+
             var removed = _blockSubscriptions.TryRemove(subscriptionId, out _);
-            
+
             if (removed)
             {
                 _logger.LogInformation("Successfully unsubscribed from blocks with ID {SubscriptionId}", subscriptionId);
@@ -230,7 +229,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to transactions with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Subscribing to transactions with subscription ID {SubscriptionId} via {RpcUrl}",
                 subscriptionId, _rpcUrl);
 
             _transactionSubscriptions[subscriptionId] = callback;
@@ -250,7 +249,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from transactions with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Unsubscribing from transactions with subscription ID {SubscriptionId} via {RpcUrl}",
                 subscriptionId, _rpcUrl);
 
             var removed = _transactionSubscriptions.TryRemove(subscriptionId, out _);
@@ -279,18 +278,18 @@ public class NeoXClient : IBlockchainClient, IDisposable
         try
         {
             string subscriptionId = Guid.NewGuid().ToString();
-            _logger.LogDebug("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Subscribing to contract events for contract {ContractAddress} and event {EventName} with subscription ID {SubscriptionId} via {RpcUrl}",
                 contractAddress, eventName, subscriptionId, _rpcUrl);
 
             _contractEventSubscriptions[subscriptionId] = (contractAddress, eventName, callback);
 
-            _logger.LogInformation("Successfully subscribed to contract events for {ContractAddress}:{EventName}", 
+            _logger.LogInformation("Successfully subscribed to contract events for {ContractAddress}:{EventName}",
                 contractAddress, eventName);
             return Task.FromResult(subscriptionId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to subscribe to contract events for {ContractAddress}:{EventName}", 
+            _logger.LogError(ex, "Failed to subscribe to contract events for {ContractAddress}:{EventName}",
                 contractAddress, eventName);
             throw;
         }
@@ -301,11 +300,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Unsubscribing from contract events with subscription ID {SubscriptionId} via {RpcUrl}", 
+            _logger.LogDebug("Unsubscribing from contract events with subscription ID {SubscriptionId} via {RpcUrl}",
                 subscriptionId, _rpcUrl);
-            
+
             var removed = _contractEventSubscriptions.TryRemove(subscriptionId, out _);
-            
+
             if (removed)
             {
                 _logger.LogInformation("Successfully unsubscribed from contract events with ID {SubscriptionId}", subscriptionId);
@@ -329,15 +328,15 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Calling contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", 
+            _logger.LogDebug("Calling contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}",
                 method, contractAddress, args.Length, _rpcUrl);
 
             // Create a contract instance
             var contract = _web3.Eth.GetContract("[]", contractAddress); // Empty ABI for generic calls
-            
+
             // Build function call data
             var functionCallData = BuildFunctionCallData(method, args);
-            
+
             // Make the call
             var result = await _web3.Eth.Transactions.Call.SendRequestAsync(new CallInput
             {
@@ -360,7 +359,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Invoking contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}", 
+            _logger.LogDebug("Invoking contract method {Method} on contract {ContractAddress} with {ArgCount} arguments via {RpcUrl}",
                 method, contractAddress, args.Length, _rpcUrl);
 
             // Build function call data
@@ -376,7 +375,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             // Send the transaction
             var txHash = await _web3.Eth.Transactions.SendTransaction.SendRequestAsync(transactionInput);
-            
+
             _logger.LogInformation("Contract method invocation sent successfully with hash: {TxHash}", txHash);
             return txHash;
         }
@@ -438,7 +437,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         var methodSignature = $"{method}({string.Join(",", args.Select(a => a.GetType().Name))})";
         var methodBytes = System.Text.Encoding.UTF8.GetBytes(methodSignature);
         var methodHash = Nethereum.Util.Sha3Keccack.Current.CalculateHash(methodBytes)[..4];
-        
+
         // For now, return just the method hash
         // In production, you would properly encode the arguments
         return "0x" + Convert.ToHexString(methodHash);
@@ -547,7 +546,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
                 try
                 {
                     var events = await ExtractContractEventsFromBlock(block, contractAddress, eventName);
-                    
+
                     foreach (var contractEvent in events)
                     {
                         await callback(contractEvent);
@@ -577,7 +576,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
             try
             {
                 var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(transaction.Hash);
-                
+
                 if (receipt?.Logs != null)
                 {
                     foreach (var logToken in receipt.Logs)
@@ -626,11 +625,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
         try
         {
             _logger.LogInformation("Disposing Neo X client");
-            
+
             _cancellationTokenSource.Cancel();
             _subscriptionTimer?.Dispose();
             _cancellationTokenSource.Dispose();
-            
+
             _blockSubscriptions.Clear();
             _transactionSubscriptions.Clear();
             _contractEventSubscriptions.Clear();

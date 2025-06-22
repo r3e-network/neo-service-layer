@@ -1,20 +1,20 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Xunit;
+using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.Randomness;
-using NeoServiceLayer.Services.Oracle;
-using NeoServiceLayer.Services.KeyManagement;
-using NeoServiceLayer.Services.Compute;
-using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.AbstractAccount;
-using NeoServiceLayer.AI.PatternRecognition;
+using NeoServiceLayer.Services.Compute;
+using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Services.Randomness;
+using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text.Json;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -30,14 +30,14 @@ public class EndToEndScenarioTests : IDisposable
     public EndToEndScenarioTests()
     {
         var services = new ServiceCollection();
-        
+
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Add service manager
         // services.AddSingleton<IServiceManager, ServiceManager>();
-        
+
         // Add all services
         services.AddSingleton<IRandomnessService, RandomnessService>();
         services.AddSingleton<IOracleService, OracleService>();
@@ -46,18 +46,18 @@ public class EndToEndScenarioTests : IDisposable
         services.AddSingleton<IStorageService, StorageService>();
         services.AddSingleton<AI.PatternRecognition.IPatternRecognitionService, AI.PatternRecognition.PatternRecognitionService>();
         services.AddSingleton<IAbstractAccountService, AbstractAccountService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
         // _serviceManager = _serviceProvider.GetRequiredService<IServiceManager>();
         _logger = _serviceProvider.GetRequiredService<ILogger<EndToEndScenarioTests>>();
-        
+
         InitializeSystemAsync().GetAwaiter().GetResult();
     }
 
     private async Task InitializeSystemAsync()
     {
         _logger.LogInformation("Initializing complete Neo Service Layer system...");
-        
+
         // Register all services with the service manager
         // Service manager not available in this test configuration
         // await _serviceManager.RegisterServiceAsync<IRandomnessService>();
@@ -67,10 +67,10 @@ public class EndToEndScenarioTests : IDisposable
         // await _serviceManager.RegisterServiceAsync<IStorageService>();
         // await _serviceManager.RegisterServiceAsync<AI.PatternRecognition.IPatternRecognitionService>();
         // await _serviceManager.RegisterServiceAsync<IAbstractAccountService>();
-        
+
         // Start all services
         // await _serviceManager.StartAllServicesAsync();
-        
+
         _logger.LogInformation("Neo Service Layer system initialized successfully");
     }
 

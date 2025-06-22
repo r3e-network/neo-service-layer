@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Advanced.FairOrdering.Models;
+﻿namespace NeoServiceLayer.Advanced.FairOrdering.Models;
 
 /// <summary>
 /// Represents risk level.

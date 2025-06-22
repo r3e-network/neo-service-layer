@@ -1,11 +1,11 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.AbstractAccount.Models;
 using NeoServiceLayer.TestInfrastructure;
-using NeoServiceLayer.Core;
+using Xunit;
 
 namespace NeoServiceLayer.Services.AbstractAccount.Tests;
 
@@ -61,7 +61,7 @@ public class AbstractAccountServiceTests : TestBase
     public async Task CreateAccountAsync_WithNullRequest_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _service.CreateAccountAsync(null!, BlockchainType.NeoN3));
     }
 
@@ -75,7 +75,7 @@ public class AbstractAccountServiceTests : TestBase
         };
 
         // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => 
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
             _service.CreateAccountAsync(request, (BlockchainType)999));
     }
 

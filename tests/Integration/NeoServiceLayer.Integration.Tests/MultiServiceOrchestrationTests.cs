@@ -1,21 +1,21 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.ProofOfReserve;
-using AutomationSvc = NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.Monitoring;
-using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Notification;
-using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
+using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text.Json;
 using Xunit;
+using AutomationSvc = NeoServiceLayer.Services.Automation;
+using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -38,14 +38,14 @@ public class MultiServiceOrchestrationTests : IDisposable
     public MultiServiceOrchestrationTests()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        
+
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Add all services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
         services.AddSingleton<AutomationSvc.IAutomationService, AutomationSvc.AutomationService>();
@@ -55,9 +55,9 @@ public class MultiServiceOrchestrationTests : IDisposable
         services.AddSingleton<IConfigurationService, ConfigurationService>();
         services.AddSingleton<IBackupService, BackupService>();
         services.AddSingleton<INotificationService, NotificationService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         // Get service instances
         _logger = _serviceProvider.GetRequiredService<ILogger<MultiServiceOrchestrationTests>>();
         _proofOfReserveService = _serviceProvider.GetRequiredService<IProofOfReserveService>();
@@ -68,7 +68,7 @@ public class MultiServiceOrchestrationTests : IDisposable
         _configurationService = _serviceProvider.GetRequiredService<IConfigurationService>();
         _backupService = _serviceProvider.GetRequiredService<IBackupService>();
         _notificationService = _serviceProvider.GetRequiredService<INotificationService>();
-        
+
         // Initialize all services
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
@@ -76,7 +76,7 @@ public class MultiServiceOrchestrationTests : IDisposable
     private async Task InitializeServicesAsync()
     {
         _logger.LogInformation("Initializing all services for multi-service orchestration testing...");
-        
+
         await _proofOfReserveService.InitializeAsync();
         await _automationService.InitializeAsync();
         await _fairOrderingService.InitializeAsync();
@@ -85,7 +85,7 @@ public class MultiServiceOrchestrationTests : IDisposable
         await _configurationService.InitializeAsync();
         await _backupService.InitializeAsync();
         await _notificationService.InitializeAsync();
-        
+
         _logger.LogInformation("All services initialized successfully");
     }
 
@@ -129,7 +129,7 @@ public class MultiServiceOrchestrationTests : IDisposable
             UpdateReason = "Monthly reserve audit",
             AuditorSignature = "0xauditor_signature"
         };
-        
+
         // Skip fair transaction submission due to missing model types
         var submissionResult_TransactionId = "test-transaction-id"; // Mock for testing
         _logger.LogInformation("Skipped fair ordering transaction submission due to missing model types");
@@ -156,7 +156,7 @@ public class MultiServiceOrchestrationTests : IDisposable
         statusResult.Should().NotBeNull();
         statusResult.TotalReserves.Should().BeGreaterThan(0);
         statusResult.IsCompliant.Should().BeTrue();
-        _logger.LogInformation("Verified reserve status: {TotalReserves} reserves, {ReserveRatio} ratio", 
+        _logger.LogInformation("Verified reserve status: {TotalReserves} reserves, {ReserveRatio} ratio",
             statusResult.TotalReserves, statusResult.ReserveRatio);
 
         // Complete test verification

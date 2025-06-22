@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -413,4 +413,4 @@ public class NotificationPreferences
     public NotificationPriority MinimumPriority { get; set; } = NotificationPriority.Normal;
 }
 
-#endregion 
+#endregion

@@ -1,20 +1,20 @@
+﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Xunit;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.Randomness;
-using NeoServiceLayer.Services.Oracle;
-using NeoServiceLayer.Services.KeyManagement;
-using NeoServiceLayer.Services.Compute;
-using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.AbstractAccount;
-using PatternRecognitionSvc = NeoServiceLayer.AI.PatternRecognition;
+using NeoServiceLayer.Services.Compute;
+using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Services.Randomness;
+using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
-using NeoServiceLayer.Tee.Enclave;
-using System.Text.Json;
+using Xunit;
+using PatternRecognitionSvc = NeoServiceLayer.AI.PatternRecognition;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -36,14 +36,14 @@ public class CrossServiceIntegrationTests : IDisposable
     public CrossServiceIntegrationTests()
     {
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        
+
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Add all services
         services.AddSingleton<IRandomnessService, RandomnessService>();
         services.AddSingleton<IOracleService, OracleService>();
@@ -52,9 +52,9 @@ public class CrossServiceIntegrationTests : IDisposable
         services.AddSingleton<IStorageService, StorageService>();
         services.AddSingleton<PatternRecognitionSvc.IPatternRecognitionService, PatternRecognitionSvc.PatternRecognitionService>();
         services.AddSingleton<IAbstractAccountService, AbstractAccountService>();
-        
+
         _serviceProvider = services.BuildServiceProvider();
-        
+
         // Get service instances
         _randomnessService = _serviceProvider.GetRequiredService<IRandomnessService>();
         _oracleService = _serviceProvider.GetRequiredService<IOracleService>();
@@ -64,7 +64,7 @@ public class CrossServiceIntegrationTests : IDisposable
         _aiService = _serviceProvider.GetRequiredService<PatternRecognitionSvc.IPatternRecognitionService>();
         _abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         _logger = _serviceProvider.GetRequiredService<ILogger<CrossServiceIntegrationTests>>();
-        
+
         // Initialize all services
         InitializeServicesAsync().GetAwaiter().GetResult();
     }
@@ -72,7 +72,7 @@ public class CrossServiceIntegrationTests : IDisposable
     private async Task InitializeServicesAsync()
     {
         _logger.LogInformation("Initializing all services for integration testing...");
-        
+
         await _randomnessService.InitializeAsync();
         await _oracleService.InitializeAsync();
         await _keyManagementService.InitializeAsync();
@@ -80,7 +80,7 @@ public class CrossServiceIntegrationTests : IDisposable
         await _storageService.InitializeAsync();
         await _aiService.InitializeAsync();
         await _abstractAccountService.InitializeAsync();
-        
+
         _logger.LogInformation("All services initialized successfully");
     }
 
@@ -97,7 +97,7 @@ public class CrossServiceIntegrationTests : IDisposable
         // Test skipped due to missing types
         await Task.CompletedTask;
     }
-    
+
     public void Dispose()
     {
         _serviceProvider?.Dispose();

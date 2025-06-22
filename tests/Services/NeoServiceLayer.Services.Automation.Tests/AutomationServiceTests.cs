@@ -1,10 +1,10 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Xunit;
-using FluentAssertions;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Automation;
 using NeoServiceLayer.TestInfrastructure;
-using NeoServiceLayer.Core;
+using Xunit;
 
 namespace NeoServiceLayer.Services.Automation.Tests;
 
@@ -61,7 +61,7 @@ public class AutomationServiceTests : TestBase
     public async Task CreateAutomationAsync_WithNullRequest_ShouldThrowArgumentNullException()
     {
         // Act & Assert
-        await Assert.ThrowsAsync<ArgumentNullException>(() => 
+        await Assert.ThrowsAsync<ArgumentNullException>(() =>
             _service.CreateAutomationAsync(null!, BlockchainType.NeoN3));
     }
 

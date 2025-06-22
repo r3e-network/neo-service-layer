@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
@@ -24,4 +24,4 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         {
         }
     }
-} 
+}

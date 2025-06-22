@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.ServiceFramework;
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
@@ -32,7 +32,7 @@ public partial class ZeroKnowledgeService
         keyInfo.Metadata["private_key"] = privateKeyHex;
         keyInfo.Metadata["public_key"] = publicKeyHex;
         keyInfo.Metadata["key_type"] = "secp256k1";
-        
+
         return Task.CompletedTask;
     }
 
@@ -182,12 +182,12 @@ public partial class ZeroKnowledgeService
         // For demo, we'll generate a deterministic public key
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(privateKeyBytes);
-        
+
         // Create a 33-byte compressed public key (0x02/0x03 prefix + 32 bytes)
         var publicKey = new byte[33];
         publicKey[0] = 0x02; // Compressed public key prefix
         Array.Copy(hash, 0, publicKey, 1, 32);
-        
+
         return publicKey;
     }
 

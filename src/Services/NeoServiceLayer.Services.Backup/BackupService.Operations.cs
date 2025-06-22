@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup.Models;
 
@@ -133,7 +133,7 @@ public partial class BackupService
                 Status = job.Status,
                 Progress = new BackupProgress
                 {
-                    PercentageCompleted = job.Status == BackupStatus.Completed ? 100.0 : 
+                    PercentageCompleted = job.Status == BackupStatus.Completed ? 100.0 :
                                         job.Status == BackupStatus.InProgress ? 50.0 : 0.0,
                     CurrentOperation = job.Status.ToString()
                 },
@@ -600,4 +600,4 @@ public partial class BackupService
             };
         }
     }
-} 
+}

@@ -1,7 +1,7 @@
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Asp.Versioning;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -48,7 +48,7 @@ public class HealthController : BaseApiController
     public async Task<IActionResult> GetHealth()
     {
         var result = await _healthCheckService.CheckHealthAsync();
-        
+
         var response = new
         {
             status = result.Status.ToString(),
@@ -56,8 +56,8 @@ public class HealthController : BaseApiController
             duration = result.TotalDuration.TotalMilliseconds
         };
 
-        return result.Status == HealthStatus.Healthy 
-            ? Ok(response) 
+        return result.Status == HealthStatus.Healthy
+            ? Ok(response)
             : StatusCode(503, response);
     }
 
@@ -76,7 +76,7 @@ public class HealthController : BaseApiController
     public async Task<IActionResult> GetDetailedHealth()
     {
         var result = await _healthCheckService.CheckHealthAsync();
-        
+
         var healthChecks = result.Entries.Select(entry => new
         {
             name = entry.Key,
@@ -95,8 +95,8 @@ public class HealthController : BaseApiController
             checks = healthChecks
         };
 
-        return result.Status == HealthStatus.Healthy 
-            ? Ok(response) 
+        return result.Status == HealthStatus.Healthy
+            ? Ok(response)
             : StatusCode(503, response);
     }
 
@@ -137,8 +137,8 @@ public class HealthController : BaseApiController
             timestamp = DateTimeOffset.UtcNow
         };
 
-        return result.Status == HealthStatus.Healthy 
-            ? Ok(response) 
+        return result.Status == HealthStatus.Healthy
+            ? Ok(response)
             : StatusCode(503, response);
     }
 

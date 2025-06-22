@@ -1,4 +1,4 @@
-using System.Text;
+﻿using System.Text;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.ServiceFramework;
@@ -59,7 +59,7 @@ public static class ServiceTemplate
             sb.AppendLine("    /// <param name=\"blockchainType\">The blockchain type.</param>");
         }
         sb.AppendLine("    /// <returns>The operation result.</returns>");
-        
+
         if (supportedBlockchains?.Length > 0)
         {
             sb.AppendLine($"    Task<{serviceName}Result> Process{serviceName}Async({serviceName}Request request, BlockchainType blockchainType);");
@@ -68,7 +68,7 @@ public static class ServiceTemplate
         {
             sb.AppendLine($"    Task<{serviceName}Result> Process{serviceName}Async({serviceName}Request request);");
         }
-        
+
         sb.AppendLine("}");
         sb.AppendLine();
 
@@ -174,10 +174,10 @@ public static class ServiceTemplate
     private static string[] GetInterfaces(BlockchainType[]? supportedBlockchains, bool requiresEnclave)
     {
         var interfaces = new List<string> { "IService" };
-        
+
         if (supportedBlockchains?.Length > 0)
             interfaces.Add("IBlockchainService");
-        
+
         if (requiresEnclave)
             interfaces.Add("IEnclaveService");
 
@@ -196,23 +196,23 @@ public static class ServiceTemplate
         sb.AppendLine($"    /// Initializes a new instance of the <see cref=\"{className}\"/> class.");
         sb.AppendLine("    /// </summary>");
         sb.AppendLine("    /// <param name=\"logger\">The logger.</param>");
-        
+
         if (requiresEnclave)
         {
             sb.AppendLine("    /// <param name=\"enclaveManager\">The enclave manager.</param>");
         }
-        
+
         sb.AppendLine("    /// <param name=\"configuration\">The service configuration.</param>");
         sb.AppendLine($"    public {className}(");
         sb.AppendLine($"        ILogger<{className}> logger,");
-        
+
         if (requiresEnclave)
         {
             sb.AppendLine("        IEnclaveManager enclaveManager,");
         }
-        
+
         sb.AppendLine("        IServiceConfiguration? configuration = null)");
-        
+
         var baseParams = new List<string>
         {
             $"\"{serviceName}\"",
@@ -250,7 +250,7 @@ public static class ServiceTemplate
     private static void GenerateInterfaceImplementation(StringBuilder sb, string serviceName, BlockchainType[]? supportedBlockchains)
     {
         sb.AppendLine("    /// <inheritdoc/>");
-        
+
         if (supportedBlockchains?.Length > 0)
         {
             sb.AppendLine($"    public async Task<{serviceName}Result> Process{serviceName}Async({serviceName}Request request, BlockchainType blockchainType)");
@@ -852,4 +852,4 @@ public static class ServiceTemplate
         sb.AppendLine("    public Dictionary<string, object> Metadata { get; set; } = new();");
         sb.AppendLine("}");
     }
-} 
+}

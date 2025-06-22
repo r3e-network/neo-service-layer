@@ -1,12 +1,12 @@
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Compliance.Models;
-using ComplianceResponseModels = NeoServiceLayer.Services.Compliance.Models;
 using NeoServiceLayer.Tee.Host.Services;
-using System.Text.Json;
 using Xunit;
+using ComplianceResponseModels = NeoServiceLayer.Services.Compliance.Models;
 
 namespace NeoServiceLayer.Services.Compliance.Tests;
 

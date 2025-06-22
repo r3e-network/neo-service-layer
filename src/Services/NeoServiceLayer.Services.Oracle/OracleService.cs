@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Services.Oracle;
+﻿namespace NeoServiceLayer.Services.Oracle;
 
 /// <summary>
 /// Oracle service implementation - main entry point.

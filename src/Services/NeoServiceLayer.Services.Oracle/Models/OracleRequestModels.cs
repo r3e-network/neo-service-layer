@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Oracle.Models;
@@ -464,4 +464,4 @@ public class OracleStatusRequest
     /// </summary>
     [Range(1, 168)] // 1 hour to 1 week
     public int ActivityRangeHours { get; set; } = 24;
-} 
+}

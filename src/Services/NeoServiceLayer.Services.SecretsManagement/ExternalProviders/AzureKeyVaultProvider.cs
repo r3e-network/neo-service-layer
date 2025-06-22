@@ -1,8 +1,8 @@
+﻿using System.Security;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using System.Security;
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -51,9 +51,9 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
             // Create credential based on configuration
             DefaultAzureCredential credential;
-            
-            if (configuration.TryGetValue("TenantId", out var tenantId) && 
-                configuration.TryGetValue("ClientId", out var clientId) && 
+
+            if (configuration.TryGetValue("TenantId", out var tenantId) &&
+                configuration.TryGetValue("ClientId", out var clientId) &&
                 configuration.TryGetValue("ClientSecret", out var clientSecret))
             {
                 // Use service principal authentication
@@ -91,7 +91,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
             var secretValue = SecureStringToString(value);
             var secret = new KeyVaultSecret(SanitizeSecretName(secretId), secretValue);
-            
+
             // Add metadata
             secret.Properties.Tags["Name"] = name;
             secret.Properties.Tags["Source"] = "NeoServiceLayer";
@@ -118,7 +118,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
             _logger.LogDebug("Retrieving secret {SecretId} from Azure Key Vault", secretId);
 
             var response = await _secretClient!.GetSecretAsync(SanitizeSecretName(secretId), cancellationToken: cancellationToken);
-            
+
             if (response?.Value?.Value != null)
             {
                 return StringToSecureString(response.Value.Value);

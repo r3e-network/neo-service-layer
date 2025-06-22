@@ -1,15 +1,15 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
-using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
-using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
-using FluentAssertions;
 
 namespace NeoServiceLayer.AI.PatternRecognition.Tests;
 

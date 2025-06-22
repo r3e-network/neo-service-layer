@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Notification.Models;
 
@@ -156,7 +156,7 @@ public partial class NotificationService
     {
         Logger.LogWarning("SendBatchNotificationsAsync is not implemented");
         await Task.CompletedTask;
-        
+
         return new
         {
             Success = false,
@@ -175,7 +175,7 @@ public partial class NotificationService
         // Try to get NotificationId property using reflection
         var requestType = request.GetType();
         var notificationIdProperty = requestType.GetProperty("NotificationId");
-        
+
         if (notificationIdProperty != null && notificationIdProperty.PropertyType == typeof(string))
         {
             return notificationIdProperty.GetValue(request) as string;

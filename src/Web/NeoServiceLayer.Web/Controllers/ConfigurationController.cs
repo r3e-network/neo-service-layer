@@ -1,5 +1,5 @@
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Services.Configuration.Models;
@@ -434,4 +434,4 @@ public class ConfigurationController : BaseApiController
             return HandleException(ex, "GetConfigurationHistory");
         }
     }
-} 
+}
