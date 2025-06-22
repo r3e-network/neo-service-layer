@@ -1,0 +1,91 @@
+# Neo Service Layer - Null Reference Warnings (CS8600-CS8620)
+## Summary: 84 total warnings found
+
+### Warning Types:
+- CS8601 (Possible null reference assignment): 12 occurrences
+- CS8602 (Dereference of a possibly null reference): 6 occurrences  
+- CS8603 (Possible null reference return): 4 occurrences
+- CS8604 (Possible null reference argument): 18 occurrences
+- CS8618 (Non-nullable field/property must contain non-null value): 8 occurrences
+- CS8620 (Nullability difference in argument types): 4 occurrences
+- CS8625 (Cannot convert null literal to non-nullable reference type): 32 occurrences
+
+## Detailed Warnings by File:
+
+### Production Code Warnings:
+
+**1. /home/neo/git/neo-service-layer/src/Core/NeoServiceLayer.Shared/Extensions/ObjectExtensions.cs**
+- Line 183: CS8603 - Possible null reference return
+
+**2. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Automation/AutomationService.cs**
+- Line 519: CS8604 - Possible null reference argument for parameter 'schedule'
+
+**3. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Backup/BackupService.Operations.cs**
+- Line 415: CS8601 - Possible null reference assignment
+- Line 418: CS8604 - Possible null reference argument for parameter 'cronExpression'
+
+**4. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Backup/BackupService.RestoreManagement.cs**
+- Line 407: CS8602 - Dereference of a possibly null reference
+- Line 425: CS8602 - Dereference of a possibly null reference  
+- Line 434: CS8602 - Dereference of a possibly null reference
+
+**5. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Compliance/Models/ComplianceSupportingTypes.cs**
+- Line 346: CS8601 - Possible null reference assignment
+
+**6. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Oracle/OracleService.Core.cs**
+- Line 68: CS8618 - Non-nullable field '_enclaveManager' must contain non-null value (constructor)
+- Line 68: CS8618 - Non-nullable field '_blockchainClientFactory' must contain non-null value (constructor)
+- Line 68: CS8618 - Non-nullable field '_httpClientService' must contain non-null value (constructor)
+- Line 71: CS8604 - Possible null reference argument for parameter 'logger'
+- Line 77: CS8601 - Possible null reference assignment
+- Line 78: CS8601 - Possible null reference assignment
+- Line 79: CS8601 - Possible null reference assignment
+
+**7. /home/neo/git/neo-service-layer/src/Services/NeoServiceLayer.Services.Oracle/OracleService.InterfaceImplementations.cs**
+- Line 285: CS8601 - Possible null reference assignment
+
+**8. /home/neo/git/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Enclave/AttestationService.cs**
+- Line 493: CS8604 - Possible null reference argument for parameter 's' in Convert.FromBase64String
+- Line 538: CS8604 - Possible null reference argument for parameter 's' in Convert.FromBase64String
+
+### Test Code Warnings:
+
+**9. /home/neo/git/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/Extensions/ObjectExtensionsTests.cs**
+- Line 223: CS8604 - Possible null reference argument for parameter 'obj'
+
+**10. /home/neo/git/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/Extensions/StringExtensionsTests.cs**
+- Line 216: CS8604 - Possible null reference argument for parameter 'value' in ToSha256
+- Line 253: CS8604 - Possible null reference argument for parameter 'value' in ToMd5
+
+**11. /home/neo/git/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/ObjectExtensionsTests.cs**
+- Line 261: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 298: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 327: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 358: CS8625 - Cannot convert null literal to non-nullable reference type
+
+**12. /home/neo/git/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/StringExtensionsTests.cs**
+- Line 254: CS8604 - Possible null reference argument for parameter 'value' in ToMd5
+- Line 308: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 371: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 638: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 645: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 652: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 659: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 666: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 673: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 680: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 687: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 694: CS8625 - Cannot convert null literal to non-nullable reference type
+- Line 701: CS8625 - Cannot convert null literal to non-nullable reference type
+
+**13. /home/neo/git/neo-service-layer/tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/RealSGXSimulationTests.cs**
+- Line 379: CS8603 - Possible null reference return
+- Line 398: CS8618 - Non-nullable property 'Skip' must contain non-null value (constructor)
+
+**14. /home/neo/git/neo-service-layer/tests/AI/NeoServiceLayer.AI.Prediction.Tests/PredictionServiceTests.cs**
+- Line 147: CS8620 - Nullability difference in argument types for mock setup
+
+**15. /home/neo/git/neo-service-layer/tests/TestInfrastructure/TestConfiguration.cs**
+- Line 35: CS8620 - Nullability difference in argument types for configuration builder
+
+EOF < /dev/null
