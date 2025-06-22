@@ -31,6 +31,11 @@ env:
   MIN_CODE_COVERAGE: 75
   MIN_BRANCH_COVERAGE: 70
   NEO_ALLOW_SGX_SIMULATION: true
+  SGX_MODE: SIM
+  SGX_SDK: /opt/intel/sgxsdk
+  SGX_DEBUG: 1
+  CI: true
+  TEST_ENVIRONMENT: CI
 
 permissions:
   contents: read
@@ -61,6 +66,25 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 🔒 Install SGX SDK (Simulation Mode)
+      run: |
+        echo "::group::Installing Intel SGX SDK for CI simulation"
+        wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+        echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+        sudo apt-get update
+        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev sgx-aesm-service libsgx-aesm-launch-plugin
+        
+        # Create SGX SDK directory structure (needed for simulation)
+        sudo mkdir -p /opt/intel/sgxsdk/lib64
+        sudo mkdir -p /opt/intel/sgxsdk/bin/x64
+        
+        # Create symbolic links for commonly used SGX libraries
+        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts.so /opt/intel/sgxsdk/lib64/libsgx_urts.so || true
+        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so || true
+        
+        echo "SGX SDK installed and configured for simulation mode"
+        echo "::endgroup::"
 
     - name: 🚀 Cache dependencies
       uses: actions/cache@v4

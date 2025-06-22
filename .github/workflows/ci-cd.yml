@@ -116,8 +116,26 @@ jobs:
         wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
         echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
         sudo apt-get update
-        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev
+        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev sgx-aesm-service libsgx-aesm-launch-plugin
+        
+        # Set SGX environment variables
         echo "SGX_MODE=SIM" >> $GITHUB_ENV
+        echo "SGX_SDK=/opt/intel/sgxsdk" >> $GITHUB_ENV
+        echo "SGX_DEBUG=1" >> $GITHUB_ENV
+        
+        # Create SGX SDK directory structure (needed for simulation)
+        sudo mkdir -p /opt/intel/sgxsdk/lib64
+        sudo mkdir -p /opt/intel/sgxsdk/bin/x64
+        
+        # Create symbolic links for commonly used SGX libraries
+        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts.so /opt/intel/sgxsdk/lib64/libsgx_urts.so
+        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
+        
+        # Set library path for SGX simulation
+        echo "LD_LIBRARY_PATH=/opt/intel/sgxsdk/lib64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV
+        echo "PATH=/opt/intel/sgxsdk/bin/x64:$PATH" >> $GITHUB_ENV
+        
+        echo "SGX SDK installed and configured for simulation mode"
         echo "::endgroup::"
 
     - name: 📦 Restore dependencies
@@ -157,6 +175,10 @@ jobs:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         NEO_ALLOW_SGX_SIMULATION: true
         SGX_MODE: SIM
+        SGX_SDK: /opt/intel/sgxsdk
+        SGX_DEBUG: 1
+        CI: true
+        TEST_ENVIRONMENT: CI
       run: |
         echo "::group::Running unit tests (${{ matrix.configuration }})"
         dotnet test NeoServiceLayer.sln \
@@ -173,9 +195,12 @@ jobs:
       if: ${{ matrix.run_integration && !github.event.inputs.skip_tests }}
       env:
         SGX_MODE: SIM
+        SGX_SDK: /opt/intel/sgxsdk
+        SGX_DEBUG: 1
         TEST_ENVIRONMENT: CI
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         NEO_ALLOW_SGX_SIMULATION: true
+        CI: true
       run: |
         echo "::group::Running integration tests"
         dotnet test tests/Integration/ \
@@ -407,6 +432,10 @@ jobs:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         NEO_ALLOW_SGX_SIMULATION: true
         SGX_MODE: SIM
+        SGX_SDK: /opt/intel/sgxsdk
+        SGX_DEBUG: 1
+        CI: true
+        TEST_ENVIRONMENT: CI
       run: |
         echo "::group::Performance Tests"
         dotnet test tests/Performance/ \

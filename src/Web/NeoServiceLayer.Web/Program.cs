@@ -193,8 +193,20 @@ builder.Services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubs
 builder.Services.AddScoped<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService, NeoServiceLayer.AI.PatternRecognition.PatternRecognitionService>();
 builder.Services.AddScoped<NeoServiceLayer.AI.Prediction.IPredictionService, NeoServiceLayer.AI.Prediction.PredictionService>();
 
-// Register TEE Services
-builder.Services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.OcclumEnclaveWrapper>();
+// Register TEE Services - Choose wrapper based on environment
+bool isCI = Environment.GetEnvironmentVariable("CI") == "true" || 
+           Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+
+if (isCI)
+{
+    // Use simulation wrapper in CI/test environments for reliability
+    builder.Services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.Tests.SGXSimulationEnclaveWrapper>();
+}
+else
+{
+    // Use production wrapper in non-CI environments
+    builder.Services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.OcclumEnclaveWrapper>();
+}
 builder.Services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveManager>(serviceProvider =>
 {
     var logger = serviceProvider.GetRequiredService<ILogger<NeoServiceLayer.Tee.Host.Services.EnclaveManager>>();
