@@ -110,6 +110,17 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
 
+    - name: 🔧 Install Build Dependencies
+      run: |
+        echo "::group::Installing build dependencies"
+        # Install Protocol Buffers compiler (needed for Rust build)
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+        
+        # Verify protoc installation
+        protoc --version
+        echo "::endgroup::"
+
     - name: 🔒 Install SGX SDK (Simulation Mode)
       run: |
         echo "::group::Installing Intel SGX SDK for CI simulation"
@@ -127,9 +138,22 @@ jobs:
         sudo mkdir -p /opt/intel/sgxsdk/lib64
         sudo mkdir -p /opt/intel/sgxsdk/bin/x64
         
-        # Create symbolic links for commonly used SGX libraries
-        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts.so /opt/intel/sgxsdk/lib64/libsgx_urts.so
-        sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
+        # Create symbolic links for commonly used SGX libraries (if they exist)
+        if [ -f /usr/lib/x86_64-linux-gnu/libsgx_urts.so ]; then
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts.so /opt/intel/sgxsdk/lib64/libsgx_urts.so
+        fi
+        if [ -f /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so ]; then
+          sudo ln -sf /usr/lib/x86_64-linux-gnu/libsgx_urts_sim.so /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
+        fi
+        
+        # Create mock SGX library files for CI simulation (if they don't exist)
+        if [ ! -f /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so ]; then
+          echo "Creating mock SGX simulation libraries for CI"
+          sudo touch /opt/intel/sgxsdk/lib64/libsgx_urts_sim.so
+          sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service_sim.so
+          sudo touch /opt/intel/sgxsdk/lib64/libsgx_uae_service.so
+          sudo chmod 644 /opt/intel/sgxsdk/lib64/*.so
+        fi
         
         # Set library path for SGX simulation
         echo "LD_LIBRARY_PATH=/opt/intel/sgxsdk/lib64:/usr/lib/x86_64-linux-gnu:$LD_LIBRARY_PATH" >> $GITHUB_ENV

@@ -52,17 +52,33 @@
 
   <!-- Copy Native Libraries -->
   <Target Name="CopyNativeLibraries" AfterTargets="Build" Condition="'$(EnableTEESupport)' == 'true' AND ($(MSBuildProjectName.Contains('Tee')) OR $(MSBuildProjectName.Contains('Enclave')))">
+    
+    <!-- Check if we're in CI environment -->
+    <PropertyGroup>
+      <IsCI Condition="'$(CI)' == 'true' OR '$(TEST_ENVIRONMENT)' == 'CI'">true</IsCI>
+      <IsCI Condition="'$(IsCI)' == ''">false</IsCI>
+    </PropertyGroup>
+    
     <Message Text="Copying native libraries for TEE support..." Importance="normal" />
+    <Message Text="CI Environment detected: $(IsCI)" Importance="normal" Condition="'$(IsCI)' == 'true'" />
     
     <!-- Create native libraries directory -->
     <MakeDir Directories="$(OutputPath)runtimes/$(RuntimeIdentifier)/native" />
     
-    <!-- Copy SGX libraries on Linux -->
-    <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' AND Exists('$(SGXLibraryPath)')">
+    <!-- Copy SGX libraries on Linux (skip in CI if files don't exist) -->
+    <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' AND Exists('$(SGXLibraryPath)') AND '$(IsCI)' != 'true'">
       <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_urts.so" />
       <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_urts_sim.so" />
       <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_uae_service.so" />
       <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_uae_service_sim.so" />
+    </ItemGroup>
+    
+    <!-- In CI: Only include SGX libraries that actually exist -->
+    <ItemGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true' AND '$(IsCI)' == 'true'">
+      <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_urts.so" Condition="Exists('$(SGXLibraryPath)/libsgx_urts.so')" />
+      <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_urts_sim.so" Condition="Exists('$(SGXLibraryPath)/libsgx_urts_sim.so')" />
+      <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_uae_service.so" Condition="Exists('$(SGXLibraryPath)/libsgx_uae_service.so')" />
+      <SGXNativeLibraries Include="$(SGXLibraryPath)/libsgx_uae_service_sim.so" Condition="Exists('$(SGXLibraryPath)/libsgx_uae_service_sim.so')" />
     </ItemGroup>
     
     <!-- Copy SGX libraries on Windows -->
@@ -90,6 +106,7 @@
           Condition="@(EnclaveLibraries->Count()) > 0" />
     
     <Message Text="Native libraries copied to $(OutputPath)runtimes/$(RuntimeIdentifier)/native" Importance="normal" />
+    <Message Text="SGX library copying skipped - files not found in CI environment" Importance="normal" Condition="'$(IsCI)' == 'true' AND @(SGXNativeLibraries->Count()) == 0" />
   </Target>
 
   <!-- Occlum Build Target -->
