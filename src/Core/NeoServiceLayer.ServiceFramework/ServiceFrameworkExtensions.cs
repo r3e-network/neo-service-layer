@@ -97,12 +97,28 @@ public static class ServiceFrameworkExtensions
                 break;
 
             case "rocksdb":
-                // Add RocksDB provider when implemented
-                throw new NotImplementedException("RocksDB storage provider not yet implemented");
+                // RocksDB provider - fallback to Occlum file storage with warning
+                services.AddSingleton<IPersistentStorageProvider>(provider =>
+                {
+                    var logger = provider.GetRequiredService<ILogger<OcclumFileStorageProvider>>();
+                    var configuration = provider.GetRequiredService<IConfiguration>();
+                    var storagePath = configuration["Storage:Path"] ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "storage", "rocksdb-fallback");
+                    logger.LogWarning("RocksDB storage provider not yet implemented. Falling back to Occlum file storage at {Path}. This may have different performance characteristics!", storagePath);
+                    return new OcclumFileStorageProvider(storagePath, logger);
+                });
+                break;
 
             case "leveldb":
-                // Add LevelDB provider when implemented
-                throw new NotImplementedException("LevelDB storage provider not yet implemented");
+                // LevelDB provider - fallback to Occlum file storage with warning
+                services.AddSingleton<IPersistentStorageProvider>(provider =>
+                {
+                    var logger = provider.GetRequiredService<ILogger<OcclumFileStorageProvider>>();
+                    var configuration = provider.GetRequiredService<IConfiguration>();
+                    var storagePath = configuration["Storage:Path"] ?? Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "storage", "leveldb-fallback");
+                    logger.LogWarning("LevelDB storage provider not yet implemented. Falling back to Occlum file storage at {Path}. This may have different performance characteristics!", storagePath);
+                    return new OcclumFileStorageProvider(storagePath, logger);
+                });
+                break;
 
             default:
                 throw new ArgumentException($"Unknown storage provider: {providerType}");

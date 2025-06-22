@@ -87,7 +87,7 @@ public class SecurityMonitoringService : BackgroundService
         }
 
         // Log monitoring metrics
-        await LogMonitoringMetricsAsync(statistics, threats);
+        LogMonitoringMetrics(statistics, threats);
     }
 
     private async Task ProcessThreatAsync(SecurityThreat threat)
@@ -178,7 +178,7 @@ public class SecurityMonitoringService : BackgroundService
         await Task.CompletedTask; // Placeholder
     }
 
-    private async Task LogMonitoringMetricsAsync(SecurityEventStatistics statistics, List<SecurityThreat> threats)
+    private void LogMonitoringMetrics(SecurityEventStatistics statistics, List<SecurityThreat> threats)
     {
         var metrics = new Dictionary<string, double>
         {
@@ -191,17 +191,10 @@ public class SecurityMonitoringService : BackgroundService
             ["security.threats.detected"] = threats.Count
         };
 
+        // TODO: Implement metric recording when monitoring service is available
         foreach (var metric in metrics)
         {
-            // await _monitoringService.RecordMetricAsync(
-            //     metric.Key,
-            //     metric.Value,
-            //     new Dictionary<string, string>
-            //     {
-            //         ["service"] = "SecurityMonitoring",
-            //         ["window"] = $"{_configuration.AnalysisWindowMinutes}min"
-            //     },
-            //     BlockchainType.NeoX);
+            _logger.LogDebug("Security metric {MetricName}: {MetricValue}", metric.Key, metric.Value);
         }
     }
 

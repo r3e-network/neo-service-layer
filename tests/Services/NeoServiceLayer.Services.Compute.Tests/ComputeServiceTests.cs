@@ -232,6 +232,15 @@ public class ComputeServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
+        
+        // First register the computation
+        await _service.RegisterComputationAsync(
+            "test-computation",
+            "function compute(input) { return input * 2; }",
+            "JavaScript",
+            "Test computation",
+            BlockchainType.NeoN3);
+        
         var parameters = new Dictionary<string, string>
         {
             { "input", "21" }

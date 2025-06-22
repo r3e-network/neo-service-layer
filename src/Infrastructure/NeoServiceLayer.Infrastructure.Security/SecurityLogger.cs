@@ -332,7 +332,19 @@ public class SecurityLogger : ISecurityLogger
                 if (now - _lastCleanup > TimeSpan.FromHours(1))
                 {
                     _lastCleanup = now;
-                    Task.Run(() => CleanupOldEventsAsync(7)); // Keep events for 7 days by default
+                    // Fire and forget with proper error handling
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await CleanupOldEventsAsync(7); // Keep events for 7 days by default
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log the error but don't fail the main operation
+                            _logger.LogError(ex, "Error during periodic cleanup of security events");
+                        }
+                    });
                 }
             }
         }

@@ -26,8 +26,12 @@ public class EventSubscriptionServiceTests
             .Returns((string key, string defaultValue) => defaultValue);
 
         _enclaveManagerMock
-            .Setup(e => e.InitializeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Setup(e => e.InitializeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
             .Returns(Task.CompletedTask);
+            
+        _enclaveManagerMock
+            .Setup(e => e.InitializeEnclaveAsync())
+            .ReturnsAsync(true);
 
         _enclaveManagerMock
             .Setup(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))

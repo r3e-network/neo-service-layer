@@ -179,8 +179,10 @@ public static class ObjectExtensions
         where TSource : class
         where TDestination : class
     {
-        if (source == null || destination == null)
+        if (source == null)
             return destination;
+        if (destination == null)
+            return default(TDestination);
 
         var sourceProps = source.GetType().GetProperties(BindingFlags.Public | BindingFlags.Instance)
                                .Where(p => p.CanRead);

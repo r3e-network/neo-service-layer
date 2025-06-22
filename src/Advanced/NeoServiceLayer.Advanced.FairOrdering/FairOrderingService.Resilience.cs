@@ -60,7 +60,7 @@ public partial class FairOrderingService
     /// <returns>The created pool ID.</returns>
     private async Task<string> CreateOrderingPoolInternalAsync(OrderingPoolConfig config, BlockchainType blockchainType)
     {
-        return await ExecuteInEnclaveAsync(async () =>
+        return await ExecuteInEnclaveAsync(() =>
         {
             var poolId = Guid.NewGuid().ToString();
 

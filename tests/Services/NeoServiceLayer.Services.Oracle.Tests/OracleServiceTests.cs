@@ -35,6 +35,8 @@ public class OracleServiceTests
 
         // Setup mocks
         _enclaveManagerMock.Setup(e => e.InitializeEnclaveAsync()).ReturnsAsync(true);
+        _enclaveManagerMock.Setup(e => e.InitializeAsync(It.IsAny<string?>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
         _enclaveManagerMock.Setup(e => e.GetDataAsync(It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync((string dataSource, string dataPath) =>
                 $"{{\"value\": 42, \"source\": \"{dataSource}\", \"path\": \"{dataPath}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
@@ -49,18 +51,11 @@ public class OracleServiceTests
             .ReturnsAsync((string keyId, string dataHex, string algorithm) => 
                 Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"encrypted_{dataHex}")));
 
-        // Remove the problematic Oracle fetch method setups that cause expression tree errors
-        // _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
-        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
-        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-        //     .ReturnsAsync((string url, string method, string headers, string body, string script, string options, CancellationToken ct) =>
-        //         $"{{\"value\": 42, \"source\": \"{url}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
-
-        // _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
-        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
-        //     It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-        //     .ReturnsAsync((string url, string method, string headers, string body, string script, string options) =>
-        //         $"{{\"value\": 42, \"source\": \"{url}\", \"timestamp\": \"{DateTime.UtcNow}\"}}");
+        // Setup Oracle fetch method
+        _enclaveManagerMock.Setup(e => e.OracleFetchAndProcessDataAsync(
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), 
+            It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"value\": 42, \"source\": \"test\", \"timestamp\": \"2024-01-01\"}");
 
         _blockchainClientFactoryMock.Setup(f => f.CreateClient(It.IsAny<BlockchainType>()))
             .Returns(_blockchainClientMock.Object);

@@ -37,14 +37,14 @@ public class StorageController : BaseApiController
     /// </summary>
     /// <param name="request">The storage request.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The storage item ID.</returns>
+    /// <returns>The storage metadata.</returns>
     /// <response code="200">Data stored successfully.</response>
     /// <response code="400">Invalid storage request.</response>
     /// <response code="401">Unauthorized access.</response>
     /// <response code="413">Payload too large.</response>
     [HttpPost("{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<string>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<StorageMetadata>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 413)]
@@ -60,16 +60,39 @@ public class StorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            // Convert request to byte array - this is a simplified implementation
-            var requestJson = System.Text.Json.JsonSerializer.Serialize(request);
-            var requestBytes = System.Text.Encoding.UTF8.GetBytes(requestJson);
-            var options = new NeoServiceLayer.Services.Storage.StorageOptions();
-            var storageId = await _storageService.StoreDataAsync("storage_key", requestBytes, options, blockchain);
             
-            _logger.LogInformation("Data stored successfully with ID: {StorageId} on {Blockchain}", 
-                storageId, blockchainType);
+            // Parse the request object to extract key and data
+            var requestDict = request as Dictionary<string, object> ?? 
+                System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    System.Text.Json.JsonSerializer.Serialize(request));
             
-            return Ok(CreateResponse(storageId, "Data stored successfully"));
+            if (requestDict == null || !requestDict.ContainsKey("key") || !requestDict.ContainsKey("data"))
+            {
+                return BadRequest(CreateErrorResponse("Request must contain 'key' and 'data' properties"));
+            }
+            
+            var key = requestDict["key"].ToString();
+            var dataStr = requestDict["data"].ToString();
+            var dataBytes = System.Text.Encoding.UTF8.GetBytes(dataStr ?? string.Empty);
+            
+            // Extract storage options from request if provided
+            var options = new StorageOptions();
+            if (requestDict.ContainsKey("options"))
+            {
+                var optionsJson = System.Text.Json.JsonSerializer.Serialize(requestDict["options"]);
+                var requestOptions = System.Text.Json.JsonSerializer.Deserialize<StorageOptions>(optionsJson);
+                if (requestOptions != null)
+                {
+                    options = requestOptions;
+                }
+            }
+            
+            var metadata = await _storageService.StoreDataAsync(key, dataBytes, options, blockchain);
+            
+            _logger.LogInformation("Data stored successfully with key: {Key} on {Blockchain}", 
+                key, blockchainType);
+            
+            return Ok(CreateResponse(metadata, "Data stored successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -165,8 +188,46 @@ public class StorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            // UpdateDataAsync method doesn't exist - return not implemented
-            return StatusCode(501, CreateResponse<object>(null, "Update operation not yet implemented", false));
+            
+            // Parse the request object to extract data
+            var requestDict = request as Dictionary<string, object> ?? 
+                System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    System.Text.Json.JsonSerializer.Serialize(request));
+            
+            if (requestDict == null || !requestDict.ContainsKey("data"))
+            {
+                return BadRequest(CreateErrorResponse("Request must contain 'data' property"));
+            }
+            
+            var dataStr = requestDict["data"].ToString();
+            var dataBytes = System.Text.Encoding.UTF8.GetBytes(dataStr ?? string.Empty);
+            
+            // Extract storage options from request if provided
+            var options = new StorageOptions();
+            if (requestDict.ContainsKey("options"))
+            {
+                var optionsJson = System.Text.Json.JsonSerializer.Serialize(requestDict["options"]);
+                var requestOptions = System.Text.Json.JsonSerializer.Deserialize<StorageOptions>(optionsJson);
+                if (requestOptions != null)
+                {
+                    options = requestOptions;
+                }
+            }
+            
+            // Delete existing data first
+            var deleteSuccess = await _storageService.DeleteDataAsync(storageId, blockchain);
+            if (!deleteSuccess)
+            {
+                return NotFound(CreateErrorResponse($"Storage item not found: {storageId}"));
+            }
+            
+            // Store new data with the same key
+            var metadata = await _storageService.StoreDataAsync(storageId, dataBytes, options, blockchain);
+            
+            _logger.LogInformation("Data updated successfully for key: {Key} on {Blockchain}", 
+                storageId, blockchainType);
+            
+            return Ok(CreateResponse(true, "Data updated successfully"));
         }
         catch (ArgumentException ex)
         {
@@ -260,8 +321,34 @@ public class StorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            // ListStorageItemsAsync method doesn't exist - return not implemented
-            return StatusCode(501, CreateResponse<object>(null, "List operation not yet implemented", false));
+            
+            // Get the user's key prefix from claims or use empty for all items
+            var userPrefix = User.Identity?.Name ?? string.Empty;
+            
+            var items = await _storageService.ListKeysAsync(userPrefix, skip, take, blockchain);
+            var itemsList = items.ToList();
+            
+            // Calculate pagination values
+            var totalItems = itemsList.Count; // This is approximate
+            var currentPage = (skip / take) + 1;
+            var totalPages = (int)Math.Ceiling((double)totalItems / take);
+            
+            var paginatedResponse = new PaginatedResponse<StorageMetadata>
+            {
+                Success = true,
+                Data = itemsList,
+                Message = "Storage items retrieved successfully",
+                Timestamp = DateTime.UtcNow,
+                Page = currentPage,
+                PageSize = take,
+                TotalItems = totalItems,
+                TotalPages = totalPages
+            };
+            
+            _logger.LogInformation("Listed {Count} storage items for user {User} on {Blockchain}", 
+                itemsList.Count, userPrefix, blockchainType);
+            
+            return Ok(paginatedResponse);
         }
         catch (Exception ex)
         {
@@ -343,8 +430,48 @@ public class StorageController : BaseApiController
                 return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
             }
 
-            // ShareDataAsync method is not available in service interface - return not implemented
-            return StatusCode(501, CreateErrorResponse("Data sharing functionality not implemented in current interface"));
+            var blockchain = ParseBlockchainType(blockchainType);
+            
+            // Parse the share request
+            var requestDict = request as Dictionary<string, object> ?? 
+                System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(
+                    System.Text.Json.JsonSerializer.Serialize(request));
+            
+            if (requestDict == null || !requestDict.ContainsKey("recipientId"))
+            {
+                return BadRequest(CreateErrorResponse("Request must contain 'recipientId' property"));
+            }
+            
+            var recipientId = requestDict["recipientId"].ToString();
+            
+            // Get the existing metadata
+            var metadata = await _storageService.GetMetadataAsync(storageId, blockchain);
+            if (metadata == null)
+            {
+                return NotFound(CreateErrorResponse($"Storage item not found: {storageId}"));
+            }
+            
+            // Add recipient to access control list
+            if (!metadata.AccessControlList.Contains(recipientId!))
+            {
+                metadata.AccessControlList.Add(recipientId!);
+            }
+            
+            // Update the metadata with new access control
+            var updateSuccess = await _storageService.UpdateMetadataAsync(storageId, metadata, blockchain);
+            if (!updateSuccess)
+            {
+                return StatusCode(500, CreateErrorResponse("Failed to update access control"));
+            }
+            
+            // Generate a share token (simplified - in production this would be a secure token)
+            var shareToken = Convert.ToBase64String(
+                System.Text.Encoding.UTF8.GetBytes($"{storageId}:{recipientId}:{DateTime.UtcNow.Ticks}"));
+            
+            _logger.LogInformation("Shared storage item {StorageId} with user {RecipientId} on {Blockchain}", 
+                storageId, recipientId, blockchainType);
+            
+            return Ok(CreateResponse(shareToken, "Storage item shared successfully"));
         }
         catch (ArgumentException ex)
         {

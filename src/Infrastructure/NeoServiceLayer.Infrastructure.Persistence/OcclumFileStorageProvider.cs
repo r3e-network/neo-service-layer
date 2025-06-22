@@ -358,17 +358,223 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     }
 
     /// <inheritdoc/>
-    public Task<bool> BackupAsync(string backupPath)
+    public async Task<bool> BackupAsync(string backupPath)
     {
-        // Implementation would backup the entire storage directory
-        throw new NotImplementedException("Backup functionality not yet implemented for Occlum storage");
+        if (!_initialized) throw new InvalidOperationException("Storage provider not initialized");
+        if (string.IsNullOrEmpty(backupPath)) throw new ArgumentException("Backup path cannot be null or empty", nameof(backupPath));
+
+        try
+        {
+            _logger.LogInformation("Starting backup of Occlum storage to {BackupPath}", backupPath);
+
+            // Create backup directory
+            var backupDir = Path.GetDirectoryName(backupPath);
+            if (!string.IsNullOrEmpty(backupDir) && !Directory.Exists(backupDir))
+            {
+                Directory.CreateDirectory(backupDir);
+            }
+
+            // Create a temporary directory for backup staging
+            var tempBackupDir = Path.Combine(Path.GetTempPath(), $"occlum_backup_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempBackupDir);
+
+            try
+            {
+                // Copy all data files and metadata
+                var dataFiles = Directory.GetFiles(_storagePath, "*.dat", SearchOption.TopDirectoryOnly);
+                var metadataDir = Path.Combine(_storagePath, ".metadata");
+                var metadataFiles = Directory.Exists(metadataDir) 
+                    ? Directory.GetFiles(metadataDir, "*.json", SearchOption.TopDirectoryOnly) 
+                    : Array.Empty<string>();
+
+                // Create backup structure
+                var backupDataDir = Path.Combine(tempBackupDir, "data");
+                var backupMetadataDir = Path.Combine(tempBackupDir, "metadata");
+                Directory.CreateDirectory(backupDataDir);
+                Directory.CreateDirectory(backupMetadataDir);
+
+                // Copy data files
+                foreach (var dataFile in dataFiles)
+                {
+                    var fileName = Path.GetFileName(dataFile);
+                    var destPath = Path.Combine(backupDataDir, fileName);
+                    File.Copy(dataFile, destPath, overwrite: true);
+                }
+
+                // Copy metadata files
+                foreach (var metadataFile in metadataFiles)
+                {
+                    var fileName = Path.GetFileName(metadataFile);
+                    var destPath = Path.Combine(backupMetadataDir, fileName);
+                    File.Copy(metadataFile, destPath, overwrite: true);
+                }
+
+                // Create backup manifest
+                var manifest = new
+                {
+                    Version = "1.0",
+                    Provider = ProviderName,
+                    BackupDate = DateTime.UtcNow,
+                    StoragePath = _storagePath,
+                    DataFileCount = dataFiles.Length,
+                    MetadataFileCount = metadataFiles.Length,
+                    Statistics = await GetStatisticsAsync()
+                };
+
+                var manifestPath = Path.Combine(tempBackupDir, "manifest.json");
+                var manifestJson = JsonSerializer.Serialize(manifest, new JsonSerializerOptions { WriteIndented = true });
+                await File.WriteAllTextAsync(manifestPath, manifestJson);
+
+                // Compress the backup
+                if (File.Exists(backupPath))
+                {
+                    File.Delete(backupPath);
+                }
+
+                using (var archive = System.IO.Compression.ZipFile.Open(backupPath, System.IO.Compression.ZipArchiveMode.Create))
+                {
+                    // Add all files from temp backup directory
+                    var filesToBackup = Directory.GetFiles(tempBackupDir, "*", SearchOption.AllDirectories);
+                    foreach (var file in filesToBackup)
+                    {
+                        var entryName = Path.GetRelativePath(tempBackupDir, file).Replace('\\', '/');
+                        archive.CreateEntryFromFile(file, entryName);
+                    }
+                }
+
+                _logger.LogInformation("Backup completed successfully. Files backed up: {TotalFiles}, Size: {Size} bytes",
+                    dataFiles.Length + metadataFiles.Length, new FileInfo(backupPath).Length);
+
+                return true;
+            }
+            finally
+            {
+                // Clean up temporary directory
+                if (Directory.Exists(tempBackupDir))
+                {
+                    Directory.Delete(tempBackupDir, recursive: true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to backup Occlum storage to {BackupPath}", backupPath);
+            return false;
+        }
     }
 
     /// <inheritdoc/>
-    public Task<bool> RestoreAsync(string backupPath)
+    public async Task<bool> RestoreAsync(string backupPath)
     {
-        // Implementation would restore from backup
-        throw new NotImplementedException("Restore functionality not yet implemented for Occlum storage");
+        if (!_initialized) throw new InvalidOperationException("Storage provider not initialized");
+        if (string.IsNullOrEmpty(backupPath)) throw new ArgumentException("Backup path cannot be null or empty", nameof(backupPath));
+        if (!File.Exists(backupPath)) throw new FileNotFoundException("Backup file not found", backupPath);
+
+        try
+        {
+            _logger.LogInformation("Starting restore of Occlum storage from {BackupPath}", backupPath);
+
+            // Create a temporary directory for restore staging
+            var tempRestoreDir = Path.Combine(Path.GetTempPath(), $"occlum_restore_{Guid.NewGuid():N}");
+            Directory.CreateDirectory(tempRestoreDir);
+
+            try
+            {
+                // Extract backup
+                System.IO.Compression.ZipFile.ExtractToDirectory(backupPath, tempRestoreDir);
+
+                // Verify manifest
+                var manifestPath = Path.Combine(tempRestoreDir, "manifest.json");
+                if (!File.Exists(manifestPath))
+                {
+                    throw new InvalidOperationException("Invalid backup file: manifest.json not found");
+                }
+
+                var manifestJson = await File.ReadAllTextAsync(manifestPath);
+                var manifest = JsonSerializer.Deserialize<JsonDocument>(manifestJson);
+                
+                if (manifest?.RootElement.GetProperty("Provider").GetString() != ProviderName)
+                {
+                    throw new InvalidOperationException($"Invalid backup file: provider mismatch. Expected {ProviderName}");
+                }
+
+                // Clear existing storage (after creating a safety backup)
+                var safetyBackupPath = $"{_storagePath}_restore_backup_{DateTime.UtcNow:yyyyMMddHHmmss}";
+                if (Directory.Exists(_storagePath))
+                {
+                    Directory.Move(_storagePath, safetyBackupPath);
+                }
+
+                try
+                {
+                    // Recreate storage directory
+                    Directory.CreateDirectory(_storagePath);
+                    var metadataDir = Path.Combine(_storagePath, ".metadata");
+                    Directory.CreateDirectory(metadataDir);
+
+                    // Restore data files
+                    var backupDataDir = Path.Combine(tempRestoreDir, "data");
+                    if (Directory.Exists(backupDataDir))
+                    {
+                        var dataFiles = Directory.GetFiles(backupDataDir, "*.dat");
+                        foreach (var dataFile in dataFiles)
+                        {
+                            var fileName = Path.GetFileName(dataFile);
+                            var destPath = Path.Combine(_storagePath, fileName);
+                            File.Copy(dataFile, destPath, overwrite: true);
+                        }
+                    }
+
+                    // Restore metadata files
+                    var backupMetadataDir = Path.Combine(tempRestoreDir, "metadata");
+                    if (Directory.Exists(backupMetadataDir))
+                    {
+                        var metadataFiles = Directory.GetFiles(backupMetadataDir, "*.json");
+                        foreach (var metadataFile in metadataFiles)
+                        {
+                            var fileName = Path.GetFileName(metadataFile);
+                            var destPath = Path.Combine(metadataDir, fileName);
+                            File.Copy(metadataFile, destPath, overwrite: true);
+                        }
+                    }
+
+                    // Remove safety backup after successful restore
+                    if (Directory.Exists(safetyBackupPath))
+                    {
+                        Directory.Delete(safetyBackupPath, recursive: true);
+                    }
+
+                    _logger.LogInformation("Restore completed successfully from {BackupPath}", backupPath);
+                    return true;
+                }
+                catch
+                {
+                    // Restore safety backup on failure
+                    if (Directory.Exists(safetyBackupPath))
+                    {
+                        if (Directory.Exists(_storagePath))
+                        {
+                            Directory.Delete(_storagePath, recursive: true);
+                        }
+                        Directory.Move(safetyBackupPath, _storagePath);
+                    }
+                    throw;
+                }
+            }
+            finally
+            {
+                // Clean up temporary directory
+                if (Directory.Exists(tempRestoreDir))
+                {
+                    Directory.Delete(tempRestoreDir, recursive: true);
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to restore Occlum storage from {BackupPath}", backupPath);
+            return false;
+        }
     }
 
     /// <inheritdoc/>
