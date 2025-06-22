@@ -30,8 +30,8 @@ public class EventSubscriptionServiceTests
             .Returns(Task.CompletedTask);
 
         _enclaveManagerMock
-            .Setup(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync((string script) =>
+            .Setup(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string script, CancellationToken token) =>
             {
                 if (script.Contains("createSubscription"))
                 {
@@ -152,7 +152,7 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.True(_service.IsRunning);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -200,7 +200,7 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.Equal("subscription-1", result);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -228,7 +228,7 @@ public class EventSubscriptionServiceTests
         Assert.Equal(5, result.RetryPolicy.InitialRetryDelaySeconds);
         Assert.Equal(2.0, result.RetryPolicy.RetryBackoffFactor);
         Assert.Equal(60, result.RetryPolicy.MaxRetryDelaySeconds);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -263,7 +263,7 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.True(result);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -280,7 +280,7 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.True(result);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -299,7 +299,7 @@ public class EventSubscriptionServiceTests
         // Assert
         Assert.Single(result);
         Assert.Equal("subscription-1", result.First().SubscriptionId);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -325,7 +325,7 @@ public class EventSubscriptionServiceTests
         Assert.False(result.First().Acknowledged);
         Assert.Equal(0, result.First().DeliveryAttempts);
         Assert.Equal("Pending", result.First().DeliveryStatus);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -343,7 +343,7 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.True(result);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     [Fact]
@@ -366,6 +366,6 @@ public class EventSubscriptionServiceTests
 
         // Assert
         Assert.Equal("event-2", result);
-        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()), Times.AtLeastOnce);
+        _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 }
