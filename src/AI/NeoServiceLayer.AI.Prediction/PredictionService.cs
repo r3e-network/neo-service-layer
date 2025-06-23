@@ -347,11 +347,14 @@ public partial class PredictionService : AIServiceBase, IPredictionService
                 Logger.LogDebug("Forecasting market {ForecastId} for {Asset} over {TimeHorizon}",
                     forecastId, request.AssetSymbol, request.ForecastHorizonDays);
 
+                // Convert AI model to Core model
+                var coreRequest = ConvertToCoreForecastRequest(request);
+
                 // Generate market forecast within the enclave
-                var historicalData = await GatherHistoricalMarketDataAsync(request);
-                var technicalAnalysis = await ApplyTechnicalAnalysisAsync(historicalData, request);
-                var fundamentalFactors = await AnalyzeFundamentalFactorsAsync(request);
-                var forecast = await GenerateComprehensiveForecastAsync(request, historicalData, technicalAnalysis, fundamentalFactors);
+                var coreForecast = await GenerateMarketForecastInEnclaveAsync(coreRequest);
+
+                // Convert Core model back to AI model
+                var forecast = ConvertFromCoreForecast(coreForecast);
 
                 Logger.LogInformation("Generated market forecast {ForecastId} for {Asset} on {Blockchain}",
                     forecastId, request.AssetSymbol, blockchainType);
@@ -590,6 +593,63 @@ public partial class PredictionService : AIServiceBase, IPredictionService
             activeModelCount, totalPredictionCount);
 
         return Task.FromResult(ServiceHealth.Healthy);
+    }
+
+    /// <summary>
+    /// Converts AI MarketForecastRequest to Core MarketForecastRequest.
+    /// </summary>
+    protected CoreModels.MarketForecastRequest ConvertToCoreForecastRequest(Models.MarketForecastRequest request)
+    {
+        return new CoreModels.MarketForecastRequest
+        {
+            Symbol = request.AssetSymbol,
+            TimeHorizon = request.ForecastHorizonDays <= 7 ? CoreModels.ForecastTimeHorizon.ShortTerm :
+                         request.ForecastHorizonDays <= 30 ? CoreModels.ForecastTimeHorizon.MediumTerm :
+                         CoreModels.ForecastTimeHorizon.LongTerm,
+            CurrentPrice = (decimal)request.CurrentPrice,
+            MarketData = request.MarketData ?? new Dictionary<string, object>(),
+            TechnicalIndicators = request.TechnicalIndicators ?? new Dictionary<string, double>(),
+            RiskParameters = request.RiskParameters ?? new Dictionary<string, double>()
+        };
+    }
+
+    /// <summary>
+    /// Converts Core MarketForecast to AI MarketForecast.
+    /// </summary>
+    protected Models.MarketForecast ConvertFromCoreForecast(CoreModels.MarketForecast coreForecast)
+    {
+        return new Models.MarketForecast
+        {
+            AssetSymbol = coreForecast.Symbol,
+            Forecasts = coreForecast.PredictedPrices.Select(p => new Models.PriceForecast
+            {
+                Date = p.Date,
+                PredictedPrice = p.PredictedPrice,
+                Confidence = p.Confidence,
+                Interval = new Models.ConfidenceInterval
+                {
+                    LowerBound = p.Interval?.LowerBound ?? p.PredictedPrice * 0.95m,
+                    UpperBound = p.Interval?.UpperBound ?? p.PredictedPrice * 1.05m,
+                    ConfidenceLevel = p.Interval?.ConfidenceLevel ?? 0.95
+                }
+            }).ToList(),
+            ConfidenceIntervals = coreForecast.ConfidenceIntervals?.ToDictionary(
+                kvp => kvp.Key,
+                kvp => new Models.ConfidenceInterval
+                {
+                    LowerBound = kvp.Value.LowerBound,
+                    UpperBound = kvp.Value.UpperBound,
+                    ConfidenceLevel = kvp.Value.ConfidenceLevel
+                }) ?? new Dictionary<string, Models.ConfidenceInterval>(),
+            Metrics = new Models.ForecastMetrics
+            {
+                MeanAbsoluteError = coreForecast.Metrics?.MeanAbsoluteError ?? 0,
+                RootMeanSquareError = coreForecast.Metrics?.RootMeanSquareError ?? 0,
+                MeanAbsolutePercentageError = coreForecast.Metrics?.MeanAbsolutePercentageError ?? 0,
+                RSquared = coreForecast.Metrics?.RSquared ?? 0
+            },
+            ForecastedAt = coreForecast.ForecastedAt
+        };
     }
 
     /// <summary>

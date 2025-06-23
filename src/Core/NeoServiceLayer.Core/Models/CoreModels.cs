@@ -1033,6 +1033,21 @@ public class MarketForecast
     /// Gets or sets the trading recommendations.
     /// </summary>
     public List<string> TradingRecommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the confidence intervals.
+    /// </summary>
+    public Dictionary<string, ConfidenceInterval> ConfidenceIntervals { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the forecast metrics.
+    /// </summary>
+    public ForecastMetrics Metrics { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the forecast was generated.
+    /// </summary>
+    public DateTime ForecastedAt { get; set; } = DateTime.UtcNow;
 }
 
 /// <summary>
@@ -1132,6 +1147,32 @@ public class ConfidenceInterval
     /// Gets or sets the confidence level.
     /// </summary>
     public double ConfidenceLevel { get; set; }
+}
+
+/// <summary>
+/// Represents forecast metrics.
+/// </summary>
+public class ForecastMetrics
+{
+    /// <summary>
+    /// Gets or sets the mean absolute error.
+    /// </summary>
+    public double MeanAbsoluteError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the root mean square error.
+    /// </summary>
+    public double RootMeanSquareError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the mean absolute percentage error.
+    /// </summary>
+    public double MeanAbsolutePercentageError { get; set; }
+
+    /// <summary>
+    /// Gets or sets the R-squared value.
+    /// </summary>
+    public double RSquared { get; set; }
 }
 
 #endregion

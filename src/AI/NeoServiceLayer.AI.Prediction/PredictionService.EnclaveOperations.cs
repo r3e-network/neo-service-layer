@@ -146,8 +146,8 @@ public partial class PredictionService
         // Consider fundamental factors
         var fundamentalFactors = await AnalyzeFundamentalFactorsAsync(request);
 
-        // Generate comprehensive forecast
-        return await GenerateComprehensiveForecastAsync(request, historicalData, technicalAnalysis, fundamentalFactors);
+        // Generate comprehensive forecast - returns Core model
+        return await GenerateComprehensiveForecastCoreAsync(request, historicalData, technicalAnalysis, fundamentalFactors);
     }
 
 
@@ -301,9 +301,9 @@ public partial class PredictionService
     }
 
     /// <summary>
-    /// Generates comprehensive forecast combining all analysis.
+    /// Generates comprehensive forecast combining all analysis (returns Core model).
     /// </summary>
-    private async Task<CoreModels.MarketForecast> GenerateComprehensiveForecastAsync(
+    private async Task<CoreModels.MarketForecast> GenerateComprehensiveForecastCoreAsync(
         CoreModels.MarketForecastRequest request,
         HistoricalMarketData historicalData,
         TechnicalAnalysis technicalAnalysis,
@@ -333,8 +333,8 @@ public partial class PredictionService
                 new() { Date = DateTime.UtcNow.AddDays(7), PredictedPrice = (decimal)mediumTermTarget, Confidence = confidence },
                 new() { Date = DateTime.UtcNow.AddDays(30), PredictedPrice = (decimal)longTermTarget, Confidence = confidence }
             },
-            ConfidenceIntervals = new Dictionary<string, Models.ConfidenceInterval>(),
-            Metrics = new Models.ForecastMetrics
+            ConfidenceIntervals = new Dictionary<string, CoreModels.ConfidenceInterval>(),
+            Metrics = new CoreModels.ForecastMetrics
             {
                 MeanAbsoluteError = 0.0,
                 RootMeanSquareError = 0.0,
@@ -343,6 +343,22 @@ public partial class PredictionService
             },
             ForecastedAt = DateTime.UtcNow
         };
+    }
+
+    /// <summary>
+    /// Generates comprehensive forecast combining all analysis (returns AI model).
+    /// </summary>
+    private async Task<Models.MarketForecast> GenerateComprehensiveForecastAsync(
+        CoreModels.MarketForecastRequest request,
+        HistoricalMarketData historicalData,
+        TechnicalAnalysis technicalAnalysis,
+        FundamentalFactors fundamentalFactors)
+    {
+        // Generate Core forecast first
+        var coreForecast = await GenerateComprehensiveForecastCoreAsync(request, historicalData, technicalAnalysis, fundamentalFactors);
+
+        // Convert to AI model
+        return ConvertFromCoreForecast(coreForecast);
     }
 
 

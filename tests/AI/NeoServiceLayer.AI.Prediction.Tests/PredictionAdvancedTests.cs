@@ -4,7 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.Prediction;
-using NeoServiceLayer.AI.Prediction.Models;
+using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -87,11 +87,11 @@ public class PredictionAdvancedTests : IDisposable
             _testModelIds["default"] = _defaultModelId;
 
             // Create additional test models that tests expect
-            await CreateTestModel("existing_model_123", "Existing Test Model", PredictionType.TimeSeries);
-            await CreateTestModel("uncertainty_model", "Uncertainty Test Model", PredictionType.Risk);
-            await CreateTestModel("backtest_model", "Backtest Model", PredictionType.MarketTrend);
-            await CreateTestModel("accuracy_test_model", "Accuracy Test Model", PredictionType.TimeSeries);
-            await CreateTestModel("history_model_456", "History Model", PredictionType.Price);
+            await CreateTestModel("existing_model_123", "Existing Test Model", PredictionModels.PredictionType.TimeSeries);
+            await CreateTestModel("uncertainty_model", "Uncertainty Test Model", PredictionModels.PredictionType.Risk);
+            await CreateTestModel("backtest_model", "Backtest Model", PredictionModels.PredictionType.MarketTrend);
+            await CreateTestModel("accuracy_test_model", "Accuracy Test Model", PredictionModels.PredictionType.TimeSeries);
+            await CreateTestModel("history_model_456", "History Model", PredictionModels.PredictionType.Price);
 
             Console.WriteLine($"Created default model with ID: {_defaultModelId}");
         }
@@ -102,7 +102,7 @@ public class PredictionAdvancedTests : IDisposable
         }
     }
 
-    private async Task CreateTestModel(string logicalName, string displayName, PredictionType predictionType)
+    private async Task CreateTestModel(string logicalName, string displayName, PredictionModels.PredictionType predictionType)
     {
         try
         {
@@ -134,8 +134,8 @@ public class PredictionAdvancedTests : IDisposable
         // Arrange
         var request = CreateMarketForecastRequest(
             symbol: "GAS",
-            marketTrend: MarketTrend.Bullish,
-            timeHorizon: ForecastTimeHorizon.ShortTerm,
+            marketTrend: PredictionModels.MarketTrend.Bullish,
+            timeHorizon: PredictionModels.ForecastTimeHorizon.ShortTerm,
             currentPrice: 4.50m);
 
         SetupMarketData("GAS", bullishTrend: true);
@@ -148,7 +148,7 @@ public class PredictionAdvancedTests : IDisposable
         forecast.Symbol.Should().Be("GAS");
         forecast.PredictedPrices.Should().NotBeEmpty();
         forecast.PredictedPrices.Should().HaveCountGreaterThan(5);
-        forecast.OverallTrend.Should().Be(MarketTrend.Bullish);
+        forecast.OverallTrend.Should().Be(PredictionModels.MarketTrend.Bullish);
         forecast.ConfidenceLevel.Should().BeGreaterThan(0.7);
         forecast.PriceTargets.Should().ContainKey("target_high");
         forecast.PriceTargets.Should().ContainKey("target_low");
@@ -161,8 +161,8 @@ public class PredictionAdvancedTests : IDisposable
         // Arrange
         var request = CreateMarketForecastRequest(
             symbol: "NEO",
-            marketTrend: MarketTrend.Bearish,
-            timeHorizon: ForecastTimeHorizon.MediumTerm,
+            marketTrend: PredictionModels.MarketTrend.Bearish,
+            timeHorizon: PredictionModels.ForecastTimeHorizon.MediumTerm,
             currentPrice: 12.80m);
 
         SetupMarketData("NEO", bullishTrend: false);
@@ -171,7 +171,7 @@ public class PredictionAdvancedTests : IDisposable
         var forecast = await _service.ForecastMarketAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        forecast.OverallTrend.Should().Be(MarketTrend.Bearish);
+        forecast.OverallTrend.Should().Be(PredictionModels.MarketTrend.Bearish);
         forecast.ConfidenceLevel.Should().BeGreaterThan(0.6);
         forecast.SupportLevels.Should().NotBeEmpty();
         forecast.ResistanceLevels.Should().NotBeEmpty();
@@ -180,16 +180,16 @@ public class PredictionAdvancedTests : IDisposable
     }
 
     [Theory]
-    [InlineData(ForecastTimeHorizon.ShortTerm, 24, 0.85)]
-    [InlineData(ForecastTimeHorizon.MediumTerm, 168, 0.75)]
-    [InlineData(ForecastTimeHorizon.LongTerm, 720, 0.65)]
+    [InlineData(PredictionModels.ForecastTimeHorizon.ShortTerm, 24, 0.85)]
+    [InlineData(PredictionModels.ForecastTimeHorizon.MediumTerm, 168, 0.75)]
+    [InlineData(PredictionModels.ForecastTimeHorizon.LongTerm, 720, 0.65)]
     public async Task ForecastMarketAsync_VariousTimeHorizons_AppropriatePredictionCounts(
-        ForecastTimeHorizon timeHorizon, int expectedHours, double minConfidence)
+        PredictionModels.ForecastTimeHorizon timeHorizon, int expectedHours, double minConfidence)
     {
         // Arrange
         var request = CreateMarketForecastRequest(
             symbol: "ETH",
-            marketTrend: MarketTrend.Neutral,
+            marketTrend: PredictionModels.MarketTrend.Neutral,
             timeHorizon: timeHorizon,
             currentPrice: 2500m);
 
@@ -212,8 +212,8 @@ public class PredictionAdvancedTests : IDisposable
         // Arrange
         var request = CreateMarketForecastRequest(
             symbol: "VOLATILE_TOKEN",
-            marketTrend: MarketTrend.Volatile,
-            timeHorizon: ForecastTimeHorizon.ShortTerm,
+            marketTrend: PredictionModels.MarketTrend.Volatile,
+            timeHorizon: PredictionModels.ForecastTimeHorizon.ShortTerm,
             currentPrice: 1.50m);
 
         SetupVolatileMarketData("VOLATILE_TOKEN");
@@ -222,7 +222,7 @@ public class PredictionAdvancedTests : IDisposable
         var forecast = await _service.ForecastMarketAsync(request, BlockchainType.NeoX);
 
         // Assert
-        forecast.OverallTrend.Should().Be(MarketTrend.Volatile);
+        forecast.OverallTrend.Should().Be(PredictionModels.MarketTrend.Volatile);
         forecast.RiskFactors.Should().Contain(r => r.Contains("high volatility"));
         forecast.VolatilityMetrics.Should().NotBeNull();
         forecast.VolatilityMetrics!.VaR.Should().BeGreaterThan(0.05); // Value at Risk > 5%
@@ -622,13 +622,13 @@ public class PredictionAdvancedTests : IDisposable
                           .ReturnsAsync(true);
     }
 
-    private MarketForecastRequest CreateMarketForecastRequest(
+    private PredictionModels.MarketForecastRequest CreateMarketForecastRequest(
         string symbol,
-        MarketTrend marketTrend,
-        ForecastTimeHorizon timeHorizon,
+        PredictionModels.MarketTrend marketTrend,
+        PredictionModels.ForecastTimeHorizon timeHorizon,
         decimal currentPrice)
     {
-        return new MarketForecastRequest
+        return new PredictionModels.MarketForecastRequest
         {
             Symbol = symbol,
             TimeHorizon = timeHorizon,
@@ -682,12 +682,12 @@ public class PredictionAdvancedTests : IDisposable
         };
     }
 
-    private PredictionModelDefinition CreatePredictionModelDefinition(
+    private PredictionModels.PredictionModelDefinition CreatePredictionModelDefinition(
         string modelType,
         string algorithm,
         string[] features)
     {
-        return new PredictionModelDefinition
+        return new PredictionModels.PredictionModelDefinition
         {
             Name = $"{modelType} Model",
             Type = AIModelType.Prediction,
@@ -708,7 +708,7 @@ public class PredictionAdvancedTests : IDisposable
                 ["dropout_rate"] = 0.2,
                 ["regularization"] = 0.01
             },
-            PredictionType = PredictionType.TimeSeries,
+            PredictionType = PredictionModels.PredictionType.TimeSeries,
             TargetVariable = "price"
         };
     }
@@ -965,9 +965,9 @@ public class PredictionAdvancedTests : IDisposable
 
     private void SetupExistingPredictionModels()
     {
-        var models = new List<PredictionModel>
+        var models = new List<PredictionModels.PredictionModel>
         {
-            new PredictionModel
+            new PredictionModels.PredictionModel
             {
                 Id = "pred_model_1",
                 Name = "TimeSeries Model",
@@ -975,7 +975,7 @@ public class PredictionAdvancedTests : IDisposable
                 Accuracy = 0.85,
                 CreatedAt = DateTime.UtcNow.AddDays(-30)
             },
-            new PredictionModel
+            new PredictionModels.PredictionModel
             {
                 Id = "pred_model_2",
                 Name = "Sentiment Model",
@@ -983,7 +983,7 @@ public class PredictionAdvancedTests : IDisposable
                 Accuracy = 0.78,
                 CreatedAt = DateTime.UtcNow.AddDays(-20)
             },
-            new PredictionModel
+            new PredictionModels.PredictionModel
             {
                 Id = "pred_model_3",
                 Name = "Market Forecast Model",
@@ -991,7 +991,7 @@ public class PredictionAdvancedTests : IDisposable
                 Accuracy = 0.82,
                 CreatedAt = DateTime.UtcNow.AddDays(-15)
             },
-            new PredictionModel
+            new PredictionModels.PredictionModel
             {
                 Id = "pred_model_4",
                 Name = "Deep Learning Model",
@@ -1008,7 +1008,7 @@ public class PredictionAdvancedTests : IDisposable
 
     private void SetupExistingPredictionModel(string modelId)
     {
-        var model = new PredictionModel
+        var model = new PredictionModels.PredictionModel
         {
             Id = modelId,
             Name = "Existing Model",
@@ -1023,7 +1023,7 @@ public class PredictionAdvancedTests : IDisposable
 
     private void SetupTrainedPredictionModel(string modelId, string modelType)
     {
-        var model = new PredictionModel
+        var model = new PredictionModels.PredictionModel
         {
             Id = modelId,
             Name = $"Trained {modelType} Model",
@@ -1084,7 +1084,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         foreach (var modelId in modelIds)
         {
-            var model = new PredictionModel
+            var model = new PredictionModels.PredictionModel
             {
                 Id = modelId,
                 Name = $"{modelId} Model",
@@ -1129,7 +1129,7 @@ public class PredictionAdvancedTests : IDisposable
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(longTermData)));
     }
 
-    private Dictionary<string, object> CreateMarketDataContext(string symbol, MarketTrend trend)
+    private Dictionary<string, object> CreateMarketDataContext(string symbol, PredictionModels.MarketTrend trend)
     {
         return new Dictionary<string, object>
         {
