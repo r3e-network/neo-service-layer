@@ -99,7 +99,7 @@ public class MultiServiceOrchestrationTests : IDisposable
         {
             AssetSymbol = "USDC",
             AssetName = "USD Coin",
-            ReserveAddresses = new[] { 
+            ReserveAddresses = new[] {
                 "0x1234567890123456789012345678901234567890",
                 "0x2345678901234567890123456789012345678901",
                 "0x3456789012345678901234567890123456789012"

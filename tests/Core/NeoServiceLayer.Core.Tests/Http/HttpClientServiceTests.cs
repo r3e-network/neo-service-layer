@@ -131,14 +131,19 @@ public class HttpClientServiceTests : IDisposable
     {
         // Arrange
         var requestUri = "https://api.example.com/test";
-        var cancellationToken = new CancellationToken();
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        CancellationToken capturedToken = default;
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri!.ToString() == requestUri),
-                ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
-            .ReturnsAsync(expectedResponse);
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.RequestUri!.ToString() == requestUri &&
+                    req.Method == HttpMethod.Get),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(expectedResponse)
+            .Callback<HttpRequestMessage, CancellationToken>((req, ct) => capturedToken = ct);
 
         // Act
         var response = await _httpClientService.GetAsync(requestUri, cancellationToken);
@@ -146,6 +151,7 @@ public class HttpClientServiceTests : IDisposable
         // Assert
         response.Should().NotBeNull();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        capturedToken.CanBeCanceled.Should().Be(true);
     }
 
     [Fact]
@@ -203,14 +209,19 @@ public class HttpClientServiceTests : IDisposable
     {
         // Arrange
         var requestUri = new Uri("https://api.example.com/test");
-        var cancellationToken = new CancellationToken();
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        CancellationToken capturedToken = default;
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.Is<HttpRequestMessage>(req => req.RequestUri == requestUri),
-                ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
-            .ReturnsAsync(expectedResponse);
+                ItExpr.Is<HttpRequestMessage>(req =>
+                    req.RequestUri == requestUri &&
+                    req.Method == HttpMethod.Get),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(expectedResponse)
+            .Callback<HttpRequestMessage, CancellationToken>((req, ct) => capturedToken = ct);
 
         // Act
         var response = await _httpClientService.GetAsync(requestUri, cancellationToken);
@@ -218,6 +229,7 @@ public class HttpClientServiceTests : IDisposable
         // Assert
         response.Should().NotBeNull();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        capturedToken.CanBeCanceled.Should().Be(true);
     }
 
     #endregion
@@ -260,16 +272,19 @@ public class HttpClientServiceTests : IDisposable
         // Arrange
         var requestUri = "https://api.example.com/post";
         var requestContent = new StringContent("test data");
-        var cancellationToken = new CancellationToken();
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        CancellationToken capturedToken = default;
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.RequestUri!.ToString() == requestUri &&
                     req.Method == HttpMethod.Post),
-                ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
-            .ReturnsAsync(expectedResponse);
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(expectedResponse)
+            .Callback<HttpRequestMessage, CancellationToken>((req, ct) => capturedToken = ct);
 
         // Act
         var response = await _httpClientService.PostAsync(requestUri, requestContent, cancellationToken);
@@ -277,6 +292,7 @@ public class HttpClientServiceTests : IDisposable
         // Assert
         response.Should().NotBeNull();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        capturedToken.CanBeCanceled.Should().Be(true);
     }
 
     #endregion
@@ -319,16 +335,19 @@ public class HttpClientServiceTests : IDisposable
         // Arrange
         var requestUri = new Uri("https://api.example.com/post");
         var requestContent = new StringContent("test data");
-        var cancellationToken = new CancellationToken();
+        var cts = new CancellationTokenSource();
+        var cancellationToken = cts.Token;
         var expectedResponse = new HttpResponseMessage(HttpStatusCode.OK);
+        CancellationToken capturedToken = default;
 
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
                 ItExpr.Is<HttpRequestMessage>(req =>
                     req.RequestUri == requestUri &&
                     req.Method == HttpMethod.Post),
-                ItExpr.Is<CancellationToken>(ct => ct == cancellationToken))
-            .ReturnsAsync(expectedResponse);
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(expectedResponse)
+            .Callback<HttpRequestMessage, CancellationToken>((req, ct) => capturedToken = ct);
 
         // Act
         var response = await _httpClientService.PostAsync(requestUri, requestContent, cancellationToken);
@@ -336,6 +355,7 @@ public class HttpClientServiceTests : IDisposable
         // Assert
         response.Should().NotBeNull();
         response.StatusCode.Should().Be(HttpStatusCode.OK);
+        capturedToken.CanBeCanceled.Should().Be(true);
     }
 
     #endregion

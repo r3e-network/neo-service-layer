@@ -1,5 +1,5 @@
+﻿using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
-using System.Collections.Generic;
 
 namespace NeoServiceLayer.Tests.Common;
 
@@ -20,11 +20,11 @@ public static class TestConfiguration
     {
         // Set JWT secret key for authentication tests
         Environment.SetEnvironmentVariable("JWT_SECRET_KEY", TestJwtSecretKey);
-        
+
         // Set SGX mode to simulation for tests
         Environment.SetEnvironmentVariable("SGX_MODE", "SIM");
         Environment.SetEnvironmentVariable("SGX_DEBUG", "1");
-        
+
         // Set environment to test
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");
         Environment.SetEnvironmentVariable("ASPNETCORE_ENVIRONMENT", "Testing");
@@ -43,12 +43,12 @@ public static class TestConfiguration
             ["JwtSettings:Issuer"] = "NeoServiceLayer.Test",
             ["JwtSettings:Audience"] = "NeoServiceLayer.Test",
             ["JwtSettings:ExpirationInMinutes"] = "60",
-            
+
             // TEE Configuration
             ["Tee:EnclaveType"] = "SGX",
             ["Tee:AttestationServiceUrl"] = "https://test-attestation.example.com",
             ["Tee:EnableRemoteAttestation"] = "false",
-            
+
             // Enclave Configuration
             ["Enclave:SGXMode"] = "SIM",
             ["Enclave:EnableDebug"] = "true",
@@ -64,18 +64,18 @@ public static class TestConfiguration
             ["Enclave:JavaScript:MaxExecutionTime"] = "00:00:05",
             ["Enclave:JavaScript:MaxMemoryUsage"] = "67108864",
             ["Enclave:Performance:EnableMetrics"] = "true",
-            
+
             // Blockchain Configuration
             ["Blockchain:Neo:RpcUrl"] = "http://localhost:20332",
             ["Blockchain:Neo:Network"] = "TestNet",
             ["Blockchain:NeoX:RpcUrl"] = "http://localhost:8545",
             ["Blockchain:NeoX:ChainId"] = "12227332",
-            
+
             // Service Configuration
             ["ServiceDefaults:MaxRetries"] = "3",
             ["ServiceDefaults:TimeoutSeconds"] = "30",
             ["ServiceDefaults:EnableCaching"] = "true",
-            
+
             // Test-specific settings
             ["Testing:EnableDetailedLogs"] = "true",
             ["Testing:MockExternalServices"] = "true"

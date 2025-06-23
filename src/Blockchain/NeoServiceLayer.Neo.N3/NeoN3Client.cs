@@ -402,7 +402,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
         {
             return sender.GetString() ?? "Unknown";
         }
-        
+
         // Fall back to signers array if sender field not present
         if (txData.TryGetProperty("signers", out var signers) && signers.GetArrayLength() > 0)
         {
@@ -434,7 +434,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
                 return valueElement.GetDecimal();
             }
         }
-        
+
         // This would need to parse the script to extract transfer amounts
         // For now, return 0 for production scenarios
         return 0m;

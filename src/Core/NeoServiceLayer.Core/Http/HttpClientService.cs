@@ -34,8 +34,16 @@ public class HttpClientService : IHttpClientService, IDisposable
     /// <inheritdoc/>
     public TimeSpan Timeout
     {
-        get => _httpClient.Timeout;
-        set => _httpClient.Timeout = value;
+        get
+        {
+            ThrowIfDisposed();
+            return _httpClient.Timeout;
+        }
+        set
+        {
+            ThrowIfDisposed();
+            _httpClient.Timeout = value;
+        }
     }
 
     /// <inheritdoc/>

@@ -90,7 +90,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogError(ex, "Failed to get block height from {RpcUrl}", _rpcUrl);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -141,7 +141,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogError(ex, "Failed to get block at height {Height} from {RpcUrl}", height, _rpcUrl);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -191,7 +191,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogError(ex, "Failed to get block with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -243,7 +243,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogError(ex, "Failed to get transaction with hash {Hash} from {RpcUrl}", hash, _rpcUrl);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -305,7 +305,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
             _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}",
                 transaction.Sender, transaction.Recipient);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);
@@ -512,7 +512,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
         {
             _logger.LogError(ex, "Failed to call contract method {Method} on {ContractAddress}", method, contractAddress);
             // Check if this is an RPC error by looking for specific patterns in the message
-            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) || 
+            if (ex.Message.Contains("Method not found", StringComparison.OrdinalIgnoreCase) ||
                 ex.Message.Contains("RPC", StringComparison.OrdinalIgnoreCase))
             {
                 throw new InvalidOperationException($"RPC Error: {ex.Message}", ex);

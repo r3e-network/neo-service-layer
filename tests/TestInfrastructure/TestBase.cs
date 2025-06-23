@@ -174,12 +174,12 @@ public abstract class TestBase
         const string base58Chars = "123456789ABCDEFGHJKLMNPQRSTUVWXYZabcdefghijkmnopqrstuvwxyz";
         var random = new Random();
         var addressChars = new char[33];
-        
+
         for (int i = 0; i < 33; i++)
         {
             addressChars[i] = base58Chars[random.Next(base58Chars.Length)];
         }
-        
+
         // Neo N3 addresses start with 'N'
         return $"N{new string(addressChars)}";
     }

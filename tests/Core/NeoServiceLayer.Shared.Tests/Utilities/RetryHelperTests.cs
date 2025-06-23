@@ -241,8 +241,9 @@ public class RetryHelperTests
         var delay2 = executionTimes[2] - executionTimes[1];
         var delay3 = executionTimes[3] - executionTimes[2];
 
-        delay2.Should().BeGreaterThan(delay1);
-        delay3.Should().BeGreaterThan(delay2);
+        // Allow for some timing variance due to system scheduling
+        delay2.TotalMilliseconds.Should().BeGreaterThan(delay1.TotalMilliseconds * 1.5);
+        delay3.TotalMilliseconds.Should().BeGreaterThan(delay2.TotalMilliseconds * 1.5);
     }
 
     [Fact]

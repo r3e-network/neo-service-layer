@@ -412,7 +412,7 @@ public class PredictionControllerTests
             .ReturnsAsync(expectedHistory);
 
         // Act
-        var result = await _controller.GetPredictionHistory(modelId, "NeoN3", 1, 20);
+        var result = await _controller.GetPredictionHistory("NeoN3", modelId, 1, 20);
 
         // Assert
         var okResult = Assert.IsType<OkObjectResult>(result);
@@ -431,7 +431,7 @@ public class PredictionControllerTests
     public async Task GetPredictionHistory_WithInvalidPage_ReturnsBadRequest()
     {
         // Act
-        var result = await _controller.GetPredictionHistory("model-123", "NeoN3", 0, 20);
+        var result = await _controller.GetPredictionHistory("NeoN3", "model-123", 0, 20);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
@@ -444,7 +444,7 @@ public class PredictionControllerTests
     public async Task GetPredictionHistory_WithInvalidPageSize_ReturnsBadRequest()
     {
         // Act
-        var result = await _controller.GetPredictionHistory("model-123", "NeoN3", 1, 101);
+        var result = await _controller.GetPredictionHistory("NeoN3", "model-123", 1, 101);
 
         // Assert
         var badRequestResult = Assert.IsType<BadRequestObjectResult>(result);
