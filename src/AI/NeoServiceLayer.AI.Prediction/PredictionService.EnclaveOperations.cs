@@ -2,6 +2,7 @@
 using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -132,7 +133,7 @@ public partial class PredictionService
 
 
 
-    private async Task<MarketForecast> GenerateMarketForecastInEnclaveAsync(MarketForecastRequest request)
+    private async Task<CoreModels.MarketForecast> GenerateMarketForecastInEnclaveAsync(CoreModels.MarketForecastRequest request)
     {
         // Perform actual comprehensive market analysis
 
@@ -202,7 +203,7 @@ public partial class PredictionService
     /// <summary>
     /// Gathers historical market data for forecasting.
     /// </summary>
-    private async Task<HistoricalMarketData> GatherHistoricalMarketDataAsync(Models.MarketForecastRequest request)
+    private async Task<HistoricalMarketData> GatherHistoricalMarketDataAsync(CoreModels.MarketForecastRequest request)
     {
         await Task.Delay(200); // Simulate data gathering
 
@@ -235,7 +236,7 @@ public partial class PredictionService
 
         return new HistoricalMarketData
         {
-            Asset = request.AssetSymbol,
+            Asset = request.Symbol,
             DataPoints = dataPoints,
             StartDate = currentTime.AddDays(-30),
             EndDate = currentTime,
@@ -246,7 +247,7 @@ public partial class PredictionService
     /// <summary>
     /// Applies technical analysis to historical data.
     /// </summary>
-    private async Task<TechnicalAnalysis> ApplyTechnicalAnalysisAsync(HistoricalMarketData historicalData, Models.MarketForecastRequest request)
+    private async Task<TechnicalAnalysis> ApplyTechnicalAnalysisAsync(HistoricalMarketData historicalData, CoreModels.MarketForecastRequest request)
     {
         await Task.Delay(150); // Simulate technical analysis
 
@@ -280,7 +281,7 @@ public partial class PredictionService
     /// <summary>
     /// Analyzes fundamental factors affecting the asset.
     /// </summary>
-    private async Task<FundamentalFactors> AnalyzeFundamentalFactorsAsync(Models.MarketForecastRequest request)
+    private async Task<FundamentalFactors> AnalyzeFundamentalFactorsAsync(CoreModels.MarketForecastRequest request)
     {
         await Task.Delay(100); // Simulate fundamental analysis
 
@@ -302,8 +303,8 @@ public partial class PredictionService
     /// <summary>
     /// Generates comprehensive forecast combining all analysis.
     /// </summary>
-    private async Task<Models.MarketForecast> GenerateComprehensiveForecastAsync(
-        Models.MarketForecastRequest request,
+    private async Task<CoreModels.MarketForecast> GenerateComprehensiveForecastAsync(
+        CoreModels.MarketForecastRequest request,
         HistoricalMarketData historicalData,
         TechnicalAnalysis technicalAnalysis,
         FundamentalFactors fundamentalFactors)
@@ -323,10 +324,10 @@ public partial class PredictionService
         // Identify risk factors
         var riskFactors = IdentifyRiskFactors(technicalAnalysis, fundamentalFactors);
 
-        return new Models.MarketForecast
+        return new CoreModels.MarketForecast
         {
-            AssetSymbol = request.AssetSymbol,
-            Forecasts = new List<Models.PriceForecast>
+            Symbol = request.Symbol,
+            PredictedPrices = new List<CoreModels.PriceForecast>
             {
                 new() { Date = DateTime.UtcNow.AddDays(1), PredictedPrice = (decimal)shortTermTarget, Confidence = confidence },
                 new() { Date = DateTime.UtcNow.AddDays(7), PredictedPrice = (decimal)mediumTermTarget, Confidence = confidence },

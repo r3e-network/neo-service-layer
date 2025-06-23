@@ -105,8 +105,8 @@ public class PatternRecognitionServiceTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.FraudScore.Should().BeLessThan(0.3);
-        result.RiskLevel.Should().Be(Models.RiskLevel.Low);
+        result.RiskScore.Should().BeLessThan(0.3);
+        result.Details["risk_level"].ToString().Should().Be("Low");
         result.RiskFactors.Should().BeEmpty();
         VerifyLoggerCalled(LogLevel.Information, "Fraud detection completed");
     }
@@ -130,8 +130,8 @@ public class PatternRecognitionServiceTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.FraudScore.Should().BeGreaterThan(0.7);
-        result.RiskLevel.Should().Be(Models.RiskLevel.High);
+        result.RiskScore.Should().BeGreaterThan(0.7);
+        result.Details["risk_level"].ToString().Should().Be("High");
         result.RiskFactors.Should().NotBeEmpty();
         result.RiskFactors.Should().ContainKey("High transaction velocity");
         result.RiskFactors.Should().ContainKey("Unusual transaction amount");
@@ -141,12 +141,12 @@ public class PatternRecognitionServiceTests : IDisposable
     [Theory]
     [Trait("Category", "Unit")]
     [Trait("Component", "FraudDetection")]
-    [InlineData(1000, false, false, false, Models.RiskLevel.Low)]
-    [InlineData(15000, false, false, false, Models.RiskLevel.Medium)]
-    [InlineData(75000, true, true, true, Models.RiskLevel.High)]
-    [InlineData(5000, true, false, false, Models.RiskLevel.Medium)]
+    [InlineData(1000, false, false, false, "Low")]
+    [InlineData(15000, false, false, false, "Medium")]
+    [InlineData(75000, true, true, true, "High")]
+    [InlineData(5000, true, false, false, "Medium")]
     public async Task DetectFraudAsync_VariousRiskLevels_ReturnsCorrectClassification(
-        decimal amount, bool isNewAddress, bool highFrequency, bool unusualTime, Models.RiskLevel expectedRiskLevel)
+        decimal amount, bool isNewAddress, bool highFrequency, bool unusualTime, string expectedRiskLevel)
     {
         // Arrange
         var request = CreateFraudDetectionRequest(amount, isNewAddress, highFrequency, unusualTime);
@@ -156,7 +156,7 @@ public class PatternRecognitionServiceTests : IDisposable
         var result = await _service.DetectFraudAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        result.RiskLevel.Should().Be(expectedRiskLevel);
+        result.Details["risk_level"].ToString().Should().Be(expectedRiskLevel);
     }
 
     #endregion
@@ -183,7 +183,7 @@ public class PatternRecognitionServiceTests : IDisposable
         var result = await _service.DetectFraudAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        result.FraudScore.Should().BeGreaterThan(0.5);
+        result.RiskScore.Should().BeGreaterThan(0.5);
         result.RiskFactors.Should().ContainKey("High transaction velocity");
     }
 
@@ -207,7 +207,7 @@ public class PatternRecognitionServiceTests : IDisposable
         var result = await _service.DetectFraudAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        result.FraudScore.Should().BeLessThan(0.4);
+        result.RiskScore.Should().BeLessThan(0.4);
         result.RiskFactors.Should().NotContainKey("High transaction velocity");
     }
 
@@ -240,11 +240,11 @@ public class PatternRecognitionServiceTests : IDisposable
         // Assert
         if (shouldBeSuspicious)
         {
-            result.FraudScore.Should().BeGreaterThan(0.3);
+            result.RiskScore.Should().BeGreaterThan(0.3);
         }
         else
         {
-            result.FraudScore.Should().BeLessThan(0.5);
+            result.RiskScore.Should().BeLessThan(0.5);
         }
     }
 
@@ -277,7 +277,7 @@ public class PatternRecognitionServiceTests : IDisposable
         var result = await _service.DetectFraudAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        result.FraudScore.Should().BeGreaterThan(0.7);
+        result.RiskScore.Should().BeGreaterThan(0.7);
         result.RiskFactors.Should().ContainKey("Matches known fraud patterns");
     }
 
@@ -312,7 +312,7 @@ public class PatternRecognitionServiceTests : IDisposable
         var result = await _service.DetectFraudAsync(request, BlockchainType.NeoN3);
 
         // Assert
-        result.FraudScore.Should().BeGreaterThan(0.5);
+        result.RiskScore.Should().BeGreaterThan(0.5);
         result.RiskFactors.Should().ContainKey("Poor network reputation");
     }
 
@@ -334,7 +334,7 @@ public class PatternRecognitionServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.AnomalyScore.Should().BeLessThan(0.3);
-        result.Anomalies.Should().BeEmpty();
+        result.DetectedAnomalies.Should().BeEmpty();
     }
 
     [Fact]
@@ -351,7 +351,7 @@ public class PatternRecognitionServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.AnomalyScore.Should().BeGreaterThan(0.7);
-        result.Anomalies.Should().NotBeEmpty();
+        result.DetectedAnomalies.Should().NotBeEmpty();
     }
 
     #endregion
@@ -406,7 +406,7 @@ public class PatternRecognitionServiceTests : IDisposable
             .ReturnsAsync(true);
     }
 
-    private static Models.FraudDetectionRequest CreateFraudDetectionRequest(
+    private static Core.Models.FraudDetectionRequest CreateFraudDetectionRequest(
         decimal amount,
         bool isNewAddress,
         bool highFrequency,
@@ -415,49 +415,56 @@ public class PatternRecognitionServiceTests : IDisposable
         TimeSpan? timeWindow = null,
         string senderAddress = "0x1234567890123456789012345678901234567890")
     {
-        return new Models.FraudDetectionRequest
+        return new Core.Models.FraudDetectionRequest
         {
             TransactionId = Guid.NewGuid().ToString(),
-            FromAddress = senderAddress,
-            ToAddress = "0xabcdef1234567890abcdef1234567890abcdef12",
-            Amount = amount,
-            Timestamp = DateTime.UtcNow,
-            Features = new Dictionary<string, object>
+            TransactionData = new Dictionary<string, object>
             {
+                ["amount"] = amount,
+                ["sender_address"] = senderAddress,
+                ["recipient_address"] = "0xabcdef1234567890abcdef1234567890abcdef12",
+                ["timestamp"] = DateTime.UtcNow,
                 ["is_new_address"] = isNewAddress,
                 ["high_frequency"] = highFrequency,
                 ["unusual_time_pattern"] = unusualTimePattern,
                 ["transaction_count"] = transactionCount,
                 ["time_window"] = timeWindow ?? TimeSpan.FromHours(1)
             },
-            Threshold = 0.8,
-            Metadata = new Dictionary<string, object>
+            Parameters = new Dictionary<string, object>
             {
-                ["test_case"] = true
-            }
+                ["include_historical"] = true,
+                ["analysis_depth"] = "comprehensive"
+            },
+            Threshold = 0.8,
+            Sensitivity = Core.Models.DetectionSensitivity.Standard,
+            IncludeHistoricalAnalysis = true
         };
     }
 
-    private static Models.AnomalyDetectionRequest CreateNormalAnomalyDetectionRequest()
+    private static Core.Models.AnomalyDetectionRequest CreateNormalAnomalyDetectionRequest()
     {
         // Create normal data points (no anomalies expected)
         var dataPoints = Enumerable.Range(0, 100)
             .Select(i => 1000.0 + (i * 10))
             .ToArray();
 
-        return new Models.AnomalyDetectionRequest
+        return new Core.Models.AnomalyDetectionRequest
         {
-            DataPoints = dataPoints,
-            FeatureNames = new[] { "amount", "hour", "random_factor" },
-            ModelId = "default-anomaly-model",
-            Metadata = new Dictionary<string, object>
+            Data = new Dictionary<string, object>
             {
+                ["data_points"] = dataPoints,
+                ["feature_names"] = new[] { "amount", "hour", "random_factor" }
+            },
+            Parameters = new Dictionary<string, object>
+            {
+                ["model_id"] = "default-anomaly-model",
                 ["test_case"] = "normal_pattern"
-            }
+            },
+            Threshold = 0.7
         };
     }
 
-    private static Models.AnomalyDetectionRequest CreateAnomalousAnomalyDetectionRequest()
+    private static Core.Models.AnomalyDetectionRequest CreateAnomalousAnomalyDetectionRequest()
     {
         // Create data with clear anomalies
         var normalData = Enumerable.Range(0, 90)
@@ -467,15 +474,19 @@ public class PatternRecognitionServiceTests : IDisposable
         // Add anomalous data points
         normalData.AddRange(new[] { 100000.0, 99999.0, 150000.0 });
 
-        return new Models.AnomalyDetectionRequest
+        return new Core.Models.AnomalyDetectionRequest
         {
-            DataPoints = normalData.ToArray(),
-            FeatureNames = new[] { "amount", "hour", "random_factor" },
-            ModelId = "default-anomaly-model",
-            Metadata = new Dictionary<string, object>
+            Data = new Dictionary<string, object>
             {
+                ["data_points"] = normalData.ToArray(),
+                ["feature_names"] = new[] { "amount", "hour", "random_factor" }
+            },
+            Parameters = new Dictionary<string, object>
+            {
+                ["model_id"] = "default-anomaly-model",
                 ["test_case"] = "anomalous_pattern"
-            }
+            },
+            Threshold = 0.7
         };
     }
 

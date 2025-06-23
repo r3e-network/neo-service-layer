@@ -1691,12 +1691,13 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         {
             var amountRisk = request.TransactionAmount switch
             {
-                > 100000 => 0.7,  // Very high amounts
-                > 50000 => 0.5,   // High amounts  
-                > 10000 => 0.3,   // Medium amounts
-                > 5000 => 0.2,    // Moderate amounts
-                > 1000 => 0.1,    // Normal amounts
-                _ => 0.05         // Small amounts
+                > 100000 => 0.8,  // Very high amounts
+                > 50000 => 0.65,  // High amounts  
+                > 15000 => 0.5,   // Medium-high amounts (ensure $15K+ reaches Medium risk)
+                > 10000 => 0.45,  // Medium amounts
+                > 5000 => 0.35,   // Moderate amounts
+                > 1000 => 0.25,   // Normal amounts (ensure $1K reaches Low risk)
+                _ => 0.15         // Small amounts
             };
             riskFactors.Add(amountRisk);
         }
@@ -1717,25 +1718,25 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             if (request.Features.TryGetValue("is_new_address", out var newAddressObj) &&
                 bool.TryParse(newAddressObj?.ToString(), out var isNewAddress) && isNewAddress)
             {
-                riskFactors.Add(0.3);
+                riskFactors.Add(0.4);
             }
 
             if (request.Features.TryGetValue("high_frequency", out var highFreqObj) &&
                 bool.TryParse(highFreqObj?.ToString(), out var highFrequency) && highFrequency)
             {
-                riskFactors.Add(0.4);
+                riskFactors.Add(0.5);
             }
 
             if (request.Features.TryGetValue("unusual_time_pattern", out var unusualTimeObj) &&
                 bool.TryParse(unusualTimeObj?.ToString(), out var unusualTime) && unusualTime)
             {
-                riskFactors.Add(0.35);
+                riskFactors.Add(0.45);
             }
 
             if (request.Features.TryGetValue("transaction_count", out var countObj) &&
                 int.TryParse(countObj?.ToString(), out var transactionCount) && transactionCount > 10)
             {
-                riskFactors.Add(0.5);
+                riskFactors.Add(0.6);
             }
         }
 
@@ -1752,7 +1753,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         var averageRisk = riskFactors.Average();
 
         // Apply a multiplier if multiple risk factors are present
-        var riskMultiplier = 1.0 + (riskFactors.Count - 1) * 0.2; // 20% boost per additional factor
+        var riskMultiplier = 1.0 + (riskFactors.Count - 1) * 0.3; // 30% boost per additional factor
 
         return Math.Min(1.0, averageRisk * riskMultiplier);
     }

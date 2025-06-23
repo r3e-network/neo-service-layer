@@ -63,6 +63,72 @@ public class PatternRecognitionAdvancedTests : IDisposable
     {
         await _service.InitializeAsync();
         _service.IsEnclaveInitialized.Should().BeTrue();
+        
+        // Create required test models
+        await CreateTestModelsAsync();
+    }
+    
+    private readonly Dictionary<string, string> _testModelIds = new();
+    
+    private async Task CreateTestModelsAsync()
+    {
+        // Create test models that the tests expect
+        var modelDefinitions = new Dictionary<string, PatternModelDefinition>
+        {
+            ["large_dataset"] = new PatternModelDefinition
+            {
+                Name = "Large Dataset Pattern Model",
+                Description = "Model for analyzing large datasets",
+                PatternType = PatternRecognitionType.BehavioralAnalysis,
+                Algorithm = "Random Forest",
+                InputFeatures = new List<string> { "transaction_amount", "frequency", "timing" },
+                OutputTargets = new List<string> { "fraud_probability", "risk_score" },
+                Metadata = new Dictionary<string, object> { ["test_model"] = true }
+            },
+            ["temporal"] = new PatternModelDefinition
+            {
+                Name = "Temporal Pattern Model", 
+                Description = "Model for temporal analysis",
+                PatternType = PatternRecognitionType.TemporalPattern,
+                Algorithm = "LSTM",
+                InputFeatures = new List<string> { "timestamp", "amount", "frequency" },
+                OutputTargets = new List<string> { "anomaly_score", "temporal_risk" },
+                Metadata = new Dictionary<string, object> { ["test_model"] = true }
+            },
+            ["network"] = new PatternModelDefinition
+            {
+                Name = "Network Pattern Model",
+                Description = "Model for network analysis", 
+                PatternType = PatternRecognitionType.NetworkAnalysis,
+                Algorithm = "Graph Neural Network",
+                InputFeatures = new List<string> { "centrality", "clustering", "connectivity" },
+                OutputTargets = new List<string> { "network_risk", "community_score" },
+                Metadata = new Dictionary<string, object> { ["test_model"] = true }
+            },
+            ["transaction_flow"] = new PatternModelDefinition
+            {
+                Name = "Transaction Flow Pattern Model",
+                Description = "Model for transaction flow analysis",
+                PatternType = PatternRecognitionType.FraudDetection,
+                Algorithm = "Decision Tree",
+                InputFeatures = new List<string> { "flow_pattern", "velocity", "complexity" },
+                OutputTargets = new List<string> { "flow_risk", "pattern_confidence" },
+                Metadata = new Dictionary<string, object> { ["test_model"] = true }
+            }
+        };
+
+        foreach (var kvp in modelDefinitions)
+        {
+            try
+            {
+                var modelId = await _service.CreatePatternModelAsync(kvp.Value, BlockchainType.NeoN3);
+                _testModelIds[kvp.Key] = modelId;
+            }
+            catch
+            {
+                // Ignore errors during test setup - models might already exist
+            }
+        }
     }
 
     #region Behavior Analysis Tests
@@ -620,9 +686,14 @@ public class PatternRecognitionAdvancedTests : IDisposable
         IEnumerable<object> dataPoints,
         AnalysisDepth analysisDepth = AnalysisDepth.Standard)
     {
+        // Use the stored model ID if available, otherwise create a fallback
+        var modelId = _testModelIds.TryGetValue(patternType, out var storedId) 
+            ? storedId 
+            : "test_model_" + patternType;
+            
         return new PatternAnalysisRequest
         {
-            ModelId = "test_model_" + patternType,
+            ModelId = modelId,
             InputData = new Dictionary<string, object>
             {
                 ["pattern_type"] = patternType,

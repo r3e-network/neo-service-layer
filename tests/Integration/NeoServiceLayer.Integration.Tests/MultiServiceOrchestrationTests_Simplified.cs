@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Configuration;
@@ -19,6 +20,120 @@ using AutomationSvc = NeoServiceLayer.Services.Automation;
 using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
 
 namespace NeoServiceLayer.Integration.Tests;
+
+/// <summary>
+/// Mock implementation of IServiceConfiguration for testing.
+/// </summary>
+public class MockServiceConfiguration : IServiceConfiguration
+{
+    private readonly Dictionary<string, object> _values = new();
+
+    public T? GetValue<T>(string key)
+    {
+        if (_values.TryGetValue(key, out var value))
+        {
+            try
+            {
+                if (value is T typedValue)
+                    return typedValue;
+                return (T?)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return default;
+            }
+        }
+        return default;
+    }
+
+    public T GetValue<T>(string key, T defaultValue)
+    {
+        if (_values.TryGetValue(key, out var value))
+        {
+            try
+            {
+                if (value is T typedValue)
+                    return typedValue;
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return defaultValue;
+            }
+        }
+        return defaultValue;
+    }
+
+    public void SetValue<T>(string key, T value)
+    {
+        _values[key] = value!;
+    }
+
+    public bool ContainsKey(string key)
+    {
+        return _values.ContainsKey(key);
+    }
+
+    public bool RemoveKey(string key)
+    {
+        return _values.Remove(key);
+    }
+
+    public IEnumerable<string> GetAllKeys()
+    {
+        return _values.Keys;
+    }
+
+    public IServiceConfiguration? GetSection(string sectionName)
+    {
+        // For testing, return a new instance
+        return new MockServiceConfiguration();
+    }
+}
+
+/// <summary>
+/// Mock implementation of IHttpClientService for testing.
+/// </summary>
+public class MockHttpClientService : IHttpClientService
+{
+    public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+
+    public Task<HttpResponseMessage> GetAsync(string requestUri, CancellationToken cancellationToken = default)
+    {
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"data\": \"mock\"}")
+        };
+        return Task.FromResult(response);
+    }
+
+    public Task<HttpResponseMessage> GetAsync(Uri requestUri, CancellationToken cancellationToken = default)
+    {
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"data\": \"mock\"}")
+        };
+        return Task.FromResult(response);
+    }
+
+    public Task<HttpResponseMessage> PostAsync(string requestUri, HttpContent content, CancellationToken cancellationToken = default)
+    {
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"success\": true}")
+        };
+        return Task.FromResult(response);
+    }
+
+    public Task<HttpResponseMessage> PostAsync(Uri requestUri, HttpContent content, CancellationToken cancellationToken = default)
+    {
+        var response = new HttpResponseMessage(System.Net.HttpStatusCode.OK)
+        {
+            Content = new StringContent("{\"success\": true}")
+        };
+        return Task.FromResult(response);
+    }
+}
 
 /// <summary>
 /// Simplified integration tests for multi-service orchestration scenarios.
@@ -40,6 +155,13 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
         services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+
+        // Add HTTP client factory
+        services.AddHttpClient();
+
+        // Add missing core dependencies
+        services.AddSingleton<IServiceConfiguration>(provider => new MockServiceConfiguration());
+        services.AddSingleton<IHttpClientService>(provider => new MockHttpClientService());
 
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
