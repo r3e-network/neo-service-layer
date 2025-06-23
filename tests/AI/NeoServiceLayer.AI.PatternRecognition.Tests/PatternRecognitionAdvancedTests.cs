@@ -906,7 +906,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
                 TransactionId = $"tx_{i}",
                 UserId = userId,
                 FraudScore = 0.2 + (i * 0.05),
-                RiskLevel = i < 5 ? RiskLevel.Low : RiskLevel.Medium,
+                RiskLevel = i < 5 ? AIModels.RiskLevel.Low : AIModels.RiskLevel.Medium,
                 DetectedAt = DateTime.UtcNow.AddHours(-i),
                 IsFraudulent = false,
                 RiskFactors = new Dictionary<string, double> { ["normal_pattern"] = 0.1 },
@@ -916,8 +916,10 @@ public class PatternRecognitionAdvancedTests : IDisposable
         }
 
         // Set up storage provider to return history items
-        _mockStorageProvider.Setup(x => x.ListKeysAsync($"fraud_history_{BlockchainType.NeoN3}_{userId}_*"))
-                          .ReturnsAsync(history.Select((h, i) => $"fraud_history_{BlockchainType.NeoN3}_{userId}_{i}").ToList());
+        var historyKeys = history.Select((h, i) => $"fraud_history_{BlockchainType.NeoN3}_{userId}_{i}").ToList();
+        var pattern = $"fraud_history_{BlockchainType.NeoN3}_{userId}_";
+        _mockStorageProvider.Setup(x => x.ListKeysAsync(pattern, It.IsAny<int>()))
+                          .ReturnsAsync(historyKeys);
 
         foreach (var (item, index) in history.Select((h, i) => (h, i)))
         {
@@ -936,7 +938,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
             TransactionFrequency = 15,
             AverageTransactionAmount = 1000m,
             EntityType = "regular",
-            RiskLevel = RiskLevel.Low,
+            RiskLevel = AIModels.RiskLevel.Low,
             UnusualTimePatterns = false,
             LastUpdated = DateTime.UtcNow.AddDays(-1),
             RiskTolerance = 0.3,
