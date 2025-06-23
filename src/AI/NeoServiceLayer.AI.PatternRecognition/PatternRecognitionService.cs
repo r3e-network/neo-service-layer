@@ -280,14 +280,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 var riskFactors = new List<string>();
                 if (isNewUser)
                     riskFactors.Add("New user profile");
-                if (behaviorProfile.TransactionFrequency > 50)
+                if (behaviorProfile.TransactionFrequency > 15 && !isNewUser)
                     riskFactors.Add("Significant deviation from normal behavior");
                 if (behaviorProfile.UnusualTimePatterns)
                     riskFactors.Add("Unusual transaction timing");
 
                 // Calculate deviation from profile
+                // For established users, deviation is based on transaction frequency (normal is 5)
                 var deviationFromProfile = isNewUser ? 0.0 :
-                    Math.Min(1.0, Math.Abs(behaviorProfile.TransactionFrequency - 10) / 10.0);
+                    Math.Min(1.0, Math.Abs(behaviorProfile.TransactionFrequency - 5) / 20.0);
 
                 var result = new AIModels.BehaviorAnalysisResult
                 {
@@ -500,15 +501,17 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
         // Transaction frequency risk
         if (profile.TransactionFrequency >= 100)
-            riskFactors.Add(0.9);
+            riskFactors.Add(0.95);
         else if (profile.TransactionFrequency >= 50)
-            riskFactors.Add(0.7);
+            riskFactors.Add(0.8);
         else if (profile.TransactionFrequency >= 20)
-            riskFactors.Add(0.5);
+            riskFactors.Add(0.75);
         else if (profile.TransactionFrequency >= 10)
-            riskFactors.Add(0.3);
+            riskFactors.Add(0.35);
         else if (profile.TransactionFrequency >= 5)
             riskFactors.Add(0.2);
+        else if (profile.TransactionFrequency >= 1)
+            riskFactors.Add(0.15);
         else
             riskFactors.Add(0.1);
 

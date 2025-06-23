@@ -628,6 +628,9 @@ public class PatternRecognitionAdvancedTests : IDisposable
                           .ReturnsAsync(true);
         _mockStorageProvider.Setup(x => x.DeleteAsync(It.IsAny<string>()))
                           .ReturnsAsync(true);
+        // Default setup for RetrieveAsync to return null for unspecified keys
+        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+                          .ReturnsAsync((byte[])null);
     }
 
     private BehaviorAnalysisRequest CreateBehaviorAnalysisRequest(
@@ -639,9 +642,9 @@ public class PatternRecognitionAdvancedTests : IDisposable
     {
         return new BehaviorAnalysisRequest
         {
-            UserId = userId,
+            Address = userId, // BehaviorAnalysisRequest uses Address not UserId
+            TransactionHistory = CreateTransactionHistory(transactionAmount, transactionFrequency, unusualTiming),
             AnalysisWindow = TimeSpan.FromDays(30),
-            TransactionData = CreateTransactionHistory(transactionAmount, transactionFrequency, unusualTiming),
             IncludeNetworkAnalysis = true,
             Metadata = new Dictionary<string, object>
             {
@@ -894,12 +897,83 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
     private void SetupFraudDetectionHistory(string userId, int transactionCount)
     {
-        // Stub method for test
+        var history = new List<AIModels.FraudDetectionResult>();
+        for (int i = 0; i < transactionCount; i++)
+        {
+            var result = new AIModels.FraudDetectionResult
+            {
+                DetectionId = $"detection_{i}",
+                TransactionId = $"tx_{i}",
+                UserId = userId,
+                FraudScore = 0.2 + (i * 0.05),
+                RiskLevel = i < 5 ? RiskLevel.Low : RiskLevel.Medium,
+                DetectedAt = DateTime.UtcNow.AddHours(-i),
+                IsFraudulent = false,
+                RiskFactors = new Dictionary<string, double> { ["normal_pattern"] = 0.1 },
+                Metadata = new Dictionary<string, object>()
+            };
+            history.Add(result);
+        }
+
+        // Set up storage provider to return history items
+        _mockStorageProvider.Setup(x => x.ListKeysAsync($"fraud_history_{BlockchainType.NeoN3}_{userId}_*"))
+                          .ReturnsAsync(history.Select((h, i) => $"fraud_history_{BlockchainType.NeoN3}_{userId}_{i}").ToList());
+
+        foreach (var (item, index) in history.Select((h, i) => (h, i)))
+        {
+            var key = $"fraud_history_{BlockchainType.NeoN3}_{userId}_{index}";
+            var data = JsonSerializer.SerializeToUtf8Bytes(item);
+            _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
+                              .ReturnsAsync(data);
+        }
     }
 
     private void SetupDetailedBehaviorProfile(string userId)
     {
-        // Stub method for test
+        var profile = new AIModels.BehaviorProfile
+        {
+            UserId = userId,
+            TransactionFrequency = 15,
+            AverageTransactionAmount = 1000m,
+            EntityType = "regular",
+            RiskLevel = RiskLevel.Low,
+            UnusualTimePatterns = false,
+            LastUpdated = DateTime.UtcNow.AddDays(-1),
+            RiskTolerance = 0.3,
+            TransactionPatterns = new Dictionary<string, object>
+            {
+                ["regular_pattern"] = "daily_transactions",
+                ["peak_hours"] = "9AM-5PM",
+                ["weekend_activity"] = 0.3
+            },
+            BehaviorMetrics = new Dictionary<string, double>
+            {
+                ["average_transaction_amount"] = 1000.0,
+                ["transaction_frequency"] = 15.0,
+                ["risk_score"] = 0.2,
+                ["normality_score"] = 0.8
+            },
+            Metadata = new Dictionary<string, object>
+            {
+                ["established_user"] = true,
+                ["account_age_days"] = 365,
+                ["transaction_count"] = 150
+            }
+        };
+
+        var key = $"behavior_profile_{BlockchainType.NeoN3}_{userId}";
+        var data = JsonSerializer.SerializeToUtf8Bytes(profile);
+        
+        // Remove any existing setup for this key first
+        _mockStorageProvider.Invocations.Clear();
+        
+        // Setup the specific key to return the profile data
+        _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
+                          .ReturnsAsync(data);
+                          
+        // Re-setup the default for other keys
+        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(k => k != key)))
+                          .ReturnsAsync((byte[])null);
     }
 
     private NeoServiceLayer.Core.Models.FraudDetectionRequest CreateFraudDetectionRequest(string transactionId)
