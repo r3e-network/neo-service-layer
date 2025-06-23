@@ -1,96 +1,32 @@
 <Project>
+  <!-- Common Properties -->
   <PropertyGroup>
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <LangVersion>latest</LangVersion>
-    <Authors>Neo Project</Authors>
-    <Company>Neo Foundation</Company>
+    
+    <!-- Company/Product Information -->
+    <Company>NeoServiceLayer</Company>
     <Product>Neo Service Layer</Product>
-    <Copyright>Copyright © Neo Project 2023-2024</Copyright>
-    <PackageLicenseExpression>MIT</PackageLicenseExpression>
-    <PackageProjectUrl>https://github.com/neo-project/neo-service-layer</PackageProjectUrl>
-    <RepositoryUrl>https://github.com/neo-project/neo-service-layer</RepositoryUrl>
-    <RepositoryType>git</RepositoryType>
-    <PackageTags>Neo;Blockchain;Smart Contract;Crypto;Occlum;SGX;Enclave</PackageTags>
-    <Description>Neo Service Layer is a comprehensive framework for building secure, privacy-preserving services on the Neo blockchain ecosystem.</Description>
-  </PropertyGroup>
-
-  <!-- SGX and TEE Configuration -->
-  <PropertyGroup>
-    <!-- SGX SDK Configuration -->
-    <SGX_SDK Condition="'$(SGX_SDK)' == '' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">/opt/intel/sgxsdk</SGX_SDK>
-    <SGX_SDK Condition="'$(SGX_SDK)' == '' AND '$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">C:\Program Files (x86)\Intel\sgxsdk</SGX_SDK>
+    <Copyright>Copyright (c) 2025 NeoServiceLayer</Copyright>
     
-    <!-- SGX Mode: SIM (simulation) or HW (hardware) -->
-    <SGX_MODE Condition="'$(SGX_MODE)' == ''">SIM</SGX_MODE>
+    <!-- Versioning -->
+    <Version>1.0.0</Version>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
     
-    <!-- SGX Debug Mode -->
-    <SGX_DEBUG Condition="'$(SGX_DEBUG)' == ''">1</SGX_DEBUG>
-    
-    <!-- Occlum LibOS Configuration -->
-    <OCCLUM_VERSION Condition="'$(OCCLUM_VERSION)' == ''">0.29.6</OCCLUM_VERSION>
-    <OCCLUM_LOG_LEVEL Condition="'$(OCCLUM_LOG_LEVEL)' == ''">info</OCCLUM_LOG_LEVEL>
-    
-    <!-- Build Configuration for TEE Projects -->
-    <EnableTEESupport Condition="'$(EnableTEESupport)' == ''">true</EnableTEESupport>
-    <EnableSGXSupport Condition="'$(EnableSGXSupport)' == ''">true</EnableSGXSupport>
-    <EnableOcclumSupport Condition="'$(EnableOcclumSupport)' == ''">true</EnableOcclumSupport>
+    <!-- Code Analysis -->
+    <EnableNETAnalyzers>true</EnableNETAnalyzers>
+    <AnalysisLevel>latest-recommended</AnalysisLevel>
+    <EnforceCodeStyleInBuild>true</EnforceCodeStyleInBuild>
+    <TreatWarningsAsErrors>false</TreatWarningsAsErrors>
   </PropertyGroup>
 
-  <!-- Platform-Specific Configurations -->
-  <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Linux)))' == 'true'">
-    <DefineConstants>$(DefineConstants);LINUX_PLATFORM</DefineConstants>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">linux-x64</RuntimeIdentifier>
-    <SGXLibraryPath>$(SGX_SDK)/lib64</SGXLibraryPath>
-    <SGXIncludePath>$(SGX_SDK)/include</SGXIncludePath>
-  </PropertyGroup>
 
-  <PropertyGroup Condition="'$([System.Runtime.InteropServices.RuntimeInformation]::IsOSPlatform($([System.Runtime.InteropServices.OSPlatform]::Windows)))' == 'true'">
-    <DefineConstants>$(DefineConstants);WINDOWS_PLATFORM</DefineConstants>
-    <RuntimeIdentifier Condition="'$(RuntimeIdentifier)' == ''">win-x64</RuntimeIdentifier>
-    <SGXLibraryPath>$(SGX_SDK)\bin\x64\Release</SGXLibraryPath>
-    <SGXIncludePath>$(SGX_SDK)\include</SGXIncludePath>
-  </PropertyGroup>
-
-  <!-- SGX Mode-Specific Configurations -->
-  <PropertyGroup Condition="'$(SGX_MODE)' == 'SIM'">
-    <DefineConstants>$(DefineConstants);SGX_SIMULATION</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(SGX_MODE)' == 'HW'">
-    <DefineConstants>$(DefineConstants);SGX_HARDWARE</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Debug Mode Configuration -->
-  <PropertyGroup Condition="'$(SGX_DEBUG)' == '1'">
-    <DefineConstants>$(DefineConstants);SGX_DEBUG_MODE</DefineConstants>
-  </PropertyGroup>
-
-  <!-- TEE Project Specific Settings -->
-  <PropertyGroup Condition="$(MSBuildProjectName.Contains('Tee')) OR $(MSBuildProjectName.Contains('Enclave'))">
-    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
-    <Optimize Condition="'$(SGX_MODE)' == 'HW'">true</Optimize>
-    <DebugType Condition="'$(SGX_DEBUG)' == '1'">full</DebugType>
-    <DebugSymbols Condition="'$(SGX_DEBUG)' == '1'">true</DebugSymbols>
-  </PropertyGroup>
-
-  <!-- Common Package References for SGX/TEE Projects -->
-  <ItemGroup Condition="$(MSBuildProjectName.Contains('Tee')) OR $(MSBuildProjectName.Contains('Enclave'))">
-    <PackageReference Include="System.Runtime.InteropServices" Version="4.3.0" />
-    <PackageReference Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.5" />
-  </ItemGroup>
-
-  <!-- Environment Variables for Build Process -->
-  <PropertyGroup>
-    <RunEnvironmentVariables>
-      SGX_MODE=$(SGX_MODE);
-      SGX_DEBUG=$(SGX_DEBUG);
-      SGX_SDK=$(SGX_SDK);
-      OCCLUM_LOG_LEVEL=$(OCCLUM_LOG_LEVEL);
-      RUST_LOG=$(OCCLUM_LOG_LEVEL);
-    </RunEnvironmentVariables>
+  <!-- Test Project Settings -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <IsPackable>false</IsPackable>
   </PropertyGroup>
 
 </Project>

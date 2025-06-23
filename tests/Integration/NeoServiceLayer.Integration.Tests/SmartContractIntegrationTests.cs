@@ -9,6 +9,7 @@ using NeoServiceLayer.Services.Randomness;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
+using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
@@ -29,6 +30,7 @@ public class SmartContractIntegrationTests : IDisposable
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
         services.AddSingleton<IRandomnessService, RandomnessService>();

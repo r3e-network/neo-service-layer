@@ -144,7 +144,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     /// <summary>
     /// Disposes the voting service resources.
     /// </summary>
-    public void Dispose()
+    public new void Dispose()
     {
         Dispose(true);
         GC.SuppressFinalize(this);
@@ -154,7 +154,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     /// Disposes the voting service resources.
     /// </summary>
     /// <param name="disposing">Whether to dispose managed resources.</param>
-    protected virtual void Dispose(bool disposing)
+    protected override void Dispose(bool disposing)
     {
         if (disposing)
         {

@@ -38,6 +38,11 @@ public class SecurityMonitoringService : BackgroundService
         InitializeThreatDetectors();
     }
 
+    /// <summary>
+    /// Executes the security monitoring background service.
+    /// </summary>
+    /// <param name="stoppingToken">The cancellation token to stop the service.</param>
+    /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
         _logger.LogInformation("Security monitoring service started");
@@ -64,6 +69,10 @@ public class SecurityMonitoringService : BackgroundService
         _logger.LogInformation("Security monitoring service stopped");
     }
 
+    /// <summary>
+    /// Analyzes security events within the configured time window and detects potential threats.
+    /// </summary>
+    /// <returns>A task representing the asynchronous analysis operation.</returns>
     private async Task AnalyzeSecurityEventsAsync()
     {
         var endTime = DateTime.UtcNow;
@@ -90,6 +99,11 @@ public class SecurityMonitoringService : BackgroundService
         LogMonitoringMetrics(statistics, threats);
     }
 
+    /// <summary>
+    /// Processes a detected security threat by logging, alerting, and notifying as appropriate.
+    /// </summary>
+    /// <param name="threat">The security threat to process.</param>
+    /// <returns>A task representing the asynchronous processing operation.</returns>
     private async Task ProcessThreatAsync(SecurityThreat threat)
     {
         _logger.LogWarning("Security threat detected: {ThreatType} - {Description} (Severity: {Severity})",

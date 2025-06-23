@@ -7,6 +7,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
 using CoreModels = NeoServiceLayer.Core.Models;
 using IConfigurationSection = Microsoft.Extensions.Configuration.IConfigurationSection;
@@ -22,7 +23,7 @@ public class PredictionServiceTests : IDisposable
     private readonly Mock<ILogger<PredictionService>> _mockLogger;
     private readonly Mock<IServiceConfiguration> _mockServiceConfiguration;
     private readonly Mock<IPersistentStorageProvider> _mockStorageProvider;
-    private readonly Mock<IEnclaveManager> _mockEnclaveManager;
+    private readonly IEnclaveManager _enclaveManager;
     private readonly PredictionService _service;
 
     public PredictionServiceTests()
@@ -30,17 +31,69 @@ public class PredictionServiceTests : IDisposable
         _mockLogger = new Mock<ILogger<PredictionService>>();
         _mockServiceConfiguration = new Mock<IServiceConfiguration>();
         _mockStorageProvider = new Mock<IPersistentStorageProvider>();
-        _mockEnclaveManager = new Mock<IEnclaveManager>();
 
         // Setup configuration
         SetupConfiguration();
+        SetupStorageProvider();
+
+        // Create real EnclaveManager with TestEnclaveWrapper like the Advanced tests
+        var enclaveManagerLogger = new Mock<ILogger<EnclaveManager>>();
+        var testEnclaveWrapper = new TestEnclaveWrapper();
+        _enclaveManager = new EnclaveManager(enclaveManagerLogger.Object, testEnclaveWrapper);
 
         // Use the correct constructor signature
         _service = new PredictionService(
             _mockLogger.Object,
             _mockServiceConfiguration.Object,
             _mockStorageProvider.Object,
-            _mockEnclaveManager.Object);
+            _enclaveManager);
+
+        // Initialize the service synchronously for tests
+        InitializeServiceForTesting();
+    }
+
+    private void InitializeServiceForTesting()
+    {
+        // Initialize the service synchronously for testing
+        // This will call the actual enclave initialization code in simulation mode
+        var initTask = _service.InitializeAsync();
+
+        try
+        {
+            initTask.Wait();
+        }
+        catch (AggregateException ex)
+        {
+            var innerException = ex.GetBaseException();
+            throw new InvalidOperationException($"Service initialization failed: {innerException.Message}", innerException);
+        }
+
+        // Verify that initialization succeeded
+        if (!initTask.IsCompletedSuccessfully)
+        {
+            var exception = initTask.Exception?.GetBaseException();
+            throw new InvalidOperationException($"Service initialization failed: {exception?.Message}", exception);
+        }
+
+        // Verify that the enclave is properly initialized
+        if (!_service.IsEnclaveInitialized)
+        {
+            throw new InvalidOperationException("Service initialization completed but enclave is not initialized");
+        }
+
+        // Verify that the enclave manager is initialized
+        if (!_enclaveManager.IsInitialized)
+        {
+            throw new InvalidOperationException("Service initialization completed but enclave manager is not initialized");
+        }
+    }
+
+    private void SetupStorageProvider()
+    {
+        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
+                          .ReturnsAsync(true);
+        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+                          .ReturnsAsync((byte[]?)null);
     }
 
     #region Service Lifecycle Tests
@@ -103,20 +156,29 @@ public class PredictionServiceTests : IDisposable
     public async Task PredictAsync_ValidModelAndFeatures_ReturnsPrediction()
     {
         // Arrange
-        const string modelId = "model_test_12345";
+        const string expectedModelId = "model_test_12345";
+
+        // Create the model first
+        var modelDef = new AI.Prediction.Models.PredictionModelDefinition
+        {
+            Name = "Test Model",
+            Type = Core.Models.AIModelType.Prediction,
+            PredictionType = AI.Prediction.Models.PredictionType.Price,
+            TargetVariable = "price",
+            Algorithm = "neural_network",
+            InputFeatures = new List<string> { "feature1", "feature2", "feature3", "feature4", "feature5" }
+        };
+
+        var actualModelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
+
         var request = new CoreModels.PredictionRequest
         {
-            ModelId = modelId,
+            ModelId = actualModelId, // Use the actual created model ID
             InputData = new Dictionary<string, object>
             {
                 ["features"] = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0 }
             }
         };
-        var mockModel = CreateMockPredictionModel();
-
-        _mockEnclaveManager
-            .Setup(x => x.StorageRetrieveDataAsync(modelId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(System.Text.Json.JsonSerializer.Serialize(mockModel));
 
         // Act
         var result = await _service.PredictAsync(request, BlockchainType.NeoN3);
@@ -124,7 +186,7 @@ public class PredictionServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Confidence.Should().BeInRange(0, 1);
-        result.ModelId.Should().Be(modelId);
+        result.ModelId.Should().Be(actualModelId);
         result.Predictions.Should().NotBeEmpty();
     }
 
@@ -144,9 +206,7 @@ public class PredictionServiceTests : IDisposable
             }
         };
 
-        _mockEnclaveManager
-            .Setup(x => x.StorageRetrieveDataAsync(nonExistentModelId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync((string?)null);
+        // No need to mock - using real enclave manager
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(() =>
@@ -160,8 +220,19 @@ public class PredictionServiceTests : IDisposable
     [Trait("Component", "ModelInference")]
     public async Task PredictAsync_InvalidFeatureCount_HandlesGracefully()
     {
-        // Arrange
-        const string modelId = "model_test_12345";
+        // Arrange - Create model first
+        var modelDef = new AI.Prediction.Models.PredictionModelDefinition
+        {
+            Name = "Test Model",
+            Type = Core.Models.AIModelType.Prediction,
+            PredictionType = AI.Prediction.Models.PredictionType.Price,
+            TargetVariable = "price",
+            Algorithm = "neural_network",
+            InputFeatures = new List<string> { "feature1", "feature2", "feature3", "feature4", "feature5" }
+        };
+
+        var modelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
+
         var request = new CoreModels.PredictionRequest
         {
             ModelId = modelId,
@@ -170,11 +241,6 @@ public class PredictionServiceTests : IDisposable
                 ["features"] = new double[] { 1.0, 2.0 } // Too few features
             }
         };
-        var mockModel = CreateMockPredictionModel(expectedFeatureCount: 5);
-
-        _mockEnclaveManager
-            .Setup(x => x.StorageRetrieveDataAsync(modelId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(System.Text.Json.JsonSerializer.Serialize(mockModel));
 
         // Act
         var result = await _service.PredictAsync(request, BlockchainType.NeoN3);
@@ -189,8 +255,18 @@ public class PredictionServiceTests : IDisposable
     [Trait("Component", "ModelInference")]
     public async Task PredictAsync_NullOrEmptyFeatures_ThrowsArgumentException()
     {
-        // Arrange
-        const string modelId = "model_test_12345";
+        // Arrange - Create model first
+        var modelDef = new AI.Prediction.Models.PredictionModelDefinition
+        {
+            Name = "Test Model",
+            Type = Core.Models.AIModelType.Prediction,
+            PredictionType = AI.Prediction.Models.PredictionType.Price,
+            TargetVariable = "price",
+            Algorithm = "neural_network",
+            InputFeatures = new List<string> { "feature1", "feature2", "feature3", "feature4", "feature5" }
+        };
+
+        var modelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
 
         // Act & Assert - Null request
         var nullException = await Assert.ThrowsAsync<ArgumentNullException>(() =>
@@ -233,14 +309,19 @@ public class PredictionServiceTests : IDisposable
     [Trait("Component", "ModelInference")]
     public async Task PredictAsync_MultipleRequests_HandlesLoadEfficiently()
     {
-        // Arrange
-        const string modelId = "model_performance_test";
-        var inputFeatures = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0 };
-        var mockModel = CreateMockPredictionModel();
+        // Arrange - Create model first
+        var modelDef = new AI.Prediction.Models.PredictionModelDefinition
+        {
+            Name = "Performance Test Model",
+            Type = Core.Models.AIModelType.Prediction,
+            PredictionType = AI.Prediction.Models.PredictionType.Price,
+            TargetVariable = "price",
+            Algorithm = "neural_network",
+            InputFeatures = new List<string> { "feature1", "feature2", "feature3", "feature4", "feature5" }
+        };
 
-        _mockEnclaveManager
-            .Setup(x => x.StorageRetrieveDataAsync(modelId, It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(System.Text.Json.JsonSerializer.Serialize(mockModel));
+        var modelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
+        var inputFeatures = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0 };
 
         const int requestCount = 100;
         var tasks = new List<Task<CoreModels.PredictionResult>>();
@@ -349,6 +430,8 @@ public class PredictionServiceTests : IDisposable
     public void Dispose()
     {
         _service?.Dispose();
+        // Dispose of the enclave manager asynchronously
+        _enclaveManager?.DisposeAsync().AsTask().Wait();
     }
 
     #region Test Data Models

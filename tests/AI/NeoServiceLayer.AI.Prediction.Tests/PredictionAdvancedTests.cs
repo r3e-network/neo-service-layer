@@ -30,6 +30,8 @@ public class PredictionAdvancedTests : IDisposable
     private readonly Mock<IPersistentStorageProvider> _mockStorageProvider;
     private readonly IEnclaveManager _enclaveManager;
     private readonly PredictionService _service;
+    private string _defaultModelId = string.Empty;
+    private readonly Dictionary<string, string> _testModelIds = new();
 
     public PredictionAdvancedTests()
     {
@@ -59,6 +61,69 @@ public class PredictionAdvancedTests : IDisposable
     {
         await _service.InitializeAsync();
         _service.IsEnclaveInitialized.Should().BeTrue();
+
+        // Create the default prediction model that tests expect
+        await CreateDefaultPredictionModel();
+    }
+
+    private async Task CreateDefaultPredictionModel()
+    {
+        try
+        {
+            // Create the default model using the service's CreateModelAsync method
+            // This will properly add it to the internal _models dictionary
+            var defaultModelDefinition = new NeoServiceLayer.AI.Prediction.Models.PredictionModelDefinition
+            {
+                Name = "Default Prediction Model",
+                Type = NeoServiceLayer.Core.Models.AIModelType.Prediction,
+                PredictionType = NeoServiceLayer.AI.Prediction.Models.PredictionType.Price,
+                TargetVariable = "price",
+                Algorithm = "neural_network",
+                InputFeatures = new List<string> { "price", "volume", "time" }
+            };
+
+            // Create the model and store its ID for tests to use
+            _defaultModelId = await _service.CreateModelAsync(defaultModelDefinition, BlockchainType.NeoN3);
+            _testModelIds["default"] = _defaultModelId;
+
+            // Create additional test models that tests expect
+            await CreateTestModel("existing_model_123", "Existing Test Model", PredictionType.TimeSeries);
+            await CreateTestModel("uncertainty_model", "Uncertainty Test Model", PredictionType.Risk);
+            await CreateTestModel("backtest_model", "Backtest Model", PredictionType.MarketTrend);
+            await CreateTestModel("accuracy_test_model", "Accuracy Test Model", PredictionType.TimeSeries);
+            await CreateTestModel("history_model_456", "History Model", PredictionType.Price);
+
+            Console.WriteLine($"Created default model with ID: {_defaultModelId}");
+        }
+        catch (Exception ex)
+        {
+            // Log but don't fail - tests should handle missing models gracefully
+            Console.WriteLine($"Warning: Could not create default prediction model: {ex.Message}");
+        }
+    }
+
+    private async Task CreateTestModel(string logicalName, string displayName, PredictionType predictionType)
+    {
+        try
+        {
+            var modelDefinition = new NeoServiceLayer.AI.Prediction.Models.PredictionModelDefinition
+            {
+                Name = displayName,
+                Type = NeoServiceLayer.Core.Models.AIModelType.Prediction,
+                PredictionType = predictionType,
+                TargetVariable = "value",
+                Algorithm = "test_algorithm",
+                InputFeatures = new List<string> { "input1", "input2" }
+            };
+
+            var modelId = await _service.CreateModelAsync(modelDefinition, BlockchainType.NeoN3);
+            _testModelIds[logicalName] = modelId;
+            Console.WriteLine($"Created test model '{logicalName}' with ID: {modelId}");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Warning: Could not create test model '{logicalName}': {ex.Message}");
+        }
     }
 
     #region Market Forecasting Tests
@@ -312,7 +377,7 @@ public class PredictionAdvancedTests : IDisposable
     public async Task RetrainModelAsync_WithNewData_UpdatesModelPerformance()
     {
         // Arrange
-        var modelId = "existing_model_123";
+        var modelId = _testModelIds["existing_model_123"];
         var updatedDefinition = CreatePredictionModelDefinition(
             modelType: "enhanced_time_series",
             algorithm: "Transformer",
@@ -335,7 +400,7 @@ public class PredictionAdvancedTests : IDisposable
     public async Task GetPredictionHistoryAsync_WithActiveModel_ReturnsHistoricalPredictions()
     {
         // Arrange
-        var modelId = "history_model_456";
+        var modelId = _testModelIds["history_model_456"];
         SetupPredictionHistory(modelId);
 
         // Act
@@ -364,7 +429,7 @@ public class PredictionAdvancedTests : IDisposable
     public async Task ValidatePredictionAccuracy_TrainedTimeSeriesModel_MeetsAccuracyTargets()
     {
         // Arrange
-        var modelId = "accuracy_test_model";
+        var modelId = _testModelIds["accuracy_test_model"];
         var testData = GenerateTimeSeriesTestData(1000);
         SetupTrainedPredictionModel(modelId, "time_series");
 
@@ -385,7 +450,7 @@ public class PredictionAdvancedTests : IDisposable
     public async Task BacktestPredictionModel_HistoricalData_ValidatesStrategy()
     {
         // Arrange
-        var modelId = "backtest_model";
+        var modelId = _testModelIds["backtest_model"];
         var historicalData = GenerateHistoricalMarketData(365); // 1 year of data
         SetupTrainedPredictionModel(modelId, "market_forecast");
 
@@ -407,7 +472,7 @@ public class PredictionAdvancedTests : IDisposable
     public async Task AssessPredictionUncertainty_ModelVariance_QuantifiesUncertainty()
     {
         // Arrange
-        var modelId = "uncertainty_model";
+        var modelId = _testModelIds["uncertainty_model"];
         var predictionRequest = CreatePredictionRequest("NEO", timeHorizon: 24);
         SetupTrainedPredictionModel(modelId, "bayesian_neural_network");
 
@@ -652,7 +717,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         return new CoreModels.PredictionRequest
         {
-            ModelId = "default_prediction_model",
+            ModelId = _defaultModelId,
             InputData = new Dictionary<string, object>
             {
                 ["symbol"] = symbol,

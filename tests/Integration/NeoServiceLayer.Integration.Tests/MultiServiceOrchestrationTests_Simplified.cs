@@ -13,6 +13,7 @@ using NeoServiceLayer.Services.ProofOfReserve;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
+using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 using AutomationSvc = NeoServiceLayer.Services.Automation;
 using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
@@ -38,6 +39,7 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
 
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
+        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
 
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();

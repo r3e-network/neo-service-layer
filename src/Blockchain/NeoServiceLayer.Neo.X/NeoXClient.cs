@@ -7,6 +7,7 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.JsonRpc.Client;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
+using Newtonsoft.Json.Linq;
 // Type aliases to resolve ambiguity
 using CoreBlock = NeoServiceLayer.Core.Block;
 using CoreTransaction = NeoServiceLayer.Core.Transaction;
@@ -746,31 +747,37 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
                 if (receipt?.Logs != null)
                 {
-                    foreach (var logToken in receipt.Logs)
+                    var logs = receipt.Logs as JArray;
+                    if (logs != null)
                     {
-                        // Handle FilterLog type properly
-                        var filterLog = logToken as FilterLog;
-                        var logAddress = filterLog?.Address ?? string.Empty;
-                        var logData = filterLog?.Data ?? string.Empty;
-                        var logTopics = filterLog?.Topics ?? Array.Empty<object>();
-
-                        if (string.Equals(logAddress, contractAddress, StringComparison.OrdinalIgnoreCase))
+                        foreach (JToken logToken in logs)
                         {
-                            events.Add(new ContractEvent
+                            var filterLog = logToken.ToObject<FilterLog>();
+                            if (filterLog != null)
                             {
-                                ContractAddress = logAddress,
-                                EventName = eventName,
-                                EventData = logData,
-                                Parameters = new Dictionary<string, object>
+                                var logAddress = filterLog.Address ?? string.Empty;
+                                var logData = filterLog.Data ?? string.Empty;
+                                var logTopics = filterLog.Topics ?? Array.Empty<object>();
+
+                                if (string.Equals(logAddress, contractAddress, StringComparison.OrdinalIgnoreCase))
                                 {
-                                    ["topics"] = logTopics,
-                                    ["data"] = logData
-                                },
-                                TransactionHash = transaction.Hash,
-                                BlockHash = block.Hash,
-                                BlockHeight = block.Height,
-                                Timestamp = transaction.Timestamp
-                            });
+                                    events.Add(new ContractEvent
+                                    {
+                                        ContractAddress = logAddress,
+                                        EventName = eventName,
+                                        EventData = logData,
+                                        Parameters = new Dictionary<string, object>
+                                        {
+                                            ["topics"] = logTopics,
+                                            ["data"] = logData
+                                        },
+                                        TransactionHash = transaction.Hash,
+                                        BlockHash = block.Hash,
+                                        BlockHeight = block.Height,
+                                        Timestamp = transaction.Timestamp
+                                    });
+                                }
+                            }
                         }
                     }
                 }
