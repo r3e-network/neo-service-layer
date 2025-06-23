@@ -121,7 +121,7 @@
   </ItemGroup>
 
   <ItemGroup Label="Serialization and Data">
-    <PackageVersion Include="System.Text.Json" Version="9.0.0" />
+    <PackageVersion Include="System.Text.Json" Version="9.0.6" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
     <PackageVersion Include="MessagePack" Version="3.0.238" />
     <PackageVersion Include="protobuf-net" Version="3.2.52" />
