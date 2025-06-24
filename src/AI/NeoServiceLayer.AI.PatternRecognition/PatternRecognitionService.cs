@@ -499,21 +499,28 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         // More sophisticated risk calculation based on behavior patterns
         var riskFactors = new List<double>();
 
-        // Transaction frequency risk
+        // Transaction frequency risk - heavily weight high frequency activity
+        var frequencyRisk = profile.TransactionFrequency switch
+        {
+            >= 100 => 0.95,
+            >= 50 => 0.8,
+            >= 20 => 0.75,
+            >= 10 => 0.35,
+            >= 5 => 0.2,
+            >= 1 => 0.15,
+            _ => 0.1
+        };
+        
+        // For very high frequency (100+), use higher weight in calculation
         if (profile.TransactionFrequency >= 100)
-            riskFactors.Add(0.95);
-        else if (profile.TransactionFrequency >= 50)
-            riskFactors.Add(0.8);
-        else if (profile.TransactionFrequency >= 20)
-            riskFactors.Add(0.75);
-        else if (profile.TransactionFrequency >= 10)
-            riskFactors.Add(0.35);
-        else if (profile.TransactionFrequency >= 5)
-            riskFactors.Add(0.2);
-        else if (profile.TransactionFrequency >= 1)
-            riskFactors.Add(0.15);
+        {
+            riskFactors.Add(frequencyRisk);
+            riskFactors.Add(frequencyRisk * 0.8); // Add additional weight for very high frequency
+        }
         else
-            riskFactors.Add(0.1);
+        {
+            riskFactors.Add(frequencyRisk);
+        }
 
         // Transaction amount risk
         if (profile.AverageTransactionAmount > 50000)
@@ -1468,8 +1475,11 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
         foreach (var tx in transactions)
         {
-            if (tx.TryGetValue("amount", out var amountObj) &&
-                decimal.TryParse(amountObj?.ToString(), out var amount))
+            // Try both "value" and "amount" keys to be compatible with different formats
+            if ((tx.TryGetValue("value", out var valueObj) &&
+                 decimal.TryParse(valueObj?.ToString(), out var amount)) ||
+                (tx.TryGetValue("amount", out var amountObj) &&
+                 decimal.TryParse(amountObj?.ToString(), out amount)))
             {
                 total += amount;
                 count++;
@@ -1750,15 +1760,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             riskFactors.Add(addressRisk);
         }
 
-        // Calculate final score - use weighted average with boost for multiple risk factors
+        // Calculate final score - use weighted average with moderate boost for multiple risk factors
         if (riskFactors.Count == 0) return 0.1; // Default low score
 
         var averageRisk = riskFactors.Average();
 
-        // Apply a multiplier if multiple risk factors are present
-        var riskMultiplier = 1.0 + (riskFactors.Count - 1) * 0.3; // 30% boost per additional factor
+        // Apply a smaller multiplier if multiple risk factors are present to avoid exceeding expected ranges
+        var riskMultiplier = 1.0 + (riskFactors.Count - 1) * 0.1; // 10% boost per additional factor
 
-        return Math.Min(1.0, averageRisk * riskMultiplier);
+        return Math.Min(0.95, averageRisk * riskMultiplier); // Cap at 0.95 to ensure "High" not "Critical"
     }
 
     /// <summary>
@@ -1809,8 +1819,10 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             riskFactors["Matches known fraud patterns"] = 0.8;
         }
 
-        // Check for poor network reputation (simplified)
-        if (!string.IsNullOrEmpty(request.SenderAddress))
+        // Check for poor network reputation only if explicitly flagged
+        if (request.Features != null &&
+            request.Features.TryGetValue("poor_reputation", out var poorRepObj) &&
+            bool.TryParse(poorRepObj?.ToString(), out var poorReputation) && poorReputation)
         {
             riskFactors["Poor network reputation"] = 0.6;
         }
