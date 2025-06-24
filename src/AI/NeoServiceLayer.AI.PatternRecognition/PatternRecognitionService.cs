@@ -1760,15 +1760,37 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             riskFactors.Add(addressRisk);
         }
 
-        // Calculate final score - use weighted average with moderate boost for multiple risk factors
+        // Calculate final score - use weighted approach that emphasizes significant risk factors
         if (riskFactors.Count == 0) return 0.1; // Default low score
 
-        var averageRisk = riskFactors.Average();
+        // Separate high-impact factors (>= 0.3) from low-impact factors (< 0.3)
+        var highImpactFactors = riskFactors.Where(r => r >= 0.3).ToList();
+        var lowImpactFactors = riskFactors.Where(r => r < 0.3).ToList();
 
-        // Apply a smaller multiplier if multiple risk factors are present to avoid exceeding expected ranges
-        var riskMultiplier = 1.0 + (riskFactors.Count - 1) * 0.1; // 10% boost per additional factor
+        double finalScore;
+        
+        if (highImpactFactors.Count > 0)
+        {
+            // For transactions with significant risk factors, weight them more heavily
+            var highImpactAverage = highImpactFactors.Average();
+            var lowImpactAverage = lowImpactFactors.Count > 0 ? lowImpactFactors.Average() : 0;
+            
+            // Weight high-impact factors at 85%, low-impact at 15%
+            var weightedAverage = highImpactAverage * 0.85 + lowImpactAverage * 0.15;
+            
+            // Apply stronger multiplier for multiple significant risk factors
+            var significantFactorCount = highImpactFactors.Count;
+            var riskMultiplier = 1.0 + (significantFactorCount - 1) * 0.25; // 25% boost per additional significant factor
+            
+            finalScore = weightedAverage * riskMultiplier;
+        }
+        else
+        {
+            // No significant risk factors, use simple average
+            finalScore = riskFactors.Average();
+        }
 
-        return Math.Min(0.95, averageRisk * riskMultiplier); // Cap at 0.95 to ensure "High" not "Critical"
+        return Math.Min(0.75, finalScore); // Cap at 0.75 to ensure "High" not "Critical"
     }
 
     /// <summary>
@@ -1783,7 +1805,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         var riskFactors = new Dictionary<string, double>();
 
         // Analyze transaction amount
-        if (request.TransactionAmount > 50000)
+        if (request.TransactionAmount >= 50000)
             riskFactors["Unusual transaction amount"] = 0.8;
         else if (request.TransactionAmount > 10000)
             riskFactors["Medium transaction amount"] = 0.5;
