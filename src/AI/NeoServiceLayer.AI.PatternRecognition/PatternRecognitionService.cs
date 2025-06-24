@@ -504,10 +504,9 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     /// <returns>The risk score.</returns>
     private double CalculateBehaviorRiskScore(AIModels.BehaviorProfile profile)
     {
-        // More sophisticated risk calculation based on behavior patterns
-        var riskFactors = new List<double>();
-
-        // Transaction frequency risk - heavily weight high frequency activity
+        // Sophisticated risk calculation that emphasizes transaction frequency as primary factor
+        
+        // Transaction frequency risk - this is the primary factor
         var frequencyRisk = profile.TransactionFrequency switch
         {
             >= 100 => 0.95,
@@ -518,39 +517,42 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             >= 1 => 0.15,
             _ => 0.1
         };
-        
-        // For very high frequency (100+), use higher weight in calculation
+
+        // Transaction amount risk (secondary factor)
+        var amountRisk = profile.AverageTransactionAmount switch
+        {
+            > 50000 => 0.8,
+            > 25000 => 0.6,
+            > 10000 => 0.4,
+            > 1000 => 0.2,
+            _ => 0.1
+        };
+
+        // Timing patterns (modifier)
+        var timingModifier = profile.UnusualTimePatterns ? 0.15 : 0.0;
+
+        // Interaction patterns (modifier) 
+        var interactionModifier = profile.SuspiciousAddressInteractions ? 0.1 : 0.0;
+
+        // Weight frequency heavily (75%), amount moderately (15%), and apply modifiers (10%)
+        var baseScore = (frequencyRisk * 0.75) + (amountRisk * 0.15) + 
+                       ((timingModifier + interactionModifier) * 0.1);
+
+        // For very high activity levels, boost the score appropriately
         if (profile.TransactionFrequency >= 100)
         {
-            riskFactors.Add(frequencyRisk);
-            riskFactors.Add(frequencyRisk * 0.8); // Add additional weight for very high frequency
+            baseScore = Math.Min(0.95, baseScore + 0.15); // Boost for extreme activity
         }
-        else
+        else if (profile.TransactionFrequency >= 50)
         {
-            riskFactors.Add(frequencyRisk);
+            baseScore = Math.Min(0.85, baseScore + 0.08); // Moderate boost for high activity
+        }
+        else if (profile.TransactionFrequency >= 10)
+        {
+            baseScore = Math.Min(0.7, baseScore + 0.05); // Small boost for moderate activity
         }
 
-        // Transaction amount risk
-        if (profile.AverageTransactionAmount > 50000)
-            riskFactors.Add(0.8);
-        else if (profile.AverageTransactionAmount > 25000)
-            riskFactors.Add(0.6);
-        else if (profile.AverageTransactionAmount > 10000)
-            riskFactors.Add(0.4);
-        else if (profile.AverageTransactionAmount > 1000)
-            riskFactors.Add(0.2);
-        else
-            riskFactors.Add(0.1);
-
-        // Timing and interaction patterns
-        if (profile.UnusualTimePatterns)
-            riskFactors.Add(0.3);
-
-        if (profile.SuspiciousAddressInteractions)
-            riskFactors.Add(0.4);
-
-        // Calculate average risk score
-        return riskFactors.Count > 0 ? riskFactors.Average() : 0.5;
+        return Math.Max(0.1, baseScore); // Ensure minimum score
     }
 
     /// <inheritdoc/>
