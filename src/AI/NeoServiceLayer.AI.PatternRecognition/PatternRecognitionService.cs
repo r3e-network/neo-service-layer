@@ -58,7 +58,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
         return await ExecuteInEnclaveAsync(async () =>
         {
-            var modelId = Guid.NewGuid().ToString();
+            var modelId = "model_" + Guid.NewGuid().ToString();
 
             // Train pattern model within the enclave for security
             var trainedModel = await TrainPatternModelInEnclaveAsync(definition);
@@ -85,6 +85,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 _models[modelId] = model;
                 _analysisHistory[modelId] = new List<AIModels.PatternAnalysisResult>();
                 _anomalyHistory[modelId] = new List<AIModels.AnomalyDetectionResult>();
+            }
+
+            // Persist model to storage if storage provider is available
+            if (_storageProvider != null)
+            {
+                var modelKey = $"pattern_model_{modelId}";
+                var modelData = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(model);
+                await _storageProvider.StoreAsync(modelKey, modelData, new StorageOptions { Encrypt = true });
             }
 
             Logger.LogInformation("Created pattern model {ModelId} ({Name}) for {Blockchain}",
@@ -1380,14 +1388,61 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
         var anomalies = new List<CoreModels.Anomaly>();
 
-        // In production, this would use real anomaly detection algorithms
-        if (request.Data?.Count > 10)
+        // Extract data points for analysis
+        if (request.Data?.TryGetValue("data_points", out var dataPointsObj) == true)
+        {
+            var dataPoints = dataPointsObj switch
+            {
+                double[] doubleArray => doubleArray,
+                IEnumerable<double> doubleEnumerable => doubleEnumerable.ToArray(),
+                _ => null
+            };
+
+            if (dataPoints != null && dataPoints.Length > 0)
+            {
+                // Statistical anomaly detection using Z-score
+                var mean = dataPoints.Average();
+                var stdDev = Math.Sqrt(dataPoints.Select(x => Math.Pow(x - mean, 2)).Average());
+                
+                var threshold = 2.5; // Z-score threshold for anomalies
+                var anomalousPoints = new List<double>();
+                
+                foreach (var point in dataPoints)
+                {
+                    var zScore = Math.Abs((point - mean) / stdDev);
+                    if (zScore > threshold)
+                    {
+                        anomalousPoints.Add(point);
+                    }
+                }
+
+                if (anomalousPoints.Count > 0)
+                {
+                    // Calculate anomaly score based on how extreme the values are
+                    var maxZScore = anomalousPoints.Max(p => Math.Abs((p - mean) / stdDev));
+                    var score = Math.Min(0.95, 0.5 + (maxZScore - threshold) / 10.0); // Scale score based on extremeness
+                    
+                    anomalies.Add(new CoreModels.Anomaly
+                    {
+                        AnomalyId = Guid.NewGuid().ToString(),
+                        Type = CoreModels.AnomalyType.Statistical,
+                        Score = score,
+                        Description = $"Statistical anomaly detected: {anomalousPoints.Count} outliers with max Z-score {maxZScore:F2}",
+                        DetectedAt = DateTime.UtcNow,
+                        AffectedDataPoints = anomalousPoints.Select(p => p.ToString()).ToList()
+                    });
+                }
+            }
+        }
+
+        // Fallback: if data volume is high, add volume-based anomaly
+        if (request.Data?.Count > 10 && anomalies.Count == 0)
         {
             anomalies.Add(new CoreModels.Anomaly
             {
                 AnomalyId = Guid.NewGuid().ToString(),
                 Type = CoreModels.AnomalyType.Statistical,
-                Score = 0.7,
+                Score = 0.6,
                 Description = "High data volume detected",
                 DetectedAt = DateTime.UtcNow,
                 AffectedDataPoints = new List<string> { "data_volume" }
