@@ -12,7 +12,6 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Tee.Enclave;
-using NeoServiceLayer.Tee.Enclave.Exceptions;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
 using Xunit.Abstractions;
