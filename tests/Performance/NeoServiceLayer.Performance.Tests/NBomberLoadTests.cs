@@ -373,7 +373,8 @@ public class NBomberLoadTests : IDisposable
         .WithLoadSimulations(
             Simulation.RampingConstant(copies: stressConfig.ConcurrentOperations,
                                      during: TimeSpan.Parse(stressConfig.Duration))
-        );
+        )
+        .WithWarmUpDuration(TimeSpan.FromSeconds(5));
 
         // Start performance monitoring
         _performanceMonitor.StartMonitoring();
@@ -382,7 +383,6 @@ public class NBomberLoadTests : IDisposable
             .RegisterScenarios(scenario)
             .WithReportFolder("stress-test-reports")
             .WithReportFormats(ReportFormat.Html, ReportFormat.Csv)
-            .WithWarmUpDuration(TimeSpan.FromSeconds(5))
             .Run();
 
         var resourceStats = _performanceMonitor.StopMonitoring();
@@ -456,7 +456,9 @@ public class NBomberLoadTests : IDisposable
             }
         }
 
-        scenario = scenario.WithLoadSimulations(loadSimulations.ToArray());
+        scenario = scenario
+            .WithLoadSimulations(loadSimulations.ToArray())
+            .WithWarmUpDuration(TimeSpan.FromSeconds(isCI ? 2 : 10)); // Shorter warm-up for CI
 
         var stats = NBomberRunner
             .RegisterScenarios(scenario)
@@ -464,7 +466,6 @@ public class NBomberLoadTests : IDisposable
             .WithReportFormats(ReportFormat.Html, ReportFormat.Csv)
             .WithTestSuite("BurstLoadTests")
             .WithTestName("BurstLoadTest")
-            .WithWarmUpDuration(TimeSpan.FromSeconds(isCI ? 2 : 10)) // Shorter warm-up for CI
             .Run();
 
         // Validate burst load handling
