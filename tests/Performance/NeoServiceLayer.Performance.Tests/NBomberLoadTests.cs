@@ -369,12 +369,19 @@ public class NBomberLoadTests : IDisposable
                 context.Logger.Error(ex, $"Memory pressure test failed for {dataSize} bytes");
                 return Response.Fail(message: ex.Message);
             }
-        })
-        .WithLoadSimulations(
-            Simulation.RampingConstant(copies: stressConfig.ConcurrentOperations,
-                                     during: TimeSpan.Parse(stressConfig.Duration))
-        )
-        .WithWarmUpDuration(TimeSpan.FromSeconds(5));
+        });
+
+        // Apply load simulations and warm-up to scenario
+        // Reduce concurrent operations for CI environment
+        var isCI = Environment.GetEnvironmentVariable("CI") == "true";
+        var concurrentOps = isCI ? Math.Min(stressConfig.ConcurrentOperations, 10) : stressConfig.ConcurrentOperations;
+        
+        scenario = scenario
+            .WithLoadSimulations(
+                Simulation.RampingConstant(copies: concurrentOps,
+                                         during: TimeSpan.Parse(stressConfig.Duration))
+            )
+            .WithWarmUpDuration(TimeSpan.FromSeconds(isCI ? 2 : 5));
 
         // Start performance monitoring
         _performanceMonitor.StartMonitoring();

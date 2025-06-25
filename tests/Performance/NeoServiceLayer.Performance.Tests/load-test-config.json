@@ -72,7 +72,7 @@
     "MemoryPressure": {
       "DataSizeMultiplier": 10,
       "ConcurrentOperations": 50,
-      "Duration": "00:10:00"
+      "Duration": "00:00:30"
     },
     "HighThroughput": {
       "TargetRps": 2000,

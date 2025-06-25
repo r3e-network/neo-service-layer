@@ -1159,7 +1159,7 @@ public partial class PatternRecognitionService
         {
             var dataList = dataPoints.ToList();
 
-            if (dataList.Count > 1000)
+            if (dataList.Count >= 1000)
             {
                 patterns.Add(new DetectedPattern
                 {
