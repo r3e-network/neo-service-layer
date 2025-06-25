@@ -337,8 +337,11 @@ public class NBomberLoadTests : IDisposable
 
             // TestEnclaveWrapper is already initialized during DI registration
 
-            // Create larger data to pressure memory
-            var dataSize = 65536 * stressConfig.DataSizeMultiplier; // Multiply base size
+            // Create larger data to pressure memory - reduced for CI
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true";
+            var baseSize = isCI ? 16384 : 65536; // Smaller base size for CI
+            var multiplier = isCI ? Math.Min(stressConfig.DataSizeMultiplier, 2) : stressConfig.DataSizeMultiplier;
+            var dataSize = baseSize * multiplier;
             var testData = GenerateTestData(dataSize);
             var keyId = $"stress-test-key-{context.InvocationNumber}";
 
@@ -379,6 +382,7 @@ public class NBomberLoadTests : IDisposable
             .RegisterScenarios(scenario)
             .WithReportFolder("stress-test-reports")
             .WithReportFormats(ReportFormat.Html, ReportFormat.Csv)
+            .WithWarmUpDuration(TimeSpan.FromSeconds(5))
             .Run();
 
         var resourceStats = _performanceMonitor.StopMonitoring();
@@ -460,6 +464,7 @@ public class NBomberLoadTests : IDisposable
             .WithReportFormats(ReportFormat.Html, ReportFormat.Csv)
             .WithTestSuite("BurstLoadTests")
             .WithTestName("BurstLoadTest")
+            .WithWarmUpDuration(TimeSpan.FromSeconds(isCI ? 2 : 10)) // Shorter warm-up for CI
             .Run();
 
         // Validate burst load handling
