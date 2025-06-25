@@ -167,33 +167,6 @@ public partial class EnclaveManager : IEnclaveManager, IDisposable
         }
     }
 
-    /// <summary>
-    /// Stores data in the enclave using encrypted storage.
-    /// </summary>
-    /// <param name="key">The storage key.</param>
-    /// <param name="data">The data to store.</param>
-    /// <param name="encryptionKey">The encryption key.</param>
-    /// <param name="compress">Whether to compress the data.</param>
-    /// <param name="cancellationToken">Cancellation token.</param>
-    /// <returns>JSON string containing the storage result and metadata.</returns>
-    public Task<string> StorageStoreDataAsync(string key, byte[] data, string encryptionKey, bool compress = false, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            _logger.LogDebug("Storing data with key: {Key}", key);
-
-            // Use the real enclave storage function
-            string result = _enclaveWrapper.StoreData(key, data, encryptionKey, compress);
-
-            _logger.LogDebug("Data stored successfully: {Key}", key);
-            return Task.FromResult(result);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error storing data: {Key}", key);
-            throw;
-        }
-    }
 
     /// <summary>
     /// Retrieves data from the enclave using encrypted storage.

@@ -120,6 +120,50 @@ public class TestEnclaveWrapper : IEnclaveWrapper
             throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
         }
 
+        // Handle specific function calls
+        if (functionCode.Contains("storageStoreData"))
+        {
+            // Extract the JSON payload from the JavaScript code
+            try
+            {
+                // The functionCode contains something like: "const payload = {\"key\":\"...\",\"data\":\"...\"}; return storageStoreData(payload);"
+                // We need to extract the payload JSON
+                var start = functionCode.IndexOf("const payload = ") + "const payload = ".Length;
+                var end = functionCode.IndexOf(";", start);
+                if (start > 0 && end > start)
+                {
+                    var payloadJson = functionCode.Substring(start, end - start);
+                    var payload = System.Text.Json.JsonSerializer.Deserialize<System.Text.Json.JsonElement>(payloadJson);
+
+                    if (payload.TryGetProperty("key", out var keyElement) &&
+                        payload.TryGetProperty("data", out var dataElement))
+                    {
+                        string key = keyElement.GetString() ?? string.Empty;
+                        string data = dataElement.GetString() ?? string.Empty;
+
+                        // Convert base64 data to bytes and store
+                        try
+                        {
+                            byte[] dataBytes = Convert.FromBase64String(data);
+                            _mockStorage[key] = dataBytes;
+                        }
+                        catch
+                        {
+                            // If not valid base64, store as UTF8 bytes
+                            _mockStorage[key] = System.Text.Encoding.UTF8.GetBytes(data);
+                        }
+
+                        return "{\"success\": true}";
+                    }
+                }
+            }
+            catch
+            {
+                // If parsing fails, return error
+                return "{\"success\": false, \"error\": \"Invalid payload\"}";
+            }
+        }
+
         return _executeJavaScriptResult;
     }
 
@@ -215,6 +259,13 @@ public class TestEnclaveWrapper : IEnclaveWrapper
         if (!_initialized)
         {
             throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // If no specific result was set, generate a proper random number
+        if (_generateRandomResult == 0 && min > 0)
+        {
+            var random = new Random();
+            return random.Next(min, max + 1); // +1 because Random.Next upper bound is exclusive
         }
 
         return _generateRandomResult;
@@ -373,29 +424,18 @@ public class TestEnclaveWrapper : IEnclaveWrapper
             throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
         }
 
-        // Store data in mock storage
-        _mockStorage[key] = data;
+        // Store data in mock storage (handle both byte[] and base64 string for compatibility)
+        if (data != null)
+        {
+            _mockStorage[key] = data;
+        }
+        else
+        {
+            _mockStorage[key] = new byte[0];
+        }
 
-        var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
-        return $@"{{
-            ""success"": true,
-            ""key"": ""{key}"",
-            ""size"": {data.Length},
-            ""encryptedSize"": {data.Length + 32},
-            ""compressed"": {(compress ? "true" : "false")},
-            ""encrypted"": true,
-            ""timestamp"": {timestamp},
-            ""enclave"": true,
-            ""enclaveSecured"": true,
-            ""metadata"": {{
-                ""key"": ""{key}"",
-                ""size"": {data.Length},
-                ""encrypted_size"": {data.Length + 32},
-                ""compressed"": {(compress ? "true" : "false")},
-                ""encrypted"": true,
-                ""timestamp"": {timestamp}
-            }}
-        }}";
+        // Return simple JSON response that matches what StorageService.DataOperations expects
+        return "{\"success\": true}";
     }
 
     /// <summary>
@@ -727,6 +767,57 @@ public class TestEnclaveWrapper : IEnclaveWrapper
         }
 
         return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+
+    /// <summary>
+    /// Stores data in the enclave storage system via IEnclaveManager interface.
+    /// </summary>
+    /// <param name="key">The key for the data.</param>
+    /// <param name="data">The data to store (base64 encoded).</param>
+    /// <param name="encryptionKey">The encryption key.</param>
+    /// <returns>JSON result indicating success.</returns>
+    public string StorageStoreData(string key, string data, string encryptionKey)
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // Store the base64 data after decoding it to bytes for mock storage
+        try
+        {
+            byte[] dataBytes = Convert.FromBase64String(data);
+            _mockStorage[key] = dataBytes;
+        }
+        catch
+        {
+            // If not valid base64, store as UTF8 bytes
+            _mockStorage[key] = System.Text.Encoding.UTF8.GetBytes(data);
+        }
+
+        // Return simple JSON response that matches what StorageService.DataOperations expects
+        return "{\"success\": true}";
+    }
+
+    /// <summary>
+    /// Retrieves data from the enclave storage system via IEnclaveManager interface.
+    /// </summary>
+    /// <param name="key">The key of the data to retrieve.</param>
+    /// <param name="encryptionKey">The encryption key.</param>
+    /// <returns>The retrieved data as base64 string.</returns>
+    public string StorageRetrieveData(string key, string encryptionKey)
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        if (!_mockStorage.TryGetValue(key, out var data))
+        {
+            throw new EnclaveException($"Data with key '{key}' not found.");
+        }
+
+        return Convert.ToBase64String(data);
     }
 
     /// <summary>

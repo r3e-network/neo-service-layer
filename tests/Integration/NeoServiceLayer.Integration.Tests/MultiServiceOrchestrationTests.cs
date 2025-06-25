@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Net.Http;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.Services.Configuration;
@@ -48,6 +50,11 @@ public class MultiServiceOrchestrationTests : IDisposable
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
 
+        // Add mock services
+        services.AddSingleton<IServiceConfiguration, MockServiceConfiguration>();
+        services.AddSingleton<IHttpClientService, MockHttpClientService>();
+        services.AddSingleton<IHttpClientFactory, MockHttpClientFactory>();
+
         // Add all services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
         services.AddSingleton<AutomationSvc.IAutomationService, AutomationSvc.AutomationService>();
@@ -79,16 +86,32 @@ public class MultiServiceOrchestrationTests : IDisposable
     {
         _logger.LogInformation("Initializing all services for multi-service orchestration testing...");
 
-        await _proofOfReserveService.InitializeAsync();
-        await _automationService.InitializeAsync();
-        await _fairOrderingService.InitializeAsync();
-        await _crossChainService.InitializeAsync();
-        await _monitoringService.InitializeAsync();
-        await _configurationService.InitializeAsync();
-        await _backupService.InitializeAsync();
-        await _notificationService.InitializeAsync();
+        // Manually initialize the TestEnclaveWrapper
+        var enclaveWrapper = _serviceProvider.GetRequiredService<IEnclaveWrapper>();
+        if (enclaveWrapper is TestEnclaveWrapper testWrapper)
+        {
+            testWrapper.Initialize();
+            _logger.LogInformation("TestEnclaveWrapper initialized successfully");
+        }
 
-        _logger.LogInformation("All services initialized successfully");
+        await _proofOfReserveService.InitializeAsync();
+        await _proofOfReserveService.StartAsync();
+        await _automationService.InitializeAsync();
+        await _automationService.StartAsync();
+        await _fairOrderingService.InitializeAsync();
+        await _fairOrderingService.StartAsync();
+        await _crossChainService.InitializeAsync();
+        await _crossChainService.StartAsync();
+        await _monitoringService.InitializeAsync();
+        await _monitoringService.StartAsync();
+        await _configurationService.InitializeAsync();
+        await _configurationService.StartAsync();
+        await _backupService.InitializeAsync();
+        await _backupService.StartAsync();
+        await _notificationService.InitializeAsync();
+        await _notificationService.StartAsync();
+
+        _logger.LogInformation("All services initialized and started successfully");
     }
 
     [Fact]
@@ -195,5 +218,23 @@ public class MultiServiceOrchestrationTests : IDisposable
     public void Dispose()
     {
         _serviceProvider?.Dispose();
+    }
+}
+
+/// <summary>
+/// Mock implementation of IHttpClientFactory for testing.
+/// </summary>
+public class MockHttpClientFactory : IHttpClientFactory
+{
+    private readonly HttpClient _httpClient;
+
+    public MockHttpClientFactory()
+    {
+        _httpClient = new HttpClient();
+    }
+
+    public HttpClient CreateClient(string name)
+    {
+        return _httpClient;
     }
 }

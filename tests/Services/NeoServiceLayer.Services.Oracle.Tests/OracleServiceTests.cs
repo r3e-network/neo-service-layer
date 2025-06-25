@@ -162,7 +162,7 @@ public class OracleServiceTests
         await _service.StartAsync();
 
         // Act
-        var result = await _service.RegisterDataSourceAsync("https://example.com/api", "Example API", BlockchainType.NeoX);
+        var result = await _service.RegisterDataSourceAsync("https://api.coingecko.com/api", "CoinGecko API", BlockchainType.NeoX);
 
         // Assert
         Assert.True(result);
@@ -174,10 +174,10 @@ public class OracleServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        await _service.RegisterDataSourceAsync("https://example.com/api", "Example API", BlockchainType.NeoX);
+        await _service.RegisterDataSourceAsync("https://api.coingecko.com/api", "CoinGecko API", BlockchainType.NeoX);
 
         // Act
-        var result = await _service.RegisterDataSourceAsync("https://example.com/api", "Example API", BlockchainType.NeoX);
+        var result = await _service.RegisterDataSourceAsync("https://api.coingecko.com/api", "CoinGecko API", BlockchainType.NeoX);
 
         // Assert
         Assert.False(result);
@@ -189,15 +189,15 @@ public class OracleServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        await _service.RegisterDataSourceAsync("https://example.com/api", "Example API", BlockchainType.NeoX);
+        await _service.RegisterDataSourceAsync("https://api.coingecko.com/api", "CoinGecko API", BlockchainType.NeoX);
 
         // Act
         var result = await _service.GetDataSourcesAsync(BlockchainType.NeoX);
 
         // Assert
         Assert.Single(result);
-        Assert.Equal("https://example.com/api", result.First().Url);
-        Assert.Equal("Example API", result.First().Description);
+        Assert.Equal("https://api.coingecko.com/api", result.First().Url);
+        Assert.Equal("CoinGecko API", result.First().Description);
         Assert.Equal(BlockchainType.NeoX, result.First().BlockchainType);
     }
 
@@ -207,10 +207,10 @@ public class OracleServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
-        await _service.RegisterDataSourceAsync("https://example.com/api", "Example API", BlockchainType.NeoX);
+        await _service.RegisterDataSourceAsync("https://api.coingecko.com/api", "CoinGecko API", BlockchainType.NeoX);
 
         // Act
-        var result = await _service.RemoveDataSourceAsync("https://example.com/api", BlockchainType.NeoX);
+        var result = await _service.RemoveDataSourceAsync("https://api.coingecko.com/api", BlockchainType.NeoX);
 
         // Assert
         Assert.True(result);
@@ -226,7 +226,7 @@ public class OracleServiceTests
         await _service.StartAsync();
 
         // Act
-        var result = await _service.RemoveDataSourceAsync("https://example.com/api", BlockchainType.NeoX);
+        var result = await _service.RemoveDataSourceAsync("https://api.coingecko.com/api", BlockchainType.NeoX);
 
         // Assert
         Assert.False(result);
@@ -240,11 +240,11 @@ public class OracleServiceTests
         await _service.StartAsync();
 
         // Act
-        var result = await _service.GetDataAsync("https://example.com/api", "data.value", BlockchainType.NeoX);
+        var result = await _service.GetDataAsync("https://api.coingecko.com/api/v3/simple/price", "data.value", BlockchainType.NeoX);
 
         // Assert
         Assert.NotNull(result);
-        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://example.com/api", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://api.coingecko.com/api/v3/simple/price", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         _blockchainClientFactoryMock.Verify(f => f.CreateClient(BlockchainType.NeoX), Times.Once);
         _blockchainClientMock.Verify(c => c.GetBlockHeightAsync(), Times.Once);
     }
@@ -257,7 +257,7 @@ public class OracleServiceTests
         await _service.StartAsync();
 
         // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(() => _service.GetDataAsync("https://example.com/api", "data.value", (BlockchainType)999));
+        await Assert.ThrowsAsync<NotSupportedException>(() => _service.GetDataAsync("https://api.coingecko.com/api/v3/simple/price", "data.value", (BlockchainType)999));
     }
 
     [Fact]
@@ -268,7 +268,7 @@ public class OracleServiceTests
         await _service.StartAsync();
         var parameters = new Dictionary<string, string>
         {
-            ["dataSource"] = "https://example.com/api",
+            ["dataSource"] = "https://api.coingecko.com/api/v3/simple/price",
             ["dataPath"] = "data.value",
             ["blockchain"] = "NeoX"
         };
@@ -278,7 +278,7 @@ public class OracleServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://example.com/api", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
+        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://api.coingecko.com/api/v3/simple/price", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]
@@ -289,7 +289,7 @@ public class OracleServiceTests
         await _service.StartAsync();
         var parameters = new Dictionary<string, string>
         {
-            ["dataSource"] = "https://example.com/api",
+            ["dataSource"] = "https://api.coingecko.com/api",
             ["dataPath"] = "data.value",
             ["blockchain"] = "NeoX",
             ["interval"] = "60000"
@@ -325,7 +325,7 @@ public class OracleServiceTests
         await _service.StartAsync();
         var parameters = new Dictionary<string, string>
         {
-            ["dataSource"] = "https://example.com/api",
+            ["dataSource"] = "https://api.coingecko.com/api",
             ["dataPath"] = "data.value",
             ["blockchain"] = "NeoX",
             ["interval"] = "60000"

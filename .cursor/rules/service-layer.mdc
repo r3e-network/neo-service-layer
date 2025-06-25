@@ -1,9 +1,0 @@
----
-description: 
-globs: 
-alwaysApply: true
----
-make the code production ready.
-file should be less than 500 lines, break large file into smaller one logically.
-
-do a document driven development.

@@ -16,6 +16,7 @@
     <PackageReference Include="Neo" />
     <PackageReference Include="Neo.Json" />
     <PackageReference Include="Neo.VM" />
+    <PackageReference Include="Neo.Extensions" />
   </ItemGroup>
 
 </Project>

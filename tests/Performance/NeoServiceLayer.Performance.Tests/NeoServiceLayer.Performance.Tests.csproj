@@ -10,8 +10,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
-    <PackageReference Include="NUnit" />
-    <PackageReference Include="NUnit3TestAdapter" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
     <PackageReference Include="NBomber" />
     <PackageReference Include="BenchmarkDotNet" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
@@ -25,6 +25,7 @@
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
     <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host.Tests\NeoServiceLayer.Tee.Host.Tests.csproj" />
     <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
     <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />

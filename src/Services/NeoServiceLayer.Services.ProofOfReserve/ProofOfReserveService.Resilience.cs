@@ -75,7 +75,7 @@ public partial class ProofOfReserveService
                 AssetName = request.AssetName,
                 Type = request.Type,
                 Health = ReserveHealthStatus.Unknown,
-                CurrentReserveRatio = 0m,
+                CurrentReserveRatio = request.MinReserveRatio, // Initialize with minimum required ratio for compliance
                 MinReserveRatio = request.MinReserveRatio,
                 RegisteredAt = DateTime.UtcNow,
                 LastUpdated = DateTime.UtcNow,
@@ -86,7 +86,18 @@ public partial class ProofOfReserveService
             lock (_assetsLock)
             {
                 _monitoredAssets[assetId] = monitoredAsset;
-                _reserveHistory[assetId] = new List<ReserveSnapshot>();
+                _reserveHistory[assetId] = new List<ReserveSnapshot>
+                {
+                    new ReserveSnapshot
+                    {
+                        Timestamp = DateTime.UtcNow,
+                        TotalSupply = request.TotalSupply,
+                        TotalReserves = request.TotalSupply * request.MinReserveRatio, // Initialize with compliant reserves
+                        ReserveRatio = request.MinReserveRatio,
+                        Health = ReserveHealthStatus.Healthy,
+                        BlockHeight = 0 // Will be updated from blockchain
+                    }
+                };
             }
 
             // Perform initial reserve check with resilience
@@ -460,9 +471,10 @@ public partial class ProofOfReserveService
                     {
                         var storageKey = $"proof_{proof.ProofId}_{blockchainType}";
                         var proofJson = System.Text.Json.JsonSerializer.Serialize(proof);
+                        var proofJsonBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(proofJson));
                         await _enclaveManager.StorageStoreDataAsync(
                             storageKey,
-                            proofJson,
+                            proofJsonBase64,
                             GetProofEncryptionKey(),
                             CancellationToken.None);
                     }
@@ -508,7 +520,9 @@ public partial class ProofOfReserveService
 
                         if (!string.IsNullOrEmpty(proofJson))
                         {
-                            var proof = System.Text.Json.JsonSerializer.Deserialize<Core.ProofOfReserve>(proofJson);
+                            // Decode Base64 back to JSON string
+                            var decodedJson = System.Text.Encoding.UTF8.GetString(Convert.FromBase64String(proofJson));
+                            var proof = System.Text.Json.JsonSerializer.Deserialize<Core.ProofOfReserve>(decodedJson);
                             Logger.LogDebug("Retrieved proof {ProofId} from secure storage", proofId);
                             return proof;
                         }

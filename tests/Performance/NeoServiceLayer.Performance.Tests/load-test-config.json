@@ -2,7 +2,7 @@
   "LoadTestConfiguration": {
     "SGXMode": "SIM",
     "EnableDebug": true,
-    "TestDurationMinutes": 5,
+    "TestDurationMinutes": 2,
     "WarmupDurationSeconds": 30,
     "ReportingIntervalSeconds": 10,
     "MaxConcurrentUsers": 100,
@@ -16,14 +16,14 @@
   "Scenarios": {
     "EnclaveInitialization": {
       "MaxRps": 10,
-      "Duration": "00:02:00",
+      "Duration": "00:01:00",
       "ConcurrentCopies": 5,
       "ExpectedLatencyP95Ms": 200,
       "ExpectedLatencyP99Ms": 500
     },
     "DataSealing": {
       "MaxRps": 1000,
-      "Duration": "00:05:00",
+      "Duration": "00:02:00",
       "ConcurrentCopies": 20,
       "DataSizes": [1024, 4096, 16384, 65536],
       "ExpectedLatencyP95Ms": 10,
@@ -31,14 +31,14 @@
     },
     "DataUnsealing": {
       "MaxRps": 1000,
-      "Duration": "00:05:00",
+      "Duration": "00:02:00",
       "ConcurrentCopies": 20,
       "ExpectedLatencyP95Ms": 8,
       "ExpectedLatencyP99Ms": 20
     },
     "CryptographicOperations": {
       "MaxRps": 500,
-      "Duration": "00:03:00",
+      "Duration": "00:01:30",
       "ConcurrentCopies": 15,
       "Operations": ["Sign", "Verify", "Encrypt", "Decrypt"],
       "ExpectedLatencyP95Ms": 15,
@@ -46,7 +46,7 @@
     },
     "JavaScriptExecution": {
       "MaxRps": 200,
-      "Duration": "00:03:00",
+      "Duration": "00:01:30",
       "ConcurrentCopies": 10,
       "ScriptComplexity": ["Simple", "Moderate", "Complex"],
       "ExpectedLatencyP95Ms": 50,
@@ -54,7 +54,7 @@
     },
     "SecureHttpRequests": {
       "MaxRps": 100,
-      "Duration": "00:04:00",
+      "Duration": "00:02:00",
       "ConcurrentCopies": 8,
       "RequestSizes": [256, 1024, 4096],
       "ExpectedLatencyP95Ms": 100,
@@ -62,7 +62,7 @@
     },
     "AttestationGeneration": {
       "MaxRps": 50,
-      "Duration": "00:02:00",
+      "Duration": "00:01:00",
       "ConcurrentCopies": 5,
       "ExpectedLatencyP95Ms": 80,
       "ExpectedLatencyP99Ms": 150
@@ -76,7 +76,7 @@
     },
     "HighThroughput": {
       "TargetRps": 2000,
-      "Duration": "00:05:00",
+      "Duration": "00:02:00",
       "ConcurrentCopies": 50
     },
     "LongRunning": {

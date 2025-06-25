@@ -4,8 +4,12 @@
 [![Test Coverage](https://img.shields.io/badge/coverage-80%25+-green)](https://github.com/neo-project/neo-service-layer)
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
+[![Intel SGX](https://img.shields.io/badge/Intel-SGX-blue)](https://software.intel.com/en-us/sgx)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 
 The Neo Service Layer is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
+
+> **Enterprise Ready** • **Hardware Security** • **Multi-Chain** • **AI-Powered** • **Production Tested**
 
 ## 🌟 Key Features
 

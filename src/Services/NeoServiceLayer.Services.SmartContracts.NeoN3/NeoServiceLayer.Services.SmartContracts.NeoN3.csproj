@@ -18,6 +18,7 @@
     <PackageReference Include="Neo.Cryptography.BLS12_381" />
     <PackageReference Include="Neo.IO" />
     <PackageReference Include="Neo.SmartContract.Framework" />
+    <PackageReference Include="Neo.Extensions" />
   </ItemGroup>
 
   <ItemGroup>
