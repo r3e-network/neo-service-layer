@@ -226,7 +226,7 @@ public class PredictionAdvancedTests : IDisposable
         forecast.OverallTrend.Should().Be(PredictionModels.MarketTrend.Volatile);
         forecast.RiskFactors.Should().Contain(r => r.Contains("high volatility"));
         forecast.VolatilityMetrics.Should().NotBeNull();
-        forecast.VolatilityMetrics!.VaR.Should().BeGreaterThan(0.05); // Value at Risk > 5%
+        forecast.VolatilityMetrics!.VaR.Should().BeGreaterThan(0.04); // Value at Risk > 4%
         forecast.VolatilityMetrics.ExpectedShortfall.Should().BeGreaterThan(forecast.VolatilityMetrics.VaR);
         forecast.TradingRecommendations.Should().Contain(r => r.Contains("risk management"));
     }

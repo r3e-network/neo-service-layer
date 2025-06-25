@@ -67,7 +67,16 @@ public class NBomberLoadTests : IDisposable
         services.AddNeoServiceLayer(_configuration);
 
         // Override with test enclave wrapper for performance tests when SGX is not available
-        services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
+        services.AddSingleton<IEnclaveWrapper>(provider =>
+        {
+            var testWrapper = new TestEnclaveWrapper();
+            var initResult = testWrapper.Initialize();
+            if (!initResult)
+            {
+                throw new InvalidOperationException("Failed to initialize TestEnclaveWrapper for performance tests");
+            }
+            return testWrapper;
+        });
 
         _serviceProvider = services.BuildServiceProvider();
         _performanceMonitor = new PerformanceMonitor(_loadTestConfig.ResourceMonitoring);
@@ -91,11 +100,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            // Initialize enclave if not already done
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             // Generate test data with varying sizes
             var dataSizes = new[] { 1024, 4096, 16384, 65536 };
@@ -154,10 +159,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             var testData = GenerateTestData(256);
             var keyId = $"crypto-key-{context.InvocationNumber % 10}"; // Reuse keys
@@ -190,10 +192,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             var testData = GenerateTestData(256);
             var keyId = $"crypto-key-{context.InvocationNumber % 10}";
@@ -248,10 +247,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             // Different JavaScript complexities
             var scripts = new[]
@@ -331,10 +327,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             // Create larger data to pressure memory
             var dataSize = 65536 * stressConfig.DataSizeMultiplier; // Multiply base size
@@ -397,10 +390,7 @@ public class NBomberLoadTests : IDisposable
             using var scope = _serviceProvider.CreateScope();
             var enclaveWrapper = scope.ServiceProvider.GetRequiredService<IEnclaveWrapper>();
 
-            if (!await IsEnclaveInitializedAsync(enclaveWrapper))
-            {
-                await InitializeEnclaveAsync(enclaveWrapper);
-            }
+            // TestEnclaveWrapper is already initialized during DI registration
 
             var testData = GenerateTestData(1024);
             var keyId = $"burst-test-key-{context.InvocationNumber % 100}";
