@@ -33,19 +33,79 @@ public class EventSubscriptionServiceTests
             .Setup(e => e.InitializeEnclaveAsync())
             .ReturnsAsync(true);
 
+        var subscriptionStore = new Dictionary<string, EventSubscription>();
+
         _enclaveManagerMock
             .Setup(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string script, CancellationToken token) =>
             {
                 if (script.Contains("createSubscription"))
                 {
-                    return JsonSerializer.Serialize("subscription-1");
+                    // Generate a unique subscription ID
+                    var subscriptionId = $"subscription-{Guid.NewGuid():N}";
+
+                    // Extract subscription data from the script to preserve original data
+                    try
+                    {
+                        var startIndex = script.IndexOf("createSubscription(") + "createSubscription(".Length;
+                        var endIndex = script.LastIndexOf(", '");
+                        var subscriptionJson = script.Substring(startIndex, endIndex - startIndex);
+                        var originalSubscription = JsonSerializer.Deserialize<EventSubscription>(subscriptionJson);
+
+                        // Update the subscription ID in the original subscription
+                        if (originalSubscription != null)
+                        {
+                            originalSubscription.SubscriptionId = subscriptionId;
+                            originalSubscription.CreatedAt = DateTime.UtcNow;
+                            originalSubscription.LastModifiedAt = DateTime.UtcNow;
+                            subscriptionStore[subscriptionId] = originalSubscription;
+                        }
+                    }
+                    catch
+                    {
+                        // Fallback to default subscription if parsing fails
+                        var subscription = new EventSubscription
+                        {
+                            SubscriptionId = subscriptionId,
+                            Name = "Test Subscription",
+                            Description = "Test subscription description",
+                            EventType = "Block",
+                            EventFilter = "",
+                            CallbackUrl = "https://example.com/callback",
+                            CallbackAuthHeader = "Bearer token123",
+                            Enabled = true,
+                            CreatedAt = DateTime.UtcNow,
+                            LastModifiedAt = DateTime.UtcNow,
+                            RetryPolicy = new RetryPolicy
+                            {
+                                MaxRetries = 3,
+                                InitialRetryDelaySeconds = 5,
+                                RetryBackoffFactor = 2.0,
+                                MaxRetryDelaySeconds = 60
+                            }
+                        };
+                        subscriptionStore[subscriptionId] = subscription;
+                    }
+
+                    return JsonSerializer.Serialize(subscriptionId);
                 }
                 else if (script.Contains("getSubscription"))
                 {
+                    // Extract subscription ID from script
+                    var startIndex = script.IndexOf("('") + 2;
+                    var endIndex = script.IndexOf("',", startIndex);
+                    if (endIndex == -1) endIndex = script.IndexOf("')", startIndex);
+                    var subscriptionId = script.Substring(startIndex, endIndex - startIndex);
+
+                    if (subscriptionStore.TryGetValue(subscriptionId, out var subscription))
+                    {
+                        return JsonSerializer.Serialize(subscription);
+                    }
+
+                    // Return default subscription for "subscription-1" for compatibility
                     return JsonSerializer.Serialize(new EventSubscription
                     {
-                        SubscriptionId = "subscription-1",
+                        SubscriptionId = subscriptionId,
                         Name = "Test Subscription",
                         Description = "Test subscription description",
                         EventType = "Block",
@@ -74,9 +134,11 @@ public class EventSubscriptionServiceTests
                 }
                 else if (script.Contains("listSubscriptions"))
                 {
-                    return JsonSerializer.Serialize(new List<EventSubscription>
+                    var subscriptions = subscriptionStore.Values.ToList();
+                    if (subscriptions.Count == 0)
                     {
-                        new EventSubscription
+                        // Return a default subscription for compatibility
+                        subscriptions.Add(new EventSubscription
                         {
                             SubscriptionId = "subscription-1",
                             Name = "Test Subscription",
@@ -95,8 +157,9 @@ public class EventSubscriptionServiceTests
                                 RetryBackoffFactor = 2.0,
                                 MaxRetryDelaySeconds = 60
                             }
-                        }
-                    });
+                        });
+                    }
+                    return JsonSerializer.Serialize(subscriptions);
                 }
                 else if (script.Contains("getEvents"))
                 {
@@ -203,7 +266,8 @@ public class EventSubscriptionServiceTests
             BlockchainType.NeoN3);
 
         // Assert
-        Assert.Equal("subscription-1", result);
+        Assert.NotEmpty(result);
+        Assert.StartsWith("subscription-", result);
         _enclaveManagerMock.Verify(e => e.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
@@ -241,9 +305,31 @@ public class EventSubscriptionServiceTests
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
+
+        // First create a subscription
+        var createSubscription = new EventSubscription
+        {
+            Name = "Test Subscription",
+            Description = "Test subscription description",
+            EventType = "Block",
+            EventFilter = "",
+            CallbackUrl = "https://example.com/callback",
+            CallbackAuthHeader = "Bearer token123",
+            Enabled = true,
+            RetryPolicy = new RetryPolicy
+            {
+                MaxRetries = 3,
+                InitialRetryDelaySeconds = 5,
+                RetryBackoffFactor = 2.0,
+                MaxRetryDelaySeconds = 60
+            }
+        };
+        var subscriptionId = await _service.CreateSubscriptionAsync(createSubscription, BlockchainType.NeoN3);
+
+        // Now prepare the update
         var subscription = new EventSubscription
         {
-            SubscriptionId = "subscription-1",
+            SubscriptionId = subscriptionId,
             Name = "Updated Subscription",
             Description = "Updated subscription description",
             EventType = "Block",
@@ -277,9 +363,29 @@ public class EventSubscriptionServiceTests
         await _service.InitializeAsync();
         await _service.StartAsync();
 
+        // First create a subscription to delete
+        var createSubscription = new EventSubscription
+        {
+            Name = "Test Subscription",
+            Description = "Test subscription description",
+            EventType = "Block",
+            EventFilter = "",
+            CallbackUrl = "https://example.com/callback",
+            CallbackAuthHeader = "Bearer token123",
+            Enabled = true,
+            RetryPolicy = new RetryPolicy
+            {
+                MaxRetries = 3,
+                InitialRetryDelaySeconds = 5,
+                RetryBackoffFactor = 2.0,
+                MaxRetryDelaySeconds = 60
+            }
+        };
+        var subscriptionId = await _service.CreateSubscriptionAsync(createSubscription, BlockchainType.NeoN3);
+
         // Act
         var result = await _service.DeleteSubscriptionAsync(
-            "subscription-1",
+            subscriptionId,
             BlockchainType.NeoN3);
 
         // Assert
@@ -313,9 +419,29 @@ public class EventSubscriptionServiceTests
         await _service.InitializeAsync();
         await _service.StartAsync();
 
+        // First create a subscription
+        var createSubscription = new EventSubscription
+        {
+            Name = "Test Subscription",
+            Description = "Test subscription description",
+            EventType = "Block",
+            EventFilter = "",
+            CallbackUrl = "https://example.com/callback",
+            CallbackAuthHeader = "Bearer token123",
+            Enabled = true,
+            RetryPolicy = new RetryPolicy
+            {
+                MaxRetries = 3,
+                InitialRetryDelaySeconds = 5,
+                RetryBackoffFactor = 2.0,
+                MaxRetryDelaySeconds = 60
+            }
+        };
+        var subscriptionId = await _service.CreateSubscriptionAsync(createSubscription, BlockchainType.NeoN3);
+
         // Act
         var result = await _service.GetEventsAsync(
-            "subscription-1",
+            subscriptionId,
             0,
             10,
             BlockchainType.NeoN3);

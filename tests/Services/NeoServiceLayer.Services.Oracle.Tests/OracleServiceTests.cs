@@ -244,7 +244,7 @@ public class OracleServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _enclaveManagerMock.Verify(e => e.GetDataAsync("https://example.com/api", "data.value"), Times.Once);
+        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://example.com/api", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
         _blockchainClientFactoryMock.Verify(f => f.CreateClient(BlockchainType.NeoX), Times.Once);
         _blockchainClientMock.Verify(c => c.GetBlockHeightAsync(), Times.Once);
     }
@@ -278,7 +278,7 @@ public class OracleServiceTests
 
         // Assert
         Assert.NotNull(result);
-        _enclaveManagerMock.Verify(e => e.GetDataAsync("https://example.com/api", "data.value"), Times.Once);
+        _enclaveManagerMock.Verify(e => e.OracleFetchAndProcessDataAsync("https://example.com/api", It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Fact]

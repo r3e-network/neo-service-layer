@@ -63,13 +63,13 @@ public class PatternRecognitionAdvancedTests : IDisposable
     {
         await _service.InitializeAsync();
         _service.IsEnclaveInitialized.Should().BeTrue();
-        
+
         // Create required test models
         await CreateTestModelsAsync();
     }
-    
+
     private readonly Dictionary<string, string> _testModelIds = new();
-    
+
     private async Task CreateTestModelsAsync()
     {
         // Create test models that the tests expect
@@ -87,7 +87,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
             },
             ["temporal"] = new PatternModelDefinition
             {
-                Name = "Temporal Pattern Model", 
+                Name = "Temporal Pattern Model",
                 Description = "Model for temporal analysis",
                 PatternType = PatternRecognitionType.TemporalPattern,
                 Algorithm = "LSTM",
@@ -98,7 +98,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
             ["network"] = new PatternModelDefinition
             {
                 Name = "Network Pattern Model",
-                Description = "Model for network analysis", 
+                Description = "Model for network analysis",
                 PatternType = PatternRecognitionType.NetworkAnalysis,
                 Algorithm = "Graph Neural Network",
                 InputFeatures = new List<string> { "centrality", "clustering", "connectivity" },
@@ -649,7 +649,8 @@ public class PatternRecognitionAdvancedTests : IDisposable
             Metadata = new Dictionary<string, object>
             {
                 ["is_new_user"] = isNewUser,
-                ["analysis_depth"] = "comprehensive"
+                ["analysis_depth"] = "comprehensive",
+                ["unusual_timing"] = unusualTiming
             }
         };
     }
@@ -690,10 +691,10 @@ public class PatternRecognitionAdvancedTests : IDisposable
         AnalysisDepth analysisDepth = AnalysisDepth.Standard)
     {
         // Use the stored model ID if available, otherwise create a fallback
-        var modelId = _testModelIds.TryGetValue(patternType, out var storedId) 
-            ? storedId 
+        var modelId = _testModelIds.TryGetValue(patternType, out var storedId)
+            ? storedId
             : "test_model_" + patternType;
-            
+
         return new PatternAnalysisRequest
         {
             ModelId = modelId,
@@ -846,9 +847,23 @@ public class PatternRecognitionAdvancedTests : IDisposable
             new PatternModel { ModelId = "model_3", ModelType = "anomaly_detection", Version = "2.0" }
         };
 
-        var modelsData = JsonSerializer.SerializeToUtf8Bytes(models);
-        _mockStorageProvider.Setup(x => x.RetrieveAsync("pattern_models_neo_n3"))
-                          .ReturnsAsync(modelsData);
+        // Setup ListKeysAsync to return the model keys
+        var modelKeys = new[]
+        {
+            "pattern_models_NeoN3_model_1",
+            "pattern_models_NeoN3_model_2",
+            "pattern_models_NeoN3_model_3"
+        };
+        _mockStorageProvider.Setup(x => x.ListKeysAsync("pattern_models_NeoN3", It.IsAny<int>()))
+                          .ReturnsAsync(modelKeys);
+
+        // Setup individual model retrieval
+        for (int i = 0; i < models.Length; i++)
+        {
+            var modelData = JsonSerializer.SerializeToUtf8Bytes(models[i]);
+            _mockStorageProvider.Setup(x => x.RetrieveAsync(modelKeys[i]))
+                              .ReturnsAsync(modelData);
+        }
     }
 
     private void SetupExistingModel(string modelId)
@@ -862,8 +877,12 @@ public class PatternRecognitionAdvancedTests : IDisposable
         };
 
         var modelData = JsonSerializer.SerializeToUtf8Bytes(model);
-        _mockStorageProvider.Setup(x => x.RetrieveAsync($"pattern_model_{modelId}"))
+        var key = $"pattern_models_NeoN3_{modelId}";
+
+        _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
                           .ReturnsAsync(modelData);
+        _mockStorageProvider.Setup(x => x.ExistsAsync(key))
+                          .ReturnsAsync(true);
     }
 
     private List<Dictionary<string, object>> CreateTransactionHistory(decimal avgAmount, int frequency, bool unusualTiming)
@@ -917,7 +936,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
         // Set up storage provider to return history items
         var historyKeys = history.Select((h, i) => $"fraud_history_{BlockchainType.NeoN3}_{userId}_{i}").ToList();
-        var pattern = $"fraud_history_{BlockchainType.NeoN3}_{userId}_";
+        var pattern = $"fraud_history_{BlockchainType.NeoN3}_{userId}_*";
         _mockStorageProvider.Setup(x => x.ListKeysAsync(pattern, It.IsAny<int>()))
                           .ReturnsAsync(historyKeys);
 
@@ -940,7 +959,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
             EntityType = "regular",
             RiskLevel = AIModels.RiskLevel.Low,
             UnusualTimePatterns = false,
-            LastUpdated = DateTime.UtcNow.AddDays(-1),
+            LastUpdated = DateTime.UtcNow.AddDays(-2),
             RiskTolerance = 0.3,
             TransactionPatterns = new Dictionary<string, object>
             {
@@ -965,14 +984,14 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
         var key = $"behavior_profile_{BlockchainType.NeoN3}_{userId}";
         var data = JsonSerializer.SerializeToUtf8Bytes(profile);
-        
+
         // Remove any existing setup for this key first
         _mockStorageProvider.Invocations.Clear();
-        
+
         // Setup the specific key to return the profile data
         _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
                           .ReturnsAsync(data);
-                          
+
         // Re-setup the default for other keys
         _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(k => k != key)))
                           .ReturnsAsync((byte[])null);

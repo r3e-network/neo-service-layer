@@ -216,6 +216,37 @@ public static class FraudDetectionHelper
             aiRequest.TransactionTime = timestamp;
         }
 
+        // Extract feature flags from transaction data
+        if (coreRequest.TransactionData.TryGetValue("is_new_address", out var isNewAddressObj)
+            && bool.TryParse(isNewAddressObj?.ToString(), out var isNewAddress))
+        {
+            aiRequest.IsNewAddress = isNewAddress;
+        }
+
+        if (coreRequest.TransactionData.TryGetValue("high_frequency", out var highFrequencyObj)
+            && bool.TryParse(highFrequencyObj?.ToString(), out var highFrequency))
+        {
+            aiRequest.HighFrequency = highFrequency;
+        }
+
+        if (coreRequest.TransactionData.TryGetValue("unusual_time_pattern", out var unusualTimeObj)
+            && bool.TryParse(unusualTimeObj?.ToString(), out var unusualTime))
+        {
+            aiRequest.UnusualTimePattern = unusualTime;
+        }
+
+        if (coreRequest.TransactionData.TryGetValue("transaction_count", out var transactionCountObj)
+            && int.TryParse(transactionCountObj?.ToString(), out var transactionCount))
+        {
+            aiRequest.TransactionCount = transactionCount;
+        }
+
+        if (coreRequest.TransactionData.TryGetValue("time_window", out var timeWindowObj)
+            && timeWindowObj is TimeSpan timeWindow)
+        {
+            aiRequest.TimeWindow = timeWindow;
+        }
+
         return aiRequest;
     }
 

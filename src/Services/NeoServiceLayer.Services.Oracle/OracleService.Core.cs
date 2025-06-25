@@ -402,8 +402,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
                 "api.coingecko.com",
                 "api.binance.com",
                 "api.cryptocompare.com",
-                "localhost",
-                "example.com"
+                "localhost"
             };
 
             if (!allowedDomains.Any(domain => uri.Host.Contains(domain, StringComparison.OrdinalIgnoreCase)))

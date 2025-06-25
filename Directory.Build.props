@@ -7,14 +7,22 @@
     <LangVersion>latest</LangVersion>
     
     <!-- Company/Product Information -->
-    <Company>NeoServiceLayer</Company>
+    <Company>Neo Project</Company>
     <Product>Neo Service Layer</Product>
-    <Copyright>Copyright (c) 2025 NeoServiceLayer</Copyright>
+    <Description>Enterprise-grade blockchain services platform with Intel SGX trusted execution environment</Description>
+    <Copyright>Copyright (c) 2025 Neo Project</Copyright>
+    <Authors>Neo Project Contributors</Authors>
+    <PackageProjectUrl>https://github.com/neo-project/neo-service-layer</PackageProjectUrl>
+    <PackageLicenseExpression>MIT</PackageLicenseExpression>
+    <RepositoryUrl>https://github.com/neo-project/neo-service-layer</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+    <PackageTags>neo;blockchain;sgx;enclave;microservices;trusted-execution</PackageTags>
     
     <!-- Versioning -->
     <Version>1.0.0</Version>
     <AssemblyVersion>1.0.0.0</AssemblyVersion>
     <FileVersion>1.0.0.0</FileVersion>
+    <InformationalVersion>1.0.0-production</InformationalVersion>
     
     <!-- Code Analysis -->
     <EnableNETAnalyzers>true</EnableNETAnalyzers>

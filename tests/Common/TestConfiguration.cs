@@ -24,6 +24,7 @@ public static class TestConfiguration
         // Set SGX mode to simulation for tests
         Environment.SetEnvironmentVariable("SGX_MODE", "SIM");
         Environment.SetEnvironmentVariable("SGX_DEBUG", "1");
+        Environment.SetEnvironmentVariable("NEO_ALLOW_SGX_SIMULATION", "true");
 
         // Set environment to test
         Environment.SetEnvironmentVariable("DOTNET_ENVIRONMENT", "Testing");

@@ -27,10 +27,10 @@ public class VotingStrategyHelperTests
         // Arrange
         var candidates = new List<CandidateInfo>
         {
-            new CandidateInfo { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, Rank = 1 },
-            new CandidateInfo { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, Rank = 2 },
-            new CandidateInfo { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, Rank = 3 },
-            new CandidateInfo { PublicKey = "key4", Name = "Candidate 4", IsActive = true, VotesReceived = 700, Rank = 4 }
+            new CandidateInfo { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, Rank = 1, UptimePercentage = 99.5 },
+            new CandidateInfo { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, Rank = 2, UptimePercentage = 99.0 },
+            new CandidateInfo { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, Rank = 3, UptimePercentage = 98.5 },
+            new CandidateInfo { PublicKey = "key4", Name = "Candidate 4", IsActive = true, VotesReceived = 700, Rank = 4, UptimePercentage = 97.0 }
         };
 
         var strategy = new VotingStrategy
@@ -47,8 +47,8 @@ public class VotingStrategyHelperTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(3); // Only active candidates
-        result.All(c => c.IsActive).Should().BeTrue();
+        result.Should().HaveCount(2); // Only active candidates with high uptime (key1 and key3)
+        result.All(c => c.IsActive && c.UptimePercentage >= 98.0).Should().BeTrue();
     }
 
     [Fact]
@@ -210,7 +210,7 @@ public class VotingStrategyHelperTests
         // Assert
         result.Should().NotBeNullOrEmpty();
         result.Should().Contain("15");
-        result.Should().Contain("active");
+        result.Should().Contain("reliable");
     }
 
     [Fact]

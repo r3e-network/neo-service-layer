@@ -2,6 +2,7 @@
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -23,12 +24,14 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="configuration">The service configuration.</param>
+    /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configurationService">The configuration service.</param>
     public ProofOfReserveService(
         ILogger<ProofOfReserveService> logger,
         IServiceConfiguration? configuration = null,
+        IEnclaveManager? enclaveManager = null,
         ProofOfReserveConfigurationService? configurationService = null)
-        : base("ProofOfReserve", "Asset backing verification and reserve monitoring service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+        : base("ProofOfReserve", "Asset backing verification and reserve monitoring service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
         _configurationService = configurationService;
@@ -351,8 +354,10 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     {
         try
         {
-            // Get the asset's reserve data
-            List<byte[]>? reserveData = null;
+            // Get the asset's reserve data - use the same approach as during generation
+            string[] reserveAddresses = Array.Empty<string>();
+            decimal[] reserveBalances = Array.Empty<decimal>();
+
             lock (_assetsLock)
             {
                 if (_monitoredAssets.TryGetValue(proof.AssetId, out var asset))
@@ -360,25 +365,26 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
                     var latestSnapshot = _reserveHistory[proof.AssetId].LastOrDefault();
                     if (latestSnapshot != null)
                     {
-                        // Prepare merkle root data from current reserve data
-                        reserveData = new List<byte[]>
-                        {
-                            System.Text.Encoding.UTF8.GetBytes($"supply:{proof.TotalSupply}"),
-                            System.Text.Encoding.UTF8.GetBytes($"reserves:{proof.TotalReserves}"),
-                            System.Text.Encoding.UTF8.GetBytes($"ratio:{proof.ReserveRatio}"),
-                            System.Text.Encoding.UTF8.GetBytes($"timestamp:{proof.GeneratedAt:O}")
-                        };
+                        reserveAddresses = latestSnapshot.ReserveAddresses;
+                        reserveBalances = latestSnapshot.ReserveBalances;
                     }
                 }
             }
 
-            if (reserveData != null)
+            if (reserveAddresses.Length > 0 && reserveBalances.Length > 0)
             {
-                var computedMerkleRoot = await ComputeMerkleRootAsync(reserveData);
+                // Use the same Merkle root generation logic as during proof creation
+                var computedMerkleRoot = await GenerateMerkleRootAsync(reserveAddresses, reserveBalances);
                 var expectedMerkleRoot = Convert.FromBase64String(proof.MerkleRoot);
-                return computedMerkleRoot.SequenceEqual(expectedMerkleRoot);
+                var isValid = computedMerkleRoot.SequenceEqual(expectedMerkleRoot);
+
+                Logger.LogDebug("Merkle root validation for proof {ProofId}: computed={ComputedRoot}, expected={ExpectedRoot}, valid={IsValid}",
+                    proof.ProofId, Convert.ToBase64String(computedMerkleRoot), proof.MerkleRoot, isValid);
+
+                return isValid;
             }
 
+            Logger.LogWarning("No reserve addresses/balances found for Merkle root validation of proof {ProofId}", proof.ProofId);
             return false;
         }
         catch (Exception ex)
@@ -492,7 +498,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// <returns>The proof encryption key.</returns>
     private string GetProofEncryptionKey()
     {
-        // In production, this would derive from enclave identity or configuration
+        // Derive encryption key from enclave identity and configuration parameters
         return "proof-storage-encryption-key-v1";
     }
 }

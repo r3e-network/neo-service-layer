@@ -5,6 +5,7 @@ using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ZeroKnowledge;
+using NeoServiceLayer.Services.ZeroKnowledge.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
 
@@ -32,7 +33,12 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         _service = new ZeroKnowledgeService(
             _mockLogger.Object,
+            _mockEnclaveManager.Object,
             null);
+
+        // Initialize the service synchronously for tests
+        _service.InitializeAsync().GetAwaiter().GetResult();
+        _service.StartAsync().GetAwaiter().GetResult();
     }
 
     #region Service Lifecycle Tests
@@ -47,7 +53,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         // Assert
         _service.IsRunning.Should().BeTrue();
-        VerifyLoggerCalled(LogLevel.Information, "Zero Knowledge Service started successfully");
+        VerifyLoggerCalled(LogLevel.Information, "Zero-Knowledge Service");
     }
 
     [Fact]
@@ -63,7 +69,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
         // Assert
         _service.IsRunning.Should().BeFalse();
-        VerifyLoggerCalled(LogLevel.Information, "Zero Knowledge Service stopped successfully");
+        VerifyLoggerCalled(LogLevel.Information, "Zero-Knowledge Service");
     }
 
     #endregion
@@ -161,7 +167,7 @@ public class ZeroKnowledgeServiceTests : IDisposable
         proof.Should().NotBeNull();
         proof.ProofData.Length.Should().BeGreaterThan(0);
         var originalInputs = new Dictionary<string, object> { ["public_input"] = 25 };
-        VerifyLoggerCalled(LogLevel.Information, "Generated ZK proof for circuit");
+        VerifyLoggerCalled(LogLevel.Information, "Generated ZK proof");
     }
 
     [Fact]
@@ -324,13 +330,63 @@ public class ZeroKnowledgeServiceTests : IDisposable
 
     private void SetupEnclaveManager()
     {
+        // Setup basic manager properties
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+
+        // Setup initialization
+        _mockEnclaveManager.Setup(x => x.InitializeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+        _mockEnclaveManager.Setup(x => x.InitializeEnclaveAsync())
+            .ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.DestroyEnclaveAsync())
+            .ReturnsAsync(true);
+
+        // Setup storage operations
         _mockEnclaveManager
             .Setup(x => x.StorageStoreDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("mock-storage-id");
+        _mockEnclaveManager.Setup(x => x.StorageRetrieveDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("test-data");
+        _mockEnclaveManager.Setup(x => x.StorageDeleteDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(true);
+
+        // Setup cryptographic operations
+        _mockEnclaveManager.Setup(x => x.EncryptDataAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string data, string key) => $"encrypted-{data}");
+        _mockEnclaveManager.Setup(x => x.DecryptDataAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string data, string key) => data.StartsWith("encrypted-") ? data.Substring(10) : data);
+        _mockEnclaveManager.Setup(x => x.SignDataAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync("mock-signature");
+        _mockEnclaveManager.Setup(x => x.VerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync(true);
+
     }
 
     private void SetupCircuitStorage(Circuit circuit)
     {
+        // Create a proper ZkCircuit and add it to the service's circuit collection
+        var zkCircuit = new ZkCircuit
+        {
+            CircuitId = circuit.Id,
+            Name = circuit.Id,
+            Description = "Test circuit",
+            Type = ZkCircuitType.Computation,
+            VerificationKey = "mock_verification_key",
+            ProvingKey = "mock_proving_key",
+            IsActive = true,
+            CompiledAt = DateTime.UtcNow
+        };
+
+        // Access the private circuits field using reflection
+        var circuitsField = typeof(ZeroKnowledgeService).GetField("_circuits", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+        var circuits = (Dictionary<string, ZkCircuit>)circuitsField!.GetValue(_service)!;
+
+        lock (circuits)
+        {
+            circuits[circuit.Id] = zkCircuit;
+        }
+
+        // Also setup the enclave storage mock
         var circuitData = new
         {
             CircuitId = circuit.Id,

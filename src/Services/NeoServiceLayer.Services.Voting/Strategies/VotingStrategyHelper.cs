@@ -30,9 +30,10 @@ public class VotingStrategyHelper
     {
         return strategy.StrategyType switch
         {
-            Core.VotingStrategyType.Automatic => allCandidates.Where(c => c.IsActive),
-            Core.VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward).Take(21),
-            Core.VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsConsensusNode),
+            Core.VotingStrategyType.Manual => allCandidates.Where(c => c.IsActive),
+            Core.VotingStrategyType.Automatic => allCandidates.OrderByDescending(c => c.VotesReceived).Take(21),
+            Core.VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward),
+            Core.VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsActive && c.UptimePercentage >= 98.0),
             Core.VotingStrategyType.Conditional => GetConditionalCandidates(allCandidates, strategy),
             Core.VotingStrategyType.Custom => GetCustomCandidates(allCandidates, strategy),
             _ => allCandidates.Where(c => c.IsActive)

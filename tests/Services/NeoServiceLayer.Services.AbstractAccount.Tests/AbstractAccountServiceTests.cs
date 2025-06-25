@@ -18,6 +18,34 @@ public class AbstractAccountServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<AbstractAccountService>>();
         _service = new AbstractAccountService(_loggerMock.Object, MockEnclaveManager.Object);
+
+        // Initialize the service to ensure enclave is ready
+        InitializeServiceAsync().GetAwaiter().GetResult();
+    }
+
+    private async Task InitializeServiceAsync()
+    {
+        await _service.InitializeAsync();
+    }
+
+    private async Task<string> CreateTestAccountAsync(BlockchainType blockchainType)
+    {
+        var request = new CreateAccountRequest
+        {
+            OwnerPublicKey = "03c663ba46afa8349f020eb9e8f9e1dc1c8e877b9d239e9110d1fdd7152e7c59dd",
+            InitialGuardians = new[] { GenerateTestAddress(blockchainType) },
+            RecoveryThreshold = 1,
+            EnableGaslessTransactions = true,
+            AccountName = "Test Account",
+            InitialBalance = 0
+        };
+
+        var result = await _service.CreateAccountAsync(request, blockchainType);
+        if (!result.Success)
+        {
+            throw new InvalidOperationException($"Failed to create test account: {result.ErrorMessage}");
+        }
+        return result.AccountId;
     }
 
     [Fact]
@@ -85,9 +113,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task ExecuteTransactionAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new ExecuteTransactionRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             ToAddress = GenerateTestAddress(blockchainType),
             Value = 1.5m,
             Data = "0x1234",
@@ -110,21 +139,22 @@ public class AbstractAccountServiceTests : TestBase
     public async Task ExecuteBatchTransactionAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new BatchTransactionRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             Transactions = new List<ExecuteTransactionRequest>
             {
                 new ExecuteTransactionRequest
                 {
-                    AccountId = "test-account-id",
+                    AccountId = accountId,
                     ToAddress = GenerateTestAddress(blockchainType),
                     Value = 1.0m,
                     Data = "0x1234"
                 },
                 new ExecuteTransactionRequest
                 {
-                    AccountId = "test-account-id",
+                    AccountId = accountId,
                     ToAddress = GenerateTestAddress(blockchainType),
                     Value = 2.0m,
                     Data = "0x5678"
@@ -149,9 +179,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task AddGuardianAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new AddGuardianRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             GuardianAddress = GenerateTestAddress(blockchainType),
             GuardianName = "Emergency Guardian"
         };
@@ -172,9 +203,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task InitiateRecoveryAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new InitiateRecoveryRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             NewOwnerPublicKey = "02c663ba46afa8349f020eb9e8f9e1dc1c8e877b9d239e9110d1fdd7152e7c59dd",
             Reason = "Test recovery"
         };
@@ -231,9 +263,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task CreateSessionKeyAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new CreateSessionKeyRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             Permissions = new SessionKeyPermissions
             {
                 MaxTransactionValue = 1000m,
@@ -264,9 +297,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task RevokeSessionKeyAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new RevokeSessionKeyRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             SessionKeyId = "test-session-key-id"
         };
 
@@ -285,7 +319,7 @@ public class AbstractAccountServiceTests : TestBase
     public async Task GetAccountInfoAsync_WithValidAccountId_ShouldReturnAccountInfo(BlockchainType blockchainType)
     {
         // Arrange
-        var accountId = "test-account-id";
+        var accountId = await CreateTestAccountAsync(blockchainType);
 
         // Act
         var result = await _service.GetAccountInfoAsync(accountId, blockchainType);
@@ -303,9 +337,10 @@ public class AbstractAccountServiceTests : TestBase
     public async Task GetTransactionHistoryAsync_WithValidRequest_ShouldReturnHistory(BlockchainType blockchainType)
     {
         // Arrange
+        var accountId = await CreateTestAccountAsync(blockchainType);
         var request = new TransactionHistoryRequest
         {
-            AccountId = "test-account-id",
+            AccountId = accountId,
             Limit = 10,
             Offset = 0,
             StartDate = DateTime.UtcNow.AddDays(-30),

@@ -17,6 +17,10 @@ public class AutomationServiceTests : TestBase
     {
         _loggerMock = new Mock<ILogger<AutomationService>>();
         _service = new AutomationService(_loggerMock.Object, MockEnclaveManager.Object);
+
+        // Initialize the service synchronously for tests
+        _service.InitializeAsync().GetAwaiter().GetResult();
+        _service.StartAsync().GetAwaiter().GetResult();
     }
 
     [Fact]
@@ -70,10 +74,21 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task UpdateAutomationAsync_WithValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for updating",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}"
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
+
         var request = new UpdateAutomationRequest
         {
-            AutomationId = "test-automation-id",
+            AutomationId = automationId,
             Name = "Updated Automation",
             IsActive = false,
             TriggerConfiguration = "{\"cron\": \"0 10 * * *\"}"
@@ -94,8 +109,17 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task DeleteAutomationAsync_WithValidId_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
-        var automationId = "test-automation-id";
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for deletion",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}"
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
 
         // Act
         var result = await _service.DeleteAutomationAsync(automationId, blockchainType);
@@ -125,7 +149,7 @@ public class AutomationServiceTests : TestBase
         // Assert
         result.Should().NotBeNull();
         result.Should().BeAssignableTo<IEnumerable<AutomationInfo>>();
-        VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
+        VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
     [Theory]
@@ -133,8 +157,17 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task GetAutomationAsync_WithValidId_ShouldReturnAutomation(BlockchainType blockchainType)
     {
-        // Arrange
-        var automationId = "test-automation-id";
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for retrieval",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}"
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
 
         // Act
         var result = await _service.GetAutomationAsync(automationId, blockchainType);
@@ -142,7 +175,7 @@ public class AutomationServiceTests : TestBase
         // Assert
         result.Should().NotBeNull();
         result.AutomationId.Should().Be(automationId);
-        VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
+        VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
     [Theory]
@@ -150,8 +183,18 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task ExecuteAutomationAsync_WithValidId_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
-        var automationId = "test-automation-id";
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for execution",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}"
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
+
         var context = new ExecutionContext
         {
             UserId = "test-user",
@@ -174,10 +217,21 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task GetExecutionHistoryAsync_WithValidRequest_ShouldReturnHistory(BlockchainType blockchainType)
     {
-        // Arrange
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for execution history",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}"
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
+
         var request = new ExecutionHistoryRequest
         {
-            AutomationId = "test-automation-id",
+            AutomationId = automationId,
             FromDate = DateTime.UtcNow.AddDays(-7),
             ToDate = DateTime.UtcNow,
             PageSize = 20,
@@ -192,7 +246,7 @@ public class AutomationServiceTests : TestBase
         result.Success.Should().BeTrue();
         result.Executions.Should().NotBeNull();
         result.TotalCount.Should().BeGreaterOrEqualTo(0);
-        VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
+        VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
     [Theory]
@@ -200,8 +254,20 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task PauseAutomationAsync_WithValidId_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
-        var automationId = "test-automation-id";
+        // Arrange - First create an automation
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for pausing",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 12 * * *\"}",
+            ActionType = AutomationActionType.SmartContract,
+            ActionConfiguration = "{\"contractAddress\": \"0x5678\", \"method\": \"testMethod\"}",
+            IsActive = true
+        };
+
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
 
         // Act
         var result = await _service.PauseAutomationAsync(automationId, blockchainType);
@@ -217,8 +283,21 @@ public class AutomationServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task ResumeAutomationAsync_WithValidId_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
-        var automationId = "test-automation-id";
+        // Arrange - First create an automation and pause it
+        var createRequest = new CreateAutomationRequest
+        {
+            Name = "Test Automation",
+            Description = "Test automation for resuming",
+            TriggerType = AutomationTriggerType.Schedule,
+            TriggerConfiguration = "{\"cron\": \"0 0 * * *\"}",
+            ActionConfiguration = "{\"type\": \"Transfer\", \"amount\": 100}",
+            IsActive = true // Make sure it's active so it can be paused
+        };
+        var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
+        var automationId = createResult.AutomationId;
+
+        // Pause the automation first so we can resume it
+        await _service.PauseAutomationAsync(automationId, blockchainType);
 
         // Act
         var result = await _service.ResumeAutomationAsync(automationId, blockchainType);
@@ -250,7 +329,7 @@ public class AutomationServiceTests : TestBase
         result.Should().NotBeNull();
         result.IsValid.Should().BeTrue();
         result.ValidationErrors.Should().BeEmpty();
-        VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
+        VerifyLoggerCalled(_loggerMock, LogLevel.Information);
     }
 
     [Fact]

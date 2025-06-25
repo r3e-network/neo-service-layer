@@ -139,7 +139,7 @@ public class MockHttpClientService : IHttpClientService
 /// Simplified integration tests for multi-service orchestration scenarios.
 /// This version focuses on testing service registration and basic interactions.
 /// </summary>
-public class MultiServiceOrchestrationTests_Simplified : IDisposable
+public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
 {
     private readonly ServiceProvider _serviceProvider;
     private readonly ILogger<MultiServiceOrchestrationTests_Simplified> _logger;
@@ -163,9 +163,9 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
         services.AddSingleton<IServiceConfiguration>(provider => new MockServiceConfiguration());
         services.AddSingleton<IHttpClientService>(provider => new MockHttpClientService());
 
-        // Add enclave services
-        services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
-        services.AddSingleton<IEnclaveManager, EnclaveManager>();
+        // Add enclave services (use mocks from TestBase)
+        services.AddSingleton<IEnclaveWrapper>(TestBase.MockEnclaveWrapper.Object);
+        services.AddSingleton<IEnclaveManager>(TestBase.MockEnclaveManager.Object);
 
         // Add core services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
@@ -191,11 +191,18 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
         _logger.LogInformation("Initializing services for simplified multi-service orchestration testing...");
 
         await _proofOfReserveService.InitializeAsync();
-        await _configurationService.InitializeAsync();
-        await _backupService.InitializeAsync();
-        await _notificationService.InitializeAsync();
+        await _proofOfReserveService.StartAsync();
 
-        _logger.LogInformation("All services initialized successfully");
+        await _configurationService.InitializeAsync();
+        await _configurationService.StartAsync();
+
+        await _backupService.InitializeAsync();
+        await _backupService.StartAsync();
+
+        await _notificationService.InitializeAsync();
+        await _notificationService.StartAsync();
+
+        _logger.LogInformation("All services initialized and started successfully");
     }
 
     [Fact]
@@ -237,6 +244,19 @@ public class MultiServiceOrchestrationTests_Simplified : IDisposable
         var assetId = await _proofOfReserveService.RegisterAssetAsync(assetRequest, BlockchainType.NeoX);
         assetId.Should().NotBeNullOrEmpty();
         _logger.LogInformation("Registered asset {AssetId} for proof of reserve", assetId);
+
+        // Update reserve data to make the asset compliant
+        var reserveUpdateRequest = new ReserveUpdateRequest
+        {
+            ReserveAddresses = assetRequest.ReserveAddresses,
+            ReserveBalances = new[] { 4000000m, 3000000m, 4000000m }, // Total 11M reserves for 10M supply = 110% ratio
+            AuditTimestamp = DateTime.UtcNow,
+            UpdateReason = "Initial reserve setup for testing"
+        };
+
+        var updateResult = await _proofOfReserveService.UpdateReserveDataAsync(assetId, reserveUpdateRequest, BlockchainType.NeoX);
+        updateResult.Should().BeTrue();
+        _logger.LogInformation("Updated reserve data for asset {AssetId}", assetId);
 
         // Generate proof
         var proof = await _proofOfReserveService.GenerateProofAsync(assetId, BlockchainType.NeoX);

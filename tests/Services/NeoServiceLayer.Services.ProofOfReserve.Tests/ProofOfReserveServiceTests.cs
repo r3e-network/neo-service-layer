@@ -20,8 +20,12 @@ public class ProofOfReserveServiceTests : TestBase
         _loggerMock = new Mock<ILogger<ProofOfReserveService>>();
         _configurationMock = new Mock<IServiceConfiguration>();
 
-        // ProofOfReserveService expects IServiceConfiguration as second parameter
-        _service = new ProofOfReserveService(_loggerMock.Object, _configurationMock.Object);
+        // ProofOfReserveService now accepts IEnclaveManager
+        _service = new ProofOfReserveService(_loggerMock.Object, _configurationMock.Object, MockEnclaveManager.Object);
+
+        // Initialize the service synchronously for tests
+        _service.InitializeAsync().GetAwaiter().GetResult();
+        _service.StartAsync().GetAwaiter().GetResult();
     }
 
     [Fact]
@@ -70,8 +74,16 @@ public class ProofOfReserveServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task GenerateProofAsync_WithValidRequest_ShouldReturnProof(BlockchainType blockchainType)
     {
-        // Arrange
-        var assetId = "test-asset-id";
+        // Arrange - First register an asset
+        var registrationRequest = new AssetRegistrationRequest
+        {
+            AssetSymbol = "TEST",
+            AssetName = "Test Token",
+            ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
+            MinReserveRatio = 1.0m,
+            TotalSupply = 1000000m
+        };
+        var assetId = await _service.RegisterAssetAsync(registrationRequest, blockchainType);
 
         // Act
         var result = await _service.GenerateProofAsync(assetId, blockchainType);
@@ -91,8 +103,18 @@ public class ProofOfReserveServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task VerifyProofAsync_WithValidProof_ShouldReturnValid(BlockchainType blockchainType)
     {
-        // Arrange
-        var proofId = "test-proof-id";
+        // Arrange - First register an asset and generate a proof
+        var registrationRequest = new AssetRegistrationRequest
+        {
+            AssetSymbol = "TEST",
+            AssetName = "Test Token",
+            ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
+            MinReserveRatio = 1.0m,
+            TotalSupply = 1000000m
+        };
+        var assetId = await _service.RegisterAssetAsync(registrationRequest, blockchainType);
+        var proof = await _service.GenerateProofAsync(assetId, blockchainType);
+        var proofId = proof.ProofId;
 
         // Act
         var result = await _service.VerifyProofAsync(proofId, blockchainType);
@@ -139,13 +161,24 @@ public class ProofOfReserveServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task UpdateReserveDataAsync_WithValidData_ShouldReturnSuccess(BlockchainType blockchainType)
     {
-        // Arrange
+        // Arrange - First register an asset
+        var registrationRequest = new AssetRegistrationRequest
+        {
+            AssetSymbol = "TEST",
+            AssetName = "Test Token",
+            ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
+            MinReserveRatio = 1.0m,
+            TotalSupply = 1000000m
+        };
+        var assetId = await _service.RegisterAssetAsync(registrationRequest, blockchainType);
+
         var request = new ReserveUpdateRequest
         {
-            AssetId = "test-asset-id",
-            NewReserveAmount = 1500000m,
+            AssetId = assetId,
+            ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
+            ReserveBalances = new[] { 1500000m },
             UpdateReason = "Monthly reserve audit",
-            AuditorSignature = "signature-data"
+            AuditSource = "Test"
         };
 
         // Act
@@ -211,8 +244,16 @@ public class ProofOfReserveServiceTests : TestBase
     [InlineData(BlockchainType.NeoX)]
     public async Task GenerateAuditReportAsync_WithValidRequest_ShouldReturnReport(BlockchainType blockchainType)
     {
-        // Arrange
-        var assetId = "test-asset-id";
+        // Arrange - First register an asset
+        var registrationRequest = new AssetRegistrationRequest
+        {
+            AssetSymbol = "TEST",
+            AssetName = "Test Token",
+            ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
+            MinReserveRatio = 1.0m,
+            TotalSupply = 1000000m
+        };
+        var assetId = await _service.RegisterAssetAsync(registrationRequest, blockchainType);
         var fromDate = DateTime.UtcNow.AddDays(-30);
         var toDate = DateTime.UtcNow;
 

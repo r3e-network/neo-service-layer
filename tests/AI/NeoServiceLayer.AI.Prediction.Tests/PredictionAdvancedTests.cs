@@ -4,7 +4,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.Prediction;
-using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -15,6 +14,7 @@ using NeoServiceLayer.Tee.Host.Tests;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 using CoreModels = NeoServiceLayer.Core.Models;
+using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
 
@@ -92,6 +92,7 @@ public class PredictionAdvancedTests : IDisposable
             await CreateTestModel("backtest_model", "Backtest Model", PredictionModels.PredictionType.MarketTrend);
             await CreateTestModel("accuracy_test_model", "Accuracy Test Model", PredictionModels.PredictionType.TimeSeries);
             await CreateTestModel("history_model_456", "History Model", PredictionModels.PredictionType.Price);
+            await CreateTestModel("advanced_ensemble_model", "Advanced Ensemble Model", PredictionModels.PredictionType.Classification);
 
             Console.WriteLine($"Created default model with ID: {_defaultModelId}");
         }
@@ -1046,7 +1047,9 @@ public class PredictionAdvancedTests : IDisposable
                 PredictionId = $"pred_{i}",
                 Confidence = 0.75 + (i % 3) * 0.05,
                 PredictedAt = DateTime.UtcNow.AddHours(-i),
-                ProcessingTimeMs = 50 + i * 5
+                ProcessingTimeMs = 50 + i * 5,
+                PredictedValue = 100.0 + i * 2.5,
+                ActualValue = 98.0 + i * 2.3 + (i % 3) * 1.5
             })
             .ToList();
 

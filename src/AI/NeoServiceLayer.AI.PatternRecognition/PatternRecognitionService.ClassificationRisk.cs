@@ -91,7 +91,21 @@ public partial class PatternRecognitionService
                 // Perform risk assessment within the enclave
                 var riskScore = await CalculateRiskScoreInEnclaveAsync(request);
                 var riskFactors = await IdentifyRiskFactorsInEnclaveAsync(request);
+
+                // Process mitigating factors
+                var mitigatingFactors = ProcessMitigatingFactors(request.MitigatingFactors);
+
+                // Adjust risk score based on mitigating factors
+                if (mitigatingFactors.Count > 0)
+                {
+                    var mitigationReduction = mitigatingFactors.Count * 0.02; // Each factor reduces risk by 2%
+                    riskScore = Math.Max(0, riskScore - mitigationReduction);
+                }
+
                 var riskLevel = CalculateRiskLevel(riskScore);
+
+                // Generate recommendations based on risk level and factors
+                var recommendations = GenerateRiskRecommendations(riskLevel, riskFactors);
 
                 var result = new Models.RiskAssessmentResult
                 {
@@ -101,6 +115,9 @@ public partial class PatternRecognitionService
                     RiskScore = riskScore,
                     RiskLevel = riskLevel,
                     RiskFactors = riskFactors,
+                    RiskBreakdown = new Dictionary<string, double>(riskFactors), // Copy risk factors to breakdown
+                    MitigatingFactors = mitigatingFactors,
+                    Recommendations = recommendations,
                     AssessedAt = DateTime.UtcNow,
                     Success = true,
                     Metadata = request.Metadata
@@ -257,9 +274,46 @@ public partial class PatternRecognitionService
             >= 0.9 => Models.RiskLevel.Critical,  // High threshold for Critical
             >= 0.6 => Models.RiskLevel.High,
             >= 0.4 => Models.RiskLevel.Medium,
-            >= 0.2 => Models.RiskLevel.Low,
+            >= 0.15 => Models.RiskLevel.Low,      // Adjusted threshold for Low
             _ => Models.RiskLevel.Minimal
         };
+    }
+
+    /// <summary>
+    /// Processes mitigating factors from the request.
+    /// </summary>
+    /// <param name="requestMitigatingFactors">The mitigating factors from the request.</param>
+    /// <returns>Dictionary of mitigating factors with scores.</returns>
+    private Dictionary<string, double> ProcessMitigatingFactors(Dictionary<string, bool>? requestMitigatingFactors)
+    {
+        var mitigatingFactors = new Dictionary<string, double>();
+
+        if (requestMitigatingFactors == null)
+            return mitigatingFactors;
+
+        foreach (var factor in requestMitigatingFactors.Where(f => f.Value))
+        {
+            switch (factor.Key.ToLowerInvariant())
+            {
+                case "kyc_verified":
+                    mitigatingFactors["KYC Verified"] = 0.95; // High confidence mitigation
+                    break;
+                case "established_relationship":
+                    mitigatingFactors["Established Relationship"] = 0.85; // Strong mitigation
+                    break;
+                case "whitelisted":
+                    mitigatingFactors["Whitelisted"] = 0.9; // Very high mitigation
+                    break;
+                case "verified_contract":
+                    mitigatingFactors["Verified Contract"] = 0.8; // Good mitigation
+                    break;
+                default:
+                    mitigatingFactors[factor.Key] = 0.7; // Default mitigation value
+                    break;
+            }
+        }
+
+        return mitigatingFactors;
     }
 
     /// <summary>
@@ -330,5 +384,61 @@ public partial class PatternRecognitionService
             },
             GeneratedAt = DateTime.UtcNow
         };
+    }
+
+    /// <summary>
+    /// Generates risk recommendations based on risk level and factors.
+    /// </summary>
+    /// <param name="riskLevel">The calculated risk level.</param>
+    /// <param name="riskFactors">Dictionary of risk factors.</param>
+    /// <returns>List of recommendations.</returns>
+    private static List<string> GenerateRiskRecommendations(Models.RiskLevel riskLevel, Dictionary<string, double> riskFactors)
+    {
+        var recommendations = new List<string>();
+
+        // Base recommendations based on risk level
+        switch (riskLevel)
+        {
+            case Models.RiskLevel.Critical:
+                recommendations.Add("Immediate enhanced monitoring required");
+                recommendations.Add("Block transaction pending manual review");
+                recommendations.Add("Escalate to compliance team");
+                break;
+
+            case Models.RiskLevel.High:
+                recommendations.Add("enhanced monitoring recommended");
+                recommendations.Add("Additional verification steps required");
+                recommendations.Add("Review transaction patterns");
+                break;
+
+            case Models.RiskLevel.Medium:
+                recommendations.Add("Standard monitoring protocols");
+                recommendations.Add("Periodic review recommended");
+                break;
+
+            case Models.RiskLevel.Low:
+                recommendations.Add("Continue standard processing");
+                recommendations.Add("Routine monitoring sufficient");
+                break;
+
+            case Models.RiskLevel.Minimal:
+                recommendations.Add("No additional action required");
+                break;
+        }
+
+        // Add specific recommendations based on risk factors
+        if (riskFactors.ContainsKey("Amount Risk"))
+            recommendations.Add("Monitor large transaction patterns");
+
+        if (riskFactors.ContainsKey("Sender Reputation"))
+            recommendations.Add("Verify sender identity and history");
+
+        if (riskFactors.ContainsKey("Network Trust"))
+            recommendations.Add("Review network connections and relationships");
+
+        if (riskFactors.ContainsKey("Transaction Complexity"))
+            recommendations.Add("Analyze transaction structure for compliance");
+
+        return recommendations;
     }
 }

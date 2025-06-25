@@ -29,19 +29,9 @@ public class PredictionModel : AIModel
     public Dictionary<string, double> FeatureImportance { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the model ID.
-    /// </summary>
-    public string ModelId { get; set; } = string.Empty;
-
-    /// <summary>
     /// Gets or sets the model type.
     /// </summary>
     public string ModelType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the accuracy.
-    /// </summary>
-    public double Accuracy { get; set; }
 
     /// <summary>
     /// Gets or sets the training data size.
@@ -84,11 +74,6 @@ public class PredictionModelDefinition : AIModelDefinition
     /// Gets or sets the model type.
     /// </summary>
     public string ModelType { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the algorithm.
-    /// </summary>
-    public string Algorithm { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the features.

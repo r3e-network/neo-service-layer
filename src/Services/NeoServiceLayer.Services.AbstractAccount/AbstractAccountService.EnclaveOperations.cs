@@ -30,7 +30,7 @@ public partial class AbstractAccountService
 
         string accountDataJson = JsonSerializer.Serialize(accountData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.CreateAbstractAccountAsync(accountId, accountDataJson);
+        string result = await _enclaveManager.CreateAbstractAccountAsync(accountId, accountDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))
@@ -71,7 +71,7 @@ public partial class AbstractAccountService
 
         string transactionDataJson = JsonSerializer.Serialize(transactionData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.SignAndExecuteTransactionAsync(request.AccountId, transactionDataJson);
+        string result = await _enclaveManager.SignAndExecuteTransactionAsync(request.AccountId, transactionDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))
@@ -115,7 +115,7 @@ public partial class AbstractAccountService
 
         string guardianDataJson = JsonSerializer.Serialize(guardianData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.AddAccountGuardianAsync(request.AccountId, guardianDataJson);
+        string result = await _enclaveManager.AddAccountGuardianAsync(request.AccountId, guardianDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))
@@ -159,7 +159,7 @@ public partial class AbstractAccountService
 
         string recoveryDataJson = JsonSerializer.Serialize(recoveryData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.InitiateAccountRecoveryAsync(request.AccountId, recoveryDataJson);
+        string result = await _enclaveManager.InitiateAccountRecoveryAsync(request.AccountId, recoveryDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))
@@ -205,7 +205,7 @@ public partial class AbstractAccountService
 
         string recoveryDataJson = JsonSerializer.Serialize(recoveryData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.CompleteAccountRecoveryAsync(request.RecoveryId, recoveryDataJson);
+        string result = await _enclaveManager.CompleteAccountRecoveryAsync(request.RecoveryId, recoveryDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))
@@ -256,7 +256,7 @@ public partial class AbstractAccountService
 
         string sessionKeyDataJson = JsonSerializer.Serialize(sessionKeyData);
 #pragma warning disable CS8602 // Dereference of a possibly null reference
-        string result = await _enclaveManager.CreateSessionKeyAsync(request.AccountId, sessionKeyDataJson);
+        string result = await _enclaveManager.CreateSessionKeyAsync(request.AccountId, sessionKeyDataJson, CancellationToken.None);
 #pragma warning restore CS8602
 
         if (string.IsNullOrEmpty(result))

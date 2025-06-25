@@ -67,6 +67,9 @@ public abstract class TestBase
 
     private static void SetupMockEnclaveManager()
     {
+        // Storage dictionary to simulate persistent storage
+        var mockStorage = new Dictionary<string, string>();
+
         // Setup basic manager properties
         MockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         // EnclaveType doesn't exist on IEnclaveManager
@@ -77,13 +80,28 @@ public abstract class TestBase
         MockEnclaveManager.Setup(x => x.DestroyEnclaveAsync())
             .ReturnsAsync(true);
 
-        // Setup storage operations
+        // Setup storage operations with persistence simulation
         MockEnclaveManager.Setup(x => x.StorageStoreDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("stored");
+            .Returns<string, string, string, CancellationToken>((key, data, encryptionKey, ct) =>
+            {
+                mockStorage[key] = data;
+                return Task.FromResult("stored");
+            });
         MockEnclaveManager.Setup(x => x.StorageRetrieveDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("test-data");
+            .Returns<string, string, CancellationToken>((key, encryptionKey, ct) =>
+            {
+                if (mockStorage.TryGetValue(key, out var data))
+                {
+                    return Task.FromResult(data);
+                }
+                return Task.FromResult<string?>(null);
+            });
         MockEnclaveManager.Setup(x => x.StorageDeleteDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(true);
+            .Returns<string, CancellationToken>((key, ct) =>
+            {
+                var removed = mockStorage.Remove(key);
+                return Task.FromResult(removed);
+            });
 
         // Setup cryptographic operations
         MockEnclaveManager.Setup(x => x.EncryptDataAsync(It.IsAny<string>(), It.IsAny<string>()))
@@ -102,6 +120,57 @@ public abstract class TestBase
         // Setup JavaScript execution
         MockEnclaveManager.Setup(x => x.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync("{\"result\": 42}");
+
+        // Setup abstract account operations
+        // Setup both overloads - the interface has the 3-parameter version with CancellationToken
+        MockEnclaveManager.Setup(x => x.CreateAbstractAccountAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string accountData, CancellationToken ct) =>
+            {
+                var guid1 = Guid.NewGuid().ToString("N");
+                var guid2 = Guid.NewGuid().ToString("N");
+                var address = "0x" + guid1 + guid2.Substring(0, Math.Min(8, guid2.Length));
+                var publicKey = "0x" + Guid.NewGuid().ToString("N");
+                var txHash = "0x" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                return $"{{\"success\": true, \"account_address\": \"{address}\", \"master_public_key\": \"{publicKey}\", \"transaction_hash\": \"{txHash}\"}}";
+            });
+
+        MockEnclaveManager.Setup(x => x.SignAndExecuteTransactionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string txData, CancellationToken ct) =>
+            {
+                var txHash = "0x" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                return $"{{\"success\": true, \"transaction_hash\": \"{txHash}\", \"gas_used\": 21000}}";
+            });
+
+        // Setup additional abstract account operations with CancellationToken
+        MockEnclaveManager.Setup(x => x.AddAccountGuardianAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string guardianData, CancellationToken ct) =>
+            {
+                var guardianId = Guid.NewGuid().ToString();
+                var txHash = "0x" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                return $"{{\"success\": true, \"guardian_id\": \"{guardianId}\", \"transaction_hash\": \"{txHash}\"}}";
+            });
+
+        MockEnclaveManager.Setup(x => x.InitiateAccountRecoveryAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string recoveryData, CancellationToken ct) =>
+            {
+                var recoveryId = Guid.NewGuid().ToString();
+                return $"{{\"success\": true, \"recovery_id\": \"{recoveryId}\"}}";
+            });
+
+        MockEnclaveManager.Setup(x => x.CompleteAccountRecoveryAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string recoveryId, string recoveryData, CancellationToken ct) =>
+            {
+                var txHash = "0x" + Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N");
+                return $"{{\"success\": true, \"recovery_id\": \"{recoveryId}\", \"transaction_hash\": \"{txHash}\"}}";
+            });
+
+        MockEnclaveManager.Setup(x => x.CreateSessionKeyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string keyData, CancellationToken ct) =>
+            {
+                var sessionKeyId = Guid.NewGuid().ToString();
+                var publicKey = "0x" + Guid.NewGuid().ToString("N");
+                return $"{{\"success\": true, \"session_key_id\": \"{sessionKeyId}\", \"public_key\": \"{publicKey}\"}}";
+            });
     }
 
     /// <summary>
@@ -162,7 +231,7 @@ public abstract class TestBase
         return blockchainType switch
         {
             BlockchainType.NeoN3 => GenerateNeoN3Address(),
-            BlockchainType.NeoX => $"0x{Guid.NewGuid().ToString("N")[..40]}",
+            BlockchainType.NeoX => "0x" + (Guid.NewGuid().ToString("N") + Guid.NewGuid().ToString("N")).Substring(0, 40),
             _ => throw new NotSupportedException($"Blockchain type {blockchainType} not supported")
         };
     }

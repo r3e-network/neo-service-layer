@@ -413,7 +413,7 @@ public class PatternRecognitionServiceTests : IDisposable
         bool unusualTimePattern,
         int transactionCount = 1,
         TimeSpan? timeWindow = null,
-        string senderAddress = "0x1234567890123456789012345678901234567890")
+        string senderAddress = "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd")
     {
         return new Core.Models.FraudDetectionRequest
         {

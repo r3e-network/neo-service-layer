@@ -36,6 +36,10 @@ public class StorageServiceTests : IDisposable
             _mockEnclaveManager.Object,
             _mockConfiguration.Object,
             _mockLogger.Object);
+
+        // Initialize the service synchronously for tests
+        _service.InitializeAsync().GetAwaiter().GetResult();
+        _service.StartAsync().GetAwaiter().GetResult();
     }
 
     #region Service Lifecycle Tests
@@ -128,9 +132,10 @@ public class StorageServiceTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        // Verify that the data retrieval was attempted via JavaScript
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("retrieveData")),
+        // Verify that the data retrieval was attempted via storage API
+        _mockEnclaveManager.Verify(x => x.StorageRetrieveDataAsync(
+            It.Is<string>(k => k == key),
+            It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
@@ -173,13 +178,8 @@ public class StorageServiceTests : IDisposable
 
         // Assert
         result.Should().BeTrue();
-        // Verify that the service called the correct JavaScript functions for deletion
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("deleteData('test_key')")),
-            It.IsAny<CancellationToken>()), Times.Once);
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("deleteMetadata('test_key')")),
-            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify that the service called the actual storage delete method (not JavaScript)
+        _mockEnclaveManager.Verify(x => x.StorageDeleteDataAsync("test_key", It.IsAny<CancellationToken>()), Times.Once);
     }
 
     #endregion
@@ -203,11 +203,10 @@ public class StorageServiceTests : IDisposable
         await _service.StoreDataAsync(key, System.Text.Encoding.UTF8.GetBytes(data), options, BlockchainType.NeoN3);
 
         // Assert
-        // Verify that the service called KMS encryption (the actual method used)
-        _mockEnclaveManager.Verify(x => x.KmsEncryptDataAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.Is<string>(alg => alg == "AES-256-GCM")), Times.Once);
+        // Verify that the service called encryption via JavaScript (the actual method used)
+        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
+            It.Is<string>(script => script.Contains("encryptData")),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         // Verify that the data was stored via StorageStoreDataAsync
         _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
             It.IsAny<string>(),
@@ -241,11 +240,11 @@ public class StorageServiceTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Should().BeEquivalentTo(System.Text.Encoding.UTF8.GetBytes(originalData));
-        // Verify that KMS decryption was called (the actual method used)
-        _mockEnclaveManager.Verify(x => x.KmsDecryptDataAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.IsAny<string>()), Times.Once);
+        // Verify that storage retrieve was called with the encryption key
+        _mockEnclaveManager.Verify(x => x.StorageRetrieveDataAsync(
+            It.Is<string>(k => k == key),
+            It.Is<string>(ek => ek == "test-key-id"),
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 
     [Theory]
@@ -269,10 +268,9 @@ public class StorageServiceTests : IDisposable
 
         // Assert
         // Verify that the operation completed successfully (encryption functionality is working)
-        _mockEnclaveManager.Verify(x => x.KmsEncryptDataAsync(
-            It.IsAny<string>(),
-            It.IsAny<string>(),
-            It.Is<string>(alg => alg == algorithm)), Times.AtLeastOnce);
+        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
+            It.Is<string>(script => script.Contains("encryptData") && script.Contains(algorithm)),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
     #endregion
@@ -294,10 +292,12 @@ public class StorageServiceTests : IDisposable
         await _service.StoreDataAsync(key, System.Text.Encoding.UTF8.GetBytes(largeData), options, BlockchainType.NeoN3);
 
         // Assert
-        // Verify that the data was stored via JavaScript (the actual method used)
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("storeData")),
-            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify that the data was stored via storage API (the actual method used)
+        _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         // Verify that metadata was stored
         _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
             It.Is<string>(script => script.Contains("storeMetadata")),
@@ -344,8 +344,10 @@ public class StorageServiceTests : IDisposable
 
         // Assert
         // Verify that the operation completed successfully (compression functionality is working)
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("storeData")),
+        _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
             It.IsAny<CancellationToken>()), Times.AtLeastOnce);
     }
 
@@ -368,10 +370,12 @@ public class StorageServiceTests : IDisposable
         await _service.StoreDataAsync(key, System.Text.Encoding.UTF8.GetBytes(largeData), options, BlockchainType.NeoN3);
 
         // Assert
-        // Verify that the data was stored via JavaScript (the actual method used)
-        _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
-            It.Is<string>(script => script.Contains("storeData")),
-            It.IsAny<CancellationToken>()), Times.Once);
+        // Verify that the data was stored via storage API (the actual method used)
+        _mockEnclaveManager.Verify(x => x.StorageStoreDataAsync(
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<string>(),
+            It.IsAny<CancellationToken>()), Times.AtLeastOnce);
         // Verify that metadata was stored
         _mockEnclaveManager.Verify(x => x.ExecuteJavaScriptAsync(
             It.Is<string>(script => script.Contains("storeMetadata")),
@@ -552,9 +556,16 @@ public class StorageServiceTests : IDisposable
             .Setup(x => x.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync((string script, CancellationToken ct) =>
             {
+                if (script.Contains("getAllMetadata")) return "[]";
                 if (script.Contains("storeMetadata")) return "true";
-                if (script.Contains("getMetadata")) return "{\"key\":\"test_key\",\"sizeBytes\":100,\"isEncrypted\":false,\"isCompressed\":false,\"chunkCount\":1}";
+                if (script.Contains("updateMetadata")) return "true";
+                if (script.Contains("deleteMetadata")) return "true";
+                if (script.Contains("getMetadata")) return "{\"Key\":\"test_key\",\"SizeBytes\":17,\"IsEncrypted\":false,\"IsCompressed\":false,\"ChunkCount\":1,\"ChunkSizeBytes\":1048576,\"CreatedAt\":\"2025-01-01T00:00:00Z\",\"LastModifiedAt\":\"2025-01-01T00:00:00Z\",\"LastAccessedAt\":\"2025-01-01T00:00:00Z\"}";
                 if (script.Contains("retrieveData")) return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("test_data_content"));
+                if (script.Contains("encryptData")) return "{\"encryptedData\":\"dGVzdF9kYXRhX2NvbnRlbnRfZW5jcnlwdGVk\"}";
+                if (script.Contains("decryptData")) return "test_data_content";
+                if (script.Contains("compressData")) return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes("compressed_data"));
+                if (script.Contains("decompressData")) return "test_data_content";
                 return "{}";
             });
 
@@ -624,13 +635,28 @@ public class StorageServiceTests : IDisposable
                 // Return the original hex string (simulate decryption by removing the added bytes)
                 return encryptedHex.EndsWith("deadbeef") ? encryptedHex.Substring(0, encryptedHex.Length - 8) : encryptedHex;
             });
+
+        // Setup transaction operations
+        _mockEnclaveManager
+            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains("beginTransaction")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"transactionId\":\"test-transaction-id\",\"status\":\"active\"}");
+
+        _mockEnclaveManager
+            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains("commitTransaction")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"success\":true,\"transactionId\":\"test-transaction-id\",\"status\":\"committed\"}");
+
+        _mockEnclaveManager
+            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains("rollbackTransaction")), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"success\":true,\"transactionId\":\"test-transaction-id\",\"status\":\"rolledback\"}");
     }
 
     private void SetupStorageRetrieval(string key, string data)
     {
+        // Storage API expects base64 encoded data
+        var base64Data = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(data));
         _mockEnclaveManager
             .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(s => s.Contains(key)), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(data);
+            .ReturnsAsync(base64Data);
     }
 
     private void SetupEncryptedStorageRetrieval(string key, string originalData)
@@ -640,18 +666,13 @@ public class StorageServiceTests : IDisposable
             .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"getMetadata('{key}')")), It.IsAny<CancellationToken>()))
             .ReturnsAsync("{\"Key\":\"" + key + "\",\"SizeBytes\":" + originalData.Length + ",\"IsEncrypted\":true,\"IsCompressed\":false,\"EncryptionKeyId\":\"test-key-id\",\"EncryptionAlgorithm\":\"AES-256-GCM\",\"ChunkCount\":1}");
 
-        // Setup data retrieval - return the original data as base64 (simulating encrypted storage)
+        // The StorageRetrieveDataAsync method is expected to return already decrypted data
+        // Since the implementation comment says: "Data is already decrypted and decompressed by the enclave storage function"
         var originalDataBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(originalData));
 
         _mockEnclaveManager
-            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"retrieveData('{key}')")), It.IsAny<CancellationToken>()))
+            .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(k => k == key), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(originalDataBase64);
-
-        // Setup KMS decryption to return original data as hex (the service expects hex output from KMS)
-        var originalDataHex = Convert.ToHexString(System.Text.Encoding.UTF8.GetBytes(originalData));
-        _mockEnclaveManager
-            .Setup(x => x.KmsDecryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
-            .ReturnsAsync(originalDataHex);
     }
 
     private void SetupCompressedStorageRetrieval(string key, string originalData)
@@ -659,11 +680,11 @@ public class StorageServiceTests : IDisposable
         // Setup metadata retrieval
         _mockEnclaveManager
             .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"getMetadata('{key}')")), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("{\"key\":\"" + key + "\",\"sizeBytes\":" + originalData.Length + ",\"isEncrypted\":false,\"isCompressed\":true,\"chunkCount\":1}");
+            .ReturnsAsync("{\"Key\":\"" + key + "\",\"SizeBytes\":" + originalData.Length + ",\"IsEncrypted\":false,\"IsCompressed\":true,\"ChunkCount\":1,\"ChunkSizeBytes\":1048576,\"CreatedAt\":\"2025-01-01T00:00:00Z\",\"LastModifiedAt\":\"2025-01-01T00:00:00Z\",\"LastAccessedAt\":\"2025-01-01T00:00:00Z\"}");
 
-        // Setup data retrieval - return the original data as base64
+        // Setup storage retrieval - the actual method used
         _mockEnclaveManager
-            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"retrieveData('{key}')")), It.IsAny<CancellationToken>()))
+            .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(k => k == key), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(originalData)));
     }
 
@@ -672,11 +693,11 @@ public class StorageServiceTests : IDisposable
         // Setup metadata retrieval
         _mockEnclaveManager
             .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"getMetadata('{key}')")), It.IsAny<CancellationToken>()))
-            .ReturnsAsync("{\"key\":\"" + key + "\",\"sizeBytes\":" + originalData.Length + ",\"isEncrypted\":false,\"isCompressed\":false,\"chunkCount\":1}");
+            .ReturnsAsync("{\"Key\":\"" + key + "\",\"SizeBytes\":" + originalData.Length + ",\"IsEncrypted\":false,\"IsCompressed\":false,\"ChunkCount\":1,\"ChunkSizeBytes\":1048576,\"CreatedAt\":\"2025-01-01T00:00:00Z\",\"LastModifiedAt\":\"2025-01-01T00:00:00Z\",\"LastAccessedAt\":\"2025-01-01T00:00:00Z\"}");
 
-        // Setup data retrieval - return the original data as base64
+        // Setup storage retrieval - the actual method used
         _mockEnclaveManager
-            .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"retrieveData('{key}')")), It.IsAny<CancellationToken>()))
+            .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(k => k == key), It.IsAny<string>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(originalData)));
     }
 
