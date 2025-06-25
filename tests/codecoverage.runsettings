@@ -40,6 +40,8 @@
   <RunConfiguration>
     <ResultsDirectory>./TestResults</ResultsDirectory>
     <CollectSourceInformation>true</CollectSourceInformation>
+    <MaxCpuCount>0</MaxCpuCount>
+    <DisableParallelization>false</DisableParallelization>
   </RunConfiguration>
   <LoggerRunSettings>
     <Loggers>

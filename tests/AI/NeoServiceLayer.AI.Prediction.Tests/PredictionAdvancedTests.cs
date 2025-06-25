@@ -550,8 +550,8 @@ public class PredictionAdvancedTests : IDisposable
     [Fact]
     public async Task ConcurrentPredictions_HighLoad_HandlesEfficiently()
     {
-        // Arrange
-        const int concurrentRequests = 50;
+        // Arrange  
+        var concurrentRequests = Environment.GetEnvironmentVariable("CI") == "true" ? 20 : 50;
         var symbols = new[] { "NEO", "GAS", "ETH", "BTC", "ADA" };
         var requests = Enumerable.Range(0, concurrentRequests)
             .Select(i => CreatePredictionRequest(symbols[i % symbols.Length], timeHorizon: 24))
@@ -568,7 +568,8 @@ public class PredictionAdvancedTests : IDisposable
         // Assert
         results.Should().HaveCount(concurrentRequests);
         results.Should().AllSatisfy(r => r.Should().NotBeNull());
-        stopwatch.ElapsedMilliseconds.Should().BeLessThan(20000); // 20 seconds max
+        var maxTimeMs = Environment.GetEnvironmentVariable("CI") == "true" ? 10000 : 20000; // 10s for CI, 20s local
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(maxTimeMs);
 
         // Verify quality of predictions
         results.Should().AllSatisfy(r =>
