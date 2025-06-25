@@ -227,7 +227,7 @@ jobs:
         CI: true
       run: |
         echo "::group::Running integration tests"
-        dotnet test tests/Integration/ \
+        dotnet test tests/Integration/NeoServiceLayer.Integration.Tests/NeoServiceLayer.Integration.Tests.csproj \
           --configuration Release \
           --no-build \
           --verbosity minimal \
@@ -463,7 +463,7 @@ jobs:
         TEST_ENVIRONMENT: CI
       run: |
         echo "::group::Performance Tests"
-        dotnet test tests/Performance/ \
+        dotnet test tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj \
           --configuration Release \
           --no-build \
           --verbosity minimal \
