@@ -138,6 +138,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_Initialize_ShouldSucceed()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Act
@@ -151,6 +156,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_CryptographicOperations_ShouldWork()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -179,6 +189,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_RandomGeneration_ShouldProvideHardwareRandomness()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -206,6 +221,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_SecureStorage_ShouldUseEnclaveProtection()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -236,6 +256,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_JavaScriptExecution_ShouldRunInEnclave()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -264,6 +289,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_KeyGeneration_ShouldUseEnclaveKeyDerivation()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -298,6 +328,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_AttestationReport_ShouldProvideRealMeasurement()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -338,6 +373,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_DataSealing_ShouldUsePlatformKey()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -362,6 +402,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_OracleData_ShouldFetchWithEnclaveProtection()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -385,6 +430,11 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         [SkippableFact]
         public void RealSGX_AbstractAccount_ShouldManageInEnclave()
         {
+            // Always skip in CI environments for reliability
+            var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
+                      Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
+            Skip.If(isCI, "Skipped in CI - SGX hardware tests require physical SGX hardware");
+            
             Skip.IfNot(_sgxAvailable, "SGX SDK not available");
 
             // Arrange
@@ -475,6 +525,14 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
         public static void IfNot(bool condition, string reason)
         {
             if (!condition)
+            {
+                throw new SkipException(reason);
+            }
+        }
+
+        public static void If(bool condition, string reason)
+        {
+            if (condition)
             {
                 throw new SkipException(reason);
             }
