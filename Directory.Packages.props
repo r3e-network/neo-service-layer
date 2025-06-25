@@ -65,7 +65,7 @@
     <PackageVersion Include="Moq" Version="4.20.72" />
     <PackageVersion Include="Moq.Contrib.HttpClient" Version="1.4.0" />
     <PackageVersion Include="Microsoft.AspNetCore.Mvc.Testing" Version="9.0.0" />
-    <PackageVersion Include="NBomber" Version="5.10.3" />
+    <PackageVersion Include="NBomber" Version="6.0.0" />
     <PackageVersion Include="NUnit" Version="4.3.2" />
     <PackageVersion Include="NUnit3TestAdapter" Version="4.6.0" />
     <PackageVersion Include="BenchmarkDotNet" Version="0.14.0" />
@@ -124,7 +124,7 @@
   <ItemGroup Label="Serialization and Data">
     <PackageVersion Include="System.Text.Json" Version="9.0.6" />
     <PackageVersion Include="Newtonsoft.Json" Version="13.0.3" />
-    <PackageVersion Include="MessagePack" Version="3.0.238" />
+    <PackageVersion Include="MessagePack" Version="3.0.300" />
     <PackageVersion Include="protobuf-net" Version="3.2.52" />
     <PackageVersion Include="CsvHelper" Version="33.0.1" />
   </ItemGroup>

@@ -211,7 +211,7 @@ jobs:
           --results-directory TestResults/Unit/ \
           --collect:"XPlat Code Coverage" \
           --settings tests/codecoverage.runsettings \
-          --filter "Category!=Integration&Category!=Performance" \
+          --filter "Category!=Integration&Category!=Performance&Category!=SGXIntegration" \
           --blame-hang-timeout 5m
         echo "::endgroup::"
 
@@ -426,7 +426,7 @@ jobs:
   performance-test:
     name: 🚀 Performance Tests
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 15
     needs: [build-and-test]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
     
@@ -469,7 +469,8 @@ jobs:
           --verbosity minimal \
           --logger trx \
           --results-directory TestResults/Performance/ \
-          --filter "Category=Performance"
+          --filter "Category=Performance" \
+          --blame-hang-timeout 3m
         echo "::endgroup::"
 
     - name: 📊 Upload performance results

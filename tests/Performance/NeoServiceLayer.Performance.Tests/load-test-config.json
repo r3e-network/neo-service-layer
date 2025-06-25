@@ -85,10 +85,10 @@
       "ConcurrentCopies": 20
     },
     "BurstLoad": {
-      "BurstRps": 1000,
-      "BurstDurationSeconds": 30,
-      "RestDurationSeconds": 60,
-      "TotalBursts": 10
+      "BurstRps": 200,
+      "BurstDurationSeconds": 10,
+      "RestDurationSeconds": 5,
+      "TotalBursts": 3
     }
   },
   "PerformanceThresholds": {

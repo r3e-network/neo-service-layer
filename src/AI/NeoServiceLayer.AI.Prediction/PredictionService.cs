@@ -1178,10 +1178,13 @@ public partial class PredictionService : AIServiceBase, IPredictionService
     {
         var random = new Random(coreForecast.Symbol.GetHashCode()); // Deterministic based on symbol
 
+        var varValue = 0.04 + random.NextDouble() * 0.12; // 4-16% VaR
+        var expectedShortfall = varValue + 0.02 + random.NextDouble() * 0.15; // ES always > VaR by at least 2%
+
         return new Models.VolatilityMetrics
         {
-            VaR = 0.04 + random.NextDouble() * 0.12, // 4-16% VaR
-            ExpectedShortfall = 0.11 + random.NextDouble() * 0.20, // 11-31% ES (higher range)
+            VaR = varValue,
+            ExpectedShortfall = expectedShortfall,
             StandardDeviation = 0.25 + random.NextDouble() * 0.35, // 25-60% std dev
             Beta = 0.7 + random.NextDouble() * 1.4 // 0.7-2.1 beta
         };

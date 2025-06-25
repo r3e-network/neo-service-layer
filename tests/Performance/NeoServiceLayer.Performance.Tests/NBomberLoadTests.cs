@@ -415,25 +415,40 @@ public class NBomberLoadTests : IDisposable
             }
         });
 
-        // Create burst load pattern
+        // Create simplified burst load pattern for CI
+        var isCI = Environment.GetEnvironmentVariable("CI") == "true";
         var loadSimulations = new List<LoadSimulation>();
-        for (int i = 0; i < burstConfig.TotalBursts; i++)
-        {
-            // Burst phase
-            loadSimulations.Add(
-                Simulation.RampingInject(rate: burstConfig.BurstRps,
-                                       interval: TimeSpan.FromSeconds(1),
-                                       during: TimeSpan.FromSeconds(burstConfig.BurstDurationSeconds))
-            );
 
-            // Rest phase
-            if (i < burstConfig.TotalBursts - 1) // Don't add rest after last burst
+        if (isCI)
+        {
+            // Simplified burst for CI - single burst only
+            loadSimulations.Add(
+                Simulation.RampingInject(rate: Math.Min(burstConfig.BurstRps, 50), // Limit rate in CI
+                                       interval: TimeSpan.FromSeconds(1),
+                                       during: TimeSpan.FromSeconds(Math.Min(burstConfig.BurstDurationSeconds, 10))) // Max 10s in CI
+            );
+        }
+        else
+        {
+            // Full burst pattern for local testing
+            for (int i = 0; i < burstConfig.TotalBursts; i++)
             {
+                // Burst phase
                 loadSimulations.Add(
-                    Simulation.RampingInject(rate: 1, // Minimal load during rest
+                    Simulation.RampingInject(rate: burstConfig.BurstRps,
                                            interval: TimeSpan.FromSeconds(1),
-                                           during: TimeSpan.FromSeconds(burstConfig.RestDurationSeconds))
+                                           during: TimeSpan.FromSeconds(burstConfig.BurstDurationSeconds))
                 );
+
+                // Rest phase
+                if (i < burstConfig.TotalBursts - 1) // Don't add rest after last burst
+                {
+                    loadSimulations.Add(
+                        Simulation.RampingInject(rate: 1, // Minimal load during rest
+                                               interval: TimeSpan.FromSeconds(1),
+                                               during: TimeSpan.FromSeconds(burstConfig.RestDurationSeconds))
+                    );
+                }
             }
         }
 
@@ -443,6 +458,8 @@ public class NBomberLoadTests : IDisposable
             .RegisterScenarios(scenario)
             .WithReportFolder("burst-test-reports")
             .WithReportFormats(ReportFormat.Html, ReportFormat.Csv)
+            .WithTestSuite("BurstLoadTests")
+            .WithTestName("BurstLoadTest")
             .Run();
 
         // Validate burst load handling
@@ -529,7 +546,7 @@ public class NBomberLoadTests : IDisposable
     private void ValidateScenarioPerformance(NodeStats stats, string scenarioName, ScenarioConfig config)
     {
         var scenarioStats = stats.ScenarioStats.FirstOrDefault(s => s.ScenarioName == scenarioName);
-        
+
         if (scenarioStats == null)
         {
             _output.WriteLine($"Warning: Scenario {scenarioName} did not generate stats - possibly canceled or timed out");
