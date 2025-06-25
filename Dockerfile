@@ -58,8 +58,7 @@ COPY src/Tee/NeoServiceLayer.Tee.*/*.csproj src/Tee/NeoServiceLayer.Tee.*/
 COPY src/Infrastructure/NeoServiceLayer.Infrastructure.*/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.*/
 
 # Copy TEE Enclave Rust dependencies
-COPY src/Tee/NeoServiceLayer.Tee.Enclave/Cargo.toml src/Tee/NeoServiceLayer.Tee.Enclave/
-COPY src/Tee/NeoServiceLayer.Tee.Enclave/Cargo.lock src/Tee/NeoServiceLayer.Tee.Enclave/
+COPY src/Tee/NeoServiceLayer.Tee.Enclave/Cargo.* src/Tee/NeoServiceLayer.Tee.Enclave/
 
 # Restore dependencies
 RUN dotnet restore src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj
@@ -142,7 +141,8 @@ ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false
 # SGX Environment Variables
 # Note: SGX_MODE should be set via environment variable or docker-compose
 # Default to HW for production, but allow override
-ENV SGX_MODE=${SGX_MODE:-HW}
+ARG SGX_MODE=HW
+ENV SGX_MODE=${SGX_MODE}
 ENV SGX_DEBUG=0
 ENV OCCLUM_LOG_LEVEL=warn
 ENV NEO_SERVICE_TEE_MODE=enabled
