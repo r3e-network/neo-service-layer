@@ -102,7 +102,7 @@ jobs:
 
     - name: 🏗️ Build solution
       run: |
-        echo "::group::Building solution"
+        echo "::group::Building solution (Release)"
         dotnet build NeoServiceLayer.sln --configuration Release --no-restore --verbosity minimal
         echo "::endgroup::"
 

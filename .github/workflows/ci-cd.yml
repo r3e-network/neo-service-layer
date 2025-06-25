@@ -33,22 +33,10 @@ env:
 jobs:
   # 🏗️ Build and Test Matrix Job
   build-and-test:
-    name: 🏗️ Build & Test (${{ matrix.configuration }})
+    name: 🏗️ Build & Test (Release)
     runs-on: ubuntu-latest
     timeout-minutes: 45
     if: ${{ !github.event.inputs.skip_tests }}
-    
-    strategy:
-      fail-fast: false
-      matrix:
-        configuration: [Debug, Release]
-        include:
-          - configuration: Debug
-            collect_coverage: false
-            run_integration: false
-          - configuration: Release
-            collect_coverage: true
-            run_integration: true
     
     outputs:
       test-results-available: ${{ steps.test-check.outputs.available }}
@@ -189,9 +177,9 @@ jobs:
 
     - name: 🏗️ Build solution
       run: |
-        echo "::group::Building solution (${{ matrix.configuration }})"
+        echo "::group::Building solution (Release)"
         dotnet build NeoServiceLayer.sln \
-          --configuration ${{ matrix.configuration }} \
+          --configuration Release \
           --no-restore \
           --verbosity minimal \
           --property WarningLevel=0 \
@@ -209,19 +197,20 @@ jobs:
         CI: true
         TEST_ENVIRONMENT: CI
       run: |
-        echo "::group::Running unit tests (${{ matrix.configuration }})"
+        echo "::group::Running unit tests (Release)"
         dotnet test NeoServiceLayer.sln \
-          --configuration ${{ matrix.configuration }} \
+          --configuration Release \
           --no-build \
           --verbosity minimal \
           --logger trx \
           --results-directory TestResults/Unit/ \
-          ${{ matrix.collect_coverage && '--collect:"XPlat Code Coverage" --settings tests/codecoverage.runsettings' || '' }} \
+          --collect:"XPlat Code Coverage" \
+          --settings tests/codecoverage.runsettings \
           --filter "Category!=Integration&Category!=Performance"
         echo "::endgroup::"
 
     - name: 🔗 Run integration tests
-      if: ${{ matrix.run_integration && !github.event.inputs.skip_tests }}
+      if: ${{ !github.event.inputs.skip_tests }}
       env:
         SGX_MODE: SIM
         SGX_SDK: /opt/intel/sgxsdk
@@ -233,16 +222,16 @@ jobs:
       run: |
         echo "::group::Running integration tests"
         dotnet test tests/Integration/ \
-          --configuration ${{ matrix.configuration }} \
+          --configuration Release \
           --no-build \
           --verbosity minimal \
           --logger trx \
           --results-directory TestResults/Integration/ \
-          ${{ matrix.collect_coverage && '--collect:"XPlat Code Coverage"' || '' }}
+          --collect:"XPlat Code Coverage"
         echo "::endgroup::"
 
     - name: 📊 Generate coverage report
-      if: ${{ matrix.collect_coverage && !github.event.inputs.skip_tests }}
+      if: ${{ !github.event.inputs.skip_tests }}
       uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
       with:
         reports: 'TestResults/**/coverage.cobertura.xml'
@@ -252,7 +241,7 @@ jobs:
 
     - name: 📈 Check coverage thresholds
       id: coverage-check
-      if: ${{ matrix.collect_coverage && !github.event.inputs.skip_tests }}
+      if: ${{ !github.event.inputs.skip_tests }}
       run: |
         if [ -f "TestResults/CoverageReport/Summary.json" ]; then
           echo "::group::Coverage Analysis"
@@ -284,7 +273,7 @@ jobs:
       uses: actions/upload-artifact@v4
       if: ${{ always() && !github.event.inputs.skip_tests }}
       with:
-        name: test-results-${{ matrix.configuration }}-${{ github.run_number }}
+        name: test-results-release-${{ github.run_number }}
         path: TestResults/
         retention-days: 30
         compression-level: 6
@@ -296,18 +285,18 @@ jobs:
         echo "available=true" >> $GITHUB_OUTPUT
 
     - name: 🎯 Upload coverage to Codecov
-      if: ${{ matrix.collect_coverage && !github.event.inputs.skip_tests }}
+      if: ${{ !github.event.inputs.skip_tests }}
       uses: codecov/codecov-action@v4
       with:
         files: TestResults/CoverageReport/Cobertura.xml
         flags: unittests,integration
-        name: neo-service-layer-${{ matrix.configuration }}
+        name: neo-service-layer-release
         fail_ci_if_error: false
         verbose: false
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: 💬 Comment PR with coverage
-      if: ${{ github.event_name == 'pull_request' && matrix.collect_coverage && !github.event.inputs.skip_tests }}
+      if: ${{ github.event_name == 'pull_request' && !github.event.inputs.skip_tests }}
       uses: 5monkeys/cobertura-action@master
       with:
         path: TestResults/CoverageReport/Cobertura.xml
