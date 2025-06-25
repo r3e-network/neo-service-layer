@@ -363,13 +363,13 @@ public class NBomberLoadTests : IDisposable
             {
                 // Perform multiple operations to increase memory pressure
                 var sealedData = enclaveWrapper.SealData(testData);
-                
+
                 // Check if sealing worked
                 if (sealedData == null || sealedData.Length == 0)
                 {
                     return Response.Fail(message: "SealData returned null or empty");
                 }
-                
+
                 var unsealedData = enclaveWrapper.UnsealData(sealedData);
 
                 // Validate data integrity under stress
@@ -402,7 +402,7 @@ public class NBomberLoadTests : IDisposable
         // Reduce concurrent operations for CI environment
         var isCI = Environment.GetEnvironmentVariable("CI") == "true";
         var concurrentOps = isCI ? Math.Min(stressConfig.ConcurrentOperations, 5) : stressConfig.ConcurrentOperations;
-        
+
         scenario = scenario
             .WithLoadSimulations(
                 Simulation.RampingConstant(copies: concurrentOps,
