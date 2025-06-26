@@ -25,7 +25,6 @@
     <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
     <PackageReference Include="Npgsql" />
     <PackageReference Include="StackExchange.Redis" />
-    <!-- Explicit CodeAnalysis references to resolve version conflicts -->
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
   </ItemGroup>
@@ -39,6 +38,7 @@
     <PackageReference Include="Microsoft.Extensions.Options" />
     <PackageReference Include="Microsoft.Extensions.Options.ConfigurationExtensions" />
     <PackageReference Include="Microsoft.Extensions.Hosting" />
+    <PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Http" />
     <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
     <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
