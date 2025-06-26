@@ -774,8 +774,8 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Setup successful HTTP response for webhook notifications
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                It.IsAny<HttpRequestMessage>(),
-                It.IsAny<CancellationToken>())
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
     }
 
