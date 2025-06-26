@@ -153,7 +153,7 @@ The test scripts enforce these quality gates:
    - Performance tests are excluded from CI for reliability
 
 4. **Coverage Collection Issues**
-   - Ensure `coverlet.runsettings` exists
+   - Ensure `config/coverlet.runsettings` exists
    - Check that test projects reference Coverlet packages
 
 ### Manual Test Commands

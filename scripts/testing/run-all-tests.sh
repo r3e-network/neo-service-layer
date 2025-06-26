@@ -94,7 +94,7 @@ dotnet test NeoServiceLayer.sln \
     --logger "trx;LogFileName=TestResults.trx" \
     --logger "console;verbosity=$VERBOSITY" \
     --collect:"XPlat Code Coverage" \
-    --settings coverlet.runsettings \
+    --settings config/coverlet.runsettings \
     --results-directory "$RESULTS_DIR"
 
 TEST_EXIT_CODE=$?

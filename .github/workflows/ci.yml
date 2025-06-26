@@ -52,7 +52,7 @@ jobs:
           --logger trx \
           --logger "console;verbosity=normal" \
           --collect:"XPlat Code Coverage" \
-          --settings coverlet.runsettings \
+          --settings config/coverlet.runsettings \
           --results-directory ./TestResults \
           --filter "FullyQualifiedName!~Performance"
 

@@ -110,7 +110,7 @@ $testArgs = @(
 if ($Coverage) {
     $testArgs += @(
         "--collect", "XPlat Code Coverage",
-        "--settings", "coverlet.runsettings"
+        "--settings", "config/coverlet.runsettings"
     )
 }
 

@@ -139,14 +139,14 @@ main() {
     case $COMMAND in
         "build")
             print_step "Building Neo Service Layer Docker image..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml build $NO_CACHE $PULL $VERBOSE
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml build $NO_CACHE $PULL $VERBOSE
             print_info "Build completed successfully! ✓"
             ;;
             
         "run")
             print_step "Building and starting Neo Service Layer..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml build $NO_CACHE $PULL
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml up -d neo-service-layer
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml build $NO_CACHE $PULL
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml up -d neo-service-layer
             print_info "Neo Service Layer is starting..."
             print_info "Web interface will be available at: http://localhost:5000"
             print_info "API documentation at: http://localhost:5000/swagger"
@@ -157,31 +157,31 @@ main() {
             
         "test")
             print_step "Building and running comprehensive tests..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml build $NO_CACHE $PULL
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml --profile test run --rm neo-test
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml build $NO_CACHE $PULL
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml --profile test run --rm neo-test
             print_info "Tests completed! Check ./test-results for detailed results."
             ;;
             
         "dev")
             print_step "Starting development environment..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml build $NO_CACHE $PULL
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml run --rm neo-dev
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml build $NO_CACHE $PULL
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml run --rm neo-dev
             ;;
             
         "clean")
             print_step "Cleaning up Docker containers and images..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml down -v --remove-orphans
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml down -v --remove-orphans
             docker system prune -f
             print_info "Cleanup completed! ✓"
             ;;
             
         "rebuild")
             print_step "Performing clean rebuild..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml down -v --remove-orphans
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml down -v --remove-orphans
             docker rmi neo-service-layer_neo-service-layer 2>/dev/null || true
             docker rmi neo-service-layer_neo-dev 2>/dev/null || true
             docker rmi neo-service-layer_neo-test 2>/dev/null || true
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml build --no-cache $PULL
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml build --no-cache $PULL
             print_info "Rebuild completed! ✓"
             ;;
             
@@ -189,7 +189,7 @@ main() {
             print_step "Starting interactive shell..."
             if ! docker ps | grep -q neo-service-layer-ubuntu24; then
                 print_info "Starting container first..."
-                $COMPOSE_CMD -f docker-compose.ubuntu24.yml up -d neo-service-layer
+                $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml up -d neo-service-layer
                 sleep 5
             fi
             docker exec -it neo-service-layer-ubuntu24 /neo-service-layer/dev-tools.sh shell
@@ -197,12 +197,12 @@ main() {
             
         "logs")
             print_step "Showing application logs..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml logs -f neo-service-layer
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml logs -f neo-service-layer
             ;;
             
         "status")
             print_step "Checking container status..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml ps
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml ps
             echo ""
             if docker ps | grep -q neo-service-layer-ubuntu24; then
                 print_info "Application health:"
@@ -212,13 +212,13 @@ main() {
             
         "stop")
             print_step "Stopping all services..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml down
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml down
             print_info "All services stopped! ✓"
             ;;
             
         "restart")
             print_step "Restarting all services..."
-            $COMPOSE_CMD -f docker-compose.ubuntu24.yml restart
+            $COMPOSE_CMD -f docker/docker-compose.ubuntu24.yml restart
             print_info "All services restarted! ✓"
             ;;
             
