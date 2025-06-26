@@ -82,7 +82,7 @@ jobs:
             - 'src/**'
           docker:
             - 'src/**'
-            - 'Dockerfile*'
+            - 'docker/Dockerfile*'
             - '.dockerignore'
             - 'global.json'
             - 'Directory.*.props'
@@ -270,7 +270,7 @@ jobs:
           --logger trx \
           --results-directory TestResults/Unit/ \
           --collect:"XPlat Code Coverage" \
-          --settings tests/codecoverage.runsettings \
+          --settings config/coverlet.runsettings \
           --filter "Category!=Integration&Category!=Performance&Category!=SGXIntegration" \
           --blame-hang-timeout 5m
         echo "::endgroup::"
@@ -422,7 +422,7 @@ jobs:
         args: >
           --failOnCVSS 7
           --enableRetired
-          --suppression dependency-check-suppressions.xml
+          --suppression config/dependency-check-suppressions.xml
 
     - name: 📤 Upload OWASP results to GitHub Security
       uses: github/codeql-action/upload-sarif@v3
