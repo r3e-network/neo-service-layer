@@ -27,6 +27,8 @@
     <PackageReference Include="StackExchange.Redis" />
     <PackageReference Include="Microsoft.CodeAnalysis.Common" />
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
+    <!-- Explicit references to resolve version conflicts -->
+    <PackageReference Include="Newtonsoft.Json" />
   </ItemGroup>
 
   <ItemGroup>
