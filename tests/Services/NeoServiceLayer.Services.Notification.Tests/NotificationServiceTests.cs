@@ -8,6 +8,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
+using Moq.Protected;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 
@@ -139,7 +140,7 @@ public class NotificationServiceTests : TestBase, IDisposable
             Subject = "Test Email",
             Message = "This is a test email notification",
             Channel = "Email",
-            Priority = NotificationPriority.Normal,
+            Priority = Services.Notification.Models.NotificationPriority.Normal,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
 
@@ -149,7 +150,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Delivered);
         result.NotificationId.Should().NotBeNullOrEmpty();
         result.SentAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
@@ -170,7 +171,7 @@ public class NotificationServiceTests : TestBase, IDisposable
             Subject = "Test Webhook",
             Message = "This is a test webhook notification",
             Channel = "Webhook",
-            Priority = NotificationPriority.High,
+            Priority = Services.Notification.Models.NotificationPriority.High,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
 
@@ -180,7 +181,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Delivered);
         result.NotificationId.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
     }
@@ -201,7 +202,7 @@ public class NotificationServiceTests : TestBase, IDisposable
             Subject = "Test SMS",
             Message = "This is a test SMS notification",
             Channel = "SMS",
-            Priority = NotificationPriority.Critical,
+            Priority = Services.Notification.Models.NotificationPriority.Critical,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
 
@@ -211,7 +212,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Delivered);
         result.NotificationId.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
     }
@@ -277,7 +278,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeFalse();
-        result.Status.Should().Be(DeliveryStatus.Failed);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Failed);
         result.ErrorMessage.Should().Contain("Recipient is required");
     }
 
@@ -302,7 +303,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeFalse();
-        result.Status.Should().Be(DeliveryStatus.Failed);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Failed);
         result.ErrorMessage.Should().Contain("is not enabled");
     }
 
@@ -325,7 +326,7 @@ public class NotificationServiceTests : TestBase, IDisposable
             Subject = "Bulk Test Email",
             Message = "This is a bulk email notification",
             Channel = "Email",
-            Priority = NotificationPriority.Normal,
+            Priority = Services.Notification.Models.NotificationPriority.Normal,
             Metadata = new Dictionary<string, object> { ["batch_type"] = "promotional" }
         };
 
@@ -335,7 +336,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
-        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.Status.Should().Be(Services.Notification.Models.DeliveryStatus.Delivered);
         result.NotificationId.Should().NotBeNullOrEmpty();
         result.SentAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
         VerifyLoggerCalled(LogLevel.Information, "Bulk notification completed");
@@ -397,9 +398,9 @@ public class NotificationServiceTests : TestBase, IDisposable
         var subscription = new NotificationSubscription
         {
             Recipient = "user@example.com",
-            Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction", "block" },
-            Filters = new Dictionary<string, object> { ["amount"] = "> 1000" }
+            Channels = new[] { NotificationChannel.Email },
+            Categories = new[] { "transaction", "block" },
+            Metadata = new Dictionary<string, object> { ["amount"] = "> 1000" }
         };
 
         // Act
@@ -425,8 +426,8 @@ public class NotificationServiceTests : TestBase, IDisposable
         var subscription = new NotificationSubscription
         {
             Recipient = "user@example.com",
-            Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            Channels = new[] { NotificationChannel.Email },
+            Categories = new[] { "transaction" }
         };
         var subscriptionId = await _service.SubscribeAsync(subscription, blockchainType);
 
@@ -471,14 +472,14 @@ public class NotificationServiceTests : TestBase, IDisposable
         var subscription1 = new NotificationSubscription
         {
             Recipient = recipient,
-            Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            Channels = new[] { NotificationChannel.Email },
+            Categories = new[] { "transaction" }
         };
         var subscription2 = new NotificationSubscription
         {
             Recipient = recipient,
-            Channel = NotificationChannel.Webhook,
-            EventTypes = new[] { "block" }
+            Channels = new[] { NotificationChannel.Webhook },
+            Categories = new[] { "block" }
         };
 
         await _service.SubscribeAsync(subscription1, blockchainType);
@@ -571,7 +572,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         var subscription = new NotificationSubscription
         {
             Recipient = "user@example.com",
-            Channel = NotificationChannel.Email
+            Channels = new[] { NotificationChannel.Email }
         };
 
         // Act & Assert
@@ -589,7 +590,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         var subscription = new NotificationSubscription
         {
             Recipient = "user@example.com",
-            Channel = NotificationChannel.Email
+            Channels = new[] { NotificationChannel.Email }
         };
 
         // Act & Assert
@@ -635,7 +636,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Arrange
         await InitializeServiceAsync();
         const int notificationCount = 50;
-        var tasks = new List<Task<NotificationResult>>();
+        var tasks = new List<Task<Services.Notification.Models.NotificationResult>>();
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
@@ -648,7 +649,7 @@ public class NotificationServiceTests : TestBase, IDisposable
                 Subject = $"Test Email {i}",
                 Message = $"This is test email notification {i}",
                 Channel = "Email",
-                Priority = NotificationPriority.Normal
+                Priority = Services.Notification.Models.NotificationPriority.Normal
             };
             tasks.Add(_service.SendNotificationAsync(request, BlockchainType.NeoN3));
         }
@@ -680,8 +681,8 @@ public class NotificationServiceTests : TestBase, IDisposable
             var subscription = new NotificationSubscription
             {
                 Recipient = $"user{i}@example.com",
-                Channel = NotificationChannel.Email,
-                EventTypes = new[] { "transaction" }
+                Channels = new[] { NotificationChannel.Email },
+                Categories = new[] { "transaction" }
             };
             tasks.Add(_service.SubscribeAsync(subscription, BlockchainType.NeoN3));
         }
@@ -722,13 +723,14 @@ public class NotificationServiceTests : TestBase, IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "ServiceProperties")]
-    public void Service_ShouldHaveCorrectMetadata()
+    public void Service_ShouldHaveCorrectProperties()
     {
         // Act & Assert
-        _service.GetMetadata("CreatedAt").Should().NotBeNull();
-        _service.GetMetadata("MaxSubscriptions").Should().Be("10000");
-        _service.GetMetadata("SupportedChannels").Should().Be("Email,Webhook");
-        _service.GetMetadata("BatchSize").Should().Be("100");
+        _service.Name.Should().Be("Notification");
+        _service.Description.Should().Be("Secure Notification Service");
+        _service.Version.Should().Be("1.0.0");
+        _service.SupportedBlockchains.Should().Contain(BlockchainType.NeoN3);
+        _service.SupportedBlockchains.Should().Contain(BlockchainType.NeoX);
     }
 
     #endregion
@@ -772,8 +774,8 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Setup successful HTTP response for webhook notifications
         _httpMessageHandlerMock.Protected()
             .Setup<Task<HttpResponseMessage>>("SendAsync",
-                ItExpr.IsAny<HttpRequestMessage>(),
-                ItExpr.IsAny<CancellationToken>())
+                It.IsAny<HttpRequestMessage>(),
+                It.IsAny<CancellationToken>())
             .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
     }
 
