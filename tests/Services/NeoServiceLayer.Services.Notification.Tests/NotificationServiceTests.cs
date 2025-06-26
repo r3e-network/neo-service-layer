@@ -1,20 +1,28 @@
-﻿using System.Net.Http;
+﻿using System.Net;
+using System.Net.Http;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
+using NeoServiceLayer.Services.Notification.Models;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 
 namespace NeoServiceLayer.Services.Notification.Tests;
 
-public class NotificationServiceTests : TestBase
+/// <summary>
+/// Comprehensive unit tests for NotificationService covering all notification operations.
+/// Tests notification sending, subscriptions, channels, error handling, and performance.
+/// </summary>
+public class NotificationServiceTests : TestBase, IDisposable
 {
     private readonly Mock<ILogger<NotificationService>> _loggerMock;
     private readonly Mock<IOptions<NotificationOptions>> _optionsMock;
     private readonly Mock<IHttpClientFactory> _httpClientFactoryMock;
+    private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly NotificationService _service;
 
     public NotificationServiceTests()
@@ -22,8 +30,719 @@ public class NotificationServiceTests : TestBase
         _loggerMock = new Mock<ILogger<NotificationService>>();
         _optionsMock = new Mock<IOptions<NotificationOptions>>();
         _httpClientFactoryMock = new Mock<IHttpClientFactory>();
+        _httpMessageHandlerMock = new Mock<HttpMessageHandler>();
 
-        // Setup default options
+        SetupConfiguration();
+        SetupHttpClient();
+
+        _service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+
+        // Initialize the service synchronously for tests
+        _service.InitializeAsync().GetAwaiter().GetResult();
+        _service.StartAsync().GetAwaiter().GetResult();
+    }
+
+    #region Service Lifecycle Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceLifecycle")]
+    public void Constructor_ShouldInitializeService()
+    {
+        // Act & Assert
+        _service.Should().NotBeNull();
+        _service.Name.Should().Be("Notification");
+        _service.Description.Should().Be("Secure Notification Service");
+        _service.Version.Should().Be("1.0.0");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceLifecycle")]
+    public async Task InitializeAsync_ShouldReturnTrue()
+    {
+        // Act
+        var result = await _service.InitializeAsync();
+
+        // Assert
+        result.Should().BeTrue();
+        VerifyLoggerCalled(LogLevel.Information, "Notification Service initialized successfully");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceLifecycle")]
+    public async Task StartAsync_ShouldReturnTrue()
+    {
+        // Arrange
+        await _service.InitializeAsync();
+
+        // Act
+        var result = await _service.StartAsync();
+
+        // Assert
+        result.Should().BeTrue();
+        _service.IsRunning.Should().BeTrue();
+        VerifyLoggerCalled(LogLevel.Information, "Notification Service started successfully");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceLifecycle")]
+    public async Task StopAsync_ShouldReturnTrue()
+    {
+        // Arrange
+        await _service.InitializeAsync();
+        await _service.StartAsync();
+
+        // Act
+        var result = await _service.StopAsync();
+
+        // Assert
+        result.Should().BeTrue();
+        _service.IsRunning.Should().BeFalse();
+        VerifyLoggerCalled(LogLevel.Information, "Notification Service stopped successfully");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceLifecycle")]
+    public async Task GetHealthAsync_ShouldReturnHealthy()
+    {
+        // Arrange
+        await _service.InitializeAsync();
+        await _service.StartAsync();
+
+        // Act
+        var result = await _service.GetHealthAsync();
+
+        // Assert
+        result.Should().Be(ServiceHealth.Healthy);
+    }
+
+    #endregion
+
+    #region Notification Sending Tests
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task SendNotificationAsync_ValidEmailRequest_ShouldReturnSuccess(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new NotificationRequest
+        {
+            Recipient = "test@example.com",
+            Subject = "Test Email",
+            Message = "This is a test email notification",
+            Channel = "Email",
+            Priority = NotificationPriority.Normal,
+            Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
+        };
+
+        // Act
+        var result = await _service.SendNotificationAsync(request, blockchainType);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.NotificationId.Should().NotBeNullOrEmpty();
+        result.SentAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task SendNotificationAsync_ValidWebhookRequest_ShouldReturnSuccess(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new NotificationRequest
+        {
+            Recipient = "https://api.example.com/webhook",
+            Subject = "Test Webhook",
+            Message = "This is a test webhook notification",
+            Channel = "Webhook",
+            Priority = NotificationPriority.High,
+            Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
+        };
+
+        // Act
+        var result = await _service.SendNotificationAsync(request, blockchainType);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.NotificationId.Should().NotBeNullOrEmpty();
+        VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task SendNotificationAsync_ValidSmsRequest_ShouldReturnSuccess(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        SetupSmsConfiguration();
+        var request = new NotificationRequest
+        {
+            Recipient = "+1234567890",
+            Subject = "Test SMS",
+            Message = "This is a test SMS notification",
+            Channel = "SMS",
+            Priority = NotificationPriority.Critical,
+            Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
+        };
+
+        // Act
+        var result = await _service.SendNotificationAsync(request, blockchainType);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.NotificationId.Should().NotBeNullOrEmpty();
+        VerifyLoggerCalled(LogLevel.Information, "Notification sent successfully");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    public async Task SendNotificationAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new NotificationRequest
+        {
+            Recipient = "test@example.com",
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "Email"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.SendNotificationAsync(request, (BlockchainType)999));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    public async Task SendNotificationAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var request = new NotificationRequest
+        {
+            Recipient = "test@example.com",
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "Email"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SendNotificationAsync(request, BlockchainType.NeoN3));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    public async Task SendNotificationAsync_EmptyRecipient_ShouldReturnFailedResult()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new NotificationRequest
+        {
+            Recipient = "",
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "Email"
+        };
+
+        // Act
+        var result = await _service.SendNotificationAsync(request, BlockchainType.NeoN3);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be(DeliveryStatus.Failed);
+        result.ErrorMessage.Should().Contain("Recipient is required");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "NotificationSending")]
+    public async Task SendNotificationAsync_UnsupportedChannel_ShouldReturnFailedResult()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new NotificationRequest
+        {
+            Recipient = "test@example.com",
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "UnsupportedChannel"
+        };
+
+        // Act
+        var result = await _service.SendNotificationAsync(request, BlockchainType.NeoN3);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
+        result.Status.Should().Be(DeliveryStatus.Failed);
+        result.ErrorMessage.Should().Contain("is not enabled");
+    }
+
+    #endregion
+
+    #region Bulk Notification Tests
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "BulkNotifications")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task SendBulkNotificationAsync_ValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new BulkNotificationRequest
+        {
+            Recipients = new List<string> { "user1@example.com", "user2@example.com", "user3@example.com" },
+            Subject = "Bulk Test Email",
+            Message = "This is a bulk email notification",
+            Channel = "Email",
+            Priority = NotificationPriority.Normal,
+            Metadata = new Dictionary<string, object> { ["batch_type"] = "promotional" }
+        };
+
+        // Act
+        var result = await _service.SendBulkNotificationAsync(request, blockchainType);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Status.Should().Be(DeliveryStatus.Delivered);
+        result.NotificationId.Should().NotBeNullOrEmpty();
+        result.SentAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        VerifyLoggerCalled(LogLevel.Information, "Bulk notification completed");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "BulkNotifications")]
+    public async Task SendBulkNotificationAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var request = new BulkNotificationRequest
+        {
+            Recipients = new List<string> { "user1@example.com" },
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "Email"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.SendBulkNotificationAsync(request, (BlockchainType)999));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "BulkNotifications")]
+    public async Task SendBulkNotificationAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var request = new BulkNotificationRequest
+        {
+            Recipients = new List<string> { "user1@example.com" },
+            Subject = "Test",
+            Message = "Test message",
+            Channel = "Email"
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SendBulkNotificationAsync(request, BlockchainType.NeoN3));
+    }
+
+    #endregion
+
+    #region Subscription Management Tests
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Subscriptions")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task SubscribeAsync_ValidSubscription_ShouldReturnSubscriptionId(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var subscription = new NotificationSubscription
+        {
+            Recipient = "user@example.com",
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction", "block" },
+            Filters = new Dictionary<string, object> { ["amount"] = "> 1000" }
+        };
+
+        // Act
+        var subscriptionId = await _service.SubscribeAsync(subscription, blockchainType);
+
+        // Assert
+        subscriptionId.Should().NotBeNullOrEmpty();
+        subscription.Id.Should().Be(subscriptionId);
+        subscription.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
+        subscription.IsActive.Should().BeTrue();
+        VerifyLoggerCalled(LogLevel.Information, "Created notification subscription");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Subscriptions")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task UnsubscribeAsync_ExistingSubscription_ShouldReturnTrue(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var subscription = new NotificationSubscription
+        {
+            Recipient = "user@example.com",
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
+        };
+        var subscriptionId = await _service.SubscribeAsync(subscription, blockchainType);
+
+        // Act
+        var result = await _service.UnsubscribeAsync(subscriptionId, blockchainType);
+
+        // Assert
+        result.Should().BeTrue();
+        VerifyLoggerCalled(LogLevel.Information, "Removed notification subscription");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Subscriptions")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task UnsubscribeAsync_NonExistentSubscription_ShouldReturnFalse(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var nonExistentId = Guid.NewGuid().ToString();
+
+        // Act
+        var result = await _service.UnsubscribeAsync(nonExistentId, blockchainType);
+
+        // Assert
+        result.Should().BeFalse();
+        VerifyLoggerCalled(LogLevel.Warning, "Subscription");
+        VerifyLoggerCalled(LogLevel.Warning, "not found for removal");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Subscriptions")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task GetSubscriptionsAsync_WithSubscriptions_ShouldReturnSubscriptions(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var recipient = "user@example.com";
+        var subscription1 = new NotificationSubscription
+        {
+            Recipient = recipient,
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
+        };
+        var subscription2 = new NotificationSubscription
+        {
+            Recipient = recipient,
+            Channel = NotificationChannel.Webhook,
+            EventTypes = new[] { "block" }
+        };
+
+        await _service.SubscribeAsync(subscription1, blockchainType);
+        await _service.SubscribeAsync(subscription2, blockchainType);
+
+        // Act
+        var subscriptions = await _service.GetSubscriptionsAsync(recipient, blockchainType);
+
+        // Assert
+        subscriptions.Should().NotBeNull();
+        subscriptions.Should().HaveCount(2);
+        subscriptions.Should().AllSatisfy(s => s.Recipient.Should().Be(recipient));
+        subscriptions.Should().AllSatisfy(s => s.IsActive.Should().BeTrue());
+        VerifyLoggerCalled(LogLevel.Debug, "Found");
+        VerifyLoggerCalled(LogLevel.Debug, "active subscriptions");
+    }
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Subscriptions")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task GetSubscriptionsAsync_NoSubscriptions_ShouldReturnEmpty(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var recipient = "nonexistent@example.com";
+
+        // Act
+        var subscriptions = await _service.GetSubscriptionsAsync(recipient, blockchainType);
+
+        // Assert
+        subscriptions.Should().NotBeNull();
+        subscriptions.Should().BeEmpty();
+    }
+
+    #endregion
+
+    #region Channel Management Tests
+
+    [Theory]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Channels")]
+    [InlineData(BlockchainType.NeoN3)]
+    [InlineData(BlockchainType.NeoX)]
+    public async Task GetAvailableChannelsAsync_ShouldReturnEnabledChannels(BlockchainType blockchainType)
+    {
+        // Arrange
+        await InitializeServiceAsync();
+
+        // Act
+        var result = await _service.GetAvailableChannelsAsync(blockchainType);
+
+        // Assert
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.Channels.Should().NotBeNull();
+        result.Channels.Should().HaveCount(2); // Email and Webhook from default config
+        result.Channels.Should().AllSatisfy(c => c.IsEnabled.Should().BeTrue());
+        result.Metadata.Should().ContainKey("total_channels");
+        result.Metadata.Should().ContainKey("blockchain_type");
+        VerifyLoggerCalled(LogLevel.Information, "Retrieved");
+        VerifyLoggerCalled(LogLevel.Information, "available notification channels");
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "Channels")]
+    public async Task GetAvailableChannelsAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.GetAvailableChannelsAsync((BlockchainType)999));
+    }
+
+    #endregion
+
+    #region Error Handling Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ErrorHandling")]
+    public async Task SubscribeAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        var subscription = new NotificationSubscription
+        {
+            Recipient = "user@example.com",
+            Channel = NotificationChannel.Email
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.SubscribeAsync(subscription, (BlockchainType)999));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ErrorHandling")]
+    public async Task SubscribeAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
+    {
+        // Arrange
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var subscription = new NotificationSubscription
+        {
+            Recipient = "user@example.com",
+            Channel = NotificationChannel.Email
+        };
+
+        // Act & Assert
+        await Assert.ThrowsAsync<InvalidOperationException>(() =>
+            service.SubscribeAsync(subscription, BlockchainType.NeoN3));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ErrorHandling")]
+    public async Task UnsubscribeAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.UnsubscribeAsync("test-id", (BlockchainType)999));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ErrorHandling")]
+    public async Task GetSubscriptionsAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+
+        // Act & Assert
+        await Assert.ThrowsAsync<NotSupportedException>(() =>
+            _service.GetSubscriptionsAsync("user@example.com", (BlockchainType)999));
+    }
+
+    #endregion
+
+    #region Performance Tests
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    [Trait("Component", "NotificationSending")]
+    public async Task SendNotificationAsync_HighVolumeOperations_PerformsEfficiently()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        const int notificationCount = 50;
+        var tasks = new List<Task<NotificationResult>>();
+
+        // Act
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        for (int i = 0; i < notificationCount; i++)
+        {
+            var request = new NotificationRequest
+            {
+                Recipient = $"user{i}@example.com",
+                Subject = $"Test Email {i}",
+                Message = $"This is test email notification {i}",
+                Channel = "Email",
+                Priority = NotificationPriority.Normal
+            };
+            tasks.Add(_service.SendNotificationAsync(request, BlockchainType.NeoN3));
+        }
+
+        var results = await Task.WhenAll(tasks);
+        stopwatch.Stop();
+
+        // Assert
+        results.Should().HaveCount(notificationCount);
+        results.Should().AllSatisfy(r => r.Success.Should().BeTrue());
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(10000); // Should complete within 10 seconds
+    }
+
+    [Fact]
+    [Trait("Category", "Performance")]
+    [Trait("Component", "Subscriptions")]
+    public async Task SubscribeAsync_HighVolumeOperations_PerformsEfficiently()
+    {
+        // Arrange
+        await InitializeServiceAsync();
+        const int subscriptionCount = 100;
+        var tasks = new List<Task<string>>();
+
+        // Act
+        var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+
+        for (int i = 0; i < subscriptionCount; i++)
+        {
+            var subscription = new NotificationSubscription
+            {
+                Recipient = $"user{i}@example.com",
+                Channel = NotificationChannel.Email,
+                EventTypes = new[] { "transaction" }
+            };
+            tasks.Add(_service.SubscribeAsync(subscription, BlockchainType.NeoN3));
+        }
+
+        var subscriptionIds = await Task.WhenAll(tasks);
+        stopwatch.Stop();
+
+        // Assert
+        subscriptionIds.Should().HaveCount(subscriptionCount);
+        subscriptionIds.Should().AllSatisfy(id => id.Should().NotBeNullOrEmpty());
+        stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
+    }
+
+    #endregion
+
+    #region Service Properties Tests
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceProperties")]
+    public void Service_ShouldSupportCorrectBlockchainTypes()
+    {
+        // Act & Assert
+        _service.SupportsBlockchain(BlockchainType.NeoN3).Should().BeTrue();
+        _service.SupportsBlockchain(BlockchainType.NeoX).Should().BeTrue();
+        _service.SupportsBlockchain((BlockchainType)999).Should().BeFalse();
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceProperties")]
+    public void Service_ShouldHaveCorrectCapabilities()
+    {
+        // Act & Assert
+        _service.Capabilities.Should().Contain(typeof(INotificationService));
+    }
+
+    [Fact]
+    [Trait("Category", "Unit")]
+    [Trait("Component", "ServiceProperties")]
+    public void Service_ShouldHaveCorrectMetadata()
+    {
+        // Act & Assert
+        _service.GetMetadata("CreatedAt").Should().NotBeNull();
+        _service.GetMetadata("MaxSubscriptions").Should().Be("10000");
+        _service.GetMetadata("SupportedChannels").Should().Be("Email,Webhook");
+        _service.GetMetadata("BatchSize").Should().Be("100");
+    }
+
+    #endregion
+
+    #region Helper Methods
+
+    private async Task InitializeServiceAsync()
+    {
+        await _service.InitializeAsync();
+        await _service.StartAsync();
+    }
+
+    private void SetupConfiguration()
+    {
         var options = new NotificationOptions
         {
             EnabledChannels = new[] { "Email", "Webhook" },
@@ -31,19 +750,49 @@ public class NotificationServiceTests : TestBase
             BatchSize = 100
         };
         _optionsMock.Setup(x => x.Value).Returns(options);
-
-        _service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
     }
 
-    [Fact]
-    public void Constructor_ShouldInitializeService()
+    private void SetupSmsConfiguration()
     {
-        // Act & Assert
-        _service.Should().NotBeNull();
+        var options = new NotificationOptions
+        {
+            EnabledChannels = new[] { "Email", "Webhook", "SMS" },
+            RetryAttempts = 3,
+            BatchSize = 100
+        };
+        _optionsMock.Setup(x => x.Value).Returns(options);
     }
 
-    // TODO: Add comprehensive tests for all service methods
-    // TODO: Add enclave integration tests
-    // TODO: Add error handling tests
-    // TODO: Add performance tests
+    private void SetupHttpClient()
+    {
+        var httpClient = new HttpClient(_httpMessageHandlerMock.Object);
+        _httpClientFactoryMock.Setup(x => x.CreateClient(It.IsAny<string>()))
+            .Returns(httpClient);
+
+        // Setup successful HTTP response for webhook notifications
+        _httpMessageHandlerMock.Protected()
+            .Setup<Task<HttpResponseMessage>>("SendAsync",
+                ItExpr.IsAny<HttpRequestMessage>(),
+                ItExpr.IsAny<CancellationToken>())
+            .ReturnsAsync(new HttpResponseMessage(HttpStatusCode.OK));
+    }
+
+    private void VerifyLoggerCalled(LogLevel level, string message)
+    {
+        _loggerMock.Verify(
+            x => x.Log(
+                level,
+                It.IsAny<EventId>(),
+                It.Is<It.IsAnyType>((v, t) => v.ToString()!.Contains(message)),
+                It.IsAny<Exception>(),
+                It.IsAny<Func<It.IsAnyType, Exception?, string>>()),
+            Times.AtLeastOnce);
+    }
+
+    public void Dispose()
+    {
+        _service?.Dispose();
+    }
+
+    #endregion
 }
