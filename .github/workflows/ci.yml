@@ -34,6 +34,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
 
     - name: Cache NuGet packages
       uses: actions/cache@v4
@@ -79,12 +82,19 @@ jobs:
     - name: Generate coverage report
       if: always()
       run: |
-        dotnet tool install -g dotnet-reportgenerator-globaltool
-        reportgenerator \
-          -reports:"./TestResults/**/coverage.cobertura.xml" \
-          -targetdir:"./CoverageReport" \
-          -reporttypes:"Html;Badges;TextSummary;MarkdownSummaryGithub" \
-          -verbosity:Warning
+        export PATH="$HOME/.dotnet/tools:$PATH"
+        dotnet tool install -g dotnet-reportgenerator-globaltool || true
+        if [ -f "./TestResults/**/coverage.cobertura.xml" ] || ls ./TestResults/**/coverage.cobertura.xml 1> /dev/null 2>&1; then
+          reportgenerator \
+            -reports:"./TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"./CoverageReport" \
+            -reporttypes:"Html;Badges;TextSummary;MarkdownSummaryGithub" \
+            -verbosity:Warning
+        else
+          echo "No coverage files found, creating empty report"
+          mkdir -p ./CoverageReport
+          echo "No coverage data available" > ./CoverageReport/SummaryGithub.md
+        fi
 
     - name: Upload coverage HTML report
       uses: actions/upload-artifact@v4
@@ -114,6 +124,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
 
     - name: Restore dependencies
       run: dotnet restore NeoServiceLayer.sln

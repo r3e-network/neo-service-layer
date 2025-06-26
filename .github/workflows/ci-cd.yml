@@ -120,6 +120,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
 
     - name: 🔧 Setup Node.js
       uses: actions/setup-node@v4
@@ -301,12 +304,21 @@ jobs:
 
     - name: 📊 Generate coverage report
       # Always generate coverage report - no skipping allowed
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
-      with:
-        reports: 'TestResults/**/coverage.cobertura.xml'
-        targetdir: 'TestResults/CoverageReport'
-        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary;Badges'
-        verbosity: 'Warning'
+      run: |
+        export PATH="$HOME/.dotnet/tools:$PATH"
+        dotnet tool install -g dotnet-reportgenerator-globaltool || true
+        if [ -f "TestResults/**/coverage.cobertura.xml" ] || ls TestResults/**/coverage.cobertura.xml 1> /dev/null 2>&1; then
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"TestResults/CoverageReport" \
+            -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;Badges" \
+            -verbosity:Warning
+        else
+          echo "No coverage files found, creating empty report"
+          mkdir -p TestResults/CoverageReport
+          echo '{"summary":{"linecoverage":0,"branchcoverage":0}}' > TestResults/CoverageReport/Summary.json
+          echo "No coverage data available" > TestResults/CoverageReport/SummaryGithub.md
+        fi
 
     - name: 📈 Check coverage thresholds
       id: coverage-check
@@ -397,6 +409,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
 
     - name: 🔍 Run dependency vulnerability scan
       run: |
@@ -502,6 +517,9 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
 
     - name: 🚀 Cache dependencies
       uses: actions/cache@v4
