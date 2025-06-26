@@ -96,7 +96,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     needs: changes
-    if: ${{ !github.event.inputs.skip_tests && (needs.changes.outputs.src == 'true' || needs.changes.outputs.tests == 'true' || github.event_name == 'workflow_dispatch') }}
+    # Always run build and test - no skipping allowed
     
     outputs:
       test-results-available: ${{ steps.test-check.outputs.available }}
@@ -246,8 +246,8 @@ jobs:
           --property TreatWarningsAsErrors=false
         echo "::endgroup::"
 
-    - name: 🧪 Run unit tests  
-      if: ${{ !github.event.inputs.skip_tests }}
+    - name: 🧪 Run unit tests
+      # Always run unit tests - no skipping allowed
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         NEO_ALLOW_SGX_SIMULATION: true
@@ -271,7 +271,7 @@ jobs:
         echo "::endgroup::"
 
     - name: 🔗 Run integration tests
-      if: ${{ !github.event.inputs.skip_tests }}
+      # Always run integration tests - no skipping allowed
       env:
         SGX_MODE: SIM
         SGX_SDK: /opt/intel/sgxsdk
@@ -293,7 +293,7 @@ jobs:
         echo "::endgroup::"
 
     - name: 📊 Generate coverage report
-      if: ${{ !github.event.inputs.skip_tests }}
+      # Always generate coverage report - no skipping allowed
       uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
       with:
         reports: 'TestResults/**/coverage.cobertura.xml'
@@ -303,7 +303,7 @@ jobs:
 
     - name: 📈 Check coverage thresholds
       id: coverage-check
-      if: ${{ !github.event.inputs.skip_tests }}
+      # Always check coverage thresholds - no skipping allowed
       run: |
         if [ -f "TestResults/CoverageReport/Summary.json" ]; then
           echo "::group::Coverage Analysis"
@@ -333,7 +333,8 @@ jobs:
 
     - name: 📤 Upload test results
       uses: actions/upload-artifact@v4
-      if: ${{ always() && !github.event.inputs.skip_tests }}
+      if: always()
+      # Always upload test results - no skipping allowed
       with:
         name: test-results-release-${{ github.run_number }}
         path: TestResults/
@@ -342,12 +343,12 @@ jobs:
 
     - name: 📈 Set test check outputs
       id: test-check
-      if: ${{ !github.event.inputs.skip_tests }}
+      # Always set test check outputs - no skipping allowed
       run: |
         echo "available=true" >> $GITHUB_OUTPUT
 
     - name: 🎯 Upload coverage to Codecov
-      if: ${{ !github.event.inputs.skip_tests }}
+      # Always upload coverage to Codecov - no skipping allowed
       uses: codecov/codecov-action@v4
       with:
         files: TestResults/CoverageReport/Cobertura.xml
@@ -358,7 +359,8 @@ jobs:
         token: ${{ secrets.CODECOV_TOKEN }}
 
     - name: 💬 Comment PR with coverage
-      if: ${{ github.event_name == 'pull_request' && !github.event.inputs.skip_tests }}
+      if: ${{ github.event_name == 'pull_request' }}
+      # Always comment PR with coverage - no skipping allowed
       uses: 5monkeys/cobertura-action@master
       with:
         path: TestResults/CoverageReport/Cobertura.xml
