@@ -16,7 +16,7 @@ public class HttpClientServiceTests : IDisposable
     private readonly IFixture _fixture;
     private readonly Mock<HttpMessageHandler> _httpMessageHandlerMock;
     private readonly HttpClient _httpClient;
-    private HttpClientService _httpClientService;
+    private readonly HttpClientService _httpClientService;
 
     public HttpClientServiceTests()
     {

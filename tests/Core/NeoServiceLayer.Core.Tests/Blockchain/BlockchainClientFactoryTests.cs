@@ -350,7 +350,7 @@ public class BlockchainClientFactoryTests
 
     #region Helper Methods and Test Classes
 
-    private Mock<IBlockchainClient> CreateMockBlockchainClient(BlockchainType blockchainType)
+    private static Mock<IBlockchainClient> CreateMockBlockchainClient(BlockchainType blockchainType)
     {
         var mock = new Mock<IBlockchainClient>();
         mock.Setup(x => x.BlockchainType).Returns(blockchainType);
@@ -365,14 +365,14 @@ public class BlockchainClientFactoryTests
         public Task<long> GetBlockHeightAsync() => Task.FromResult(1000000L);
         public Task<Block> GetBlockAsync(long height) => Task.FromResult(new Block());
         public Task<Block> GetBlockAsync(string hash) => Task.FromResult(new Block());
-        public Task<string> GetBlockHashAsync(long height) => Task.FromResult("0x123");
+        public static Task<string> GetBlockHashAsync(long height) => Task.FromResult("0x123");
         public Task<Transaction> GetTransactionAsync(string hash) => Task.FromResult(new Transaction());
         public Task<string> SendTransactionAsync(Transaction transaction) => Task.FromResult("0x123");
-        public Task<decimal> GetBalanceAsync(string address, string assetId) => Task.FromResult(100m);
-        public Task<decimal> GetGasPriceAsync() => Task.FromResult(0.001m);
-        public Task<decimal> EstimateGasAsync(Transaction transaction) => Task.FromResult(0.01m);
-        public Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("result");
-        public Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("0x456");
+        public static Task<decimal> GetBalanceAsync(string address, string assetId) => Task.FromResult(100m);
+        public static Task<decimal> GetGasPriceAsync() => Task.FromResult(0.001m);
+        public static Task<decimal> EstimateGasAsync(Transaction transaction) => Task.FromResult(0.01m);
+        public static Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("result");
+        public static Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("0x456");
         public Task<string> SubscribeToBlocksAsync(Func<Block, Task> callback) => Task.FromResult("sub1");
         public Task<bool> UnsubscribeFromBlocksAsync(string subscriptionId) => Task.FromResult(true);
         public Task<string> SubscribeToTransactionsAsync(Func<Transaction, Task> callback) => Task.FromResult("sub2");
@@ -397,7 +397,7 @@ public class BlockchainConfiguration
     public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
     public int MaxRetries { get; set; } = 3;
     public bool EnableLogging { get; set; } = true;
-    public List<string> ValidationErrors { get; private set; } = new();
+    public List<string> ValidationErrors { get; private set; } = [];
 
     public bool Validate()
     {

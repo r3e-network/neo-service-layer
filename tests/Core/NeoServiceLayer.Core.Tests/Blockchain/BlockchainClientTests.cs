@@ -404,7 +404,7 @@ public class BlockchainClientTests
         block.Height.Should().Be(0);
         block.PreviousHash.Should().Be(string.Empty);
         block.Transactions.Should().NotBeNull().And.BeEmpty();
-        block.Timestamp.Should().Be(default(DateTime));
+        block.Timestamp.Should().Be(default);
     }
 
     [Fact]
@@ -421,7 +421,7 @@ public class BlockchainClientTests
         transaction.Data.Should().Be(string.Empty);
         transaction.BlockHash.Should().Be(string.Empty);
         transaction.BlockHeight.Should().Be(0);
-        transaction.Timestamp.Should().Be(default(DateTime));
+        transaction.Timestamp.Should().Be(default);
     }
 
     [Fact]
@@ -438,7 +438,7 @@ public class BlockchainClientTests
         contractEvent.TransactionHash.Should().Be(string.Empty);
         contractEvent.BlockHash.Should().Be(string.Empty);
         contractEvent.BlockHeight.Should().Be(0);
-        contractEvent.Timestamp.Should().Be(default(DateTime));
+        contractEvent.Timestamp.Should().Be(default);
     }
 
     [Fact]
@@ -506,15 +506,15 @@ public class BlockchainClientTests
             Height = height,
             Timestamp = DateTime.UtcNow,
             PreviousHash = $"0x{new string('0', 64)}",
-            Transactions = new List<Transaction>
-            {
+            Transactions =
+            [
                 CreateTestTransaction("0x" + new string('a', 64)),
                 CreateTestTransaction("0x" + new string('b', 64))
-            }
+            ]
         };
     }
 
-    private Transaction CreateTestTransaction(string? hash = null)
+    private static Transaction CreateTestTransaction(string? hash = null)
     {
         return new Transaction
         {
@@ -529,7 +529,7 @@ public class BlockchainClientTests
         };
     }
 
-    private ContractEvent CreateTestContractEvent()
+    private static ContractEvent CreateTestContractEvent()
     {
         return new ContractEvent
         {
