@@ -3,8 +3,22 @@ name: 🚀 Neo Service Layer CI/CD Pipeline
 on:
   push:
     branches: [ main, master, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - '.vscode/**'
+      - '.devcontainer/**'
   pull_request:
     branches: [ main, master ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+      - '.vscode/**'
+      - '.devcontainer/**'
   workflow_dispatch:
     inputs:
       skip_tests:
@@ -36,12 +50,53 @@ env:
   NEO_ALLOW_SGX_SIMULATION: true
 
 jobs:
+  # 🔍 Changes Detection Job
+  changes:
+    name: 🔍 Detect Changes
+    runs-on: ubuntu-latest
+    outputs:
+      src: ${{ steps.changes.outputs.src }}
+      tests: ${{ steps.changes.outputs.tests }}
+      docker: ${{ steps.changes.outputs.docker }}
+      workflows: ${{ steps.changes.outputs.workflows }}
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔍 Detect file changes
+      uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          src:
+            - 'src/**'
+            - 'global.json'
+            - 'Directory.Build.props'
+            - 'Directory.Build.targets'
+            - 'Directory.Packages.props'
+            - '*.sln'
+          tests:
+            - 'tests/**'
+            - 'src/**'
+          docker:
+            - 'src/**'
+            - 'Dockerfile*'
+            - '.dockerignore'
+            - 'global.json'
+            - 'Directory.*.props'
+            - '*.sln'
+          workflows:
+            - '.github/workflows/**'
+
   # 🏗️ Build and Test Matrix Job
   build-and-test:
     name: 🏗️ Build & Test (Release)
     runs-on: ubuntu-latest
     timeout-minutes: 60
-    if: ${{ !github.event.inputs.skip_tests }}
+    needs: changes
+    if: ${{ !github.event.inputs.skip_tests && (needs.changes.outputs.src == 'true' || needs.changes.outputs.tests == 'true' || github.event_name == 'workflow_dispatch') }}
     
     outputs:
       test-results-available: ${{ steps.test-check.outputs.available }}
@@ -373,8 +428,8 @@ jobs:
     name: 🐳 Docker Build & Push
     runs-on: ubuntu-latest
     timeout-minutes: 30
-    needs: [build-and-test]
-    if: ${{ !github.event.inputs.skip_docker && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
+    needs: [changes, build-and-test]
+    if: ${{ !github.event.inputs.skip_docker && needs.changes.outputs.docker == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     
     permissions:
       contents: read
