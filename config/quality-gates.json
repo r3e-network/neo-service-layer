@@ -1,0 +1,82 @@
+{
+  "version": "1.0",
+  "description": "Quality gates configuration for Neo Service Layer",
+  "quality_gates": {
+    "code_coverage": {
+      "enabled": true,
+      "minimum_line_coverage": 75,
+      "minimum_branch_coverage": 70,
+      "minimum_method_coverage": 75,
+      "exclude_patterns": [
+        "**/bin/**",
+        "**/obj/**",
+        "**/*Tests*/**",
+        "**/*Designer.cs",
+        "**/Program.cs",
+        "**/Startup.cs",
+        "**/GlobalSuppressions.cs"
+      ],
+      "fail_build_on_coverage_below_threshold": true
+    },
+    "static_analysis": {
+      "enabled": true,
+      "tools": ["sonarcloud", "codeql", "snyk"],
+      "severity_threshold": "high",
+      "fail_build_on_security_issues": true,
+      "fail_build_on_maintainability_issues": false
+    },
+    "build_requirements": {
+      "enabled": true,
+      "require_clean_build": true,
+      "require_all_tests_pass": true,
+      "allow_warnings": false,
+      "fail_on_package_vulnerabilities": true
+    },
+    "performance_gates": {
+      "enabled": true,
+      "max_build_time_minutes": 15,
+      "max_test_time_minutes": 10,
+      "performance_regression_threshold": 20
+    }
+  },
+  "notifications": {
+    "slack": {
+      "enabled": true,
+      "channels": ["#ci-cd", "#neo-service-layer"],
+      "notify_on_failure": true,
+      "notify_on_success_after_failure": true
+    },
+    "email": {
+      "enabled": false,
+      "recipients": [],
+      "notify_on_failure": true
+    }
+  },
+  "deployment_gates": {
+    "development": {
+      "require_passing_tests": true,
+      "require_code_coverage": true,
+      "require_security_scan": true,
+      "auto_deploy": true
+    },
+    "staging": {
+      "require_passing_tests": true,
+      "require_code_coverage": true,
+      "require_security_scan": true,
+      "require_manual_approval": false,
+      "auto_deploy": true
+    },
+    "production": {
+      "require_passing_tests": true,
+      "require_code_coverage": true,
+      "require_security_scan": true,
+      "require_manual_approval": true,
+      "auto_deploy": false,
+      "additional_checks": [
+        "performance_tests",
+        "load_tests",
+        "security_penetration_tests"
+      ]
+    }
+  }
+}

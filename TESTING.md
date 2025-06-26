@@ -4,22 +4,28 @@ This document describes how to run tests for the Neo Service Layer project.
 
 ## Quick Start
 
-### Run Unit Tests Only (Recommended for CI/CD)
+### Quick Test Commands (From Root Directory)
 ```bash
-# Linux/macOS
-./run-unit-tests.sh
+# Run unit tests only (recommended for CI/CD)
+./test.sh unit
 
-# Windows
-./run-all-tests.ps1 -Coverage
+# Run all tests including performance tests
+./test.sh all
+
+# Get help
+./test.sh help
 ```
 
-### Run All Tests (Including Performance Tests)
+### Direct Script Access
 ```bash
-# Linux/macOS
-./run-all-tests.sh
+# Linux/macOS - Unit tests only
+./scripts/testing/run-unit-tests.sh
 
-# Windows
-./run-all-tests.ps1 -Coverage
+# Linux/macOS - All tests
+./scripts/testing/run-all-tests.sh
+
+# Windows - PowerShell
+./scripts/testing/run-all-tests.ps1 -Coverage
 ```
 
 ## Test Scripts

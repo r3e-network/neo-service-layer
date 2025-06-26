@@ -1,0 +1,360 @@
+Summary
+  Generated on: 6/26/2025 - 4:13:43 PM
+  Coverage date: 6/26/2025 - 4:10:45 PM - 6/26/2025 - 4:11:54 PM
+  Parser: MultiReport (50x Cobertura)
+  Assemblies: 35
+  Classes: 270
+  Files: 332
+  Line coverage: 19.7%
+  Covered lines: 4276
+  Uncovered lines: 17420
+  Coverable lines: 21696
+  Total lines: 141777
+  Branch coverage: 16.4% (1175 of 7130)
+  Covered branches: 1175
+  Total branches: 7130
+  Method coverage: 20% (514 of 2564)
+  Full method coverage: 14.2% (365 of 2564)
+  Covered methods: 514
+  Fully covered methods: 365
+  Total methods: 2564
+
+NeoServiceLayer.Advanced.FairOrdering                                             54.8%
+  NeoServiceLayer.Advanced.FairOrdering.CircuitBreaker                            57.8%
+  NeoServiceLayer.Advanced.FairOrdering.FairOrderingService                         51%
+  NeoServiceLayer.Advanced.FairOrdering.Models.FairTransactionRequest              100%
+  NeoServiceLayer.Advanced.FairOrdering.Models.OrderingPoolConfig                  100%
+  NeoServiceLayer.Advanced.FairOrdering.Models.TransactionSubmission               100%
+  NeoServiceLayer.Advanced.FairOrdering.ResilienceHelper                          58.8%
+
+NeoServiceLayer.AI.PatternRecognition                                               11%
+  NeoServiceLayer.AI.PatternRecognition.EvaluationResult                             0%
+  NeoServiceLayer.AI.PatternRecognition.Models.AddressPattern                        0%
+  NeoServiceLayer.AI.PatternRecognition.Models.AmountRange                           0%
+  NeoServiceLayer.AI.PatternRecognition.Models.AnomalyDetectionHelper                0%
+  NeoServiceLayer.AI.PatternRecognition.Models.AnomalyDetectionStatistics            0%
+  NeoServiceLayer.AI.PatternRecognition.Models.BehaviorAnalysisRequest              50%
+  NeoServiceLayer.AI.PatternRecognition.Models.ClassificationStatistics              0%
+  NeoServiceLayer.AI.PatternRecognition.Models.Extensions                            0%
+  NeoServiceLayer.AI.PatternRecognition.Models.FraudDetectionExtensions              0%
+  NeoServiceLayer.AI.PatternRecognition.Models.FraudDetectionHelper                 38%
+  NeoServiceLayer.AI.PatternRecognition.Models.FraudDetectionRequest              34.6%
+  NeoServiceLayer.AI.PatternRecognition.Models.FraudTimePattern                      0%
+  NeoServiceLayer.AI.PatternRecognition.Models.HolidayHelper                         0%
+  NeoServiceLayer.AI.PatternRecognition.Models.PatternAnalysisStatistics             0%
+  NeoServiceLayer.AI.PatternRecognition.Models.RiskAssessmentResult                 25%
+  NeoServiceLayer.AI.PatternRecognition.Models.RiskAssessmentStatistics              0%
+  NeoServiceLayer.AI.PatternRecognition.Models.TimeRange                            50%
+  NeoServiceLayer.AI.PatternRecognition.PatternRecognitionService                  9.8%
+  NeoServiceLayer.AI.PatternRecognition.StatisticalExtensions                        0%
+
+NeoServiceLayer.AI.Prediction                                                     71.9%
+  NeoServiceLayer.AI.Prediction.PredictionService                                 71.9%
+
+NeoServiceLayer.Api                                                               43.4%
+  NeoServiceLayer.Api.Controllers.AutomationController                               0%
+  NeoServiceLayer.Api.Controllers.BackupController                                   0%
+  NeoServiceLayer.Api.Controllers.BaseApiController                               78.1%
+  NeoServiceLayer.Api.Controllers.ComplianceController                               0%
+  NeoServiceLayer.Api.Controllers.FairOrderingController                             0%
+  NeoServiceLayer.Api.Controllers.HealthController                                   0%
+  NeoServiceLayer.Api.Controllers.KeyManagementController                          100%
+  NeoServiceLayer.Api.Controllers.MonitoringController                               0%
+  NeoServiceLayer.Api.Controllers.NotificationController                             0%
+  NeoServiceLayer.Api.Controllers.OracleController                                   0%
+  NeoServiceLayer.Api.Controllers.PaginatedResponse<T>                             100%
+  NeoServiceLayer.Api.Controllers.PatternRecognitionController                     100%
+  NeoServiceLayer.Api.Controllers.PredictionController                             100%
+  NeoServiceLayer.Api.Controllers.RandomnessController                               0%
+  NeoServiceLayer.Api.Controllers.SecretsController                                  0%
+  NeoServiceLayer.Api.Controllers.StorageController                                  0%
+  NeoServiceLayer.Api.Controllers.VotingController                                   0%
+  NeoServiceLayer.Api.Controllers.ZeroKnowledgeController                            0%
+  NeoServiceLayer.Api.Filters.GlobalExceptionFilter                                4.5%
+  NeoServiceLayer.Api.HealthChecks.AIServicesHealthCheck                             0%
+  NeoServiceLayer.Api.HealthChecks.BlockchainHealthCheck                             0%
+  NeoServiceLayer.Api.HealthChecks.CustomHealthChecks                                0%
+  NeoServiceLayer.Api.HealthChecks.DatabaseHealthCheck                               0%
+  NeoServiceLayer.Api.HealthChecks.DiskSpaceHealthCheck                              0%
+  NeoServiceLayer.Api.HealthChecks.KeyManagementHealthCheck                          0%
+  NeoServiceLayer.Api.HealthChecks.MemoryHealthCheck                                 0%
+  NeoServiceLayer.Api.HealthChecks.NeoN3RpcHealthCheck                               0%
+  NeoServiceLayer.Api.HealthChecks.NeoXRpcHealthCheck                                0%
+  NeoServiceLayer.Api.HealthChecks.RedisHealthCheck                                  0%
+  NeoServiceLayer.Api.HealthChecks.StorageHealthCheck                                0%
+  NeoServiceLayer.Api.Middleware.ErrorHandlingMiddleware                             6%
+  Program                                                                         93.7%
+
+NeoServiceLayer.Core                                                              43.8%
+  NeoServiceLayer.Core.AnomalyDetectionResult                                       50%
+  NeoServiceLayer.Core.AssetRegistrationRequest                                     50%
+  NeoServiceLayer.Core.AuditReport                                                  50%
+  NeoServiceLayer.Core.ClassificationResult                                         50%
+  NeoServiceLayer.Core.ConfigurationSubscription                                     0%
+  NeoServiceLayer.Core.CrossChainMessageRequest                                     50%
+  NeoServiceLayer.Core.CrossChainOperation                                          50%
+  NeoServiceLayer.Core.CrossChainTransferRequest                                    50%
+  NeoServiceLayer.Core.FairnessAnalysisResult                                       50%
+  NeoServiceLayer.Core.FairTransactionRequest                                       50%
+  NeoServiceLayer.Core.HealthThreshold                                              50%
+  NeoServiceLayer.Core.Http.HttpClientService                                       50%
+  NeoServiceLayer.Core.Models.AIInferenceResult                                     50%
+  NeoServiceLayer.Core.Models.AIModel                                               50%
+  NeoServiceLayer.Core.Models.AIModelMetrics                                        50%
+  NeoServiceLayer.Core.Models.NotificationOptions                                   50%
+  NeoServiceLayer.Core.Models.NotificationPreferences                                0%
+  NeoServiceLayer.Core.Models.TokenMapping                                           0%
+  NeoServiceLayer.Core.MonitoredAsset                                               50%
+  NeoServiceLayer.Core.ProofOfReserve                                               50%
+  NeoServiceLayer.Core.ProofResult                                                  50%
+  NeoServiceLayer.Core.RemoteCallRequest                                            50%
+  NeoServiceLayer.Core.ReserveAlert                                                  0%
+  NeoServiceLayer.Core.ReserveAsset                                                  0%
+  NeoServiceLayer.Core.ReserveSnapshot                                              50%
+  NeoServiceLayer.Core.SentimentResult                                              50%
+  NeoServiceLayer.Core.SmartContracts.ContractInvocationOptions                      0%
+  NeoServiceLayer.Core.TokenMapping                                                  0%
+  NeoServiceLayer.Core.VotingStrategyRequest                                        50%
+  NeoServiceLayer.Core.ZkComputationRequest                                         50%
+
+NeoServiceLayer.Infrastructure.Blockchain                                          4.9%
+  NeoServiceLayer.Infrastructure.AbstractAccountOptions                              0%
+  NeoServiceLayer.Infrastructure.BlockchainClientFactory                             0%
+  NeoServiceLayer.Infrastructure.CrossChainOptions                                   0%
+  NeoServiceLayer.Infrastructure.KeyManagementOptions                                0%
+  NeoServiceLayer.Infrastructure.NeoBlockchainClient                                 0%
+  NeoServiceLayer.Infrastructure.NeoN3ClientAdapter                                  0%
+  NeoServiceLayer.Infrastructure.NeoXClientAdapter                                   0%
+  NeoServiceLayer.Infrastructure.NotificationOptions                                 0%
+  NeoServiceLayer.Infrastructure.ProductionBlockchainClientFactory                   0%
+  NeoServiceLayer.Infrastructure.ProofOfReserveOptions                               0%
+  NeoServiceLayer.Infrastructure.RandomnessOptions                                   0%
+  NeoServiceLayer.Infrastructure.ServiceCollectionExtensions                      18.5%
+  NeoServiceLayer.Infrastructure.StorageOptions                                      0%
+  NeoServiceLayer.Infrastructure.ZeroKnowledgeOptions                                0%
+
+NeoServiceLayer.Infrastructure.Persistence                                           0%
+  NeoServiceLayer.Infrastructure.Persistence.OcclumFileStorageProvider               0%
+
+NeoServiceLayer.Infrastructure.Security                                           12.3%
+  NeoServiceLayer.Infrastructure.Security.AuthenticationAnomalyDetector           13.6%
+  NeoServiceLayer.Infrastructure.Security.BruteForceDetector                        23%
+  NeoServiceLayer.Infrastructure.Security.DataExfiltrationDetector                21.6%
+  NeoServiceLayer.Infrastructure.Security.RateLimitAbuseDetector                   9.6%
+  NeoServiceLayer.Infrastructure.Security.SecurityEvent                              0%
+  NeoServiceLayer.Infrastructure.Security.SecurityLogger                          11.1%
+  NeoServiceLayer.Infrastructure.Security.SecurityLoggingExtensions                6.2%
+  NeoServiceLayer.Infrastructure.Security.SecurityMonitoringConfiguration           50%
+  NeoServiceLayer.Infrastructure.Security.SecurityMonitoringService               39.3%
+  NeoServiceLayer.Infrastructure.Security.SecurityThreatDetector                    50%
+  NeoServiceLayer.Infrastructure.Security.SuspiciousPatternDetector                 19%
+  NeoServiceLayer.ServiceFramework.Security.SecurityAwareServiceBase                 0%
+
+NeoServiceLayer.Neo.N3                                                              13%
+  NeoServiceLayer.Neo.N3.NeoN3Client                                                13%
+
+NeoServiceLayer.Neo.X                                                             16.8%
+  NeoServiceLayer.Neo.X.NeoXClient                                                16.8%
+
+NeoServiceLayer.ServiceFramework                                                  23.2%
+  NeoServiceLayer.ServiceFramework.AIServiceBase                                   5.1%
+  NeoServiceLayer.ServiceFramework.BlockchainServiceBase                             0%
+  NeoServiceLayer.ServiceFramework.BlockchainServiceOptions<T>                       0%
+  NeoServiceLayer.ServiceFramework.CryptographicServiceBase                       19.3%
+  NeoServiceLayer.ServiceFramework.DataServiceBase                                   0%
+  NeoServiceLayer.ServiceFramework.DefaultServiceDependencyResolver                  0%
+  NeoServiceLayer.ServiceFramework.DefaultServiceLifecycleManager                    0%
+  NeoServiceLayer.ServiceFramework.DefaultServiceValidator                           0%
+  NeoServiceLayer.ServiceFramework.EnclaveBlockchainServiceBase                     50%
+  NeoServiceLayer.ServiceFramework.EnclaveInitializationException                    0%
+  NeoServiceLayer.ServiceFramework.EnclaveServiceBase                               50%
+  NeoServiceLayer.ServiceFramework.EnclaveServiceOptions<T>                          0%
+  NeoServiceLayer.ServiceFramework.EnhancedServiceBase                               0%
+  NeoServiceLayer.ServiceFramework.EnhancedServiceRegistry                           0%
+  NeoServiceLayer.ServiceFramework.ServiceBase                                    39.4%
+  NeoServiceLayer.ServiceFramework.ServiceCollectionExtensions                       0%
+  NeoServiceLayer.ServiceFramework.ServiceConfiguration                             50%
+  NeoServiceLayer.ServiceFramework.ServiceDependency                                45%
+  NeoServiceLayer.ServiceFramework.ServiceEventArgs                                 50%
+  NeoServiceLayer.ServiceFramework.ServiceFrameworkExtensions                        0%
+  NeoServiceLayer.ServiceFramework.ServiceFrameworkHealthCheck                       0%
+  NeoServiceLayer.ServiceFramework.ServiceFrameworkMetrics                           0%
+  NeoServiceLayer.ServiceFramework.ServiceFrameworkOptions                           0%
+  NeoServiceLayer.ServiceFramework.ServiceHealthChangedEventArgs                    50%
+  NeoServiceLayer.ServiceFramework.ServiceHealthCheck<T>                             0%
+  NeoServiceLayer.ServiceFramework.ServiceMetricsCollector                        45.1%
+  NeoServiceLayer.ServiceFramework.ServiceMetricsEventArgs                          50%
+  NeoServiceLayer.ServiceFramework.ServiceRegistrationExtensions                     0%
+  NeoServiceLayer.ServiceFramework.ServiceRegistry                                22.8%
+  NeoServiceLayer.ServiceFramework.ServiceTemplate                                   0%
+  NeoServiceLayer.ServiceFramework.ServiceTemplateGenerator                       46.9%
+
+NeoServiceLayer.Services.AbstractAccount                                          68.1%
+  NeoServiceLayer.Services.AbstractAccount.AbstractAccountService                   65%
+  NeoServiceLayer.Services.AbstractAccount.Models.BatchTransactionRequest          100%
+  NeoServiceLayer.Services.AbstractAccount.Models.ExecuteTransactionRequest        100%
+
+NeoServiceLayer.Services.Automation                                               43.4%
+  NeoServiceLayer.Services.Automation.AutomationService                           43.4%
+
+NeoServiceLayer.Services.Backup                                                      9%
+  NeoServiceLayer.Services.Backup.BackupService                                   12.8%
+  NeoServiceLayer.Services.Backup.Models.BackupDeletionResult                        0%
+  NeoServiceLayer.Services.Backup.Models.BackupExportResult                          0%
+  NeoServiceLayer.Services.Backup.Models.BackupImportResult                          0%
+  NeoServiceLayer.Services.Backup.Models.BackupRequest                               0%
+  NeoServiceLayer.Services.Backup.Models.BackupResult                                0%
+  NeoServiceLayer.Services.Backup.Models.BackupStatisticsRequest                     0%
+  NeoServiceLayer.Services.Backup.Models.BackupStatisticsResult                      0%
+  NeoServiceLayer.Services.Backup.Models.BackupValidationResult                      0%
+  NeoServiceLayer.Services.Backup.Models.ExportBackupRequest                         0%
+  NeoServiceLayer.Services.Backup.Models.RetentionPolicy                             0%
+  NeoServiceLayer.Services.Backup.Models.ScheduledBackupResult                       0%
+
+NeoServiceLayer.Services.Compliance                                                 20%
+  NeoServiceLayer.Services.Compliance.ComplianceService                           28.1%
+  NeoServiceLayer.Services.Compliance.Models.ComplianceCheckRequest                  0%
+  NeoServiceLayer.Services.Compliance.Models.ComplianceReportData                    0%
+  NeoServiceLayer.Services.Compliance.Models.DateRange                               0%
+  NeoServiceLayer.Services.Compliance.Models.GetComplianceRulesRequest               0%
+  NeoServiceLayer.Services.Compliance.Models.GetComplianceRulesResult                0%
+  NeoServiceLayer.Services.Compliance.Models.GetViolationsResult                     0%
+  NeoServiceLayer.Services.Compliance.Models.SeverityRange                           0%
+
+NeoServiceLayer.Services.Compute                                                  43.7%
+  NeoServiceLayer.Services.Compute.ComputeService                                 43.7%
+
+NeoServiceLayer.Services.Configuration                                            19.1%
+  NeoServiceLayer.Services.Configuration.ConfigurationService                     19.4%
+  NeoServiceLayer.Services.Configuration.Models.ChangeNotificationPreferences        0%
+
+NeoServiceLayer.Services.CrossChain                                               35.7%
+  NeoServiceLayer.Services.CrossChain.CrossChainService                           35.2%
+  NeoServiceLayer.Services.CrossChain.Models.CrossChainPair                        100%
+
+NeoServiceLayer.Services.EventSubscription                                        47.8%
+  NeoServiceLayer.Services.EventSubscription.EventSubscriptionService             47.8%
+
+NeoServiceLayer.Services.Health                                                   27.1%
+  NeoServiceLayer.Services.Health.HealthService                                   15.1%
+  NeoServiceLayer.Services.Health.Monitoring.HealthMonitoringHelper                 50%
+  NeoServiceLayer.Services.Health.Storage.HealthStorageHelper                       50%
+
+NeoServiceLayer.Services.KeyManagement                                            29.4%
+  NeoServiceLayer.Services.KeyManagement.KeyManagementService                     29.4%
+
+NeoServiceLayer.Services.Monitoring                                                5.4%
+  NeoServiceLayer.Services.Monitoring.Models.MonitoringSession                       0%
+  NeoServiceLayer.Services.Monitoring.Models.PerformanceStatisticsRequest            0%
+  NeoServiceLayer.Services.Monitoring.Models.StartMonitoringRequest                  0%
+  NeoServiceLayer.Services.Monitoring.MonitoringService                            5.5%
+
+NeoServiceLayer.Services.Notification                                             36.4%
+  NeoServiceLayer.Services.Notification.Models.DeliveryStatisticsRequest             0%
+  NeoServiceLayer.Services.Notification.Models.SubscriptionPreferences             100%
+  NeoServiceLayer.Services.Notification.NotificationService                       36.3%
+
+NeoServiceLayer.Services.Oracle                                                   54.3%
+  NeoServiceLayer.Services.Oracle.Configuration.OracleServiceBuilder                 0%
+  NeoServiceLayer.Services.Oracle.Models.DateRange                                   0%
+  NeoServiceLayer.Services.Oracle.Models.ListDataSourcesResult                       0%
+  NeoServiceLayer.Services.Oracle.Models.ListSubscriptionsResult                     0%
+  NeoServiceLayer.Services.Oracle.Models.OracleSubscription                        100%
+  NeoServiceLayer.Services.Oracle.Models.RateLimit                                   0%
+  NeoServiceLayer.Services.Oracle.OracleService                                   71.4%
+
+NeoServiceLayer.Services.ProofOfReserve                                            3.8%
+  NeoServiceLayer.Services.ProofOfReserve.AlertSettings                              0%
+  NeoServiceLayer.Services.ProofOfReserve.CacheHelperLogger                          0%
+  NeoServiceLayer.Services.ProofOfReserve.CryptographicSettings                      0%
+  NeoServiceLayer.Services.ProofOfReserve.EnumerableExtensions                       0%
+  NeoServiceLayer.Services.ProofOfReserve.EnvironmentSettings                        0%
+  NeoServiceLayer.Services.ProofOfReserve.MonitoringSettings                         0%
+  NeoServiceLayer.Services.ProofOfReserve.PerformanceSettings                        0%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveCacheHelper                1.7%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveCircuitBreaker            10.3%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveConfiguration                0%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveConfigurationService         0%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveResilienceHelper             0%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveSecurityHelper             1.5%
+  NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService                    8.5%
+  NeoServiceLayer.Services.ProofOfReserve.RateLimitBucket                            0%
+  NeoServiceLayer.Services.ProofOfReserve.ResilienceSettings                         0%
+  NeoServiceLayer.Services.ProofOfReserve.SecureOperationResult<T>                   0%
+  NeoServiceLayer.Services.ProofOfReserve.SecurityHelperLogger                    33.3%
+  NeoServiceLayer.Services.ProofOfReserve.SecuritySettings                           0%
+  NeoServiceLayer.Services.ProofOfReserve.SecurityValidationResult                   0%
+  NeoServiceLayer.Services.ProofOfReserve.StorageSettings                            0%
+
+NeoServiceLayer.Services.Randomness                                                100%
+  NeoServiceLayer.Services.Randomness.RandomnessService                            100%
+
+NeoServiceLayer.Services.SecretsManagement                                           0%
+  Microsoft.Extensions.DependencyInjection.SecretsManagementServiceExtensions        0%
+  NeoServiceLayer.Services.SecretsManagement.AwsSecretsManagerProvider               0%
+  NeoServiceLayer.Services.SecretsManagement.AzureKeyVaultProvider                   0%
+  NeoServiceLayer.Services.SecretsManagement.SecretsManagementService                0%
+
+NeoServiceLayer.Services.Storage                                                    56%
+  NeoServiceLayer.Services.Storage.Models.DateTimeRange                              0%
+  NeoServiceLayer.Services.Storage.Models.ListDataResult                             0%
+  NeoServiceLayer.Services.Storage.Models.SearchDataResult                           0%
+  NeoServiceLayer.Services.Storage.Models.SizeRange                                  0%
+  NeoServiceLayer.Services.Storage.Models.StorageUsage                               0%
+  NeoServiceLayer.Services.Storage.StorageOptions                                   50%
+  NeoServiceLayer.Services.Storage.StorageService                                 59.2%
+
+NeoServiceLayer.Services.Voting                                                   28.6%
+  NeoServiceLayer.Services.Voting.Models.DateRange                                   0%
+  NeoServiceLayer.Services.Voting.Models.GetCandidatesResult                         0%
+  NeoServiceLayer.Services.Voting.Models.GetProposalsResult                          0%
+  NeoServiceLayer.Services.Voting.Models.VotingRiskAssessment                        0%
+  NeoServiceLayer.Services.Voting.Storage.VotingStorageHelper                       50%
+  NeoServiceLayer.Services.Voting.Strategies.StatisticsExtensions                   50%
+  NeoServiceLayer.Services.Voting.Strategies.VotingStrategyHelper                 36.1%
+  NeoServiceLayer.Services.Voting.VotingService                                   26.1%
+
+NeoServiceLayer.Services.ZeroKnowledge                                            32.3%
+  NeoServiceLayer.Services.ZeroKnowledge.Models.CryptographicProof                   0%
+  NeoServiceLayer.Services.ZeroKnowledge.Models.DateRange                            0%
+  NeoServiceLayer.Services.ZeroKnowledge.Models.SecureComputationContext             0%
+  NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService                       33%
+
+NeoServiceLayer.Shared                                                              49%
+  NeoServiceLayer.Shared.Constants.ServiceConstants                                  0%
+  NeoServiceLayer.Shared.Extensions.ObjectExtensions                              47.4%
+  NeoServiceLayer.Shared.Extensions.StringExtensions                                50%
+  NeoServiceLayer.Shared.Utilities.CircuitBreaker                                   50%
+  NeoServiceLayer.Shared.Utilities.CircuitBreakerOpenException                      50%
+  NeoServiceLayer.Shared.Utilities.Guard                                            50%
+  NeoServiceLayer.Shared.Utilities.RetryHelper                                      50%
+
+NeoServiceLayer.Tee.Enclave                                                        8.4%
+  NeoServiceLayer.Tee.Enclave.AttestationService                                     0%
+  NeoServiceLayer.Tee.Enclave.EnclaveConfig                                         50%
+  NeoServiceLayer.Tee.Enclave.EnclaveException                                       0%
+  NeoServiceLayer.Tee.Enclave.EnclaveNetworkService                                  0%
+  NeoServiceLayer.Tee.Enclave.EnclaveServiceAdapter                                  0%
+  NeoServiceLayer.Tee.Enclave.EnclaveStorageService                                  0%
+  NeoServiceLayer.Tee.Enclave.LoggerWrapper<T>                                    33.3%
+  NeoServiceLayer.Tee.Enclave.Native.OcclumException                                 0%
+  NeoServiceLayer.Tee.Enclave.Native.OcclumNativeApi                                 0%
+  NeoServiceLayer.Tee.Enclave.Native.SgxException                                    0%
+  NeoServiceLayer.Tee.Enclave.Native.SgxNativeApi                                    0%
+  NeoServiceLayer.Tee.Enclave.OcclumEnclaveWrapper                                10.4%
+  NeoServiceLayer.Tee.Enclave.ProductionSGXEnclaveWrapper                         23.6%
+
+NeoServiceLayer.Tee.Host                                                           9.8%
+  NeoServiceLayer.Tee.Host.Services.EnclaveHostService                               0%
+  NeoServiceLayer.Tee.Host.Services.EnclaveManager                                 9.8%
+
+NeoServiceLayer.TestInfrastructure                                                14.3%
+  NeoServiceLayer.TestInfrastructure.MockBlockchainClient                            0%
+  NeoServiceLayer.TestInfrastructure.MockBlockchainClientFactory                   7.6%
+  NeoServiceLayer.TestInfrastructure.MockInfrastructureBlockchainClient              0%
+  NeoServiceLayer.TestInfrastructure.TestBase                                     41.8%
+  NeoServiceLayer.TestInfrastructure.TestConfiguration                               0%
+  NeoServiceLayer.TestInfrastructure.TestDataBuilders.BlockchainTestDataBuilder      0%
+
+NeoServiceLayer.Tests.Common                                                      83.8%
+  NeoServiceLayer.Tests.Common.TestConfiguration                                  83.8%

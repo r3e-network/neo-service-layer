@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<suppressions xmlns="https://jeremylong.github.io/DependencyCheck/dependency-suppression.1.3.xsd">
+    
+    <!-- CVE-2014-9152: False positive for Neo blockchain library (not the vulnerable "neon" package) -->
+    <suppress>
+        <notes><![CDATA[
+        This CVE affects the "neon" package, not the Neo blockchain library.
+        The Neo blockchain library is a different project entirely.
+        ]]></notes>
+        <cpe regex="true">cpe:2\.3:a:neon:neon:3:.*</cpe>
+        <cpe regex="true">cpe:2\.3:a:service_project:service:3:.*</cpe>
+        <cpe regex="true">cpe:2\.3:a:services_project:services:3:.*</cpe>
+        <cve>CVE-2014-9152</cve>
+    </suppress>
+    
+    <!-- CVE-2024-43485: System.Text.Json 9.0.6 is the patched version -->
+    <suppress>
+        <notes><![CDATA[
+        System.Text.Json 9.0.6 is the patched version that fixes CVE-2024-43485.
+        This appears to be a false positive or outdated vulnerability database.
+        Microsoft advisory confirms 9.0.6+ is safe.
+        See: https://github.com/dotnet/announcements/issues/329
+        ]]></notes>
+        <packageUrl regex="true">^pkg:nuget/System\.Text\.Json@9\.0\.[6-9].*$</packageUrl>
+        <cve>CVE-2024-43485</cve>
+    </suppress>
+    
+    <!-- CVE-2024-43598: Microsoft.ML.LightGbm 4.0.1 - No patch available yet -->
+    <suppress until="2025-12-31">
+        <notes><![CDATA[
+        Microsoft.ML.LightGbm 4.0.1 is the latest available version.
+        Monitoring for patch availability from Microsoft.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:nuget/Microsoft\.ML\.LightGbm@4\.0\.1$</packageUrl>
+        <cpe regex="true">cpe:2\.3:a:light:light:4\.0\.1:.*</cpe>
+        <cpe regex="true">cpe:2\.3:a:microsoft:lightgbm:4\.0\.1:.*</cpe>
+        <cve>CVE-2024-43598</cve>
+    </suppress>
+    
+    <!-- WireMock.Net CVEs: False positives - these CVEs affect Java WireMock, not .NET WireMock.Net -->
+    <suppress>
+        <notes><![CDATA[
+        These CVEs affect the Java version of WireMock, not the .NET WireMock.Net library.
+        WireMock.Net is a separate implementation that is not affected by these Java-specific vulnerabilities.
+        ]]></notes>
+        <packageUrl regex="true">^pkg:nuget/WireMock\.Net@.*$</packageUrl>
+        <cpe regex="true">cpe:2\.3:a:wire:wire:.*</cpe>
+        <cpe regex="true">cpe:2\.3:a:wiremock:wiremock:.*</cpe>
+        <cve>CVE-2018-8909</cve>
+        <cve>CVE-2021-41093</cve>
+        <cve>CVE-2020-27853</cve>
+        <cve>CVE-2018-9116</cve>
+        <cve>CVE-2020-15258</cve>
+    </suppress>
+    
+</suppressions>
