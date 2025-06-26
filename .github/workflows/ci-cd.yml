@@ -102,6 +102,8 @@ jobs:
       contents: read
       pull-requests: write
       issues: write
+      checks: write
+      statuses: write
     
     outputs:
       test-results-available: ${{ steps.test-check.outputs.available }}
