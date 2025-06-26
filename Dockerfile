@@ -55,7 +55,7 @@ COPY Directory.Build.targets .
 COPY src/Api/NeoServiceLayer.Api/*.csproj src/Api/NeoServiceLayer.Api/
 COPY src/Core/NeoServiceLayer.Core/*.csproj src/Core/NeoServiceLayer.Core/
 COPY src/Core/NeoServiceLayer.ServiceFramework/*.csproj src/Core/NeoServiceLayer.ServiceFramework/
-COPY src/Core/NeoServiceLayer.Infrastructure/*.csproj src/Core/NeoServiceLayer.Infrastructure/
+# Infrastructure projects are already copied in line 66
 COPY src/Core/NeoServiceLayer.Shared/*.csproj src/Core/NeoServiceLayer.Shared/
 COPY src/Blockchain/NeoServiceLayer.Neo.N3/*.csproj src/Blockchain/NeoServiceLayer.Neo.N3/
 COPY src/Blockchain/NeoServiceLayer.Neo.X/*.csproj src/Blockchain/NeoServiceLayer.Neo.X/
