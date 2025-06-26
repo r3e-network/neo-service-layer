@@ -143,7 +143,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Act
@@ -161,7 +161,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -194,7 +194,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -226,7 +226,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -261,7 +261,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -294,7 +294,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -333,7 +333,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -378,7 +378,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -407,7 +407,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange
@@ -435,7 +435,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             if (!_sgxAvailable) return;
 
             // Arrange

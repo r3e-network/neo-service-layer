@@ -79,7 +79,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _output.WriteLine($"Running Initialize test with {(_isRealSGXAvailable ? "real SGX" : "simulation")}");
 
@@ -98,7 +98,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             var plaintext = "Test data for real SGX encryption";
@@ -123,7 +123,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             _output.WriteLine("Generating keys with real SGX...");
@@ -148,7 +148,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             _output.WriteLine("Requesting SGX attestation report...");
@@ -176,7 +176,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             var storageKey = "secure-storage-test";
@@ -205,7 +205,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             var script = "function add(a, b) { return a + b; } add(5, 3);";
@@ -227,7 +227,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // Arrange
             _enclave.Initialize();
             const int size = 32;
@@ -253,7 +253,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var isCI = Environment.GetEnvironmentVariable("CI") == "true" ||
                       Environment.GetEnvironmentVariable("TEST_ENVIRONMENT") == "CI";
             if (isCI) return;
-            
+
             // This test combines multiple operations to verify the real SGX integration
             _output.WriteLine("Running complete SGX workflow test...");
 
