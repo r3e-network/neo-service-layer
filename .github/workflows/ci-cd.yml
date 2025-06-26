@@ -252,8 +252,8 @@ jobs:
       run: |
         if [ -f "TestResults/CoverageReport/Summary.json" ]; then
           echo "::group::Coverage Analysis"
-          COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.linecoverage // 0')
-          BRANCH_COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.coverage.branchcoverage // 0')
+          COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.summary.linecoverage // 0')
+          BRANCH_COVERAGE=$(cat TestResults/CoverageReport/Summary.json | jq -r '.summary.branchcoverage // 0')
           
           echo "Line coverage: ${COVERAGE}%"
           echo "Branch coverage: ${BRANCH_COVERAGE}%"
