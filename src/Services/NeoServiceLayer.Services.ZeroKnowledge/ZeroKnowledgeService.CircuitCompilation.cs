@@ -534,7 +534,9 @@ public partial class ZeroKnowledgeService
         for (int i = 0; i < row.Length; i++)
         {
             rng.GetBytes(bytes);
-            row[i] = BitConverter.ToDouble(bytes) % 10.0; // Keep values reasonable
+            // Convert bytes to a value between 0 and 1, then scale to 0-10
+            var value = Math.Abs(BitConverter.ToInt64(bytes, 0)) / (double)long.MaxValue;
+            row[i] = value * 10.0; // Scale to 0-10 range
         }
 
         return row;
