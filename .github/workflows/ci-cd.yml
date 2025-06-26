@@ -53,7 +53,7 @@ jobs:
   # 🔍 Changes Detection Job
   changes:
     name: 🔍 Detect Changes
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     outputs:
       src: ${{ steps.changes.outputs.src }}
       tests: ${{ steps.changes.outputs.tests }}
@@ -93,7 +93,7 @@ jobs:
   # 🏗️ Build and Test Matrix Job
   build-and-test:
     name: 🏗️ Build & Test (Release)
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 60
     needs: changes
     # Always run build and test - no skipping allowed
@@ -381,7 +381,7 @@ jobs:
   # 🛡️ Security Scanning Job (Dependency Check Only)
   security-scan:
     name: 🛡️ Dependency Security Scan
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     permissions:
       contents: read
@@ -435,7 +435,7 @@ jobs:
   # 🐳 Docker Build Job
   docker-build:
     name: 🐳 Docker Build & Push
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 30
     needs: [changes, build-and-test]
     if: ${{ !github.event.inputs.skip_docker && needs.changes.outputs.docker == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
@@ -489,7 +489,7 @@ jobs:
   # 🚀 Performance Testing Job
   performance-test:
     name: 🚀 Performance Tests
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     needs: [build-and-test]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -548,7 +548,7 @@ jobs:
   # 🚀 Deploy to Staging
   deploy-staging:
     name: 🚀 Deploy to Staging
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 15
     needs: [build-and-test, security-scan, docker-build]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/develop' }}
@@ -574,7 +574,7 @@ jobs:
   # 🚀 Deploy to Production
   deploy-production:
     name: 🚀 Deploy to Production
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 20
     needs: [build-and-test, security-scan, docker-build, performance-test]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
@@ -606,7 +606,7 @@ jobs:
   # 📢 Notification Job
   notify:
     name: 📢 Notify Results
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
     timeout-minutes: 2
     needs: [build-and-test, security-scan, docker-build]
     if: always()
