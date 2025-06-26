@@ -98,6 +98,11 @@ jobs:
     needs: changes
     # Always run build and test - no skipping allowed
     
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
     outputs:
       test-results-available: ${{ steps.test-check.outputs.available }}
       coverage-results-available: ${{ steps.coverage-check.outputs.available }}
@@ -365,7 +370,7 @@ jobs:
       with:
         path: TestResults/CoverageReport/Cobertura.xml
         minimum_coverage: ${{ env.COVERAGE_THRESHOLD }}
-        fail_below_minimum: false
+        fail_below_threshold: false
         show_missing: true
         show_line: true
         show_branch: true
