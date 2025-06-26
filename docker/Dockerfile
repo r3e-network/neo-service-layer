@@ -50,6 +50,7 @@ COPY *.sln .
 COPY global.json .
 COPY Directory.Build.props .
 COPY Directory.Build.targets .
+COPY Directory.Packages.props .
 
 # Copy all project files for dependency resolution
 COPY src/Api/NeoServiceLayer.Api/*.csproj src/Api/NeoServiceLayer.Api/
