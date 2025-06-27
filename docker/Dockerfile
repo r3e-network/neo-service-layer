@@ -5,7 +5,7 @@
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 WORKDIR /src
 
-# Install build dependencies
+# Install build dependencies including Protocol Buffers compiler
 RUN apt-get update && apt-get install -y \
     build-essential \
     wget \
@@ -13,7 +13,11 @@ RUN apt-get update && apt-get install -y \
     gnupg \
     software-properties-common \
     ca-certificates \
+    protobuf-compiler \
     && rm -rf /var/lib/apt/lists/*
+
+# Verify protoc installation
+RUN protoc --version
 
 # Install Rust toolchain for Occlum LibOS
 RUN curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
@@ -56,29 +60,58 @@ COPY Directory.Packages.props .
 COPY src/Api/NeoServiceLayer.Api/*.csproj src/Api/NeoServiceLayer.Api/
 COPY src/Core/NeoServiceLayer.Core/*.csproj src/Core/NeoServiceLayer.Core/
 COPY src/Core/NeoServiceLayer.ServiceFramework/*.csproj src/Core/NeoServiceLayer.ServiceFramework/
-# Infrastructure projects are already copied in line 66
 COPY src/Core/NeoServiceLayer.Shared/*.csproj src/Core/NeoServiceLayer.Shared/
 COPY src/Blockchain/NeoServiceLayer.Neo.N3/*.csproj src/Blockchain/NeoServiceLayer.Neo.N3/
 COPY src/Blockchain/NeoServiceLayer.Neo.X/*.csproj src/Blockchain/NeoServiceLayer.Neo.X/
-COPY src/Services/NeoServiceLayer.Services.*/*.csproj src/Services/NeoServiceLayer.Services.*/
-COPY src/AI/NeoServiceLayer.AI.*/*.csproj src/AI/NeoServiceLayer.AI.*/
-COPY src/Advanced/NeoServiceLayer.Advanced.*/*.csproj src/Advanced/NeoServiceLayer.Advanced.*/
-COPY src/Tee/NeoServiceLayer.Tee.*/*.csproj src/Tee/NeoServiceLayer.Tee.*/
-COPY src/Infrastructure/NeoServiceLayer.Infrastructure.*/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.*/
+
+# Copy Services projects explicitly
+COPY src/Services/NeoServiceLayer.Services.Automation/*.csproj src/Services/NeoServiceLayer.Services.Automation/
+COPY src/Services/NeoServiceLayer.Services.Backup/*.csproj src/Services/NeoServiceLayer.Services.Backup/
+COPY src/Services/NeoServiceLayer.Services.Compliance/*.csproj src/Services/NeoServiceLayer.Services.Compliance/
+COPY src/Services/NeoServiceLayer.Services.Health/*.csproj src/Services/NeoServiceLayer.Services.Health/
+COPY src/Services/NeoServiceLayer.Services.KeyManagement/*.csproj src/Services/NeoServiceLayer.Services.KeyManagement/
+COPY src/Services/NeoServiceLayer.Services.Monitoring/*.csproj src/Services/NeoServiceLayer.Services.Monitoring/
+COPY src/Services/NeoServiceLayer.Services.Notification/*.csproj src/Services/NeoServiceLayer.Services.Notification/
+COPY src/Services/NeoServiceLayer.Services.Oracle/*.csproj src/Services/NeoServiceLayer.Services.Oracle/
+COPY src/Services/NeoServiceLayer.Services.ProofOfReserve/*.csproj src/Services/NeoServiceLayer.Services.ProofOfReserve/
+COPY src/Services/NeoServiceLayer.Services.Randomness/*.csproj src/Services/NeoServiceLayer.Services.Randomness/
+COPY src/Services/NeoServiceLayer.Services.SecretsManagement/*.csproj src/Services/NeoServiceLayer.Services.SecretsManagement/
+COPY src/Services/NeoServiceLayer.Services.Storage/*.csproj src/Services/NeoServiceLayer.Services.Storage/
+COPY src/Services/NeoServiceLayer.Services.Voting/*.csproj src/Services/NeoServiceLayer.Services.Voting/
+COPY src/Services/NeoServiceLayer.Services.ZeroKnowledge/*.csproj src/Services/NeoServiceLayer.Services.ZeroKnowledge/
+
+# Copy AI projects explicitly
+COPY src/AI/NeoServiceLayer.AI.PatternRecognition/*.csproj src/AI/NeoServiceLayer.AI.PatternRecognition/
+COPY src/AI/NeoServiceLayer.AI.Prediction/*.csproj src/AI/NeoServiceLayer.AI.Prediction/
+
+# Copy Advanced projects explicitly
+COPY src/Advanced/NeoServiceLayer.Advanced.FairOrdering/*.csproj src/Advanced/NeoServiceLayer.Advanced.FairOrdering/
+
+# Copy TEE projects explicitly
+COPY src/Tee/NeoServiceLayer.Tee.Host/*.csproj src/Tee/NeoServiceLayer.Tee.Host/
+COPY src/Tee/NeoServiceLayer.Tee.Enclave/*.csproj src/Tee/NeoServiceLayer.Tee.Enclave/
+
+# Copy Infrastructure projects explicitly
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Security/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.Security/
 
 # Copy TEE Enclave Rust dependencies
 COPY src/Tee/NeoServiceLayer.Tee.Enclave/Cargo.* src/Tee/NeoServiceLayer.Tee.Enclave/
 
-# Restore dependencies
+# Restore dependencies for the main API project only
 RUN dotnet restore src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj
 
 # Copy source code
 COPY src/ src/
 
-# Build Rust enclave components first
+# Build Rust enclave components (skip if V8 dependencies cause issues)
 WORKDIR /src/src/Tee/NeoServiceLayer.Tee.Enclave
-RUN if [ -f "Cargo.toml" ]; then \
+RUN if [ -f "Cargo.toml" ] && ! grep -q "v8" Cargo.toml; then \
+    echo "Building Rust enclave components..."; \
     cargo build --release; \
+    else \
+    echo "Skipping Rust enclave build (V8 dependencies or missing Cargo.toml)"; \
     fi
 
 # Build the .NET application

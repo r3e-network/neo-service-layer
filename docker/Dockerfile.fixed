@@ -1,0 +1,87 @@
+# Use the official .NET 9.0 SDK image for building
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+
+# Set working directory
+WORKDIR /src
+
+# Install essential build tools and dependencies
+RUN apt-get update && apt-get install -y \
+    build-essential \
+    curl \
+    wget \
+    git \
+    && rm -rf /var/lib/apt/lists/*
+
+# Clear any existing NuGet cache to avoid package conflicts
+RUN dotnet nuget locals all --clear
+
+# Copy solution and project files first for better layer caching
+COPY *.sln .
+COPY global.json .
+COPY Directory.Build.props .
+COPY Directory.Build.targets .
+COPY Directory.Packages.props .
+
+# Copy all project files
+COPY src/Api/NeoServiceLayer.Api/*.csproj src/Api/NeoServiceLayer.Api/
+COPY src/Core/NeoServiceLayer.Core/*.csproj src/Core/NeoServiceLayer.Core/
+COPY src/Core/NeoServiceLayer.ServiceFramework/*.csproj src/Core/NeoServiceLayer.ServiceFramework/
+COPY src/Core/NeoServiceLayer.Shared/*.csproj src/Core/NeoServiceLayer.Shared/
+COPY src/Blockchain/NeoServiceLayer.Neo.N3/*.csproj src/Blockchain/NeoServiceLayer.Neo.N3/
+COPY src/Blockchain/NeoServiceLayer.Neo.X/*.csproj src/Blockchain/NeoServiceLayer.Neo.X/
+COPY src/Services/NeoServiceLayer.Services.*/*.csproj src/Services/NeoServiceLayer.Services.*/
+COPY src/AI/NeoServiceLayer.AI.*/*.csproj src/AI/NeoServiceLayer.AI.*/
+COPY src/Advanced/NeoServiceLayer.Advanced.*/*.csproj src/Advanced/NeoServiceLayer.Advanced.*/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.*/*.csproj src/Infrastructure/NeoServiceLayer.Infrastructure.*/
+
+# Restore packages with verbose logging to debug any issues
+RUN dotnet restore src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+    --verbosity normal \
+    --disable-parallel \
+    --force
+
+# Copy the rest of the source code
+COPY src/ src/
+
+# Build the application
+WORKDIR /src/src/Api/NeoServiceLayer.Api
+RUN dotnet build -c Release --no-restore --verbosity normal
+
+# Publish the application
+RUN dotnet publish -c Release --no-build -o /app/publish
+
+# Use the official .NET 9.0 runtime image for the final stage
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy the published application
+COPY --from=build /app/publish .
+
+# Change ownership to the non-root user
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose the port the app runs on
+EXPOSE 8080
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start the application
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Api.dll"]

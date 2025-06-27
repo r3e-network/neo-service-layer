@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+  neo-service-layer:
+    image: jinghuiliao/neo-service-layer:latest
+    container_name: neo-service-layer
+    ports:
+      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:5000;https://+:5001
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-production-jwt-secret-key-change-this-in-production}
+      - NEO_ALLOW_SGX_SIMULATION=true
+    volumes:
+      - neo-data:/app/data
+      - neo-logs:/var/log/neo-service-layer
+      - neo-config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - neo-network
+
+  # Optional: Add a reverse proxy for production deployments
+  nginx:
+    image: nginx:alpine
+    container_name: neo-nginx
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./config/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./config/ssl:/etc/nginx/ssl:ro
+    depends_on:
+      - neo-service-layer
+    restart: unless-stopped
+    networks:
+      - neo-network
+    profiles:
+      - production
+
+volumes:
+  neo-data:
+    driver: local
+  neo-logs:
+    driver: local
+  neo-config:
+    driver: local
+
+networks:
+  neo-network:
+    driver: bridge

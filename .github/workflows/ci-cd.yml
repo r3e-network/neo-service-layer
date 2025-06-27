@@ -31,6 +31,15 @@ on:
         required: false
         default: false
         type: boolean
+      docker_build_type:
+        description: 'Docker build type'
+        required: false
+        default: 'complete'
+        type: choice
+        options:
+        - complete
+        - minimal
+        - dockerhub
 
 # Cancel previous workflow runs for the same branch/PR
 concurrency:
@@ -508,9 +517,9 @@ jobs:
 
   # 🐳 Docker Build Job
   docker-build:
-    name: 🐳 Docker Build & Push
+    name: 🐳 Docker Build & Test
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 20
     needs: [changes, build-and-test]
     if: ${{ !github.event.inputs.skip_docker && needs.changes.outputs.docker == 'true' && (github.event_name == 'push' || github.event_name == 'workflow_dispatch') }}
     
@@ -518,18 +527,59 @@ jobs:
       contents: read
       packages: write
     
-    strategy:
-      matrix:
-        platform: [linux/amd64, linux/arm64]
-    
     steps:
     - name: 📥 Checkout repository
       uses: actions/checkout@v4
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+
+    - name: 🚀 Cache .NET dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', 'global.json', '**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: 📦 Restore dependencies
+      run: |
+        echo "::group::Restoring .NET dependencies"
+        dotnet restore NeoServiceLayer.sln --verbosity minimal
+        echo "::endgroup::"
+
+    - name: 📦 Publish application (minimal build only)
+      if: ${{ github.event.inputs.docker_build_type == 'minimal' || github.event.inputs.docker_build_type == '' }}
+      run: |
+        echo "::group::Publishing .NET application for minimal Docker build"
+        dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+          -c Release \
+          -o src/Api/NeoServiceLayer.Api/bin/Release/net9.0/publish/ \
+          --verbosity minimal
+        echo "::endgroup::"
+
+    - name: 🔧 Install additional dependencies (complete build only)
+      if: ${{ github.event.inputs.docker_build_type == 'complete' }}
+      run: |
+        echo "::group::Installing dependencies for complete Docker build"
+        # Install Protocol Buffers compiler (needed for Rust build)
+        sudo apt-get update
+        sudo apt-get install -y protobuf-compiler
+        
+        # Verify protoc installation
+        protoc --version
+        echo "::endgroup::"
 
     - name: 🔧 Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
     - name: 🔐 Log in to Container Registry
+      if: github.event_name == 'push'
       uses: docker/login-action@v3
       with:
         registry: ${{ env.REGISTRY }}
@@ -547,19 +597,107 @@ jobs:
           type=sha,prefix=sha-
           type=raw,value=latest,enable={{is_default_branch}}
 
-    - name: 🐳 Build and push Docker image
+    - name: 🐳 Build Docker image (minimal approach)
+      if: ${{ github.event.inputs.docker_build_type == 'minimal' || github.event.inputs.docker_build_type == '' }}
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./docker/Dockerfile
-        platforms: ${{ matrix.platform }}
-        push: true
+        file: ./docker/Dockerfile.minimal
+        platforms: linux/amd64
+        push: ${{ github.event_name == 'push' }}
         tags: ${{ steps.meta.outputs.tags }}
         labels: ${{ steps.meta.outputs.labels }}
         cache-from: type=gha
         cache-to: type=gha,mode=max
         build-args: |
           BUILDKIT_INLINE_CACHE=1
+
+    - name: 🐳 Build Docker image (complete approach)
+      if: ${{ github.event.inputs.docker_build_type == 'complete' }}
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./docker/Dockerfile
+        platforms: linux/amd64
+        push: ${{ github.event_name == 'push' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          BUILDKIT_INLINE_CACHE=1
+
+    - name: 🐳 Use Docker Hub image (dockerhub option)
+      if: ${{ github.event.inputs.docker_build_type == 'dockerhub' }}
+      run: |
+        echo "::group::Using Docker Hub image"
+        echo "📥 Pulling latest image from Docker Hub..."
+        docker pull jinghuiliao/neo-service-layer:latest
+        
+        # Tag for local testing
+        docker tag jinghuiliao/neo-service-layer:latest neo-service-layer:test
+        echo "✅ Docker Hub image ready for testing"
+        echo "::endgroup::"
+
+    - name: 🧪 Test Docker image
+      run: |
+        echo "::group::Testing Docker image"
+        
+        # Determine which approach to use for testing
+        if [ "${{ github.event.inputs.docker_build_type }}" = "dockerhub" ]; then
+          echo "Testing Docker Hub image"
+          # Image already tagged as neo-service-layer:test in previous step
+        elif [ "${{ github.event.inputs.docker_build_type }}" = "complete" ]; then
+          DOCKERFILE="docker/Dockerfile"
+          echo "Testing complete Docker build"
+          # Build image locally for testing
+          docker build -f $DOCKERFILE -t neo-service-layer:test .
+        else
+          DOCKERFILE="docker/Dockerfile.minimal"
+          echo "Testing minimal Docker build"
+          # Build image locally for testing
+          docker build -f $DOCKERFILE -t neo-service-layer:test .
+        fi
+        
+        # Run container for testing
+        docker run -d \
+          --name neo-service-test \
+          -p 8080:8080 \
+          -e ASPNETCORE_ENVIRONMENT=Development \
+          -e ASPNETCORE_URLS="http://+:8080" \
+          -e JWT_SECRET_KEY="test-jwt-secret-key-for-ci-pipeline-32chars" \
+          -e NEO_ALLOW_SGX_SIMULATION=true \
+          neo-service-layer:test
+        
+        # Wait for startup
+        sleep 15
+        
+        # Test health endpoint
+        for i in {1..12}; do
+          if curl -f http://localhost:8080/health; then
+            echo "✅ Health check passed"
+            break
+          fi
+          if [ $i -eq 12 ]; then
+            echo "❌ Health check failed after 60 seconds"
+            docker logs neo-service-test
+            exit 1
+          fi
+          echo "Waiting for application startup... ($i/12)"
+          sleep 5
+        done
+        
+        # Test API info endpoint
+        curl -f http://localhost:8080/api/info
+        echo "✅ API info endpoint working"
+        
+        # Cleanup
+        docker stop neo-service-test
+        docker rm neo-service-test
+        docker rmi neo-service-layer:test
+        
+        echo "✅ Docker image test completed successfully"
+        echo "::endgroup::"
 
   # 🚀 Performance Testing Job
   performance-test:

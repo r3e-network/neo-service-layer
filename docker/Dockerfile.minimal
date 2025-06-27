@@ -1,0 +1,35 @@
+# Use the official .NET 9.0 runtime image
+FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS runtime
+
+# Install runtime dependencies
+RUN apt-get update && apt-get install -y \
+    curl \
+    wget \
+    && rm -rf /var/lib/apt/lists/*
+
+# Create a non-root user for security
+RUN groupadd -r appuser && useradd -r -g appuser appuser
+
+# Set working directory
+WORKDIR /app
+
+# Copy the pre-built application from local build
+COPY src/Api/NeoServiceLayer.Api/bin/Release/net9.0/publish/ .
+
+# Change ownership to the non-root user
+RUN chown -R appuser:appuser /app
+USER appuser
+
+# Expose the port the app runs on
+EXPOSE 8080
+
+# Set environment variables
+ENV ASPNETCORE_URLS=http://+:8080
+ENV ASPNETCORE_ENVIRONMENT=Production
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD curl -f http://localhost:8080/health || exit 1
+
+# Start the application
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Api.dll"]

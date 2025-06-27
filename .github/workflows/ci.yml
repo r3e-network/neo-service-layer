@@ -6,6 +6,12 @@ on:
   pull_request:
     branches: [ main, master, develop ]
   workflow_dispatch:
+    inputs:
+      use_dockerhub:
+        description: 'Use Docker Hub image instead of building locally'
+        required: false
+        default: false
+        type: boolean
 
 env:
   DOTNET_VERSION: '9.0.x'
@@ -201,20 +207,100 @@ jobs:
     - name: Checkout code
       uses: actions/checkout@v4
 
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: dotnet restore NeoServiceLayer.sln
+
+    - name: Publish application for Docker
+      run: |
+        echo "Publishing .NET application for Docker..."
+        dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+          -c Release \
+          -o src/Api/NeoServiceLayer.Api/bin/Release/net9.0/publish/ \
+          --verbosity minimal
+
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v3
 
-    - name: Build Docker image
+    - name: Use Docker Hub image
+      if: ${{ github.event.inputs.use_dockerhub == 'true' }}
+      run: |
+        echo "📥 Pulling latest image from Docker Hub..."
+        docker pull jinghuiliao/neo-service-layer:latest
+        docker tag jinghuiliao/neo-service-layer:latest neo-service-layer:test
+        echo "✅ Docker Hub image ready for testing"
+
+    - name: Build Docker image (minimal approach)
+      if: ${{ github.event.inputs.use_dockerhub != 'true' }}
       uses: docker/build-push-action@v5
       with:
         context: .
-        file: ./docker/Dockerfile
+        file: ./docker/Dockerfile.minimal
         push: false
         tags: neo-service-layer:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-    - name: Test Docker image
+    - name: Test Docker image functionality
       run: |
-        docker run --rm neo-service-layer:test --version || true
-        echo "Docker image built successfully"
+        echo "Testing Docker image functionality..."
+        
+        if [ "${{ github.event.inputs.use_dockerhub }}" = "true" ]; then
+          echo "Testing Docker Hub image"
+        else
+          echo "Testing locally built minimal image"
+        fi
+        
+        # Run container for testing
+        docker run -d \
+          --name neo-service-test \
+          -p 8080:5000 \
+          -e ASPNETCORE_ENVIRONMENT=Development \
+          -e ASPNETCORE_URLS="http://+:5000" \
+          -e JWT_SECRET_KEY="test-jwt-secret-key-for-ci-pipeline-32chars" \
+          -e NEO_ALLOW_SGX_SIMULATION=true \
+          neo-service-layer:test
+        
+        # Wait for startup
+        sleep 15
+        
+        # Test health endpoint
+        for i in {1..8}; do
+          if curl -f http://localhost:8080/health; then
+            echo "✅ Health check passed"
+            break
+          fi
+          if [ $i -eq 8 ]; then
+            echo "❌ Health check failed"
+            docker logs neo-service-test
+            exit 1
+          fi
+          echo "Waiting for application startup... ($i/8)"
+          sleep 5
+        done
+        
+        # Test API info endpoint
+        curl -f http://localhost:8080/api/info
+        echo "✅ API endpoints working correctly"
+        
+        # Cleanup
+        docker stop neo-service-test
+        docker rm neo-service-test
+        docker rmi neo-service-layer:test
+        
+        echo "✅ Docker image test completed successfully"
