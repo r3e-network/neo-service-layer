@@ -378,7 +378,7 @@ jobs:
     - name: 🎯 Upload coverage to Codecov
       # Always upload coverage to Codecov - no skipping allowed
       if: hashFiles('TestResults/CoverageReport/Cobertura.xml') != ''
-      uses: codecov/codecov-action@v4
+      uses: codecov/codecov-action@v5
       with:
         files: TestResults/CoverageReport/Cobertura.xml
         flags: unittests,integration
