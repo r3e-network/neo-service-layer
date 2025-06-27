@@ -211,8 +211,6 @@ docker run -d \
 ## 📚 Additional Resources
 
 - [Docker Documentation](docs/DOCKER.md) - Complete Docker setup guide
-- [Complete vs Minimal Docker](docs/COMPLETE_VS_MINIMAL_DOCKER.md) - Architecture comparison
-- [Docker Workflow Updates](docs/DOCKER_WORKFLOW_UPDATES.md) - CI/CD integration
 
 ## 🐛 Troubleshooting
 

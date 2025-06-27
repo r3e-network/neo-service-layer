@@ -1,0 +1,63 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <RootNamespace>NeoServiceLayer</RootNamespace>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <OutputType>Library</OutputType>
+    <EnableDefaultCompileItems>false</EnableDefaultCompileItems>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neo.SmartContract.Framework" Version="3.6.3" />
+    <PackageReference Include="Neo.Compiler.CSharp" Version="3.6.3" />
+    <PackageReference Include="Neo.SmartContract.Testing" Version="3.6.3" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="MSTest.TestAdapter" Version="3.1.1" />
+    <PackageReference Include="MSTest.TestFramework" Version="3.1.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Core Infrastructure -->
+    <Compile Include="src/Core/IServiceContract.cs" />
+    <Compile Include="src/Core/ServiceRegistry.cs" />
+    
+    <!-- Service Contracts -->
+    <Compile Include="src/Services/RandomnessContract.cs" />
+    <Compile Include="src/Services/OracleContract.cs" />
+    <Compile Include="src/Services/AbstractAccountContract.cs" />
+    <Compile Include="src/Services/StorageContract.cs" />
+    <Compile Include="src/Services/ComputeContract.cs" />
+    <Compile Include="src/Services/CrossChainContract.cs" />
+    <Compile Include="src/Services/MonitoringContract.cs" />
+    <Compile Include="src/Services/VotingContract.cs" />
+    <Compile Include="src/Services/ComplianceContract.cs" />
+    <Compile Include="src/Services/KeyManagementContract.cs" />
+    <Compile Include="src/Services/AutomationContract.cs" />
+    <Compile Include="src/Services/IdentityManagementContract.cs" />
+    <Compile Include="src/Services/PaymentProcessingContract.cs" />
+    <Compile Include="src/Services/NotificationContract.cs" />
+    <Compile Include="src/Services/AnalyticsContract.cs" />
+    <Compile Include="src/Services/MarketplaceContract.cs" />
+    <Compile Include="src/Services/InsuranceContract.cs" />
+    <Compile Include="src/Services/LendingContract.cs" />
+    <Compile Include="src/Services/TokenizationContract.cs" />
+    <Compile Include="src/Services/SupplyChainContract.cs" />
+    <Compile Include="src/Services/EnergyManagementContract.cs" />
+    <Compile Include="src/Services/HealthcareContract.cs" />
+    <Compile Include="src/Services/GameContract.cs" />
+    
+    <!-- Test Framework -->
+    <Compile Include="tests/ContractTestFramework.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="README.md" />
+    <None Include="ULTIMATE_ENTERPRISE_STATUS_REPORT.md" />
+    <None Include="scripts/deploy.sh" />
+    <None Include="scripts/compile.sh" />
+  </ItemGroup>
+
+</Project>

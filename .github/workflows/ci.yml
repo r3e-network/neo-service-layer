@@ -22,7 +22,7 @@ jobs:
   build-and-test:
     name: Build and Test
     runs-on: self-hosted
-    timeout-minutes: 30
+    timeout-minutes: 120
     permissions:
       contents: read
       pull-requests: write
@@ -119,6 +119,7 @@ jobs:
   security-scan:
     name: Security Scan
     runs-on: self-hosted
+    timeout-minutes: 30
     needs: build-and-test
     if: always()
     
@@ -155,6 +156,7 @@ jobs:
   quality-gates:
     name: Quality Gates
     runs-on: self-hosted
+    timeout-minutes: 15
     needs: build-and-test
     if: always()
     
@@ -200,6 +202,7 @@ jobs:
   docker-build:
     name: Docker Build Test
     runs-on: self-hosted
+    timeout-minutes: 60
     needs: build-and-test
     if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master')
     

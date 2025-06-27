@@ -1,0 +1,146 @@
+{
+  "compiler": {
+    "version": "3.6.3",
+    "framework": "net8.0",
+    "optimization": true,
+    "debug": false
+  },
+  "contracts": [
+    {
+      "name": "ServiceRegistry",
+      "source": "src/Core/ServiceRegistry.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "RandomnessContract",
+      "source": "src/Services/RandomnessContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "OracleContract",
+      "source": "src/Services/OracleContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "AbstractAccountContract",
+      "source": "src/Services/AbstractAccountContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "StorageContract",
+      "source": "src/Services/StorageContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "ComputeContract",
+      "source": "src/Services/ComputeContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "CrossChainContract",
+      "source": "src/Services/CrossChainContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "MonitoringContract",
+      "source": "src/Services/MonitoringContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "VotingContract",
+      "source": "src/Services/VotingContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "ComplianceContract",
+      "source": "src/Services/ComplianceContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "KeyManagementContract",
+      "source": "src/Services/KeyManagementContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "AutomationContract",
+      "source": "src/Services/AutomationContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "IdentityManagementContract",
+      "source": "src/Services/IdentityManagementContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "PaymentProcessingContract",
+      "source": "src/Services/PaymentProcessingContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "NotificationContract",
+      "source": "src/Services/NotificationContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "AnalyticsContract",
+      "source": "src/Services/AnalyticsContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "MarketplaceContract",
+      "source": "src/Services/MarketplaceContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "InsuranceContract",
+      "source": "src/Services/InsuranceContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "LendingContract",
+      "source": "src/Services/LendingContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "TokenizationContract",
+      "source": "src/Services/TokenizationContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "SupplyChainContract",
+      "source": "src/Services/SupplyChainContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "EnergyManagementContract",
+      "source": "src/Services/EnergyManagementContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "HealthcareContract",
+      "source": "src/Services/HealthcareContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    },
+    {
+      "name": "GameContract",
+      "source": "src/Services/GameContract.cs",
+      "dependencies": ["src/Core/IServiceContract.cs"]
+    }
+  ],
+  "output": {
+    "directory": "./bin/contracts",
+    "manifest_directory": "./manifests",
+    "format": "nef"
+  },
+  "optimization": {
+    "enable": true,
+    "level": "release",
+    "gas_optimization": true,
+    "size_optimization": true
+  },
+  "security": {
+    "enable_permissions": true,
+    "validate_manifest": true,
+    "check_vulnerabilities": true
+  }
+}

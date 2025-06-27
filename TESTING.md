@@ -7,13 +7,13 @@ This document describes how to run tests for the Neo Service Layer project.
 ### Quick Test Commands (From Root Directory)
 ```bash
 # Run unit tests only (recommended for CI/CD)
-./test.sh unit
+./scripts/testing/run-unit-tests.sh
 
 # Run all tests including performance tests
-./test.sh all
+./scripts/testing/run-all-tests.sh
 
-# Get help
-./test.sh help
+# Windows - PowerShell
+./scripts/testing/run-all-tests.ps1 -Coverage
 ```
 
 ### Direct Script Access
@@ -37,11 +37,11 @@ This document describes how to run tests for the Neo Service Layer project.
 - **Coverage**: Includes code coverage collection and reporting
 
 ```bash
-./run-unit-tests.sh [Configuration] [Verbosity]
+./scripts/testing/run-unit-tests.sh [Configuration] [Verbosity]
 
 # Examples:
-./run-unit-tests.sh Release minimal    # Release build, minimal output
-./run-unit-tests.sh Debug normal       # Debug build, normal output
+./scripts/testing/run-unit-tests.sh Release minimal    # Release build, minimal output
+./scripts/testing/run-unit-tests.sh Debug normal       # Debug build, normal output
 ```
 
 ### 2. `run-all-tests.sh` (Complete Suite)
@@ -51,11 +51,11 @@ This document describes how to run tests for the Neo Service Layer project.
 - **Note**: Performance tests may fail in resource-constrained environments
 
 ```bash
-./run-all-tests.sh [Configuration] [Verbosity]
+./scripts/testing/run-all-tests.sh [Configuration] [Verbosity]
 
 # Examples:
-./run-all-tests.sh Release minimal     # All tests, minimal output
-./run-all-tests.sh Debug detailed      # All tests, detailed output
+./scripts/testing/run-all-tests.sh Release minimal     # All tests, minimal output
+./scripts/testing/run-all-tests.sh Debug detailed      # All tests, detailed output
 ```
 
 ### 3. `run-all-tests.ps1` (PowerShell/Windows)
@@ -63,8 +63,8 @@ This document describes how to run tests for the Neo Service Layer project.
 - **Features**: Same functionality as bash scripts but for Windows/PowerShell
 
 ```powershell
-./run-all-tests.ps1 -Configuration Release -Verbosity normal -Coverage
-./run-all-tests.ps1 -Help  # Show help
+./scripts/testing/run-all-tests.ps1 -Configuration Release -Verbosity normal -Coverage
+./scripts/testing/run-all-tests.ps1 -Help  # Show help
 ```
 
 ## Test Results
@@ -149,7 +149,7 @@ The test scripts enforce these quality gates:
    ```
 
 3. **Performance Tests Failing**
-   - Use `run-unit-tests.sh` instead of `run-all-tests.sh`
+   - Use `./scripts/testing/run-unit-tests.sh` instead of `./scripts/testing/run-all-tests.sh`
    - Performance tests are excluded from CI for reliability
 
 4. **Coverage Collection Issues**
