@@ -1,0 +1,945 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Service Layer - Enterprise Blockchain Infrastructure</title>
+    <meta name="description" content="Neo Service Layer provides enterprise-grade blockchain infrastructure with 22+ smart contracts, Intel SGX support, and comprehensive service framework.">
+    <meta name="keywords" content="Neo, Blockchain, Smart Contracts, Enterprise, Infrastructure, SGX, DeFi">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="src/styles/main.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <div class="nav-brand">
+                <i class="fas fa-cube brand-icon"></i>
+                <span class="brand-text">Neo Service Layer</span>
+            </div>
+            <div class="nav-menu" id="nav-menu">
+                <a href="#home" class="nav-link">Home</a>
+                <a href="#features" class="nav-link">Features</a>
+                <a href="#services" class="nav-link">Services</a>
+                <a href="#documentation" class="nav-link">Docs</a>
+                <a href="#examples" class="nav-link">Examples</a>
+                <a href="#getting-started" class="nav-link">Get Started</a>
+            </div>
+            <div class="nav-actions">
+                <a href="https://github.com/r3e-network/neo-service-layer" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+                <button class="nav-toggle" id="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero">
+        <div class="hero-background">
+            <div class="hero-grid"></div>
+        </div>
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge">
+                    <i class="fas fa-rocket"></i>
+                    <span>Enterprise-Grade Blockchain Infrastructure</span>
+                </div>
+                <h1 class="hero-title">
+                    Build the Future with
+                    <span class="gradient-text">Neo Service Layer</span>
+                </h1>
+                <p class="hero-description">
+                    A comprehensive blockchain service framework with 22+ smart contracts, 
+                    Intel SGX support, and enterprise-grade security. Deploy scalable 
+                    DeFi applications with confidence.
+                </p>
+                <div class="hero-actions">
+                    <a href="#getting-started" class="btn btn-primary btn-large">
+                        <i class="fas fa-play"></i>
+                        Get Started
+                    </a>
+                    <a href="#documentation" class="btn btn-secondary btn-large">
+                        <i class="fas fa-book"></i>
+                        Documentation
+                    </a>
+                </div>
+                <div class="hero-stats">
+                    <div class="stat">
+                        <div class="stat-number">22+</div>
+                        <div class="stat-label">Smart Contracts</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">100%</div>
+                        <div class="stat-label">Test Coverage</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-number">SGX</div>
+                        <div class="stat-label">Secure Enclaves</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section id="features" class="features">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Why Choose Neo Service Layer?</h2>
+                <p class="section-description">
+                    Built for enterprise needs with cutting-edge technology and comprehensive tooling
+                </p>
+            </div>
+            <div class="features-grid">
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3 class="feature-title">Enterprise Security</h3>
+                    <p class="feature-description">
+                        Intel SGX trusted execution environments, comprehensive security monitoring, 
+                        and enterprise-grade authentication systems.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Intel SGX Enclaves</li>
+                        <li>Zero-Knowledge Proofs</li>
+                        <li>Multi-signature Support</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-cubes"></i>
+                    </div>
+                    <h3 class="feature-title">Modular Architecture</h3>
+                    <p class="feature-description">
+                        Extensible service framework with standardized interfaces, 
+                        dependency injection, and easy service composition.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Service Registry</li>
+                        <li>Template Generation</li>
+                        <li>Dependency Injection</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3 class="feature-title">Production Ready</h3>
+                    <p class="feature-description">
+                        Comprehensive testing, CI/CD pipelines, Docker support, 
+                        and production deployment tools out of the box.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Docker Containers</li>
+                        <li>CI/CD Pipelines</li>
+                        <li>Health Monitoring</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <h3 class="feature-title">DeFi Complete</h3>
+                    <p class="feature-description">
+                        Full suite of financial services including lending, insurance, 
+                        tokenization, and marketplace functionality.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Lending Protocols</li>
+                        <li>Insurance Contracts</li>
+                        <li>NFT Marketplace</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-network-wired"></i>
+                    </div>
+                    <h3 class="feature-title">Cross-Chain</h3>
+                    <p class="feature-description">
+                        Seamless integration across multiple blockchain networks 
+                        with standardized cross-chain protocols.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Multi-Network Support</li>
+                        <li>Bridge Protocols</li>
+                        <li>Asset Transfers</li>
+                    </ul>
+                </div>
+                <div class="feature-card">
+                    <div class="feature-icon">
+                        <i class="fas fa-brain"></i>
+                    </div>
+                    <h3 class="feature-title">AI-Powered</h3>
+                    <p class="feature-description">
+                        Built-in AI services for pattern recognition, fraud detection, 
+                        and predictive analytics.
+                    </p>
+                    <ul class="feature-list">
+                        <li>Pattern Recognition</li>
+                        <li>Fraud Detection</li>
+                        <li>Predictive Analytics</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Comprehensive Service Portfolio</h2>
+                <p class="section-description">
+                    22+ production-ready smart contracts covering all aspects of modern blockchain applications
+                </p>
+            </div>
+            <div class="services-tabs">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="financial">Financial Services</button>
+                    <button class="tab-button" data-tab="infrastructure">Infrastructure</button>
+                    <button class="tab-button" data-tab="industry">Industry Solutions</button>
+                    <button class="tab-button" data-tab="ai">AI & Analytics</button>
+                </div>
+                <div class="tab-content">
+                    <div class="tab-pane active" id="financial">
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <div class="service-icon">💰</div>
+                                <h4>Lending Protocol</h4>
+                                <p>Decentralized lending and borrowing with automated liquidation and risk management.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Collateral Management</span>
+                                    <span class="feature-tag">Interest Rates</span>
+                                    <span class="feature-tag">Liquidation</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🛡️</div>
+                                <h4>Insurance</h4>
+                                <p>Smart contract-based insurance with automated claims processing and risk assessment.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Claims Processing</span>
+                                    <span class="feature-tag">Risk Assessment</span>
+                                    <span class="feature-tag">Premium Calculation</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">💳</div>
+                                <h4>Payment Processing</h4>
+                                <p>Enterprise payment solutions with multi-currency support and compliance features.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Multi-Currency</span>
+                                    <span class="feature-tag">Compliance</span>
+                                    <span class="feature-tag">Escrow</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🏪</div>
+                                <h4>Marketplace</h4>
+                                <p>NFT and digital asset marketplace with royalties, auctions, and trading features.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">NFT Trading</span>
+                                    <span class="feature-tag">Auctions</span>
+                                    <span class="feature-tag">Royalties</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="infrastructure">
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <div class="service-icon">🔐</div>
+                                <h4>Key Management</h4>
+                                <p>Secure key generation, storage, and management with hardware security module support.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">HSM Support</span>
+                                    <span class="feature-tag">Key Rotation</span>
+                                    <span class="feature-tag">Multi-Sig</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🔗</div>
+                                <h4>Cross-Chain</h4>
+                                <p>Seamless asset transfers and communication across multiple blockchain networks.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Asset Bridges</span>
+                                    <span class="feature-tag">Message Passing</span>
+                                    <span class="feature-tag">Multi-Network</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">📊</div>
+                                <h4>Monitoring</h4>
+                                <p>Real-time system monitoring with alerts, metrics collection, and performance tracking.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Real-time Alerts</span>
+                                    <span class="feature-tag">Metrics</span>
+                                    <span class="feature-tag">Performance</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🗳️</div>
+                                <h4>Voting</h4>
+                                <p>Decentralized governance with proposal management and transparent voting mechanisms.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Governance</span>
+                                    <span class="feature-tag">Proposals</span>
+                                    <span class="feature-tag">Transparency</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="industry">
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <div class="service-icon">🏥</div>
+                                <h4>Healthcare</h4>
+                                <p>Secure patient data management with privacy-preserving analytics and compliance.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">HIPAA Compliance</span>
+                                    <span class="feature-tag">Privacy</span>
+                                    <span class="feature-tag">Analytics</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🚚</div>
+                                <h4>Supply Chain</h4>
+                                <p>End-to-end supply chain tracking with provenance verification and quality assurance.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Traceability</span>
+                                    <span class="feature-tag">Provenance</span>
+                                    <span class="feature-tag">Quality Control</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">⚡</div>
+                                <h4>Energy Management</h4>
+                                <p>Smart grid integration with renewable energy trading and carbon credit management.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Smart Grid</span>
+                                    <span class="feature-tag">Energy Trading</span>
+                                    <span class="feature-tag">Carbon Credits</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🎮</div>
+                                <h4>Gaming</h4>
+                                <p>Blockchain gaming infrastructure with NFT assets, tournaments, and reward systems.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">NFT Assets</span>
+                                    <span class="feature-tag">Tournaments</span>
+                                    <span class="feature-tag">Rewards</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="tab-pane" id="ai">
+                        <div class="services-grid">
+                            <div class="service-card">
+                                <div class="service-icon">🧠</div>
+                                <h4>Pattern Recognition</h4>
+                                <p>AI-powered pattern detection for fraud prevention and behavioral analysis.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Fraud Detection</span>
+                                    <span class="feature-tag">Behavior Analysis</span>
+                                    <span class="feature-tag">Risk Assessment</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">📈</div>
+                                <h4>Predictive Analytics</h4>
+                                <p>Machine learning models for market prediction and trend analysis.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Market Prediction</span>
+                                    <span class="feature-tag">Trend Analysis</span>
+                                    <span class="feature-tag">ML Models</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">📊</div>
+                                <h4>Analytics</h4>
+                                <p>Comprehensive data analytics with real-time insights and custom reporting.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Real-time Insights</span>
+                                    <span class="feature-tag">Custom Reports</span>
+                                    <span class="feature-tag">Data Mining</span>
+                                </div>
+                            </div>
+                            <div class="service-card">
+                                <div class="service-icon">🔍</div>
+                                <h4>Oracle Services</h4>
+                                <p>Reliable external data feeds with multiple data sources and validation mechanisms.</p>
+                                <div class="service-features">
+                                    <span class="feature-tag">Data Feeds</span>
+                                    <span class="feature-tag">Validation</span>
+                                    <span class="feature-tag">Multi-Source</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Documentation Section -->
+    <section id="documentation" class="documentation">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Comprehensive Documentation</h2>
+                <p class="section-description">
+                    Everything you need to get started and build amazing applications
+                </p>
+            </div>
+            <div class="docs-grid">
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-rocket"></i>
+                    </div>
+                    <h3>Quick Start Guide</h3>
+                    <p>Get up and running in minutes with our step-by-step installation and setup guide.</p>
+                    <a href="docs/quick-start.html" class="doc-link">
+                        Read Guide <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-code"></i>
+                    </div>
+                    <h3>API Reference</h3>
+                    <p>Complete API documentation with examples and interactive playground.</p>
+                    <a href="docs/api-reference.html" class="doc-link">
+                        View API <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-book"></i>
+                    </div>
+                    <h3>Advanced Setup</h3>
+                    <p>Production deployment, security configuration, and performance optimization.</p>
+                    <a href="docs/advanced-setup.html" class="doc-link">
+                        Learn More <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>GitHub Repository</h3>
+                    <p>Access the complete source code, examples, and community contributions.</p>
+                    <a href="https://github.com/r3e-network/neo-service-layer" class="doc-link" target="_blank">
+                        View Source <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-cogs"></i>
+                    </div>
+                    <h3>Neo Documentation</h3>
+                    <p>Official Neo blockchain documentation and developer resources.</p>
+                    <a href="https://docs.neo.org" class="doc-link" target="_blank">
+                        Neo Docs <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+                <div class="doc-card">
+                    <div class="doc-icon">
+                        <i class="fas fa-puzzle-piece"></i>
+                    </div>
+                    <h3>Community Support</h3>
+                    <p>Join our Discord community for support, discussions, and updates.</p>
+                    <a href="https://discord.gg/neo" class="doc-link" target="_blank">
+                        Join Discord <i class="fas fa-external-link-alt"></i>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Examples Section -->
+    <section id="examples" class="examples">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Code Examples</h2>
+                <p class="section-description">
+                    Real-world examples to help you get started quickly
+                </p>
+            </div>
+            <div class="examples-container">
+                <div class="example-tabs">
+                    <button class="example-tab active" data-example="lending">Lending Protocol</button>
+                    <button class="example-tab" data-example="nft">NFT Marketplace</button>
+                    <button class="example-tab" data-example="defi">DeFi Integration</button>
+                    <button class="example-tab" data-example="oracle">Oracle Service</button>
+                </div>
+                <div class="example-content">
+                    <div class="example-pane active" id="lending-example">
+                        <div class="example-description">
+                            <h3>Decentralized Lending Protocol</h3>
+                            <p>Create a lending pool with automated interest calculation and liquidation mechanisms.</p>
+                            <div class="example-features">
+                                <span class="feature-badge">Collateral Management</span>
+                                <span class="feature-badge">Interest Calculation</span>
+                                <span class="feature-badge">Liquidation</span>
+                            </div>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">LendingProtocol.cs</span>
+                                <button class="copy-btn" onclick="copyCode('lending-code')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <pre><code id="lending-code">using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Services;
+
+[DisplayName("LendingProtocol")]
+public class LendingProtocol : SmartContract
+{
+    [InitialValue("0x...", ContractParameterType.Hash160)]
+    private static readonly UInt160 Owner = default;
+
+    public static bool CreateLendingPool(
+        UInt160 collateralToken,
+        UInt160 borrowToken,
+        BigInteger collateralRatio,
+        BigInteger interestRate)
+    {
+        // Validate caller permissions
+        if (!Runtime.CheckWitness(Owner))
+            throw new Exception("Unauthorized");
+
+        // Create lending pool with parameters
+        var poolId = GeneratePoolId(collateralToken, borrowToken);
+        
+        StorageMap pools = new(Storage.CurrentContext, "pools");
+        pools.Put(poolId, new LendingPool
+        {
+            CollateralToken = collateralToken,
+            BorrowToken = borrowToken,
+            CollateralRatio = collateralRatio,
+            InterestRate = interestRate,
+            TotalCollateral = 0,
+            TotalBorrowed = 0
+        }.ToByteArray());
+
+        return true;
+    }
+
+    public static bool Deposit(UInt160 user, UInt160 token, BigInteger amount)
+    {
+        if (!Runtime.CheckWitness(user))
+            throw new Exception("Invalid witness");
+
+        // Transfer tokens to contract
+        var success = (bool)Contract.Call(token, "transfer", 
+            CallFlags.All, user, Runtime.ExecutingScriptHash, amount, null);
+        
+        if (!success) return false;
+
+        // Update user balance
+        UpdateUserBalance(user, token, amount, true);
+        
+        OnDeposit(user, token, amount);
+        return true;
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="example-pane" id="nft-example">
+                        <div class="example-description">
+                            <h3>NFT Marketplace</h3>
+                            <p>Build a complete NFT marketplace with auctions, royalties, and trading features.</p>
+                            <div class="example-features">
+                                <span class="feature-badge">NFT Trading</span>
+                                <span class="feature-badge">Auctions</span>
+                                <span class="feature-badge">Royalties</span>
+                            </div>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">NFTMarketplace.cs</span>
+                                <button class="copy-btn" onclick="copyCode('nft-code')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <pre><code id="nft-code">using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Services;
+
+[DisplayName("NFTMarketplace")]
+public class NFTMarketplace : SmartContract
+{
+    public static bool ListNFT(
+        UInt160 nftContract,
+        ByteString tokenId,
+        BigInteger price,
+        UInt160 seller)
+    {
+        if (!Runtime.CheckWitness(seller))
+            throw new Exception("Invalid seller");
+
+        // Verify NFT ownership
+        var owner = (UInt160)Contract.Call(nftContract, "ownerOf", 
+            CallFlags.ReadOnly, tokenId);
+        if (owner != seller)
+            throw new Exception("Not NFT owner");
+
+        // Create listing
+        var listingId = GenerateListingId(nftContract, tokenId);
+        StorageMap listings = new(Storage.CurrentContext, "listings");
+        
+        listings.Put(listingId, new Listing
+        {
+            NFTContract = nftContract,
+            TokenId = tokenId,
+            Price = price,
+            Seller = seller,
+            IsActive = true,
+            ListedAt = Runtime.Time
+        }.ToByteArray());
+
+        OnNFTListed(nftContract, tokenId, price, seller);
+        return true;
+    }
+
+    public static bool PurchaseNFT(
+        ByteString listingId,
+        UInt160 buyer)
+    {
+        if (!Runtime.CheckWitness(buyer))
+            throw new Exception("Invalid buyer");
+
+        StorageMap listings = new(Storage.CurrentContext, "listings");
+        var listingData = listings.Get(listingId);
+        if (listingData == null)
+            throw new Exception("Listing not found");
+
+        var listing = (Listing)listingData.ToStruct();
+        if (!listing.IsActive)
+            throw new Exception("Listing inactive");
+
+        // Process payment and transfer
+        ProcessPayment(buyer, listing.Seller, listing.Price);
+        TransferNFT(listing.NFTContract, listing.TokenId, 
+                   listing.Seller, buyer);
+
+        // Mark listing as sold
+        listing.IsActive = false;
+        listings.Put(listingId, listing.ToByteArray());
+
+        OnNFTPurchased(listing.NFTContract, listing.TokenId, 
+                      listing.Price, listing.Seller, buyer);
+        return true;
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="example-pane" id="defi-example">
+                        <div class="example-description">
+                            <h3>DeFi Integration</h3>
+                            <p>Integrate multiple DeFi protocols for yield farming and liquidity provision.</p>
+                            <div class="example-features">
+                                <span class="feature-badge">Yield Farming</span>
+                                <span class="feature-badge">Liquidity Pools</span>
+                                <span class="feature-badge">Rewards</span>
+                            </div>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">DeFiIntegration.cs</span>
+                                <button class="copy-btn" onclick="copyCode('defi-code')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <pre><code id="defi-code">using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Services;
+
+[DisplayName("DeFiIntegration")]
+public class DeFiIntegration : SmartContract
+{
+    public static bool AddLiquidity(
+        UInt160 tokenA,
+        UInt160 tokenB,
+        BigInteger amountA,
+        BigInteger amountB,
+        UInt160 provider)
+    {
+        if (!Runtime.CheckWitness(provider))
+            throw new Exception("Invalid provider");
+
+        // Calculate optimal amounts
+        var (optimalA, optimalB) = CalculateOptimalAmounts(
+            tokenA, tokenB, amountA, amountB);
+
+        // Transfer tokens to pool
+        TransferToPool(provider, tokenA, optimalA);
+        TransferToPool(provider, tokenB, optimalB);
+
+        // Mint LP tokens
+        var lpTokens = CalculateLPTokens(optimalA, optimalB);
+        MintLPTokens(provider, lpTokens);
+
+        // Update pool state
+        UpdatePoolReserves(tokenA, tokenB, optimalA, optimalB);
+
+        OnLiquidityAdded(provider, tokenA, tokenB, 
+                        optimalA, optimalB, lpTokens);
+        return true;
+    }
+
+    public static bool Stake(
+        UInt160 lpToken,
+        BigInteger amount,
+        UInt160 staker)
+    {
+        if (!Runtime.CheckWitness(staker))
+            throw new Exception("Invalid staker");
+
+        // Transfer LP tokens to staking contract
+        var success = (bool)Contract.Call(lpToken, "transfer",
+            CallFlags.All, staker, Runtime.ExecutingScriptHash, amount, null);
+        
+        if (!success) return false;
+
+        // Update staking balance
+        UpdateStakingBalance(staker, lpToken, amount);
+        
+        // Calculate and distribute rewards
+        DistributeRewards(staker, lpToken);
+        
+        OnTokensStaked(staker, lpToken, amount);
+        return true;
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                    <div class="example-pane" id="oracle-example">
+                        <div class="example-description">
+                            <h3>Oracle Service</h3>
+                            <p>Reliable external data feeds with validation and aggregation mechanisms.</p>
+                            <div class="example-features">
+                                <span class="feature-badge">Data Feeds</span>
+                                <span class="feature-badge">Validation</span>
+                                <span class="feature-badge">Aggregation</span>
+                            </div>
+                        </div>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">OracleService.cs</span>
+                                <button class="copy-btn" onclick="copyCode('oracle-code')">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <pre><code id="oracle-code">using Neo.SmartContract.Framework;
+using Neo.SmartContract.Framework.Services;
+
+[DisplayName("OracleService")]
+public class OracleService : SmartContract
+{
+    public static bool UpdatePrice(
+        string symbol,
+        BigInteger price,
+        uint timestamp,
+        UInt160 oracle)
+    {
+        if (!IsAuthorizedOracle(oracle))
+            throw new Exception("Unauthorized oracle");
+
+        // Validate price data
+        if (price <= 0 || timestamp == 0)
+            throw new Exception("Invalid price data");
+
+        // Store price with validation
+        StorageMap prices = new(Storage.CurrentContext, "prices");
+        var priceData = new PriceData
+        {
+            Symbol = symbol,
+            Price = price,
+            Timestamp = timestamp,
+            Oracle = oracle,
+            IsValid = true
+        };
+
+        prices.Put(symbol, priceData.ToByteArray());
+        
+        OnPriceUpdated(symbol, price, timestamp, oracle);
+        return true;
+    }
+
+    public static BigInteger GetPrice(string symbol)
+    {
+        StorageMap prices = new(Storage.CurrentContext, "prices");
+        var priceData = prices.Get(symbol);
+        
+        if (priceData == null)
+            throw new Exception("Price not found");
+
+        var price = (PriceData)priceData.ToStruct();
+        
+        // Check if price is recent (within 1 hour)
+        if (Runtime.Time - price.Timestamp > 3600)
+            throw new Exception("Price data stale");
+
+        return price.Price;
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Getting Started Section -->
+    <section id="getting-started" class="getting-started">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title">Get Started in Minutes</h2>
+                <p class="section-description">
+                    Follow these simple steps to deploy your first Neo Service Layer application
+                </p>
+            </div>
+            
+            <div class="install-steps">
+                <div class="step">
+                    <div class="step-number">1</div>
+                    <h3>Clone Repository</h3>
+                    <p>Get the latest version of Neo Service Layer from GitHub.</p>
+                    <div class="install-command">
+                        git clone https://github.com/r3e-network/neo-service-layer.git
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">2</div>
+                    <h3>Install Dependencies</h3>
+                    <p>Restore NuGet packages and build the solution.</p>
+                    <div class="install-command">
+                        dotnet restore && dotnet build
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">3</div>
+                    <h3>Run Tests</h3>
+                    <p>Verify everything works with our comprehensive test suite.</p>
+                    <div class="install-command">
+                        ./scripts/testing/run-all-tests.sh
+                    </div>
+                </div>
+                
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Deploy Contracts</h3>
+                    <p>Deploy your first smart contract to the Neo blockchain.</p>
+                    <div class="install-command">
+                        neo-express contract deploy UserManagementContract.nef
+                    </div>
+                </div>
+            </div>
+            
+            <div class="quick-links">
+                <a href="docs/quick-start.html" class="btn btn-primary">
+                    <i class="fas fa-rocket"></i>
+                    Detailed Guide
+                </a>
+                <a href="docs/api-reference.html" class="btn btn-secondary">
+                    <i class="fas fa-code"></i>
+                    API Reference
+                </a>
+                <a href="https://github.com/r3e-network/neo-service-layer" class="btn btn-outline" target="_blank">
+                    <i class="fab fa-github"></i>
+                    View Source
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="docs/quick-start.html">Quick Start</a></li>
+                        <li><a href="docs/api-reference.html">API Reference</a></li>
+                        <li><a href="docs/advanced-setup.html">Advanced Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/r3e-network/neo-service-layer" target="_blank">GitHub</a></li>
+                        <li><a href="https://discord.gg/neo" target="_blank">Discord</a></li>
+                        <li><a href="https://neo.org" target="_blank">Neo Website</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="#examples">Examples</a></li>
+                        <li><a href="https://docs.neo.org" target="_blank">Neo Docs</a></li>
+                        <li><a href="https://neo.org/blog" target="_blank">Blog</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Enterprise</h4>
+                    <ul class="footer-links">
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="docs/advanced-setup.html">Enterprise Setup</a></li>
+                        <li><a href="https://neo.org/enterprise" target="_blank">Enterprise Solutions</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. Built for the Neo blockchain ecosystem.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="src/scripts/main.js"></script>
+    
+    <!-- Copy Code Function -->
+    <script>
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success feedback
+                const button = event.target.closest('.copy-btn');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="fas fa-check"></i> Copied!';
+                button.style.color = 'var(--primary-color)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+    </script>
+</body>
+</html>

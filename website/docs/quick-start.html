@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quick Start - Neo Service Layer</title>
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="stylesheet" href="../src/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <i class="fas fa-cube brand-icon"></i>
+                Neo Service Layer
+            </a>
+            <div class="nav-menu">
+                <a href="../index.html#features" class="nav-link">Features</a>
+                <a href="../index.html#services" class="nav-link">Services</a>
+                <a href="../index.html#documentation" class="nav-link">Documentation</a>
+                <a href="../index.html#examples" class="nav-link">Examples</a>
+            </div>
+            <div class="nav-actions">
+                <a href="https://github.com/neo-project/neo-service-layer" class="btn btn-outline">
+                    <i class="fab fa-github"></i>
+                    GitHub
+                </a>
+                <button class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="padding-top: 80px;">
+        <div class="container" style="max-width: 800px; padding: var(--spacing-3xl) var(--spacing-md);">
+            <!-- Header -->
+            <header class="section-header">
+                <h1 class="section-title">Quick Start Guide</h1>
+                <p class="section-description">
+                    Get up and running with Neo Service Layer in minutes. This guide will walk you through 
+                    the installation process and help you deploy your first smart contract.
+                </p>
+            </header>
+
+            <!-- Prerequisites -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Prerequisites</h2>
+                <div class="feature-card">
+                    <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">System Requirements</h3>
+                    <ul class="feature-list">
+                        <li>.NET 8.0 SDK or later</li>
+                        <li>Neo CLI or Neo Express</li>
+                        <li>Visual Studio Code (recommended)</li>
+                        <li>Git for version control</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Installation Steps -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Installation</h2>
+                
+                <div class="step" style="margin-bottom: var(--spacing-xl);">
+                    <div class="step-number">1</div>
+                    <h3>Clone the Repository</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Start by cloning the Neo Service Layer repository to your local machine.
+                    </p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>git clone https://github.com/neo-project/neo-service-layer.git
+cd neo-service-layer</code></pre>
+                    </div>
+                </div>
+
+                <div class="step" style="margin-bottom: var(--spacing-xl);">
+                    <div class="step-number">2</div>
+                    <h3>Install Dependencies</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Restore the required NuGet packages and build the solution.
+                    </p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>dotnet restore
+dotnet build</code></pre>
+                    </div>
+                </div>
+
+                <div class="step" style="margin-bottom: var(--spacing-xl);">
+                    <div class="step-number">3</div>
+                    <h3>Run Tests</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Verify your installation by running the test suite.
+                    </p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>./scripts/testing/run-all-tests.sh</code></pre>
+                    </div>
+                </div>
+
+                <div class="step">
+                    <div class="step-number">4</div>
+                    <h3>Deploy Your First Contract</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Deploy a sample contract to test your setup.
+                    </p>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>cd src/contracts/UserManagementContract
+dotnet build
+neo-express contract deploy bin/sc/UserManagementContract.nef</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Next Steps -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Next Steps</h2>
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-book"></i>
+                        </div>
+                        <h3>API Reference</h3>
+                        <p>Explore the complete API documentation for all available services.</p>
+                        <a href="api-reference.html" class="doc-link">
+                            View API Docs <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-code"></i>
+                        </div>
+                        <h3>Examples</h3>
+                        <p>Learn from practical examples and implementation patterns.</p>
+                        <a href="../index.html#examples" class="doc-link">
+                            View Examples <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-cogs"></i>
+                        </div>
+                        <h3>Advanced Setup</h3>
+                        <p>Configure advanced features and deployment options.</p>
+                        <a href="advanced-setup.html" class="doc-link">
+                            Advanced Guide <i class="fas fa-arrow-right"></i>
+                        </a>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Support -->
+            <section>
+                <div class="feature-card" style="text-align: center;">
+                    <h3 style="color: var(--text-primary); margin-bottom: var(--spacing-md);">Need Help?</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-lg);">
+                        If you encounter any issues during setup, check out our troubleshooting guide or reach out to the community.
+                    </p>
+                    <div style="display: flex; gap: var(--spacing-md); justify-content: center; flex-wrap: wrap;">
+                        <a href="https://github.com/neo-project/neo-service-layer/issues" class="btn btn-outline">
+                            <i class="fab fa-github"></i>
+                            Report Issue
+                        </a>
+                        <a href="https://discord.gg/neo" class="btn btn-secondary">
+                            <i class="fab fa-discord"></i>
+                            Join Discord
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="quick-start.html">Quick Start</a></li>
+                        <li><a href="api-reference.html">API Reference</a></li>
+                        <li><a href="advanced-setup.html">Advanced Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/neo-project/neo-service-layer">GitHub</a></li>
+                        <li><a href="https://discord.gg/neo">Discord</a></li>
+                        <li><a href="https://neo.org">Neo Website</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#examples">Examples</a></li>
+                        <li><a href="https://docs.neo.org">Neo Docs</a></li>
+                        <li><a href="https://neo.org/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. Built for the Neo blockchain ecosystem.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../src/scripts/main.js"></script>
+</body>
+</html>

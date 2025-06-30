@@ -1,0 +1,11 @@
+<svg width="120" height="40" viewBox="0 0 120 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <!-- Neo hexagon symbol -->
+  <path d="M8 15L16 11L24 15V25L16 29L8 25V15Z" stroke="#00d4aa" stroke-width="2" fill="none"/>
+  <circle cx="16" cy="20" r="3" fill="#00d4aa"/>
+  <path d="M12 18L16 16L20 18" stroke="#6c5ce7" stroke-width="1.5" stroke-linecap="round"/>
+  <path d="M12 22L16 24L20 22" stroke="#6c5ce7" stroke-width="1.5" stroke-linecap="round"/>
+  
+  <!-- Text -->
+  <text x="32" y="16" font-family="Inter, sans-serif" font-size="12" font-weight="700" fill="#ffffff">Neo</text>
+  <text x="32" y="28" font-family="Inter, sans-serif" font-size="8" font-weight="500" fill="#a0a9c0">Service Layer</text>
+</svg>

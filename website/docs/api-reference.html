@@ -1,0 +1,483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Neo Service Layer</title>
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="stylesheet" href="../src/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <i class="fas fa-cube brand-icon"></i>
+                Neo Service Layer
+            </a>
+            <div class="nav-menu">
+                <a href="../index.html#features" class="nav-link">Features</a>
+                <a href="../index.html#services" class="nav-link">Services</a>
+                <a href="../index.html#documentation" class="nav-link">Documentation</a>
+                <a href="../index.html#examples" class="nav-link">Examples</a>
+            </div>
+            <div class="nav-actions">
+                <a href="https://github.com/neo-project/neo-service-layer" class="btn btn-outline">
+                    <i class="fab fa-github"></i>
+                    GitHub
+                </a>
+                <button class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="padding-top: 80px;">
+        <div class="container" style="max-width: 1000px; padding: var(--spacing-3xl) var(--spacing-md);">
+            <!-- Header -->
+            <header class="section-header">
+                <h1 class="section-title">API Reference</h1>
+                <p class="section-description">
+                    Complete reference documentation for all Neo Service Layer contracts and their methods.
+                </p>
+            </header>
+
+            <!-- API Navigation -->
+            <div class="services-tabs" style="margin-bottom: var(--spacing-3xl);">
+                <div class="tab-buttons">
+                    <button class="tab-button active" data-tab="core-services">Core Services</button>
+                    <button class="tab-button" data-tab="enterprise-services">Enterprise</button>
+                    <button class="tab-button" data-tab="specialized-services">Specialized</button>
+                    <button class="tab-button" data-tab="industry-services">Industry</button>
+                </div>
+
+                <!-- Core Services -->
+                <div id="core-services" class="tab-pane active">
+                    <div class="api-section">
+                        <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Core Services</h2>
+                        
+                        <!-- User Management -->
+                        <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                            <h3 style="color: var(--primary-color);">UserManagementContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Manages user registration, authentication, and profile management.
+                            </p>
+                            
+                            <h4 style="color: var(--text-primary); margin: var(--spacing-lg) 0 var(--spacing-sm);">Methods</h4>
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Register a new user
+public static bool RegisterUser(UInt160 userHash, string username, string email)
+
+// Authenticate user
+public static bool AuthenticateUser(UInt160 userHash, string password)
+
+// Update user profile
+public static bool UpdateProfile(UInt160 userHash, string newEmail, string newUsername)
+
+// Get user information
+public static UserInfo GetUser(UInt160 userHash)
+
+// Check if user exists
+public static bool UserExists(UInt160 userHash)</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Data Storage -->
+                        <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                            <h3 style="color: var(--primary-color);">DataStorageContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Provides secure, encrypted data storage with access control.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Store data with encryption
+public static bool StoreData(UInt160 owner, string key, ByteString data, bool encrypted)
+
+// Retrieve stored data
+public static ByteString GetData(UInt160 requester, string key)
+
+// Delete stored data
+public static bool DeleteData(UInt160 owner, string key)
+
+// Grant access to data
+public static bool GrantAccess(UInt160 owner, string key, UInt160 grantee)
+
+// Revoke access to data
+public static bool RevokeAccess(UInt160 owner, string key, UInt160 grantee)</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Access Control -->
+                        <div class="feature-card">
+                            <h3 style="color: var(--primary-color);">AccessControlContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Role-based access control with hierarchical permissions.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Create a new role
+public static bool CreateRole(string roleName, string[] permissions)
+
+// Assign role to user
+public static bool AssignRole(UInt160 user, string roleName)
+
+// Check if user has permission
+public static bool HasPermission(UInt160 user, string permission)
+
+// Revoke role from user
+public static bool RevokeRole(UInt160 user, string roleName)
+
+// Get user roles
+public static string[] GetUserRoles(UInt160 user)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Enterprise Services -->
+                <div id="enterprise-services" class="tab-pane">
+                    <div class="api-section">
+                        <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Enterprise Services</h2>
+                        
+                        <!-- Identity Management -->
+                        <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                            <h3 style="color: var(--primary-color);">IdentityManagementContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Enterprise-grade identity verification and management.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Create digital identity
+public static bool CreateIdentity(UInt160 user, string identityData, string[] credentials)
+
+// Verify identity
+public static bool VerifyIdentity(UInt160 user, string credential)
+
+// Add credential to identity
+public static bool AddCredential(UInt160 user, string credentialType, string credentialData)
+
+// Revoke credential
+public static bool RevokeCredential(UInt160 user, string credentialId)
+
+// Get identity status
+public static IdentityStatus GetIdentityStatus(UInt160 user)</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Payment Processing -->
+                        <div class="feature-card">
+                            <h3 style="color: var(--primary-color);">PaymentProcessingContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Multi-currency payment processing with escrow support.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Process payment
+public static bool ProcessPayment(UInt160 from, UInt160 to, BigInteger amount, UInt160 tokenHash)
+
+// Create escrow
+public static string CreateEscrow(UInt160 buyer, UInt160 seller, BigInteger amount, string conditions)
+
+// Release escrow
+public static bool ReleaseEscrow(string escrowId, UInt160 releaser)
+
+// Refund escrow
+public static bool RefundEscrow(string escrowId, UInt160 refunder)
+
+// Get payment history
+public static PaymentRecord[] GetPaymentHistory(UInt160 user)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Specialized Services -->
+                <div id="specialized-services" class="tab-pane">
+                    <div class="api-section">
+                        <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Specialized Services</h2>
+                        
+                        <!-- Analytics -->
+                        <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                            <h3 style="color: var(--primary-color);">AnalyticsContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                On-chain analytics and data aggregation services.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Track event
+public static bool TrackEvent(string eventName, string eventData, UInt160 user)
+
+// Get analytics data
+public static AnalyticsData GetAnalytics(string metric, uint timeframe)
+
+// Create custom metric
+public static bool CreateMetric(string metricName, string aggregationType)
+
+// Generate report
+public static ReportData GenerateReport(string reportType, uint startTime, uint endTime)</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Marketplace -->
+                        <div class="feature-card">
+                            <h3 style="color: var(--primary-color);">MarketplaceContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Decentralized marketplace for digital assets and services.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// List item for sale
+public static string ListItem(UInt160 seller, string itemData, BigInteger price, UInt160 tokenHash)
+
+// Purchase item
+public static bool PurchaseItem(string itemId, UInt160 buyer)
+
+// Update listing
+public static bool UpdateListing(string itemId, BigInteger newPrice, UInt160 seller)
+
+// Cancel listing
+public static bool CancelListing(string itemId, UInt160 seller)
+
+// Get marketplace stats
+public static MarketStats GetMarketplaceStats()</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Industry Services -->
+                <div id="industry-services" class="tab-pane">
+                    <div class="api-section">
+                        <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Industry-Specific Services</h2>
+                        
+                        <!-- Supply Chain -->
+                        <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                            <h3 style="color: var(--primary-color);">SupplyChainContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                End-to-end supply chain tracking and verification.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Create product
+public static string CreateProduct(string productData, UInt160 manufacturer)
+
+// Add supply chain step
+public static bool AddSupplyChainStep(string productId, string stepData, UInt160 participant)
+
+// Verify product authenticity
+public static bool VerifyProduct(string productId, string verificationData)
+
+// Get product history
+public static SupplyChainStep[] GetProductHistory(string productId)
+
+// Transfer product ownership
+public static bool TransferOwnership(string productId, UInt160 newOwner)</code></pre>
+                            </div>
+                        </div>
+
+                        <!-- Healthcare -->
+                        <div class="feature-card">
+                            <h3 style="color: var(--primary-color);">HealthcareContract</h3>
+                            <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                                Secure healthcare data management with privacy compliance.
+                            </p>
+                            
+                            <div class="code-block">
+                                <div class="code-header">
+                                    <span class="code-title">C# Interface</span>
+                                    <button class="copy-btn" title="Copy to clipboard">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                                <pre><code>// Create patient record
+public static bool CreatePatientRecord(UInt160 patient, string encryptedData, UInt160 provider)
+
+// Grant access to medical data
+public static bool GrantMedicalAccess(UInt160 patient, UInt160 provider, string[] dataTypes)
+
+// Add medical record
+public static bool AddMedicalRecord(UInt160 patient, string recordData, UInt160 provider)
+
+// Revoke medical access
+public static bool RevokeMedicalAccess(UInt160 patient, UInt160 provider)
+
+// Get patient consent status
+public static ConsentStatus GetConsentStatus(UInt160 patient, UInt160 provider)</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Common Types -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Common Types & Structures</h2>
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Data Structures</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">C# Types</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>// User Information
+public struct UserInfo
+{
+    public string Username;
+    public string Email;
+    public uint CreatedAt;
+    public bool IsActive;
+}
+
+// Service Response
+public struct ServiceResponse
+{
+    public bool Success;
+    public string Message;
+    public ByteString Data;
+}
+
+// Access Permission
+public struct Permission
+{
+    public string Name;
+    public string Description;
+    public uint Level;
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Error Codes -->
+            <section>
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Error Codes</h2>
+                <div class="feature-card">
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Authentication Errors</h4>
+                            <ul class="feature-list">
+                                <li><code>AUTH_001</code> - Invalid credentials</li>
+                                <li><code>AUTH_002</code> - User not found</li>
+                                <li><code>AUTH_003</code> - Account locked</li>
+                                <li><code>AUTH_004</code> - Session expired</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Permission Errors</h4>
+                            <ul class="feature-list">
+                                <li><code>PERM_001</code> - Access denied</li>
+                                <li><code>PERM_002</code> - Insufficient privileges</li>
+                                <li><code>PERM_003</code> - Role not found</li>
+                                <li><code>PERM_004</code> - Permission expired</li>
+                            </ul>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Data Errors</h4>
+                            <ul class="feature-list">
+                                <li><code>DATA_001</code> - Data not found</li>
+                                <li><code>DATA_002</code> - Invalid format</li>
+                                <li><code>DATA_003</code> - Encryption failed</li>
+                                <li><code>DATA_004</code> - Storage limit exceeded</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="quick-start.html">Quick Start</a></li>
+                        <li><a href="api-reference.html">API Reference</a></li>
+                        <li><a href="advanced-setup.html">Advanced Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/neo-project/neo-service-layer">GitHub</a></li>
+                        <li><a href="https://discord.gg/neo">Discord</a></li>
+                        <li><a href="https://neo.org">Neo Website</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#examples">Examples</a></li>
+                        <li><a href="https://docs.neo.org">Neo Docs</a></li>
+                        <li><a href="https://neo.org/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. Built for the Neo blockchain ecosystem.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../src/scripts/main.js"></script>
+</body>
+</html>

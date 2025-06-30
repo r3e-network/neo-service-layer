@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Setup - Neo Service Layer</title>
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="stylesheet" href="../src/styles/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="../index.html" class="nav-brand">
+                <i class="fas fa-cube brand-icon"></i>
+                Neo Service Layer
+            </a>
+            <div class="nav-menu">
+                <a href="../index.html#features" class="nav-link">Features</a>
+                <a href="../index.html#services" class="nav-link">Services</a>
+                <a href="../index.html#documentation" class="nav-link">Documentation</a>
+                <a href="../index.html#examples" class="nav-link">Examples</a>
+            </div>
+            <div class="nav-actions">
+                <a href="https://github.com/neo-project/neo-service-layer" class="btn btn-outline">
+                    <i class="fab fa-github"></i>
+                    GitHub
+                </a>
+                <button class="nav-toggle">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main style="padding-top: 80px;">
+        <div class="container" style="max-width: 900px; padding: var(--spacing-3xl) var(--spacing-md);">
+            <!-- Header -->
+            <header class="section-header">
+                <h1 class="section-title">Advanced Setup</h1>
+                <p class="section-description">
+                    Configure advanced features, deployment options, and production environments 
+                    for the Neo Service Layer.
+                </p>
+            </header>
+
+            <!-- Docker Configuration -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Docker Deployment</h2>
+                
+                <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Production Docker Setup</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Deploy the Neo Service Layer using Docker for production environments.
+                    </p>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">docker-compose.yml</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>version: '3.8'
+services:
+  neo-service-layer:
+    build: .
+    ports:
+      - "8080:8080"
+    environment:
+      - NEO_NETWORK=mainnet
+      - NEO_RPC_URL=http://seed1.neo.org:10332
+      - LOG_LEVEL=info
+    volumes:
+      - ./data:/app/data
+      - ./logs:/app/logs
+    restart: unless-stopped
+    
+  neo-express:
+    image: cityofzion/neo-express:latest
+    ports:
+      - "50012:50012"
+    volumes:
+      - ./blockchain:/blockchain
+    command: ["run", "-i", "/blockchain/default.neo-express"]</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Build and Deploy</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">Terminal</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code># Build the Docker image
+docker build -t neo-service-layer .
+
+# Run with Docker Compose
+docker-compose up -d
+
+# View logs
+docker-compose logs -f neo-service-layer
+
+# Scale services
+docker-compose up -d --scale neo-service-layer=3</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Environment Configuration -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Environment Configuration</h2>
+                
+                <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Environment Variables</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">.env</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code># Neo Network Configuration
+NEO_NETWORK=mainnet
+NEO_RPC_URL=http://seed1.neo.org:10332
+NEO_WEBSOCKET_URL=ws://seed1.neo.org:10333
+
+# Security Settings
+ENCRYPTION_KEY=your-256-bit-encryption-key
+JWT_SECRET=your-jwt-secret-key
+CORS_ORIGINS=https://yourdomain.com,https://app.yourdomain.com
+
+# Database Configuration
+DATABASE_URL=postgresql://user:password@localhost:5432/neo_service_layer
+REDIS_URL=redis://localhost:6379
+
+# Logging
+LOG_LEVEL=info
+LOG_FORMAT=json
+LOG_FILE=/app/logs/neo-service-layer.log
+
+# Performance
+MAX_CONCURRENT_REQUESTS=100
+REQUEST_TIMEOUT=30000
+CACHE_TTL=3600</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Network Configurations</h3>
+                    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: var(--spacing-lg);">
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">MainNet</h4>
+                            <div class="code-block">
+                                <pre><code>NEO_NETWORK=mainnet
+NEO_RPC_URL=http://seed1.neo.org:10332
+MAGIC_NUMBER=860833102</code></pre>
+                            </div>
+                        </div>
+                        <div>
+                            <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">TestNet</h4>
+                            <div class="code-block">
+                                <pre><code>NEO_NETWORK=testnet
+NEO_RPC_URL=http://seed1t.neo.org:20332
+MAGIC_NUMBER=894710606</code></pre>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Configuration -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Security Configuration</h2>
+                
+                <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Intel SGX Setup</h3>
+                    <p style="color: var(--text-secondary); margin-bottom: var(--spacing-md);">
+                        Configure Intel SGX for secure enclave execution.
+                    </p>
+                    
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">SGX Configuration</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code># Install SGX SDK
+wget https://download.01.org/intel-sgx/sgx-linux/2.17/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.17.101.1.bin
+chmod +x sgx_linux_x64_sdk_2.17.101.1.bin
+sudo ./sgx_linux_x64_sdk_2.17.101.1.bin
+
+# Configure SGX in appsettings.json
+{
+  "SGX": {
+    "Enabled": true,
+    "EnclaveFile": "/app/enclaves/neo-service-layer.signed.so",
+    "SpidFile": "/app/config/spid.txt",
+    "AttestationMode": "EPID"
+  }
+}</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">SSL/TLS Configuration</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">nginx.conf</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>server {
+    listen 443 ssl http2;
+    server_name api.yourdomain.com;
+    
+    ssl_certificate /etc/ssl/certs/yourdomain.crt;
+    ssl_certificate_key /etc/ssl/private/yourdomain.key;
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES256-GCM-SHA512:DHE-RSA-AES256-GCM-SHA512;
+    
+    location / {
+        proxy_pass http://localhost:8080;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring and Logging -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Monitoring & Logging</h2>
+                
+                <div class="feature-card" style="margin-bottom: var(--spacing-xl);">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Prometheus Metrics</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">prometheus.yml</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'neo-service-layer'
+    static_configs:
+      - targets: ['localhost:8080']
+    metrics_path: '/metrics'
+    scrape_interval: 10s
+    
+  - job_name: 'neo-node'
+    static_configs:
+      - targets: ['localhost:10332']
+    metrics_path: '/metrics'</code></pre>
+                    </div>
+                </div>
+
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Structured Logging</h3>
+                    <div class="code-block">
+                        <div class="code-header">
+                            <span class="code-title">appsettings.Production.json</span>
+                            <button class="copy-btn" title="Copy to clipboard">
+                                <i class="fas fa-copy"></i>
+                            </button>
+                        </div>
+                        <pre><code>{
+  "Logging": {
+    "LogLevel": {
+      "Default": "Information",
+      "Microsoft": "Warning",
+      "Microsoft.Hosting.Lifetime": "Information"
+    },
+    "Console": {
+      "FormatterName": "json"
+    },
+    "File": {
+      "Path": "/app/logs/neo-service-layer-.log",
+      "RollingInterval": "Day",
+      "RetainedFileCountLimit": 30,
+      "FormatterName": "json"
+    }
+  }
+}</code></pre>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Performance Optimization -->
+            <section style="margin-bottom: var(--spacing-3xl);">
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Performance Optimization</h2>
+                
+                <div class="docs-grid">
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-database"></i>
+                        </div>
+                        <h3>Database Optimization</h3>
+                        <ul class="feature-list" style="text-align: left;">
+                            <li>Connection pooling configuration</li>
+                            <li>Index optimization strategies</li>
+                            <li>Query performance monitoring</li>
+                            <li>Read replica setup</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-memory"></i>
+                        </div>
+                        <h3>Memory Management</h3>
+                        <ul class="feature-list" style="text-align: left;">
+                            <li>Garbage collection tuning</li>
+                            <li>Memory pool configuration</li>
+                            <li>Cache optimization</li>
+                            <li>Memory leak detection</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="doc-card">
+                        <div class="doc-icon">
+                            <i class="fas fa-network-wired"></i>
+                        </div>
+                        <h3>Network Optimization</h3>
+                        <ul class="feature-list" style="text-align: left;">
+                            <li>Connection keep-alive settings</li>
+                            <li>Request batching strategies</li>
+                            <li>Load balancing configuration</li>
+                            <li>CDN integration</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Troubleshooting -->
+            <section>
+                <h2 style="color: var(--text-primary); margin-bottom: var(--spacing-lg);">Troubleshooting</h2>
+                
+                <div class="feature-card">
+                    <h3 style="color: var(--primary-color); margin-bottom: var(--spacing-md);">Common Issues</h3>
+                    
+                    <div style="margin-bottom: var(--spacing-lg);">
+                        <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Contract Deployment Failures</h4>
+                        <div class="code-block">
+                            <div class="code-header">
+                                <span class="code-title">Diagnostic Commands</span>
+                                <button class="copy-btn" title="Copy to clipboard">
+                                    <i class="fas fa-copy"></i>
+                                </button>
+                            </div>
+                            <pre><code># Check Neo node connectivity
+curl -X POST http://localhost:10332 \
+  -H "Content-Type: application/json" \
+  -d '{"jsonrpc":"2.0","method":"getversion","params":[],"id":1}'
+
+# Verify contract compilation
+dotnet build --verbosity detailed
+
+# Check gas balance
+neo-express wallet list</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div style="margin-bottom: var(--spacing-lg);">
+                        <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Performance Issues</h4>
+                        <ul class="feature-list">
+                            <li>Monitor CPU and memory usage with <code>htop</code> or <code>docker stats</code></li>
+                            <li>Check database connection pool status</li>
+                            <li>Analyze slow query logs</li>
+                            <li>Review garbage collection metrics</li>
+                        </ul>
+                    </div>
+                    
+                    <div>
+                        <h4 style="color: var(--text-primary); margin-bottom: var(--spacing-sm);">Network Connectivity</h4>
+                        <ul class="feature-list">
+                            <li>Verify firewall rules for ports 10332, 10333</li>
+                            <li>Check DNS resolution for Neo seed nodes</li>
+                            <li>Test WebSocket connections</li>
+                            <li>Validate SSL certificate chain</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul class="footer-links">
+                        <li><a href="quick-start.html">Quick Start</a></li>
+                        <li><a href="api-reference.html">API Reference</a></li>
+                        <li><a href="advanced-setup.html">Advanced Setup</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://github.com/neo-project/neo-service-layer">GitHub</a></li>
+                        <li><a href="https://discord.gg/neo">Discord</a></li>
+                        <li><a href="https://neo.org">Neo Website</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="../index.html#examples">Examples</a></li>
+                        <li><a href="https://docs.neo.org">Neo Docs</a></li>
+                        <li><a href="https://neo.org/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. Built for the Neo blockchain ecosystem.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="../src/scripts/main.js"></script>
+</body>
+</html>
