@@ -99,8 +99,9 @@
     contexts = ["production"]
 
 # Edge functions (for future use)
-[edge_functions]
-  # Placeholder for future edge functions
+# [[edge_functions]]
+#   path = "/api/*"
+#   function = "api-handler"
 
 # Dev server configuration
 [dev]
