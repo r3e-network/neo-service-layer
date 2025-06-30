@@ -1,97 +1,21 @@
 [build]
-  # Build command for Next.js
-  command = "npm install && npm run build"
+  # Deploy static site for now - skip Next.js build
+  command = "echo 'Deploying static site'"
+  publish = "."
   
-  # Directory to publish
-  publish = ".next"
-  
-  # Functions directory (if needed in future)
-  functions = "netlify/functions"
-
 [build.environment]
-  # Environment variables
   NODE_VERSION = "18.18.0"
-  NEXT_TELEMETRY_DISABLED = "1"
 
-# Redirect rules
-# Note: Next.js handles routing automatically, no manual redirects needed
-
-# Headers for security and performance
+# Headers
 [[headers]]
   for = "/*"
   [headers.values]
-    # Security headers
     X-Frame-Options = "DENY"
     X-Content-Type-Options = "nosniff"
-    X-XSS-Protection = "1; mode=block"
     Referrer-Policy = "strict-origin-when-cross-origin"
-    
-    # Performance headers
-    Cache-Control = "public, max-age=31536000"
 
-[[headers]]
-  for = "*.html"
-  [headers.values]
-    Cache-Control = "public, max-age=0, must-revalidate"
-
-[[headers]]
-  for = "*.css"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.js"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.png"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.jpg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.svg"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-[[headers]]
-  for = "*.ico"
-  [headers.values]
-    Cache-Control = "public, max-age=31536000, immutable"
-
-# Build processing handled by Next.js
-# Next.js automatically handles bundling, minification, and optimization
-
-# Plugin configuration
-[[plugins]]
-  package = "@netlify/plugin-nextjs"
-
-# Edge functions (for future use)
-# [[edge_functions]]
-#   path = "/api/*"
-#   function = "api-handler"
-
-# Dev server configuration
-[dev]
-  command = "npm run dev"
-  port = 3000
-  publish = ".next"
-  autoLaunch = true
-
-# Context-specific settings
-[context.production]
-  [context.production.environment]
-    NODE_ENV = "production"
-
-[context.deploy-preview]
-  [context.deploy-preview.environment]
-    NODE_ENV = "development"
-
-[context.branch-deploy]
-  [context.branch-deploy.environment]
-    NODE_ENV = "development"
+# SPA routing
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200
