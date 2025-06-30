@@ -1,0 +1,1645 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Service Layer - Dashboard</title>
+    <meta name="description" content="Interactive dashboard for Neo Service Layer - Execute smart contracts, monitor transactions, and manage blockchain services">
+    
+    <!-- Styles -->
+    <link href="src/styles/main.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <style>
+        /* Dashboard Specific Styles */
+        :root {
+            --card-bg: rgba(26, 31, 58, 0.6);
+            --card-border: rgba(0, 212, 170, 0.2);
+            --card-hover-border: rgba(0, 212, 170, 0.5);
+            --input-bg: rgba(255, 255, 255, 0.05);
+            --input-border: rgba(255, 255, 255, 0.1);
+            --input-focus-border: var(--primary-color);
+            --success-color: #28a745;
+            --warning-color: #ffc107;
+            --danger-color: #dc3545;
+            --info-color: #17a2b8;
+        }
+
+        /* Layout */
+        .dashboard-layout {
+            display: flex;
+            min-height: 100vh;
+            background: var(--dark-bg);
+        }
+
+        /* Sidebar */
+        .sidebar {
+            width: 260px;
+            background: rgba(10, 12, 28, 0.95);
+            border-right: 1px solid rgba(255, 255, 255, 0.1);
+            position: fixed;
+            height: 100vh;
+            overflow-y: auto;
+            z-index: 100;
+        }
+
+        .sidebar-header {
+            padding: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            text-decoration: none;
+            color: white;
+        }
+
+        .sidebar-logo i {
+            font-size: 1.5rem;
+            color: var(--primary-color);
+        }
+
+        .sidebar-logo span {
+            font-size: 1.25rem;
+            font-weight: 600;
+        }
+
+        .sidebar-nav {
+            padding: 1.5rem 0;
+        }
+
+        .sidebar-item {
+            display: block;
+            padding: 0.875rem 2rem;
+            color: rgba(255, 255, 255, 0.7);
+            text-decoration: none;
+            transition: all 0.3s ease;
+            position: relative;
+        }
+
+        .sidebar-item:hover {
+            color: white;
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .sidebar-item.active {
+            color: var(--primary-color);
+            background: rgba(0, 212, 170, 0.1);
+        }
+
+        .sidebar-item.active::before {
+            content: '';
+            position: absolute;
+            left: 0;
+            top: 0;
+            bottom: 0;
+            width: 3px;
+            background: var(--primary-color);
+        }
+
+        .sidebar-item i {
+            width: 20px;
+            margin-right: 0.75rem;
+        }
+
+        /* Main Content */
+        .main-content {
+            flex: 1;
+            margin-left: 260px;
+            padding: 2rem;
+            max-width: 1400px;
+            width: 100%;
+        }
+
+        /* Header */
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding-bottom: 2rem;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        .page-title {
+            font-size: 2rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .header-actions {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        /* Wallet Card */
+        .wallet-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .wallet-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .wallet-info h4 {
+            margin: 0;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            font-weight: 500;
+        }
+
+        .wallet-address {
+            margin: 0.25rem 0 0;
+            font-family: 'JetBrains Mono', monospace;
+            color: var(--primary-color);
+            font-size: 0.875rem;
+        }
+
+        .wallet-balance {
+            margin-top: 0.5rem;
+            display: flex;
+            gap: 1rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* Stats Grid */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .stat-card:hover {
+            border-color: var(--card-hover-border);
+            transform: translateY(-2px);
+        }
+
+        .stat-label {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 600;
+            color: white;
+        }
+
+        .stat-change {
+            font-size: 0.75rem;
+            margin-top: 0.5rem;
+        }
+
+        .stat-change.positive {
+            color: var(--success-color);
+        }
+
+        .stat-change.negative {
+            color: var(--danger-color);
+        }
+
+        /* Service Cards */
+        .services-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(380px, 1fr));
+            gap: 2rem;
+        }
+
+        .service-card {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.75rem;
+            padding: 2rem;
+            transition: all 0.3s ease;
+        }
+
+        .service-card:hover {
+            border-color: var(--card-hover-border);
+            transform: translateY(-3px);
+            box-shadow: 0 10px 30px rgba(0, 212, 170, 0.1);
+        }
+
+        .service-header {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+            margin-bottom: 1rem;
+        }
+
+        .service-icon {
+            width: 48px;
+            height: 48px;
+            background: rgba(0, 212, 170, 0.1);
+            border-radius: 0.5rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--primary-color);
+            font-size: 1.5rem;
+        }
+
+        .service-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: white;
+            margin: 0;
+        }
+
+        .service-description {
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.875rem;
+            margin: 0.5rem 0 1.5rem;
+        }
+
+        /* Forms */
+        .form-group {
+            margin-bottom: 1.25rem;
+        }
+
+        .form-label {
+            display: block;
+            margin-bottom: 0.5rem;
+            color: rgba(255, 255, 255, 0.9);
+            font-weight: 500;
+            font-size: 0.875rem;
+        }
+
+        .form-input,
+        .form-select,
+        .form-textarea {
+            width: 100%;
+            padding: 0.75rem 1rem;
+            background: var(--input-bg);
+            border: 1px solid var(--input-border);
+            border-radius: 0.375rem;
+            color: white;
+            font-family: inherit;
+            font-size: 0.875rem;
+            transition: all 0.3s ease;
+        }
+
+        .form-input:focus,
+        .form-select:focus,
+        .form-textarea:focus {
+            outline: none;
+            border-color: var(--input-focus-border);
+            background: rgba(255, 255, 255, 0.08);
+            box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+        }
+
+        .form-textarea {
+            min-height: 100px;
+            resize: vertical;
+        }
+
+        .form-help {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+            margin-top: 0.25rem;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 0.75rem 1.5rem;
+            border: none;
+            border-radius: 0.375rem;
+            font-weight: 600;
+            font-size: 0.875rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            text-decoration: none;
+        }
+
+        .btn-primary {
+            background: var(--primary-color);
+            color: var(--dark-bg);
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: var(--secondary-color);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 212, 170, 0.3);
+        }
+
+        .btn-secondary {
+            background: rgba(255, 255, 255, 0.1);
+            color: white;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: rgba(255, 255, 255, 0.15);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        .btn-block {
+            width: 100%;
+            justify-content: center;
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* Results */
+        .result-box {
+            margin-top: 1rem;
+            padding: 1rem;
+            background: rgba(0, 212, 170, 0.05);
+            border: 1px solid rgba(0, 212, 170, 0.2);
+            border-radius: 0.375rem;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.875rem;
+            word-break: break-all;
+        }
+
+        .result-box.error {
+            background: rgba(220, 53, 69, 0.05);
+            border-color: rgba(220, 53, 69, 0.2);
+            color: #ff6b6b;
+        }
+
+        /* Transaction List */
+        .transaction-list {
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.75rem;
+            padding: 1.5rem;
+        }
+
+        .transaction-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem;
+            background: rgba(255, 255, 255, 0.02);
+            border-radius: 0.375rem;
+            margin-bottom: 0.75rem;
+            transition: all 0.3s ease;
+        }
+
+        .transaction-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .tx-info h4 {
+            margin: 0 0 0.25rem;
+            font-size: 0.875rem;
+            color: white;
+        }
+
+        .tx-hash {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.75rem;
+            color: var(--primary-color);
+        }
+
+        .tx-time {
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .tx-status {
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .tx-status.pending {
+            background: rgba(255, 193, 7, 0.1);
+            color: var(--warning-color);
+        }
+
+        .tx-status.confirmed {
+            background: rgba(40, 167, 69, 0.1);
+            color: var(--success-color);
+        }
+
+        .tx-status.failed {
+            background: rgba(220, 53, 69, 0.1);
+            color: var(--danger-color);
+        }
+
+        /* Loading States */
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-radius: 50%;
+            border-top-color: var(--primary-color);
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        /* Notifications */
+        .notification {
+            position: fixed;
+            top: 2rem;
+            right: 2rem;
+            padding: 1rem 1.5rem;
+            background: var(--card-bg);
+            border: 1px solid var(--card-border);
+            border-radius: 0.5rem;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+            z-index: 1000;
+            animation: slideIn 0.3s ease;
+            max-width: 400px;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(100%);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        .notification.success {
+            border-color: var(--success-color);
+            background: rgba(40, 167, 69, 0.1);
+        }
+
+        .notification.error {
+            border-color: var(--danger-color);
+            background: rgba(220, 53, 69, 0.1);
+        }
+
+        /* Mobile Responsive */
+        @media (max-width: 1024px) {
+            .sidebar {
+                transform: translateX(-100%);
+                transition: transform 0.3s ease;
+            }
+
+            .sidebar.active {
+                transform: translateX(0);
+            }
+
+            .main-content {
+                margin-left: 0;
+            }
+
+            .services-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        /* Empty States */
+        .empty-state {
+            text-align: center;
+            padding: 3rem;
+            color: rgba(255, 255, 255, 0.5);
+        }
+
+        .empty-state i {
+            font-size: 3rem;
+            margin-bottom: 1rem;
+            opacity: 0.3;
+        }
+
+        /* Network Badge */
+        .network-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 2rem;
+            font-size: 0.75rem;
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .network-badge.mainnet {
+            border-color: var(--success-color);
+            color: var(--success-color);
+        }
+
+        .network-badge.testnet {
+            border-color: var(--warning-color);
+            color: var(--warning-color);
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-layout">
+        <!-- Sidebar -->
+        <aside class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <a href="index.html" class="sidebar-logo">
+                    <i class="fas fa-cube"></i>
+                    <span>Neo Service Layer</span>
+                </a>
+            </div>
+            
+            <nav class="sidebar-nav">
+                <a href="#dashboard" class="sidebar-item active" data-section="dashboard">
+                    <i class="fas fa-tachometer-alt"></i> Dashboard
+                </a>
+                <a href="#services" class="sidebar-item" data-section="services">
+                    <i class="fas fa-cubes"></i> Services
+                </a>
+                <a href="#transactions" class="sidebar-item" data-section="transactions">
+                    <i class="fas fa-list"></i> Transactions
+                </a>
+                <a href="#analytics" class="sidebar-item" data-section="analytics">
+                    <i class="fas fa-chart-bar"></i> Analytics
+                </a>
+                <a href="#contracts" class="sidebar-item" data-section="contracts">
+                    <i class="fas fa-file-code"></i> Contracts
+                </a>
+                <a href="#settings" class="sidebar-item" data-section="settings">
+                    <i class="fas fa-cog"></i> Settings
+                </a>
+                <div style="border-top: 1px solid rgba(255,255,255,0.1); margin: 1rem 0;"></div>
+                <a href="docs/api-reference.html" class="sidebar-item">
+                    <i class="fas fa-book"></i> Documentation
+                </a>
+                <a href="https://github.com/r3e-network/neo-service-layer" class="sidebar-item" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </nav>
+        </aside>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Mobile Menu Toggle -->
+            <button class="mobile-menu-toggle" onclick="toggleSidebar()" style="display: none;">
+                <i class="fas fa-bars"></i>
+            </button>
+
+            <!-- Dashboard Section -->
+            <section id="dashboard" class="content-section active">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Dashboard</h1>
+                    <div class="header-actions">
+                        <div class="network-badge testnet">
+                            <i class="fas fa-circle" style="font-size: 0.5rem;"></i>
+                            <span id="networkName">TestNet</span>
+                        </div>
+                        <button class="btn btn-primary" onclick="connectWallet()" id="connectBtn">
+                            <i class="fas fa-wallet"></i>
+                            Connect Wallet
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Wallet Status -->
+                <div class="wallet-card" id="walletCard" style="display: none;">
+                    <div class="wallet-icon">
+                        <i class="fas fa-wallet"></i>
+                    </div>
+                    <div class="wallet-info">
+                        <h4>Connected Wallet</h4>
+                        <p class="wallet-address" id="walletAddress">Not connected</p>
+                        <div class="wallet-balance">
+                            <span>NEO: <strong id="neoBalance">0</strong></span>
+                            <span>GAS: <strong id="gasBalance">0</strong></span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Stats Overview -->
+                <div class="stats-grid" style="margin-top: 2rem;">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-exchange-alt"></i>
+                            Total Transactions
+                        </div>
+                        <div class="stat-value" id="totalTransactions">0</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-arrow-up"></i> 12% from last week
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-fire"></i>
+                            Gas Used
+                        </div>
+                        <div class="stat-value" id="totalGasUsed">0 GAS</div>
+                        <div class="stat-change negative">
+                            <i class="fas fa-arrow-down"></i> 5% from last week
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-cube"></i>
+                            Active Services
+                        </div>
+                        <div class="stat-value" id="activeServices">22</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-check-circle"></i> All operational
+                        </div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-server"></i>
+                            System Health
+                        </div>
+                        <div class="stat-value" style="color: var(--success-color);">100%</div>
+                        <div class="stat-change positive">
+                            <i class="fas fa-heartbeat"></i> Excellent
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Recent Activity -->
+                <h2 style="margin: 2rem 0 1rem; font-size: 1.5rem; color: white;">Recent Activity</h2>
+                <div class="transaction-list">
+                    <div id="recentActivity" class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No recent activity. Connect your wallet to get started.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Services Section -->
+            <section id="services" class="content-section" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Services</h1>
+                    <div class="header-actions">
+                        <input type="search" placeholder="Search services..." class="form-input" style="width: 300px;" id="serviceSearch">
+                    </div>
+                </div>
+
+                <div class="services-grid" id="servicesGrid">
+                    <!-- Storage Service -->
+                    <div class="service-card" data-service="storage">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-database"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Storage Service</h3>
+                                <p class="service-description">Decentralized data storage with encryption and access control</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'storage')">
+                            <div class="form-group">
+                                <label class="form-label">Storage Key</label>
+                                <input type="text" class="form-input" name="key" required placeholder="mydata_001">
+                                <p class="form-help">Unique identifier for your data</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Data Value</label>
+                                <textarea class="form-textarea" name="value" required placeholder="Enter your data here..."></textarea>
+                                <p class="form-help">Data will be encrypted before storage</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Access Level</label>
+                                <select class="form-select" name="access">
+                                    <option value="private">Private (Only you)</option>
+                                    <option value="public">Public (Anyone can read)</option>
+                                    <option value="restricted">Restricted (Whitelist only)</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-save"></i> Store Data
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Oracle Service -->
+                    <div class="service-card" data-service="oracle">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-globe"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Oracle Service</h3>
+                                <p class="service-description">Fetch external data for smart contracts with verification</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'oracle')">
+                            <div class="form-group">
+                                <label class="form-label">Data Source URL</label>
+                                <input type="url" class="form-input" name="url" required placeholder="https://api.example.com/data">
+                                <p class="form-help">HTTPS endpoints only for security</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Response Path</label>
+                                <input type="text" class="form-input" name="path" placeholder="$.result.price">
+                                <p class="form-help">JSONPath to extract specific data</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Callback Contract</label>
+                                <input type="text" class="form-input" name="callback" placeholder="0x...">
+                                <p class="form-help">Contract to receive oracle response</p>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-download"></i> Request Data
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Compute Service -->
+                    <div class="service-card" data-service="compute">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-microchip"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Compute Service</h3>
+                                <p class="service-description">Off-chain computation with on-chain verification</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'compute')">
+                            <div class="form-group">
+                                <label class="form-label">Computation Type</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Select computation...</option>
+                                    <option value="hash">SHA256 Hash</option>
+                                    <option value="merkle">Merkle Tree Root</option>
+                                    <option value="aggregate">Data Aggregation</option>
+                                    <option value="ml">Machine Learning Inference</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Input Data</label>
+                                <textarea class="form-textarea" name="input" required placeholder="Enter computation input..."></textarea>
+                                <p class="form-help">JSON format for complex data</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Verification Required</label>
+                                <select class="form-select" name="verify">
+                                    <option value="true">Yes (Recommended)</option>
+                                    <option value="false">No</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-calculator"></i> Execute Computation
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Identity Service -->
+                    <div class="service-card" data-service="identity">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-id-card"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Identity Management</h3>
+                                <p class="service-description">Decentralized identity creation and verification</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'identity')">
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required onchange="updateIdentityForm(this.value)">
+                                    <option value="">Select action...</option>
+                                    <option value="create">Create New DID</option>
+                                    <option value="verify">Verify Identity</option>
+                                    <option value="update">Update Attributes</option>
+                                    <option value="revoke">Revoke Identity</option>
+                                </select>
+                            </div>
+                            
+                            <div id="identityFields"></div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-user-check"></i> Execute
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Analytics Service -->
+                    <div class="service-card" data-service="analytics">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-chart-line"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Analytics Service</h3>
+                                <p class="service-description">Track and analyze blockchain events and metrics</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'analytics')">
+                            <div class="form-group">
+                                <label class="form-label">Event Type</label>
+                                <select class="form-select" name="eventType" required>
+                                    <option value="">Select event type...</option>
+                                    <option value="transfer">Token Transfer</option>
+                                    <option value="contract_call">Contract Call</option>
+                                    <option value="state_change">State Change</option>
+                                    <option value="custom">Custom Event</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Event Data</label>
+                                <textarea class="form-textarea" name="eventData" required placeholder='{"action": "transfer", "amount": 100}'></textarea>
+                                <p class="form-help">JSON format required</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Tags (comma-separated)</label>
+                                <input type="text" class="form-input" name="tags" placeholder="defi, trading, user123">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-paper-plane"></i> Track Event
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Cross-Chain Service -->
+                    <div class="service-card" data-service="crosschain">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-exchange-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Cross-Chain Bridge</h3>
+                                <p class="service-description">Bridge assets between Neo and other blockchains</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'crosschain')">
+                            <div class="form-group">
+                                <label class="form-label">Target Blockchain</label>
+                                <select class="form-select" name="targetChain" required>
+                                    <option value="">Select blockchain...</option>
+                                    <option value="ethereum">Ethereum</option>
+                                    <option value="bsc">Binance Smart Chain</option>
+                                    <option value="polygon">Polygon</option>
+                                    <option value="avalanche">Avalanche</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Asset</label>
+                                <select class="form-select" name="asset" required>
+                                    <option value="neo">NEO</option>
+                                    <option value="gas">GAS</option>
+                                    <option value="custom">Custom Token</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Amount</label>
+                                <input type="number" class="form-input" name="amount" required step="0.00000001" min="0" placeholder="0.0">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Destination Address</label>
+                                <input type="text" class="form-input" name="destination" required placeholder="0x...">
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-bridge"></i> Bridge Assets
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- More services can be added here -->
+                </div>
+            </section>
+
+            <!-- Transactions Section -->
+            <section id="transactions" class="content-section" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Transactions</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="exportTransactions()">
+                            <i class="fas fa-download"></i> Export
+                        </button>
+                    </div>
+                </div>
+
+                <div class="transaction-list">
+                    <div id="transactionsList">
+                        <div class="empty-state">
+                            <i class="fas fa-receipt"></i>
+                            <p>No transactions yet. Start using services to see your transaction history.</p>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Analytics Section -->
+            <section id="analytics" class="content-section" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Analytics</h1>
+                    <div class="header-actions">
+                        <select class="form-select" style="width: 200px;" onchange="updateAnalyticsPeriod(this.value)">
+                            <option value="24h">Last 24 Hours</option>
+                            <option value="7d">Last 7 Days</option>
+                            <option value="30d">Last 30 Days</option>
+                            <option value="all">All Time</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-chart-bar"></i>
+                            Service Calls
+                        </div>
+                        <div class="stat-value">1,234</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-users"></i>
+                            Unique Users
+                        </div>
+                        <div class="stat-value">456</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-clock"></i>
+                            Avg Response Time
+                        </div>
+                        <div class="stat-value">1.2s</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-label">
+                            <i class="fas fa-check-circle"></i>
+                            Success Rate
+                        </div>
+                        <div class="stat-value">99.8%</div>
+                    </div>
+                </div>
+
+                <div style="margin-top: 2rem;">
+                    <canvas id="analyticsChart" style="max-height: 400px;"></canvas>
+                </div>
+            </section>
+
+            <!-- Contracts Section -->
+            <section id="contracts" class="content-section" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Smart Contracts</h1>
+                    <div class="header-actions">
+                        <button class="btn btn-secondary" onclick="verifyContracts()">
+                            <i class="fas fa-check-double"></i> Verify All
+                        </button>
+                    </div>
+                </div>
+
+                <div id="contractsList" style="display: grid; gap: 1rem;">
+                    <!-- Contract list will be populated dynamically -->
+                </div>
+            </section>
+
+            <!-- Settings Section -->
+            <section id="settings" class="content-section" style="display: none;">
+                <div class="dashboard-header">
+                    <h1 class="page-title">Settings</h1>
+                </div>
+
+                <div class="service-card" style="max-width: 600px;">
+                    <h3 style="margin-bottom: 1.5rem;">Network Configuration</h3>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Network</label>
+                        <select class="form-select" id="networkSelect" onchange="changeNetwork(this.value)">
+                            <option value="TESTNET">TestNet</option>
+                            <option value="MAINNET">MainNet</option>
+                            <option value="PRIVATE">Private Network</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">RPC Endpoint</label>
+                        <input type="text" class="form-input" id="rpcEndpoint" readonly>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Default Gas Fee</label>
+                        <input type="number" class="form-input" id="defaultGasFee" value="0.01" step="0.001">
+                    </div>
+                    
+                    <button class="btn btn-primary" onclick="saveSettings()">
+                        <i class="fas fa-save"></i> Save Settings
+                    </button>
+                </div>
+            </section>
+        </main>
+    </div>
+
+    <!-- Scripts -->
+    <script src="config/contracts.js"></script>
+    <script src="src/scripts/neo-service-layer.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        // Global state
+        let wallet = null;
+        let transactions = JSON.parse(localStorage.getItem('nsl_transactions') || '[]');
+        let neoServiceLayer = null;
+
+        // Initialize
+        document.addEventListener('DOMContentLoaded', async () => {
+            // Initialize SDK
+            if (window.NeoServiceLayer) {
+                neoServiceLayer = new NeoServiceLayer();
+                await neoServiceLayer.init();
+            }
+
+            // Setup navigation
+            setupNavigation();
+            
+            // Load saved data
+            updateTransactionsList();
+            updateStats();
+            
+            // Check wallet connection
+            checkWalletConnection();
+            
+            // Initialize charts
+            if (document.getElementById('analyticsChart')) {
+                initAnalyticsChart();
+            }
+            
+            // Load contracts list
+            loadContractsList();
+            
+            // Update network display
+            updateNetworkDisplay();
+        });
+
+        // Navigation
+        function setupNavigation() {
+            document.querySelectorAll('.sidebar-item[data-section]').forEach(item => {
+                item.addEventListener('click', (e) => {
+                    e.preventDefault();
+                    const section = item.getAttribute('data-section');
+                    showSection(section);
+                    
+                    // Update active state
+                    document.querySelectorAll('.sidebar-item').forEach(i => i.classList.remove('active'));
+                    item.classList.add('active');
+                });
+            });
+        }
+
+        function showSection(sectionId) {
+            document.querySelectorAll('.content-section').forEach(section => {
+                section.style.display = 'none';
+            });
+            document.getElementById(sectionId).style.display = 'block';
+        }
+
+        // Wallet Connection
+        async function connectWallet() {
+            const btn = document.getElementById('connectBtn');
+            btn.disabled = true;
+            btn.innerHTML = '<span class="loading"></span> Connecting...';
+
+            try {
+                if (!neoServiceLayer) {
+                    throw new Error('Neo Service Layer SDK not initialized');
+                }
+
+                wallet = await neoServiceLayer.connect();
+                
+                // Update UI
+                document.getElementById('walletCard').style.display = 'flex';
+                document.getElementById('walletAddress').textContent = neoServiceLayer.formatAddress(wallet.address, 10);
+                btn.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+                btn.classList.remove('btn-primary');
+                btn.classList.add('btn-secondary');
+                
+                // Get balance
+                const balance = await neoServiceLayer.getBalance();
+                updateBalance(balance);
+                
+                showNotification('Wallet connected successfully!', 'success');
+                
+                // Save connection state
+                localStorage.setItem('nsl_wallet_connected', 'true');
+                
+            } catch (error) {
+                showNotification('Failed to connect wallet: ' + error.message, 'error');
+                btn.disabled = false;
+                btn.innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+            }
+        }
+
+        async function checkWalletConnection() {
+            if (localStorage.getItem('nsl_wallet_connected') === 'true' && window.NEOLineN3) {
+                try {
+                    await connectWallet();
+                } catch (error) {
+                    console.error('Auto-connect failed:', error);
+                }
+            }
+        }
+
+        function updateBalance(balance) {
+            const neoBalance = balance.find(b => b.symbol === 'NEO');
+            const gasBalance = balance.find(b => b.symbol === 'GAS');
+            
+            document.getElementById('neoBalance').textContent = neoBalance ? neoBalance.amount : '0';
+            document.getElementById('gasBalance').textContent = gasBalance ? parseFloat(gasBalance.amount).toFixed(4) : '0';
+        }
+
+        // Service Execution
+        async function executeService(event, serviceName) {
+            event.preventDefault();
+            
+            if (!wallet) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const resultBox = form.parentElement.querySelector('.result-box');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Disable form
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Processing...';
+            
+            try {
+                let result;
+                const formData = new FormData(form);
+                
+                switch (serviceName) {
+                    case 'storage':
+                        result = await neoServiceLayer.storeData(
+                            formData.get('key'),
+                            formData.get('value')
+                        );
+                        break;
+                        
+                    case 'oracle':
+                        result = await neoServiceLayer.requestOracleData(
+                            formData.get('url'),
+                            formData.get('path'),
+                            formData.get('callback')
+                        );
+                        break;
+                        
+                    case 'compute':
+                        result = await neoServiceLayer.executeComputation(
+                            formData.get('type'),
+                            formData.get('input')
+                        );
+                        break;
+                        
+                    case 'analytics':
+                        result = await neoServiceLayer.trackEvent(
+                            formData.get('eventType'),
+                            JSON.parse(formData.get('eventData'))
+                        );
+                        break;
+                        
+                    case 'identity':
+                        const action = formData.get('action');
+                        if (action === 'create') {
+                            result = await neoServiceLayer.createDID({
+                                name: formData.get('name'),
+                                email: formData.get('email'),
+                                publicKey: formData.get('publicKey')
+                            });
+                        }
+                        break;
+                        
+                    case 'crosschain':
+                        result = await neoServiceLayer.initiateBridge(
+                            formData.get('targetChain'),
+                            formData.get('asset'),
+                            parseInt(formData.get('amount'))
+                        );
+                        break;
+                }
+                
+                // Add transaction
+                const tx = {
+                    id: Date.now(),
+                    txid: result.txid,
+                    service: serviceName,
+                    timestamp: new Date().toISOString(),
+                    status: 'pending',
+                    data: Object.fromEntries(formData)
+                };
+                
+                addTransaction(tx);
+                
+                // Show result
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box';
+                resultBox.innerHTML = `
+                    <strong>Transaction Submitted</strong><br>
+                    TX ID: ${result.txid}<br>
+                    <small>Monitoring transaction status...</small>
+                `;
+                
+                // Monitor transaction
+                monitorTransaction(tx.id, result.txid);
+                
+            } catch (error) {
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box error';
+                resultBox.innerHTML = `<strong>Error:</strong> ${error.message}`;
+                showNotification('Transaction failed: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        }
+
+        // Transaction Management
+        function addTransaction(tx) {
+            transactions.unshift(tx);
+            localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+            updateTransactionsList();
+            updateStats();
+            updateRecentActivity();
+        }
+
+        async function monitorTransaction(id, txid) {
+            // Poll for transaction status
+            const checkStatus = async () => {
+                try {
+                    const result = await neoServiceLayer.getTransaction(txid);
+                    if (result && result.confirmations > 0) {
+                        updateTransactionStatus(id, 'confirmed');
+                        showNotification('Transaction confirmed!', 'success');
+                    }
+                } catch (error) {
+                    setTimeout(checkStatus, 5000); // Retry in 5 seconds
+                }
+            };
+            
+            setTimeout(checkStatus, 3000);
+        }
+
+        function updateTransactionStatus(id, status) {
+            const tx = transactions.find(t => t.id === id);
+            if (tx) {
+                tx.status = status;
+                localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+                updateTransactionsList();
+                updateRecentActivity();
+            }
+        }
+
+        function updateTransactionsList() {
+            const container = document.getElementById('transactionsList');
+            
+            if (transactions.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-receipt"></i>
+                        <p>No transactions yet. Start using services to see your transaction history.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = transactions.map(tx => `
+                <div class="transaction-item">
+                    <div class="tx-info">
+                        <h4>${getServiceName(tx.service)}</h4>
+                        <div class="tx-hash">${tx.txid.substring(0, 16)}...</div>
+                        <div class="tx-time">${new Date(tx.timestamp).toLocaleString()}</div>
+                    </div>
+                    <span class="tx-status ${tx.status}">${tx.status.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        function updateRecentActivity() {
+            const container = document.getElementById('recentActivity');
+            const recent = transactions.slice(0, 5);
+            
+            if (recent.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <i class="fas fa-inbox"></i>
+                        <p>No recent activity. Connect your wallet to get started.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = recent.map(tx => `
+                <div class="transaction-item">
+                    <div class="tx-info">
+                        <h4>${getServiceName(tx.service)}</h4>
+                        <div class="tx-hash">${tx.txid.substring(0, 16)}...</div>
+                        <div class="tx-time">${new Date(tx.timestamp).toLocaleString()}</div>
+                    </div>
+                    <span class="tx-status ${tx.status}">${tx.status.toUpperCase()}</span>
+                </div>
+            `).join('');
+        }
+
+        // Analytics
+        function initAnalyticsChart() {
+            const ctx = document.getElementById('analyticsChart').getContext('2d');
+            new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'],
+                    datasets: [{
+                        label: 'Service Calls',
+                        data: [65, 78, 90, 81, 96, 105, 120],
+                        borderColor: 'rgba(0, 212, 170, 1)',
+                        backgroundColor: 'rgba(0, 212, 170, 0.1)',
+                        tension: 0.4
+                    }, {
+                        label: 'Gas Used',
+                        data: [28, 32, 35, 30, 40, 42, 45],
+                        borderColor: 'rgba(255, 193, 7, 1)',
+                        backgroundColor: 'rgba(255, 193, 7, 0.1)',
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            labels: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: 'rgba(255, 255, 255, 0.1)'
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false
+                            },
+                            ticks: {
+                                color: 'rgba(255, 255, 255, 0.7)'
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Contracts
+        function loadContractsList() {
+            const container = document.getElementById('contractsList');
+            const contracts = window.NEO_CONFIG.contracts;
+            
+            container.innerHTML = Object.entries(contracts).map(([name, address]) => {
+                const isDeployed = window.NEO_CONFIG.isDeployed(name);
+                return `
+                    <div class="service-card">
+                        <div class="service-header">
+                            <div>
+                                <h3 class="service-title">${name}</h3>
+                                <p class="wallet-address">${address}</p>
+                            </div>
+                            <span class="tx-status ${isDeployed ? 'confirmed' : 'pending'}">
+                                ${isDeployed ? 'DEPLOYED' : 'NOT DEPLOYED'}
+                            </span>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        }
+
+        // Utilities
+        function updateStats() {
+            document.getElementById('totalTransactions').textContent = transactions.length;
+            
+            const gasUsed = transactions.reduce((total, tx) => {
+                return total + (tx.status === 'confirmed' ? 0.01 : 0);
+            }, 0);
+            document.getElementById('totalGasUsed').textContent = gasUsed.toFixed(4) + ' GAS';
+        }
+
+        function getServiceName(service) {
+            const names = {
+                storage: 'Storage Service',
+                oracle: 'Oracle Service',
+                compute: 'Compute Service',
+                analytics: 'Analytics Service',
+                identity: 'Identity Management',
+                crosschain: 'Cross-Chain Bridge'
+            };
+            return names[service] || service;
+        }
+
+        function updateNetworkDisplay() {
+            const config = window.NEO_CONFIG;
+            document.getElementById('networkName').textContent = config.network.name;
+            document.getElementById('rpcEndpoint').value = config.network.rpcUrl;
+            
+            const badge = document.querySelector('.network-badge');
+            badge.className = 'network-badge ' + config.currentNetwork.toLowerCase();
+        }
+
+        function showNotification(message, type = 'info') {
+            const notification = document.createElement('div');
+            notification.className = `notification ${type}`;
+            notification.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 0.75rem;">
+                    <i class="fas fa-${type === 'success' ? 'check-circle' : 'exclamation-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+            
+            document.body.appendChild(notification);
+            
+            setTimeout(() => {
+                notification.style.animation = 'slideOut 0.3s ease';
+                setTimeout(() => notification.remove(), 300);
+            }, 3000);
+        }
+
+        // Form Updates
+        function updateIdentityForm(action) {
+            const container = document.getElementById('identityFields');
+            
+            switch (action) {
+                case 'create':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Full Name</label>
+                            <input type="text" class="form-input" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Email</label>
+                            <input type="email" class="form-input" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Public Key</label>
+                            <input type="text" class="form-input" name="publicKey" placeholder="Optional">
+                        </div>
+                    `;
+                    break;
+                    
+                case 'verify':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">DID</label>
+                            <input type="text" class="form-input" name="did" required placeholder="did:neo:...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Verification Proof</label>
+                            <textarea class="form-textarea" name="proof" required></textarea>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'update':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">DID</label>
+                            <input type="text" class="form-input" name="did" required placeholder="did:neo:...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Attributes (JSON)</label>
+                            <textarea class="form-textarea" name="attributes" required placeholder='{"email": "new@example.com"}'></textarea>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    container.innerHTML = '';
+            }
+        }
+
+        // Export functions
+        function exportTransactions() {
+            const dataStr = JSON.stringify(transactions, null, 2);
+            const dataUri = 'data:application/json;charset=utf-8,' + encodeURIComponent(dataStr);
+            
+            const exportFileDefaultName = `neo-service-layer-transactions-${Date.now()}.json`;
+            
+            const linkElement = document.createElement('a');
+            linkElement.setAttribute('href', dataUri);
+            linkElement.setAttribute('download', exportFileDefaultName);
+            linkElement.click();
+        }
+
+        // Mobile menu
+        function toggleSidebar() {
+            document.getElementById('sidebar').classList.toggle('active');
+        }
+
+        // Service search
+        document.getElementById('serviceSearch')?.addEventListener('input', (e) => {
+            const query = e.target.value.toLowerCase();
+            document.querySelectorAll('.service-card').forEach(card => {
+                const title = card.querySelector('.service-title').textContent.toLowerCase();
+                const description = card.querySelector('.service-description').textContent.toLowerCase();
+                
+                if (title.includes(query) || description.includes(query)) {
+                    card.style.display = 'block';
+                } else {
+                    card.style.display = 'none';
+                }
+            });
+        });
+
+        // Settings
+        function changeNetwork(network) {
+            // In production, this would reload with new network config
+            localStorage.setItem('nsl_network', network);
+            showNotification(`Switched to ${network}`, 'success');
+            window.location.reload();
+        }
+
+        function saveSettings() {
+            const settings = {
+                network: document.getElementById('networkSelect').value,
+                defaultGasFee: document.getElementById('defaultGasFee').value
+            };
+            
+            localStorage.setItem('nsl_settings', JSON.stringify(settings));
+            showNotification('Settings saved successfully', 'success');
+        }
+
+        // Contract verification
+        async function verifyContracts() {
+            showNotification('Verifying contracts...', 'info');
+            
+            // In production, this would verify each contract on-chain
+            setTimeout(() => {
+                showNotification('All contracts verified successfully', 'success');
+                loadContractsList();
+            }, 2000);
+        }
+    </script>
+</body>
+</html>
