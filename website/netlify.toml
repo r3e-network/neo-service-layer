@@ -1,9 +1,9 @@
 [build]
-  # Build command (not needed for static site)
-  command = ""
+  # Build command for Next.js
+  command = "npm install && npm run build"
   
   # Directory to publish
-  publish = "."
+  publish = ".next"
   
   # Functions directory (if needed in future)
   functions = "netlify/functions"
@@ -13,17 +13,7 @@
   NODE_VERSION = "18"
 
 # Redirect rules
-[[redirects]]
-  # Redirect /docs/* to documentation pages
-  from = "/docs/*"
-  to = "/docs/:splat"
-  status = 200
-
-[[redirects]]
-  # SPA fallback for any unmatched routes
-  from = "/*"
-  to = "/index.html"
-  status = 200
+# Note: Next.js handles routing automatically, no manual redirects needed
 
 # Headers for security and performance
 [[headers]]
@@ -73,30 +63,12 @@
   [headers.values]
     Cache-Control = "public, max-age=31536000, immutable"
 
-# Form handling (for future contact forms)
-[build.processing]
-  skip_processing = false
-
-[build.processing.css]
-  bundle = true
-  minify = true
-
-[build.processing.js]
-  bundle = true
-  minify = true
-
-[build.processing.html]
-  pretty_urls = true
-
-[build.processing.images]
-  compress = true
+# Build processing handled by Next.js
+# Next.js automatically handles bundling, minification, and optimization
 
 # Plugin configuration
 [[plugins]]
-  package = "netlify-plugin-minify-html"
-  
-  [plugins.inputs]
-    contexts = ["production"]
+  package = "@netlify/plugin-nextjs"
 
 # Edge functions (for future use)
 # [[edge_functions]]
@@ -105,9 +77,9 @@
 
 # Dev server configuration
 [dev]
-  command = "python3 -m http.server 8000"
-  port = 8000
-  publish = "."
+  command = "npm run dev"
+  port = 3000
+  publish = ".next"
   autoLaunch = true
 
 # Context-specific settings
