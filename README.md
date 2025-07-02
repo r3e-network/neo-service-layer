@@ -17,7 +17,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 - **🌐 Interactive Web Application**: Full-featured web interface with real-time service interaction
 - **🤖 AI-Powered Services**: Pattern recognition, fraud detection, and predictive analytics
 - **⛓️ Multi-Chain Support**: Neo N3 and Neo X blockchain integration
-- **🏗️ Microservices Architecture**: 24 production-ready services
+- **🏗️ Microservices Architecture**: 25 production-ready services
 - **📊 Enterprise-Grade Quality**: 80%+ test coverage, comprehensive documentation
 - **🚀 Production Ready**: Docker containerization, monitoring, and CI/CD
 
@@ -39,11 +39,11 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 │     • Service Lifecycle      • Dependency Injection        │
 │     • Health Monitoring      • Configuration Management    │
 ├─────────────────────────────────────────────────────────────┤
-│  🏢 Microservices Portfolio (24 Services)                 │
+│  🏢 Microservices Portfolio (25 Services)                 │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
-│  │   Core (4)  │ │Security (4) │ │    AI (2)   │ │Advanced │ │
-│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │   (4)   │ │
-│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────┘ │
+│  │   Core (4)  │ │Security (5) │ │    AI (2)   │ │Advanced │ │
+│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │   (1)   │ │
+│  └─────────────┘ └─────────────┘ └───(4)────────┘ └─────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │  🔒 Intel SGX + Occlum LibOS (Trusted Execution)          │
 │     • Hardware Security      • Remote Attestation          │
