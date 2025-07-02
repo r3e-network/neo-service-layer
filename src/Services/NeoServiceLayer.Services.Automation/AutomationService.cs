@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 
@@ -9,12 +10,13 @@ namespace NeoServiceLayer.Services.Automation;
 /// <summary>
 /// Implementation of the Automation Service that provides smart contract automation and scheduling capabilities.
 /// </summary>
-public class AutomationService : EnclaveBlockchainServiceBase, IAutomationService, IDisposable
+public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomationService, IDisposable
 {
     private readonly Dictionary<string, AutomationJob> _jobs = new();
     private readonly Dictionary<string, List<AutomationExecution>> _executionHistory = new();
     private readonly object _jobsLock = new();
     private readonly Timer _executionTimer;
+    private readonly Timer? _cleanupTimer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutomationService"/> class.
@@ -22,13 +24,25 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
-    public AutomationService(ILogger<AutomationService> logger, IEnclaveManager? enclaveManager = null, IServiceConfiguration? configuration = null)
+    /// <param name="persistentStorage">The persistent storage provider.</param>
+    public AutomationService(
+        ILogger<AutomationService> logger, 
+        IEnclaveManager? enclaveManager = null, 
+        IServiceConfiguration? configuration = null,
+        IPersistentStorageProvider? persistentStorage = null)
         : base("AutomationService", "Smart contract automation and scheduling service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
+        _persistentStorage = persistentStorage;
 
         // Initialize execution timer (runs every minute)
         _executionTimer = new Timer(ExecuteScheduledJobs, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
+
+        // Initialize cleanup timer (runs every 24 hours) if persistent storage is available
+        if (_persistentStorage != null)
+        {
+            _cleanupTimer = new Timer(async _ => await CleanupOldExecutionsAsync(), null, TimeSpan.FromHours(24), TimeSpan.FromHours(24));
+        }
 
         AddCapability<IAutomationService>();
         AddDependency(new ServiceDependency("EventSubscriptionService", true, "1.0.0"));
@@ -123,7 +137,9 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     job.Status = AutomationJobStatus.Active;
                 }
 
-                await Task.CompletedTask; // Ensure async operation
+                // Persist the job
+                await PersistJobAsync(job);
+
                 Logger.LogInformation("Created automation {AutomationId} for {ActionType} on {Blockchain}",
                     automationId, request.ActionType, blockchainType);
 
@@ -192,7 +208,9 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                 job.Status = AutomationJobStatus.Active;
             }
 
-            await Task.CompletedTask; // Ensure async operation
+            // Persist the job
+            await PersistJobAsync(job);
+
             Logger.LogInformation("Created automation job {JobId} for contract {Contract} on {Blockchain}",
                 jobId, request.TargetContract, blockchainType);
 
@@ -234,6 +252,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
 
         return await ExecuteInEnclaveAsync(async () =>
         {
+            bool cancelled = false;
             lock (_jobsLock)
             {
                 if (_jobs.TryGetValue(jobId, out var job))
@@ -242,11 +261,18 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     {
                         job.Status = AutomationJobStatus.Cancelled;
                         job.IsEnabled = false;
+                        cancelled = true;
 
                         Logger.LogInformation("Cancelled automation job {JobId} on {Blockchain}", jobId, blockchainType);
-                        return true;
                     }
                 }
+            }
+
+            if (cancelled)
+            {
+                // Persist the updated job
+                await PersistJobAsync(_jobs[jobId]);
+                return true;
             }
 
             await Task.CompletedTask; // Ensure async operation
@@ -267,6 +293,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
 
         return await ExecuteInEnclaveAsync(async () =>
         {
+            bool paused = false;
             lock (_jobsLock)
             {
                 if (_jobs.TryGetValue(jobId, out var job))
@@ -275,11 +302,18 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     {
                         job.Status = AutomationJobStatus.Paused;
                         job.IsEnabled = false;
+                        paused = true;
 
                         Logger.LogInformation("Paused automation job {JobId} on {Blockchain}", jobId, blockchainType);
-                        return true;
                     }
                 }
+            }
+
+            if (paused)
+            {
+                // Persist the updated job
+                await PersistJobAsync(_jobs[jobId]);
+                return true;
             }
 
             await Task.CompletedTask; // Ensure async operation
@@ -300,6 +334,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
 
         return await ExecuteInEnclaveAsync(async () =>
         {
+            bool resumed = false;
             lock (_jobsLock)
             {
                 if (_jobs.TryGetValue(jobId, out var job))
@@ -309,11 +344,18 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                         job.Status = AutomationJobStatus.Active;
                         job.IsEnabled = true;
                         job.NextExecution = CalculateNextExecution(job.Trigger);
+                        resumed = true;
 
                         Logger.LogInformation("Resumed automation job {JobId} on {Blockchain}", jobId, blockchainType);
-                        return true;
                     }
                 }
+            }
+
+            if (resumed)
+            {
+                // Persist the updated job
+                await PersistJobAsync(_jobs[jobId]);
+                return true;
             }
 
             await Task.CompletedTask; // Ensure async operation
@@ -381,8 +423,14 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     }
 
                     Logger.LogInformation("Updated automation job {JobId} on {Blockchain}", jobId, blockchainType);
-                    return true;
                 }
+            }
+
+            if (_jobs.ContainsKey(jobId))
+            {
+                // Persist the updated job
+                await PersistJobAsync(_jobs[jobId]);
+                return true;
             }
 
             await Task.CompletedTask; // Ensure async operation
@@ -495,6 +543,9 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
             job.ExecutionCount++;
             job.NextExecution = CalculateNextExecution(job.Trigger);
 
+            // Persist the updated job
+            await PersistJobAsync(job);
+
             Logger.LogInformation("Successfully executed automation job {JobId}", job.Id);
         }
         catch (Exception ex)
@@ -522,6 +573,9 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     }
                 }
             }
+
+            // Persist execution history
+            await PersistExecutionAsync(job.Id, execution);
         }
     }
 
@@ -1191,7 +1245,8 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     }
                 }
 
-                await Task.CompletedTask;
+                // Persist the updated job
+                await PersistJobAsync(_jobs[request.AutomationId]);
                 return new UpdateAutomationResponse
                 {
                     Success = true,
@@ -1225,11 +1280,13 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
         {
             try
             {
+                bool removed = false;
                 lock (_jobsLock)
                 {
                     if (_jobs.Remove(automationId))
                     {
                         _executionHistory.Remove(automationId);
+                        removed = true;
                         Logger.LogInformation("Deleted automation {AutomationId} on {Blockchain}", automationId, blockchainType);
                     }
                     else
@@ -1238,7 +1295,11 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
                     }
                 }
 
-                await Task.CompletedTask;
+                if (removed)
+                {
+                    // Remove from persistent storage
+                    await RemovePersistedJobAsync(automationId);
+                }
                 return new DeleteAutomationResponse
                 {
                     Success = true,
@@ -1760,8 +1821,8 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     {
         Logger.LogInformation("Initializing Automation Service");
 
-        // Base initialization is handled by the framework
-        await Task.CompletedTask;
+        // Load persistent jobs
+        await LoadPersistentJobsAsync();
 
         Logger.LogInformation("Automation Service initialized successfully");
         return true;
@@ -1780,8 +1841,12 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     {
         Logger.LogInformation("Stopping Automation Service");
 
-        // Dispose timer
+        // Dispose timers
         _executionTimer?.Dispose();
+        _cleanupTimer?.Dispose();
+
+        // Persist statistics before stopping
+        await PersistStatisticsAsync();
 
         await Task.CompletedTask;
         return true;
@@ -1895,6 +1960,7 @@ public class AutomationService : EnclaveBlockchainServiceBase, IAutomationServic
     public new void Dispose()
     {
         _executionTimer?.Dispose();
+        _cleanupTimer?.Dispose();
         base.Dispose();
         GC.SuppressFinalize(this);
     }

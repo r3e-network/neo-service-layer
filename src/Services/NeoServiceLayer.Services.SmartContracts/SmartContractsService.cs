@@ -11,7 +11,7 @@ namespace NeoServiceLayer.Services.SmartContracts;
 /// <summary>
 /// Unified smart contracts service that manages both Neo N3 and Neo X smart contract operations.
 /// </summary>
-public class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContractsService
+public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContractsService
 {
     private readonly IServiceConfiguration _configuration;
     private new readonly IEnclaveManager _enclaveManager;
@@ -30,16 +30,19 @@ public class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContrac
     /// <param name="neoN3Manager">The Neo N3 smart contract manager.</param>
     /// <param name="neoXManager">The Neo X smart contract manager.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public SmartContractsService(
         IServiceConfiguration configuration,
         IEnclaveManager enclaveManager,
         NeoN3SmartContractManager neoN3Manager,
         NeoXSmartContractManager neoXManager,
-        ILogger<SmartContractsService> logger)
+        ILogger<SmartContractsService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("SmartContracts", "Unified Smart Contracts Management Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _configuration = configuration;
         _enclaveManager = enclaveManager;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
@@ -67,6 +70,9 @@ public class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContrac
         try
         {
             Logger.LogInformation("Initializing Smart Contracts Service...");
+
+            // Initialize persistent storage
+            await InitializePersistentStorageAsync();
 
             // Initialize all blockchain managers
             var initTasks = _managers.Values.Select(async manager =>
@@ -775,4 +781,14 @@ public class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContrac
     }
 
     #endregion
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
+    }
 }

@@ -1,0 +1,665 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentation - Neo Service Layer</title>
+    <meta name="description" content="Complete documentation for Neo Service Layer - Enterprise blockchain infrastructure with 22+ smart contracts and Intel SGX support.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/components.css">
+    <link rel="stylesheet" href="../src/styles/navigation.css">
+    <link rel="stylesheet" href="../src/styles/main.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+</head>
+<body>
+    <!-- Skip to content -->
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">⚡</span>
+                Neo Service Layer
+            </a>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="/docs/" class="nav-link active">Documentation</a>
+                    <div class="nav-dropdown-menu">
+                        <a href="/docs/quick-start.html" class="nav-dropdown-item">Quick Start</a>
+                        <a href="/docs/sdk-v2-reference.html" class="nav-dropdown-item">SDK v2 Reference</a>
+                        <a href="/docs/api-reference.html" class="nav-dropdown-item">API Reference</a>
+                        <a href="/docs/deployment-guide.html" class="nav-dropdown-item">Deployment Guide</a>
+                        <a href="/docs/migration-guide.html" class="nav-dropdown-item">Migration Guide</a>
+                    </div>
+                </div>
+                <a href="/app.html" class="nav-link">Dashboard</a>
+                <a href="https://github.com/neo-service-layer" class="nav-link" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="neo-btn neo-btn-ghost neo-btn-sm" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="/app.html" class="neo-btn neo-btn-primary neo-btn-sm">Launch App</a>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Main Content -->
+    <main id="main-content">
+        <!-- Hero Section -->
+        <section class="docs-hero">
+            <div class="container">
+                <div class="docs-hero-content">
+                    <h1>Neo Service Layer Documentation</h1>
+                    <p class="docs-hero-description">
+                        Everything you need to build enterprise blockchain applications with 
+                        Neo Service Layer's comprehensive infrastructure and tooling.
+                    </p>
+                    
+                    <!-- Search Bar -->
+                    <div class="docs-search">
+                        <div class="search-input-wrapper">
+                            <i class="fas fa-search search-icon"></i>
+                            <input type="text" placeholder="Search documentation..." class="search-input" id="docs-search">
+                            <div class="search-shortcut">⌘K</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Documentation Categories -->
+        <section class="docs-categories">
+            <div class="container">
+                <!-- Getting Started -->
+                <div class="docs-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-rocket"></i>
+                        </div>
+                        <div>
+                            <h2>Getting Started</h2>
+                            <p>Quick start guides and tutorials to get you up and running</p>
+                        </div>
+                    </div>
+                    
+                    <div class="docs-grid">
+                        <a href="quick-start.html" class="doc-card featured">
+                            <div class="doc-icon">
+                                <i class="fas fa-play"></i>
+                            </div>
+                            <h3>Quick Start Guide</h3>
+                            <p>Get started with Neo Service Layer in 5 minutes. Install, configure, and deploy your first smart contract.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 5 min read</span>
+                                <span class="doc-badge">Essential</span>
+                            </div>
+                        </a>
+                        
+                        <a href="installation.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-download"></i>
+                            </div>
+                            <h3>Installation & Setup</h3>
+                            <p>Detailed installation instructions for all supported platforms and environments.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 10 min read</span>
+                            </div>
+                        </a>
+                        
+                        <a href="core-concepts.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h3>Core Concepts</h3>
+                            <p>Understanding Neo Service Layer architecture, services, and key concepts.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 15 min read</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Professional Documentation -->
+                <div class="docs-category">
+                    <div class="category-header">
+                        <div class="category-icon professional">
+                            <i class="fas fa-crown"></i>
+                        </div>
+                        <div>
+                            <h2>Professional Documentation</h2>
+                            <p>Enterprise-grade comprehensive reference documentation</p>
+                        </div>
+                    </div>
+                    
+                    <div class="docs-grid">
+                        <a href="sdk-v2-reference.html" class="doc-card professional featured">
+                            <div class="doc-icon">
+                                <i class="fas fa-code"></i>
+                            </div>
+                            <h3>SDK v2 Complete Reference</h3>
+                            <p>Comprehensive JavaScript/TypeScript SDK documentation with all services, methods, and advanced features.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 45 min read</span>
+                                <span class="doc-badge professional">Professional</span>
+                            </div>
+                        </a>
+                        
+                        <a href="api-reference.html" class="doc-card professional">
+                            <div class="doc-icon">
+                                <i class="fas fa-server"></i>
+                            </div>
+                            <h3>API Complete Reference</h3>
+                            <p>Full REST API documentation with authentication, endpoints, and service specifications.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 60 min read</span>
+                                <span class="doc-badge professional">Professional</span>
+                            </div>
+                        </a>
+                        
+                        <a href="deployment-guide.html" class="doc-card professional">
+                            <div class="doc-icon">
+                                <i class="fas fa-cloud-upload-alt"></i>
+                            </div>
+                            <h3>Deployment & Operations</h3>
+                            <p>Enterprise deployment guide with Kubernetes, Intel SGX setup, and production operations.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 90 min read</span>
+                                <span class="doc-badge professional">Professional</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- SDK Documentation -->
+                <div class="docs-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-puzzle-piece"></i>
+                        </div>
+                        <div>
+                            <h2>SDK Documentation</h2>
+                            <p>Client libraries and integration guides</p>
+                        </div>
+                    </div>
+                    
+                    <div class="docs-grid">
+                        <a href="javascript-sdk.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fab fa-js-square"></i>
+                            </div>
+                            <h3>JavaScript SDK</h3>
+                            <p>Web and Node.js integration with TypeScript support and real-time features.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 20 min read</span>
+                                <span class="doc-badge">Popular</span>
+                            </div>
+                        </a>
+                        
+                        <a href="migration-guide.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-arrows-alt-h"></i>
+                            </div>
+                            <h3>Migration Guide</h3>
+                            <p>Step-by-step guide for upgrading from SDK v1 to v2 with breaking changes and new features.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 25 min read</span>
+                            </div>
+                        </a>
+                        
+                        <a href="error-codes.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-exclamation-triangle"></i>
+                            </div>
+                            <h3>Error Codes Reference</h3>
+                            <p>Complete error codes documentation with troubleshooting and best practices.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 15 min read</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Examples & Tutorials -->
+                <div class="docs-category">
+                    <div class="category-header">
+                        <div class="category-icon">
+                            <i class="fas fa-laptop-code"></i>
+                        </div>
+                        <div>
+                            <h2>Examples & Tutorials</h2>
+                            <p>Practical examples and step-by-step tutorials</p>
+                        </div>
+                    </div>
+                    
+                    <div class="docs-grid">
+                        <a href="contract-examples.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-file-contract"></i>
+                            </div>
+                            <h3>Smart Contract Examples</h3>
+                            <p>Sample contracts showcasing different services and integration patterns.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 30 min read</span>
+                            </div>
+                        </a>
+                        
+                        <a href="tutorials.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-graduation-cap"></i>
+                            </div>
+                            <h3>Step-by-Step Tutorials</h3>
+                            <p>Build complete applications with guided tutorials and explanations.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 45 min read</span>
+                            </div>
+                        </a>
+                        
+                        <a href="best-practices.html" class="doc-card">
+                            <div class="doc-icon">
+                                <i class="fas fa-star"></i>
+                            </div>
+                            <h3>Best Practices</h3>
+                            <p>Production-ready patterns, security guidelines, and performance optimization.</p>
+                            <div class="doc-meta">
+                                <span><i class="fas fa-clock"></i> 25 min read</span>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Quick Actions -->
+        <section class="docs-actions">
+            <div class="container">
+                <div class="actions-grid">
+                    <div class="action-card">
+                        <i class="fas fa-rocket"></i>
+                        <h3>Ready to Start?</h3>
+                        <p>Jump right into building with our quick start guide</p>
+                        <a href="quick-start.html" class="neo-btn neo-btn-primary">Get Started</a>
+                    </div>
+                    
+                    <div class="action-card">
+                        <i class="fas fa-question-circle"></i>
+                        <h3>Need Help?</h3>
+                        <p>Join our community and get support from other developers</p>
+                        <a href="https://discord.gg/neo-service-layer" class="neo-btn neo-btn-ghost">Join Discord</a>
+                    </div>
+                    
+                    <div class="action-card">
+                        <i class="fas fa-bug"></i>
+                        <h3>Found an Issue?</h3>
+                        <p>Report bugs or suggest improvements on GitHub</p>
+                        <a href="https://github.com/neo-service-layer/issues" class="neo-btn neo-btn-ghost">Report Issue</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Documentation</h4>
+                    <ul>
+                        <li><a href="quick-start.html">Quick Start</a></li>
+                        <li><a href="sdk-v2-reference.html">SDK Reference</a></li>
+                        <li><a href="api-reference.html">API Reference</a></li>
+                        <li><a href="deployment-guide.html">Deployment</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul>
+                        <li><a href="https://github.com/neo-service-layer">GitHub</a></li>
+                        <li><a href="https://discord.gg/neo-service-layer">Discord</a></li>
+                        <li><a href="https://twitter.com/neoservicelayer">Twitter</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="/roadmap">Roadmap</a></li>
+                        <li><a href="/security">Security</a></li>
+                        <li><a href="/terms">Terms</a></li>
+                        <li><a href="/privacy">Privacy</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="../src/scripts/navigation.js"></script>
+    <script>
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    
+                    const icon = themeToggle.querySelector('i');
+                    icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                });
+            }
+            
+            // Search functionality
+            const searchInput = document.getElementById('docs-search');
+            if (searchInput) {
+                searchInput.addEventListener('input', function(e) {
+                    const query = e.target.value.toLowerCase();
+                    const docCards = document.querySelectorAll('.doc-card');
+                    
+                    docCards.forEach(card => {
+                        const title = card.querySelector('h3').textContent.toLowerCase();
+                        const description = card.querySelector('p').textContent.toLowerCase();
+                        
+                        if (title.includes(query) || description.includes(query)) {
+                            card.style.display = 'block';
+                        } else {
+                            card.style.display = query ? 'none' : 'block';
+                        }
+                    });
+                });
+            }
+        });
+    </script>
+
+    <style>
+        /* Documentation-specific styles */
+        .docs-hero {
+            background: linear-gradient(135deg, var(--neo-black) 0%, var(--neo-gray-900) 100%);
+            padding: var(--neo-space-24) 0 var(--neo-space-16);
+            text-align: center;
+        }
+        
+        .docs-hero-content h1 {
+            font-size: var(--neo-text-5xl);
+            font-weight: var(--neo-font-bold);
+            color: var(--neo-white);
+            margin-bottom: var(--neo-space-6);
+        }
+        
+        .docs-hero-description {
+            font-size: var(--neo-text-xl);
+            color: var(--neo-gray-300);
+            max-width: 600px;
+            margin: 0 auto var(--neo-space-8);
+            line-height: var(--neo-leading-relaxed);
+        }
+        
+        .docs-search {
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        
+        .search-input {
+            width: 100%;
+            padding: var(--neo-space-4) var(--neo-space-12) var(--neo-space-4) var(--neo-space-12);
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: var(--neo-radius-full);
+            color: var(--neo-white);
+            font-size: var(--neo-text-base);
+            transition: all var(--neo-transition-normal);
+        }
+        
+        .search-input:focus {
+            outline: none;
+            border-color: var(--neo-primary);
+            background: rgba(255, 255, 255, 0.1);
+        }
+        
+        .search-icon {
+            position: absolute;
+            left: var(--neo-space-4);
+            color: var(--neo-gray-500);
+        }
+        
+        .search-shortcut {
+            position: absolute;
+            right: var(--neo-space-4);
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--neo-space-1) var(--neo-space-2);
+            border-radius: var(--neo-radius-sm);
+            font-size: var(--neo-text-xs);
+            color: var(--neo-gray-500);
+        }
+        
+        .docs-categories {
+            padding: var(--neo-space-16) 0;
+        }
+        
+        .docs-category {
+            margin-bottom: var(--neo-space-16);
+        }
+        
+        .category-header {
+            display: flex;
+            align-items: center;
+            gap: var(--neo-space-6);
+            margin-bottom: var(--neo-space-8);
+        }
+        
+        .category-icon {
+            width: 64px;
+            height: 64px;
+            border-radius: var(--neo-radius-xl);
+            background: var(--neo-gradient-primary);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--neo-text-2xl);
+            color: var(--neo-white);
+        }
+        
+        .category-icon.professional {
+            background: var(--neo-gradient-secondary);
+        }
+        
+        .category-header h2 {
+            font-size: var(--neo-text-3xl);
+            font-weight: var(--neo-font-bold);
+            color: var(--neo-white);
+            margin-bottom: var(--neo-space-2);
+        }
+        
+        .category-header p {
+            color: var(--neo-gray-400);
+            font-size: var(--neo-text-lg);
+            margin: 0;
+        }
+        
+        .docs-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--neo-space-6);
+        }
+        
+        .doc-card {
+            background: var(--neo-gray-900);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            border-radius: var(--neo-radius-xl);
+            padding: var(--neo-space-6);
+            text-decoration: none;
+            transition: all var(--neo-transition-normal);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .doc-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: var(--neo-gradient-primary);
+            opacity: 0;
+            transition: opacity var(--neo-transition-normal);
+        }
+        
+        .doc-card.professional::before {
+            background: var(--neo-gradient-secondary);
+        }
+        
+        .doc-card:hover {
+            transform: translateY(-4px);
+            box-shadow: var(--neo-shadow-xl);
+            border-color: rgba(255, 255, 255, 0.1);
+        }
+        
+        .doc-card:hover::before,
+        .doc-card.featured::before {
+            opacity: 1;
+        }
+        
+        .doc-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: var(--neo-radius-lg);
+            background: rgba(0, 212, 170, 0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: var(--neo-text-xl);
+            color: var(--neo-primary);
+            margin-bottom: var(--neo-space-4);
+        }
+        
+        .doc-card.professional .doc-icon {
+            background: rgba(95, 75, 182, 0.1);
+            color: var(--neo-secondary);
+        }
+        
+        .doc-card h3 {
+            font-size: var(--neo-text-xl);
+            font-weight: var(--neo-font-semibold);
+            color: var(--neo-white);
+            margin-bottom: var(--neo-space-3);
+        }
+        
+        .doc-card p {
+            color: var(--neo-gray-300);
+            line-height: var(--neo-leading-relaxed);
+            margin-bottom: var(--neo-space-4);
+        }
+        
+        .doc-meta {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            font-size: var(--neo-text-sm);
+            color: var(--neo-gray-500);
+        }
+        
+        .doc-badge {
+            background: var(--neo-primary);
+            color: var(--neo-black);
+            padding: var(--neo-space-1) var(--neo-space-3);
+            border-radius: var(--neo-radius-full);
+            font-size: var(--neo-text-xs);
+            font-weight: var(--neo-font-semibold);
+            text-transform: uppercase;
+        }
+        
+        .doc-badge.professional {
+            background: var(--neo-secondary);
+            color: var(--neo-white);
+        }
+        
+        .docs-actions {
+            background: var(--neo-gray-900);
+            padding: var(--neo-space-16) 0;
+        }
+        
+        .actions-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--neo-space-8);
+        }
+        
+        .action-card {
+            text-align: center;
+            padding: var(--neo-space-8);
+        }
+        
+        .action-card i {
+            font-size: var(--neo-text-4xl);
+            color: var(--neo-primary);
+            margin-bottom: var(--neo-space-4);
+        }
+        
+        .action-card h3 {
+            font-size: var(--neo-text-xl);
+            color: var(--neo-white);
+            margin-bottom: var(--neo-space-3);
+        }
+        
+        .action-card p {
+            color: var(--neo-gray-400);
+            margin-bottom: var(--neo-space-6);
+        }
+        
+        @media (max-width: 768px) {
+            .docs-hero-content h1 {
+                font-size: var(--neo-text-4xl);
+            }
+            
+            .category-header {
+                flex-direction: column;
+                text-align: center;
+                gap: var(--neo-space-4);
+            }
+            
+            .docs-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</body>
+</html>

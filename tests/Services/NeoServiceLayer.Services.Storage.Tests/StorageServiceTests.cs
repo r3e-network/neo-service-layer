@@ -114,7 +114,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "BasicStorage")]
-    public async Task RetrieveDataAsync_ExistingKey_ReturnsData()
+    public async Task GetDataAsync_ExistingKey_ReturnsData()
     {
         // Arrange
         const string key = "test_key";
@@ -128,7 +128,7 @@ public class StorageServiceTests : IDisposable
         await _service.StoreDataAsync(key, System.Text.Encoding.UTF8.GetBytes(expectedData), options, BlockchainType.NeoN3);
 
         // Act
-        var result = await _service.RetrieveDataAsync(key, BlockchainType.NeoN3);
+        var result = await _service.GetDataAsync(key, BlockchainType.NeoN3);
 
         // Assert
         result.Should().NotBeNull();
@@ -142,7 +142,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "BasicStorage")]
-    public async Task RetrieveDataAsync_NonExistentKey_ReturnsNull()
+    public async Task GetDataAsync_NonExistentKey_ReturnsNull()
     {
         // Arrange
         await InitializeServiceAsync();
@@ -155,7 +155,7 @@ public class StorageServiceTests : IDisposable
 
         // Act & Assert
         await Assert.ThrowsAsync<KeyNotFoundException>(async () =>
-            await _service.RetrieveDataAsync(nonExistentKey, BlockchainType.NeoN3));
+            await _service.GetDataAsync(nonExistentKey, BlockchainType.NeoN3));
     }
 
     [Fact]
@@ -222,7 +222,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "Encryption")]
-    public async Task RetrieveDataAsync_WithEncryption_DecryptsData()
+    public async Task GetDataAsync_WithEncryption_DecryptsData()
     {
         // Arrange
         const string key = "encrypted_key";
@@ -235,7 +235,7 @@ public class StorageServiceTests : IDisposable
         SetupEncryptedStorageRetrieval(key, originalData);
 
         // Act
-        var result = await _service.RetrieveDataAsync(key, BlockchainType.NeoN3);
+        var result = await _service.GetDataAsync(key, BlockchainType.NeoN3);
 
         // Assert
         result.Should().NotBeNull();
@@ -307,7 +307,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "Compression")]
-    public async Task RetrieveDataAsync_WithCompression_DecompressesData()
+    public async Task GetDataAsync_WithCompression_DecompressesData()
     {
         // Arrange
         await InitializeServiceAsync();
@@ -318,7 +318,7 @@ public class StorageServiceTests : IDisposable
         SetupCompressedStorageRetrieval(key, originalData);
 
         // Act
-        var result = await _service.RetrieveDataAsync(key, BlockchainType.NeoN3);
+        var result = await _service.GetDataAsync(key, BlockchainType.NeoN3);
 
         // Assert
         result.Should().NotBeNull();
@@ -385,7 +385,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "Chunking")]
-    public async Task RetrieveDataAsync_ChunkedData_ReassemblesCorrectly()
+    public async Task GetDataAsync_ChunkedData_ReassemblesCorrectly()
     {
         // Arrange
         await InitializeServiceAsync();
@@ -396,7 +396,7 @@ public class StorageServiceTests : IDisposable
         SetupChunkedStorageRetrieval(key, originalData);
 
         // Act
-        var result = await _service.RetrieveDataAsync(key, BlockchainType.NeoN3);
+        var result = await _service.GetDataAsync(key, BlockchainType.NeoN3);
 
         // Assert
         result.Should().NotBeNull();
@@ -488,7 +488,7 @@ public class StorageServiceTests : IDisposable
     [Fact]
     [Trait("Category", "Performance")]
     [Trait("Component", "Storage")]
-    public async Task RetrieveDataAsync_HighVolumeOperations_PerformsEfficiently()
+    public async Task GetDataAsync_HighVolumeOperations_PerformsEfficiently()
     {
         // Arrange
         await InitializeServiceAsync();
@@ -507,7 +507,7 @@ public class StorageServiceTests : IDisposable
 
         for (int i = 0; i < operationCount; i++)
         {
-            tasks.Add(_service.RetrieveDataAsync($"key_{i}", BlockchainType.NeoN3));
+            tasks.Add(_service.GetDataAsync($"key_{i}", BlockchainType.NeoN3));
         }
 
         var results = await Task.WhenAll(tasks);
@@ -666,13 +666,12 @@ public class StorageServiceTests : IDisposable
             .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"getMetadata('{key}')")), It.IsAny<CancellationToken>()))
             .ReturnsAsync("{\"Key\":\"" + key + "\",\"SizeBytes\":" + originalData.Length + ",\"IsEncrypted\":true,\"IsCompressed\":false,\"EncryptionKeyId\":\"test-key-id\",\"EncryptionAlgorithm\":\"AES-256-GCM\",\"ChunkCount\":1}");
 
-        // The StorageRetrieveDataAsync method is expected to return already decrypted data
-        // Since the implementation comment says: "Data is already decrypted and decompressed by the enclave storage function"
-        var originalDataBase64 = Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(originalData));
-
+        // Setup storage retrieval - return encrypted data
+        var originalBytes = System.Text.Encoding.UTF8.GetBytes(originalData);
+        var encryptedBytes = EncryptDataForTest(originalBytes, "test-key-id");
         _mockEnclaveManager
             .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(k => k == key), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(originalDataBase64);
+            .ReturnsAsync(Convert.ToBase64String(encryptedBytes));
     }
 
     private void SetupCompressedStorageRetrieval(string key, string originalData)
@@ -682,10 +681,42 @@ public class StorageServiceTests : IDisposable
             .Setup(x => x.ExecuteJavaScriptAsync(It.Is<string>(script => script.Contains($"getMetadata('{key}')")), It.IsAny<CancellationToken>()))
             .ReturnsAsync("{\"Key\":\"" + key + "\",\"SizeBytes\":" + originalData.Length + ",\"IsEncrypted\":false,\"IsCompressed\":true,\"ChunkCount\":1,\"ChunkSizeBytes\":1048576,\"CreatedAt\":\"2025-01-01T00:00:00Z\",\"LastModifiedAt\":\"2025-01-01T00:00:00Z\",\"LastAccessedAt\":\"2025-01-01T00:00:00Z\"}");
 
-        // Setup storage retrieval - the actual method used
+        // Setup storage retrieval - return compressed data
+        var originalBytes = System.Text.Encoding.UTF8.GetBytes(originalData);
+        var compressedBytes = CompressDataForTest(originalBytes);
         _mockEnclaveManager
             .Setup(x => x.StorageRetrieveDataAsync(It.Is<string>(k => k == key), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-            .ReturnsAsync(Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(originalData)));
+            .ReturnsAsync(Convert.ToBase64String(compressedBytes));
+    }
+
+    private static byte[] CompressDataForTest(byte[] data)
+    {
+        using var output = new MemoryStream();
+        using (var gzip = new System.IO.Compression.GZipStream(output, System.IO.Compression.CompressionMode.Compress))
+        {
+            gzip.Write(data, 0, data.Length);
+        }
+        return output.ToArray();
+    }
+
+    private static byte[] EncryptDataForTest(byte[] data, string keyId)
+    {
+        using var aes = System.Security.Cryptography.Aes.Create();
+        aes.Key = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(keyId));
+        aes.GenerateIV();
+
+        using var encryptor = aes.CreateEncryptor();
+        using var output = new MemoryStream();
+        
+        // Write IV to the beginning
+        output.Write(aes.IV, 0, aes.IV.Length);
+        
+        using (var cryptoStream = new System.Security.Cryptography.CryptoStream(output, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+        {
+            cryptoStream.Write(data, 0, data.Length);
+        }
+        
+        return output.ToArray();
     }
 
     private void SetupChunkedStorageRetrieval(string key, string originalData)

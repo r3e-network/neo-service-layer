@@ -320,7 +320,9 @@ public partial class ProofOfReserveService
         {
             if (_reserveHistory.TryGetValue(assetId, out var history))
             {
-                return history.Where(s => s.Timestamp >= from && s.Timestamp <= to).ToArray();
+                return history.Where(s => s.Timestamp >= from && s.Timestamp <= to)
+                             .Select(ConvertModelsSnapshotToCoreSnapshot)
+                             .ToArray();
             }
         }
 
@@ -377,7 +379,8 @@ public partial class ProofOfReserveService
         BlockchainType blockchainType)
     {
         var asset = GetMonitoredAsset(assetId);
-        var snapshots = await GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType);
+        var coreSnapshots = await GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType);
+        var snapshots = coreSnapshots.Select(ConvertCoreSnapshotToModelsSnapshot).ToArray();
 
         var report = new AuditReport
         {
@@ -393,7 +396,7 @@ public partial class ProofOfReserveService
             MaxReserveRatio = snapshots.Length > 0 ? snapshots.Max(s => s.ReserveRatio) : 0,
             CompliancePercentage = snapshots.Length > 0 ?
                 (decimal)snapshots.Count(s => s.ReserveRatio >= asset.MinReserveRatio) / snapshots.Length * 100 : 0,
-            Recommendations = GenerateAuditRecommendations(asset, snapshots)
+            Recommendations = GenerateAuditRecommendations(ConvertModelsAssetToCoreAsset(asset), snapshots.Select(ConvertModelsSnapshotToCoreSnapshot).ToArray())
         };
 
         Logger.LogInformation("Generated audit report {ReportId} for asset {AssetId} covering period {From} to {To}",

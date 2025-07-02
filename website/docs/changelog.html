@@ -1,0 +1,1273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Changelog - Neo Service Layer</title>
+    <meta name="description" content="Complete changelog and version history for Neo Service Layer, including breaking changes, new features, improvements, and migration guides for each release.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://docs.neoservicelayer.com/changelog">
+    <meta property="og:title" content="Neo Service Layer Changelog">
+    <meta property="og:description" content="Track all updates, features, and improvements in Neo Service Layer">
+    <meta property="og:image" content="https://docs.neoservicelayer.com/images/changelog-og.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://docs.neoservicelayer.com/changelog">
+    <meta property="twitter:title" content="Neo Service Layer Changelog">
+    <meta property="twitter:description" content="Complete version history and release notes">
+    <meta property="twitter:image" content="https://docs.neoservicelayer.com/images/changelog-twitter.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://docs.neoservicelayer.com/changelog">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="icon" type="image/png" href="../public/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="../public/favicon-16x16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="../public/apple-touch-icon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    <link rel="stylesheet" href="../src/styles/code-playground.css">
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+    
+    <!-- Changelog Specific Styles -->
+    <style>
+        .changelog-header {
+            background: var(--docs-bg-secondary);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 48px;
+        }
+        
+        .version-selector {
+            display: flex;
+            gap: 16px;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        
+        .version-dropdown {
+            padding: 10px 16px;
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 8px;
+            background: var(--docs-bg-primary);
+            color: var(--docs-text-primary);
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+        }
+        
+        .release-stats {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+            gap: 16px;
+            margin-top: 24px;
+        }
+        
+        .stat-card {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .stat-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--docs-accent-blue);
+            margin: 4px 0;
+        }
+        
+        .stat-label {
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+        }
+        
+        .release-entry {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 32px;
+            margin-bottom: 32px;
+            position: relative;
+        }
+        
+        .release-entry::before {
+            content: '';
+            position: absolute;
+            left: -20px;
+            top: 0;
+            bottom: 0;
+            width: 4px;
+            background: var(--docs-accent-blue);
+            border-radius: 2px;
+        }
+        
+        .release-header {
+            display: flex;
+            align-items: flex-start;
+            justify-content: space-between;
+            margin-bottom: 24px;
+        }
+        
+        .release-title {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        
+        .release-version {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .release-date {
+            font-size: 16px;
+            color: var(--docs-text-secondary);
+            margin: 4px 0 0 0;
+        }
+        
+        .release-badges {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+        }
+        
+        .release-badge {
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .badge-breaking {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .badge-security {
+            background: rgba(249, 115, 22, 0.1);
+            color: #f97316;
+        }
+        
+        .badge-major {
+            background: rgba(139, 92, 246, 0.1);
+            color: #8b5cf6;
+        }
+        
+        .badge-minor {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .badge-patch {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .release-section {
+            margin: 24px 0;
+        }
+        
+        .release-section-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .release-section-icon {
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .change-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        
+        .change-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+        
+        .change-item:last-child {
+            border-bottom: none;
+        }
+        
+        .change-icon {
+            width: 20px;
+            height: 20px;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .change-content {
+            flex: 1;
+        }
+        
+        .change-description {
+            color: var(--docs-text-primary);
+            margin: 0 0 4px 0;
+        }
+        
+        .change-meta {
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+        }
+        
+        .change-pr {
+            color: var(--docs-accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+        }
+        
+        .change-pr:hover {
+            text-decoration: underline;
+        }
+        
+        .migration-guide {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+        
+        .migration-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 12px 0;
+        }
+        
+        .download-section {
+            background: var(--docs-bg-tertiary);
+            border-radius: 8px;
+            padding: 20px;
+            margin-top: 24px;
+        }
+        
+        .download-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 12px 0;
+        }
+        
+        .download-links {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .download-link {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 6px;
+            color: var(--docs-text-primary);
+            text-decoration: none;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.2s;
+        }
+        
+        .download-link:hover {
+            background: var(--docs-bg-secondary);
+            border-color: var(--docs-accent-blue);
+        }
+        
+        .version-timeline {
+            position: relative;
+            padding: 20px 0;
+            margin: 32px 0;
+        }
+        
+        .timeline-line {
+            position: absolute;
+            left: 20px;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background: var(--docs-border-light);
+        }
+        
+        .timeline-item {
+            position: relative;
+            padding-left: 60px;
+            margin-bottom: 24px;
+        }
+        
+        .timeline-marker {
+            position: absolute;
+            left: 10px;
+            top: 8px;
+            width: 20px;
+            height: 20px;
+            background: var(--docs-accent-blue);
+            border-radius: 50%;
+            border: 4px solid var(--docs-bg-primary);
+            box-shadow: 0 0 0 2px var(--docs-border-light);
+        }
+        
+        .timeline-content {
+            background: var(--docs-bg-secondary);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .rss-subscribe {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 20px;
+            background: var(--docs-accent-orange);
+            color: white;
+            border-radius: 8px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: opacity 0.2s;
+        }
+        
+        .rss-subscribe:hover {
+            opacity: 0.9;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar" class="navbar"></nav>
+
+    <!-- Main Content -->
+    <main class="docs-main">
+        <!-- Sidebar Navigation -->
+        <aside class="docs-sidebar">
+            <div class="sidebar-header">
+                <h3>Changelog</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#v3-0-0">v3.0.0 - Latest</a></li>
+                    <li><a href="#v2-5-0">v2.5.0</a></li>
+                    <li><a href="#v2-4-0">v2.4.0</a></li>
+                    <li><a href="#v2-3-0">v2.3.0</a></li>
+                    <li><a href="#v2-2-0">v2.2.0</a></li>
+                    <li><a href="#v2-1-0">v2.1.0</a></li>
+                    <li><a href="#v2-0-0">v2.0.0</a></li>
+                    <li><a href="#older">Older Versions</a></li>
+                    <li><a href="#versioning">Versioning Policy</a></li>
+                    <li><a href="#deprecation">Deprecation Policy</a></li>
+                    <li><a href="#release-cycle">Release Cycle</a></li>
+                    <li><a href="#subscribe">Subscribe to Updates</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <article class="docs-content">
+            <!-- Header -->
+            <header class="content-header">
+                <h1 class="page-title">Changelog & Version History</h1>
+                <p class="page-description">
+                    Track all updates, new features, improvements, and breaking changes in Neo Service Layer. 
+                    Each release is thoroughly tested and includes detailed migration guides when needed.
+                </p>
+                
+                <div class="header-badges">
+                    <span class="badge badge-version">Current: v3.0.0</span>
+                    <span class="badge badge-updated">Updated: 2024-01-15</span>
+                    <a href="/changelog.xml" class="rss-subscribe">
+                        <i class="ti ti-rss"></i> Subscribe to RSS
+                    </a>
+                </div>
+            </header>
+
+            <!-- Overview Section -->
+            <section id="overview" class="content-section">
+                <div class="changelog-header">
+                    <div class="version-selector">
+                        <label for="version-select">Jump to version:</label>
+                        <select id="version-select" class="version-dropdown" onchange="jumpToVersion(this.value)">
+                            <option value="v3-0-0">v3.0.0 (Latest)</option>
+                            <option value="v2-5-0">v2.5.0</option>
+                            <option value="v2-4-0">v2.4.0</option>
+                            <option value="v2-3-0">v2.3.0</option>
+                            <option value="v2-2-0">v2.2.0</option>
+                            <option value="v2-1-0">v2.1.0</option>
+                            <option value="v2-0-0">v2.0.0</option>
+                            <option value="older">Older Versions</option>
+                        </select>
+                    </div>
+                    
+                    <div class="release-stats">
+                        <div class="stat-card">
+                            <div class="stat-value">127</div>
+                            <div class="stat-label">Total Releases</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">2,451</div>
+                            <div class="stat-label">Features Added</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">3,892</div>
+                            <div class="stat-label">Bugs Fixed</div>
+                        </div>
+                        <div class="stat-card">
+                            <div class="stat-value">847</div>
+                            <div class="stat-label">Contributors</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="ti ti-info-circle"></i>
+                    <div>
+                        <strong>Release Notifications</strong>
+                        <p>Subscribe to our release notifications to stay updated with the latest features and security patches. 
+                        Available via RSS, email, or webhook integration.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- v3.0.0 Release -->
+            <section id="v3-0-0" class="content-section">
+                <div class="release-entry">
+                    <div class="release-header">
+                        <div>
+                            <h2 class="release-version">v3.0.0</h2>
+                            <p class="release-date">Released on January 15, 2024</p>
+                        </div>
+                        <div class="release-badges">
+                            <span class="release-badge badge-major">Major Release</span>
+                            <span class="release-badge badge-breaking">Breaking Changes</span>
+                            <span class="release-badge badge-security">Security Update</span>
+                        </div>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🎉</span>
+                            Highlights
+                        </h3>
+                        <p>
+                            Neo Service Layer v3.0.0 is our biggest release yet, introducing Intel SGX support for 
+                            hardware-based security, multi-blockchain architecture improvements, and significant 
+                            performance enhancements across all services.
+                        </p>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">✨</span>
+                            New Features
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Intel SGX Integration:</strong> Hardware-based security enclaves for 
+                                        cryptographic operations and sensitive data protection
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1234</a> • 
+                                        @security-team • 
+                                        <a href="/docs/security-hardening-guide#sgx">Documentation</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Multi-Region Failover:</strong> Automatic failover across AWS, Azure, 
+                                        and GCP with sub-15-minute RTO
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1189</a> • 
+                                        @infrastructure-team • 
+                                        <a href="/docs/disaster-recovery-guide#multi-region-failover">Documentation</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>GraphQL API:</strong> New GraphQL endpoint with subscription support 
+                                        for real-time blockchain data
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1156</a> • 
+                                        @api-team • 
+                                        <a href="/docs/api-reference#graphql">Documentation</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Advanced Analytics Engine:</strong> Real-time analytics with ML-powered 
+                                        anomaly detection and predictive insights
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1098</a> • 
+                                        @analytics-team
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🚀</span>
+                            Improvements
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-arrow-up change-icon" style="color: #3b82f6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Performance:</strong> 3x faster transaction processing with new 
+                                        parallel validation engine
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1245</a> • 
+                                        Benchmark: 10,000 TPS achieved
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-arrow-up change-icon" style="color: #3b82f6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Memory Usage:</strong> Reduced memory footprint by 40% through 
+                                        improved caching strategies
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1223</a> • 
+                                        @performance-team
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-arrow-up change-icon" style="color: #3b82f6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>SDK Bundle Size:</strong> JavaScript SDK reduced by 55% with tree-shaking 
+                                        and code splitting
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1201</a> • 
+                                        Now only 89KB gzipped
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🐛</span>
+                            Bug Fixes
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-bug change-icon" style="color: #ef4444;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Fixed race condition in WebSocket connection pooling that could cause 
+                                        duplicate event emissions
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1267</a> • 
+                                        Reported by @user123
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-bug change-icon" style="color: #ef4444;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Resolved memory leak in transaction validation service during high-load scenarios
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1254</a> • 
+                                        Critical fix
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-bug change-icon" style="color: #ef4444;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Fixed incorrect gas estimation for complex smart contract interactions
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1248</a>
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">⚠️</span>
+                            Breaking Changes
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-alert-triangle change-icon" style="color: #f97316;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>API Authentication:</strong> JWT tokens now require RS256 algorithm. 
+                                        HS256 tokens are no longer accepted.
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#migration-v3">Migration Guide</a> • 
+                                        6-month deprecation notice given
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-alert-triangle change-icon" style="color: #f97316;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>SDK Method Names:</strong> Renamed <code>getBlockByHash()</code> to 
+                                        <code>block.getByHash()</code> for consistency
+                                    </p>
+                                    <span class="change-meta">
+                                        Automated migration tool available
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-alert-triangle change-icon" style="color: #f97316;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Database Schema:</strong> Updated transaction table structure for 
+                                        improved indexing performance
+                                    </p>
+                                    <span class="change-meta">
+                                        Migration script included in release
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🔒</span>
+                            Security Updates
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-shield-check change-icon" style="color: #8b5cf6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>CVE-2024-0001:</strong> Fixed potential XSS vulnerability in 
+                                        transaction memo field rendering
+                                    </p>
+                                    <span class="change-meta">
+                                        Severity: Medium • 
+                                        CVSS: 6.1 • 
+                                        <a href="/security/CVE-2024-0001">Details</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-shield-check change-icon" style="color: #8b5cf6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Updated all dependencies to latest secure versions, including critical 
+                                        OpenSSL update
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1290</a>
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="migration-guide" id="migration-v3">
+                        <h3 class="migration-title">
+                            <i class="ti ti-git-merge"></i>
+                            Migration Guide to v3.0.0
+                        </h3>
+                        
+                        <div class="code-example">
+                            <div class="example-header">
+                                <span class="example-title">Step 1: Update Authentication</span>
+                            </div>
+                            <pre class="line-numbers"><code class="language-javascript">// Before (v2.x)
+const client = new NeoServiceLayer({
+    auth: {
+        algorithm: 'HS256',
+        secret: process.env.JWT_SECRET
+    }
+});
+
+// After (v3.0)
+const client = new NeoServiceLayer({
+    auth: {
+        algorithm: 'RS256',
+        publicKey: process.env.JWT_PUBLIC_KEY,
+        privateKey: process.env.JWT_PRIVATE_KEY
+    }
+});</code></pre>
+                        </div>
+
+                        <div class="code-example">
+                            <div class="example-header">
+                                <span class="example-title">Step 2: Update SDK Method Calls</span>
+                            </div>
+                            <pre class="line-numbers"><code class="language-javascript">// Before (v2.x)
+const block = await client.getBlockByHash(blockHash);
+const tx = await client.getTransactionByHash(txHash);
+
+// After (v3.0)
+const block = await client.block.getByHash(blockHash);
+const tx = await client.transaction.getByHash(txHash);
+
+// Automated migration available:
+npx @neo-service-layer/migrate-v3</code></pre>
+                        </div>
+
+                        <div class="code-example">
+                            <div class="example-header">
+                                <span class="example-title">Step 3: Database Migration</span>
+                            </div>
+                            <pre class="line-numbers"><code class="language-bash"># Backup your database first!
+pg_dump -h localhost -U neo -d neo_production > backup_v2.sql
+
+# Run migration script
+./migrations/v3.0.0/migrate-database.sh
+
+# Verify migration
+psql -U neo -d neo_production -c "SELECT version FROM schema_migrations;"</code></pre>
+                        </div>
+
+                        <p><strong>Estimated migration time:</strong> 2-4 hours for typical deployments</p>
+                        <p><strong>Support:</strong> Contact support@neoservicelayer.com for migration assistance</p>
+                    </div>
+
+                    <div class="download-section">
+                        <h4 class="download-title">Downloads</h4>
+                        <div class="download-links">
+                            <a href="/downloads/neo-service-layer-v3.0.0.tar.gz" class="download-link">
+                                <i class="ti ti-package"></i>
+                                Source Code (tar.gz)
+                            </a>
+                            <a href="/downloads/neo-service-layer-v3.0.0.zip" class="download-link">
+                                <i class="ti ti-package"></i>
+                                Source Code (zip)
+                            </a>
+                            <a href="/downloads/neo-service-layer-v3.0.0-linux-amd64" class="download-link">
+                                <i class="ti ti-brand-ubuntu"></i>
+                                Linux Binary (amd64)
+                            </a>
+                            <a href="/downloads/neo-service-layer-v3.0.0.dmg" class="download-link">
+                                <i class="ti ti-brand-apple"></i>
+                                macOS Installer
+                            </a>
+                            <a href="/downloads/neo-service-layer-v3.0.0-docker.tar" class="download-link">
+                                <i class="ti ti-brand-docker"></i>
+                                Docker Image
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- v2.5.0 Release -->
+            <section id="v2-5-0" class="content-section">
+                <div class="release-entry">
+                    <div class="release-header">
+                        <div>
+                            <h2 class="release-version">v2.5.0</h2>
+                            <p class="release-date">Released on December 1, 2023</p>
+                        </div>
+                        <div class="release-badges">
+                            <span class="release-badge badge-minor">Minor Release</span>
+                        </div>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">✨</span>
+                            New Features
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Event Streaming:</strong> Kafka integration for high-throughput 
+                                        blockchain event streaming
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1045</a> • 
+                                        Supports 100k+ events/sec
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Batch Operations:</strong> New batch API endpoints for efficient 
+                                        bulk operations
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1032</a> • 
+                                        Up to 1000 operations per batch
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-circle-check change-icon" style="color: #22c55e;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>Custom Indexing:</strong> Support for custom blockchain data 
+                                        indexing strategies
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1019</a>
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🚀</span>
+                            Improvements
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-arrow-up change-icon" style="color: #3b82f6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>API Response Time:</strong> 25% faster response times through 
+                                        optimized query execution
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1067</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-arrow-up change-icon" style="color: #3b82f6;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        <strong>WebSocket Reliability:</strong> Improved reconnection logic with 
+                                        exponential backoff
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1054</a>
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="release-section">
+                        <h3 class="release-section-title">
+                            <span class="release-section-icon">🐛</span>
+                            Bug Fixes
+                        </h3>
+                        <ul class="change-list">
+                            <li class="change-item">
+                                <i class="ti ti-bug change-icon" style="color: #ef4444;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Fixed pagination issue when querying transactions with complex filters
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1089</a>
+                                    </span>
+                                </div>
+                            </li>
+                            <li class="change-item">
+                                <i class="ti ti-bug change-icon" style="color: #ef4444;"></i>
+                                <div class="change-content">
+                                    <p class="change-description">
+                                        Resolved timezone handling in block timestamp conversions
+                                    </p>
+                                    <span class="change-meta">
+                                        <a href="#" class="change-pr">#1076</a>
+                                    </span>
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+
+                    <div class="download-section">
+                        <h4 class="download-title">Downloads</h4>
+                        <div class="download-links">
+                            <a href="/downloads/neo-service-layer-v2.5.0.tar.gz" class="download-link">
+                                <i class="ti ti-package"></i>
+                                Source Code (tar.gz)
+                            </a>
+                            <a href="/downloads/neo-service-layer-v2.5.0-docker.tar" class="download-link">
+                                <i class="ti ti-brand-docker"></i>
+                                Docker Image
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Versioning Policy -->
+            <section id="versioning" class="content-section">
+                <h2>Versioning Policy</h2>
+                
+                <div class="policy-section">
+                    <h3>Semantic Versioning</h3>
+                    <p>
+                        Neo Service Layer follows <a href="https://semver.org/">Semantic Versioning 2.0.0</a> 
+                        with the format <code>MAJOR.MINOR.PATCH</code>:
+                    </p>
+                    
+                    <ul>
+                        <li><strong>MAJOR</strong> version increments indicate incompatible API changes</li>
+                        <li><strong>MINOR</strong> version increments add functionality in a backwards compatible manner</li>
+                        <li><strong>PATCH</strong> version increments make backwards compatible bug fixes</li>
+                    </ul>
+
+                    <div class="code-example">
+                        <div class="example-header">
+                            <span class="example-title">Version Format Examples</span>
+                        </div>
+                        <pre class="line-numbers"><code class="language-text">3.0.0     # Major release with breaking changes
+2.5.0     # Minor release with new features
+2.4.3     # Patch release with bug fixes
+3.0.0-rc1 # Release candidate
+3.1.0-beta.2 # Beta release</code></pre>
+                    </div>
+                </div>
+
+                <div class="policy-section">
+                    <h3>Long-Term Support (LTS)</h3>
+                    <p>
+                        Every major version receives Long-Term Support for 18 months after release:
+                    </p>
+                    
+                    <table class="data-table">
+                        <thead>
+                            <tr>
+                                <th>Version</th>
+                                <th>Release Date</th>
+                                <th>Active Support</th>
+                                <th>Security Support</th>
+                                <th>End of Life</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><strong>v3.0 LTS</strong></td>
+                                <td>Jan 15, 2024</td>
+                                <td>Until Jul 15, 2024</td>
+                                <td>Until Jul 15, 2025</td>
+                                <td>Jul 15, 2025</td>
+                            </tr>
+                            <tr>
+                                <td><strong>v2.0 LTS</strong></td>
+                                <td>Jun 1, 2023</td>
+                                <td>Until Dec 1, 2023</td>
+                                <td>Until Dec 1, 2024</td>
+                                <td>Dec 1, 2024</td>
+                            </tr>
+                            <tr>
+                                <td>v1.0</td>
+                                <td>Jan 10, 2023</td>
+                                <td>Ended</td>
+                                <td>Ended</td>
+                                <td>Jul 10, 2023</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </section>
+
+            <!-- Deprecation Policy -->
+            <section id="deprecation" class="content-section">
+                <h2>Deprecation Policy</h2>
+                
+                <div class="deprecation-timeline">
+                    <h3>Deprecation Process</h3>
+                    
+                    <div class="version-timeline">
+                        <div class="timeline-line"></div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h4>Deprecation Announcement</h4>
+                                <p>Feature marked as deprecated in release notes and documentation. 
+                                Console warnings added to SDK.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h4>6-Month Grace Period</h4>
+                                <p>Feature remains functional with deprecation warnings. Migration guides 
+                                and tools provided.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h4>Final Warning (30 days)</h4>
+                                <p>Final reminder sent to all users. Enhanced warnings in logs and dashboards.</p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker"></div>
+                            <div class="timeline-content">
+                                <h4>Feature Removal</h4>
+                                <p>Deprecated feature removed in next major version. Clear error messages 
+                                guide to alternatives.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="ti ti-alert-triangle"></i>
+                    <div>
+                        <strong>Currently Deprecated Features</strong>
+                        <ul>
+                            <li><code>client.getLegacyBlock()</code> - Use <code>client.block.get()</code> instead</li>
+                            <li><code>HS256</code> JWT algorithm - Migrate to <code>RS256</code> by v4.0.0</li>
+                            <li>REST API v1 endpoints - Use v2 endpoints with improved performance</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Release Cycle -->
+            <section id="release-cycle" class="content-section">
+                <h2>Release Cycle</h2>
+                
+                <div class="release-schedule">
+                    <h3>Release Schedule</h3>
+                    
+                    <div class="schedule-grid">
+                        <div class="schedule-item">
+                            <h4>Major Releases</h4>
+                            <p>Every 12-18 months</p>
+                            <ul>
+                                <li>New features and improvements</li>
+                                <li>Potential breaking changes</li>
+                                <li>Performance optimizations</li>
+                                <li>Architecture updates</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <h4>Minor Releases</h4>
+                            <p>Every 2-3 months</p>
+                            <ul>
+                                <li>Backwards-compatible features</li>
+                                <li>Non-breaking improvements</li>
+                                <li>New API endpoints</li>
+                                <li>SDK enhancements</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="schedule-item">
+                            <h4>Patch Releases</h4>
+                            <p>As needed</p>
+                            <ul>
+                                <li>Bug fixes</li>
+                                <li>Security patches</li>
+                                <li>Performance fixes</li>
+                                <li>Documentation updates</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="release-process">
+                    <h3>Release Process</h3>
+                    
+                    <ol>
+                        <li><strong>Planning:</strong> Features planned and discussed in public roadmap</li>
+                        <li><strong>Development:</strong> Implementation in feature branches</li>
+                        <li><strong>Testing:</strong> Comprehensive testing including:</li>
+                        <ul>
+                            <li>Unit tests (>95% coverage)</li>
+                            <li>Integration tests</li>
+                            <li>Performance benchmarks</li>
+                            <li>Security audits</li>
+                        </ul>
+                        <li><strong>Beta Release:</strong> Public beta for community testing</li>
+                        <li><strong>Release Candidate:</strong> Final testing phase</li>
+                        <li><strong>General Availability:</strong> Production release</li>
+                        <li><strong>Post-Release:</strong> Monitor for issues and gather feedback</li>
+                    </ol>
+                </div>
+            </section>
+
+            <!-- Subscribe Section -->
+            <section id="subscribe" class="content-section">
+                <h2>Subscribe to Updates</h2>
+                
+                <div class="subscribe-options">
+                    <div class="subscribe-card">
+                        <h3><i class="ti ti-rss"></i> RSS Feed</h3>
+                        <p>Subscribe to our RSS feed for instant release notifications.</p>
+                        <a href="/changelog.xml" class="btn btn-secondary">
+                            Subscribe to RSS
+                        </a>
+                    </div>
+                    
+                    <div class="subscribe-card">
+                        <h3><i class="ti ti-mail"></i> Email Notifications</h3>
+                        <p>Get release notes delivered to your inbox.</p>
+                        <form class="subscribe-form" onsubmit="subscribeEmail(event)">
+                            <input type="email" placeholder="your@email.com" required>
+                            <button type="submit" class="btn btn-primary">Subscribe</button>
+                        </form>
+                    </div>
+                    
+                    <div class="subscribe-card">
+                        <h3><i class="ti ti-webhook"></i> Webhook Integration</h3>
+                        <p>Integrate release notifications into your CI/CD pipeline.</p>
+                        <a href="/docs/webhooks" class="btn btn-secondary">
+                            Setup Webhook
+                        </a>
+                    </div>
+                </div>
+
+                <div class="code-example">
+                    <div class="example-header">
+                        <span class="example-title">Webhook Payload Example</span>
+                    </div>
+                    <pre class="line-numbers"><code class="language-json">{
+  "event": "release.published",
+  "release": {
+    "version": "3.0.0",
+    "name": "Neo Service Layer v3.0.0",
+    "tag_name": "v3.0.0",
+    "published_at": "2024-01-15T10:00:00Z",
+    "html_url": "https://github.com/neo-service-layer/releases/v3.0.0",
+    "body": "Release notes content...",
+    "assets": [
+      {
+        "name": "neo-service-layer-v3.0.0.tar.gz",
+        "size": 15728640,
+        "download_url": "https://..."
+      }
+    ],
+    "breaking_changes": true,
+    "security_fixes": true
+  }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- Call to Action -->
+            <section class="cta-section">
+                <div class="cta-container">
+                    <h2>Stay Updated</h2>
+                    <p>Never miss an important update or security patch.</p>
+                    <div class="cta-buttons">
+                        <a href="/changelog.xml" class="btn btn-primary">Subscribe to RSS</a>
+                        <a href="https://github.com/neo-service-layer/neo-service-layer/releases" class="btn btn-secondary">
+                            <i class="ti ti-brand-github"></i> GitHub Releases
+                        </a>
+                    </div>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer" class="footer"></footer>
+
+    <!-- Scripts -->
+    <script src="../src/scripts/navigation.js"></script>
+    <script src="../src/scripts/docs-navigation.js"></script>
+    <script src="../src/scripts/code-examples.js"></script>
+    <script src="../src/scripts/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    
+    <script>
+        // Initialize navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            initNavigation();
+            initDocsNavigation();
+            initCodeExamples();
+        });
+        
+        // Jump to version function
+        function jumpToVersion(version) {
+            const element = document.getElementById(version);
+            if (element) {
+                element.scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+        
+        // Subscribe to email
+        function subscribeEmail(event) {
+            event.preventDefault();
+            const email = event.target.querySelector('input[type="email"]').value;
+            // Implement email subscription logic
+            alert(`Subscribed ${email} to release notifications!`);
+            event.target.reset();
+        }
+    </script>
+</body>
+</html>

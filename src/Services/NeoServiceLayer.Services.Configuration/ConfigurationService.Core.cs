@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Configuration.Models;
 using NeoServiceLayer.Tee.Host.Services;
@@ -17,6 +18,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     private readonly object _configLock = new();
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration? _configuration;
+    private Timer? _cleanupTimer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationService"/> class.
@@ -24,14 +26,17 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager for secure configuration operations.</param>
     /// <param name="configuration">The service configuration.</param>
+    /// <param name="persistentStorage">The persistent storage provider.</param>
     public ConfigurationService(
         ILogger<ConfigurationService> logger,
         IEnclaveManager enclaveManager,
-        IServiceConfiguration? configuration = null)
+        IServiceConfiguration? configuration = null,
+        IPersistentStorageProvider? persistentStorage = null)
         : base("ConfigurationService", "Dynamic configuration management service with enclave security", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
+        _persistentStorage = persistentStorage;
 
         // Add capabilities
         AddCapability<IConfigurationService>();
@@ -44,6 +49,12 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
 
         // Add dependencies
         AddRequiredDependency<IEnclaveService>("EnclaveManager", "1.0.0");
+
+        // Initialize cleanup timer if persistent storage is available
+        if (_persistentStorage != null)
+        {
+            _cleanupTimer = new Timer(async _ => await CleanupOldDataAsync(), null, TimeSpan.FromHours(24), TimeSpan.FromHours(24));
+        }
     }
 
     /// <inheritdoc/>
@@ -55,6 +66,9 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
         {
             // Load default configurations
             await LoadDefaultConfigurationsAsync();
+
+            // Load from persistent storage if available
+            await LoadPersistentConfigurationsAsync();
 
             // Initialize configuration storage
             await InitializeConfigurationStorageAsync();
@@ -122,8 +136,14 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Stop configuration monitoring
             await StopConfigurationMonitoringAsync();
 
+            // Dispose cleanup timer
+            _cleanupTimer?.Dispose();
+
             // Persist pending configurations
             await PersistPendingConfigurationsAsync();
+
+            // Persist statistics
+            await PersistStatisticsAsync();
 
             Logger.LogInformation("Configuration Service stopped successfully");
             return true;
@@ -404,9 +424,17 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     {
         try
         {
-            // Persist configuration to storage
-            var json = JsonSerializer.Serialize(entry);
-            await Task.Delay(10); // Simulate storage operation
+            // Use persistent storage if available
+            if (_persistentStorage != null)
+            {
+                await PersistConfigurationEntryAsync(entry);
+            }
+            else
+            {
+                // Fallback to simulated storage
+                var json = JsonSerializer.Serialize(entry);
+                await Task.Delay(10); // Simulate storage operation
+            }
 
             Logger.LogDebug("Persisted configuration {Key} to storage", entry.Key);
         }
@@ -425,8 +453,16 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     {
         try
         {
-            // Remove configuration from storage
-            await Task.Delay(10); // Simulate storage operation
+            // Use persistent storage if available
+            if (_persistentStorage != null)
+            {
+                await RemovePersistedConfigurationAsync(key);
+            }
+            else
+            {
+                // Fallback to simulated storage
+                await Task.Delay(10); // Simulate storage operation
+            }
 
             Logger.LogDebug("Removed configuration {Key} from storage", key);
         }

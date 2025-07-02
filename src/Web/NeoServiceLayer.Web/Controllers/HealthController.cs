@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Health;
 
 namespace NeoServiceLayer.Web.Controllers;
 

@@ -139,7 +139,7 @@ public class StorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var response = await _storageService.RetrieveDataAsync(storageId, blockchain);
+            var response = await _storageService.GetDataAsync(storageId, blockchain);
 
             if (response == null)
             {
@@ -385,7 +385,7 @@ public class StorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var metadata = await _storageService.GetMetadataAsync(storageId, blockchain);
+            var metadata = await _storageService.GetStorageMetadataAsync(storageId, blockchain);
 
             if (metadata == null)
             {
@@ -445,7 +445,7 @@ public class StorageController : BaseApiController
             var recipientId = requestDict["recipientId"].ToString();
 
             // Get the existing metadata
-            var metadata = await _storageService.GetMetadataAsync(storageId, blockchain);
+            var metadata = await _storageService.GetStorageMetadataAsync(storageId, blockchain);
             if (metadata == null)
             {
                 return NotFound(CreateErrorResponse($"Storage item not found: {storageId}"));

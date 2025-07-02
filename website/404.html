@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>404 - Page Not Found | Neo Service Layer</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/src/styles/design-system.css">
+    <link rel="stylesheet" href="/src/styles/components.css">
+    
+    <style>
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: var(--neo-font-family);
+            background: var(--neo-black);
+            color: var(--neo-white);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+        }
+
+        .error-container {
+            text-align: center;
+            padding: var(--neo-space-8);
+            max-width: 600px;
+            animation: neo-fade-in 0.5s ease-out;
+        }
+
+        .error-code {
+            font-size: clamp(6rem, 20vw, 12rem);
+            font-weight: var(--neo-font-black);
+            line-height: 1;
+            margin: 0;
+            background: var(--neo-gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            text-fill-color: transparent;
+            position: relative;
+            animation: neo-glow 2s ease-in-out infinite;
+        }
+
+        .error-title {
+            font-size: var(--neo-text-3xl);
+            font-weight: var(--neo-font-bold);
+            margin: var(--neo-space-6) 0 var(--neo-space-4);
+            color: var(--neo-white);
+        }
+
+        .error-message {
+            font-size: var(--neo-text-lg);
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-8);
+            line-height: var(--neo-leading-relaxed);
+        }
+
+        .error-actions {
+            display: flex;
+            gap: var(--neo-space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .error-illustration {
+            position: absolute;
+            inset: 0;
+            z-index: -1;
+            opacity: 0.05;
+            pointer-events: none;
+        }
+
+        .grid-pattern {
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 212, 170, 0.1) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 212, 170, 0.1) 1px, transparent 1px);
+            background-size: 50px 50px;
+            animation: grid-move 20s linear infinite;
+        }
+
+        @keyframes grid-move {
+            0% { transform: translate(0, 0); }
+            100% { transform: translate(50px, 50px); }
+        }
+
+        .glitch-effect {
+            position: relative;
+            display: inline-block;
+        }
+
+        .glitch-effect::before,
+        .glitch-effect::after {
+            content: attr(data-text);
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: var(--neo-black);
+        }
+
+        .glitch-effect::before {
+            animation: glitch-1 0.5s infinite;
+            color: var(--neo-primary);
+            z-index: -1;
+        }
+
+        .glitch-effect::after {
+            animation: glitch-2 0.5s infinite;
+            color: var(--neo-secondary);
+            z-index: -2;
+        }
+
+        @keyframes glitch-1 {
+            0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+            20% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, 2px); }
+            40% { clip-path: inset(40% 0 40% 0); transform: translate(2px, -2px); }
+            60% { clip-path: inset(60% 0 20% 0); transform: translate(-2px, -2px); }
+            80% { clip-path: inset(80% 0 0 0); transform: translate(2px, 2px); }
+        }
+
+        @keyframes glitch-2 {
+            0%, 100% { clip-path: inset(0 0 0 0); transform: translate(0); }
+            20% { clip-path: inset(80% 0 0 0); transform: translate(2px, -2px); }
+            40% { clip-path: inset(60% 0 20% 0); transform: translate(-2px, 2px); }
+            60% { clip-path: inset(40% 0 40% 0); transform: translate(2px, 2px); }
+            80% { clip-path: inset(20% 0 60% 0); transform: translate(-2px, -2px); }
+        }
+
+        .search-suggestion {
+            margin-top: var(--neo-space-12);
+            padding: var(--neo-space-6);
+            background: var(--neo-gray-900);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+        }
+
+        .suggestion-title {
+            font-size: var(--neo-text-lg);
+            font-weight: var(--neo-font-semibold);
+            margin-bottom: var(--neo-space-4);
+            color: var(--neo-gray-100);
+        }
+
+        .suggestion-links {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: var(--neo-space-3);
+        }
+
+        .suggestion-link {
+            display: flex;
+            align-items: center;
+            gap: var(--neo-space-2);
+            padding: var(--neo-space-3) var(--neo-space-4);
+            background: var(--neo-black);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-md);
+            color: var(--neo-gray-300);
+            text-decoration: none;
+            transition: all var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .suggestion-link:hover {
+            border-color: var(--neo-primary);
+            color: var(--neo-primary);
+            transform: translateX(4px);
+        }
+
+        @media (max-width: 640px) {
+            .error-code {
+                font-size: 6rem;
+            }
+            
+            .error-title {
+                font-size: var(--neo-text-2xl);
+            }
+            
+            .error-actions {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="error-illustration">
+        <div class="grid-pattern"></div>
+    </div>
+
+    <div class="error-container">
+        <h1 class="error-code glitch-effect" data-text="404">404</h1>
+        <h2 class="error-title">Page Not Found</h2>
+        <p class="error-message">
+            The page you're looking for seems to have wandered off into the blockchain void. 
+            Don't worry, we'll help you find your way back.
+        </p>
+        
+        <div class="error-actions">
+            <a href="/" class="neo-btn neo-btn-primary neo-btn-lg">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M10.707 2.293a1 1 0 00-1.414 0l-7 7a1 1 0 001.414 1.414L4 10.414V17a1 1 0 001 1h2a1 1 0 001-1v-2a1 1 0 011-1h2a1 1 0 011 1v2a1 1 0 001 1h2a1 1 0 001-1v-6.586l.293.293a1 1 0 001.414-1.414l-7-7z"/>
+                </svg>
+                Back to Home
+            </a>
+            <a href="/app.html" class="neo-btn neo-btn-ghost neo-btn-lg">
+                <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                    <path d="M3 4a1 1 0 011-1h12a1 1 0 011 1v2a1 1 0 01-1 1H4a1 1 0 01-1-1V4zM3 10a1 1 0 011-1h6a1 1 0 011 1v6a1 1 0 01-1 1H4a1 1 0 01-1-1v-6zM14 9a1 1 0 00-1 1v6a1 1 0 001 1h2a1 1 0 001-1v-6a1 1 0 00-1-1h-2z"/>
+                </svg>
+                Go to Dashboard
+            </a>
+        </div>
+
+        <div class="search-suggestion">
+            <h3 class="suggestion-title">Popular Pages</h3>
+            <div class="suggestion-links">
+                <a href="/docs/quick-start.html" class="suggestion-link">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                    </svg>
+                    Documentation
+                </a>
+                <a href="/app.html#services" class="suggestion-link">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M7 3a1 1 0 000 2h6a1 1 0 100-2H7zM4 7a1 1 0 011-1h10a1 1 0 110 2H5a1 1 0 01-1-1zM2 11a2 2 0 012-2h12a2 2 0 012 2v4a2 2 0 01-2 2H4a2 2 0 01-2-2v-4z"/>
+                    </svg>
+                    Services
+                </a>
+                <a href="/docs/api-reference.html" class="suggestion-link">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M12.316 3.051a1 1 0 01.633 1.265l-4 12a1 1 0 11-1.898-.632l4-12a1 1 0 011.265-.633zM5.707 6.293a1 1 0 010 1.414L3.414 10l2.293 2.293a1 1 0 11-1.414 1.414l-3-3a1 1 0 010-1.414l3-3a1 1 0 011.414 0zm8.586 0a1 1 0 011.414 0l3 3a1 1 0 010 1.414l-3 3a1 1 0 11-1.414-1.414L16.586 10l-2.293-2.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                    </svg>
+                    API Reference
+                </a>
+                <a href="https://github.com/r3e-network/neo-service-layer" class="suggestion-link">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M10 0C4.477 0 0 4.484 0 10.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0110 4.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.203 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.942.359.31.678.921.678 1.856 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0020 10.017C20 4.484 15.522 0 10 0z" clip-rule="evenodd"/>
+                    </svg>
+                    GitHub
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Report 404 to analytics if available
+        if (typeof gtag !== 'undefined') {
+            gtag('event', 'page_not_found', {
+                page_location: window.location.href,
+                page_referrer: document.referrer
+            });
+        }
+
+        // Add keyboard navigation
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') {
+                window.location.href = '/';
+            }
+        });
+    </script>
+</body>
+</html>

@@ -19,12 +19,12 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     Task<StorageMetadata> StoreDataAsync(string key, byte[] data, StorageOptions options, BlockchainType blockchainType);
 
     /// <summary>
-    /// Retrieves data.
+    /// Gets data.
     /// </summary>
     /// <param name="key">The key.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data.</returns>
-    Task<byte[]> RetrieveDataAsync(string key, BlockchainType blockchainType);
+    Task<byte[]> GetDataAsync(string key, BlockchainType blockchainType);
 
     /// <summary>
     /// Deletes data.
@@ -40,7 +40,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="key">The key.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The storage metadata.</returns>
-    Task<StorageMetadata> GetMetadataAsync(string key, BlockchainType blockchainType);
+    Task<StorageMetadata> GetStorageMetadataAsync(string key, BlockchainType blockchainType);
 
     /// <summary>
     /// Lists storage keys.
@@ -244,4 +244,18 @@ public class StorageMetadata
     /// Gets or sets the custom metadata.
     /// </summary>
     public Dictionary<string, string> CustomMetadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the size (alias for SizeBytes for compatibility).
+    /// </summary>
+    public long Size
+    {
+        get => SizeBytes;
+        set => SizeBytes = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the owner of the stored data.
+    /// </summary>
+    public string Owner { get; set; } = string.Empty;
 }

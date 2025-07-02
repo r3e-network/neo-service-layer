@@ -11,21 +11,6 @@ using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
 /// <summary>
-/// Interface for the Fair Ordering Service.
-/// </summary>
-public interface IFairOrderingService : IEnclaveService, IBlockchainService
-{
-    Task<string> CreateOrderingPoolAsync(FairOrderingModels.OrderingPoolConfig config, BlockchainType blockchainType);
-    Task<string> SubmitFairTransactionAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType);
-    Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType);
-    Task<FairOrderingModels.MevProtectionResult> AnalyzeMevRiskAsync(FairOrderingModels.MevAnalysisRequest request, BlockchainType blockchainType);
-    Task<string> SubmitTransactionAsync(FairOrderingModels.TransactionSubmission submission, BlockchainType blockchainType);
-    Task<FairOrderingModels.FairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType);
-    Task<IEnumerable<FairOrderingModels.OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType);
-    Task<bool> UpdatePoolConfigAsync(string poolId, FairOrderingModels.OrderingPoolConfig config, BlockchainType blockchainType);
-}
-
-/// <summary>
 /// Implementation of the Fair Ordering Service that provides transaction fairness and MEV protection capabilities.
 /// </summary>
 public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOrderingService

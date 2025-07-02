@@ -177,6 +177,11 @@ public class ServiceHealthStatus
     /// Gets or sets the last check timestamp.
     /// </summary>
     public DateTime LastCheck { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the last check time (alias for LastCheck).
+    /// </summary>
+    public DateTime LastCheckTime { get => LastCheck; set => LastCheck = value; }
 
     /// <summary>
     /// Gets or sets the error message if unhealthy.

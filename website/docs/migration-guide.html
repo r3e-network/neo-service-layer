@@ -1,0 +1,2273 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Migration Guide - Neo Service Layer</title>
+    <meta name="description" content="Comprehensive migration guide for Neo Service Layer with automated tools, zero-downtime strategies, data migration patterns, and rollback procedures for enterprise deployments.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://docs.neoservicelayer.com/migration-guide">
+    <meta property="og:title" content="Neo Service Layer Migration Guide">
+    <meta property="og:description" content="Zero-downtime migration strategies with automated tools and rollback procedures">
+    <meta property="og:image" content="https://docs.neoservicelayer.com/images/migration-guide-og.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://docs.neoservicelayer.com/migration-guide">
+    <meta property="twitter:title" content="Neo Service Layer Migration Guide">
+    <meta property="twitter:description" content="Zero-downtime migration strategies with automated tools">
+    <meta property="twitter:image" content="https://docs.neoservicelayer.com/images/migration-guide-twitter.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://docs.neoservicelayer.com/migration-guide">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="icon" type="image/png" href="../public/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="../public/favicon-16x16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="../public/apple-touch-icon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    <link rel="stylesheet" href="../src/styles/code-playground.css">
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+    
+    <!-- Migration Guide Specific Styles -->
+    <style>
+        .migration-timeline {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 24px;
+            margin: 24px 0;
+            position: relative;
+        }
+        
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 23px;
+            top: 48px;
+            bottom: -24px;
+            width: 2px;
+            background: var(--docs-border-light);
+        }
+        
+        .timeline-marker {
+            width: 48px;
+            height: 48px;
+            background: var(--docs-accent-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 8px 0;
+        }
+        
+        .timeline-duration {
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+            margin: 0 0 12px 0;
+        }
+        
+        .migration-strategy {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .strategy-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .strategy-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--docs-bg-tertiary);
+            color: var(--docs-accent-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        
+        .strategy-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .strategy-badge {
+            margin-left: auto;
+            padding: 6px 12px;
+            background: var(--docs-bg-tertiary);
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+        
+        .risk-low {
+            color: #22c55e;
+            background: rgba(34, 197, 94, 0.1);
+        }
+        
+        .risk-medium {
+            color: #3b82f6;
+            background: rgba(59, 130, 246, 0.1);
+        }
+        
+        .risk-high {
+            color: #f59e0b;
+            background: rgba(251, 191, 36, 0.1);
+        }
+        
+        .migration-tool {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .tool-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .tool-icon {
+            width: 32px;
+            height: 32px;
+            background: var(--docs-bg-tertiary);
+            color: var(--docs-accent-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .tool-name {
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .tool-description {
+            color: var(--docs-text-secondary);
+            font-size: 14px;
+            margin: 0 0 16px 0;
+        }
+        
+        .compatibility-matrix {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+        
+        .compatibility-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+        
+        .compatibility-table th {
+            background: var(--docs-bg-tertiary);
+            padding: 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+        
+        .compatibility-table td {
+            padding: 12px;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+        
+        .compatibility-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .compat-yes {
+            color: #22c55e;
+            font-weight: 600;
+        }
+        
+        .compat-partial {
+            color: #f59e0b;
+            font-weight: 600;
+        }
+        
+        .compat-no {
+            color: #ef4444;
+            font-weight: 600;
+        }
+        
+        .migration-checklist {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .checklist-section {
+            margin: 20px 0;
+        }
+        
+        .checklist-section-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 12px 0;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+        }
+        
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--docs-border-medium);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .checklist-checkbox.checked {
+            background: var(--docs-accent-green);
+            border-color: var(--docs-accent-green);
+        }
+        
+        .checklist-checkbox.checked::after {
+            content: "✓";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .checklist-content {
+            flex: 1;
+            color: var(--docs-text-secondary);
+        }
+        
+        .rollback-plan {
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .rollback-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 20px;
+        }
+        
+        .rollback-icon {
+            color: #f59e0b;
+            font-size: 24px;
+        }
+        
+        .rollback-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .data-migration-visual {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 20px 0;
+            text-align: center;
+        }
+        
+        .migration-flow {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 32px;
+            margin: 24px 0;
+        }
+        
+        .flow-node {
+            background: var(--docs-bg-tertiary);
+            border: 2px solid var(--docs-border-medium);
+            border-radius: 8px;
+            padding: 16px 24px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+        
+        .flow-arrow {
+            color: var(--docs-accent-blue);
+            font-size: 24px;
+        }
+        
+        .flow-node.active {
+            background: var(--docs-accent-blue);
+            color: white;
+            border-color: var(--docs-accent-blue);
+        }
+    </style>
+</head>
+<body class="migration-guide-page">
+    <!-- Documentation Header -->
+    <header class="docs-header-nav migration-header">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">🔄</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Migration Guide</div>
+                    </div>
+                </a>
+                
+                <div class="migration-stats">
+                    <div class="stat-item">
+                        <span class="stat-value">Zero</span>
+                        <span class="stat-label">Downtime</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">100%</span>
+                        <span class="stat-label">Data Integrity</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-value">Automated</span>
+                        <span class="stat-label">Process</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search migration strategies..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                
+                <a href="https://github.com/neo-service-layer" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                
+                <a href="/app.html" class="docs-cta-button">
+                    Try Live Demo
+                    <i class="ti ti-external-link"></i>
+                </a>
+                
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">Migration Guide</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v1.5.2</span>
+                    <span>Latest</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Overview -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Overview</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#introduction" class="docs-nav-link active">
+                                <i class="ti ti-info-circle"></i>
+                                Introduction
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#compatibility" class="docs-nav-link">
+                                <i class="ti ti-versions"></i>
+                                Version Compatibility
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#strategies" class="docs-nav-link">
+                                <i class="ti ti-route"></i>
+                                Migration Strategies
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#timeline" class="docs-nav-link">
+                                <i class="ti ti-timeline"></i>
+                                Migration Timeline
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Migration Types -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Migration Types</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#version-upgrade" class="docs-nav-link">
+                                <i class="ti ti-arrow-up"></i>
+                                Version Upgrade
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#platform-migration" class="docs-nav-link">
+                                <i class="ti ti-transform"></i>
+                                Platform Migration
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#data-migration" class="docs-nav-link">
+                                <i class="ti ti-database-export"></i>
+                                Data Migration
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#blockchain-migration" class="docs-nav-link">
+                                <i class="ti ti-link"></i>
+                                Blockchain Migration
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Tools & Automation -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Tools & Automation</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#migration-tools" class="docs-nav-link">
+                                <i class="ti ti-tool"></i>
+                                Migration Tools
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#automated-scripts" class="docs-nav-link">
+                                <i class="ti ti-robot"></i>
+                                Automated Scripts
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#validation" class="docs-nav-link">
+                                <i class="ti ti-check"></i>
+                                Validation Suite
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#rollback" class="docs-nav-link">
+                                <i class="ti ti-rotate-clockwise"></i>
+                                Rollback Procedures
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Best Practices -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Best Practices</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#pre-migration" class="docs-nav-link">
+                                <i class="ti ti-checklist"></i>
+                                Pre-Migration Checklist
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#testing" class="docs-nav-link">
+                                <i class="ti ti-test-pipe"></i>
+                                Testing Strategy
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#monitoring" class="docs-nav-link">
+                                <i class="ti ti-activity"></i>
+                                Migration Monitoring
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#post-migration" class="docs-nav-link">
+                                <i class="ti ti-certificate"></i>
+                                Post-Migration Validation
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <!-- Introduction Section -->
+            <section id="introduction" class="docs-section">
+                <div class="section-header">
+                    <h1 class="section-title">Migration Guide</h1>
+                    <div class="section-meta">
+                        <span class="section-badge">Zero Downtime</span>
+                        <span class="section-version">v1.5.2</span>
+                        <span class="section-update">Updated Jan 30, 2025</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="section-intro">
+                        <p class="lead">
+                            Comprehensive migration guide for Neo Service Layer with automated tools, zero-downtime strategies, 
+                            and enterprise-grade data migration patterns. Successfully migrate your infrastructure, data, 
+                            and applications with confidence using our battle-tested procedures.
+                        </p>
+                    </div>
+
+                    <!-- Migration Overview -->
+                    <div class="migration-overview">
+                        <h3>Migration Scenarios</h3>
+                        <div class="scenario-grid">
+                            <div class="scenario-card">
+                                <div class="scenario-icon">
+                                    <i class="ti ti-arrow-up"></i>
+                                </div>
+                                <h4>Version Upgrades</h4>
+                                <p>Upgrade from older versions to v1.5.2 with automatic compatibility checks</p>
+                            </div>
+                            
+                            <div class="scenario-card">
+                                <div class="scenario-icon">
+                                    <i class="ti ti-transform"></i>
+                                </div>
+                                <h4>Platform Migration</h4>
+                                <p>Migrate between cloud providers (AWS, Azure, GCP) or on-premise</p>
+                            </div>
+                            
+                            <div class="scenario-card">
+                                <div class="scenario-icon">
+                                    <i class="ti ti-database-export"></i>
+                                </div>
+                                <h4>Data Migration</h4>
+                                <p>Transfer terabytes of data with integrity verification and minimal downtime</p>
+                            </div>
+                            
+                            <div class="scenario-card">
+                                <div class="scenario-icon">
+                                    <i class="ti ti-link"></i>
+                                </div>
+                                <h4>Blockchain Migration</h4>
+                                <p>Migrate between Neo N3 and Neo X or upgrade smart contracts</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Features -->
+                    <div class="key-features">
+                        <h3>Migration Features</h3>
+                        <ul class="feature-list">
+                            <li><strong>Zero-downtime migrations</strong> using blue-green deployments</li>
+                            <li><strong>Automated rollback</strong> with instant recovery capability</li>
+                            <li><strong>Data integrity validation</strong> with cryptographic verification</li>
+                            <li><strong>Progressive migration</strong> with canary deployments</li>
+                            <li><strong>Real-time monitoring</strong> during migration process</li>
+                            <li><strong>Comprehensive logging</strong> for audit trails</li>
+                            <li><strong>Automated testing</strong> at each migration phase</li>
+                            <li><strong>Multi-region support</strong> for global deployments</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Version Compatibility Section -->
+            <section id="compatibility" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Version Compatibility</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Critical</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="compatibility-matrix">
+                        <h3>Compatibility Matrix</h3>
+                        <table class="compatibility-table">
+                            <thead>
+                                <tr>
+                                    <th>Current Version</th>
+                                    <th>Target Version</th>
+                                    <th>Direct Upgrade</th>
+                                    <th>Data Migration Required</th>
+                                    <th>Breaking Changes</th>
+                                    <th>Downtime Required</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>v1.4.x</td>
+                                    <td>v1.5.2</td>
+                                    <td><span class="compat-yes">✓ Yes</span></td>
+                                    <td><span class="compat-no">✗ No</span></td>
+                                    <td><span class="compat-no">✗ None</span></td>
+                                    <td><span class="compat-no">✗ No</span></td>
+                                </tr>
+                                <tr>
+                                    <td>v1.3.x</td>
+                                    <td>v1.5.2</td>
+                                    <td><span class="compat-yes">✓ Yes</span></td>
+                                    <td><span class="compat-partial">⚠ Partial</span></td>
+                                    <td><span class="compat-partial">⚠ Minor</span></td>
+                                    <td><span class="compat-no">✗ No</span></td>
+                                </tr>
+                                <tr>
+                                    <td>v1.2.x</td>
+                                    <td>v1.5.2</td>
+                                    <td><span class="compat-partial">⚠ Via v1.4</span></td>
+                                    <td><span class="compat-yes">✓ Yes</span></td>
+                                    <td><span class="compat-yes">✓ Major</span></td>
+                                    <td><span class="compat-partial">⚠ Optional</span></td>
+                                </tr>
+                                <tr>
+                                    <td>v1.0.x - v1.1.x</td>
+                                    <td>v1.5.2</td>
+                                    <td><span class="compat-no">✗ Multi-step</span></td>
+                                    <td><span class="compat-yes">✓ Yes</span></td>
+                                    <td><span class="compat-yes">✓ Major</span></td>
+                                    <td><span class="compat-yes">✓ Yes</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+
+                    <!-- Breaking Changes -->
+                    <div class="breaking-changes">
+                        <h3>Breaking Changes in v1.5.x</h3>
+                        <div class="change-list">
+                            <div class="change-item">
+                                <h4>API Changes</h4>
+                                <ul>
+                                    <li><code>BlockchainType</code> parameter now required for all operations</li>
+                                    <li>Authentication header format changed from <code>X-API-Key</code> to <code>Authorization: Bearer</code></li>
+                                    <li>Response format standardized with <code>data</code> wrapper</li>
+                                    <li>Error codes restructured with service prefixes</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="change-item">
+                                <h4>Database Schema Changes</h4>
+                                <ul>
+                                    <li>New columns added for multi-blockchain support</li>
+                                    <li>Index restructuring for performance optimization</li>
+                                    <li>Partitioning implemented for large tables</li>
+                                    <li>Foreign key constraints added for data integrity</li>
+                                </ul>
+                            </div>
+                            
+                            <div class="change-item">
+                                <h4>Configuration Changes</h4>
+                                <ul>
+                                    <li>Environment variables renamed for consistency</li>
+                                    <li>YAML configuration format updated</li>
+                                    <li>New required security parameters</li>
+                                    <li>Service discovery mechanism changed</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Migration Strategies Section -->
+            <section id="strategies" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Migration Strategies</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Best Practices</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <!-- Blue-Green Deployment -->
+                    <div class="migration-strategy">
+                        <div class="strategy-header">
+                            <div class="strategy-icon">
+                                <i class="ti ti-switch-3"></i>
+                            </div>
+                            <h3 class="strategy-title">Blue-Green Deployment</h3>
+                            <span class="strategy-badge risk-low">Low Risk</span>
+                        </div>
+                        
+                        <p>Deploy new version alongside existing version and switch traffic atomically:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-bash">
+#!/bin/bash
+# Blue-Green Migration Script
+
+# Step 1: Deploy Green environment
+echo "Deploying Green environment (v1.5.2)..."
+kubectl apply -f deployment-green.yaml -n neo-green
+
+# Step 2: Wait for Green to be ready
+kubectl wait --for=condition=ready pod -l app=neo-service,version=v1.5.2 -n neo-green --timeout=600s
+
+# Step 3: Run smoke tests
+echo "Running smoke tests on Green environment..."
+./scripts/smoke-tests.sh https://green.neo-internal.com
+
+# Step 4: Gradually shift traffic
+echo "Starting traffic migration..."
+for weight in 10 25 50 75 90 100; do
+    echo "Shifting ${weight}% traffic to Green..."
+    kubectl patch virtualservice neo-service -n istio-system --type merge -p '
+    {
+      "spec": {
+        "http": [
+          {
+            "match": [{"headers": {"canary": {"exact": "true"}}}],
+            "route": [{"destination": {"host": "neo-service-green", "port": {"number": 80}}}]
+          },
+          {
+            "route": [
+              {"destination": {"host": "neo-service-blue", "port": {"number": 80}}, "weight": '$((100-weight))'},
+              {"destination": {"host": "neo-service-green", "port": {"number": 80}}, "weight": '$weight'}
+            ]
+          }
+        ]
+      }
+    }'
+    
+    # Monitor error rates
+    sleep 300 # 5 minutes
+    ERROR_RATE=$(curl -s http://prometheus:9090/api/v1/query?query=rate(http_requests_total{status=~"5.."}[5m]) | jq -r '.data.result[0].value[1]')
+    
+    if (( $(echo "$ERROR_RATE > 0.01" | bc -l) )); then
+        echo "Error rate too high, rolling back..."
+        kubectl patch virtualservice neo-service -n istio-system --type merge -p '
+        {"spec": {"http": [{"route": [{"destination": {"host": "neo-service-blue"}}]}]}}'
+        exit 1
+    fi
+done
+
+echo "Migration completed successfully!"
+
+# Step 5: Cleanup Blue environment after validation period
+echo "Schedule Blue environment cleanup in 24 hours..."
+at now + 24 hours <<EOF
+kubectl delete namespace neo-blue
+EOF
+                            </code>
+                        </div>
+
+                        <h4>Advantages</h4>
+                        <ul>
+                            <li>Zero downtime deployment</li>
+                            <li>Instant rollback capability</li>
+                            <li>Easy validation of new version</li>
+                            <li>No data migration during switch</li>
+                        </ul>
+                    </div>
+
+                    <!-- Canary Deployment -->
+                    <div class="migration-strategy">
+                        <div class="strategy-header">
+                            <div class="strategy-icon">
+                                <i class="ti ti-percentage"></i>
+                            </div>
+                            <h3 class="strategy-title">Canary Deployment</h3>
+                            <span class="strategy-badge risk-medium">Medium Risk</span>
+                        </div>
+                        
+                        <p>Gradually roll out changes to a subset of users:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# Flagger Canary Configuration
+apiVersion: flagger.app/v1beta1
+kind: Canary
+metadata:
+  name: neo-service-canary
+  namespace: neo-prod
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neo-service
+  
+  # Progressive delivery configuration
+  progressDeadlineSeconds: 3600
+  
+  service:
+    port: 80
+    targetPort: 8080
+    gateways:
+    - public-gateway.istio-system.svc.cluster.local
+    hosts:
+    - api.neoservicelayer.com
+    
+  analysis:
+    # Canary analysis interval
+    interval: 1m
+    
+    # Max number of failed checks
+    threshold: 5
+    
+    # Max traffic percentage
+    maxWeight: 50
+    
+    # Canary increment step
+    stepWeight: 10
+    
+    # Metrics for canary analysis
+    metrics:
+    - name: request-success-rate
+      thresholdRange:
+        min: 99
+      interval: 1m
+      
+    - name: request-duration
+      thresholdRange:
+        max: 500
+      interval: 30s
+      
+    - name: error-rate
+      templateRef:
+        name: error-rate
+        namespace: flagger-system
+      thresholdRange:
+        max: 1
+      interval: 1m
+      
+    # Load testing during canary
+    webhooks:
+    - name: load-test
+      type: rollout
+      url: http://flagger-loadtester.test/
+      timeout: 5s
+      metadata:
+        cmd: "hey -z 1m -q 10 -c 2 -H 'Authorization: Bearer test' https://api.neoservicelayer.com/"
+        
+    - name: acceptance-test
+      type: pre-rollout
+      url: http://flagger-loadtester.test/
+      timeout: 30s
+      metadata:
+        type: bash
+        cmd: "curl -s https://api.neoservicelayer.com/health | grep -q 'healthy'"
+        
+    # Alerts
+    alerts:
+    - name: "canary-rollout"
+      severity: info
+      providerRef:
+        name: slack
+        namespace: flagger-system
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Rolling Update -->
+                    <div class="migration-strategy">
+                        <div class="strategy-header">
+                            <div class="strategy-icon">
+                                <i class="ti ti-refresh"></i>
+                            </div>
+                            <h3 class="strategy-title">Rolling Update</h3>
+                            <span class="strategy-badge risk-low">Low Risk</span>
+                        </div>
+                        
+                        <p>Update instances one at a time with health checks:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-yaml">
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-service
+spec:
+  replicas: 10
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 2        # Max pods above desired replicas
+      maxUnavailable: 1  # Max pods unavailable during update
+      
+  template:
+    spec:
+      containers:
+      - name: neo-service
+        image: neo-service:v1.5.2
+        
+        # Readiness probe for safe rolling
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 5
+          successThreshold: 2
+          failureThreshold: 3
+          
+        # Liveness probe
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 60
+          periodSeconds: 10
+          
+        # Graceful shutdown
+        lifecycle:
+          preStop:
+            exec:
+              command:
+              - /bin/sh
+              - -c
+              - |
+                # Signal service to stop accepting new requests
+                curl -X POST localhost:8080/admin/drain
+                # Wait for in-flight requests to complete
+                sleep 30
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Migration Timeline Section -->
+            <section id="timeline" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Migration Timeline</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Planning</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="migration-timeline">
+                        <h3>Typical Enterprise Migration Timeline</h3>
+                        <p>Complete migration process from planning to validation:</p>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">1</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Planning & Assessment</h4>
+                                <p class="timeline-duration">1-2 weeks</p>
+                                <ul>
+                                    <li>Inventory current infrastructure and dependencies</li>
+                                    <li>Analyze breaking changes and compatibility</li>
+                                    <li>Define success metrics and rollback criteria</li>
+                                    <li>Create detailed migration plan and runbooks</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">2</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Environment Preparation</h4>
+                                <p class="timeline-duration">1 week</p>
+                                <ul>
+                                    <li>Provision new infrastructure resources</li>
+                                    <li>Set up monitoring and alerting</li>
+                                    <li>Configure security policies and certificates</li>
+                                    <li>Install migration tools and scripts</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">3</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Data Migration</h4>
+                                <p class="timeline-duration">2-5 days</p>
+                                <ul>
+                                    <li>Create database backups and snapshots</li>
+                                    <li>Run schema migration scripts</li>
+                                    <li>Perform initial data sync</li>
+                                    <li>Set up continuous replication</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">4</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Service Deployment</h4>
+                                <p class="timeline-duration">1-2 days</p>
+                                <ul>
+                                    <li>Deploy new version in parallel</li>
+                                    <li>Configure service mesh and routing</li>
+                                    <li>Run integration tests</li>
+                                    <li>Validate service health</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">5</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Traffic Migration</h4>
+                                <p class="timeline-duration">4-8 hours</p>
+                                <ul>
+                                    <li>Start with canary traffic (5%)</li>
+                                    <li>Monitor metrics and error rates</li>
+                                    <li>Gradually increase traffic percentage</li>
+                                    <li>Complete traffic switchover</li>
+                                </ul>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-marker">6</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Validation & Cleanup</h4>
+                                <p class="timeline-duration">1 week</p>
+                                <ul>
+                                    <li>Run comprehensive test suites</li>
+                                    <li>Verify data integrity</li>
+                                    <li>Monitor for stability</li>
+                                    <li>Decommission old infrastructure</li>
+                                </ul>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Data Migration Section -->
+            <section id="data-migration" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Data Migration</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Critical Path</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="data-migration-overview">
+                        <h3>Zero-Downtime Data Migration</h3>
+                        
+                        <div class="data-migration-visual">
+                            <h4>Migration Flow</h4>
+                            <div class="migration-flow">
+                                <div class="flow-node">Old Database</div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-node active">CDC Replication</div>
+                                <div class="flow-arrow">→</div>
+                                <div class="flow-node">New Database</div>
+                            </div>
+                        </div>
+
+                        <!-- Database Migration Script -->
+                        <div class="migration-tool">
+                            <div class="tool-header">
+                                <div class="tool-icon">
+                                    <i class="ti ti-database"></i>
+                                </div>
+                                <h4 class="tool-name">Database Migration Tool</h4>
+                            </div>
+                            <p class="tool-description">Automated database migration with schema versioning and data validation:</p>
+                            
+                            <div class="code-playground">
+                                <code class="language-python">
+#!/usr/bin/env python3
+"""
+Neo Service Layer Database Migration Tool
+Handles schema migrations and data transfer with zero downtime
+"""
+
+import asyncio
+import asyncpg
+import logging
+from datetime import datetime
+from typing import Dict, List, Optional
+import click
+import yaml
+from dataclasses import dataclass
+
+@dataclass
+class MigrationConfig:
+    source_db: str
+    target_db: str
+    batch_size: int = 10000
+    parallel_workers: int = 4
+    validate_data: bool = True
+    use_cdc: bool = True
+
+class DatabaseMigrator:
+    def __init__(self, config: MigrationConfig):
+        self.config = config
+        self.source_pool = None
+        self.target_pool = None
+        self.logger = logging.getLogger(__name__)
+        
+    async def connect(self):
+        """Establish connection pools"""
+        self.source_pool = await asyncpg.create_pool(
+            self.config.source_db,
+            min_size=10,
+            max_size=20
+        )
+        self.target_pool = await asyncpg.create_pool(
+            self.config.target_db,
+            min_size=10,
+            max_size=20
+        )
+        
+    async def migrate_schema(self):
+        """Migrate database schema with version tracking"""
+        self.logger.info("Starting schema migration...")
+        
+        async with self.source_pool.acquire() as source_conn:
+            # Get current schema version
+            current_version = await source_conn.fetchval(
+                "SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1"
+            )
+            
+        # Apply migration scripts
+        migrations_path = "./migrations"
+        for migration_file in sorted(os.listdir(migrations_path)):
+            version = migration_file.split('_')[0]
+            if version > current_version:
+                self.logger.info(f"Applying migration {migration_file}")
+                
+                with open(f"{migrations_path}/{migration_file}", 'r') as f:
+                    migration_sql = f.read()
+                    
+                async with self.target_pool.acquire() as target_conn:
+                    async with target_conn.transaction():
+                        await target_conn.execute(migration_sql)
+                        await target_conn.execute(
+                            "INSERT INTO schema_migrations (version, applied_at) VALUES ($1, $2)",
+                            version, datetime.utcnow()
+                        )
+                        
+    async def setup_cdc(self):
+        """Setup Change Data Capture for real-time sync"""
+        self.logger.info("Setting up CDC replication...")
+        
+        async with self.source_pool.acquire() as conn:
+            # Create logical replication slot
+            await conn.execute("""
+                SELECT pg_create_logical_replication_slot('neo_migration_slot', 'pgoutput')
+                WHERE NOT EXISTS (
+                    SELECT 1 FROM pg_replication_slots 
+                    WHERE slot_name = 'neo_migration_slot'
+                )
+            """)
+            
+            # Create publication for all tables
+            await conn.execute("""
+                CREATE PUBLICATION neo_migration_pub FOR ALL TABLES
+            """)
+            
+    async def migrate_table(self, table_name: str, where_clause: str = ""):
+        """Migrate a single table with progress tracking"""
+        self.logger.info(f"Migrating table: {table_name}")
+        
+        # Get total row count
+        async with self.source_pool.acquire() as conn:
+            total_rows = await conn.fetchval(
+                f"SELECT COUNT(*) FROM {table_name} {where_clause}"
+            )
+            
+        self.logger.info(f"Total rows to migrate: {total_rows:,}")
+        
+        # Migrate in batches
+        offset = 0
+        migrated = 0
+        
+        while offset < total_rows:
+            async with self.source_pool.acquire() as source_conn:
+                # Fetch batch
+                query = f"""
+                    SELECT * FROM {table_name} 
+                    {where_clause}
+                    ORDER BY id
+                    LIMIT $1 OFFSET $2
+                """
+                rows = await source_conn.fetch(query, self.config.batch_size, offset)
+                
+            if not rows:
+                break
+                
+            # Insert batch into target
+            async with self.target_pool.acquire() as target_conn:
+                # Build insert query dynamically
+                columns = list(rows[0].keys())
+                placeholders = ', '.join(f'${i+1}' for i in range(len(columns)))
+                insert_query = f"""
+                    INSERT INTO {table_name} ({', '.join(columns)})
+                    VALUES ({placeholders})
+                    ON CONFLICT (id) DO UPDATE SET
+                    {', '.join(f'{col} = EXCLUDED.{col}' for col in columns if col != 'id')}
+                """
+                
+                # Bulk insert
+                async with target_conn.transaction():
+                    await target_conn.executemany(
+                        insert_query,
+                        [tuple(row.values()) for row in rows]
+                    )
+                    
+            migrated += len(rows)
+            offset += self.config.batch_size
+            
+            # Progress update
+            progress = (migrated / total_rows) * 100
+            self.logger.info(f"Progress: {progress:.1f}% ({migrated:,}/{total_rows:,})")
+            
+    async def validate_migration(self, table_name: str) -> bool:
+        """Validate data integrity after migration"""
+        self.logger.info(f"Validating table: {table_name}")
+        
+        # Compare row counts
+        async with self.source_pool.acquire() as source_conn:
+            source_count = await source_conn.fetchval(
+                f"SELECT COUNT(*) FROM {table_name}"
+            )
+            source_checksum = await source_conn.fetchval(
+                f"SELECT MD5(CAST(array_agg(t.* ORDER BY id) AS text)) FROM {table_name} t"
+            )
+            
+        async with self.target_pool.acquire() as target_conn:
+            target_count = await target_conn.fetchval(
+                f"SELECT COUNT(*) FROM {table_name}"
+            )
+            target_checksum = await target_conn.fetchval(
+                f"SELECT MD5(CAST(array_agg(t.* ORDER BY id) AS text)) FROM {table_name} t"
+            )
+            
+        if source_count != target_count:
+            self.logger.error(f"Row count mismatch: {source_count} vs {target_count}")
+            return False
+            
+        if source_checksum != target_checksum:
+            self.logger.error("Data checksum mismatch")
+            return False
+            
+        self.logger.info(f"Validation passed: {source_count:,} rows")
+        return True
+        
+    async def run_migration(self, tables: List[str]):
+        """Run complete migration process"""
+        try:
+            await self.connect()
+            await self.migrate_schema()
+            
+            if self.config.use_cdc:
+                await self.setup_cdc()
+                
+            # Migrate tables in parallel
+            tasks = []
+            for table in tables:
+                task = asyncio.create_task(self.migrate_table(table))
+                tasks.append(task)
+                
+            await asyncio.gather(*tasks)
+            
+            # Validate if enabled
+            if self.config.validate_data:
+                for table in tables:
+                    if not await self.validate_migration(table):
+                        raise Exception(f"Validation failed for {table}")
+                        
+            self.logger.info("Migration completed successfully!")
+            
+        finally:
+            if self.source_pool:
+                await self.source_pool.close()
+            if self.target_pool:
+                await self.target_pool.close()
+
+@click.command()
+@click.option('--config', '-c', required=True, help='Migration config file')
+@click.option('--tables', '-t', multiple=True, help='Tables to migrate')
+@click.option('--validate/--no-validate', default=True, help='Validate after migration')
+def main(config: str, tables: tuple, validate: bool):
+    """Neo Service Layer Database Migration Tool"""
+    
+    # Load configuration
+    with open(config, 'r') as f:
+        config_data = yaml.safe_load(f)
+        
+    migration_config = MigrationConfig(
+        source_db=config_data['source_db'],
+        target_db=config_data['target_db'],
+        batch_size=config_data.get('batch_size', 10000),
+        validate_data=validate
+    )
+    
+    # Setup logging
+    logging.basicConfig(
+        level=logging.INFO,
+        format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    )
+    
+    # Run migration
+    migrator = DatabaseMigrator(migration_config)
+    asyncio.run(migrator.run_migration(list(tables)))
+
+if __name__ == '__main__':
+    main()
+                                </code>
+                            </div>
+                        </div>
+
+                        <!-- Migration Configuration -->
+                        <div class="migration-tool">
+                            <div class="tool-header">
+                                <div class="tool-icon">
+                                    <i class="ti ti-settings"></i>
+                                </div>
+                                <h4 class="tool-name">Migration Configuration</h4>
+                            </div>
+                            <p class="tool-description">Example configuration for production migration:</p>
+                            
+                            <div class="code-playground">
+                                <code class="language-yaml">
+# migration-config.yaml
+source_db: postgresql://user:pass@old-db:5432/neo_service_layer
+target_db: postgresql://user:pass@new-db:5432/neo_service_layer_v2
+
+# Batch processing
+batch_size: 10000
+parallel_workers: 8
+
+# Data validation
+validate_data: true
+checksum_validation: true
+
+# CDC Configuration
+use_cdc: true
+cdc_slot_name: neo_migration_slot
+
+# Tables to migrate (in order)
+tables:
+  - name: users
+    where_clause: ""
+    priority: 1
+    
+  - name: storage_items
+    where_clause: "WHERE created_at > '2024-01-01'"
+    priority: 2
+    partition_by: created_at
+    
+  - name: transactions
+    where_clause: ""
+    priority: 3
+    batch_size: 50000  # Larger batches for this table
+    
+  - name: identity_credentials
+    where_clause: ""
+    priority: 4
+    sensitive: true  # Extra encryption during transfer
+
+# Schema migrations
+schema:
+  pre_migration:
+    - file: 001_create_indexes.sql
+    - file: 002_add_blockchain_columns.sql
+    
+  post_migration:
+    - file: 003_update_constraints.sql
+    - file: 004_rebuild_materialized_views.sql
+
+# Monitoring
+monitoring:
+  metrics_endpoint: http://prometheus:9090
+  alert_webhook: https://slack.webhook.url
+  progress_interval: 60  # seconds
+  
+# Rollback configuration
+rollback:
+  enabled: true
+  snapshot_before: true
+  keep_snapshots: 3
+                                </code>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Migration Tools Section -->
+            <section id="migration-tools" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Migration Tools</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Automation</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <h3>Automated Migration Toolkit</h3>
+                    
+                    <!-- CLI Tool -->
+                    <div class="migration-tool">
+                        <div class="tool-header">
+                            <div class="tool-icon">
+                                <i class="ti ti-terminal"></i>
+                            </div>
+                            <h4 class="tool-name">Neo Migration CLI</h4>
+                        </div>
+                        <p class="tool-description">Command-line tool for automated migrations:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-bash">
+# Install Neo Migration CLI
+npm install -g @neo-service-layer/migration-cli
+
+# Initialize migration project
+neo-migrate init --type version-upgrade --from v1.4.0 --to v1.5.2
+
+# Analyze current environment
+neo-migrate analyze --environment production
+# Output:
+# ✓ 22 services detected
+# ✓ 3.2TB data to migrate
+# ✓ 15 breaking changes identified
+# ⚠ 3 manual interventions required
+
+# Generate migration plan
+neo-migrate plan --strategy blue-green --zero-downtime
+# Creates: migration-plan-2025-01-30.yaml
+
+# Validate migration plan
+neo-migrate validate --plan migration-plan-2025-01-30.yaml
+
+# Execute migration with monitoring
+neo-migrate execute \
+  --plan migration-plan-2025-01-30.yaml \
+  --monitor \
+  --rollback-on-error \
+  --slack-webhook $SLACK_WEBHOOK
+
+# Check migration status
+neo-migrate status --detailed
+
+# Run post-migration validation
+neo-migrate validate --post-migration --comprehensive
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Compatibility Checker -->
+                    <div class="migration-tool">
+                        <div class="tool-header">
+                            <div class="tool-icon">
+                                <i class="ti ti-check"></i>
+                            </div>
+                            <h4 class="tool-name">Compatibility Checker</h4>
+                        </div>
+                        <p class="tool-description">Automated compatibility analysis tool:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-javascript">
+// compatibility-checker.js
+const { CompatibilityChecker } = require('@neo-service-layer/migration-tools');
+
+async function checkCompatibility() {
+  const checker = new CompatibilityChecker({
+    currentVersion: 'v1.4.2',
+    targetVersion: 'v1.5.2',
+    environment: 'production'
+  });
+  
+  // API Compatibility Check
+  const apiReport = await checker.checkAPICompatibility({
+    currentSwagger: './api/v1.4.2/swagger.json',
+    targetSwagger: './api/v1.5.2/swagger.json'
+  });
+  
+  console.log('API Compatibility Report:');
+  console.log(`- Breaking changes: ${apiReport.breakingChanges.length}`);
+  console.log(`- Deprecated endpoints: ${apiReport.deprecations.length}`);
+  console.log(`- New required parameters: ${apiReport.newRequired.length}`);
+  
+  // Database Schema Compatibility
+  const schemaReport = await checker.checkSchemaCompatibility({
+    currentSchema: await getCurrentSchema(),
+    targetSchema: await getTargetSchema()
+  });
+  
+  console.log('\nSchema Compatibility Report:');
+  console.log(`- New tables: ${schemaReport.newTables.length}`);
+  console.log(`- Modified columns: ${schemaReport.modifiedColumns.length}`);
+  console.log(`- Dropped constraints: ${schemaReport.droppedConstraints.length}`);
+  
+  // Configuration Compatibility
+  const configReport = await checker.checkConfigCompatibility({
+    currentConfig: './config/v1.4.2/production.yaml',
+    targetConfig: './config/v1.5.2/production.yaml'
+  });
+  
+  // Generate compatibility report
+  await checker.generateReport({
+    output: './migration-compatibility-report.html',
+    format: 'html',
+    includeRecommendations: true
+  });
+  
+  // Exit with error if critical issues found
+  if (apiReport.breakingChanges.length > 0 && !apiReport.migrationPath) {
+    console.error('❌ Critical compatibility issues found!');
+    process.exit(1);
+  }
+  
+  console.log('✅ Compatibility check passed with warnings');
+}
+
+checkCompatibility().catch(console.error);
+                            </code>
+                        </div>
+                    </div>
+
+                    <!-- Data Validation Tool -->
+                    <div class="migration-tool">
+                        <div class="tool-header">
+                            <div class="tool-icon">
+                                <i class="ti ti-shield-check"></i>
+                            </div>
+                            <h4 class="tool-name">Data Validation Suite</h4>
+                        </div>
+                        <p class="tool-description">Comprehensive data integrity validation:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-python">
+#!/usr/bin/env python3
+"""
+Data Validation Suite for Neo Service Layer Migration
+Ensures data integrity during and after migration
+"""
+
+import hashlib
+import asyncio
+from typing import Dict, List, Tuple
+import pandas as pd
+from deepdiff import DeepDiff
+
+class DataValidator:
+    def __init__(self, source_conn, target_conn):
+        self.source = source_conn
+        self.target = target_conn
+        self.validation_results = []
+        
+    async def validate_table(self, table_name: str) -> Dict:
+        """Comprehensive table validation"""
+        results = {
+            'table': table_name,
+            'status': 'passed',
+            'checks': []
+        }
+        
+        # 1. Row count validation
+        source_count = await self.source.fetchval(
+            f"SELECT COUNT(*) FROM {table_name}"
+        )
+        target_count = await self.target.fetchval(
+            f"SELECT COUNT(*) FROM {table_name}"
+        )
+        
+        count_check = {
+            'check': 'row_count',
+            'passed': source_count == target_count,
+            'source': source_count,
+            'target': target_count
+        }
+        results['checks'].append(count_check)
+        
+        # 2. Schema validation
+        source_schema = await self.get_table_schema(self.source, table_name)
+        target_schema = await self.get_table_schema(self.target, table_name)
+        
+        schema_diff = DeepDiff(source_schema, target_schema, ignore_order=True)
+        schema_check = {
+            'check': 'schema_match',
+            'passed': not schema_diff,
+            'differences': str(schema_diff) if schema_diff else None
+        }
+        results['checks'].append(schema_check)
+        
+        # 3. Data checksum validation (sampling for large tables)
+        if source_count > 1000000:
+            # Sample validation for large tables
+            sample_size = min(100000, int(source_count * 0.01))
+            checksum_match = await self.validate_sample_checksum(
+                table_name, sample_size
+            )
+        else:
+            # Full validation for smaller tables
+            checksum_match = await self.validate_full_checksum(table_name)
+            
+        checksum_check = {
+            'check': 'data_checksum',
+            'passed': checksum_match,
+            'method': 'sample' if source_count > 1000000 else 'full'
+        }
+        results['checks'].append(checksum_check)
+        
+        # 4. Constraint validation
+        constraints_valid = await self.validate_constraints(table_name)
+        constraint_check = {
+            'check': 'constraints',
+            'passed': constraints_valid
+        }
+        results['checks'].append(constraint_check)
+        
+        # 5. Index validation
+        indexes_valid = await self.validate_indexes(table_name)
+        index_check = {
+            'check': 'indexes',
+            'passed': indexes_valid
+        }
+        results['checks'].append(index_check)
+        
+        # Overall status
+        results['status'] = 'passed' if all(
+            check['passed'] for check in results['checks']
+        ) else 'failed'
+        
+        return results
+        
+    async def validate_full_checksum(self, table_name: str) -> bool:
+        """Calculate and compare full table checksums"""
+        
+        # Get ordered data from both databases
+        source_query = f"""
+            SELECT MD5(
+                CAST(
+                    array_agg(
+                        row_to_json(t) ORDER BY t.id
+                    ) AS text
+                )
+            ) as checksum
+            FROM {table_name} t
+        """
+        
+        source_checksum = await self.source.fetchval(source_query)
+        target_checksum = await self.target.fetchval(source_query)
+        
+        return source_checksum == target_checksum
+        
+    async def validate_sample_checksum(
+        self, 
+        table_name: str, 
+        sample_size: int
+    ) -> bool:
+        """Validate using statistical sampling"""
+        
+        # Random sample validation
+        sample_query = f"""
+            WITH sample AS (
+                SELECT * FROM {table_name}
+                ORDER BY RANDOM()
+                LIMIT {sample_size}
+            )
+            SELECT MD5(
+                CAST(
+                    array_agg(
+                        row_to_json(t) ORDER BY t.id
+                    ) AS text
+                )
+            ) as checksum
+            FROM sample t
+        """
+        
+        # Run multiple samples
+        mismatches = 0
+        for i in range(5):
+            source_checksum = await self.source.fetchval(sample_query)
+            target_checksum = await self.target.fetchval(sample_query)
+            
+            if source_checksum != target_checksum:
+                mismatches += 1
+                
+        # Allow up to 20% mismatch rate for sampling
+        return mismatches <= 1
+        
+    async def generate_validation_report(self) -> str:
+        """Generate comprehensive validation report"""
+        
+        report = []
+        report.append("# Neo Service Layer Migration Validation Report")
+        report.append(f"Generated: {datetime.now().isoformat()}")
+        report.append("\n## Summary")
+        
+        total_tables = len(self.validation_results)
+        passed_tables = sum(
+            1 for r in self.validation_results if r['status'] == 'passed'
+        )
+        
+        report.append(f"- Total tables validated: {total_tables}")
+        report.append(f"- Passed: {passed_tables}")
+        report.append(f"- Failed: {total_tables - passed_tables}")
+        report.append(f"- Success rate: {(passed_tables/total_tables)*100:.1f}%")
+        
+        report.append("\n## Detailed Results")
+        
+        for result in self.validation_results:
+            report.append(f"\n### Table: {result['table']}")
+            report.append(f"Status: **{result['status'].upper()}**")
+            report.append("\n| Check | Result | Details |")
+            report.append("|-------|--------|---------|")
+            
+            for check in result['checks']:
+                status = "✅ PASS" if check['passed'] else "❌ FAIL"
+                details = self.format_check_details(check)
+                report.append(f"| {check['check']} | {status} | {details} |")
+                
+        return "\n".join(report)
+        
+    def format_check_details(self, check: Dict) -> str:
+        """Format check details for report"""
+        if check['check'] == 'row_count':
+            return f"Source: {check['source']:,}, Target: {check['target']:,}"
+        elif check['check'] == 'schema_match' and check['differences']:
+            return "Schema differences detected"
+        elif check['check'] == 'data_checksum':
+            return f"Method: {check['method']}"
+        else:
+            return "See detailed log"
+
+# Usage example
+async def main():
+    validator = DataValidator(source_conn, target_conn)
+    
+    tables = ['users', 'storage_items', 'transactions', 'identity_credentials']
+    
+    for table in tables:
+        result = await validator.validate_table(table)
+        validator.validation_results.append(result)
+        
+    report = await validator.generate_validation_report()
+    
+    with open('migration-validation-report.md', 'w') as f:
+        f.write(report)
+        
+    # Exit with appropriate code
+    failed_tables = sum(
+        1 for r in validator.validation_results if r['status'] == 'failed'
+    )
+    
+    if failed_tables > 0:
+        print(f"❌ Validation failed for {failed_tables} tables")
+        sys.exit(1)
+    else:
+        print("✅ All validations passed!")
+        sys.exit(0)
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Pre-Migration Checklist -->
+            <section id="pre-migration" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Pre-Migration Checklist</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Required</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="migration-checklist">
+                        <h3>Complete Pre-Migration Checklist</h3>
+                        <p>Ensure all items are completed before starting migration:</p>
+                        
+                        <div class="checklist-section">
+                            <h4 class="checklist-section-title">📋 Planning & Documentation</h4>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Migration plan reviewed and approved by all stakeholders
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Rollback procedures documented and tested
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Communication plan prepared for users and teams
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Maintenance window scheduled and communicated
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-section">
+                            <h4 class="checklist-section-title">🔧 Technical Preparation</h4>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Full backup of production databases completed
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Infrastructure resources provisioned and tested
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Migration tools installed and configured
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Monitoring and alerting systems configured
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    SSL certificates and security credentials prepared
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-section">
+                            <h4 class="checklist-section-title">✅ Validation & Testing</h4>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Dry run completed in staging environment
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Performance benchmarks established
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Automated test suite prepared and validated
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Data validation scripts tested
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-section">
+                            <h4 class="checklist-section-title">👥 Team Readiness</h4>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Migration team roles and responsibilities assigned
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    On-call rotation scheduled for migration window
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    Emergency contacts list updated and distributed
+                                </div>
+                            </div>
+                            <div class="checklist-item">
+                                <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                                <div class="checklist-content">
+                                    War room or communication channel established
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rollback Procedures -->
+            <section id="rollback" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Rollback Procedures</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Emergency</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="rollback-plan">
+                        <div class="rollback-header">
+                            <i class="ti ti-alert-triangle rollback-icon"></i>
+                            <h3 class="rollback-title">Emergency Rollback Plan</h3>
+                        </div>
+                        
+                        <p>Automated rollback procedures for different scenarios:</p>
+                        
+                        <div class="code-playground">
+                            <code class="language-bash">
+#!/bin/bash
+# emergency-rollback.sh
+# Automated rollback script for Neo Service Layer migration
+
+set -e
+
+# Configuration
+ROLLBACK_REASON="${1:-Unspecified}"
+ENVIRONMENT="${2:-production}"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+LOG_FILE="/var/log/neo-migration/rollback_${TIMESTAMP}.log"
+
+# Logging function
+log() {
+    echo "[$(date +'%Y-%m-%d %H:%M:%S')] $1" | tee -a $LOG_FILE
+}
+
+# Send alerts
+send_alert() {
+    local message="$1"
+    local severity="${2:-high}"
+    
+    # Slack notification
+    curl -X POST $SLACK_WEBHOOK \
+        -H 'Content-Type: application/json' \
+        -d "{\"text\": \"🚨 ROLLBACK INITIATED: ${message}\"}"
+    
+    # PagerDuty alert
+    curl -X POST https://events.pagerduty.com/v2/enqueue \
+        -H 'Content-Type: application/json' \
+        -d "{
+            \"routing_key\": \"${PAGERDUTY_KEY}\",
+            \"event_action\": \"trigger\",
+            \"payload\": {
+                \"summary\": \"Migration rollback: ${message}\",
+                \"severity\": \"${severity}\",
+                \"source\": \"neo-migration\",
+                \"custom_details\": {
+                    \"environment\": \"${ENVIRONMENT}\",
+                    \"reason\": \"${ROLLBACK_REASON}\"
+                }
+            }
+        }"
+}
+
+# Phase 1: Stop new traffic
+rollback_phase1_stop_traffic() {
+    log "Phase 1: Stopping new traffic to v1.5.2"
+    
+    # Update load balancer to stop sending traffic to new version
+    kubectl patch service neo-service -n neo-prod -p '
+    {
+        "spec": {
+            "selector": {
+                "version": "v1.4.2"
+            }
+        }
+    }'
+    
+    # Verify traffic switch
+    sleep 10
+    NEW_VERSION_TRAFFIC=$(curl -s http://prometheus:9090/api/v1/query?query=rate(http_requests_total{version="v1.5.2"}[1m]) | jq -r '.data.result[0].value[1]')
+    
+    if (( $(echo "$NEW_VERSION_TRAFFIC > 0" | bc -l) )); then
+        log "ERROR: Traffic still flowing to new version"
+        return 1
+    fi
+    
+    log "Phase 1 completed: Traffic stopped"
+    return 0
+}
+
+# Phase 2: Restore database
+rollback_phase2_restore_database() {
+    log "Phase 2: Restoring database to pre-migration state"
+    
+    # Stop replication
+    psql -h $DB_HOST -U $DB_USER -d $DB_NAME -c "
+        SELECT pg_drop_replication_slot('neo_migration_slot');
+    "
+    
+    # Restore from snapshot
+    if [[ -f "/backups/pre-migration-snapshot.sql" ]]; then
+        log "Restoring from pre-migration snapshot"
+        psql -h $DB_HOST -U $DB_USER -d $DB_NAME < /backups/pre-migration-snapshot.sql
+    else
+        log "ERROR: Pre-migration snapshot not found"
+        return 1
+    fi
+    
+    # Verify database state
+    CURRENT_VERSION=$(psql -h $DB_HOST -U $DB_USER -d $DB_NAME -t -c "
+        SELECT version FROM schema_migrations ORDER BY version DESC LIMIT 1;
+    ")
+    
+    log "Database restored to version: $CURRENT_VERSION"
+    return 0
+}
+
+# Phase 3: Restore services
+rollback_phase3_restore_services() {
+    log "Phase 3: Restoring services to v1.4.2"
+    
+    # Scale down new version
+    kubectl scale deployment neo-service-v152 -n neo-prod --replicas=0
+    
+    # Scale up old version
+    kubectl scale deployment neo-service-v142 -n neo-prod --replicas=10
+    
+    # Wait for pods to be ready
+    kubectl wait --for=condition=ready pod -l app=neo-service,version=v1.4.2 -n neo-prod --timeout=300s
+    
+    # Verify service health
+    for i in {1..10}; do
+        HEALTH_CHECK=$(curl -s https://api.neoservicelayer.com/health || echo "FAIL")
+        if [[ "$HEALTH_CHECK" == *"healthy"* ]]; then
+            log "Service health check passed"
+            return 0
+        fi
+        sleep 10
+    done
+    
+    log "ERROR: Service health check failed"
+    return 1
+}
+
+# Phase 4: Cleanup
+rollback_phase4_cleanup() {
+    log "Phase 4: Cleanup and validation"
+    
+    # Remove new version deployments
+    kubectl delete deployment neo-service-v152 -n neo-prod
+    
+    # Clear cache
+    redis-cli -h $REDIS_HOST FLUSHALL
+    
+    # Run validation tests
+    npm run test:production
+    
+    # Generate rollback report
+    cat > /tmp/rollback-report.json <<EOF
+{
+    "timestamp": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+    "environment": "${ENVIRONMENT}",
+    "reason": "${ROLLBACK_REASON}",
+    "from_version": "v1.5.2",
+    "to_version": "v1.4.2",
+    "duration": "${SECONDS} seconds",
+    "status": "completed"
+}
+EOF
+    
+    # Upload report
+    aws s3 cp /tmp/rollback-report.json s3://neo-migrations/rollbacks/${TIMESTAMP}/
+    
+    log "Phase 4 completed: Cleanup finished"
+    return 0
+}
+
+# Main rollback execution
+main() {
+    log "Starting emergency rollback"
+    log "Reason: $ROLLBACK_REASON"
+    
+    send_alert "Migration rollback initiated: $ROLLBACK_REASON" "critical"
+    
+    # Execute rollback phases
+    if rollback_phase1_stop_traffic; then
+        log "✓ Traffic stopped successfully"
+    else
+        log "✗ Failed to stop traffic"
+        exit 1
+    fi
+    
+    if rollback_phase2_restore_database; then
+        log "✓ Database restored successfully"
+    else
+        log "✗ Failed to restore database"
+        exit 1
+    fi
+    
+    if rollback_phase3_restore_services; then
+        log "✓ Services restored successfully"
+    else
+        log "✗ Failed to restore services"
+        exit 1
+    fi
+    
+    if rollback_phase4_cleanup; then
+        log "✓ Cleanup completed successfully"
+    else
+        log "✗ Cleanup failed (non-critical)"
+    fi
+    
+    # Final notification
+    send_alert "Migration rollback completed successfully" "info"
+    log "Rollback completed in ${SECONDS} seconds"
+}
+
+# Execute main function
+main
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="../src/scripts/navigation.js"></script>
+    <script src="../src/scripts/docs-search.js"></script>
+    <script src="../src/scripts/code-playground.js"></script>
+    
+    <!-- Migration guide specific JavaScript -->
+    <script>
+        // Checklist functionality
+        function toggleCheck(checkbox) {
+            checkbox.classList.toggle('checked');
+            
+            // Save state to localStorage
+            const checklistState = {};
+            document.querySelectorAll('.checklist-checkbox').forEach((cb, index) => {
+                checklistState[`item-${index}`] = cb.classList.contains('checked');
+            });
+            localStorage.setItem('migration-checklist', JSON.stringify(checklistState));
+            
+            // Update progress
+            updateChecklistProgress();
+        }
+        
+        // Load checklist state
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedState = localStorage.getItem('migration-checklist');
+            if (savedState) {
+                const checklistState = JSON.parse(savedState);
+                document.querySelectorAll('.checklist-checkbox').forEach((cb, index) => {
+                    if (checklistState[`item-${index}`]) {
+                        cb.classList.add('checked');
+                    }
+                });
+            }
+            
+            updateChecklistProgress();
+        });
+        
+        // Update checklist progress
+        function updateChecklistProgress() {
+            const total = document.querySelectorAll('.checklist-checkbox').length;
+            const checked = document.querySelectorAll('.checklist-checkbox.checked').length;
+            const progress = (checked / total) * 100;
+            
+            // Update progress indicator if exists
+            const progressElement = document.getElementById('checklist-progress');
+            if (progressElement) {
+                progressElement.style.width = `${progress}%`;
+                progressElement.textContent = `${Math.round(progress)}%`;
+            }
+        }
+        
+        // Copy button functionality for code blocks
+        document.querySelectorAll('.code-playground code').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-button';
+            button.innerHTML = '<i class="ti ti-copy"></i>';
+            button.onclick = () => {
+                navigator.clipboard.writeText(block.textContent);
+                button.innerHTML = '<i class="ti ti-check"></i>';
+                setTimeout(() => {
+                    button.innerHTML = '<i class="ti ti-copy"></i>';
+                }, 2000);
+            };
+            block.parentElement.appendChild(button);
+        });
+    </script>
+</body>
+</html>

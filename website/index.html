@@ -13,37 +13,58 @@
     <!-- Fonts -->
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
     
     <!-- CSS -->
+    <link rel="stylesheet" href="src/styles/design-system.css">
+    <link rel="stylesheet" href="src/styles/components.css">
+    <link rel="stylesheet" href="src/styles/navigation.css">
     <link rel="stylesheet" href="src/styles/main.css">
     
     <!-- Icons -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- SEO -->
+    <meta property="og:title" content="Neo Service Layer - Enterprise Blockchain Infrastructure">
+    <meta property="og:description" content="Build the future with Neo Service Layer. 22+ smart contracts, Intel SGX support, enterprise-grade security.">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neoservicelayer.com">
+    <meta property="og:image" content="https://neoservicelayer.com/images/og-image.png">
+    <link rel="canonical" href="https://neoservicelayer.com">
 </head>
 <body>
     <!-- Navigation -->
     <nav class="navbar" id="navbar">
         <div class="nav-container">
-            <div class="nav-brand">
-                <i class="fas fa-cube brand-icon"></i>
-                <span class="brand-text">Neo Service Layer</span>
-            </div>
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">⚡</span>
+                Neo Service Layer
+            </a>
+            
             <div class="nav-menu" id="nav-menu">
-                <a href="#home" class="nav-link">Home</a>
                 <a href="#features" class="nav-link">Features</a>
                 <a href="#services" class="nav-link">Services</a>
-                <a href="#documentation" class="nav-link">Docs</a>
-                <a href="app.html" class="nav-link highlight" style="color: var(--primary-color); font-weight: 600;">
-                    <i class="fas fa-rocket"></i> Launch App
-                </a>
-                <a href="#getting-started" class="nav-link">Get Started</a>
-            </div>
-            <div class="nav-actions">
-                <a href="https://github.com/r3e-network/neo-service-layer" class="btn btn-outline" target="_blank">
+                <div class="nav-dropdown">
+                    <a href="/docs/" class="nav-link">Documentation</a>
+                    <div class="nav-dropdown-menu">
+                        <a href="/docs/quick-start.html" class="nav-dropdown-item">Quick Start</a>
+                        <a href="/docs/sdk-v2-reference.html" class="nav-dropdown-item">SDK v2 Reference</a>
+                        <a href="/docs/api-reference.html" class="nav-dropdown-item">API Reference</a>
+                        <a href="/docs/deployment-guide.html" class="nav-dropdown-item">Deployment Guide</a>
+                        <a href="/docs/migration-guide.html" class="nav-dropdown-item">Migration Guide</a>
+                    </div>
+                </div>
+                <a href="https://github.com/neo-service-layer" class="nav-link" target="_blank">
                     <i class="fab fa-github"></i> GitHub
                 </a>
-                <button class="nav-toggle" id="nav-toggle">
+            </div>
+            
+            <div class="nav-actions">
+                <button class="neo-btn neo-btn-ghost neo-btn-sm" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="/app.html" class="neo-btn neo-btn-primary neo-btn-sm">Launch App</a>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
                     <span></span>
                     <span></span>
                     <span></span>
@@ -59,13 +80,15 @@
         </div>
         <div class="container">
             <div class="hero-content">
-                <div class="hero-badge">
-                    <i class="fas fa-rocket"></i>
+                <div class="hero-badge neo-badge neo-badge-primary">
+                    <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M6 2a1 1 0 00-1 1v1H4a2 2 0 00-2 2v10a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-1V3a1 1 0 10-2 0v1H7V3a1 1 0 00-1-1zm0 5a1 1 0 000 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/>
+                    </svg>
                     <span>Enterprise-Grade Blockchain Infrastructure</span>
                 </div>
                 <h1 class="hero-title">
                     Build the Future with
-                    <span class="gradient-text">Neo Service Layer</span>
+                    <span class="neo-text-gradient">Neo Service Layer</span>
                 </h1>
                 <p class="hero-description">
                     A comprehensive blockchain service framework with 22+ smart contracts, 
@@ -73,30 +96,30 @@
                     DeFi applications with confidence.
                 </p>
                 <div class="hero-actions">
-                    <a href="app.html" class="btn btn-primary btn-large">
-                        <i class="fas fa-rocket"></i>
+                    <a href="/app.html" class="neo-btn neo-btn-primary neo-btn-lg">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10.293 3.293a1 1 0 011.414 0l6 6a1 1 0 010 1.414l-6 6a1 1 0 01-1.414-1.414L14.586 11H3a1 1 0 110-2h11.586l-4.293-4.293a1 1 0 010-1.414z" clip-rule="evenodd"/>
+                        </svg>
                         Launch Dashboard
                     </a>
-                    <a href="#getting-started" class="btn btn-secondary btn-large">
-                        <i class="fas fa-play"></i>
+                    <a href="/docs/quick-start.html" class="neo-btn neo-btn-ghost neo-btn-lg">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path d="M9 4.804A7.968 7.968 0 005.5 4c-1.255 0-2.443.29-3.5.804v10A7.969 7.969 0 015.5 14c1.669 0 3.218.51 4.5 1.385A7.962 7.962 0 0114.5 14c1.255 0 2.443.29 3.5.804v-10A7.968 7.968 0 0014.5 4c-1.255 0-2.443.29-3.5.804V12a1 1 0 11-2 0V4.804z"/>
+                        </svg>
                         Get Started
-                    </a>
-                    <a href="#documentation" class="btn btn-secondary btn-large">
-                        <i class="fas fa-book"></i>
-                        Documentation
                     </a>
                 </div>
                 <div class="hero-stats">
                     <div class="stat">
-                        <div class="stat-number">22+</div>
+                        <div class="stat-number neo-animate-pulse">22+</div>
                         <div class="stat-label">Smart Contracts</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-number">100%</div>
+                        <div class="stat-number neo-animate-pulse" style="animation-delay: 0.2s">100%</div>
                         <div class="stat-label">Test Coverage</div>
                     </div>
                     <div class="stat">
-                        <div class="stat-number">SGX</div>
+                        <div class="stat-number neo-animate-pulse" style="animation-delay: 0.4s">SGX</div>
                         <div class="stat-label">Secure Enclaves</div>
                     </div>
                 </div>
@@ -884,45 +907,54 @@ public class OracleService : SmartContract
         <div class="container">
             <div class="footer-content">
                 <div class="footer-section">
-                    <h4>Documentation</h4>
+                    <h4>Product</h4>
                     <ul class="footer-links">
-                        <li><a href="docs/quick-start.html">Quick Start</a></li>
-                        <li><a href="docs/api-reference.html">API Reference</a></li>
-                        <li><a href="docs/advanced-setup.html">Advanced Setup</a></li>
+                        <li><a href="/#features">Features</a></li>
+                        <li><a href="/#services">Services</a></li>
+                        <li><a href="/docs/quick-start.html">Documentation</a></li>
+                        <li><a href="/app.html">Launch App</a></li>
                     </ul>
                 </div>
-                <div class="footer-section">
-                    <h4>Community</h4>
-                    <ul class="footer-links">
-                        <li><a href="https://github.com/r3e-network/neo-service-layer" target="_blank">GitHub</a></li>
-                        <li><a href="https://discord.gg/neo" target="_blank">Discord</a></li>
-                        <li><a href="https://neo.org" target="_blank">Neo Website</a></li>
-                    </ul>
-                </div>
+                
                 <div class="footer-section">
                     <h4>Resources</h4>
                     <ul class="footer-links">
-                        <li><a href="#examples">Examples</a></li>
-                        <li><a href="https://docs.neo.org" target="_blank">Neo Docs</a></li>
-                        <li><a href="https://neo.org/blog" target="_blank">Blog</a></li>
+                        <li><a href="/docs/api-reference.html">API Reference</a></li>
+                        <li><a href="https://github.com/r3e-network/neo-service-layer">GitHub</a></li>
+                        <li><a href="/security.html">Security</a></li>
+                        <li><a href="/roadmap.html">Roadmap</a></li>
                     </ul>
                 </div>
+                
                 <div class="footer-section">
-                    <h4>Enterprise</h4>
+                    <h4>Company</h4>
                     <ul class="footer-links">
-                        <li><a href="#services">Services</a></li>
-                        <li><a href="docs/advanced-setup.html">Enterprise Setup</a></li>
-                        <li><a href="https://neo.org/enterprise" target="_blank">Enterprise Solutions</a></li>
+                        <li><a href="/about.html">About</a></li>
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://twitter.com/neoservicelayer">Twitter</a></li>
+                        <li><a href="https://discord.gg/neoservicelayer">Discord</a></li>
+                        <li><a href="https://t.me/neoservicelayer">Telegram</a></li>
+                        <li><a href="/blog">Blog</a></li>
                     </ul>
                 </div>
             </div>
+            
             <div class="footer-bottom">
-                <p>&copy; 2024 Neo Service Layer. Built for the Neo blockchain ecosystem.</p>
+                <p>&copy; 2025 Neo Service Layer. All rights reserved.</p>
             </div>
         </div>
     </footer>
 
     <!-- JavaScript -->
+    <script src="src/scripts/navigation.js"></script>
     <script src="src/scripts/main.js"></script>
     
     <!-- Copy Code Function -->
@@ -946,6 +978,25 @@ public class OracleService : SmartContract
                 console.error('Failed to copy: ', err);
             });
         }
+        
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    
+                    const icon = themeToggle.querySelector('i');
+                    icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                });
+            }
+        });
     </script>
 </body>
 </html>

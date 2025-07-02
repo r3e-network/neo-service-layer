@@ -1,0 +1,1378 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Deployment Guide - Neo Service Layer</title>
+    <meta name="description" content="Complete deployment guide for Neo Service Layer with Docker, Kubernetes, Intel SGX setup, and production best practices.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    
+    <!-- Search Styles -->
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+</head>
+<body>
+    <!-- Documentation Header -->
+    <header class="docs-header-nav">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">⚡</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Deployment Guide</div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search deployment docs..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                <a href="https://github.com/neo-service-layer/deployment" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="/docs/deployment-templates.html" class="docs-cta-button">
+                    Download Templates
+                    <i class="ti ti-download"></i>
+                </a>
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">Deployment Guide</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v2.0</span>
+                    <span>Latest</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Overview -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Overview</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#introduction" class="docs-nav-link active">
+                                <i class="ti ti-info-circle"></i>
+                                Introduction
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#architecture" class="docs-nav-link">
+                                <i class="ti ti-building"></i>
+                                Architecture
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#requirements" class="docs-nav-link">
+                                <i class="ti ti-list-check"></i>
+                                Requirements
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#deployment-models" class="docs-nav-link">
+                                <i class="ti ti-stack"></i>
+                                Deployment Models
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Quick Start -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Quick Start</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#docker-quickstart" class="docs-nav-link">
+                                <i class="ti ti-brand-docker"></i>
+                                Docker Quick Start
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#local-development" class="docs-nav-link">
+                                <i class="ti ti-code"></i>
+                                Local Development
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#environment-setup" class="docs-nav-link">
+                                <i class="ti ti-settings"></i>
+                                Environment Setup
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Production Deployment -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Production</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#kubernetes-deployment" class="docs-nav-link">
+                                <i class="ti ti-kubernetes"></i>
+                                Kubernetes
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#k8s-prerequisites" class="docs-nav-sublink">Prerequisites</a></li>
+                                <li><a href="#k8s-installation" class="docs-nav-sublink">Installation</a></li>
+                                <li><a href="#k8s-configuration" class="docs-nav-sublink">Configuration</a></li>
+                                <li><a href="#k8s-scaling" class="docs-nav-sublink">Scaling</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#cloud-deployment" class="docs-nav-link">
+                                <i class="ti ti-cloud"></i>
+                                Cloud Platforms
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#aws-deployment" class="docs-nav-sublink">AWS EKS</a></li>
+                                <li><a href="#azure-deployment" class="docs-nav-sublink">Azure AKS</a></li>
+                                <li><a href="#gcp-deployment" class="docs-nav-sublink">Google GKE</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#intel-sgx-setup" class="docs-nav-link">
+                                <i class="ti ti-shield-lock"></i>
+                                Intel SGX Setup
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Configuration -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Configuration</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#database-setup" class="docs-nav-link">
+                                <i class="ti ti-database"></i>
+                                Database Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#security-configuration" class="docs-nav-link">
+                                <i class="ti ti-shield"></i>
+                                Security Config
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#networking" class="docs-nav-link">
+                                <i class="ti ti-network"></i>
+                                Networking
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#load-balancing" class="docs-nav-link">
+                                <i class="ti ti-scale"></i>
+                                Load Balancing
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Operations -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Operations</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#monitoring" class="docs-nav-link">
+                                <i class="ti ti-chart-line"></i>
+                                Monitoring
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#logging" class="docs-nav-link">
+                                <i class="ti ti-file-text"></i>
+                                Logging
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#backup-recovery" class="docs-nav-link">
+                                <i class="ti ti-backup"></i>
+                                Backup & Recovery
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#maintenance" class="docs-nav-link">
+                                <i class="ti ti-tool"></i>
+                                Maintenance
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Troubleshooting -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Troubleshooting</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#common-issues" class="docs-nav-link">
+                                <i class="ti ti-help"></i>
+                                Common Issues
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#performance-tuning" class="docs-nav-link">
+                                <i class="ti ti-dashboard"></i>
+                                Performance Tuning
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#debugging" class="docs-nav-link">
+                                <i class="ti ti-bug"></i>
+                                Debugging
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <div class="docs-content">
+                <!-- Breadcrumb -->
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ul class="docs-breadcrumb-list">
+                        <li class="docs-breadcrumb-item">
+                            <a href="/docs" class="docs-breadcrumb-link">Documentation</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <span>Deployment Guide</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Article Header -->
+                <header class="docs-article-header">
+                    <h1 class="docs-article-title">Deployment Guide</h1>
+                    <p class="docs-article-description">
+                        Complete guide for deploying Neo Service Layer in production environments. 
+                        From local development to enterprise Kubernetes clusters with Intel SGX support.
+                    </p>
+                    <div class="docs-article-meta">
+                        <div class="docs-meta-item">
+                            <i class="ti ti-calendar"></i>
+                            <span>Updated January 30, 2025</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-git-branch"></i>
+                            <span>v2.0.0</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-clock"></i>
+                            <span>45 min read</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-users"></i>
+                            <span>DevOps/SRE</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Introduction Section -->
+                <section id="introduction" class="docs-section">
+                    <h2>Introduction</h2>
+                    <p>
+                        This guide provides comprehensive instructions for deploying Neo Service Layer in production environments. 
+                        Whether you're setting up a development environment or deploying to enterprise Kubernetes clusters, 
+                        this guide covers everything you need to know.
+                    </p>
+
+                    <div class="deployment-overview-grid">
+                        <div class="overview-card">
+                            <div class="overview-icon development">
+                                <i class="ti ti-code"></i>
+                            </div>
+                            <h3>Development</h3>
+                            <p>Quick setup for local development with Docker Compose</p>
+                            <ul>
+                                <li>Single command deployment</li>
+                                <li>Hot reload support</li>
+                                <li>Debug configuration</li>
+                            </ul>
+                            <a href="#docker-quickstart" class="overview-link">Get Started →</a>
+                        </div>
+
+                        <div class="overview-card">
+                            <div class="overview-icon staging">
+                                <i class="ti ti-test-pipe"></i>
+                            </div>
+                            <h3>Staging</h3>
+                            <p>Production-like environment for testing and validation</p>
+                            <ul>
+                                <li>Kubernetes deployment</li>
+                                <li>CI/CD integration</li>
+                                <li>Performance testing</li>
+                            </ul>
+                            <a href="#kubernetes-deployment" class="overview-link">Learn More →</a>
+                        </div>
+
+                        <div class="overview-card">
+                            <div class="overview-icon production">
+                                <i class="ti ti-rocket"></i>
+                            </div>
+                            <h3>Production</h3>
+                            <p>Enterprise-grade deployment with high availability</p>
+                            <ul>
+                                <li>Multi-zone deployment</li>
+                                <li>Intel SGX integration</li>
+                                <li>Advanced monitoring</li>
+                            </ul>
+                            <a href="#cloud-deployment" class="overview-link">Deploy Now →</a>
+                        </div>
+                    </div>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-info-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>Prerequisites:</strong> This guide assumes familiarity with Docker, Kubernetes, 
+                            and basic blockchain concepts. For Intel SGX deployments, compatible hardware is required.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Architecture Section -->
+                <section id="architecture" class="docs-section">
+                    <h2>Architecture Overview</h2>
+                    <p>
+                        Neo Service Layer follows a microservices architecture with 22+ specialized services. 
+                        Understanding the architecture is crucial for proper deployment and scaling.
+                    </p>
+
+                    <div class="architecture-diagram">
+                        <div class="architecture-layer intel-sgx">
+                            <h4>Intel SGX Secure Enclaves</h4>
+                            <div class="architecture-services">
+                                <span class="service-item">Key Management</span>
+                                <span class="service-item">Zero Knowledge</span>
+                                <span class="service-item">Secure Compute</span>
+                                <span class="service-item">Random Number</span>
+                            </div>
+                        </div>
+
+                        <div class="architecture-layer application">
+                            <h4>Application Services</h4>
+                            <div class="architecture-services">
+                                <span class="service-item">Storage</span>
+                                <span class="service-item">Oracle</span>
+                                <span class="service-item">Identity</span>
+                                <span class="service-item">Analytics</span>
+                                <span class="service-item">Lending</span>
+                                <span class="service-item">Marketplace</span>
+                                <span class="service-item">Insurance</span>
+                                <span class="service-item">Gaming</span>
+                            </div>
+                        </div>
+
+                        <div class="architecture-layer infrastructure">
+                            <h4>Infrastructure Layer</h4>
+                            <div class="architecture-services">
+                                <span class="service-item">API Gateway</span>
+                                <span class="service-item">Load Balancer</span>
+                                <span class="service-item">Database</span>
+                                <span class="service-item">Cache</span>
+                                <span class="service-item">Message Queue</span>
+                            </div>
+                        </div>
+
+                        <div class="architecture-layer blockchain">
+                            <h4>Blockchain Layer</h4>
+                            <div class="architecture-services">
+                                <span class="service-item">Neo N3</span>
+                                <span class="service-item">Neo X (EVM)</span>
+                                <span class="service-item">Cross-Chain Bridge</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <h3>Service Dependencies</h3>
+                    <p>
+                        Each service has specific dependencies and resource requirements. 
+                        The deployment order matters for proper initialization.
+                    </p>
+
+                    <div class="dependency-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Service</th>
+                                    <th>Dependencies</th>
+                                    <th>CPU</th>
+                                    <th>Memory</th>
+                                    <th>Storage</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>API Gateway</strong></td>
+                                    <td>None</td>
+                                    <td>0.5 CPU</td>
+                                    <td>1Gi</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Database (PostgreSQL)</strong></td>
+                                    <td>Persistent Storage</td>
+                                    <td>2 CPU</td>
+                                    <td>4Gi</td>
+                                    <td>100Gi</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Cache (Redis)</strong></td>
+                                    <td>None</td>
+                                    <td>1 CPU</td>
+                                    <td>2Gi</td>
+                                    <td>10Gi</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Storage Service</strong></td>
+                                    <td>Database, Cache</td>
+                                    <td>1 CPU</td>
+                                    <td>2Gi</td>
+                                    <td>50Gi</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Oracle Service</strong></td>
+                                    <td>Database, External APIs</td>
+                                    <td>0.5 CPU</td>
+                                    <td>1Gi</td>
+                                    <td>-</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>SGX Services</strong></td>
+                                    <td>Intel SGX Hardware</td>
+                                    <td>2 CPU</td>
+                                    <td>4Gi</td>
+                                    <td>10Gi</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- Docker Quick Start -->
+                <section id="docker-quickstart" class="docs-section">
+                    <h2>Docker Quick Start</h2>
+                    <p>
+                        Get Neo Service Layer running locally in under 5 minutes using Docker Compose. 
+                        Perfect for development and testing.
+                    </p>
+
+                    <h3>Prerequisites</h3>
+                    <ul>
+                        <li>Docker Engine 20.0+ and Docker Compose</li>
+                        <li>8GB+ RAM available</li>
+                        <li>20GB+ free disk space</li>
+                        <li>Git for cloning the repository</li>
+                    </ul>
+
+                    <h3>Step 1: Clone the Repository</h3>
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('clone-repo')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="clone-repo" class="language-bash">git clone https://github.com/neo-service-layer/deployment.git
+cd deployment/docker</code></pre>
+
+                    <h3>Step 2: Configure Environment</h3>
+                    <p>Copy the example environment file and customize it for your setup:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('copy-env')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="copy-env" class="language-bash">cp .env.example .env
+nano .env  # Edit configuration</code></pre>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">.env Configuration</div>
+                        <button class="code-copy-button" onclick="copyCode('env-config')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="env-config" class="language-bash"># Neo Service Layer Configuration
+NEO_NETWORK=testnet
+NEO_RPC_URL=https://testnet1.neo.coz.io:443
+NEO_NETWORK_MAGIC=894710606
+
+# Database Configuration
+POSTGRES_DB=neo_service_layer
+POSTGRES_USER=neo_user
+POSTGRES_PASSWORD=your_secure_password_here
+
+# Redis Configuration
+REDIS_PASSWORD=your_redis_password_here
+
+# API Configuration
+JWT_SECRET=your_jwt_secret_key_here_minimum_32_chars
+API_RATE_LIMIT=1000
+
+# Optional: Intel SGX (requires compatible hardware)
+ENABLE_SGX=false
+SGX_MODE=SW  # Use SW for simulation mode
+
+# Monitoring (optional)
+ENABLE_PROMETHEUS=true
+ENABLE_GRAFANA=true</code></pre>
+
+                    <h3>Step 3: Start Services</h3>
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('start-services')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="start-services" class="language-bash"># Start all services
+docker-compose up -d
+
+# View logs
+docker-compose logs -f
+
+# Check service status
+docker-compose ps</code></pre>
+
+                    <h3>Step 4: Verify Deployment</h3>
+                    <p>Once all services are running, verify the deployment:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('verify-deployment')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="verify-deployment" class="language-bash"># Check API health
+curl http://localhost:8080/health
+
+# Expected response:
+{
+  "status": "healthy",
+  "services": {
+    "database": "connected",
+    "redis": "connected",
+    "blockchain": "synced"
+  },
+  "version": "2.0.0"
+}</code></pre>
+
+                    <h3>Service URLs</h3>
+                    <div class="service-urls-grid">
+                        <div class="service-url-card">
+                            <h4>API Gateway</h4>
+                            <code>http://localhost:8080</code>
+                            <p>Main API endpoint for all services</p>
+                        </div>
+                        <div class="service-url-card">
+                            <h4>Grafana Dashboard</h4>
+                            <code>http://localhost:3000</code>
+                            <p>Monitoring and metrics (admin/admin)</p>
+                        </div>
+                        <div class="service-url-card">
+                            <h4>Prometheus</h4>
+                            <code>http://localhost:9090</code>
+                            <p>Metrics collection and alerting</p>
+                        </div>
+                        <div class="service-url-card">
+                            <h4>Database</h4>
+                            <code>localhost:5432</code>
+                            <p>PostgreSQL database connection</p>
+                        </div>
+                    </div>
+
+                    <div class="docs-alert docs-alert-success">
+                        <i class="ti ti-check-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>Success!</strong> Neo Service Layer is now running locally. 
+                            You can start using the API endpoints or proceed to configure additional services.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Kubernetes Deployment -->
+                <section id="kubernetes-deployment" class="docs-section">
+                    <h2>Kubernetes Deployment</h2>
+                    <p>
+                        Deploy Neo Service Layer to Kubernetes for production workloads with high availability, 
+                        automatic scaling, and comprehensive monitoring.
+                    </p>
+
+                    <h3 id="k8s-prerequisites">Prerequisites</h3>
+                    <ul>
+                        <li>Kubernetes cluster 1.24+ (managed or self-hosted)</li>
+                        <li>kubectl configured to access your cluster</li>
+                        <li>Helm 3.8+ for package management</li>
+                        <li>At least 3 worker nodes with 8GB+ RAM each</li>
+                        <li>Persistent storage provisioner (e.g., EBS, Azure Disk)</li>
+                        <li>Load balancer support (for cloud providers)</li>
+                    </ul>
+
+                    <h3 id="k8s-installation">Installation</h3>
+                    <p>We provide a comprehensive Helm chart for easy Kubernetes deployment:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('helm-install')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="helm-install" class="language-bash"># Add Neo Service Layer Helm repository
+helm repo add neo-service-layer https://charts.neo-service-layer.io
+helm repo update
+
+# Create namespace
+kubectl create namespace neo-service-layer
+
+# Install with default values
+helm install neo-service-layer neo-service-layer/neo-service-layer \
+  --namespace neo-service-layer \
+  --set global.environment=production \
+  --set global.domain=your-domain.com</code></pre>
+
+                    <h3 id="k8s-configuration">Custom Configuration</h3>
+                    <p>Create a custom values file for your specific environment:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">values-production.yaml</div>
+                        <button class="code-copy-button" onclick="copyCode('helm-values')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="helm-values" class="language-yaml"># Neo Service Layer Production Configuration
+global:
+  environment: production
+  domain: api.your-company.com
+  
+  # Image configuration
+  image:
+    registry: ghcr.io/neo-service-layer
+    tag: "2.0.0"
+    pullPolicy: IfNotPresent
+
+  # Security
+  security:
+    enableNetworkPolicies: true
+    enablePodSecurityPolicies: true
+    enableServiceMesh: true
+
+# API Gateway Configuration
+apiGateway:
+  replicaCount: 3
+  resources:
+    requests:
+      cpu: 500m
+      memory: 1Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  
+  autoscaling:
+    enabled: true
+    minReplicas: 3
+    maxReplicas: 10
+    targetCPUUtilizationPercentage: 70
+
+  service:
+    type: LoadBalancer
+    port: 443
+    annotations:
+      service.beta.kubernetes.io/aws-load-balancer-ssl-cert: "arn:aws:acm:..."
+      service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+
+# Database Configuration
+postgresql:
+  enabled: true
+  auth:
+    postgresPassword: "your-secure-password"
+    database: "neo_service_layer"
+  
+  primary:
+    persistence:
+      enabled: true
+      size: 100Gi
+      storageClass: "gp3"
+    
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+      limits:
+        cpu: 4000m
+        memory: 8Gi
+
+  readReplicas:
+    replicaCount: 2
+    persistence:
+      size: 100Gi
+
+# Redis Configuration
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: "your-redis-password"
+  
+  master:
+    persistence:
+      enabled: true
+      size: 20Gi
+      storageClass: "gp3"
+    
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+
+# Core Services Configuration
+services:
+  storage:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 1000m
+        memory: 2Gi
+    persistence:
+      enabled: true
+      size: 200Gi
+  
+  oracle:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+    
+    config:
+      updateInterval: 60000
+      sources:
+        - coinbase
+        - binance
+        - chainlink
+  
+  identity:
+    replicaCount: 2
+    resources:
+      requests:
+        cpu: 500m
+        memory: 1Gi
+
+# Intel SGX Configuration (optional)
+sgx:
+  enabled: false  # Set to true if you have SGX-capable nodes
+  nodeSelector:
+    intel.feature.node.kubernetes.io/sgx: "true"
+  
+  keyManagement:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+  
+  zeroKnowledge:
+    replicaCount: 1
+    resources:
+      requests:
+        cpu: 2000m
+        memory: 4Gi
+
+# Monitoring Configuration
+monitoring:
+  prometheus:
+    enabled: true
+    retention: "30d"
+    storage:
+      size: 50Gi
+  
+  grafana:
+    enabled: true
+    adminPassword: "your-grafana-password"
+    persistence:
+      enabled: true
+      size: 10Gi
+  
+  loki:
+    enabled: true
+    retention: "7d"
+    storage:
+      size: 100Gi
+
+# Backup Configuration
+backup:
+  enabled: true
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  retention: "30d"
+  
+  s3:
+    bucket: "neo-service-layer-backups"
+    region: "us-west-2"
+    
+# Network Policies
+networkPolicies:
+  enabled: true
+  
+  # Allow ingress traffic
+  ingress:
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: ingress-nginx
+    - from:
+      - namespaceSelector:
+          matchLabels:
+            name: monitoring
+  
+  # Allow egress to specific services
+  egress:
+    - to: []
+      ports:
+      - protocol: TCP
+        port: 443  # HTTPS
+      - protocol: TCP
+        port: 53   # DNS</code></pre>
+
+                    <p>Install with custom configuration:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('helm-install-custom')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="helm-install-custom" class="language-bash"># Install with custom values
+helm install neo-service-layer neo-service-layer/neo-service-layer \
+  --namespace neo-service-layer \
+  --values values-production.yaml \
+  --wait --timeout 10m</code></pre>
+
+                    <h3>Verification</h3>
+                    <p>Verify your Kubernetes deployment:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">bash</div>
+                        <button class="code-copy-button" onclick="copyCode('k8s-verify')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="k8s-verify" class="language-bash"># Check pod status
+kubectl get pods -n neo-service-layer
+
+# Check services
+kubectl get services -n neo-service-layer
+
+# Check ingress
+kubectl get ingress -n neo-service-layer
+
+# View logs
+kubectl logs -f deployment/api-gateway -n neo-service-layer
+
+# Test health endpoint
+kubectl exec -it deployment/api-gateway -n neo-service-layer -- \
+  curl http://localhost:8080/health</code></pre>
+                </section>
+
+                <!-- Footer Navigation -->
+                <nav class="docs-footer-nav">
+                    <a href="/docs/api-reference-professional.html" class="docs-footer-link docs-footer-link-prev">
+                        <i class="ti ti-arrow-left"></i>
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Previous</div>
+                            <div class="docs-footer-link-title">API Reference</div>
+                        </div>
+                    </a>
+                    <a href="/docs/troubleshooting.html" class="docs-footer-link docs-footer-link-next">
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Next</div>
+                            <div class="docs-footer-link-title">Troubleshooting</div>
+                        </div>
+                        <i class="ti ti-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Table of Contents -->
+            <aside class="docs-toc">
+                <h4 class="docs-toc-title">On this page</h4>
+                <ul class="docs-toc-list" id="table-of-contents">
+                    <li class="docs-toc-item">
+                        <a href="#introduction" class="docs-toc-link active">Introduction</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#architecture" class="docs-toc-link">Architecture</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#docker-quickstart" class="docs-toc-link">Docker Quick Start</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#kubernetes-deployment" class="docs-toc-link">Kubernetes</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#k8s-prerequisites" class="docs-toc-link level-3">Prerequisites</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#k8s-installation" class="docs-toc-link level-3">Installation</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="docs-overlay" id="docs-overlay"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    
+    <script>
+        // Copy code function
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target.closest('.code-copy-button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="ti ti-check"></i> Copied!';
+                button.style.color = 'var(--docs-accent-green)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Initialize documentation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('docs-sidebar');
+            const overlay = document.getElementById('docs-overlay');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Initialize syntax highlighting
+            Prism.highlightAll();
+        });
+    </script>
+
+    <style>
+        /* Deployment-specific styles */
+        .deployment-overview-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .overview-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            transition: all 0.15s ease;
+        }
+
+        .overview-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--docs-shadow-lg);
+        }
+
+        .overview-icon {
+            width: 56px;
+            height: 56px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 16px;
+            font-size: 24px;
+        }
+
+        .overview-icon.development {
+            background: var(--docs-accent-blue);
+        }
+
+        .overview-icon.staging {
+            background: var(--docs-accent-orange);
+        }
+
+        .overview-icon.production {
+            background: var(--docs-accent-green);
+        }
+
+        .overview-card h3 {
+            margin: 0 0 8px 0;
+            font-size: 20px;
+            color: var(--docs-text-primary);
+        }
+
+        .overview-card p {
+            color: var(--docs-text-secondary);
+            margin-bottom: 16px;
+        }
+
+        .overview-card ul {
+            list-style: none;
+            padding: 0;
+            margin: 0 0 20px 0;
+        }
+
+        .overview-card li {
+            color: var(--docs-text-secondary);
+            margin-bottom: 8px;
+            padding-left: 20px;
+            position: relative;
+        }
+
+        .overview-card li::before {
+            content: '✓';
+            position: absolute;
+            left: 0;
+            color: var(--docs-accent-green);
+            font-weight: 600;
+        }
+
+        .overview-link {
+            color: var(--docs-accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .overview-link:hover {
+            text-decoration: underline;
+        }
+
+        /* Architecture Diagram */
+        .architecture-diagram {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+
+        .architecture-layer {
+            margin-bottom: 20px;
+            padding: 16px;
+            border-radius: 8px;
+            border-left: 4px solid;
+        }
+
+        .architecture-layer.intel-sgx {
+            background: rgba(139, 92, 246, 0.1);
+            border-left-color: var(--docs-accent-purple);
+        }
+
+        .architecture-layer.application {
+            background: rgba(59, 130, 246, 0.1);
+            border-left-color: var(--docs-accent-blue);
+        }
+
+        .architecture-layer.infrastructure {
+            background: rgba(245, 158, 11, 0.1);
+            border-left-color: var(--docs-accent-orange);
+        }
+
+        .architecture-layer.blockchain {
+            background: rgba(16, 185, 129, 0.1);
+            border-left-color: var(--docs-accent-green);
+        }
+
+        .architecture-layer h4 {
+            margin: 0 0 12px 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+
+        .architecture-services {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .service-item {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-medium);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+        }
+
+        /* Service URLs Grid */
+        .service-urls-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .service-url-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .service-url-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+        }
+
+        .service-url-card code {
+            display: block;
+            background: var(--docs-code-bg);
+            padding: 8px 12px;
+            border-radius: 4px;
+            margin-bottom: 8px;
+            font-size: 13px;
+        }
+
+        .service-url-card p {
+            margin: 0;
+            font-size: 12px;
+            color: var(--docs-text-muted);
+        }
+
+        /* Dependency Table */
+        .dependency-table {
+            overflow-x: auto;
+            margin: 24px 0;
+        }
+
+        .dependency-table table {
+            width: 100%;
+            min-width: 600px;
+        }
+
+        /* Header styles (reused from API reference) */
+        .docs-header-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--docs-bg-primary);
+            border-bottom: 1px solid var(--docs-border-light);
+            z-index: 50;
+        }
+
+        .docs-header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .docs-header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .docs-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4aa 0%, #5f4bb6 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+
+        .docs-brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .docs-brand-subtitle {
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+            line-height: 1;
+        }
+
+        .docs-header-center {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 48px;
+        }
+
+        .docs-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .docs-theme-toggle,
+        .docs-github-link {
+            width: 36px;
+            height: 36px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-cta-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--docs-accent-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .version-badge {
+            background: var(--docs-accent-green);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .docs-header-center {
+                display: none;
+            }
+            
+            .deployment-overview-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .service-urls-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .architecture-services {
+                justify-content: center;
+            }
+        }
+    </style>
+    <!-- Search Script -->
+    <script src="../src/scripts/docs-search.js"></script>
+</body>
+</html>

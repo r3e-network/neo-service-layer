@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.EventSubscription.Models;
 
 namespace NeoServiceLayer.Services.EventSubscription;
 
@@ -10,7 +11,7 @@ namespace NeoServiceLayer.Services.EventSubscription;
 public partial class EventSubscriptionService
 {
     /// <inheritdoc/>
-    public async Task<IEnumerable<EventData>> GetEventsAsync(string subscriptionId, int skip, int take, BlockchainType blockchainType)
+    public async Task<IEnumerable<EventData>> ListEventsAsync(string subscriptionId, int skip, int take, BlockchainType blockchainType)
     {
         ValidateOperation(blockchainType);
 

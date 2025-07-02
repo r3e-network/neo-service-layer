@@ -924,7 +924,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
     private void SetupTrainedModel(string modelId, List<object>? trainingData = null)
     {
         // Stub method for test - would normally set up mock data
-        _mockStorageService.Setup(s => s.RetrieveDataAsync(It.IsAny<string>(), It.IsAny<BlockchainType>()))
+        _mockStorageService.Setup(s => s.GetDataAsync(It.IsAny<string>(), It.IsAny<BlockchainType>()))
             .ReturnsAsync(new byte[0]);
     }
 

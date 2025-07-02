@@ -1,0 +1,244 @@
+{
+  "searchIndex": [
+    {
+      "title": "Introduction to Neo Service Layer",
+      "content": "Neo Service Layer is an enterprise-grade blockchain infrastructure platform with 22+ smart contracts and Intel SGX support",
+      "url": "/docs/index-professional.html#introduction",
+      "category": "Getting Started",
+      "tags": ["introduction", "overview", "enterprise", "blockchain", "intel sgx"],
+      "type": "page"
+    },
+    {
+      "title": "Quick Start Guide",
+      "content": "Get started with Neo Service Layer in under 5 minutes. Install SDK, connect to network, make first service call",
+      "url": "/docs/index-professional.html#quick-start",
+      "category": "Getting Started",
+      "tags": ["quickstart", "setup", "tutorial", "installation"],
+      "type": "section"
+    },
+    {
+      "title": "JavaScript SDK Installation", 
+      "content": "Install the Neo Service Layer JavaScript SDK using npm, yarn, or pnpm. Supports Node.js 14+ and modern browsers",
+      "url": "/docs/javascript-sdk-professional.html#installation",
+      "category": "SDK",
+      "tags": ["javascript", "sdk", "installation", "npm", "yarn", "nodejs"],
+      "type": "section"
+    },
+    {
+      "title": "SDK Configuration",
+      "content": "Configure the SDK with network settings, authentication, blockchain type selection, and advanced options",
+      "url": "/docs/javascript-sdk-professional.html#configuration", 
+      "category": "SDK",
+      "tags": ["configuration", "setup", "network", "authentication", "blockchain"],
+      "type": "section"
+    },
+    {
+      "title": "Storage Service",
+      "content": "Store and retrieve data with encryption, access control, and versioning. Supports JSON, binary, and structured data",
+      "url": "/docs/javascript-sdk-professional.html#storage-service",
+      "category": "SDK",
+      "tags": ["storage", "data", "encryption", "access control", "versioning"],
+      "type": "service"
+    },
+    {
+      "title": "Oracle Service", 
+      "content": "Access external data feeds, create custom oracles, and subscribe to real-time data updates",
+      "url": "/docs/javascript-sdk-professional.html#oracle-service",
+      "category": "SDK", 
+      "tags": ["oracle", "data feeds", "external data", "real-time", "subscription"],
+      "type": "service"
+    },
+    {
+      "title": "Compute Service",
+      "content": "Execute distributed computations with Intel SGX protection, zero-knowledge proofs, and verifiable results",
+      "url": "/docs/javascript-sdk-professional.html#compute-service",
+      "category": "SDK",
+      "tags": ["compute", "sgx", "zero knowledge", "distributed", "verifiable"],
+      "type": "service"
+    },
+    {
+      "title": "Identity Service",
+      "content": "Manage digital identities, credentials, and attestations with privacy-preserving technology",
+      "url": "/docs/javascript-sdk-professional.html#identity-service", 
+      "category": "SDK",
+      "tags": ["identity", "credentials", "attestations", "privacy", "did"],
+      "type": "service"
+    },
+    {
+      "title": "Lending Service",
+      "content": "Create lending pools, manage collateral, calculate interest rates, and handle liquidations",
+      "url": "/docs/javascript-sdk-professional.html#lending-service",
+      "category": "SDK",
+      "tags": ["lending", "defi", "collateral", "interest", "liquidation"],
+      "type": "service"
+    },
+    {
+      "title": "Marketplace Service", 
+      "content": "Build NFT marketplaces, asset exchanges, and trading platforms with auction support",
+      "url": "/docs/javascript-sdk-professional.html#marketplace-service",
+      "category": "SDK",
+      "tags": ["marketplace", "nft", "trading", "auction", "exchange"],
+      "type": "service"
+    },
+    {
+      "title": "Tokenization Service",
+      "content": "Tokenize real-world assets, create custom tokens, and manage token lifecycle", 
+      "url": "/docs/javascript-sdk-professional.html#tokenization-service",
+      "category": "SDK",
+      "tags": ["tokenization", "assets", "tokens", "lifecycle", "custom"],
+      "type": "service"
+    },
+    {
+      "title": "API Authentication",
+      "content": "Authenticate API requests using JWT tokens, API keys, OAuth 2.0, and role-based access control",
+      "url": "/docs/api-reference-professional.html#authentication",
+      "category": "API",
+      "tags": ["authentication", "jwt", "api key", "oauth", "rbac", "security"],
+      "type": "section"
+    },
+    {
+      "title": "POST /storage/store",
+      "content": "Store data with optional encryption, access control, versioning, and metadata",
+      "url": "/docs/api-reference-professional.html#post-storage-store",
+      "category": "API",
+      "tags": ["storage", "post", "endpoint", "encryption", "metadata"],
+      "type": "endpoint"
+    },
+    {
+      "title": "GET /storage/{key}",
+      "content": "Retrieve stored data by key with automatic decryption and access validation",
+      "url": "/docs/api-reference-professional.html#get-storage-key", 
+      "category": "API",
+      "tags": ["storage", "get", "endpoint", "retrieval", "decryption"],
+      "type": "endpoint"
+    },
+    {
+      "title": "POST /oracle/request",
+      "content": "Request external data from oracle networks with custom parameters and callbacks",
+      "url": "/docs/api-reference-professional.html#post-oracle-request",
+      "category": "API", 
+      "tags": ["oracle", "post", "endpoint", "data request", "callback"],
+      "type": "endpoint"
+    },
+    {
+      "title": "WebSocket Events",
+      "content": "Subscribe to real-time blockchain events, transaction updates, and service notifications",
+      "url": "/docs/api-reference-professional.html#websocket-events",
+      "category": "API",
+      "tags": ["websocket", "real-time", "events", "notifications", "streaming"],
+      "type": "section"
+    },
+    {
+      "title": "Rate Limiting",
+      "content": "API requests are rate limited per API key with tiered limits and burst capacity",
+      "url": "/docs/api-reference-professional.html#rate-limiting",
+      "category": "API", 
+      "tags": ["rate limiting", "limits", "throttling", "api key", "burst"],
+      "type": "section"
+    },
+    {
+      "title": "Error Codes Reference",
+      "content": "Complete list of API error codes, descriptions, and troubleshooting guidelines",
+      "url": "/docs/api-reference-professional.html#error-codes",
+      "category": "API",
+      "tags": ["errors", "troubleshooting", "debugging", "codes", "reference"],
+      "type": "section"
+    },
+    {
+      "title": "Docker Quick Start",
+      "content": "Get Neo Service Layer running locally with Docker Compose in minutes",
+      "url": "/docs/deployment-guide-professional.html#docker-quickstart", 
+      "category": "Deployment",
+      "tags": ["docker", "quickstart", "local", "development", "compose"],
+      "type": "section"
+    },
+    {
+      "title": "Kubernetes Deployment",
+      "content": "Deploy to Kubernetes for production workloads with high availability, auto-scaling, and monitoring",
+      "url": "/docs/deployment-guide-professional.html#kubernetes-deployment",
+      "category": "Deployment",
+      "tags": ["kubernetes", "production", "helm", "scaling", "monitoring"],
+      "type": "section"
+    },
+    {
+      "title": "Intel SGX Setup",
+      "content": "Configure Intel SGX for hardware-based security, enclave management, and trusted execution",
+      "url": "/docs/deployment-guide-professional.html#intel-sgx-setup",
+      "category": "Deployment", 
+      "tags": ["intel sgx", "security", "hardware", "enclave", "trusted execution"],
+      "type": "section"
+    },
+    {
+      "title": "Environment Configuration",
+      "content": "Configure environment variables, secrets management, and service configuration",
+      "url": "/docs/deployment-guide-professional.html#environment-configuration",
+      "category": "Deployment",
+      "tags": ["environment", "configuration", "secrets", "variables", "settings"],
+      "type": "section"
+    },
+    {
+      "title": "Load Balancing",
+      "content": "Configure load balancers, health checks, and traffic distribution for high availability",
+      "url": "/docs/deployment-guide-professional.html#load-balancing", 
+      "category": "Deployment",
+      "tags": ["load balancing", "health checks", "traffic", "availability", "nginx"],
+      "type": "section"
+    },
+    {
+      "title": "Monitoring & Observability",
+      "content": "Set up Prometheus, Grafana, logging, and alerting for production monitoring",
+      "url": "/docs/deployment-guide-professional.html#monitoring-observability",
+      "category": "Deployment",
+      "tags": ["monitoring", "prometheus", "grafana", "logging", "alerting"],
+      "type": "section"
+    },
+    {
+      "title": "Security Best Practices",
+      "content": "Implement security hardening, network policies, and vulnerability management",
+      "url": "/docs/deployment-guide-professional.html#security-best-practices",
+      "category": "Deployment", 
+      "tags": ["security", "hardening", "network policies", "vulnerabilities", "best practices"],
+      "type": "section"
+    },
+    {
+      "title": "Backup & Recovery",
+      "content": "Configure automated backups, disaster recovery, and data restoration procedures",
+      "url": "/docs/deployment-guide-professional.html#backup-recovery",
+      "category": "Deployment",
+      "tags": ["backup", "recovery", "disaster recovery", "restoration", "data"],
+      "type": "section"
+    },
+    {
+      "title": "TypeScript Support", 
+      "content": "Full TypeScript definitions, interfaces, and type safety for all SDK methods",
+      "url": "/docs/javascript-sdk-professional.html#typescript",
+      "category": "SDK",
+      "tags": ["typescript", "types", "interfaces", "type safety", "definitions"],
+      "type": "section"
+    },
+    {
+      "title": "Error Handling",
+      "content": "Comprehensive error handling, retry logic, and graceful degradation strategies",
+      "url": "/docs/javascript-sdk-professional.html#error-handling",
+      "category": "SDK",
+      "tags": ["error handling", "retry", "graceful degradation", "resilience"],
+      "type": "section"
+    },
+    {
+      "title": "Batch Operations",
+      "content": "Execute multiple operations in batches for improved performance and atomicity",
+      "url": "/docs/javascript-sdk-professional.html#batch-operations", 
+      "category": "SDK",
+      "tags": ["batch", "operations", "performance", "atomicity", "bulk"],
+      "type": "section"
+    },
+    {
+      "title": "WebSocket Integration",
+      "content": "Real-time event streaming, subscription management, and connection handling",
+      "url": "/docs/javascript-sdk-professional.html#websockets",
+      "category": "SDK",
+      "tags": ["websocket", "real-time", "streaming", "subscription", "events"],
+      "type": "section"
+    }
+  ]
+}

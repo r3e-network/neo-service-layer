@@ -1,0 +1,1215 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Getting Started Tutorial - Neo Service Layer</title>
+    <meta name="description" content="Step-by-step tutorial for building your first application with Neo Service Layer. Learn the fundamentals through hands-on examples.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    <link rel="stylesheet" href="../src/styles/code-playground.css">
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+</head>
+<body>
+    <!-- Documentation Header -->
+    <header class="docs-header-nav">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">⚡</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Tutorials</div>
+                    </div>
+                </a>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search tutorials..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                <a href="https://github.com/neo-service-layer" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="/app.html" class="docs-cta-button">
+                    Try Live Demo
+                    <i class="ti ti-external-link"></i>
+                </a>
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">Getting Started</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">Tutorial 1</span>
+                    <span>Beginner</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Tutorial Steps -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Tutorial Steps</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#overview" class="docs-nav-link active">
+                                <i class="ti ti-info-circle"></i>
+                                Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#setup" class="docs-nav-link">
+                                <i class="ti ti-tool"></i>
+                                Environment Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#first-project" class="docs-nav-link">
+                                <i class="ti ti-folder"></i>
+                                Create First Project
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#sdk-basics" class="docs-nav-link">
+                                <i class="ti ti-code"></i>
+                                SDK Basics
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#storage-example" class="docs-nav-link">
+                                <i class="ti ti-database"></i>
+                                Storage Example
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#oracle-example" class="docs-nav-link">
+                                <i class="ti ti-cloud-data-connection"></i>
+                                Oracle Example
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#next-steps" class="docs-nav-link">
+                                <i class="ti ti-arrow-right"></i>
+                                Next Steps
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Other Tutorials -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Other Tutorials</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="/docs/tutorials-defi-app.html" class="docs-nav-link">
+                                <i class="ti ti-coins"></i>
+                                Build a DeFi App
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="/docs/tutorials-nft-marketplace.html" class="docs-nav-link">
+                                <i class="ti ti-shopping-cart"></i>
+                                NFT Marketplace
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="/docs/tutorials-identity-system.html" class="docs-nav-link">
+                                <i class="ti ti-user-check"></i>
+                                Identity System
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <div class="docs-content">
+                <!-- Breadcrumb -->
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ul class="docs-breadcrumb-list">
+                        <li class="docs-breadcrumb-item">
+                            <a href="/docs" class="docs-breadcrumb-link">Documentation</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <a href="/docs/tutorials.html" class="docs-breadcrumb-link">Tutorials</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <span>Getting Started</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Article Header -->
+                <header class="docs-article-header">
+                    <h1 class="docs-article-title">Getting Started Tutorial</h1>
+                    <p class="docs-article-description">
+                        Learn the fundamentals of Neo Service Layer by building your first blockchain application. 
+                        This hands-on tutorial covers environment setup, SDK basics, and core service integration.
+                    </p>
+                    <div class="docs-article-meta">
+                        <div class="docs-meta-item">
+                            <i class="ti ti-clock"></i>
+                            <span>30 min tutorial</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-user"></i>
+                            <span>Beginner Level</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-code"></i>
+                            <span>JavaScript/TypeScript</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Tutorial Overview -->
+                <section id="overview" class="docs-section">
+                    <h2>What You'll Build</h2>
+                    <p>
+                        In this tutorial, you'll create a simple data management application that demonstrates 
+                        the core capabilities of Neo Service Layer. Your app will:
+                    </p>
+                    
+                    <ul>
+                        <li>🔐 <strong>Store encrypted data</strong> using the Storage Service</li>
+                        <li>🌐 <strong>Fetch external data</strong> using the Oracle Service</li>
+                        <li>📊 <strong>Display real-time updates</strong> with WebSocket integration</li>
+                        <li>🛡️ <strong>Handle authentication</strong> and error scenarios gracefully</li>
+                    </ul>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-lightbulb docs-alert-icon"></i>
+                        <div>
+                            <strong>Prerequisites:</strong> Basic JavaScript knowledge and Node.js installed on your system. 
+                            No prior blockchain experience required!
+                        </div>
+                    </div>
+
+                    <h3>Tutorial Goals</h3>
+                    <div class="docs-goals-grid">
+                        <div class="docs-goal-card">
+                            <div class="docs-goal-icon">
+                                <i class="ti ti-target"></i>
+                            </div>
+                            <h4>Learn Core Concepts</h4>
+                            <p>Understand Neo Service Layer architecture and service model</p>
+                        </div>
+                        <div class="docs-goal-card">
+                            <div class="docs-goal-icon">
+                                <i class="ti ti-code"></i>
+                            </div>
+                            <h4>Hands-on Coding</h4>
+                            <p>Write real code with interactive examples and immediate feedback</p>
+                        </div>
+                        <div class="docs-goal-card">
+                            <div class="docs-goal-icon">
+                                <i class="ti ti-rocket"></i>
+                            </div>
+                            <h4>Build Confidence</h4>
+                            <p>Deploy your first application and understand deployment patterns</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Environment Setup -->
+                <section id="setup" class="docs-section">
+                    <h2>Environment Setup</h2>
+                    <p>
+                        Let's prepare your development environment for building with Neo Service Layer.
+                    </p>
+
+                    <h3>1. Prerequisites Check</h3>
+                    <p>Ensure you have the following installed:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">Check Node.js Version</div>
+                        <button class="code-copy-button" onclick="copyCode('check-node')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="check-node" class="language-bash">node --version
+npm --version
+
+# Should show Node.js 14+ and npm 6+</code></pre>
+
+                    <h3>2. Create New Project</h3>
+                    <p>Create a new directory and initialize a Node.js project:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">Project Setup</div>
+                        <button class="code-copy-button" onclick="copyCode('create-project')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="create-project" class="language-bash">mkdir neo-tutorial-app
+cd neo-tutorial-app
+npm init -y
+
+# Install Neo Service Layer SDK
+npm install @neo-service-layer/sdk
+
+# Install development dependencies
+npm install --save-dev @types/node typescript ts-node</code></pre>
+
+                    <h3>3. Basic Project Structure</h3>
+                    <p>Create the basic project structure:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">File Structure</div>
+                    </div>
+                    <pre><code class="language-text">neo-tutorial-app/
+├── src/
+│   ├── index.ts          # Main application file
+│   ├── config.ts         # Configuration settings
+│   └── services/         # Service integrations
+├── package.json          # Project dependencies
+├── tsconfig.json         # TypeScript configuration
+└── .env                  # Environment variables</code></pre>
+                </section>
+
+                <!-- First Project -->
+                <section id="first-project" class="docs-section">
+                    <h2>Create Your First Project</h2>
+                    <p>
+                        Now let's create the basic application structure and configuration files.
+                    </p>
+
+                    <h3>1. TypeScript Configuration</h3>
+                    <p>Create a <code>tsconfig.json</code> file for TypeScript settings:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">tsconfig.json</div>
+                        <button class="code-copy-button" onclick="copyCode('tsconfig')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="tsconfig" class="language-json">{
+  "compilerOptions": {
+    "target": "ES2020",
+    "module": "commonjs",
+    "lib": ["ES2020"],
+    "outDir": "./dist",
+    "rootDir": "./src",
+    "strict": true,
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "forceConsistentCasingInFileNames": true,
+    "resolveJsonModule": true
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist"]
+}</code></pre>
+
+                    <h3>2. Environment Configuration</h3>
+                    <p>Create a <code>.env</code> file for environment variables:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">.env</div>
+                        <button class="code-copy-button" onclick="copyCode('env-file')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="env-file" class="language-bash"># Neo Service Layer Configuration
+NSL_NETWORK=testnet
+NSL_BLOCKCHAIN_TYPE=NeoN3
+NSL_API_KEY=your-api-key-here
+
+# Application Settings
+APP_NAME=Neo Tutorial App
+APP_VERSION=1.0.0</code></pre>
+
+                    <h3>3. Configuration Module</h3>
+                    <p>Create <code>src/config.ts</code> to manage configuration:</p>
+
+                    <div class="code-playground">
+                        <code class="language-typescript">// src/config.ts
+import { config } from 'dotenv';
+
+// Load environment variables
+config();
+
+export interface AppConfig {
+  neoServiceLayer: {
+    network: 'testnet' | 'mainnet';
+    blockchainType: 'NeoN3' | 'NeoX';
+    apiKey: string;
+    endpoints?: {
+      testnet?: {
+        NeoN3?: string[];
+        NeoX?: string[];
+      };
+      mainnet?: {
+        NeoN3?: string[];
+        NeoX?: string[];
+      };
+    };
+  };
+  app: {
+    name: string;
+    version: string;
+  };
+}
+
+export const appConfig: AppConfig = {
+  neoServiceLayer: {
+    network: (process.env.NSL_NETWORK as 'testnet' | 'mainnet') || 'testnet',
+    blockchainType: (process.env.NSL_BLOCKCHAIN_TYPE as 'NeoN3' | 'NeoX') || 'NeoN3',
+    apiKey: process.env.NSL_API_KEY || 'demo-key-for-testing',
+  },
+  app: {
+    name: process.env.APP_NAME || 'Neo Tutorial App',
+    version: process.env.APP_VERSION || '1.0.0',
+  },
+};
+
+// Validate configuration
+export function validateConfig(config: AppConfig): boolean {
+  if (!config.neoServiceLayer.apiKey) {
+    console.error('Missing NSL_API_KEY in environment variables');
+    return false;
+  }
+  
+  if (!['testnet', 'mainnet'].includes(config.neoServiceLayer.network)) {
+    console.error('Invalid NSL_NETWORK. Must be "testnet" or "mainnet"');
+    return false;
+  }
+  
+  return true;
+}
+
+console.log('Configuration loaded:', {
+  network: appConfig.neoServiceLayer.network,
+  blockchainType: appConfig.neoServiceLayer.blockchainType,
+  appName: appConfig.app.name,
+});</code>
+                    </div>
+                </section>
+
+                <!-- SDK Basics -->
+                <section id="sdk-basics" class="docs-section">
+                    <h2>SDK Basics</h2>
+                    <p>
+                        Let's create the main application file and learn how to initialize the Neo Service Layer SDK.
+                    </p>
+
+                    <h3>1. Main Application Setup</h3>
+                    <p>Create <code>src/index.ts</code> as your main application entry point:</p>
+
+                    <div class="code-playground">
+                        <code class="language-typescript">// src/index.ts
+import { NeoServiceLayerSDK } from '@neo-service-layer/sdk';
+import { appConfig, validateConfig } from './config';
+
+class TutorialApp {
+  private sdk: NeoServiceLayerSDK | null = null;
+  private isInitialized = false;
+
+  async initialize(): Promise<void> {
+    try {
+      // Validate configuration
+      if (!validateConfig(appConfig)) {
+        throw new Error('Invalid configuration');
+      }
+
+      console.log('🚀 Initializing Neo Service Layer SDK...');
+      
+      // Initialize SDK with configuration
+      this.sdk = new NeoServiceLayerSDK(appConfig.neoServiceLayer);
+      
+      // Wait for SDK to connect
+      await this.sdk.init();
+      
+      this.isInitialized = true;
+      console.log('✅ SDK initialized successfully!');
+      
+      // Display connection info
+      const networkInfo = await this.sdk.getNetworkInfo();
+      console.log('📡 Connected to network:', networkInfo);
+      
+    } catch (error) {
+      console.error('❌ Failed to initialize SDK:', error);
+      throw error;
+    }
+  }
+
+  async run(): Promise<void> {
+    if (!this.isInitialized || !this.sdk) {
+      throw new Error('App not initialized. Call initialize() first.');
+    }
+
+    console.log('🎯 Starting tutorial application...');
+    
+    // Run tutorial examples
+    await this.runStorageExample();
+    await this.runOracleExample();
+    
+    console.log('🎉 Tutorial completed successfully!');
+  }
+
+  private async runStorageExample(): Promise<void> {
+    console.log('\\n📦 Storage Service Example:');
+    // We'll implement this in the next section
+  }
+
+  private async runOracleExample(): Promise<void> {
+    console.log('\\n🌐 Oracle Service Example:');
+    // We'll implement this in the next section
+  }
+
+  async cleanup(): Promise<void> {
+    if (this.sdk) {
+      console.log('🧹 Cleaning up resources...');
+      await this.sdk.disconnect();
+      console.log('✨ Cleanup completed');
+    }
+  }
+}
+
+// Application entry point
+async function main(): Promise<void> {
+  const app = new TutorialApp();
+  
+  try {
+    await app.initialize();
+    await app.run();
+  } catch (error) {
+    console.error('💥 Application error:', error);
+    process.exit(1);
+  } finally {
+    await app.cleanup();
+  }
+}
+
+// Handle graceful shutdown
+process.on('SIGINT', async () => {
+  console.log('\\n👋 Graceful shutdown initiated...');
+  process.exit(0);
+});
+
+// Run the application
+if (require.main === module) {
+  main().catch((error) => {
+    console.error('Fatal error:', error);
+    process.exit(1);
+  });
+}</code>
+                    </div>
+
+                    <div class="docs-alert docs-alert-tip">
+                        <i class="ti ti-bulb docs-alert-icon"></i>
+                        <div>
+                            <strong>Try it out:</strong> Run the code above in the interactive playground to see 
+                            how the SDK initialization works. The mock SDK will simulate real network connections.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Storage Example -->
+                <section id="storage-example" class="docs-section">
+                    <h2>Storage Service Example</h2>
+                    <p>
+                        Now let's implement the storage example to learn how to store and retrieve data securely.
+                    </p>
+
+                    <h3>Understanding the Storage Service</h3>
+                    <p>
+                        The Storage Service provides secure, encrypted data storage on the blockchain with features like:
+                    </p>
+                    <ul>
+                        <li><strong>Encryption:</strong> Automatic data encryption using AES-256</li>
+                        <li><strong>Access Control:</strong> Permission-based data access</li>
+                        <li><strong>Versioning:</strong> Track data changes over time</li>
+                        <li><strong>Metadata:</strong> Additional information about stored data</li>
+                    </ul>
+
+                    <h3>Implementation</h3>
+                    <p>Let's implement the storage example in our tutorial app:</p>
+
+                    <div class="code-playground">
+                        <code class="language-typescript">// Update the runStorageExample method in src/index.ts
+
+private async runStorageExample(): Promise<void> {
+  console.log('\\n📦 Storage Service Example:');
+  
+  try {
+    // Example 1: Store simple data
+    console.log('1️⃣ Storing user profile...');
+    
+    const userProfile = {
+      id: 'user-123',
+      name: 'Alice Johnson',
+      email: 'alice@example.com',
+      preferences: {
+        theme: 'dark',
+        notifications: true
+      },
+      createdAt: new Date().toISOString()
+    };
+
+    const storeResult = await this.sdk!.storage.store({
+      key: 'user:profile:123',
+      value: JSON.stringify(userProfile),
+      encrypted: true,
+      metadata: {
+        contentType: 'application/json',
+        version: '1.0',
+        tags: ['user', 'profile']
+      }
+    });
+
+    console.log('✅ Data stored successfully!');
+    console.log('   Transaction ID:', storeResult.transactionId);
+    console.log('   Storage Key:', storeResult.key);
+
+    // Example 2: Retrieve the stored data
+    console.log('\\n2️⃣ Retrieving user profile...');
+    
+    const retrieveResult = await this.sdk!.storage.get('user:profile:123');
+    const retrievedProfile = JSON.parse(retrieveResult.value);
+    
+    console.log('✅ Data retrieved successfully!');
+    console.log('   User Name:', retrievedProfile.name);
+    console.log('   Email:', retrievedProfile.email);
+    console.log('   Created:', retrievedProfile.createdAt);
+
+    // Example 3: Update existing data
+    console.log('\\n3️⃣ Updating user preferences...');
+    
+    retrievedProfile.preferences.theme = 'light';
+    retrievedProfile.updatedAt = new Date().toISOString();
+
+    const updateResult = await this.sdk!.storage.update({
+      key: 'user:profile:123',
+      value: JSON.stringify(retrievedProfile),
+      metadata: {
+        contentType: 'application/json',
+        version: '1.1',
+        tags: ['user', 'profile', 'updated']
+      }
+    });
+
+    console.log('✅ Data updated successfully!');
+    console.log('   New Transaction ID:', updateResult.transactionId);
+
+    // Example 4: List stored data
+    console.log('\\n4️⃣ Listing user data...');
+    
+    const listResult = await this.sdk!.storage.list({
+      prefix: 'user:',
+      limit: 10
+    });
+
+    console.log('✅ Found stored items:');
+    listResult.items.forEach((item, index) => {
+      console.log(`   ${index + 1}. ${item.key} (${item.size} bytes)`);
+    });
+
+  } catch (error) {
+    console.error('❌ Storage example failed:', error);
+    throw error;
+  }
+}</code>
+                    </div>
+
+                    <h3>Key Concepts Explained</h3>
+                    <div class="docs-concept-cards">
+                        <div class="docs-concept-card">
+                            <h4>🔑 Storage Keys</h4>
+                            <p>Use hierarchical keys like <code>user:profile:123</code> for organization and easy querying.</p>
+                        </div>
+                        <div class="docs-concept-card">
+                            <h4>🔐 Encryption</h4>
+                            <p>Enable encryption for sensitive data. The SDK handles encryption/decryption automatically.</p>
+                        </div>
+                        <div class="docs-concept-card">
+                            <h4>📋 Metadata</h4>
+                            <p>Store additional information about your data for better organization and searchability.</p>
+                        </div>
+                        <div class="docs-concept-card">
+                            <h4>🔍 Querying</h4>
+                            <p>Use prefixes and filters to efficiently find and retrieve related data items.</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Oracle Example -->
+                <section id="oracle-example" class="docs-section">
+                    <h2>Oracle Service Example</h2>
+                    <p>
+                        Learn how to fetch external data and integrate real-world information into your blockchain application.
+                    </p>
+
+                    <h3>Understanding Oracles</h3>
+                    <p>
+                        Oracles bridge the gap between blockchain and real-world data. Neo Service Layer's Oracle Service provides:
+                    </p>
+                    <ul>
+                        <li><strong>Price Feeds:</strong> Real-time cryptocurrency and asset prices</li>
+                        <li><strong>Weather Data:</strong> Current weather conditions and forecasts</li>
+                        <li><strong>Sports Data:</strong> Live scores and statistics</li>
+                        <li><strong>Custom APIs:</strong> Connect to any external API</li>
+                    </ul>
+
+                    <h3>Implementation</h3>
+                    <div class="code-playground">
+                        <code class="language-typescript">// Update the runOracleExample method in src/index.ts
+
+private async runOracleExample(): Promise<void> {
+  console.log('\\n🌐 Oracle Service Example:');
+  
+  try {
+    // Example 1: Get cryptocurrency price
+    console.log('1️⃣ Fetching Bitcoin price...');
+    
+    const btcPriceRequest = await this.sdk!.oracle.requestData({
+      feed: 'crypto-price',
+      parameters: {
+        symbol: 'BTC',
+        currency: 'USD'
+      }
+    });
+
+    console.log('✅ Bitcoin price data:');
+    console.log('   Price: $' + btcPriceRequest.data.price);
+    console.log('   Timestamp:', btcPriceRequest.data.timestamp);
+    console.log('   Confidence:', (btcPriceRequest.confidence * 100).toFixed(1) + '%');
+
+    // Example 2: Get weather data
+    console.log('\\n2️⃣ Fetching weather data...');
+    
+    const weatherRequest = await this.sdk!.oracle.requestData({
+      feed: 'weather',
+      parameters: {
+        city: 'New York',
+        country: 'US'
+      }
+    });
+
+    console.log('✅ Weather data:');
+    console.log('   Temperature:', weatherRequest.data.temperature + '°C');
+    console.log('   Condition:', weatherRequest.data.condition);
+    console.log('   Humidity:', weatherRequest.data.humidity + '%');
+
+    // Example 3: Subscribe to real-time updates
+    console.log('\\n3️⃣ Subscribing to real-time price updates...');
+    
+    const subscription = await this.sdk!.oracle.subscribe({
+      feed: 'crypto-price',
+      parameters: {
+        symbols: ['BTC', 'ETH', 'NEO'],
+        currency: 'USD'
+      },
+      interval: 30000 // Update every 30 seconds
+    });
+
+    console.log('✅ Subscription created:');
+    console.log('   Subscription ID:', subscription.subscriptionId);
+    console.log('   Feed:', subscription.feed);
+    console.log('   Status:', subscription.active ? 'Active' : 'Inactive');
+
+    // Set up event listener for price updates
+    this.sdk!.oracle.onData(subscription.subscriptionId, (data) => {
+      console.log('📊 Price Update:', data);
+    });
+
+    // Example 4: Custom API integration
+    console.log('\\n4️⃣ Custom API example...');
+    
+    const customApiRequest = await this.sdk!.oracle.requestData({
+      feed: 'custom-api',
+      parameters: {
+        url: 'https://api.github.com/repos/neo-project/neo',
+        method: 'GET',
+        headers: {
+          'User-Agent': 'Neo-Tutorial-App/1.0'
+        }
+      }
+    });
+
+    console.log('✅ GitHub API data:');
+    console.log('   Repository:', customApiRequest.data.name);
+    console.log('   Stars:', customApiRequest.data.stargazers_count);
+    console.log('   Language:', customApiRequest.data.language);
+
+    // Example 5: Batch data request
+    console.log('\\n5️⃣ Batch data request...');
+    
+    const batchRequest = await this.sdk!.oracle.batchRequest([
+      {
+        feed: 'crypto-price',
+        parameters: { symbol: 'BTC', currency: 'USD' }
+      },
+      {
+        feed: 'crypto-price', 
+        parameters: { symbol: 'ETH', currency: 'USD' }
+      },
+      {
+        feed: 'crypto-price',
+        parameters: { symbol: 'NEO', currency: 'USD' }
+      }
+    ]);
+
+    console.log('✅ Batch results:');
+    batchRequest.results.forEach((result, index) => {
+      console.log(`   ${result.parameters.symbol}: $${result.data.price}`);
+    });
+
+  } catch (error) {
+    console.error('❌ Oracle example failed:', error);
+    throw error;
+  }
+}</code>
+                    </div>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-info-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>Note:</strong> The interactive playground uses mock data for demonstration. 
+                            In a real application, you'll receive live data from actual oracle networks.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Next Steps -->
+                <section id="next-steps" class="docs-section">
+                    <h2>Next Steps</h2>
+                    <p>
+                        Congratulations! You've successfully completed the getting started tutorial. 
+                        Here's what you've learned and where to go next.
+                    </p>
+
+                    <h3>What You've Accomplished</h3>
+                    <div class="docs-accomplishments">
+                        <div class="docs-accomplishment">
+                            <i class="ti ti-check-circle"></i>
+                            <span>Set up a Neo Service Layer development environment</span>
+                        </div>
+                        <div class="docs-accomplishment">
+                            <i class="ti ti-check-circle"></i>
+                            <span>Initialized and configured the SDK with TypeScript</span>
+                        </div>
+                        <div class="docs-accomplishment">
+                            <i class="ti ti-check-circle"></i>
+                            <span>Stored and retrieved encrypted data using the Storage Service</span>
+                        </div>
+                        <div class="docs-accomplishment">
+                            <i class="ti ti-check-circle"></i>
+                            <span>Fetched external data using the Oracle Service</span>
+                        </div>
+                        <div class="docs-accomplishment">
+                            <i class="ti ti-check-circle"></i>
+                            <span>Implemented real-time data subscriptions</span>
+                        </div>
+                    </div>
+
+                    <h3>Continue Learning</h3>
+                    <div class="docs-next-tutorials">
+                        <a href="/docs/tutorials-defi-app.html" class="docs-tutorial-card">
+                            <div class="docs-tutorial-icon">
+                                <i class="ti ti-coins"></i>
+                            </div>
+                            <div class="docs-tutorial-content">
+                                <h4>Build a DeFi Application</h4>
+                                <p>Create a lending protocol with yield farming and liquidity pools</p>
+                                <span class="docs-tutorial-level">Intermediate • 45 min</span>
+                            </div>
+                        </a>
+
+                        <a href="/docs/tutorials-nft-marketplace.html" class="docs-tutorial-card">
+                            <div class="docs-tutorial-icon">
+                                <i class="ti ti-shopping-cart"></i>
+                            </div>
+                            <div class="docs-tutorial-content">
+                                <h4>NFT Marketplace</h4>
+                                <p>Build a complete NFT marketplace with minting and trading</p>
+                                <span class="docs-tutorial-level">Intermediate • 60 min</span>
+                            </div>
+                        </a>
+
+                        <a href="/docs/tutorials-identity-system.html" class="docs-tutorial-card">
+                            <div class="docs-tutorial-icon">
+                                <i class="ti ti-user-check"></i>
+                            </div>
+                            <div class="docs-tutorial-content">
+                                <h4>Identity & Credentials</h4>
+                                <p>Implement decentralized identity with verifiable credentials</p>
+                                <span class="docs-tutorial-level">Advanced • 90 min</span>
+                            </div>
+                        </a>
+                    </div>
+
+                    <h3>Additional Resources</h3>
+                    <div class="docs-resources-grid">
+                        <div class="docs-resource-card">
+                            <i class="ti ti-book"></i>
+                            <h4>API Reference</h4>
+                            <p>Complete documentation of all available methods and parameters</p>
+                            <a href="/docs/api-reference-professional.html">View API Docs →</a>
+                        </div>
+                        <div class="docs-resource-card">
+                            <i class="ti ti-code-dots"></i>
+                            <h4>Example Projects</h4>
+                            <p>Browse full example applications and use cases</p>
+                            <a href="https://github.com/neo-service-layer/examples">View Examples →</a>
+                        </div>
+                        <div class="docs-resource-card">
+                            <i class="ti ti-help-circle"></i>
+                            <h4>Community Support</h4>
+                            <p>Get help from the community and Neo Service Layer team</p>
+                            <a href="https://discord.gg/neo-service-layer">Join Discord →</a>
+                        </div>
+                    </div>
+
+                    <div class="docs-alert docs-alert-success">
+                        <i class="ti ti-trophy docs-alert-icon"></i>
+                        <div>
+                            <strong>Well done!</strong> You're now ready to build sophisticated blockchain applications 
+                            with Neo Service Layer. Share your projects with the community and keep learning!
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer Navigation -->
+                <nav class="docs-footer-nav">
+                    <a href="/docs/index-professional.html" class="docs-footer-link docs-footer-link-prev">
+                        <i class="ti ti-arrow-left"></i>
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Previous</div>
+                            <div class="docs-footer-link-title">Documentation Home</div>
+                        </div>
+                    </a>
+                    <a href="/docs/tutorials-defi-app.html" class="docs-footer-link docs-footer-link-next">
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Next Tutorial</div>
+                            <div class="docs-footer-link-title">Build a DeFi App</div>
+                        </div>
+                        <i class="ti ti-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Table of Contents -->
+            <aside class="docs-toc">
+                <h4 class="docs-toc-title">On this page</h4>
+                <ul class="docs-toc-list" id="table-of-contents">
+                    <li class="docs-toc-item">
+                        <a href="#overview" class="docs-toc-link active">Overview</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#setup" class="docs-toc-link">Environment Setup</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#first-project" class="docs-toc-link">Create First Project</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#sdk-basics" class="docs-toc-link">SDK Basics</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#storage-example" class="docs-toc-link">Storage Example</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#oracle-example" class="docs-toc-link">Oracle Example</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#next-steps" class="docs-toc-link">Next Steps</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="docs-overlay" id="docs-overlay"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="../src/scripts/docs-search.js"></script>
+    <script src="../src/scripts/code-playground.js"></script>
+    
+    <script>
+        // Initialize documentation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Copy code function
+            window.copyCode = function(elementId) {
+                const codeElement = document.getElementById(elementId);
+                const text = codeElement.textContent;
+                
+                navigator.clipboard.writeText(text).then(() => {
+                    const button = event.target.closest('.code-copy-button');
+                    const originalHTML = button.innerHTML;
+                    button.innerHTML = '<i class="ti ti-check"></i> Copied!';
+                    button.style.color = 'var(--docs-accent-green)';
+                    
+                    setTimeout(() => {
+                        button.innerHTML = originalHTML;
+                        button.style.color = '';
+                    }, 2000);
+                });
+            };
+
+            // Theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('docs-sidebar');
+            const overlay = document.getElementById('docs-overlay');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Initialize syntax highlighting
+            Prism.highlightAll();
+        });
+    </script>
+
+    <style>
+        /* Tutorial-specific styles */
+        .docs-goals-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .docs-goal-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .docs-goal-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--docs-accent-blue);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 16px;
+            color: white;
+            font-size: 20px;
+        }
+
+        .docs-concept-cards {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 24px 0;
+        }
+
+        .docs-concept-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 16px;
+        }
+
+        .docs-concept-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-concept-card p {
+            margin: 0;
+            font-size: 13px;
+            color: var(--docs-text-secondary);
+            line-height: 1.4;
+        }
+
+        .docs-accomplishments {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            margin: 24px 0;
+        }
+
+        .docs-accomplishment {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 12px 16px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+        }
+
+        .docs-accomplishment i {
+            color: var(--docs-accent-green);
+            font-size: 18px;
+        }
+
+        .docs-next-tutorials {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .docs-tutorial-card {
+            display: flex;
+            gap: 16px;
+            padding: 20px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            text-decoration: none;
+            color: var(--docs-text-primary);
+            transition: all 0.2s ease;
+        }
+
+        .docs-tutorial-card:hover {
+            border-color: var(--docs-accent-blue);
+            transform: translateY(-2px);
+            box-shadow: var(--docs-shadow-md);
+        }
+
+        .docs-tutorial-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--docs-accent-blue);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 20px;
+            flex-shrink: 0;
+        }
+
+        .docs-tutorial-content h4 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .docs-tutorial-content p {
+            margin: 0 0 12px 0;
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+            line-height: 1.4;
+        }
+
+        .docs-tutorial-level {
+            font-size: 12px;
+            color: var(--docs-text-muted);
+            font-weight: 500;
+        }
+
+        .docs-resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+
+        .docs-resource-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+        }
+
+        .docs-resource-card i {
+            font-size: 32px;
+            color: var(--docs-accent-blue);
+            margin-bottom: 16px;
+        }
+
+        .docs-resource-card h4 {
+            margin: 0 0 8px 0;
+            font-size: 16px;
+        }
+
+        .docs-resource-card p {
+            margin: 0 0 16px 0;
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+            line-height: 1.4;
+        }
+
+        .docs-resource-card a {
+            color: var(--docs-accent-blue);
+            text-decoration: none;
+            font-weight: 500;
+            font-size: 14px;
+        }
+
+        .docs-resource-card a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</body>
+</html>

@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
 using NeoServiceLayer.Tee.Host.Services;
@@ -11,12 +12,13 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 /// </summary>
 public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProofOfReserveService
 {
-    private readonly Dictionary<string, MonitoredAsset> _monitoredAssets = new();
-    private readonly Dictionary<string, List<ReserveSnapshot>> _reserveHistory = new();
+    private readonly Dictionary<string, Models.MonitoredAsset> _monitoredAssets = new();
+    private readonly Dictionary<string, List<Models.ReserveSnapshot>> _reserveHistory = new();
     private readonly Dictionary<string, Core.ReserveAlertConfig> _alertConfigs = new();
-    private readonly Dictionary<string, List<ReserveSubscription>> _subscriptions = new();
+    private readonly Dictionary<string, List<Models.ReserveSubscription>> _subscriptions = new();
     private readonly object _assetsLock = new();
     private readonly Timer _monitoringTimer;
+    private Timer? _cleanupTimer;
     private readonly ProofOfReserveConfigurationService? _configurationService;
 
     /// <summary>
@@ -26,15 +28,18 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// <param name="configuration">The service configuration.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configurationService">The configuration service.</param>
+    /// <param name="persistentStorage">The persistent storage provider.</param>
     public ProofOfReserveService(
         ILogger<ProofOfReserveService> logger,
         IServiceConfiguration? configuration = null,
         IEnclaveManager? enclaveManager = null,
-        ProofOfReserveConfigurationService? configurationService = null)
+        ProofOfReserveConfigurationService? configurationService = null,
+        IPersistentStorageProvider? persistentStorage = null)
         : base("ProofOfReserve", "Asset backing verification and reserve monitoring service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
         _configurationService = configurationService;
+        _persistentStorage = persistentStorage;
 
         // Get monitoring interval from configuration
         var monitoringInterval = GetMonitoringInterval();
@@ -50,6 +55,12 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
 
         // Initialize security features
         InitializeSecurity();
+
+        // Initialize cleanup timer if persistent storage is available
+        if (_persistentStorage != null)
+        {
+            _cleanupTimer = new Timer(async _ => await CleanupOldDataAsync(), null, TimeSpan.FromHours(24), TimeSpan.FromHours(24));
+        }
 
         AddCapability<IProofOfReserveService>();
         AddDependency(ServiceDependency.Required("OracleService", "1.0.0"));
@@ -89,7 +100,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     }
 
     /// <inheritdoc/>
-    public async Task<Core.ProofOfReserve> GenerateProofAsync(string assetId, BlockchainType blockchainType)
+    public async Task<Models.ProofOfReserve> GenerateProofAsync(string assetId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
 
@@ -98,7 +109,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await GenerateProofWithResilienceAsync(assetId, blockchainType);
+        var coreProof = await GenerateProofWithResilienceAsync(assetId, blockchainType);
+        return ConvertCoreProofToModelsProof(coreProof);
     }
 
     /// <inheritdoc/>
@@ -115,7 +127,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     }
 
     /// <inheritdoc/>
-    public async Task<ReserveSnapshot[]> GetReserveHistoryAsync(string assetId, DateTime from, DateTime to, BlockchainType blockchainType)
+    public async Task<Models.ReserveSnapshot[]> GetReserveHistoryAsync(string assetId, DateTime from, DateTime to, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
 
@@ -124,7 +136,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await GetReserveSnapshotsWithCachingAsync(assetId, from, to, blockchainType);
+        var coreSnapshots = await GetReserveSnapshotsWithCachingAsync(assetId, from, to, blockchainType);
+        return coreSnapshots.Select(ConvertCoreSnapshotToModelsSnapshot).ToArray();
     }
 
     /// <inheritdoc/>
@@ -154,7 +167,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
         var subscriptionId = Guid.NewGuid().ToString();
 
         // Store subscription details
-        var subscription = new ReserveSubscription
+        var subscription = new Models.ReserveSubscription
         {
             SubscriptionId = subscriptionId,
             AssetId = assetId,
@@ -167,7 +180,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
         {
             if (!_subscriptions.ContainsKey(assetId))
             {
-                _subscriptions[assetId] = new List<ReserveSubscription>();
+                _subscriptions[assetId] = new List<Models.ReserveSubscription>();
             }
             _subscriptions[assetId].Add(subscription);
         }
@@ -236,7 +249,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<MonitoredAsset>> GetRegisteredAssetsAsync(BlockchainType blockchainType)
+    public async Task<IEnumerable<Models.MonitoredAsset>> GetRegisteredAssetsAsync(BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -289,6 +302,43 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
         {
             Logger.LogError(ex, "Failed to set alert threshold for asset {AssetId}", assetId);
             return false;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> SetupAlertAsync(string assetId, Models.ReserveAlertConfig alertConfig, BlockchainType blockchainType)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(assetId);
+        ArgumentNullException.ThrowIfNull(alertConfig);
+
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        try
+        {
+            lock (_assetsLock)
+            {
+                // Store alert config
+                _alertConfigs[assetId] = new Core.ReserveAlertConfig
+                {
+                    AssetId = assetId,
+                    MinimumThreshold = alertConfig.MinimumThreshold,
+                    WarningThreshold = alertConfig.WarningThreshold,
+                    CriticalThreshold = alertConfig.CriticalThreshold,
+                    AlertRecipients = alertConfig.AlertRecipients.ToArray(),
+                    IsEnabled = alertConfig.IsEnabled
+                };
+            }
+
+            Logger.LogInformation("Set up alert for asset {AssetId} on {Blockchain}", assetId, blockchainType);
+            return assetId;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to setup alert for asset {AssetId}", assetId);
+            throw;
         }
     }
 
@@ -400,7 +450,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// Gets active monitored assets for health monitoring.
     /// </summary>
     /// <returns>List of active monitored assets.</returns>
-    private List<MonitoredAsset> GetActiveMonitoredAssets()
+    private List<Models.MonitoredAsset> GetActiveMonitoredAssets()
     {
         lock (_assetsLock)
         {
@@ -413,8 +463,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     {
         Logger.LogInformation("Initializing Proof of Reserve Service");
 
-        // Initialize proof of reserve specific components
-        await Task.CompletedTask;
+        // Load persistent assets
+        await LoadPersistentAssetsAsync();
 
         Logger.LogInformation("Proof of Reserve Service initialized successfully");
         return true;
@@ -433,8 +483,12 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     {
         Logger.LogInformation("Stopping Proof of Reserve Service");
 
-        // Dispose timer
+        // Dispose timers
         _monitoringTimer?.Dispose();
+        _cleanupTimer?.Dispose();
+
+        // Persist statistics
+        await PersistStatisticsAsync();
 
         await Task.CompletedTask;
         return true;
@@ -470,6 +524,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     public new void Dispose()
     {
         _monitoringTimer?.Dispose();
+        _cleanupTimer?.Dispose();
         DisposeCacheResources();
         DisposeSecurityResources();
         base.Dispose();
@@ -502,6 +557,89 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     {
         // Derive encryption key from enclave identity and configuration parameters
         return "proof-storage-encryption-key-v1";
+    }
+
+    /// <summary>
+    /// Converts Core ProofOfReserve to Models ProofOfReserve.
+    /// </summary>
+    private Models.ProofOfReserve ConvertCoreProofToModelsProof(Core.ProofOfReserve coreProof)
+    {
+        return new Models.ProofOfReserve
+        {
+            ProofId = coreProof.ProofId,
+            AssetId = coreProof.AssetId,
+            ReserveAmount = coreProof.ReserveAmount,
+            LiabilityAmount = coreProof.LiabilityAmount,
+            ReserveRatio = coreProof.ReserveRatio,
+            ProofData = coreProof.ProofData,
+            Timestamp = coreProof.Timestamp,
+            Signature = coreProof.Signature,
+            IsVerified = coreProof.IsVerified,
+            MerkleRoot = coreProof.MerkleRoot,
+            GeneratedAt = coreProof.GeneratedAt
+        };
+    }
+
+    /// <summary>
+    /// Converts Core ReserveSnapshot to Models ReserveSnapshot.
+    /// </summary>
+    private Models.ReserveSnapshot ConvertCoreSnapshotToModelsSnapshot(Core.ReserveSnapshot coreSnapshot)
+    {
+        return new Models.ReserveSnapshot
+        {
+            SnapshotId = coreSnapshot.SnapshotId,
+            AssetId = coreSnapshot.AssetId,
+            ReserveAmount = coreSnapshot.TotalReserves,
+            LiabilityAmount = 0, // Set default or calculate from Core data
+            ReserveRatio = coreSnapshot.ReserveRatio,
+            Timestamp = coreSnapshot.Timestamp,
+            TotalSupply = coreSnapshot.TotalSupply,
+            TotalReserves = coreSnapshot.TotalReserves,
+            ReserveAddresses = coreSnapshot.ReserveAddresses,
+            ReserveBalances = coreSnapshot.ReserveBalances,
+            Health = coreSnapshot.Health,
+            AdditionalData = coreSnapshot.Metadata
+        };
+    }
+
+    /// <summary>
+    /// Converts Models ReserveSnapshot to Core ReserveSnapshot.
+    /// </summary>
+    private Core.ReserveSnapshot ConvertModelsSnapshotToCoreSnapshot(Models.ReserveSnapshot modelsSnapshot)
+    {
+        return new Core.ReserveSnapshot
+        {
+            SnapshotId = modelsSnapshot.SnapshotId,
+            AssetId = modelsSnapshot.AssetId,
+            TotalReserves = modelsSnapshot.ReserveAmount,
+            TotalSupply = modelsSnapshot.TotalSupply,
+            ReserveRatio = modelsSnapshot.ReserveRatio,
+            Timestamp = modelsSnapshot.Timestamp,
+            ReserveAddresses = modelsSnapshot.ReserveAddresses,
+            ReserveBalances = modelsSnapshot.ReserveBalances,
+            Health = modelsSnapshot.Health,
+            Metadata = modelsSnapshot.AdditionalData
+        };
+    }
+
+    /// <summary>
+    /// Converts Models MonitoredAsset to Core MonitoredAsset.
+    /// </summary>
+    private Core.MonitoredAsset ConvertModelsAssetToCoreAsset(Models.MonitoredAsset modelsAsset)
+    {
+        return new Core.MonitoredAsset
+        {
+            AssetId = modelsAsset.AssetId,
+            AssetSymbol = modelsAsset.AssetSymbol,
+            AssetName = modelsAsset.AssetName,
+            Type = Core.AssetType.Token, // Default conversion - may need to be more sophisticated
+            BlockchainType = modelsAsset.BlockchainType,
+            Health = modelsAsset.Health,
+            CurrentReserveRatio = modelsAsset.CurrentReserveRatio,
+            MinReserveRatio = modelsAsset.MinReserveRatio,
+            IsActive = modelsAsset.IsActive,
+            LastUpdated = modelsAsset.LastUpdated
+        };
     }
 }
 

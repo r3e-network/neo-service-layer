@@ -78,7 +78,7 @@ public class VotingStorageHelperTests
         };
 
         var data = JsonSerializer.SerializeToUtf8Bytes(strategies);
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("voting:strategies", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("voting:strategies", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act
@@ -95,7 +95,7 @@ public class VotingStorageHelperTests
     public async Task LoadVotingStrategiesAsync_NoData_ReturnsEmptyDictionary()
     {
         // Arrange
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("voting:strategies", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("voting:strategies", BlockchainType.NeoN3))
             .ThrowsAsync(new KeyNotFoundException("No data found"));
 
         // Act
@@ -161,7 +161,7 @@ public class VotingStorageHelperTests
         };
 
         var data = JsonSerializer.SerializeToUtf8Bytes(candidates);
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("voting:candidates", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("voting:candidates", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act
@@ -225,7 +225,7 @@ public class VotingStorageHelperTests
         };
 
         var data = JsonSerializer.SerializeToUtf8Bytes(results);
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("voting:results", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("voting:results", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act

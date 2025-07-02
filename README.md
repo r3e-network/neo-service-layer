@@ -17,7 +17,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 - **🌐 Interactive Web Application**: Full-featured web interface with real-time service interaction
 - **🤖 AI-Powered Services**: Pattern recognition, fraud detection, and predictive analytics
 - **⛓️ Multi-Chain Support**: Neo N3 and Neo X blockchain integration
-- **🏗️ Microservices Architecture**: 20+ production-ready services
+- **🏗️ Microservices Architecture**: 24 production-ready services
 - **📊 Enterprise-Grade Quality**: 80%+ test coverage, comprehensive documentation
 - **🚀 Production Ready**: Docker containerization, monitoring, and CI/CD
 
@@ -31,7 +31,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 │     • Service Demonstrations  • JWT Authentication         │
 │     • Real-time Testing      • API Documentation           │
 ├─────────────────────────────────────────────────────────────┤
-│  🔌 RESTful API Layer (20+ Service Controllers)           │
+│  🔌 RESTful API Layer (24 Service Controllers)            │
 │     • Standardized APIs      • Swagger Documentation       │
 │     • Authentication         • Rate Limiting               │
 ├─────────────────────────────────────────────────────────────┤
@@ -39,10 +39,10 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 │     • Service Lifecycle      • Dependency Injection        │
 │     • Health Monitoring      • Configuration Management    │
 ├─────────────────────────────────────────────────────────────┤
-│  🏢 Microservices Portfolio (20+ Services)                │
+│  🏢 Microservices Portfolio (24 Services)                 │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
 │  │   Core (4)  │ │Security (4) │ │    AI (2)   │ │Advanced │ │
-│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │ (2+)    │ │
+│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │   (4)   │ │
 │  └─────────────┘ └─────────────┘ └─────────────┘ └─────────┘ │
 ├─────────────────────────────────────────────────────────────┤
 │  🔒 Intel SGX + Occlum LibOS (Trusted Execution)          │
@@ -95,7 +95,7 @@ dotnet run --project src/Web/NeoServiceLayer.Web
    - **🎮 Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Interactive service testing
    - **📚 API Documentation**: `http://localhost:5000/swagger` - Complete API reference
 
-## 📊 Service Portfolio (20+ Services)
+## 📊 Service Portfolio (24 Services)
 
 The Neo Service Layer provides a comprehensive suite of production-ready services organized into six categories:
 
@@ -131,16 +131,20 @@ The Neo Service Layer provides a comprehensive suite of production-ready service
 19. **Pattern Recognition Service** - AI-powered analysis and fraud detection
 20. **Prediction Service** - Machine learning forecasting and analytics
 
-### **🚀 Advanced Services (2+)**
+### **🚀 Advanced Services (2)**
 21. **Fair Ordering Service** - Transaction fairness and MEV protection
-22. **Additional Services** - Continuously expanding based on ecosystem needs
+22. **Secrets Management Service** - Secure secrets storage and rotation
+
+### **🔌 Additional Services (2)**
+23. **Smart Contracts Service** - Smart contract deployment and management
+24. **Demo Service** - Service demonstration and testing capabilities
 
 ## 🌐 Interactive Web Application
 
 The Neo Service Layer includes a **comprehensive web application** that provides:
 
 ### **🔴 Live Service Demonstrations**
-- **Real-time Testing**: Interactive testing of all 20+ services
+- **Real-time Testing**: Interactive testing of all 24 services
 - **Professional UI**: Modern, responsive interface built with Bootstrap 5
 - **Service Categories**: Organized into 6 categories for easy navigation
 - **Direct Integration**: Real communication with actual service endpoints

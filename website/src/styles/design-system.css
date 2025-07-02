@@ -1,0 +1,297 @@
+/* Neo Service Layer Design System - Production Ready */
+
+:root {
+    /* Brand Colors */
+    --neo-primary: #00D4AA;
+    --neo-primary-dark: #00A085;
+    --neo-primary-light: #33DDBB;
+    --neo-secondary: #5F4BB6;
+    --neo-secondary-dark: #4A3A91;
+    --neo-secondary-light: #7A6BC9;
+    --neo-accent: #FF4757;
+    --neo-accent-dark: #CC3947;
+    --neo-accent-light: #FF6B7A;
+    
+    /* Neutral Colors */
+    --neo-black: #0A0E27;
+    --neo-gray-900: #1A1F3A;
+    --neo-gray-800: #2D3561;
+    --neo-gray-700: #404968;
+    --neo-gray-600: #535D7F;
+    --neo-gray-500: #6C7293;
+    --neo-gray-400: #8B91A7;
+    --neo-gray-300: #A0A9C0;
+    --neo-gray-200: #C3CAD9;
+    --neo-gray-100: #E4E7EF;
+    --neo-gray-50: #F5F7FA;
+    --neo-white: #FFFFFF;
+    
+    /* Semantic Colors */
+    --neo-success: #00D4AA;
+    --neo-warning: #FFB800;
+    --neo-error: #FF4757;
+    --neo-info: #00A8E8;
+    
+    /* Gradients */
+    --neo-gradient-primary: linear-gradient(135deg, #00D4AA 0%, #5F4BB6 100%);
+    --neo-gradient-secondary: linear-gradient(135deg, #5F4BB6 0%, #FF4757 100%);
+    --neo-gradient-dark: linear-gradient(180deg, #0A0E27 0%, #1A1F3A 100%);
+    --neo-gradient-light: linear-gradient(135deg, #F5F7FA 0%, #E4E7EF 100%);
+    --neo-gradient-glow: radial-gradient(circle at center, rgba(0, 212, 170, 0.15) 0%, transparent 70%);
+    
+    /* Typography Scale */
+    --neo-font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --neo-font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', monospace;
+    
+    /* Font Sizes - Perfect Fourth Scale */
+    --neo-text-xs: 0.75rem;     /* 12px */
+    --neo-text-sm: 0.875rem;    /* 14px */
+    --neo-text-base: 1rem;      /* 16px */
+    --neo-text-lg: 1.125rem;    /* 18px */
+    --neo-text-xl: 1.333rem;    /* 21px */
+    --neo-text-2xl: 1.777rem;   /* 28px */
+    --neo-text-3xl: 2.369rem;   /* 38px */
+    --neo-text-4xl: 3.157rem;   /* 51px */
+    --neo-text-5xl: 4.209rem;   /* 67px */
+    --neo-text-6xl: 5.610rem;   /* 90px */
+    
+    /* Font Weights */
+    --neo-font-light: 300;
+    --neo-font-regular: 400;
+    --neo-font-medium: 500;
+    --neo-font-semibold: 600;
+    --neo-font-bold: 700;
+    --neo-font-black: 900;
+    
+    /* Line Heights */
+    --neo-leading-none: 1;
+    --neo-leading-tight: 1.25;
+    --neo-leading-snug: 1.375;
+    --neo-leading-normal: 1.5;
+    --neo-leading-relaxed: 1.625;
+    --neo-leading-loose: 2;
+    
+    /* Letter Spacing */
+    --neo-tracking-tighter: -0.05em;
+    --neo-tracking-tight: -0.025em;
+    --neo-tracking-normal: 0;
+    --neo-tracking-wide: 0.025em;
+    --neo-tracking-wider: 0.05em;
+    --neo-tracking-widest: 0.1em;
+    
+    /* Spacing Scale - 8px Grid */
+    --neo-space-0: 0;
+    --neo-space-1: 0.25rem;   /* 4px */
+    --neo-space-2: 0.5rem;    /* 8px */
+    --neo-space-3: 0.75rem;   /* 12px */
+    --neo-space-4: 1rem;      /* 16px */
+    --neo-space-5: 1.25rem;   /* 20px */
+    --neo-space-6: 1.5rem;    /* 24px */
+    --neo-space-8: 2rem;      /* 32px */
+    --neo-space-10: 2.5rem;   /* 40px */
+    --neo-space-12: 3rem;     /* 48px */
+    --neo-space-16: 4rem;     /* 64px */
+    --neo-space-20: 5rem;     /* 80px */
+    --neo-space-24: 6rem;     /* 96px */
+    --neo-space-32: 8rem;     /* 128px */
+    
+    /* Border Radius */
+    --neo-radius-none: 0;
+    --neo-radius-sm: 0.25rem;    /* 4px */
+    --neo-radius-md: 0.5rem;     /* 8px */
+    --neo-radius-lg: 0.75rem;    /* 12px */
+    --neo-radius-xl: 1rem;       /* 16px */
+    --neo-radius-2xl: 1.5rem;    /* 24px */
+    --neo-radius-3xl: 2rem;      /* 32px */
+    --neo-radius-full: 9999px;
+    
+    /* Shadows */
+    --neo-shadow-xs: 0 1px 2px 0 rgba(10, 14, 39, 0.05);
+    --neo-shadow-sm: 0 1px 3px 0 rgba(10, 14, 39, 0.1), 0 1px 2px 0 rgba(10, 14, 39, 0.06);
+    --neo-shadow-md: 0 4px 6px -1px rgba(10, 14, 39, 0.1), 0 2px 4px -1px rgba(10, 14, 39, 0.06);
+    --neo-shadow-lg: 0 10px 15px -3px rgba(10, 14, 39, 0.1), 0 4px 6px -2px rgba(10, 14, 39, 0.05);
+    --neo-shadow-xl: 0 20px 25px -5px rgba(10, 14, 39, 0.1), 0 10px 10px -5px rgba(10, 14, 39, 0.04);
+    --neo-shadow-2xl: 0 25px 50px -12px rgba(10, 14, 39, 0.25);
+    --neo-shadow-inner: inset 0 2px 4px 0 rgba(10, 14, 39, 0.06);
+    --neo-shadow-glow-sm: 0 0 10px rgba(0, 212, 170, 0.3);
+    --neo-shadow-glow-md: 0 0 20px rgba(0, 212, 170, 0.4);
+    --neo-shadow-glow-lg: 0 0 40px rgba(0, 212, 170, 0.5);
+    
+    /* Transitions */
+    --neo-duration-75: 75ms;
+    --neo-duration-100: 100ms;
+    --neo-duration-150: 150ms;
+    --neo-duration-200: 200ms;
+    --neo-duration-300: 300ms;
+    --neo-duration-500: 500ms;
+    --neo-duration-700: 700ms;
+    --neo-duration-1000: 1000ms;
+    
+    /* Easings */
+    --neo-ease-linear: linear;
+    --neo-ease-in: cubic-bezier(0.4, 0, 1, 1);
+    --neo-ease-out: cubic-bezier(0, 0, 0.2, 1);
+    --neo-ease-in-out: cubic-bezier(0.4, 0, 0.2, 1);
+    --neo-ease-bounce: cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    
+    /* Z-Index Scale */
+    --neo-z-0: 0;
+    --neo-z-10: 10;
+    --neo-z-20: 20;
+    --neo-z-30: 30;
+    --neo-z-40: 40;
+    --neo-z-50: 50;
+    --neo-z-60: 60;
+    --neo-z-70: 70;
+    --neo-z-80: 80;
+    --neo-z-90: 90;
+    --neo-z-100: 100;
+    --neo-z-modal: 1000;
+    --neo-z-popover: 1100;
+    --neo-z-tooltip: 1200;
+    --neo-z-notification: 1300;
+    
+    /* Breakpoints */
+    --neo-screen-sm: 640px;
+    --neo-screen-md: 768px;
+    --neo-screen-lg: 1024px;
+    --neo-screen-xl: 1280px;
+    --neo-screen-2xl: 1536px;
+    
+    /* Container Widths */
+    --neo-container-sm: 640px;
+    --neo-container-md: 768px;
+    --neo-container-lg: 1024px;
+    --neo-container-xl: 1280px;
+    --neo-container-2xl: 1536px;
+    
+    /* Animation Keyframes */
+    --neo-animation-fade-in: neo-fade-in;
+    --neo-animation-fade-out: neo-fade-out;
+    --neo-animation-slide-up: neo-slide-up;
+    --neo-animation-slide-down: neo-slide-down;
+    --neo-animation-scale-up: neo-scale-up;
+    --neo-animation-pulse: neo-pulse;
+    --neo-animation-glow: neo-glow;
+}
+
+/* Animations */
+@keyframes neo-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes neo-fade-out {
+    from { opacity: 1; }
+    to { opacity: 0; }
+}
+
+@keyframes neo-slide-up {
+    from { transform: translateY(20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes neo-slide-down {
+    from { transform: translateY(-20px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes neo-scale-up {
+    from { transform: scale(0.95); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+@keyframes neo-pulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+@keyframes neo-glow {
+    0%, 100% { box-shadow: 0 0 20px rgba(0, 212, 170, 0.5); }
+    50% { box-shadow: 0 0 40px rgba(0, 212, 170, 0.8); }
+}
+
+/* Utility Classes */
+.neo-animate-fade-in { animation: neo-fade-in var(--neo-duration-300) var(--neo-ease-out); }
+.neo-animate-slide-up { animation: neo-slide-up var(--neo-duration-500) var(--neo-ease-out); }
+.neo-animate-scale-up { animation: neo-scale-up var(--neo-duration-300) var(--neo-ease-out); }
+.neo-animate-pulse { animation: neo-pulse var(--neo-duration-1000) var(--neo-ease-in-out) infinite; }
+.neo-animate-glow { animation: neo-glow var(--neo-duration-1000) var(--neo-ease-in-out) infinite; }
+
+/* Focus Styles */
+.neo-focus {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+}
+
+.neo-focus:focus-visible {
+    outline-color: var(--neo-primary);
+    box-shadow: 0 0 0 3px rgba(0, 212, 170, 0.1);
+}
+
+/* Selection */
+::selection {
+    background-color: var(--neo-primary);
+    color: var(--neo-black);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 12px;
+    height: 12px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--neo-gray-900);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--neo-gray-700);
+    border-radius: var(--neo-radius-full);
+    border: 2px solid var(--neo-gray-900);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--neo-gray-600);
+}
+
+/* Responsive Utilities */
+@media (max-width: 640px) {
+    :root {
+        --neo-text-base: 0.875rem;
+        --neo-space-4: 0.875rem;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
+}
+
+/* Print Styles */
+@media print {
+    :root {
+        --neo-black: #000;
+        --neo-white: #fff;
+        --neo-primary: #000;
+    }
+}
+
+/* Dark Mode Support */
+@media (prefers-color-scheme: dark) {
+    /* Already optimized for dark mode by default */
+}
+
+/* High Contrast Mode */
+@media (prefers-contrast: high) {
+    :root {
+        --neo-primary: #00FFD1;
+        --neo-gray-900: #000000;
+        --neo-gray-100: #FFFFFF;
+    }
+}

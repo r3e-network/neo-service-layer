@@ -143,6 +143,9 @@ public partial class StorageService
             {
                 _metadataCache[key] = metadata;
             }
+            
+            // Persist metadata to storage if available
+            await PersistMetadataAsync(key, metadata);
 
             RecordSuccess();
             UpdateMetric("TotalStoredBytes", _metadataCache.Values.Sum(m => m.SizeBytes));
@@ -155,7 +158,7 @@ public partial class StorageService
     }
 
     /// <inheritdoc/>
-    public async Task<byte[]> RetrieveDataAsync(string key, BlockchainType blockchainType)
+    public async Task<byte[]> GetDataAsync(string key, BlockchainType blockchainType)
     {
         ValidateStorageOperation(key, blockchainType);
 
@@ -164,7 +167,7 @@ public partial class StorageService
             IncrementRequestCounters();
 
             // Get metadata
-            var metadata = await GetMetadataAsync(key, blockchainType);
+            var metadata = await GetStorageMetadataAsync(key, blockchainType);
             if (metadata == null)
             {
                 throw new KeyNotFoundException($"No data found for key {key}.");
@@ -190,7 +193,19 @@ public partial class StorageService
                 retrievedData = Convert.FromBase64String(retrievedDataBase64);
             }
 
-            // Perform data integrity verification
+            // Decrypt data if necessary (enclave storage doesn't handle this automatically)
+            if (metadata.IsEncrypted)
+            {
+                retrievedData = await DecryptDataAsync(retrievedData, metadata.EncryptionKeyId ?? "default", metadata.EncryptionAlgorithm ?? "AES-256-GCM");
+            }
+
+            // Decompress data if necessary
+            if (metadata.IsCompressed)
+            {
+                retrievedData = DecompressData(retrievedData);
+            }
+
+            // Perform data integrity verification on the final decrypted/decompressed data
             if (!string.IsNullOrEmpty(metadata.ContentHash))
             {
                 using var sha256 = SHA256.Create();
@@ -202,10 +217,6 @@ public partial class StorageService
                     throw new InvalidDataException($"Data integrity verification failed for key {key}");
                 }
             }
-
-            // Decrypt and decompress if necessary (handled by enclave)
-            // Note: Data is already decrypted and decompressed by the enclave storage function
-            // No additional processing needed since the enclave handles encryption/decryption internally
 
             RecordSuccess();
 

@@ -351,6 +351,11 @@ public class Alert
     /// Gets or sets the alert ID.
     /// </summary>
     public string AlertId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the alert ID (alias for AlertId).
+    /// </summary>
+    public string Id { get => AlertId; set => AlertId = value; }
 
     /// <summary>
     /// Gets or sets the rule ID that triggered this alert.
@@ -401,6 +406,21 @@ public class Alert
     /// Gets or sets additional alert metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets whether the alert is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets when the alert was created.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Gets or sets when the alert was resolved.
+    /// </summary>
+    public DateTime? ResolvedAt { get; set; }
 }
 
 /// <summary>

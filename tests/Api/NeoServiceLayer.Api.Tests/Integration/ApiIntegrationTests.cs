@@ -491,7 +491,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 
             // Setup mock for generating keys
             mockKeyManagementService
-                .Setup(x => x.GenerateKeyAsync(
+                .Setup(x => x.CreateKeyAsync(
                     It.IsAny<string>(),
                     It.IsAny<string>(),
                     It.IsAny<string>(),

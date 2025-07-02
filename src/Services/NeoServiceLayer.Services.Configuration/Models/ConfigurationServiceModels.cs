@@ -45,6 +45,7 @@ public class ConfigurationSubscription
     public string SubscriptionId { get; set; } = string.Empty;
     public string ConfigurationKey { get; set; } = string.Empty;
     public string SubscriberEndpoint { get; set; } = string.Empty;
+    public string CallbackUrl { get; set; } = string.Empty;
     public bool IsActive { get; set; }
     public DateTime CreatedAt { get; set; }
     public DateTime? LastNotified { get; set; }

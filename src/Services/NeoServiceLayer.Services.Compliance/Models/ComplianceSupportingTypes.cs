@@ -640,6 +640,52 @@ public class ComplianceTrendData
 }
 
 /// <summary>
+/// Represents a compliance report.
+/// </summary>
+public class ComplianceReport
+{
+    /// <summary>
+    /// Gets or sets the report identifier.
+    /// </summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the report name.
+    /// </summary>
+    public string ReportName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the report type.
+    /// </summary>
+    public string ReportType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the report generation status.
+    /// </summary>
+    public string Status { get; set; } = "Generated";
+
+    /// <summary>
+    /// Gets or sets the report data.
+    /// </summary>
+    public ComplianceReportData ReportData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the report generation timestamp.
+    /// </summary>
+    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the report parameters.
+    /// </summary>
+    public Dictionary<string, string> Parameters { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the report format.
+    /// </summary>
+    public string Format { get; set; } = "JSON";
+}
+
+/// <summary>
 /// Represents certification details.
 /// </summary>
 public class CertificationDetails

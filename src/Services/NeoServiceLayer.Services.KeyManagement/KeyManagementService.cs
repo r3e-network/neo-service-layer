@@ -9,7 +9,7 @@ namespace NeoServiceLayer.Services.KeyManagement;
 /// <summary>
 /// Implementation of the Key Management service.
 /// </summary>
-public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagementService
+public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagementService
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
@@ -61,6 +61,9 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
 
             // Initialize service-specific components
             await RefreshKeyCacheAsync();
+            
+            // Load persistent keys if storage is available
+            await LoadPersistentKeysAsync();
 
             Logger.LogInformation("Key Management Service initialized successfully");
             return true;
@@ -124,7 +127,7 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
     }
 
     /// <inheritdoc/>
-    public async Task<KeyMetadata> GenerateKeyAsync(string keyId, string keyType, string keyUsage, bool exportable, string description, BlockchainType blockchainType)
+    public async Task<KeyMetadata> CreateKeyAsync(string keyId, string keyType, string keyUsage, bool exportable, string description, BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -171,6 +174,12 @@ public class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagement
             {
                 _keyCache[keyId] = keyMetadata;
             }
+            
+            // Persist to storage if available
+            await PersistKeyMetadataAsync(keyMetadata);
+            
+            // Record key creation audit log
+            await RecordKeyUsageAsync(keyId, "CreateKey", $"Created {keyType} key for {keyUsage}");
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);

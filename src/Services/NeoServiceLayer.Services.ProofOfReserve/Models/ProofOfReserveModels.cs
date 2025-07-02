@@ -4,6 +4,245 @@ using NeoServiceLayer.Core;
 namespace NeoServiceLayer.Services.ProofOfReserve.Models;
 
 /// <summary>
+/// Represents a proof of reserve.
+/// </summary>
+public class ProofOfReserve
+{
+    /// <summary>
+    /// Gets or sets the proof ID.
+    /// </summary>
+    public string ProofId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reserve amount.
+    /// </summary>
+    public decimal ReserveAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the liability amount.
+    /// </summary>
+    public decimal LiabilityAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reserve ratio.
+    /// </summary>
+    public decimal ReserveRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the proof data.
+    /// </summary>
+    public Dictionary<string, object> ProofData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the signature.
+    /// </summary>
+    public string Signature { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the proof is verified.
+    /// </summary>
+    public bool IsVerified { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the merkle root.
+    /// </summary>
+    public string MerkleRoot { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets when the proof was generated.
+    /// </summary>
+    public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Represents a monitored asset.
+/// </summary>
+public class MonitoredAsset
+{
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset symbol.
+    /// </summary>
+    public string AssetSymbol { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset name.
+    /// </summary>
+    public string AssetName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset type.
+    /// </summary>
+    public string AssetType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the monitoring configuration.
+    /// </summary>
+    public Dictionary<string, object> MonitoringConfig { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether monitoring is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the creation timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Gets or sets the current reserve ratio.
+    /// </summary>
+    public decimal CurrentReserveRatio { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the minimum reserve ratio.
+    /// </summary>
+    public decimal MinReserveRatio { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the asset health status.
+    /// </summary>
+    public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
+    
+    /// <summary>
+    /// Gets or sets when the asset was last updated.
+    /// </summary>
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Gets or sets the blockchain type.
+    /// </summary>
+    public BlockchainType BlockchainType { get; set; }
+}
+
+/// <summary>
+/// Represents a reserve snapshot.
+/// </summary>
+public class ReserveSnapshot
+{
+    /// <summary>
+    /// Gets or sets the snapshot ID.
+    /// </summary>
+    public string SnapshotId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reserve amount.
+    /// </summary>
+    public decimal ReserveAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the liability amount.
+    /// </summary>
+    public decimal LiabilityAmount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reserve ratio.
+    /// </summary>
+    public decimal ReserveRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the snapshot timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets additional data.
+    /// </summary>
+    public Dictionary<string, object> AdditionalData { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the total supply.
+    /// </summary>
+    public decimal TotalSupply { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total reserves.
+    /// </summary>
+    public decimal TotalReserves { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the reserve addresses.
+    /// </summary>
+    public string[] ReserveAddresses { get; set; } = Array.Empty<string>();
+    
+    /// <summary>
+    /// Gets or sets the reserve balances.
+    /// </summary>
+    public decimal[] ReserveBalances { get; set; } = Array.Empty<decimal>();
+    
+    /// <summary>
+    /// Gets or sets the health status of this snapshot.
+    /// </summary>
+    public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
+    
+    /// <summary>
+    /// Gets or sets the verification status.
+    /// </summary>
+    public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Pending;
+    
+    /// <summary>
+    /// Gets or sets the block height.
+    /// </summary>
+    public long BlockHeight { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the block hash.
+    /// </summary>
+    public string BlockHash { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Represents a reserve subscription.
+/// </summary>
+public class ReserveSubscription
+{
+    /// <summary>
+    /// Gets or sets the subscription ID.
+    /// </summary>
+    public string SubscriptionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the asset ID.
+    /// </summary>
+    public string AssetId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the callback URL.
+    /// </summary>
+    public string CallbackUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the subscription is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the creation timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
 /// Represents reserve alert configuration.
 /// </summary>
 public class ReserveAlertConfig

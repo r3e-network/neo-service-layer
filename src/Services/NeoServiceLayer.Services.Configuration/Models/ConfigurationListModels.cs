@@ -204,6 +204,11 @@ public class ConfigurationEntry
     /// Gets or sets the version.
     /// </summary>
     public int Version { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the user who last updated this entry.
+    /// </summary>
+    public string? UpdatedBy { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata.

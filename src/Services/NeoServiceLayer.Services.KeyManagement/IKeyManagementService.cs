@@ -8,7 +8,7 @@ namespace NeoServiceLayer.Services.KeyManagement;
 public interface IKeyManagementService : IEnclaveService, IBlockchainService
 {
     /// <summary>
-    /// Generates a new key.
+    /// Creates a new key.
     /// </summary>
     /// <param name="keyId">The key ID.</param>
     /// <param name="keyType">The key type (e.g., "Secp256k1", "Ed25519", "RSA").</param>
@@ -17,7 +17,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="description">The key description.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The key metadata.</returns>
-    Task<KeyMetadata> GenerateKeyAsync(string keyId, string keyType, string keyUsage, bool exportable, string description, BlockchainType blockchainType);
+    Task<KeyMetadata> CreateKeyAsync(string keyId, string keyType, string keyUsage, bool exportable, string description, BlockchainType blockchainType);
 
     /// <summary>
     /// Gets key metadata.

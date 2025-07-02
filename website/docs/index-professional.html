@@ -1,0 +1,931 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Service Layer Documentation</title>
+    <meta name="description" content="Complete developer documentation for Neo Service Layer - Enterprise blockchain infrastructure with 22+ smart contracts, Intel SGX support, and comprehensive service framework.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Search Styles -->
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Meta -->
+    <meta property="og:title" content="Neo Service Layer Documentation">
+    <meta property="og:description" content="Complete developer documentation for enterprise blockchain infrastructure">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neoservicelayer.com/docs">
+    
+    <link rel="canonical" href="https://neoservicelayer.com/docs">
+</head>
+<body>
+    <!-- Documentation Header -->
+    <header class="docs-header-nav">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">⚡</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Documentation</div>
+                    </div>
+                </a>
+                
+                <div class="docs-version-selector">
+                    <button class="docs-version-button" id="version-selector">
+                        <span>v2.0</span>
+                        <i class="ti ti-chevron-down"></i>
+                    </button>
+                    <div class="docs-version-menu" id="version-menu">
+                        <a href="#" class="docs-version-item active">
+                            <span>v2.0</span>
+                            <span class="version-badge">Latest</span>
+                        </a>
+                        <a href="#" class="docs-version-item">
+                            <span>v1.5</span>
+                            <span class="version-badge-old">Stable</span>
+                        </a>
+                        <a href="#" class="docs-version-item">
+                            <span>v1.0</span>
+                            <span class="version-badge-old">Legacy</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search documentation..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                <a href="https://github.com/neo-service-layer" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="/app.html" class="docs-cta-button">
+                    Launch App
+                    <i class="ti ti-arrow-right"></i>
+                </a>
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">Documentation</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v2.0</span>
+                    <span>Latest</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Getting Started -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Getting Started</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#introduction" class="docs-nav-link active">
+                                <i class="ti ti-rocket"></i>
+                                Introduction
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#quick-start" class="docs-nav-link">
+                                <i class="ti ti-zap"></i>
+                                Quick Start
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#installation" class="docs-nav-link">
+                                <i class="ti ti-download"></i>
+                                Installation
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#configuration" class="docs-nav-link">
+                                <i class="ti ti-settings"></i>
+                                Configuration
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- SDK Reference -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">SDK Reference</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#sdk-overview" class="docs-nav-link">
+                                <i class="ti ti-code"></i>
+                                SDK Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#javascript-sdk" class="docs-nav-link">
+                                <i class="ti ti-brand-javascript"></i>
+                                JavaScript SDK
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#js-installation" class="docs-nav-sublink">Installation</a></li>
+                                <li><a href="#js-authentication" class="docs-nav-sublink">Authentication</a></li>
+                                <li><a href="#js-core-services" class="docs-nav-sublink">Core Services</a></li>
+                                <li><a href="#js-defi-services" class="docs-nav-sublink">DeFi Services</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#python-sdk" class="docs-nav-link">
+                                <i class="ti ti-brand-python"></i>
+                                Python SDK
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#csharp-sdk" class="docs-nav-link">
+                                <i class="ti ti-brand-c-sharp"></i>
+                                C# SDK
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- API Reference -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">API Reference</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#api-overview" class="docs-nav-link">
+                                <i class="ti ti-api"></i>
+                                API Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#authentication" class="docs-nav-link">
+                                <i class="ti ti-shield-check"></i>
+                                Authentication
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#core-services-api" class="docs-nav-link">
+                                <i class="ti ti-server"></i>
+                                Core Services
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#storage-api" class="docs-nav-sublink">Storage API</a></li>
+                                <li><a href="#oracle-api" class="docs-nav-sublink">Oracle API</a></li>
+                                <li><a href="#compute-api" class="docs-nav-sublink">Compute API</a></li>
+                                <li><a href="#identity-api" class="docs-nav-sublink">Identity API</a></li>
+                                <li><a href="#analytics-api" class="docs-nav-sublink">Analytics API</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#defi-services-api" class="docs-nav-link">
+                                <i class="ti ti-coins"></i>
+                                DeFi Services
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#lending-api" class="docs-nav-sublink">Lending API</a></li>
+                                <li><a href="#marketplace-api" class="docs-nav-sublink">Marketplace API</a></li>
+                                <li><a href="#tokenization-api" class="docs-nav-sublink">Tokenization API</a></li>
+                                <li><a href="#insurance-api" class="docs-nav-sublink">Insurance API</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Smart Contracts -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Smart Contracts</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#contract-overview" class="docs-nav-link">
+                                <i class="ti ti-file-text"></i>
+                                Contract Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#deployment" class="docs-nav-link">
+                                <i class="ti ti-upload"></i>
+                                Deployment
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#examples" class="docs-nav-link">
+                                <i class="ti ti-code-dots"></i>
+                                Examples
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Advanced -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Advanced</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#intel-sgx" class="docs-nav-link">
+                                <i class="ti ti-shield-lock"></i>
+                                Intel SGX
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#zero-knowledge" class="docs-nav-link">
+                                <i class="ti ti-eye-off"></i>
+                                Zero Knowledge
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#cross-chain" class="docs-nav-link">
+                                <i class="ti ti-arrows-exchange"></i>
+                                Cross-Chain
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#monitoring" class="docs-nav-link">
+                                <i class="ti ti-chart-line"></i>
+                                Monitoring
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Resources -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Resources</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#tutorials" class="docs-nav-link">
+                                <i class="ti ti-school"></i>
+                                Tutorials
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#best-practices" class="docs-nav-link">
+                                <i class="ti ti-star"></i>
+                                Best Practices
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#troubleshooting" class="docs-nav-link">
+                                <i class="ti ti-help"></i>
+                                Troubleshooting
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#changelog" class="docs-nav-link">
+                                <i class="ti ti-list"></i>
+                                Changelog
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <div class="docs-content">
+                <!-- Breadcrumb -->
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ul class="docs-breadcrumb-list">
+                        <li class="docs-breadcrumb-item">
+                            <a href="/" class="docs-breadcrumb-link">Home</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <span>Documentation</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Article Header -->
+                <header class="docs-article-header">
+                    <h1 class="docs-article-title">Neo Service Layer Documentation</h1>
+                    <p class="docs-article-description">
+                        Complete developer documentation for building enterprise blockchain applications 
+                        with Neo Service Layer's comprehensive infrastructure and 22+ smart contract services.
+                    </p>
+                    <div class="docs-article-meta">
+                        <div class="docs-meta-item">
+                            <i class="ti ti-calendar"></i>
+                            <span>Updated January 30, 2025</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-git-branch"></i>
+                            <span>Version 2.0</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-clock"></i>
+                            <span>5 min read</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Content -->
+                <section id="introduction" class="docs-section">
+                    <h2>Introduction</h2>
+                    <p>
+                        Neo Service Layer is an enterprise-grade blockchain infrastructure platform that provides 
+                        a comprehensive suite of smart contracts and services for building sophisticated decentralized 
+                        applications. With over 22 specialized smart contracts, Intel SGX support for enhanced security, 
+                        and a robust service framework, it's designed to meet the demands of enterprise blockchain development.
+                    </p>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-info-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>New in v2.0:</strong> Enhanced TypeScript support, improved WebSocket connectivity, 
+                            multi-blockchain support for Neo N3 and Neo X, and comprehensive Intel SGX integration.
+                        </div>
+                    </div>
+
+                    <h3>Key Features</h3>
+                    <ul>
+                        <li><strong>22+ Smart Contracts</strong> - Pre-built, audited contracts for common blockchain operations</li>
+                        <li><strong>Intel SGX Integration</strong> - Hardware-based security for sensitive computations</li>
+                        <li><strong>Multi-Blockchain Support</strong> - Compatible with Neo N3 and Neo X (EVM-compatible)</li>
+                        <li><strong>Enterprise Security</strong> - Zero-knowledge proofs, multi-signature support, and comprehensive auditing</li>
+                        <li><strong>Developer Experience</strong> - TypeScript SDKs, comprehensive documentation, and extensive tooling</li>
+                        <li><strong>Production Ready</strong> - Battle-tested in enterprise environments with 99.9% uptime</li>
+                    </ul>
+
+                    <h3>Architecture Overview</h3>
+                    <p>
+                        Neo Service Layer follows a modular microservices architecture, where each service is 
+                        responsible for specific blockchain functionality. This design enables scalability, 
+                        maintainability, and allows developers to use only the services they need.
+                    </p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">Service Categories</div>
+                    </div>
+                    <pre><code class="language-javascript">const serviceCategories = {
+  core: [
+    'Storage',      // Decentralized data storage
+    'Oracle',       // External data feeds
+    'Compute',      // Distributed computation
+    'Identity',     // Identity management
+    'Analytics'     // Blockchain analytics
+  ],
+  defi: [
+    'Lending',      // Lending protocols
+    'Marketplace',  // NFT and asset marketplace
+    'Tokenization', // Asset tokenization
+    'Insurance',    // Decentralized insurance
+    'Gaming'        // Gaming and tournaments
+  ],
+  advanced: [
+    'ZeroKnowledge',   // ZK proof generation
+    'KeyManagement',   // Secure key storage
+    'Automation',      // Smart contract automation
+    'CrossChain',      // Cross-chain bridges
+    'Randomness'       // Verifiable randomness
+  ]
+};</code></pre>
+                </section>
+
+                <section id="quick-start" class="docs-section">
+                    <h2>Quick Start</h2>
+                    <p>
+                        Get started with Neo Service Layer in under 5 minutes. This guide will walk you through 
+                        installing the SDK, connecting to the network, and making your first service call.
+                    </p>
+
+                    <h3>1. Installation</h3>
+                    <p>Install the Neo Service Layer SDK using your preferred package manager:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">npm</div>
+                        <button class="code-copy-button" onclick="copyCode('install-npm')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-npm" class="language-bash">npm install @neo-service-layer/sdk</code></pre>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">yarn</div>
+                        <button class="code-copy-button" onclick="copyCode('install-yarn')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-yarn" class="language-bash">yarn add @neo-service-layer/sdk</code></pre>
+
+                    <h3>2. Initialize the SDK</h3>
+                    <p>Create a new instance of the Neo Service Layer SDK:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">JavaScript</div>
+                        <button class="code-copy-button" onclick="copyCode('init-sdk')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="init-sdk" class="language-javascript">import { NeoServiceLayerSDK } from '@neo-service-layer/sdk';
+
+// Initialize with default testnet configuration
+const sdk = new NeoServiceLayerSDK({
+  network: 'testnet',
+  blockchainType: 'NeoN3',
+  apiKey: 'your-api-key-here'
+});
+
+// Wait for SDK to initialize
+await sdk.init();</code></pre>
+
+                    <h3>3. Make Your First Call</h3>
+                    <p>Store data using the Storage service:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">JavaScript</div>
+                        <button class="code-copy-button" onclick="copyCode('first-call')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="first-call" class="language-javascript">// Store data
+const result = await sdk.storage.store({
+  key: 'user:12345',
+  value: JSON.stringify({
+    name: 'Alice',
+    email: 'alice@example.com',
+    createdAt: new Date().toISOString()
+  }),
+  encrypted: true
+});
+
+console.log('Data stored:', result.transactionId);
+
+// Retrieve data
+const data = await sdk.storage.get('user:12345');
+console.log('Retrieved data:', JSON.parse(data.value));</code></pre>
+
+                    <div class="docs-alert docs-alert-success">
+                        <i class="ti ti-check-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>Success!</strong> You've successfully stored and retrieved data using Neo Service Layer. 
+                            Continue reading to learn about authentication, advanced features, and service-specific documentation.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer Navigation -->
+                <nav class="docs-footer-nav">
+                    <a href="#quick-start" class="docs-footer-link docs-footer-link-next">
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Next</div>
+                            <div class="docs-footer-link-title">Quick Start Guide</div>
+                        </div>
+                        <i class="ti ti-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Table of Contents -->
+            <aside class="docs-toc">
+                <h4 class="docs-toc-title">On this page</h4>
+                <ul class="docs-toc-list" id="table-of-contents">
+                    <li class="docs-toc-item">
+                        <a href="#introduction" class="docs-toc-link active">Introduction</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#quick-start" class="docs-toc-link">Quick Start</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="docs-overlay" id="docs-overlay"></div>
+
+    <!-- Scripts -->
+    <script src="../src/scripts/docs-search.js"></script>
+    <script>
+        // Copy code function
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                // Show success feedback
+                const button = event.target.closest('.code-copy-button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="ti ti-check"></i> Copied!';
+                button.style.color = 'var(--docs-accent-green)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Theme toggle
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('docs-sidebar');
+            const overlay = document.getElementById('docs-overlay');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Version selector
+            const versionSelector = document.getElementById('version-selector');
+            const versionMenu = document.getElementById('version-menu');
+
+            versionSelector.addEventListener('click', () => {
+                versionMenu.classList.toggle('open');
+            });
+
+            document.addEventListener('click', (e) => {
+                if (!versionSelector.contains(e.target)) {
+                    versionMenu.classList.remove('open');
+                }
+            });
+
+            // Search functionality
+            const searchInput = document.getElementById('docs-search');
+            searchInput.addEventListener('input', function(e) {
+                const query = e.target.value.toLowerCase();
+                // Implement search logic here
+                console.log('Searching for:', query);
+            });
+
+            // Keyboard shortcuts
+            document.addEventListener('keydown', (e) => {
+                if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
+                    e.preventDefault();
+                    searchInput.focus();
+                }
+            });
+
+            // Active navigation highlighting
+            const navLinks = document.querySelectorAll('.docs-nav-link');
+            const sections = document.querySelectorAll('.docs-section');
+
+            function updateActiveNavigation() {
+                const scrollPosition = window.scrollY + 100;
+
+                sections.forEach(section => {
+                    const sectionTop = section.offsetTop;
+                    const sectionHeight = section.offsetHeight;
+                    const sectionId = section.getAttribute('id');
+
+                    if (scrollPosition >= sectionTop && scrollPosition < sectionTop + sectionHeight) {
+                        navLinks.forEach(link => {
+                            link.classList.remove('active');
+                            if (link.getAttribute('href') === `#${sectionId}`) {
+                                link.classList.add('active');
+                            }
+                        });
+                    }
+                });
+            }
+
+            window.addEventListener('scroll', updateActiveNavigation);
+            updateActiveNavigation();
+        });
+    </script>
+
+    <style>
+        /* Header navigation styles */
+        .docs-header-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--docs-bg-primary);
+            border-bottom: 1px solid var(--docs-border-light);
+            z-index: 50;
+        }
+
+        .docs-header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .docs-header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .docs-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4aa 0%, #5f4bb6 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+
+        .docs-brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .docs-brand-subtitle {
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+            line-height: 1;
+        }
+
+        .docs-version-selector {
+            position: relative;
+        }
+
+        .docs-version-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-version-button:hover {
+            background: var(--docs-bg-tertiary);
+        }
+
+        .docs-version-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 200px;
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            box-shadow: var(--docs-shadow-lg);
+            padding: 8px;
+            margin-top: 4px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-4px);
+            transition: all 0.15s ease;
+        }
+
+        .docs-version-menu.open {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .docs-version-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 8px 12px;
+            color: var(--docs-text-primary);
+            text-decoration: none;
+            border-radius: 4px;
+            transition: background 0.15s ease;
+        }
+
+        .docs-version-item:hover {
+            background: var(--docs-bg-secondary);
+        }
+
+        .docs-version-item.active {
+            background: var(--docs-accent-blue);
+            color: white;
+        }
+
+        .docs-header-center {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 48px;
+        }
+
+        .docs-search-container {
+            position: relative;
+        }
+
+        .docs-search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .docs-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+            transition: all 0.15s ease;
+        }
+
+        .docs-search-input:focus {
+            outline: none;
+            border-color: var(--docs-accent-blue);
+            background: var(--docs-bg-primary);
+            box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+        }
+
+        .docs-search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-search-shortcut {
+            position: absolute;
+            right: 12px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .docs-search-shortcut kbd {
+            background: var(--docs-bg-tertiary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .docs-theme-toggle {
+            position: relative;
+            width: 36px;
+            height: 36px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-theme-toggle:hover {
+            background: var(--docs-bg-tertiary);
+        }
+
+        .docs-theme-icon-light {
+            display: none;
+        }
+
+        .docs-theme-icon-dark {
+            display: block;
+        }
+
+        [data-theme="light"] .docs-theme-icon-light {
+            display: block;
+        }
+
+        [data-theme="light"] .docs-theme-icon-dark {
+            display: none;
+        }
+
+        .docs-github-link {
+            width: 36px;
+            height: 36px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--docs-text-secondary);
+            text-decoration: none;
+            transition: all 0.15s ease;
+        }
+
+        .docs-github-link:hover {
+            background: var(--docs-bg-tertiary);
+            color: var(--docs-text-primary);
+        }
+
+        .docs-cta-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--docs-accent-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .docs-cta-button:hover {
+            background: #2563eb;
+            transform: translateY(-1px);
+        }
+
+        .docs-mobile-menu-toggle {
+            display: none;
+            width: 36px;
+            height: 36px;
+            background: transparent;
+            border: none;
+            color: var(--docs-text-secondary);
+            cursor: pointer;
+        }
+
+        @media (max-width: 768px) {
+            .docs-header-center {
+                display: none;
+            }
+
+            .docs-mobile-menu-toggle {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+        }
+    </style>
+</body>
+</html>

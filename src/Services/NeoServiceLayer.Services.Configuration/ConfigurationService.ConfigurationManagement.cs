@@ -108,7 +108,7 @@ public partial class ConfigurationService
                     return new ConfigurationResult
                     {
                         Key = entry.Key,
-                        Value = entry.Value,
+                        Value = ConvertValueToCorrectType(entry.Value, entry.ValueType),
                         ValueType = (ConfigurationValueType)entry.ValueType,
                         Version = entry.Version,
                         LastModified = entry.UpdatedAt,
@@ -454,5 +454,35 @@ public partial class ConfigurationService
 
         var lowerKey = key.ToLowerInvariant();
         return sensitiveKeywords.Any(keyword => lowerKey.Contains(keyword));
+    }
+
+    /// <summary>
+    /// Converts a value to the correct type based on the specified ValueType.
+    /// </summary>
+    /// <param name="value">The value to convert.</param>
+    /// <param name="valueType">The target value type.</param>
+    /// <returns>The converted value.</returns>
+    private object? ConvertValueToCorrectType(object? value, Models.ConfigurationValueType valueType)
+    {
+        if (value == null) return null;
+
+        try
+        {
+            return valueType switch
+            {
+                Models.ConfigurationValueType.String => value.ToString(),
+                Models.ConfigurationValueType.Integer => Convert.ToInt32(value),
+                Models.ConfigurationValueType.Boolean => Convert.ToBoolean(value),
+                Models.ConfigurationValueType.Double => Convert.ToDouble(value),
+                Models.ConfigurationValueType.DateTime => Convert.ToDateTime(value),
+                Models.ConfigurationValueType.JsonObject => value.ToString(),
+                _ => value
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to convert value {Value} to type {ValueType}, returning original value", value, valueType);
+            return value;
+        }
     }
 }

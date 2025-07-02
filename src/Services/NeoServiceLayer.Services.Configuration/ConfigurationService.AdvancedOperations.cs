@@ -259,7 +259,7 @@ public partial class ConfigurationService
             // For now, return mock history data
             var historyEntries = new[]
             {
-                new ConfigurationHistoryEntry
+                new Models.ConfigurationHistoryEntry
                 {
                     Key = request.Key,
                     Value = "current_value",
@@ -268,7 +268,7 @@ public partial class ConfigurationService
                     ChangedBy = "System",
                     ChangeType = "Update"
                 },
-                new ConfigurationHistoryEntry
+                new Models.ConfigurationHistoryEntry
                 {
                     Key = request.Key,
                     Value = "previous_value",

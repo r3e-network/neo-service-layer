@@ -3,6 +3,7 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Notification.Models;
 using CoreModels = NeoServiceLayer.Core.Models;
@@ -34,14 +35,17 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <param name="options">The notification options.</param>
     /// <param name="httpClientFactory">The HTTP client factory.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="persistentStorage">The persistent storage provider (optional).</param>
     public NotificationService(
         IOptions<CoreModels.NotificationOptions> options,
         IHttpClientFactory httpClientFactory,
-        ILogger<NotificationService> logger)
+        ILogger<NotificationService> logger,
+        IPersistentStorageProvider? persistentStorage = null)
         : base("Notification", "Secure Notification Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _options = options;
         _httpClientFactory = httpClientFactory;
+        _persistentStorage = persistentStorage;
         _totalNotificationsSent = 0;
         _totalNotificationsFailed = 0;
         _lastProcessingTime = DateTime.MinValue;
@@ -77,6 +81,9 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
             // Initialize notification channels
             await InitializeNotificationChannelsAsync();
+
+            // Load persistent data if available
+            await LoadPersistentDataAsync();
 
             Logger.LogInformation("Notification Service initialized successfully");
             return true;

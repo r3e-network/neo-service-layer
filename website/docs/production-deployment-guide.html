@@ -1,0 +1,2483 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Production Deployment Guide - Neo Service Layer</title>
+    <meta name="description" content="Enterprise production deployment guide for Neo Service Layer with Kubernetes orchestration, Docker configurations, Intel SGX setup, monitoring, scaling, and security best practices.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://docs.neoservicelayer.com/production-deployment">
+    <meta property="og:title" content="Neo Service Layer Production Deployment Guide">
+    <meta property="og:description" content="Complete guide for deploying Neo Service Layer in production with Kubernetes, Docker, and Intel SGX">
+    <meta property="og:image" content="https://docs.neoservicelayer.com/images/deployment-guide-og.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://docs.neoservicelayer.com/production-deployment">
+    <meta property="twitter:title" content="Neo Service Layer Production Deployment Guide">
+    <meta property="twitter:description" content="Complete guide for production deployment with Kubernetes and Docker">
+    <meta property="twitter:image" content="https://docs.neoservicelayer.com/images/deployment-guide-twitter.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://docs.neoservicelayer.com/production-deployment">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="icon" type="image/png" href="../public/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="../public/favicon-16x16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="../public/apple-touch-icon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    <link rel="stylesheet" href="../src/styles/code-playground.css">
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+    
+    <!-- Deployment Guide Specific Styles -->
+    <style>
+        .deployment-architecture {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .architecture-diagram {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 16px 0;
+            overflow-x: auto;
+        }
+        
+        .deployment-checklist {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 12px 0;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+        
+        .checklist-item:last-child {
+            border-bottom: none;
+        }
+        
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--docs-border-medium);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .checklist-checkbox.checked {
+            background: var(--docs-accent-green);
+            border-color: var(--docs-accent-green);
+        }
+        
+        .checklist-checkbox.checked::after {
+            content: "✓";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: white;
+            font-weight: bold;
+        }
+        
+        .checklist-content {
+            flex: 1;
+        }
+        
+        .checklist-title {
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 4px 0;
+        }
+        
+        .checklist-description {
+            color: var(--docs-text-secondary);
+            font-size: 14px;
+            margin: 0;
+        }
+        
+        .resource-requirements {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .resource-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 16px;
+        }
+        
+        .resource-table th,
+        .resource-table td {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+        
+        .resource-table th {
+            background: var(--docs-bg-tertiary);
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+        
+        .resource-table tr:last-child td {
+            border-bottom: none;
+        }
+        
+        .deployment-step {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .step-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+        
+        .step-number {
+            background: var(--docs-accent-blue);
+            color: white;
+            width: 40px;
+            height: 40px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            font-size: 18px;
+            flex-shrink: 0;
+        }
+        
+        .step-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .step-duration {
+            margin-left: auto;
+            background: var(--docs-bg-tertiary);
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+        }
+        
+        .monitoring-dashboard {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .metric-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 16px;
+            margin-top: 20px;
+        }
+        
+        .metric-card {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 16px;
+        }
+        
+        .metric-label {
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+            text-transform: uppercase;
+            margin: 0 0 8px 0;
+        }
+        
+        .metric-value {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0;
+        }
+        
+        .metric-threshold {
+            font-size: 14px;
+            color: var(--docs-text-muted);
+            margin: 4px 0 0 0;
+        }
+        
+        .security-hardening {
+            background: rgba(239, 68, 68, 0.05);
+            border: 1px solid rgba(239, 68, 68, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .security-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            margin: 16px 0;
+        }
+        
+        .security-icon {
+            color: #ef4444;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+        
+        .security-content {
+            flex: 1;
+        }
+        
+        .rollback-strategy {
+            background: rgba(251, 191, 36, 0.05);
+            border: 1px solid rgba(251, 191, 36, 0.2);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .rollback-step {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 12px;
+            background: var(--docs-bg-primary);
+            border-radius: 8px;
+            margin: 12px 0;
+        }
+        
+        .rollback-icon {
+            color: #f59e0b;
+            flex-shrink: 0;
+        }
+    </style>
+</head>
+<body class="deployment-guide-page">
+    <!-- Documentation Header -->
+    <header class="docs-header-nav deployment-header">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">🚀</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Production Deployment Guide</div>
+                    </div>
+                </a>
+                
+                <div class="deployment-info">
+                    <div class="deployment-stats">
+                        <span class="stat-value">22</span>
+                        <span class="stat-label">Services</span>
+                    </div>
+                    <div class="deployment-stats">
+                        <span class="stat-value">3</span>
+                        <span class="stat-label">Environments</span>
+                    </div>
+                    <div class="deployment-stats">
+                        <span class="stat-value">15min</span>
+                        <span class="stat-label">Deploy Time</span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search deployment configurations..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                
+                <a href="https://github.com/neo-service-layer" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                
+                <a href="/app.html" class="docs-cta-button">
+                    Try Live Demo
+                    <i class="ti ti-external-link"></i>
+                </a>
+                
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">Deployment Guide</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v1.5.2</span>
+                    <span>Production</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Quick Start -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Quick Start</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#overview" class="docs-nav-link active">
+                                <i class="ti ti-info-circle"></i>
+                                Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#prerequisites" class="docs-nav-link">
+                                <i class="ti ti-checklist"></i>
+                                Prerequisites
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#architecture" class="docs-nav-link">
+                                <i class="ti ti-building-arch"></i>
+                                Architecture
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#resource-requirements" class="docs-nav-link">
+                                <i class="ti ti-server"></i>
+                                Resource Requirements
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Deployment Steps -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Deployment Steps</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#infrastructure-setup" class="docs-nav-link">
+                                <i class="ti ti-cloud"></i>
+                                1. Infrastructure Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#kubernetes-cluster" class="docs-nav-link">
+                                <i class="ti ti-brand-docker"></i>
+                                2. Kubernetes Cluster
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#intel-sgx" class="docs-nav-link">
+                                <i class="ti ti-cpu"></i>
+                                3. Intel SGX Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#database-setup" class="docs-nav-link">
+                                <i class="ti ti-database"></i>
+                                4. Database Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#service-deployment" class="docs-nav-link">
+                                <i class="ti ti-rocket"></i>
+                                5. Service Deployment
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#networking" class="docs-nav-link">
+                                <i class="ti ti-network"></i>
+                                6. Networking & Load Balancing
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#monitoring" class="docs-nav-link">
+                                <i class="ti ti-activity"></i>
+                                7. Monitoring Setup
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#security" class="docs-nav-link">
+                                <i class="ti ti-shield-check"></i>
+                                8. Security Hardening
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Operations -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Operations</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#scaling" class="docs-nav-link">
+                                <i class="ti ti-arrows-maximize"></i>
+                                Scaling Strategies
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#backup-recovery" class="docs-nav-link">
+                                <i class="ti ti-cloud-upload"></i>
+                                Backup & Recovery
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#rollback" class="docs-nav-link">
+                                <i class="ti ti-rotate-clockwise"></i>
+                                Rollback Procedures
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#troubleshooting" class="docs-nav-link">
+                                <i class="ti ti-tool"></i>
+                                Troubleshooting
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Best Practices -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Best Practices</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#performance" class="docs-nav-link">
+                                <i class="ti ti-bolt"></i>
+                                Performance Optimization
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#ci-cd" class="docs-nav-link">
+                                <i class="ti ti-git-merge"></i>
+                                CI/CD Pipeline
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#compliance" class="docs-nav-link">
+                                <i class="ti ti-certificate"></i>
+                                Compliance
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <!-- Overview Section -->
+            <section id="overview" class="docs-section">
+                <div class="section-header">
+                    <h1 class="section-title">Production Deployment Guide</h1>
+                    <div class="section-meta">
+                        <span class="section-badge">Enterprise Grade</span>
+                        <span class="section-version">v1.5.2</span>
+                        <span class="section-update">Updated Jan 30, 2025</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="section-intro">
+                        <p class="lead">
+                            Complete guide for deploying Neo Service Layer in production environments with Kubernetes orchestration, 
+                            Docker containerization, Intel SGX security, comprehensive monitoring, and enterprise-grade scaling strategies.
+                        </p>
+                    </div>
+
+                    <!-- Deployment Overview -->
+                    <div class="deployment-overview">
+                        <h3>Deployment Overview</h3>
+                        <div class="overview-grid">
+                            <div class="overview-item">
+                                <div class="overview-icon">
+                                    <i class="ti ti-brand-docker"></i>
+                                </div>
+                                <h4>Container-Based</h4>
+                                <p>All 22 services are containerized using Docker with optimized multi-stage builds</p>
+                            </div>
+                            
+                            <div class="overview-item">
+                                <div class="overview-icon">
+                                    <i class="ti ti-brand-kubernetes"></i>
+                                </div>
+                                <h4>Kubernetes Orchestration</h4>
+                                <p>Production-grade orchestration with auto-scaling, self-healing, and rolling updates</p>
+                            </div>
+                            
+                            <div class="overview-item">
+                                <div class="overview-icon">
+                                    <i class="ti ti-cpu-2"></i>
+                                </div>
+                                <h4>Intel SGX Security</h4>
+                                <p>Hardware-based security with encrypted enclaves for sensitive operations</p>
+                            </div>
+                            
+                            <div class="overview-item">
+                                <div class="overview-icon">
+                                    <i class="ti ti-activity"></i>
+                                </div>
+                                <h4>Full Observability</h4>
+                                <p>Comprehensive monitoring with Prometheus, Grafana, and distributed tracing</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Deployment Checklist -->
+                    <div class="deployment-checklist">
+                        <h3>Pre-Deployment Checklist</h3>
+                        <p>Complete all items before beginning deployment:</p>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Infrastructure provisioned</div>
+                                <div class="checklist-description">AWS/Azure/GCP resources created with required specifications</div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Intel SGX enabled nodes</div>
+                                <div class="checklist-description">At least 30% of nodes must have Intel SGX support</div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">SSL certificates generated</div>
+                                <div class="checklist-description">Valid certificates for all domains and internal services</div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Database clusters ready</div>
+                                <div class="checklist-description">PostgreSQL and Redis clusters configured with replication</div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Container registry access</div>
+                                <div class="checklist-description">Access to private container registry with all service images</div>
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-content">
+                                <div class="checklist-title">Backup strategy defined</div>
+                                <div class="checklist-description">Automated backup procedures and recovery tested</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Prerequisites Section -->
+            <section id="prerequisites" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Prerequisites</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Required</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="prerequisites-grid">
+                        <div class="prerequisite-category">
+                            <h4>Infrastructure Requirements</h4>
+                            <ul>
+                                <li>Kubernetes cluster v1.26+ with RBAC enabled</li>
+                                <li>Docker Engine v20.10+ on all nodes</li>
+                                <li>Helm v3.10+ for chart deployment</li>
+                                <li>kubectl v1.26+ configured with cluster access</li>
+                                <li>Minimum 10 nodes for production workload</li>
+                                <li>Intel SGX enabled on at least 3 nodes</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="prerequisite-category">
+                            <h4>Networking Requirements</h4>
+                            <ul>
+                                <li>CNI plugin (Calico/Cilium recommended)</li>
+                                <li>LoadBalancer service support</li>
+                                <li>Internal DNS resolution</li>
+                                <li>Network policies configured</li>
+                                <li>TLS certificates for all endpoints</li>
+                                <li>Firewall rules for service mesh</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="prerequisite-category">
+                            <h4>Storage Requirements</h4>
+                            <ul>
+                                <li>Persistent volume provisioner</li>
+                                <li>SSD storage class for databases</li>
+                                <li>Minimum 1TB available storage</li>
+                                <li>Backup storage location (S3/Azure Blob)</li>
+                                <li>Volume snapshot support</li>
+                                <li>Storage encryption at rest</li>
+                            </ul>
+                        </div>
+                        
+                        <div class="prerequisite-category">
+                            <h4>Security Requirements</h4>
+                            <ul>
+                                <li>RBAC policies configured</li>
+                                <li>Network policies enabled</li>
+                                <li>Pod security policies</li>
+                                <li>Secret management (Vault/Sealed Secrets)</li>
+                                <li>Container image scanning</li>
+                                <li>Runtime security monitoring</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Installation Commands -->
+                    <div class="installation-commands">
+                        <h4>Required Tool Installation</h4>
+                        <div class="code-playground">
+                            <code class="language-bash">
+# Install kubectl
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+
+# Install Helm
+curl https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash
+
+# Install Docker
+curl -fsSL https://get.docker.com -o get-docker.sh
+sudo sh get-docker.sh
+
+# Install Intel SGX SDK
+wget https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu20.04-server/sgx_linux_x64_sdk_2.19.100.3.bin
+chmod +x sgx_linux_x64_sdk_2.19.100.3.bin
+./sgx_linux_x64_sdk_2.19.100.3.bin
+
+# Verify installations
+kubectl version --client
+helm version
+docker --version
+sgx_capable
+
+# Add Neo Service Layer Helm repository
+helm repo add neo-service-layer https://helm.neoservicelayer.com
+helm repo update
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Architecture Section -->
+            <section id="architecture" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Production Architecture</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Multi-Region</span>
+                        <span class="section-badge">High Availability</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="deployment-architecture">
+                        <h3>Kubernetes Architecture</h3>
+                        <div class="architecture-diagram">
+                            <pre class="architecture-ascii">
+┌─────────────────────────────────────────────────────────────────────────────────────────┐
+│                                   Internet Gateway                                       │
+│                                         │                                                │
+│                                    Load Balancer                                         │
+│                                    (NGINX/HAProxy)                                       │
+└─────────────────────────────────────────┬───────────────────────────────────────────────┘
+                                          │
+┌─────────────────────────────────────────┴───────────────────────────────────────────────┐
+│                                  Kubernetes Cluster                                      │
+│                                                                                          │
+│  ┌────────────────────────────────────────────────────────────────────────────────────┐ │
+│  │                                   Ingress Controller                                │ │
+│  │                              (NGINX Ingress + Cert Manager)                         │ │
+│  └────────────────────────────────────────────────────────────────────────────────────┘ │
+│                                                                                          │
+│  ┌─────────────────────┐  ┌─────────────────────┐  ┌─────────────────────┐            │
+│  │   Namespace: prod   │  │ Namespace: monitoring│  │  Namespace: security│            │
+│  │                     │  │                     │  │                     │            │
+│  │  ┌───────────────┐  │  │  ┌───────────────┐  │  │  ┌───────────────┐  │            │
+│  │  │ Storage       │  │  │  │ Prometheus    │  │  │  │ Vault         │  │            │
+│  │  │ Service       │  │  │  │ Server        │  │  │  │ Server        │  │            │
+│  │  │ (3 replicas)  │  │  │  └───────────────┘  │  │  └───────────────┘  │            │
+│  │  └───────────────┘  │  │                     │  │                     │            │
+│  │                     │  │  ┌───────────────┐  │  │  ┌───────────────┐  │            │
+│  │  ┌───────────────┐  │  │  │ Grafana       │  │  │  │ Falco         │  │            │
+│  │  │ Identity      │  │  │  │ Dashboard     │  │  │  │ Runtime       │  │            │
+│  │  │ Service       │  │  │  └───────────────┘  │  │  │ Security      │  │            │
+│  │  │ (3 replicas)  │  │  │                     │  │  └───────────────┘  │            │
+│  │  └───────────────┘  │  │  ┌───────────────┐  │  │                     │            │
+│  │                     │  │  │ Alertmanager  │  │  │  ┌───────────────┐  │            │
+│  │  ┌───────────────┐  │  │  │               │  │  │  │ OPA           │  │            │
+│  │  │ Oracle        │  │  │  └───────────────┘  │  │  │ Gatekeeper    │  │            │
+│  │  │ Service       │  │  │                     │  │  └───────────────┘  │            │
+│  │  │ (3 replicas)  │  │  │  ┌───────────────┐  │  │                     │            │
+│  │  └───────────────┘  │  │  │ Jaeger        │  │  └─────────────────────┘            │
+│  │                     │  │  │ Tracing       │  │                                      │
+│  │  [+ 19 more       ] │  │  └───────────────┘  │  ┌─────────────────────┐            │
+│  │  [  services      ] │  │                     │  │ Namespace: database │            │
+│  │                     │  └─────────────────────┘  │                     │            │
+│  └─────────────────────┘                           │  ┌───────────────┐  │            │
+│                                                     │  │ PostgreSQL    │  │            │
+│  ┌────────────────────────────────────────────┐    │  │ Cluster       │  │            │
+│  │          Intel SGX Node Pool               │    │  │ (3 masters)   │  │            │
+│  │                                            │    │  └───────────────┘  │            │
+│  │  ┌─────────┐  ┌─────────┐  ┌─────────┐   │    │                     │            │
+│  │  │ SGX     │  │ SGX     │  │ SGX     │   │    │  ┌───────────────┐  │            │
+│  │  │ Node 1  │  │ Node 2  │  │ Node 3  │   │    │  │ Redis         │  │            │
+│  │  └─────────┘  └─────────┘  └─────────┘   │    │  │ Cluster       │  │            │
+│  │                                            │    │  │ (6 nodes)     │  │            │
+│  └────────────────────────────────────────────┘    │  └───────────────┘  │            │
+│                                                     └─────────────────────┘            │
+└──────────────────────────────────────────────────────────────────────────────────────────┘
+                            </pre>
+                        </div>
+
+                        <h4>Service Mesh Architecture</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# Istio Service Mesh Configuration
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: neo-service-layer-istio
+spec:
+  profile: production
+  
+  values:
+    pilot:
+      autoscaleEnabled: true
+      autoscaleMin: 2
+      autoscaleMax: 5
+      
+    global:
+      proxy:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 2000m
+            memory: 1024Mi
+            
+      # Enable mTLS for all services
+      mtls:
+        enabled: true
+        
+  meshConfig:
+    defaultConfig:
+      # Enable distributed tracing
+      tracing:
+        sampling: 100.0
+        
+    # Access log configuration
+    accessLogFile: /dev/stdout
+    
+    # Enable telemetry v2
+    defaultProviders:
+      metrics:
+      - prometheus
+      
+  components:
+    egressGateways:
+    - name: istio-egressgateway
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+            
+    ingressGateways:
+    - name: istio-ingressgateway
+      enabled: true
+      k8s:
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+        service:
+          type: LoadBalancer
+          ports:
+          - port: 15021
+            targetPort: 15021
+            name: status-port
+          - port: 80
+            targetPort: 8080
+            name: http2
+          - port: 443
+            targetPort: 8443
+            name: https
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Resource Requirements Section -->
+            <section id="resource-requirements" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Resource Requirements</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Production Sizing</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="resource-requirements">
+                        <h3>Minimum Production Requirements</h3>
+                        <p>Resources needed for handling 50,000 requests per second across all services:</p>
+                        
+                        <table class="resource-table">
+                            <thead>
+                                <tr>
+                                    <th>Component</th>
+                                    <th>CPU</th>
+                                    <th>Memory</th>
+                                    <th>Storage</th>
+                                    <th>Replicas</th>
+                                    <th>Special Requirements</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Storage Service</strong></td>
+                                    <td>4 cores</td>
+                                    <td>8GB</td>
+                                    <td>100GB SSD</td>
+                                    <td>3</td>
+                                    <td>Intel SGX required</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Identity Service</strong></td>
+                                    <td>2 cores</td>
+                                    <td>4GB</td>
+                                    <td>50GB SSD</td>
+                                    <td>3</td>
+                                    <td>Intel SGX required</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Oracle Service</strong></td>
+                                    <td>2 cores</td>
+                                    <td>4GB</td>
+                                    <td>20GB SSD</td>
+                                    <td>3</td>
+                                    <td>External API access</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Compute Service</strong></td>
+                                    <td>8 cores</td>
+                                    <td>16GB</td>
+                                    <td>50GB SSD</td>
+                                    <td>5</td>
+                                    <td>Intel SGX required</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Transaction Service</strong></td>
+                                    <td>4 cores</td>
+                                    <td>8GB</td>
+                                    <td>100GB SSD</td>
+                                    <td>5</td>
+                                    <td>Low latency network</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>PostgreSQL Cluster</strong></td>
+                                    <td>16 cores</td>
+                                    <td>64GB</td>
+                                    <td>1TB SSD</td>
+                                    <td>3</td>
+                                    <td>NVMe SSD recommended</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Redis Cluster</strong></td>
+                                    <td>4 cores</td>
+                                    <td>32GB</td>
+                                    <td>100GB SSD</td>
+                                    <td>6</td>
+                                    <td>In-memory dataset</td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Monitoring Stack</strong></td>
+                                    <td>8 cores</td>
+                                    <td>16GB</td>
+                                    <td>500GB SSD</td>
+                                    <td>1 set</td>
+                                    <td>30-day retention</td>
+                                </tr>
+                            </tbody>
+                            <tfoot>
+                                <tr>
+                                    <td><strong>Total (Minimum)</strong></td>
+                                    <td><strong>100+ cores</strong></td>
+                                    <td><strong>200+ GB</strong></td>
+                                    <td><strong>3+ TB</strong></td>
+                                    <td><strong>-</strong></td>
+                                    <td><strong>30% SGX nodes</strong></td>
+                                </tr>
+                            </tfoot>
+                        </table>
+
+                        <h4>Node Configuration</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# Node pool configurations for different workload types
+
+# Intel SGX Node Pool (for secure services)
+apiVersion: v1
+kind: NodePool
+metadata:
+  name: sgx-pool
+spec:
+  nodeType: c5.4xlarge  # AWS example
+  nodeCount: 3
+  labels:
+    sgx: "enabled"
+    workload-type: "secure"
+  taints:
+  - key: "sgx-only"
+    value: "true"
+    effect: "NoSchedule"
+  machineConfig:
+    kernel:
+      modules:
+      - intel_sgx
+      - intel_sgx_enclave
+    sysctl:
+      vm.mmap_min_addr: "0"
+      
+# General Purpose Node Pool
+apiVersion: v1
+kind: NodePool
+metadata:
+  name: general-pool
+spec:
+  nodeType: m5.2xlarge
+  nodeCount: 5
+  labels:
+    workload-type: "general"
+  autoscaling:
+    enabled: true
+    minNodes: 5
+    maxNodes: 20
+    
+# High Memory Node Pool (for databases)
+apiVersion: v1
+kind: NodePool  
+metadata:
+  name: memory-pool
+spec:
+  nodeType: r5.4xlarge
+  nodeCount: 3
+  labels:
+    workload-type: "memory-intensive"
+  taints:
+  - key: "database-only"
+    value: "true"
+    effect: "NoSchedule"
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Infrastructure Setup Section -->
+            <section id="infrastructure-setup" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Step 1: Infrastructure Setup</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">15 minutes</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="deployment-step">
+                        <div class="step-header">
+                            <div class="step-number">1</div>
+                            <h3 class="step-title">Provision Cloud Infrastructure</h3>
+                            <span class="step-duration">~15 min</span>
+                        </div>
+
+                        <h4>AWS Infrastructure (Terraform)</h4>
+                        <div class="code-playground">
+                            <code class="language-hcl">
+# main.tf - AWS Infrastructure for Neo Service Layer
+
+terraform {
+  required_providers {
+    aws = {
+      source  = "hashicorp/aws"
+      version = "~> 5.0"
+    }
+  }
+}
+
+provider "aws" {
+  region = var.aws_region
+}
+
+# VPC Configuration
+module "vpc" {
+  source = "terraform-aws-modules/vpc/aws"
+  version = "5.0.0"
+
+  name = "neo-service-layer-vpc"
+  cidr = "10.0.0.0/16"
+
+  azs             = ["${var.aws_region}a", "${var.aws_region}b", "${var.aws_region}c"]
+  private_subnets = ["10.0.1.0/24", "10.0.2.0/24", "10.0.3.0/24"]
+  public_subnets  = ["10.0.101.0/24", "10.0.102.0/24", "10.0.103.0/24"]
+
+  enable_nat_gateway = true
+  enable_vpn_gateway = true
+  enable_dns_hostnames = true
+  enable_dns_support = true
+
+  tags = {
+    Environment = "production"
+    Project = "neo-service-layer"
+  }
+}
+
+# EKS Cluster
+module "eks" {
+  source  = "terraform-aws-modules/eks/aws"
+  version = "19.0.0"
+
+  cluster_name    = "neo-service-layer-cluster"
+  cluster_version = "1.28"
+
+  vpc_id     = module.vpc.vpc_id
+  subnet_ids = module.vpc.private_subnets
+
+  # Enable IRSA
+  enable_irsa = true
+
+  # Cluster endpoint access
+  cluster_endpoint_public_access = true
+  cluster_endpoint_private_access = true
+
+  # Encryption
+  cluster_encryption_config = [{
+    provider_key_arn = aws_kms_key.eks.arn
+    resources        = ["secrets"]
+  }]
+
+  # Node groups
+  eks_managed_node_groups = {
+    # Intel SGX enabled nodes
+    sgx_nodes = {
+      name = "sgx-node-group"
+      
+      instance_types = ["c5n.xlarge"]
+      capacity_type  = "ON_DEMAND"
+      
+      min_size     = 3
+      max_size     = 6
+      desired_size = 3
+
+      labels = {
+        sgx = "enabled"
+        workload-type = "secure"
+      }
+
+      taints = [{
+        key    = "sgx-only"
+        value  = "true"
+        effect = "NO_SCHEDULE"
+      }]
+
+      # User data for SGX setup
+      pre_bootstrap_user_data = <<-EOT
+        #!/bin/bash
+        # Install Intel SGX drivers
+        wget https://download.01.org/intel-sgx/latest/linux-latest/distro/ubuntu20.04-server/sgx_linux_x64_driver_2.11.0_2d2b795.bin
+        chmod +x sgx_linux_x64_driver_2.11.0_2d2b795.bin
+        ./sgx_linux_x64_driver_2.11.0_2d2b795.bin
+      EOT
+    }
+
+    # General purpose nodes
+    general_nodes = {
+      name = "general-node-group"
+      
+      instance_types = ["m5.2xlarge"]
+      capacity_type  = "SPOT"
+      
+      min_size     = 5
+      max_size     = 20
+      desired_size = 5
+
+      labels = {
+        workload-type = "general"
+      }
+    }
+
+    # High memory nodes for databases
+    memory_nodes = {
+      name = "memory-node-group"
+      
+      instance_types = ["r5.4xlarge"]
+      capacity_type  = "ON_DEMAND"
+      
+      min_size     = 3
+      max_size     = 5
+      desired_size = 3
+
+      labels = {
+        workload-type = "memory-intensive"
+      }
+
+      taints = [{
+        key    = "database-only"
+        value  = "true"
+        effect = "NO_SCHEDULE"
+      }]
+    }
+  }
+}
+
+# RDS PostgreSQL Cluster
+resource "aws_rds_cluster" "postgresql" {
+  cluster_identifier      = "neo-service-layer-db"
+  engine                  = "aurora-postgresql"
+  engine_version          = "15.2"
+  availability_zones      = module.vpc.azs
+  database_name           = "neoservicelayer"
+  master_username         = "postgres"
+  master_password         = random_password.db_password.result
+  
+  db_subnet_group_name    = aws_db_subnet_group.postgresql.name
+  vpc_security_group_ids  = [aws_security_group.rds.id]
+  
+  backup_retention_period = 30
+  preferred_backup_window = "03:00-04:00"
+  
+  enabled_cloudwatch_logs_exports = ["postgresql"]
+  
+  storage_encrypted = true
+  kms_key_id       = aws_kms_key.rds.arn
+  
+  tags = {
+    Environment = "production"
+    Service = "neo-service-layer"
+  }
+}
+
+resource "aws_rds_cluster_instance" "postgresql" {
+  count              = 3
+  identifier         = "neo-service-layer-db-${count.index}"
+  cluster_identifier = aws_rds_cluster.postgresql.id
+  instance_class     = "db.r6g.2xlarge"
+  engine             = aws_rds_cluster.postgresql.engine
+  engine_version     = aws_rds_cluster.postgresql.engine_version
+  
+  performance_insights_enabled = true
+  monitoring_interval         = 60
+  monitoring_role_arn        = aws_iam_role.rds_monitoring.arn
+}
+
+# ElastiCache Redis Cluster
+resource "aws_elasticache_replication_group" "redis" {
+  replication_group_id       = "neo-service-layer-cache"
+  replication_group_description = "Redis cluster for Neo Service Layer"
+  
+  engine               = "redis"
+  engine_version       = "7.0"
+  node_type           = "cache.r6g.xlarge"
+  number_cache_clusters = 6
+  
+  subnet_group_name = aws_elasticache_subnet_group.redis.name
+  security_group_ids = [aws_security_group.redis.id]
+  
+  at_rest_encryption_enabled = true
+  transit_encryption_enabled = true
+  auth_token = random_password.redis_auth.result
+  
+  automatic_failover_enabled = true
+  multi_az_enabled          = true
+  
+  snapshot_retention_limit = 7
+  snapshot_window         = "03:00-05:00"
+  
+  tags = {
+    Environment = "production"
+    Service = "neo-service-layer"
+  }
+}
+
+# S3 Buckets for storage and backups
+resource "aws_s3_bucket" "storage" {
+  bucket = "neo-service-layer-storage-${var.environment}"
+  
+  tags = {
+    Environment = var.environment
+    Service = "neo-service-layer"
+  }
+}
+
+resource "aws_s3_bucket_versioning" "storage" {
+  bucket = aws_s3_bucket.storage.id
+  
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+resource "aws_s3_bucket_encryption" "storage" {
+  bucket = aws_s3_bucket.storage.id
+  
+  rule {
+    apply_server_side_encryption_by_default {
+      sse_algorithm     = "aws:kms"
+      kms_master_key_id = aws_kms_key.s3.arn
+    }
+  }
+}
+
+# Application Load Balancer
+resource "aws_lb" "main" {
+  name               = "neo-service-layer-alb"
+  internal           = false
+  load_balancer_type = "application"
+  security_groups    = [aws_security_group.alb.id]
+  subnets           = module.vpc.public_subnets
+
+  enable_deletion_protection = true
+  enable_http2              = true
+  
+  tags = {
+    Environment = "production"
+    Service = "neo-service-layer"
+  }
+}
+
+# Outputs
+output "cluster_endpoint" {
+  value = module.eks.cluster_endpoint
+}
+
+output "cluster_security_group_id" {
+  value = module.eks.cluster_security_group_id
+}
+
+output "rds_endpoint" {
+  value = aws_rds_cluster.postgresql.endpoint
+}
+
+output "redis_endpoint" {
+  value = aws_elasticache_replication_group.redis.primary_endpoint_address
+}
+                            </code>
+                        </div>
+
+                        <h4>Apply Terraform Configuration</h4>
+                        <div class="code-playground">
+                            <code class="language-bash">
+# Initialize Terraform
+terraform init
+
+# Plan infrastructure changes
+terraform plan -out=tfplan
+
+# Apply infrastructure
+terraform apply tfplan
+
+# Save outputs for later use
+terraform output -json > infrastructure-outputs.json
+
+# Configure kubectl
+aws eks update-kubeconfig --region us-east-1 --name neo-service-layer-cluster
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Kubernetes Cluster Setup -->
+            <section id="kubernetes-cluster" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Step 2: Kubernetes Cluster Setup</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">20 minutes</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="deployment-step">
+                        <div class="step-header">
+                            <div class="step-number">2</div>
+                            <h3 class="step-title">Configure Kubernetes Cluster</h3>
+                            <span class="step-duration">~20 min</span>
+                        </div>
+
+                        <h4>Create Namespaces</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# namespaces.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-prod
+  labels:
+    name: neo-prod
+    environment: production
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-monitoring
+  labels:
+    name: neo-monitoring
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-security
+  labels:
+    name: neo-security
+    environment: production
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-database
+  labels:
+    name: neo-database
+    environment: production
+                            </code>
+                        </div>
+
+                        <h4>Install Core Components</h4>
+                        <div class="code-playground">
+                            <code class="language-bash">
+# Create namespaces
+kubectl apply -f namespaces.yaml
+
+# Install Istio Service Mesh
+istioctl install --set profile=production -y
+
+# Install cert-manager for SSL certificates
+kubectl apply -f https://github.com/cert-manager/cert-manager/releases/download/v1.13.0/cert-manager.yaml
+
+# Install NGINX Ingress Controller
+helm upgrade --install ingress-nginx ingress-nginx \
+  --repo https://kubernetes.github.io/ingress-nginx \
+  --namespace ingress-nginx --create-namespace \
+  --set controller.service.type=LoadBalancer \
+  --set controller.metrics.enabled=true \
+  --set controller.podAnnotations."prometheus\.io/scrape"=true
+
+# Install Prometheus Operator
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm upgrade --install kube-prometheus-stack prometheus-community/kube-prometheus-stack \
+  --namespace neo-monitoring \
+  --set prometheus.prometheusSpec.retention=30d \
+  --set prometheus.prometheusSpec.storageSpec.volumeClaimTemplate.spec.resources.requests.storage=100Gi
+
+# Install Loki for log aggregation
+helm repo add grafana https://grafana.github.io/helm-charts
+helm upgrade --install loki grafana/loki-stack \
+  --namespace neo-monitoring \
+  --set loki.persistence.enabled=true \
+  --set loki.persistence.size=100Gi
+
+# Install Jaeger for distributed tracing
+helm repo add jaegertracing https://jaegertracing.github.io/helm-charts
+helm upgrade --install jaeger jaegertracing/jaeger \
+  --namespace neo-monitoring \
+  --set provisionDataStore.cassandra=false \
+  --set storage.type=elasticsearch \
+  --set elasticsearch.nodeGroup="master" \
+  --set elasticsearch.minimumMasterNodes=2
+                            </code>
+                        </div>
+
+                        <h4>Configure Storage Classes</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# storage-classes.yaml
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: fast-ssd
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "false"
+provisioner: ebs.csi.aws.com
+parameters:
+  type: gp3
+  fsType: ext4
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+---
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: ultra-fast-nvme
+provisioner: ebs.csi.aws.com
+parameters:
+  type: io2
+  iopsPerGB: "50"
+  fsType: ext4
+  encrypted: "true"
+volumeBindingMode: WaitForFirstConsumer
+allowVolumeExpansion: true
+                            </code>
+                        </div>
+
+                        <h4>Configure Network Policies</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# network-policies.yaml
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: deny-all-ingress
+  namespace: neo-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-istio-system
+  namespace: neo-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-same-namespace
+  namespace: neo-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector: {}
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: allow-monitoring
+  namespace: neo-prod
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-monitoring
+    ports:
+    - protocol: TCP
+      port: 9090  # Prometheus metrics
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Service Deployment Section -->
+            <section id="service-deployment" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Step 5: Service Deployment</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">30 minutes</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="deployment-step">
+                        <div class="step-header">
+                            <div class="step-number">5</div>
+                            <h3 class="step-title">Deploy Neo Service Layer Services</h3>
+                            <span class="step-duration">~30 min</span>
+                        </div>
+
+                        <h4>Deploy Core Services</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# storage-service-deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: storage-service
+  namespace: neo-prod
+  labels:
+    app: storage-service
+    version: v1.5.2
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: storage-service
+  template:
+    metadata:
+      labels:
+        app: storage-service
+        version: v1.5.2
+        sgx: required
+    spec:
+      nodeSelector:
+        sgx: "enabled"
+      tolerations:
+      - key: "sgx-only"
+        operator: "Equal"
+        value: "true"
+        effect: "NoSchedule"
+      
+      serviceAccountName: storage-service
+      
+      initContainers:
+      - name: sgx-init
+        image: neo-service-layer/sgx-init:latest
+        securityContext:
+          privileged: true
+        volumeMounts:
+        - name: sgx-device
+          mountPath: /dev/sgx
+          
+      containers:
+      - name: storage-service
+        image: neo-service-layer/storage-service:v1.5.2
+        
+        ports:
+        - containerPort: 8080
+          name: http
+        - containerPort: 9090
+          name: metrics
+          
+        env:
+        - name: ENVIRONMENT
+          value: "production"
+        - name: LOG_LEVEL
+          value: "info"
+        - name: SGX_ENABLED
+          value: "true"
+        - name: DATABASE_URL
+          valueFrom:
+            secretKeyRef:
+              name: database-credentials
+              key: url
+        - name: REDIS_URL
+          valueFrom:
+            secretKeyRef:
+              name: redis-credentials
+              key: url
+              
+        resources:
+          requests:
+            cpu: "2000m"
+            memory: "4Gi"
+            sgx.intel.com/enclave: 1
+            sgx.intel.com/epc: "512Mi"
+          limits:
+            cpu: "4000m"
+            memory: "8Gi"
+            sgx.intel.com/enclave: 1
+            sgx.intel.com/epc: "512Mi"
+            
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 20
+          periodSeconds: 5
+          
+        volumeMounts:
+        - name: config
+          mountPath: /etc/neo-service-layer
+        - name: sgx-device
+          mountPath: /dev/sgx
+        - name: data
+          mountPath: /data
+          
+      volumes:
+      - name: config
+        configMap:
+          name: storage-service-config
+      - name: sgx-device
+        hostPath:
+          path: /dev/sgx
+      - name: data
+        persistentVolumeClaim:
+          claimName: storage-service-data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: storage-service
+  namespace: neo-prod
+  labels:
+    app: storage-service
+spec:
+  selector:
+    app: storage-service
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: storage-service
+  namespace: neo-prod
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: storage-service
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  - type: Pods
+    pods:
+      metric:
+        name: neo_storage_requests_per_second
+      target:
+        type: AverageValue
+        averageValue: "1000"
+---
+apiVersion: policy/v1
+kind: PodDisruptionBudget
+metadata:
+  name: storage-service
+  namespace: neo-prod
+spec:
+  minAvailable: 2
+  selector:
+    matchLabels:
+      app: storage-service
+                            </code>
+                        </div>
+
+                        <h4>Deploy All Services with Helm</h4>
+                        <div class="code-playground">
+                            <code class="language-bash">
+# Create secrets
+kubectl create secret generic database-credentials \
+  --namespace=neo-prod \
+  --from-literal=url="postgresql://user:pass@postgresql:5432/neo"
+
+kubectl create secret generic redis-credentials \
+  --namespace=neo-prod \
+  --from-literal=url="redis://default:pass@redis:6379"
+
+# Deploy Neo Service Layer using Helm
+helm upgrade --install neo-service-layer ./helm/neo-service-layer \
+  --namespace neo-prod \
+  --values production-values.yaml \
+  --set global.environment=production \
+  --set global.image.tag=v1.5.2 \
+  --set global.sgx.enabled=true \
+  --set storage.replicas=3 \
+  --set identity.replicas=3 \
+  --set oracle.replicas=3 \
+  --set compute.replicas=5 \
+  --set transaction.replicas=5
+
+# Wait for rollout
+kubectl rollout status deployment/storage-service -n neo-prod
+kubectl rollout status deployment/identity-service -n neo-prod
+kubectl rollout status deployment/oracle-service -n neo-prod
+
+# Verify deployment
+kubectl get pods -n neo-prod
+kubectl get svc -n neo-prod
+kubectl get hpa -n neo-prod
+                            </code>
+                        </div>
+
+                        <h4>Production Values Configuration</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# production-values.yaml
+global:
+  environment: production
+  
+  image:
+    registry: neo-service-layer
+    tag: v1.5.2
+    pullPolicy: IfNotPresent
+    
+  sgx:
+    enabled: true
+    devicePlugin:
+      enabled: true
+      
+  security:
+    podSecurityPolicy:
+      enabled: true
+    networkPolicy:
+      enabled: true
+      
+  monitoring:
+    prometheus:
+      enabled: true
+    grafana:
+      enabled: true
+    jaeger:
+      enabled: true
+      
+# Service-specific configurations
+storage:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+  persistence:
+    enabled: true
+    size: 100Gi
+    storageClass: fast-ssd
+    
+identity:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+      
+oracle:
+  replicas: 3
+  resources:
+    requests:
+      cpu: 1000m
+      memory: 2Gi
+    limits:
+      cpu: 2000m
+      memory: 4Gi
+  externalApi:
+    timeout: 30s
+    retries: 3
+    
+compute:
+  replicas: 5
+  resources:
+    requests:
+      cpu: 4000m
+      memory: 8Gi
+    limits:
+      cpu: 8000m
+      memory: 16Gi
+  sgx:
+    enclaveSize: 1Gi
+    
+transaction:
+  replicas: 5
+  resources:
+    requests:
+      cpu: 2000m
+      memory: 4Gi
+    limits:
+      cpu: 4000m
+      memory: 8Gi
+  blockchain:
+    confirmations: 6
+    gasLimit: 10000000
+    
+# Database configuration
+postgresql:
+  enabled: false  # Using external RDS
+  external:
+    host: neo-db.cluster-xxx.us-east-1.rds.amazonaws.com
+    port: 5432
+    database: neoservicelayer
+    
+redis:
+  enabled: false  # Using external ElastiCache
+  external:
+    host: neo-cache.xxx.cache.amazonaws.com
+    port: 6379
+    
+# Ingress configuration
+ingress:
+  enabled: true
+  className: nginx
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt-prod
+    nginx.ingress.kubernetes.io/rate-limit: "1000"
+  hosts:
+  - host: api.neoservicelayer.com
+    paths:
+    - path: /
+      pathType: Prefix
+  tls:
+  - secretName: neo-tls
+    hosts:
+    - api.neoservicelayer.com
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Monitoring Section -->
+            <section id="monitoring" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Step 7: Monitoring Setup</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">15 minutes</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="deployment-step">
+                        <div class="step-header">
+                            <div class="step-number">7</div>
+                            <h3 class="step-title">Configure Monitoring & Observability</h3>
+                            <span class="step-duration">~15 min</span>
+                        </div>
+
+                        <h4>Production Monitoring Dashboard</h4>
+                        <div class="monitoring-dashboard">
+                            <h4>Key Production Metrics</h4>
+                            <p>Monitor these critical metrics for production health:</p>
+                            
+                            <div class="metric-grid">
+                                <div class="metric-card">
+                                    <div class="metric-label">Request Rate</div>
+                                    <div class="metric-value">45,231 req/s</div>
+                                    <div class="metric-threshold">Alert: >50,000 req/s</div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-label">Error Rate</div>
+                                    <div class="metric-value">0.01%</div>
+                                    <div class="metric-threshold">Alert: >0.1%</div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-label">P95 Latency</div>
+                                    <div class="metric-value">12ms</div>
+                                    <div class="metric-threshold">Alert: >50ms</div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-label">CPU Usage</div>
+                                    <div class="metric-value">65%</div>
+                                    <div class="metric-threshold">Alert: >80%</div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-label">Memory Usage</div>
+                                    <div class="metric-value">72%</div>
+                                    <div class="metric-threshold">Alert: >85%</div>
+                                </div>
+                                
+                                <div class="metric-card">
+                                    <div class="metric-label">Active Connections</div>
+                                    <div class="metric-value">12,847</div>
+                                    <div class="metric-threshold">Alert: >20,000</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <h4>Prometheus Configuration</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# prometheus-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-config
+  namespace: neo-monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'production'
+        region: 'us-east-1'
+    
+    # Alerting configuration
+    alerting:
+      alertmanagers:
+      - static_configs:
+        - targets:
+          - alertmanager:9093
+    
+    # Load rules
+    rule_files:
+      - "/etc/prometheus/rules/*.yml"
+    
+    # Service discovery
+    scrape_configs:
+    - job_name: 'kubernetes-pods'
+      kubernetes_sd_configs:
+      - role: pod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_scrape]
+        action: keep
+        regex: true
+      - source_labels: [__meta_kubernetes_pod_annotation_prometheus_io_path]
+        action: replace
+        target_label: __metrics_path__
+        regex: (.+)
+      - source_labels: [__address__, __meta_kubernetes_pod_annotation_prometheus_io_port]
+        action: replace
+        regex: ([^:]+)(?::\d+)?;(\d+)
+        replacement: $1:$2
+        target_label: __address__
+      - action: labelmap
+        regex: __meta_kubernetes_pod_label_(.+)
+      - source_labels: [__meta_kubernetes_namespace]
+        action: replace
+        target_label: kubernetes_namespace
+      - source_labels: [__meta_kubernetes_pod_name]
+        action: replace
+        target_label: kubernetes_pod_name
+        
+    - job_name: 'neo-services'
+      metrics_path: '/metrics'
+      kubernetes_sd_configs:
+      - role: endpoints
+        namespaces:
+          names:
+          - neo-prod
+      relabel_configs:
+      - source_labels: [__meta_kubernetes_service_name]
+        regex: (.+)-service
+        action: keep
+                            </code>
+                        </div>
+
+                        <h4>Alerting Rules</h4>
+                        <div class="code-playground">
+                            <code class="language-yaml">
+# alerting-rules.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-rules
+  namespace: neo-monitoring
+data:
+  neo-alerts.yml: |
+    groups:
+    - name: neo-service-layer
+      interval: 30s
+      rules:
+      
+      # High Error Rate
+      - alert: HighErrorRate
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "High error rate detected for {{ $labels.service }}"
+          description: "Service {{ $labels.service }} has error rate of {{ $value | humanizePercentage }}"
+          
+      # Service Down
+      - alert: ServiceDown
+        expr: up{job="neo-services"} == 0
+        for: 2m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.instance }} is down"
+          description: "{{ $labels.instance }} has been down for more than 2 minutes"
+          
+      # High CPU Usage
+      - alert: HighCPUUsage
+        expr: |
+          (
+            sum(rate(container_cpu_usage_seconds_total[5m])) by (pod)
+            /
+            sum(container_spec_cpu_quota/container_spec_cpu_period) by (pod)
+          ) > 0.8
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High CPU usage for pod {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} CPU usage is {{ $value | humanizePercentage }}"
+          
+      # High Memory Usage
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            sum(container_memory_working_set_bytes) by (pod)
+            /
+            sum(container_spec_memory_limit_bytes) by (pod)
+          ) > 0.85
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High memory usage for pod {{ $labels.pod }}"
+          description: "Pod {{ $labels.pod }} memory usage is {{ $value | humanizePercentage }}"
+          
+      # Database Connection Pool Exhaustion
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          neo_database_connections_active / neo_database_connections_max > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of database connections are in use"
+          
+      # SGX Enclave Memory Pressure
+      - alert: SGXEnclaveMemoryPressure
+        expr: |
+          neo_sgx_enclave_memory_used_bytes / neo_sgx_enclave_memory_total_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "SGX enclave memory pressure on {{ $labels.node }}"
+          description: "SGX enclave memory usage is {{ $value | humanizePercentage }}"
+                            </code>
+                        </div>
+
+                        <h4>Grafana Dashboards</h4>
+                        <div class="code-playground">
+                            <code class="language-json">
+{
+  "dashboard": {
+    "title": "Neo Service Layer - Production Overview",
+    "panels": [
+      {
+        "title": "Request Rate by Service",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (service)",
+            "legendFormat": "{{ service }}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "Error Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service) / sum(rate(http_requests_total[5m])) by (service)",
+            "legendFormat": "{{ service }}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "P95 Latency",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le))",
+            "legendFormat": "{{ service }}"
+          }
+        ],
+        "type": "graph"
+      },
+      {
+        "title": "SGX Enclave Usage",
+        "targets": [
+          {
+            "expr": "neo_sgx_enclave_memory_used_bytes / neo_sgx_enclave_memory_total_bytes",
+            "legendFormat": "{{ node }}"
+          }
+        ],
+        "type": "gauge"
+      }
+    ]
+  }
+}
+                            </code>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Security Hardening Section -->
+            <section id="security" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Step 8: Security Hardening</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Critical</span>
+                        <span class="section-badge">30 minutes</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="security-hardening">
+                        <h3>Production Security Checklist</h3>
+                        <p>Complete all security hardening steps before going live:</p>
+                        
+                        <div class="security-item">
+                            <i class="ti ti-shield-lock security-icon"></i>
+                            <div class="security-content">
+                                <h4>Enable Pod Security Policies</h4>
+                                <p>Restrict pod capabilities and enforce security standards</p>
+                                <div class="code-playground">
+                                    <code class="language-yaml">
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: neo-restricted
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+  - ALL
+  volumes:
+  - 'configMap'
+  - 'emptyDir'
+  - 'projected'
+  - 'secret'
+  - 'downwardAPI'
+  - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  seLinux:
+    rule: 'RunAsAny'
+  fsGroup:
+    rule: 'RunAsAny'
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="security-item">
+                            <i class="ti ti-lock security-icon"></i>
+                            <div class="security-content">
+                                <h4>Configure RBAC</h4>
+                                <p>Implement least privilege access control</p>
+                                <div class="code-playground">
+                                    <code class="language-yaml">
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: neo-service-role
+  namespace: neo-prod
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["configmaps"]
+  verbs: ["get", "list"]
+- apiGroups: [""]
+  resources: ["secrets"]
+  verbs: ["get"]
+  resourceNames: ["database-credentials", "redis-credentials"]
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="security-item">
+                            <i class="ti ti-key security-icon"></i>
+                            <div class="security-content">
+                                <h4>Secrets Management</h4>
+                                <p>Use HashiCorp Vault for production secrets</p>
+                                <div class="code-playground">
+                                    <code class="language-bash">
+# Install Vault
+helm repo add hashicorp https://helm.releases.hashicorp.com
+helm install vault hashicorp/vault \
+  --namespace neo-security \
+  --set server.ha.enabled=true \
+  --set server.ha.replicas=3
+
+# Configure Kubernetes auth
+vault auth enable kubernetes
+vault write auth/kubernetes/config \
+  kubernetes_host="https://$KUBERNETES_PORT_443_TCP_ADDR:443" \
+  kubernetes_ca_cert=@/var/run/secrets/kubernetes.io/serviceaccount/ca.crt \
+  token_reviewer_jwt=@/var/run/secrets/kubernetes.io/serviceaccount/token
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="security-item">
+                            <i class="ti ti-scan security-icon"></i>
+                            <div class="security-content">
+                                <h4>Container Image Scanning</h4>
+                                <p>Scan all images for vulnerabilities before deployment</p>
+                                <div class="code-playground">
+                                    <code class="language-bash">
+# Scan images with Trivy
+trivy image neo-service-layer/storage-service:v1.5.2
+trivy image neo-service-layer/identity-service:v1.5.2
+
+# Enforce image scanning policy
+kubectl apply -f - <<EOF
+apiVersion: admissionregistration.k8s.io/v1
+kind: ValidatingAdmissionWebhook
+metadata:
+  name: image-scan-webhook
+webhooks:
+- name: scan.security.neo
+  rules:
+  - apiGroups: ["apps"]
+    apiVersions: ["v1"]
+    resources: ["deployments"]
+    operations: ["CREATE", "UPDATE"]
+  clientConfig:
+    service:
+      name: image-scanner
+      namespace: neo-security
+      path: "/scan"
+EOF
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Rollback Procedures -->
+            <section id="rollback" class="docs-section">
+                <div class="section-header">
+                    <h2 class="section-title">Rollback Procedures</h2>
+                    <div class="section-meta">
+                        <span class="section-badge">Emergency</span>
+                    </div>
+                </div>
+
+                <div class="section-content">
+                    <div class="rollback-strategy">
+                        <h3>Emergency Rollback Strategy</h3>
+                        <p>Follow these steps to rollback a failed deployment:</p>
+                        
+                        <div class="rollback-step">
+                            <i class="ti ti-rotate-clockwise rollback-icon"></i>
+                            <div class="rollback-content">
+                                <h4>1. Check Deployment History</h4>
+                                <div class="code-playground">
+                                    <code class="language-bash">
+# View rollout history
+kubectl rollout history deployment/storage-service -n neo-prod
+
+# Get current revision details
+kubectl rollout status deployment/storage-service -n neo-prod
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="rollback-step">
+                            <i class="ti ti-rotate-clockwise rollback-icon"></i>
+                            <div class="rollback-content">
+                                <h4>2. Perform Rollback</h4>
+                                <div class="code-playground">
+                                    <code class="language-bash">
+# Rollback to previous version
+kubectl rollout undo deployment/storage-service -n neo-prod
+
+# Rollback to specific revision
+kubectl rollout undo deployment/storage-service -n neo-prod --to-revision=3
+
+# Rollback all services
+helm rollback neo-service-layer 2 -n neo-prod
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="rollback-step">
+                            <i class="ti ti-activity rollback-icon"></i>
+                            <div class="rollback-content">
+                                <h4>3. Verify Rollback</h4>
+                                <div class="code-playground">
+                                    <code class="language-bash">
+# Check pod status
+kubectl get pods -n neo-prod -w
+
+# Verify service health
+curl -s https://api.neoservicelayer.com/health | jq .
+
+# Check metrics
+kubectl port-forward -n neo-monitoring svc/prometheus 9090:9090
+                                    </code>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+        </main>
+    </div>
+
+    <!-- JavaScript -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-core.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/autoloader/prism-autoloader.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    <script src="../src/scripts/navigation.js"></script>
+    <script src="../src/scripts/docs-search.js"></script>
+    <script src="../src/scripts/code-playground.js"></script>
+    
+    <!-- Deployment guide specific JavaScript -->
+    <script>
+        // Checklist functionality
+        function toggleCheck(checkbox) {
+            checkbox.classList.toggle('checked');
+            
+            // Save state to localStorage
+            const checklistState = {};
+            document.querySelectorAll('.checklist-checkbox').forEach((cb, index) => {
+                checklistState[`item-${index}`] = cb.classList.contains('checked');
+            });
+            localStorage.setItem('deployment-checklist', JSON.stringify(checklistState));
+        }
+        
+        // Load checklist state
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedState = localStorage.getItem('deployment-checklist');
+            if (savedState) {
+                const checklistState = JSON.parse(savedState);
+                document.querySelectorAll('.checklist-checkbox').forEach((cb, index) => {
+                    if (checklistState[`item-${index}`]) {
+                        cb.classList.add('checked');
+                    }
+                });
+            }
+        });
+        
+        // Copy button functionality for code blocks
+        document.querySelectorAll('.code-playground code').forEach(block => {
+            const button = document.createElement('button');
+            button.className = 'copy-button';
+            button.innerHTML = '<i class="ti ti-copy"></i>';
+            button.onclick = () => {
+                navigator.clipboard.writeText(block.textContent);
+                button.innerHTML = '<i class="ti ti-check"></i>';
+                setTimeout(() => {
+                    button.innerHTML = '<i class="ti ti-copy"></i>';
+                }, 2000);
+            };
+            block.parentElement.appendChild(button);
+        });
+    </script>
+</body>
+</html>

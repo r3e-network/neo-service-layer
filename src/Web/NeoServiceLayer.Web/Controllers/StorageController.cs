@@ -45,7 +45,7 @@ public class StorageController : ControllerBase
     public async Task<IActionResult> RetrieveData(string dataId)
     {
         var request = new RetrieveDataRequest { DataId = dataId };
-        var result = await _storageService.RetrieveDataAsync(request.DataId, BlockchainType.NeoN3);
+        var result = await _storageService.GetDataAsync(request.DataId, BlockchainType.NeoN3);
         return Ok(result);
     }
     */

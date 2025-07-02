@@ -56,7 +56,7 @@ public class KeyManagementController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var keyMetadata = await _keyManagementService.GenerateKeyAsync(
+            var keyMetadata = await _keyManagementService.CreateKeyAsync(
                 request.KeyId,
                 request.KeyType,
                 request.KeyUsage,

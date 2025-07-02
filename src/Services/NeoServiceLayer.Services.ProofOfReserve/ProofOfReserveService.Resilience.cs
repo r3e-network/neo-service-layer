@@ -68,37 +68,47 @@ public partial class ProofOfReserveService
         {
             var assetId = Guid.NewGuid().ToString();
 
-            var monitoredAsset = new MonitoredAsset
+            var monitoredAsset = new Models.MonitoredAsset
             {
                 AssetId = assetId,
                 AssetSymbol = request.AssetSymbol,
                 AssetName = request.AssetName,
-                Type = request.Type,
+                AssetType = request.AssetSymbol, // Use symbol as type string
                 Health = ReserveHealthStatus.Unknown,
                 CurrentReserveRatio = request.MinReserveRatio, // Initialize with minimum required ratio for compliance
                 MinReserveRatio = request.MinReserveRatio,
-                RegisteredAt = DateTime.UtcNow,
+                CreatedAt = DateTime.UtcNow,
                 LastUpdated = DateTime.UtcNow,
-                Owner = request.Owner,
+                BlockchainType = blockchainType,
                 IsActive = true
+            };
+
+            var initialSnapshot = new Models.ReserveSnapshot
+            {
+                SnapshotId = Guid.NewGuid().ToString(),
+                Timestamp = DateTime.UtcNow,
+                AssetId = assetId,
+                TotalSupply = request.TotalSupply,
+                TotalReserves = request.TotalSupply * request.MinReserveRatio, // Initialize with compliant reserves
+                ReserveAmount = request.TotalSupply * request.MinReserveRatio,
+                ReserveRatio = request.MinReserveRatio,
+                Health = ReserveHealthStatus.Healthy,
+                VerificationStatus = Models.VerificationStatus.Completed,
+                ReserveAddresses = Array.Empty<string>(),
+                ReserveBalances = Array.Empty<decimal>()
             };
 
             lock (_assetsLock)
             {
                 _monitoredAssets[assetId] = monitoredAsset;
-                _reserveHistory[assetId] = new List<ReserveSnapshot>
-                {
-                    new ReserveSnapshot
-                    {
-                        Timestamp = DateTime.UtcNow,
-                        TotalSupply = request.TotalSupply,
-                        TotalReserves = request.TotalSupply * request.MinReserveRatio, // Initialize with compliant reserves
-                        ReserveRatio = request.MinReserveRatio,
-                        Health = ReserveHealthStatus.Healthy,
-                        BlockHeight = 0 // Will be updated from blockchain
-                    }
-                };
+                _reserveHistory[assetId] = new List<Models.ReserveSnapshot> { initialSnapshot };
             }
+
+            // Persist the monitored asset
+            await PersistMonitoredAssetAsync(monitoredAsset);
+
+            // Persist the initial snapshot
+            await PersistSnapshotAsync(assetId, initialSnapshot);
 
             // Perform initial reserve check with resilience
             await UpdateReserveStatusWithResilienceAsync(assetId, request.ReserveAddresses, blockchainType);
@@ -371,18 +381,19 @@ public partial class ProofOfReserveService
             var reserveRatio = totalSupply > 0 ? totalReserves / totalSupply : 0;
 
             // Create snapshot
-            var snapshot = new ReserveSnapshot
+            var snapshot = new Models.ReserveSnapshot
             {
                 SnapshotId = Guid.NewGuid().ToString(),
                 AssetId = assetId,
                 Timestamp = DateTime.UtcNow,
                 TotalSupply = totalSupply,
                 TotalReserves = totalReserves,
+                ReserveAmount = totalReserves,
                 ReserveRatio = reserveRatio,
                 Health = CalculateHealthStatus(reserveRatio, asset.MinReserveRatio),
                 ReserveAddresses = reserveData.ReserveAddresses,
                 ReserveBalances = reserveData.ReserveBalances,
-                ProofHash = Convert.ToBase64String(await ComputeHashAsync(System.Text.Encoding.UTF8.GetBytes($"{assetId}:{totalSupply}:{totalReserves}")))
+                VerificationStatus = Models.VerificationStatus.Completed
             };
 
             // Update asset and history
@@ -403,7 +414,7 @@ public partial class ProofOfReserveService
 
             // Check for alerts with resilience
             await ProofOfReserveResilienceHelper.ExecuteWithRetryAsync(
-                () => CheckAlertsAsync(assetId, snapshot),
+                () => CheckAlertsAsync(assetId, ConvertModelsSnapshotToCoreSnapshot(snapshot)),
                 Logger,
                 maxRetries: 2,
                 operationName: "CheckAlerts");

@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
@@ -10,11 +11,18 @@ namespace NeoServiceLayer.Services.Compliance;
 /// <summary>
 /// Implementation of the Compliance service.
 /// </summary>
-public class ComplianceService : EnclaveBlockchainServiceBase, IComplianceService
+public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplianceService
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
+    private readonly IServiceProvider? _serviceProvider;
     private readonly Dictionary<string, ComplianceRule> _ruleCache = new();
+    private readonly ConcurrentDictionary<string, ComplianceRule> _complianceRules = new();
+    private readonly ConcurrentDictionary<string, ComplianceCheckResult> _recentCheckResults = new();
+    private readonly ConcurrentDictionary<string, ComplianceViolation> _activeViolations = new();
+    private long _totalChecksPerformed;
+    private long _totalViolationsDetected;
+    private long _totalRulesEvaluated;
     private int _requestCount;
     private int _successCount;
     private int _failureCount;
@@ -26,18 +34,24 @@ public class ComplianceService : EnclaveBlockchainServiceBase, IComplianceServic
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public ComplianceService(
         IEnclaveManager enclaveManager,
         IServiceConfiguration configuration,
-        ILogger<ComplianceService> logger)
+        ILogger<ComplianceService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("Compliance", "Compliance Gateway Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
         _lastRequestTime = DateTime.MinValue;
+        _totalChecksPerformed = 0;
+        _totalViolationsDetected = 0;
+        _totalRulesEvaluated = 0;
 
         // Add capabilities
         AddCapability<IComplianceService>();
@@ -57,6 +71,9 @@ public class ComplianceService : EnclaveBlockchainServiceBase, IComplianceServic
         try
         {
             Logger.LogInformation("Initializing Compliance Service...");
+
+            // Initialize persistent storage
+            await InitializePersistentStorageAsync();
 
             // Initialize service-specific components
             await RefreshRuleCacheAsync();
@@ -1050,5 +1067,15 @@ public class ComplianceService : EnclaveBlockchainServiceBase, IComplianceServic
             Logger.LogError(ex, "Failed to request certification of type {CertificationType}", request.CertificationType);
             throw;
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

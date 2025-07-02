@@ -12,7 +12,7 @@ namespace NeoServiceLayer.Tee.Enclave;
 /// <summary>
 /// Service for handling SGX attestation verification.
 /// </summary>
-public class AttestationService
+public class AttestationService : IAttestationService
 {
     private readonly ILogger<AttestationService> _logger;
     private readonly HttpClient _httpClient;

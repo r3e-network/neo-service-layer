@@ -274,7 +274,7 @@ public class EventSubscriptionController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var events = await _eventSubscriptionService.GetEventsAsync(subscriptionId, skip, take, blockchain);
+            var events = await _eventSubscriptionService.ListEventsAsync(subscriptionId, skip, take, blockchain);
 
             Logger.LogInformation("Retrieved {EventCount} events for subscription {SubscriptionId} on {BlockchainType} by user {UserId}",
                 events.Count(), subscriptionId, blockchainType, GetCurrentUserId());

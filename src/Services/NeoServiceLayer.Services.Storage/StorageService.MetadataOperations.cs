@@ -31,7 +31,7 @@ public partial class StorageService
                 // Try to get metadata from the enclave
                 try
                 {
-                    metadata = await GetMetadataAsync(key, blockchainType);
+                    metadata = await GetStorageMetadataAsync(key, blockchainType);
                 }
                 catch
                 {
@@ -71,7 +71,7 @@ public partial class StorageService
     }
 
     /// <inheritdoc/>
-    public async Task<StorageMetadata> GetMetadataAsync(string key, BlockchainType blockchainType)
+    public async Task<StorageMetadata> GetStorageMetadataAsync(string key, BlockchainType blockchainType)
     {
         ValidateStorageOperation(key, blockchainType);
 
@@ -136,7 +136,7 @@ public partial class StorageService
             // Check in the enclave
             try
             {
-                await GetMetadataAsync(key, blockchainType);
+                await GetStorageMetadataAsync(key, blockchainType);
                 RecordSuccess();
                 return true;
             }

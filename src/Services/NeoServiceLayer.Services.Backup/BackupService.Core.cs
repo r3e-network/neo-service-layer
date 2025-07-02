@@ -19,11 +19,12 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
     private readonly IBlockchainClientFactory _blockchainClientFactory;
     private readonly IHttpClientService _httpClientService;
 
-    public BackupService(ILogger<BackupService> logger, IBlockchainClientFactory blockchainClientFactory, IHttpClientService httpClientService)
+    public BackupService(ILogger<BackupService> logger, IBlockchainClientFactory blockchainClientFactory, IHttpClientService httpClientService, IServiceProvider? serviceProvider = null)
         : base("Backup", "Data Backup and Recovery Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _blockchainClientFactory = blockchainClientFactory ?? throw new ArgumentNullException(nameof(blockchainClientFactory));
         _httpClientService = httpClientService ?? throw new ArgumentNullException(nameof(httpClientService));
+        _serviceProvider = serviceProvider;
         // Add capabilities
         AddCapability<IBackupService>();
 
@@ -36,6 +37,9 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
     protected override async Task<bool> OnInitializeAsync()
     {
         Logger.LogInformation("Initializing Backup Service...");
+
+        // Initialize persistent storage
+        await InitializePersistentStorageAsync();
 
         // Initialize backup storage
         await InitializeBackupStorageAsync();
@@ -403,7 +407,7 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
     /// Gets backup service statistics.
     /// </summary>
     /// <returns>Backup service statistics.</returns>
-    public BackupServiceStatistics GetStatistics()
+    internal BackupServiceStatistics GetStatistics()
     {
         lock (_jobsLock)
         {
@@ -422,5 +426,15 @@ public partial class BackupService : EnclaveBlockchainServiceBase, IBackupServic
                 NextScheduledBackup = nextScheduledBackup == DateTime.MinValue ? null : nextScheduledBackup
             };
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

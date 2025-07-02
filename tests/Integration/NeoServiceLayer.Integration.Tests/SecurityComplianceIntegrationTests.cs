@@ -28,7 +28,7 @@ public class SecurityComplianceIntegrationTests : IDisposable
     private readonly IProofOfReserveService _proofOfReserveService;
     private readonly IComplianceService _complianceService;
     private readonly IKeyManagementService _keyManagementService;
-    private readonly IZeroKnowledgeService _zeroKnowledgeService;
+    private readonly NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService _zeroKnowledgeService;
     private readonly IVotingService _votingService;
     private readonly IEnclaveManager _enclaveManager;
     private readonly AttestationService _attestationService;
@@ -56,7 +56,7 @@ public class SecurityComplianceIntegrationTests : IDisposable
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
         services.AddSingleton<IComplianceService, ComplianceService>();
         services.AddSingleton<IKeyManagementService, KeyManagementService>();
-        services.AddSingleton<IZeroKnowledgeService, ZeroKnowledgeService>();
+        services.AddSingleton<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService, ZeroKnowledgeService>();
         services.AddSingleton<IVotingService, VotingService>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -66,7 +66,7 @@ public class SecurityComplianceIntegrationTests : IDisposable
         _proofOfReserveService = _serviceProvider.GetRequiredService<IProofOfReserveService>();
         _complianceService = _serviceProvider.GetRequiredService<IComplianceService>();
         _keyManagementService = _serviceProvider.GetRequiredService<IKeyManagementService>();
-        _zeroKnowledgeService = _serviceProvider.GetRequiredService<IZeroKnowledgeService>();
+        _zeroKnowledgeService = _serviceProvider.GetRequiredService<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService>();
         _votingService = _serviceProvider.GetRequiredService<IVotingService>();
         _enclaveManager = _serviceProvider.GetRequiredService<IEnclaveManager>();
         _attestationService = _serviceProvider.GetRequiredService<AttestationService>();

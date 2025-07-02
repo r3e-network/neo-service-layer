@@ -29,3 +29,38 @@ internal class NotificationTemplate
     public DateTime CreatedAt { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
+
+/// <summary>
+/// Notification subscription.
+/// </summary>
+public class NotificationSubscription
+{
+    public string SubscriptionId { get; set; } = string.Empty;
+    public string SubscriberId { get; set; } = string.Empty;
+    public string EventType { get; set; } = string.Empty;
+    public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
+    public Dictionary<string, object> Preferences { get; set; } = new();
+    public bool IsActive { get; set; } = true;
+    public DateTime CreatedAt { get; set; }
+    public DateTime? UpdatedAt { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the subscription ID (alias for SubscriptionId).
+    /// </summary>
+    public string Id { get => SubscriptionId; set => SubscriptionId = value; }
+    
+    /// <summary>
+    /// Gets or sets the recipient (alias for SubscriberId).
+    /// </summary>
+    public string Recipient { get => SubscriberId; set => SubscriberId = value; }
+    
+    /// <summary>
+    /// Gets or sets the notification categories.
+    /// </summary>
+    public string[] Categories { get; set; } = Array.Empty<string>();
+    
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}

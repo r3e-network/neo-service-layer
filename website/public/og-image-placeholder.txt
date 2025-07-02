@@ -1,0 +1,30 @@
+# Open Graph Image Placeholder
+
+This is a placeholder for the og-image.png file that should be created for social media sharing.
+
+## Recommended Image Specifications:
+- Dimensions: 1200x630 pixels (standard OG image size)
+- Format: PNG
+- Content: Neo Service Layer branding with key features highlighted
+
+## Suggested Design Elements:
+1. Neo Service Layer logo
+2. Tagline: "Enterprise-Grade Blockchain Services"
+3. Key features icons:
+   - Intel SGX Security
+   - 20+ Microservices
+   - Multi-blockchain Support (Neo N3 & Neo X)
+   - Smart Contract Integration
+4. Dark theme matching the website design
+5. Professional gradient background
+
+## To Create the Image:
+1. Use a design tool like Figma, Canva, or Adobe Photoshop
+2. Create a 1200x630px canvas
+3. Apply the brand colors from the website CSS
+4. Include the elements listed above
+5. Export as PNG with the filename "og-image.png"
+6. Place in the /website/public/ directory
+
+## Temporary Solution:
+Until the actual image is created, the website will function normally but social media previews will not show a custom image.

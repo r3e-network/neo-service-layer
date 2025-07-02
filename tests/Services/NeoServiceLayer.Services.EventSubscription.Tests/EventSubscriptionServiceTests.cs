@@ -413,7 +413,7 @@ public class EventSubscriptionServiceTests
     }
 
     [Fact]
-    public async Task GetEventsAsync_ShouldGetEvents()
+    public async Task ListEventsAsync_ShouldGetEvents()
     {
         // Arrange
         await _service.InitializeAsync();
@@ -440,7 +440,7 @@ public class EventSubscriptionServiceTests
         var subscriptionId = await _service.CreateSubscriptionAsync(createSubscription, BlockchainType.NeoN3);
 
         // Act
-        var result = await _service.GetEventsAsync(
+        var result = await _service.ListEventsAsync(
             subscriptionId,
             0,
             10,

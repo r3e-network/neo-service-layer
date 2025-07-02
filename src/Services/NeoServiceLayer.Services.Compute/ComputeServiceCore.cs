@@ -26,14 +26,17 @@ public partial class ComputeService : EnclaveBlockchainServiceBase, IComputeServ
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public ComputeService(
         IEnclaveManager enclaveManager,
         IServiceConfiguration configuration,
-        ILogger<ComputeService> logger)
+        ILogger<ComputeService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("Compute", "High-Performance Verifiable Compute Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
@@ -225,6 +228,9 @@ public partial class ComputeService : EnclaveBlockchainServiceBase, IComputeServ
         {
             Logger.LogInformation("Initializing Compute Service...");
 
+            // Initialize persistent storage
+            await InitializePersistentStorageAsync();
+
             // Initialize service-specific components
             await RefreshComputationCacheAsync();
 
@@ -285,5 +291,15 @@ public partial class ComputeService : EnclaveBlockchainServiceBase, IComputeServ
             Logger.LogError(ex, "Error verifying computation result {ComputationId}", result.ComputationId);
             throw;
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

@@ -45,7 +45,7 @@ public partial class ProofOfReserveService
     /// </summary>
     /// <param name="assetId">The asset ID.</param>
     /// <returns>The monitored asset.</returns>
-    private MonitoredAsset GetMonitoredAsset(string assetId)
+    private Models.MonitoredAsset GetMonitoredAsset(string assetId)
     {
         lock (_assetsLock)
         {
@@ -63,7 +63,7 @@ public partial class ProofOfReserveService
     /// </summary>
     /// <param name="assetId">The asset ID.</param>
     /// <returns>The latest snapshot.</returns>
-    private ReserveSnapshot? GetLatestSnapshot(string assetId)
+    private Models.ReserveSnapshot? GetLatestSnapshot(string assetId)
     {
         lock (_assetsLock)
         {
@@ -80,7 +80,7 @@ public partial class ProofOfReserveService
     /// Gets all active monitored assets.
     /// </summary>
     /// <returns>The active assets.</returns>
-    private List<MonitoredAsset> GetActiveAssets()
+    private List<Models.MonitoredAsset> GetActiveAssets()
     {
         lock (_assetsLock)
         {

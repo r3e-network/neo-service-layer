@@ -1,0 +1,1264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Reference - Neo Service Layer</title>
+    <meta name="description" content="Complete REST API reference for Neo Service Layer with interactive examples, authentication guides, and comprehensive endpoint documentation.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    
+    <!-- Search Styles -->
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Meta -->
+    <meta property="og:title" content="API Reference - Neo Service Layer">
+    <meta property="og:description" content="Complete REST API reference with interactive examples">
+    <meta property="og:type" content="website">
+</head>
+<body>
+    <!-- Documentation Header -->
+    <header class="docs-header-nav">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">⚡</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">API Reference</div>
+                    </div>
+                </a>
+                
+                <div class="docs-version-selector">
+                    <button class="docs-version-button" id="version-selector">
+                        <span>v1.5</span>
+                        <i class="ti ti-chevron-down"></i>
+                    </button>
+                    <div class="docs-version-menu" id="version-menu">
+                        <a href="#" class="docs-version-item active">
+                            <span>v1.5</span>
+                            <span class="version-badge">Latest</span>
+                        </a>
+                        <a href="#" class="docs-version-item">
+                            <span>v1.4</span>
+                            <span class="version-badge-old">Stable</span>
+                        </a>
+                        <a href="#" class="docs-version-item">
+                            <span>v1.3</span>
+                            <span class="version-badge-old">Legacy</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search API endpoints..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                <a href="https://github.com/neo-service-layer/api" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="/docs/api-explorer.html" class="docs-cta-button">
+                    API Explorer
+                    <i class="ti ti-external-link"></i>
+                </a>
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">API Reference</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v1.5.0</span>
+                    <span>Latest</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Getting Started -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Getting Started</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#overview" class="docs-nav-link active">
+                                <i class="ti ti-info-circle"></i>
+                                Overview
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#authentication" class="docs-nav-link">
+                                <i class="ti ti-shield-check"></i>
+                                Authentication
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#rate-limiting" class="docs-nav-link">
+                                <i class="ti ti-clock"></i>
+                                Rate Limiting
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#errors" class="docs-nav-link">
+                                <i class="ti ti-alert-triangle"></i>
+                                Error Handling
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Core Services -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Core Services</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#storage-api" class="docs-nav-link">
+                                <i class="ti ti-database"></i>
+                                Storage API
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#post-storage-store" class="docs-nav-sublink">POST /storage/store</a></li>
+                                <li><a href="#get-storage-get" class="docs-nav-sublink">GET /storage/{key}</a></li>
+                                <li><a href="#put-storage-update" class="docs-nav-sublink">PUT /storage/{key}</a></li>
+                                <li><a href="#delete-storage-delete" class="docs-nav-sublink">DELETE /storage/{key}</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#oracle-api" class="docs-nav-link">
+                                <i class="ti ti-cloud-data-connection"></i>
+                                Oracle API
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#post-oracle-request" class="docs-nav-sublink">POST /oracle/request</a></li>
+                                <li><a href="#get-oracle-feeds" class="docs-nav-sublink">GET /oracle/feeds</a></li>
+                                <li><a href="#post-oracle-subscribe" class="docs-nav-sublink">POST /oracle/subscribe</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#compute-api" class="docs-nav-link">
+                                <i class="ti ti-cpu"></i>
+                                Compute API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#identity-api" class="docs-nav-link">
+                                <i class="ti ti-user-check"></i>
+                                Identity API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#analytics-api" class="docs-nav-link">
+                                <i class="ti ti-chart-line"></i>
+                                Analytics API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- DeFi Services -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">DeFi Services</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#lending-api" class="docs-nav-link">
+                                <i class="ti ti-coins"></i>
+                                Lending API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#marketplace-api" class="docs-nav-link">
+                                <i class="ti ti-shopping-cart"></i>
+                                Marketplace API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#tokenization-api" class="docs-nav-link">
+                                <i class="ti ti-diamond"></i>
+                                Tokenization API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#insurance-api" class="docs-nav-link">
+                                <i class="ti ti-shield"></i>
+                                Insurance API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Advanced Services -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Advanced Services</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#zero-knowledge-api" class="docs-nav-link">
+                                <i class="ti ti-eye-off"></i>
+                                Zero Knowledge API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#key-management-api" class="docs-nav-link">
+                                <i class="ti ti-key"></i>
+                                Key Management API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#automation-api" class="docs-nav-link">
+                                <i class="ti ti-robot"></i>
+                                Automation API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#cross-chain-api" class="docs-nav-link">
+                                <i class="ti ti-arrows-exchange"></i>
+                                Cross-Chain API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- WebSocket API -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Real-Time</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#websocket-api" class="docs-nav-link">
+                                <i class="ti ti-plug-connected"></i>
+                                WebSocket API
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#webhooks-api" class="docs-nav-link">
+                                <i class="ti ti-webhook"></i>
+                                Webhooks API
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <div class="docs-content">
+                <!-- Breadcrumb -->
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ul class="docs-breadcrumb-list">
+                        <li class="docs-breadcrumb-item">
+                            <a href="/docs" class="docs-breadcrumb-link">Documentation</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <span>API Reference</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Article Header -->
+                <header class="docs-article-header">
+                    <h1 class="docs-article-title">API Reference</h1>
+                    <p class="docs-article-description">
+                        Complete REST API reference for Neo Service Layer. Build powerful blockchain applications 
+                        with our comprehensive set of endpoints covering storage, oracles, DeFi, and advanced features.
+                    </p>
+                    <div class="docs-article-meta">
+                        <div class="docs-meta-item">
+                            <i class="ti ti-world"></i>
+                            <span>https://api.neo-service-layer.io/v1</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-git-branch"></i>
+                            <span>v1.5.0</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-shield-check"></i>
+                            <span>Bearer Token Auth</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-clock"></i>
+                            <span>99.9% Uptime</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- API Overview -->
+                <section id="overview" class="docs-section">
+                    <h2>API Overview</h2>
+                    <p>
+                        The Neo Service Layer API is a RESTful API that provides access to 22+ blockchain services 
+                        through a unified interface. All endpoints return JSON and use standard HTTP methods and status codes.
+                    </p>
+
+                    <div class="api-info-grid">
+                        <div class="api-info-card">
+                            <div class="api-info-icon">
+                                <i class="ti ti-world"></i>
+                            </div>
+                            <h3>Base URLs</h3>
+                            <div class="api-urls">
+                                <div class="api-url">
+                                    <span class="api-env production">Production</span>
+                                    <code>https://api.neo-service-layer.io/v1</code>
+                                </div>
+                                <div class="api-url">
+                                    <span class="api-env staging">Staging</span>
+                                    <code>https://staging-api.neo-service-layer.io/v1</code>
+                                </div>
+                                <div class="api-url">
+                                    <span class="api-env development">Development</span>
+                                    <code>https://dev-api.neo-service-layer.io/v1</code>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="api-info-card">
+                            <div class="api-info-icon">
+                                <i class="ti ti-shield-check"></i>
+                            </div>
+                            <h3>Authentication</h3>
+                            <p>All API requests require authentication using JWT Bearer tokens or API keys.</p>
+                            <div class="code-block-header">
+                                <div class="code-block-title">Authorization Header</div>
+                                <button class="code-copy-button" onclick="copyCode('auth-header')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="auth-header" class="language-http">Authorization: Bearer YOUR_JWT_TOKEN</code></pre>
+                        </div>
+
+                        <div class="api-info-card">
+                            <div class="api-info-icon">
+                                <i class="ti ti-clock"></i>
+                            </div>
+                            <h3>Rate Limits</h3>
+                            <p>API requests are rate limited to ensure fair usage and system stability.</p>
+                            <table class="rate-limit-table">
+                                <thead>
+                                    <tr>
+                                        <th>Plan</th>
+                                        <th>Requests/minute</th>
+                                        <th>Burst</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td>Free</td>
+                                        <td>100</td>
+                                        <td>200</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Pro</td>
+                                        <td>1,000</td>
+                                        <td>2,000</td>
+                                    </tr>
+                                    <tr>
+                                        <td>Enterprise</td>
+                                        <td>10,000</td>
+                                        <td>20,000</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div class="api-info-card">
+                            <div class="api-info-icon">
+                                <i class="ti ti-database"></i>
+                            </div>
+                            <h3>Response Format</h3>
+                            <p>All responses follow a consistent JSON structure with metadata and data.</p>
+                            <div class="code-block-header">
+                                <div class="code-block-title">Response Structure</div>
+                                <button class="code-copy-button" onclick="copyCode('response-format')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="response-format" class="language-json">{
+  "success": true,
+  "data": {
+    // Response data here
+  },
+  "meta": {
+    "timestamp": "2024-01-30T12:00:00Z",
+    "version": "v1.5.0",
+    "requestId": "req_123456789"
+  }
+}</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Authentication Section -->
+                <section id="authentication" class="docs-section">
+                    <h2>Authentication</h2>
+                    <p>
+                        Neo Service Layer API uses JWT (JSON Web Tokens) for authentication. 
+                        You can obtain tokens through our authentication endpoints or use API keys for server-to-server communication.
+                    </p>
+
+                    <h3>JWT Authentication</h3>
+                    <p>The primary authentication method for client applications.</p>
+
+                    <div class="api-endpoint">
+                        <div class="endpoint-header">
+                            <div class="endpoint-method post">POST</div>
+                            <div class="endpoint-path">/auth/login</div>
+                            <div class="endpoint-description">Authenticate user and receive JWT token</div>
+                        </div>
+
+                        <div class="endpoint-tabs">
+                            <button class="endpoint-tab active" onclick="showEndpointTab(event, 'login-request')">Request</button>
+                            <button class="endpoint-tab" onclick="showEndpointTab(event, 'login-response')">Response</button>
+                            <button class="endpoint-tab" onclick="showEndpointTab(event, 'login-examples')">Examples</button>
+                        </div>
+
+                        <div id="login-request" class="endpoint-content active">
+                            <h4>Request Body</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">application/json</div>
+                                <button class="code-copy-button" onclick="copyCode('login-request-body')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-request-body" class="language-json">{
+  "email": "user@example.com",
+  "password": "securePassword123",
+  "blockchainType": "NeoN3"
+}</code></pre>
+
+                            <h4>Parameters</h4>
+                            <table class="params-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Type</th>
+                                        <th>Required</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>email</code></td>
+                                        <td>string</td>
+                                        <td>✅</td>
+                                        <td>User's email address</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>password</code></td>
+                                        <td>string</td>
+                                        <td>✅</td>
+                                        <td>User's password</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>blockchainType</code></td>
+                                        <td>enum</td>
+                                        <td>❌</td>
+                                        <td>Blockchain type: <code>NeoN3</code> or <code>NeoX</code></td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="login-response" class="endpoint-content">
+                            <h4>Success Response (200)</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">application/json</div>
+                                <button class="code-copy-button" onclick="copyCode('login-response-body')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-response-body" class="language-json">{
+  "success": true,
+  "data": {
+    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+    "refreshToken": "rt_1234567890abcdef",
+    "expiresIn": 3600,
+    "user": {
+      "id": "user_12345",
+      "email": "user@example.com",
+      "roles": ["user", "developer"],
+      "permissions": ["storage:read", "storage:write", "oracle:read"]
+    }
+  },
+  "meta": {
+    "timestamp": "2024-01-30T12:00:00Z",
+    "version": "v1.5.0",
+    "requestId": "req_auth_123456"
+  }
+}</code></pre>
+
+                            <h4>Error Response (401)</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">application/json</div>
+                                <button class="code-copy-button" onclick="copyCode('login-error-body')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-error-body" class="language-json">{
+  "success": false,
+  "error": {
+    "code": "INVALID_CREDENTIALS",
+    "message": "Invalid email or password",
+    "details": "The provided credentials do not match any user account"
+  },
+  "meta": {
+    "timestamp": "2024-01-30T12:00:00Z",
+    "version": "v1.5.0",
+    "requestId": "req_auth_123457"
+  }
+}</code></pre>
+                        </div>
+
+                        <div id="login-examples" class="endpoint-content">
+                            <h4>cURL Example</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">bash</div>
+                                <button class="code-copy-button" onclick="copyCode('login-curl')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-curl" class="language-bash">curl -X POST https://api.neo-service-layer.io/v1/auth/login \
+  -H "Content-Type: application/json" \
+  -d '{
+    "email": "user@example.com",
+    "password": "securePassword123",
+    "blockchainType": "NeoN3"
+  }'</code></pre>
+
+                            <h4>JavaScript Example</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">javascript</div>
+                                <button class="code-copy-button" onclick="copyCode('login-js')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-js" class="language-javascript">const response = await fetch('https://api.neo-service-layer.io/v1/auth/login', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    email: 'user@example.com',
+    password: 'securePassword123',
+    blockchainType: 'NeoN3'
+  })
+});
+
+const data = await response.json();
+
+if (data.success) {
+  // Store the token for future requests
+  localStorage.setItem('authToken', data.data.token);
+  console.log('Login successful:', data.data.user);
+} else {
+  console.error('Login failed:', data.error.message);
+}</code></pre>
+
+                            <h4>Python Example</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">python</div>
+                                <button class="code-copy-button" onclick="copyCode('login-python')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="login-python" class="language-python">import requests
+import json
+
+url = "https://api.neo-service-layer.io/v1/auth/login"
+payload = {
+    "email": "user@example.com",
+    "password": "securePassword123",
+    "blockchainType": "NeoN3"
+}
+
+response = requests.post(url, json=payload)
+data = response.json()
+
+if data['success']:
+    token = data['data']['token']
+    print(f"Login successful. Token: {token}")
+else:
+    print(f"Login failed: {data['error']['message']}")</code></pre>
+                        </div>
+                    </div>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-info-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>Token Storage:</strong> Store JWT tokens securely and include them in the 
+                            Authorization header for all subsequent API requests. Tokens expire after 1 hour by default.
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Storage API Section -->
+                <section id="storage-api" class="docs-section">
+                    <h2>Storage API</h2>
+                    <p>
+                        The Storage API provides decentralized data storage with encryption, access control, 
+                        and versioning capabilities. Perfect for user data, application state, and content management.
+                    </p>
+
+                    <h3 id="post-storage-store">Store Data</h3>
+                    <div class="api-endpoint">
+                        <div class="endpoint-header">
+                            <div class="endpoint-method post">POST</div>
+                            <div class="endpoint-path">/storage/store</div>
+                            <div class="endpoint-description">Store data with optional encryption and access control</div>
+                        </div>
+
+                        <div class="endpoint-tabs">
+                            <button class="endpoint-tab active" onclick="showEndpointTab(event, 'store-request')">Request</button>
+                            <button class="endpoint-tab" onclick="showEndpointTab(event, 'store-response')">Response</button>
+                            <button class="endpoint-tab" onclick="showEndpointTab(event, 'store-examples')">Examples</button>
+                        </div>
+
+                        <div id="store-request" class="endpoint-content active">
+                            <h4>Request Body</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">application/json</div>
+                                <button class="code-copy-button" onclick="copyCode('store-request-body')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="store-request-body" class="language-json">{
+  "key": "user-profile-123",
+  "value": "{\"name\":\"Alice\",\"email\":\"alice@example.com\"}",
+  "encrypted": true,
+  "accessControl": {
+    "public": false,
+    "allowedAddresses": ["NX7dkCKKUHdFjG8gQJZxMdZLGKyKMzGrQs"],
+    "permissions": ["read", "write"]
+  },
+  "metadata": {
+    "contentType": "application/json",
+    "category": "user-data",
+    "tags": ["profile", "personal"]
+  },
+  "expiresAt": "2024-12-31T23:59:59Z"
+}</code></pre>
+
+                            <h4>Parameters</h4>
+                            <table class="params-table">
+                                <thead>
+                                    <tr>
+                                        <th>Parameter</th>
+                                        <th>Type</th>
+                                        <th>Required</th>
+                                        <th>Description</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr>
+                                        <td><code>key</code></td>
+                                        <td>string</td>
+                                        <td>✅</td>
+                                        <td>Unique identifier for the data (max 256 chars)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>value</code></td>
+                                        <td>string</td>
+                                        <td>✅</td>
+                                        <td>Data to store (max 1MB)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>encrypted</code></td>
+                                        <td>boolean</td>
+                                        <td>❌</td>
+                                        <td>Whether to encrypt the data (default: false)</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>accessControl</code></td>
+                                        <td>object</td>
+                                        <td>❌</td>
+                                        <td>Access control settings</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>metadata</code></td>
+                                        <td>object</td>
+                                        <td>❌</td>
+                                        <td>Additional metadata for the data</td>
+                                    </tr>
+                                    <tr>
+                                        <td><code>expiresAt</code></td>
+                                        <td>string</td>
+                                        <td>❌</td>
+                                        <td>ISO 8601 timestamp for data expiration</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+
+                        <div id="store-response" class="endpoint-content">
+                            <h4>Success Response (201)</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">application/json</div>
+                                <button class="code-copy-button" onclick="copyCode('store-response-body')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="store-response-body" class="language-json">{
+  "success": true,
+  "data": {
+    "transactionId": "0x1234567890abcdef",
+    "blockHeight": 12345678,
+    "gasUsed": "0.002",
+    "storageHash": "sha256:abcdef1234567890",
+    "createdAt": "2024-01-30T12:00:00Z",
+    "expiresAt": "2024-12-31T23:59:59Z"
+  },
+  "meta": {
+    "timestamp": "2024-01-30T12:00:00Z",
+    "version": "v1.5.0",
+    "requestId": "req_storage_123456"
+  }
+}</code></pre>
+                        </div>
+
+                        <div id="store-examples" class="endpoint-content">
+                            <h4>cURL Example</h4>
+                            <div class="code-block-header">
+                                <div class="code-block-title">bash</div>
+                                <button class="code-copy-button" onclick="copyCode('store-curl')">
+                                    <i class="ti ti-copy"></i>
+                                    Copy
+                                </button>
+                            </div>
+                            <pre><code id="store-curl" class="language-bash">curl -X POST https://api.neo-service-layer.io/v1/storage/store \
+  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "key": "user-profile-123",
+    "value": "{\"name\":\"Alice\",\"email\":\"alice@example.com\"}",
+    "encrypted": true,
+    "metadata": {
+      "contentType": "application/json",
+      "category": "user-data"
+    }
+  }'</code></pre>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Footer Navigation -->
+                <nav class="docs-footer-nav">
+                    <a href="/docs/javascript-sdk-professional.html" class="docs-footer-link docs-footer-link-prev">
+                        <i class="ti ti-arrow-left"></i>
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Previous</div>
+                            <div class="docs-footer-link-title">JavaScript SDK</div>
+                        </div>
+                    </a>
+                    <a href="/docs/deployment-guide-professional.html" class="docs-footer-link docs-footer-link-next">
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Next</div>
+                            <div class="docs-footer-link-title">Deployment Guide</div>
+                        </div>
+                        <i class="ti ti-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Table of Contents -->
+            <aside class="docs-toc">
+                <h4 class="docs-toc-title">On this page</h4>
+                <ul class="docs-toc-list" id="table-of-contents">
+                    <li class="docs-toc-item">
+                        <a href="#overview" class="docs-toc-link active">Overview</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#authentication" class="docs-toc-link">Authentication</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#storage-api" class="docs-toc-link">Storage API</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#post-storage-store" class="docs-toc-link level-3">POST /storage/store</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="docs-overlay" id="docs-overlay"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-http.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    
+    <script>
+        // Copy code function
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target.closest('.code-copy-button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="ti ti-check"></i> Copied!';
+                button.style.color = 'var(--docs-accent-green)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Show endpoint tab
+        function showEndpointTab(event, tabId) {
+            // Hide all content
+            const contents = event.target.closest('.api-endpoint').querySelectorAll('.endpoint-content');
+            contents.forEach(content => content.classList.remove('active'));
+            
+            // Remove active from all tabs
+            const tabs = event.target.closest('.endpoint-tabs').querySelectorAll('.endpoint-tab');
+            tabs.forEach(tab => tab.classList.remove('active'));
+            
+            // Show selected content and mark tab as active
+            document.getElementById(tabId).classList.add('active');
+            event.target.classList.add('active');
+        }
+
+        // Initialize documentation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('docs-sidebar');
+            const overlay = document.getElementById('docs-overlay');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Initialize syntax highlighting
+            Prism.highlightAll();
+        });
+    </script>
+
+    <style>
+        /* API-specific styles */
+        .api-info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: 24px;
+            margin: 32px 0;
+        }
+
+        .api-info-card {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+        }
+
+        .api-info-icon {
+            width: 48px;
+            height: 48px;
+            background: var(--docs-accent-blue);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            margin-bottom: 16px;
+        }
+
+        .api-info-card h3 {
+            margin: 0 0 12px 0;
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+
+        .api-urls {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .api-url {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 8px 0;
+        }
+
+        .api-env {
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            min-width: 80px;
+            text-align: center;
+        }
+
+        .api-env.production {
+            background: var(--docs-accent-green);
+            color: white;
+        }
+
+        .api-env.staging {
+            background: var(--docs-accent-orange);
+            color: white;
+        }
+
+        .api-env.development {
+            background: var(--docs-accent-purple);
+            color: white;
+        }
+
+        .rate-limit-table {
+            width: 100%;
+            margin-top: 12px;
+        }
+
+        .rate-limit-table th,
+        .rate-limit-table td {
+            padding: 8px 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+
+        .api-endpoint {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            margin: 32px 0;
+            overflow: hidden;
+        }
+
+        .endpoint-header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            padding: 20px 24px;
+            background: var(--docs-bg-primary);
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+
+        .endpoint-method {
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            color: white;
+        }
+
+        .endpoint-method.post {
+            background: var(--docs-accent-green);
+        }
+
+        .endpoint-method.get {
+            background: var(--docs-accent-blue);
+        }
+
+        .endpoint-method.put {
+            background: var(--docs-accent-orange);
+        }
+
+        .endpoint-method.delete {
+            background: var(--docs-accent-red);
+        }
+
+        .endpoint-path {
+            font-family: var(--neo-font-mono);
+            font-size: 16px;
+            font-weight: 500;
+            color: var(--docs-text-primary);
+        }
+
+        .endpoint-description {
+            color: var(--docs-text-secondary);
+            flex: 1;
+        }
+
+        .endpoint-tabs {
+            display: flex;
+            background: var(--docs-bg-tertiary);
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+
+        .endpoint-tab {
+            padding: 12px 24px;
+            background: transparent;
+            border: none;
+            color: var(--docs-text-secondary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+            position: relative;
+        }
+
+        .endpoint-tab.active {
+            color: var(--docs-accent-blue);
+            background: var(--docs-bg-primary);
+        }
+
+        .endpoint-tab.active::after {
+            content: '';
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            height: 2px;
+            background: var(--docs-accent-blue);
+        }
+
+        .endpoint-content {
+            display: none;
+            padding: 24px;
+        }
+
+        .endpoint-content.active {
+            display: block;
+        }
+
+        .params-table {
+            width: 100%;
+            margin: 16px 0;
+            border-collapse: collapse;
+        }
+
+        .params-table th,
+        .params-table td {
+            padding: 12px 16px;
+            text-align: left;
+            border-bottom: 1px solid var(--docs-border-light);
+        }
+
+        .params-table th {
+            background: var(--docs-bg-tertiary);
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+
+        .params-table code {
+            background: var(--docs-code-bg);
+            padding: 2px 6px;
+            border-radius: 4px;
+            font-size: 13px;
+        }
+
+        /* Include header styles */
+        .docs-header-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--docs-bg-primary);
+            border-bottom: 1px solid var(--docs-border-light);
+            z-index: 50;
+        }
+
+        .docs-header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .docs-header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .docs-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4aa 0%, #5f4bb6 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+
+        .docs-brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .docs-brand-subtitle {
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+            line-height: 1;
+        }
+
+        .docs-header-center {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 48px;
+        }
+
+        .docs-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .docs-theme-toggle,
+        .docs-github-link {
+            width: 36px;
+            height: 36px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-cta-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--docs-accent-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .version-badge {
+            background: var(--docs-accent-green);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .docs-header-center {
+                display: none;
+            }
+            
+            .api-info-grid {
+                grid-template-columns: 1fr;
+            }
+            
+            .endpoint-header {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 8px;
+            }
+            
+            .endpoint-tabs {
+                overflow-x: auto;
+            }
+        }
+    </style>
+    
+    <!-- Search Script -->
+    <script src="../src/scripts/docs-search.js"></script>
+</body>
+</html>

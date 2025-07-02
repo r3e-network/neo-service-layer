@@ -136,14 +136,14 @@ public class KeyManagementServiceTests
     }
 
     [Fact]
-    public async Task GenerateKeyAsync_ShouldGenerateKey()
+    public async Task CreateKeyAsync_ShouldGenerateKey()
     {
         // Arrange
         await _service.InitializeAsync();
         await _service.StartAsync();
 
         // Act
-        var result = await _service.GenerateKeyAsync(
+        var result = await _service.CreateKeyAsync(
             "test-key",
             "Secp256k1",
             "signing,verification",
@@ -215,7 +215,7 @@ public class KeyManagementServiceTests
         await _service.StartAsync();
 
         // Create the key first
-        await _service.GenerateKeyAsync(
+        await _service.CreateKeyAsync(
             "test-key",
             "Secp256k1",
             "signing,verification",
@@ -270,7 +270,7 @@ public class KeyManagementServiceTests
         await _service.StartAsync();
 
         // Create the key first
-        await _service.GenerateKeyAsync(
+        await _service.CreateKeyAsync(
             "encrypt-test-key",
             "Secp256k1",
             "encryption,decryption",
@@ -301,7 +301,7 @@ public class KeyManagementServiceTests
         await _service.StartAsync();
 
         // Create the key first
-        await _service.GenerateKeyAsync(
+        await _service.CreateKeyAsync(
             "encrypt-test-key",
             "Secp256k1",
             "encryption,decryption",

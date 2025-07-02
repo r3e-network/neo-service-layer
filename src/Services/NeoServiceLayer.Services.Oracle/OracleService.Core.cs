@@ -21,7 +21,8 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     protected readonly IBlockchainClientFactory _blockchainClientFactory;
     protected readonly IHttpClientService _httpClientService;
     protected readonly List<DataSource> _dataSources = new();
-    protected readonly Dictionary<string, OracleSubscription> _subscriptions = new();
+    protected readonly Dictionary<string, Models.OracleSubscription> _subscriptions = new();
+    protected readonly IServiceProvider? _serviceProvider;
     protected int _requestCount;
     protected int _successCount;
     protected int _failureCount;
@@ -35,12 +36,14 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     /// <param name="blockchainClientFactory">The blockchain client factory.</param>
     /// <param name="httpClientService">The HTTP client service.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public OracleService(
         IServiceConfiguration configuration,
         IEnclaveManager enclaveManager,
         IBlockchainClientFactory blockchainClientFactory,
         IHttpClientService httpClientService,
-        ILogger<OracleService> logger)
+        ILogger<OracleService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("Oracle", "Confidential Oracle Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         ArgumentNullException.ThrowIfNull(configuration);
@@ -52,6 +55,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         _enclaveManager = enclaveManager;
         _blockchainClientFactory = blockchainClientFactory;
         _httpClientService = httpClientService;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
@@ -292,6 +296,9 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     {
         Logger.LogInformation("Initializing Oracle service...");
 
+        // Initialize persistent storage
+        await InitializePersistentStorageAsync();
+
         // Load configuration
         var maxConcurrentRequests = _configuration.GetValue("Oracle:MaxConcurrentRequests", "10");
         var defaultTimeout = _configuration.GetValue("Oracle:DefaultTimeout", "30000");
@@ -518,5 +525,15 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             // Return original data if metadata addition fails
             return data;
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

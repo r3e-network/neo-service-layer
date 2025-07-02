@@ -175,7 +175,7 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             // Load monitored nodes
             try
             {
-                var nodesData = await _storageService.RetrieveDataAsync(NodesStorageKey, BlockchainType.NeoN3);
+                var nodesData = await _storageService.GetDataAsync(NodesStorageKey, BlockchainType.NeoN3);
                 var nodesJson = System.Text.Encoding.UTF8.GetString(nodesData);
                 var nodes = JsonSerializer.Deserialize<Dictionary<string, NodeHealthReport>>(nodesJson);
 
@@ -198,7 +198,7 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             // Load active alerts
             try
             {
-                var alertsData = await _storageService.RetrieveDataAsync(AlertsStorageKey, BlockchainType.NeoN3);
+                var alertsData = await _storageService.GetDataAsync(AlertsStorageKey, BlockchainType.NeoN3);
                 var alertsJson = System.Text.Encoding.UTF8.GetString(alertsData);
                 var alerts = JsonSerializer.Deserialize<Dictionary<string, HealthAlert>>(alertsJson);
 
@@ -221,7 +221,7 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             // Load node thresholds
             try
             {
-                var thresholdsData = await _storageService.RetrieveDataAsync(ThresholdsStorageKey, BlockchainType.NeoN3);
+                var thresholdsData = await _storageService.GetDataAsync(ThresholdsStorageKey, BlockchainType.NeoN3);
                 var thresholdsJson = System.Text.Encoding.UTF8.GetString(thresholdsData);
                 var thresholds = JsonSerializer.Deserialize<Dictionary<string, HealthThreshold>>(thresholdsJson);
 

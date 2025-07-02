@@ -1,0 +1,805 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Security at Neo Service Layer - Learn about our security measures, audits, and best practices">
+    <title>Security | Neo Service Layer</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/src/styles/design-system.css">
+    <link rel="stylesheet" href="/src/styles/components.css">
+    <link rel="stylesheet" href="/src/styles/main.css">
+    
+    <!-- SEO -->
+    <meta property="og:title" content="Security - Neo Service Layer">
+    <meta property="og:description" content="Learn about our comprehensive security measures and best practices">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neoservicelayer.com/security">
+    <link rel="canonical" href="https://neoservicelayer.com/security">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">⚡</span>
+                Neo Service Layer
+            </a>
+            
+            <div class="nav-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/#services" class="nav-link">Services</a>
+                <a href="/docs/quick-start.html" class="nav-link">Documentation</a>
+                <a href="/docs/api-reference.html" class="nav-link">API</a>
+                <a href="https://github.com/r3e-network/neo-service-layer" class="nav-link">GitHub</a>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="/app.html" class="neo-btn neo-btn-primary">Launch App</a>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Security Content -->
+    <main class="security-page">
+        <!-- Hero Section -->
+        <section class="security-hero">
+            <div class="container">
+                <div class="security-hero-content">
+                    <div class="neo-badge neo-badge-error">
+                        <svg width="16" height="16" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M2.166 4.999A11.954 11.954 0 0010 1.944 11.954 11.954 0 0017.834 5c.11.65.166 1.32.166 2.001 0 5.225-3.34 9.67-8 11.317C5.34 16.67 2 12.225 2 7c0-.682.057-1.35.166-2.001zm11.541 3.708a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/>
+                        </svg>
+                        Security First Approach
+                    </div>
+                    <h1 class="security-title">Security is Our <span class="neo-text-gradient">Top Priority</span></h1>
+                    <p class="security-subtitle">
+                        We implement industry-leading security practices to protect your assets and ensure the integrity of the Neo Service Layer ecosystem.
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Features -->
+        <section class="security-features">
+            <div class="container">
+                <div class="features-grid">
+                    <div class="security-feature">
+                        <div class="feature-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 2L2 7v10c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V7l-10-5z"/>
+                            </svg>
+                        </div>
+                        <h3>Smart Contract Audits</h3>
+                        <p>All smart contracts undergo rigorous security audits by leading blockchain security firms before deployment.</p>
+                        <a href="#audits" class="security-link">View Audit Reports →</a>
+                    </div>
+
+                    <div class="security-feature">
+                        <div class="feature-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <rect x="3" y="11" width="18" height="10" rx="2" ry="2"/>
+                                <path d="M7 11V7a5 5 0 0110 0v4"/>
+                            </svg>
+                        </div>
+                        <h3>Intel SGX Integration</h3>
+                        <p>Sensitive operations run in secure enclaves, providing hardware-level security for critical computations.</p>
+                        <a href="/docs/sgx-setup.html" class="security-link">Learn About SGX →</a>
+                    </div>
+
+                    <div class="security-feature">
+                        <div class="feature-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/>
+                                <line x1="12" y1="22.08" x2="12" y2="12"/>
+                            </svg>
+                        </div>
+                        <h3>Multi-Signature Controls</h3>
+                        <p>Critical operations require multiple signatures, preventing single points of failure in system management.</p>
+                        <a href="#multisig" class="security-link">Security Architecture →</a>
+                    </div>
+
+                    <div class="security-feature">
+                        <div class="feature-icon">
+                            <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+                                <path d="M9 12l2 2 4-4"/>
+                            </svg>
+                        </div>
+                        <h3>Real-time Monitoring</h3>
+                        <p>24/7 monitoring of all contracts and services with automated threat detection and response systems.</p>
+                        <a href="#monitoring" class="security-link">Monitoring Details →</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Measures -->
+        <section class="security-measures">
+            <div class="container">
+                <h2 class="section-title">Comprehensive Security Measures</h2>
+                
+                <div class="measures-grid">
+                    <div class="measure-category">
+                        <h3>Smart Contract Security</h3>
+                        <ul class="security-list">
+                            <li>Formal verification of critical contracts</li>
+                            <li>Automated vulnerability scanning</li>
+                            <li>Bug bounty program with rewards up to $100,000</li>
+                            <li>Immutable contract deployment with upgrade mechanisms</li>
+                            <li>Emergency pause functionality</li>
+                        </ul>
+                    </div>
+
+                    <div class="measure-category">
+                        <h3>Infrastructure Security</h3>
+                        <ul class="security-list">
+                            <li>DDoS protection and rate limiting</li>
+                            <li>End-to-end encryption for all communications</li>
+                            <li>Regular penetration testing</li>
+                            <li>Secure key management with HSM</li>
+                            <li>Compliance with security standards</li>
+                        </ul>
+                    </div>
+
+                    <div class="measure-category">
+                        <h3>Operational Security</h3>
+                        <ul class="security-list">
+                            <li>Strict access controls and authentication</li>
+                            <li>Regular security training for team members</li>
+                            <li>Incident response procedures</li>
+                            <li>Secure development lifecycle</li>
+                            <li>Code review requirements</li>
+                        </ul>
+                    </div>
+
+                    <div class="measure-category">
+                        <h3>User Security</h3>
+                        <ul class="security-list">
+                            <li>Secure wallet integration guidelines</li>
+                            <li>Transaction simulation before execution</li>
+                            <li>Clear risk warnings and disclosures</li>
+                            <li>Educational resources on security</li>
+                            <li>Phishing protection measures</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Audit Reports -->
+        <section id="audits" class="audit-section">
+            <div class="container">
+                <h2 class="section-title">Security Audits</h2>
+                <p class="section-subtitle">All our smart contracts are audited by leading security firms</p>
+                
+                <div class="audits-grid">
+                    <div class="audit-card">
+                        <div class="audit-header">
+                            <div class="audit-firm">CertiK</div>
+                            <div class="audit-date">January 2025</div>
+                        </div>
+                        <h4>Core Service Contracts</h4>
+                        <p>Comprehensive audit of service registry, automation, and core infrastructure contracts.</p>
+                        <div class="audit-stats">
+                            <div class="audit-stat">
+                                <span class="stat-label">Issues Found</span>
+                                <span class="stat-value">0 Critical</span>
+                            </div>
+                            <div class="audit-stat">
+                                <span class="stat-label">Score</span>
+                                <span class="stat-value">98/100</span>
+                            </div>
+                        </div>
+                        <a href="/audits/certik-core-2025.pdf" class="neo-btn neo-btn-secondary">View Report</a>
+                    </div>
+
+                    <div class="audit-card">
+                        <div class="audit-header">
+                            <div class="audit-firm">Trail of Bits</div>
+                            <div class="audit-date">December 2024</div>
+                        </div>
+                        <h4>Cross-Chain Bridge</h4>
+                        <p>Security assessment of cross-chain communication and asset bridging mechanisms.</p>
+                        <div class="audit-stats">
+                            <div class="audit-stat">
+                                <span class="stat-label">Issues Found</span>
+                                <span class="stat-value">0 Critical</span>
+                            </div>
+                            <div class="audit-stat">
+                                <span class="stat-label">Score</span>
+                                <span class="stat-value">96/100</span>
+                            </div>
+                        </div>
+                        <a href="/audits/tob-bridge-2024.pdf" class="neo-btn neo-btn-secondary">View Report</a>
+                    </div>
+
+                    <div class="audit-card">
+                        <div class="audit-header">
+                            <div class="audit-firm">Consensys Diligence</div>
+                            <div class="audit-date">November 2024</div>
+                        </div>
+                        <h4>DeFi Service Suite</h4>
+                        <p>Audit of lending, marketplace, and tokenization contracts with focus on economic security.</p>
+                        <div class="audit-stats">
+                            <div class="audit-stat">
+                                <span class="stat-label">Issues Found</span>
+                                <span class="stat-value">1 Medium</span>
+                            </div>
+                            <div class="audit-stat">
+                                <span class="stat-label">Score</span>
+                                <span class="stat-value">94/100</span>
+                            </div>
+                        </div>
+                        <a href="/audits/consensys-defi-2024.pdf" class="neo-btn neo-btn-secondary">View Report</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Bug Bounty -->
+        <section class="bug-bounty">
+            <div class="container">
+                <div class="bounty-content">
+                    <div class="bounty-info">
+                        <h2>Bug Bounty Program</h2>
+                        <p>Help us maintain the highest security standards by reporting vulnerabilities</p>
+                        
+                        <div class="bounty-rewards">
+                            <h3>Reward Tiers</h3>
+                            <div class="reward-tier">
+                                <span class="tier-level critical">Critical</span>
+                                <span class="tier-amount">Up to $100,000</span>
+                            </div>
+                            <div class="reward-tier">
+                                <span class="tier-level high">High</span>
+                                <span class="tier-amount">Up to $50,000</span>
+                            </div>
+                            <div class="reward-tier">
+                                <span class="tier-level medium">Medium</span>
+                                <span class="tier-amount">Up to $10,000</span>
+                            </div>
+                            <div class="reward-tier">
+                                <span class="tier-level low">Low</span>
+                                <span class="tier-amount">Up to $1,000</span>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bounty-cta">
+                        <h3>How to Participate</h3>
+                        <p>Review our bug bounty rules and submit vulnerabilities through our secure portal.</p>
+                        <a href="https://immunefi.com/bounty/neoservicelayer" class="neo-btn neo-btn-primary neo-btn-lg">
+                            Report Vulnerability
+                        </a>
+                        <a href="/docs/bug-bounty.html" class="neo-btn neo-btn-ghost">
+                            View Rules
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Security Resources -->
+        <section class="security-resources">
+            <div class="container">
+                <h2 class="section-title">Security Resources</h2>
+                
+                <div class="resources-grid">
+                    <a href="/docs/security-best-practices.html" class="resource-card">
+                        <div class="resource-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M12 14l9-5-9-5-9 5 9 5z"/>
+                                <path d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"/>
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 14l9-5-9-5-9 5 9 5zm0 0l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14zm-4 6v-7.5l4-2.222"/>
+                            </svg>
+                        </div>
+                        <h3>Security Best Practices</h3>
+                        <p>Learn how to secure your applications when building on Neo Service Layer</p>
+                    </a>
+
+                    <a href="/docs/incident-response.html" class="resource-card">
+                        <div class="resource-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M18.364 5.636A9 9 0 115.636 18.364 9 9 0 0118.364 5.636zM12 4a8 8 0 100 16 8 8 0 000-16zm-1 11a1 1 0 102 0 1 1 0 00-2 0zm.5-8.25a.75.75 0 00-1.5 0v4.5a.75.75 0 001.5 0v-4.5z" clip-rule="evenodd"/>
+                            </svg>
+                        </div>
+                        <h3>Incident Response</h3>
+                        <p>Our procedures for handling and communicating security incidents</p>
+                    </a>
+
+                    <a href="/docs/security-faq.html" class="resource-card">
+                        <div class="resource-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path fill-rule="evenodd" d="M2 5a2 2 0 012-2h8a2 2 0 012 2v10a2 2 0 002 2H4a2 2 0 01-2-2V5zm3 1h6v4H5V6zm6 6H5v2h6v-2z" clip-rule="evenodd"/>
+                                <path d="M15 7h1a2 2 0 012 2v5.5a1.5 1.5 0 01-3 0V7z"/>
+                            </svg>
+                        </div>
+                        <h3>Security FAQ</h3>
+                        <p>Frequently asked questions about Neo Service Layer security</p>
+                    </a>
+
+                    <a href="mailto:security@neoservicelayer.com" class="resource-card">
+                        <div class="resource-icon">
+                            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+                                <path d="M2.003 5.884L10 9.882l7.997-3.998A2 2 0 0016 4H4a2 2 0 00-1.997 1.884z"/>
+                                <path d="M18 8.118l-8 4-8-4V14a2 2 0 002 2h12a2 2 0 002-2V8.118z"/>
+                            </svg>
+                        </div>
+                        <h3>Security Contact</h3>
+                        <p>Report security concerns directly to our security team</p>
+                    </a>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul class="footer-links">
+                        <li><a href="/#features">Features</a></li>
+                        <li><a href="/#services">Services</a></li>
+                        <li><a href="/docs/quick-start.html">Documentation</a></li>
+                        <li><a href="/app.html">Launch App</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="/docs/api-reference.html">API Reference</a></li>
+                        <li><a href="https://github.com/r3e-network/neo-service-layer">GitHub</a></li>
+                        <li><a href="/security.html">Security</a></li>
+                        <li><a href="/roadmap.html">Roadmap</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="/about.html">About</a></li>
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://twitter.com/neoservicelayer">Twitter</a></li>
+                        <li><a href="https://discord.gg/neoservicelayer">Discord</a></li>
+                        <li><a href="https://t.me/neoservicelayer">Telegram</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* Security Page Specific Styles */
+        .security-page {
+            padding-top: 80px;
+            background: var(--neo-black);
+        }
+
+        /* Security Hero */
+        .security-hero {
+            padding: var(--neo-space-16) 0 var(--neo-space-12);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .security-hero::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle at center, rgba(255, 71, 87, 0.1) 0%, transparent 70%);
+            animation: rotate 30s linear infinite;
+        }
+
+        @keyframes rotate {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+
+        .security-hero-content {
+            text-align: center;
+            position: relative;
+            z-index: 1;
+        }
+
+        .security-title {
+            font-size: var(--neo-text-5xl);
+            font-weight: var(--neo-font-black);
+            margin: var(--neo-space-6) 0;
+            line-height: 1.1;
+        }
+
+        .security-subtitle {
+            font-size: var(--neo-text-xl);
+            color: var(--neo-gray-300);
+            max-width: 700px;
+            margin: 0 auto;
+        }
+
+        /* Security Features */
+        .security-features {
+            padding: var(--neo-space-16) 0;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--neo-space-6);
+        }
+
+        .security-feature {
+            background: var(--neo-gray-900);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+            padding: var(--neo-space-8);
+            text-align: center;
+            transition: all var(--neo-duration-300) var(--neo-ease-out);
+        }
+
+        .security-feature:hover {
+            transform: translateY(-5px);
+            border-color: var(--neo-error);
+            box-shadow: 0 0 30px rgba(255, 71, 87, 0.1);
+        }
+
+        .feature-icon {
+            width: 80px;
+            height: 80px;
+            margin: 0 auto var(--neo-space-6);
+            background: linear-gradient(135deg, var(--neo-error), var(--neo-primary));
+            border-radius: var(--neo-radius-xl);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .feature-icon svg {
+            color: var(--neo-white);
+        }
+
+        .security-feature h3 {
+            font-size: var(--neo-text-xl);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .security-feature p {
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-4);
+            line-height: var(--neo-leading-relaxed);
+        }
+
+        .security-link {
+            color: var(--neo-primary);
+            text-decoration: none;
+            font-weight: var(--neo-font-medium);
+            transition: color var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .security-link:hover {
+            color: var(--neo-primary-light);
+        }
+
+        /* Security Measures */
+        .security-measures {
+            padding: var(--neo-space-16) 0;
+            background: var(--neo-gray-900);
+        }
+
+        .measures-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--neo-space-8);
+            margin-top: var(--neo-space-8);
+        }
+
+        .measure-category {
+            background: var(--neo-black);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+            padding: var(--neo-space-8);
+        }
+
+        .measure-category h3 {
+            font-size: var(--neo-text-xl);
+            margin-bottom: var(--neo-space-6);
+            color: var(--neo-primary);
+        }
+
+        .security-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .security-list li {
+            position: relative;
+            padding-left: var(--neo-space-8);
+            margin-bottom: var(--neo-space-3);
+            color: var(--neo-gray-300);
+            line-height: var(--neo-leading-relaxed);
+        }
+
+        .security-list li::before {
+            content: "✓";
+            position: absolute;
+            left: 0;
+            color: var(--neo-success);
+            font-weight: var(--neo-font-bold);
+            font-size: var(--neo-text-lg);
+        }
+
+        /* Audit Section */
+        .audit-section {
+            padding: var(--neo-space-16) 0;
+        }
+
+        .audits-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+            gap: var(--neo-space-6);
+            margin-top: var(--neo-space-8);
+        }
+
+        .audit-card {
+            background: var(--neo-gray-900);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+            padding: var(--neo-space-8);
+            transition: all var(--neo-duration-300) var(--neo-ease-out);
+        }
+
+        .audit-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neo-primary);
+        }
+
+        .audit-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .audit-firm {
+            font-weight: var(--neo-font-bold);
+            color: var(--neo-primary);
+        }
+
+        .audit-date {
+            font-size: var(--neo-text-sm);
+            color: var(--neo-gray-400);
+        }
+
+        .audit-card h4 {
+            font-size: var(--neo-text-lg);
+            margin-bottom: var(--neo-space-3);
+        }
+
+        .audit-card p {
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-6);
+            line-height: var(--neo-leading-relaxed);
+        }
+
+        .audit-stats {
+            display: flex;
+            gap: var(--neo-space-6);
+            margin-bottom: var(--neo-space-6);
+        }
+
+        .audit-stat {
+            text-align: center;
+        }
+
+        .stat-label {
+            display: block;
+            font-size: var(--neo-text-sm);
+            color: var(--neo-gray-400);
+            margin-bottom: var(--neo-space-1);
+        }
+
+        .stat-value {
+            font-size: var(--neo-text-lg);
+            font-weight: var(--neo-font-bold);
+            color: var(--neo-success);
+        }
+
+        /* Bug Bounty */
+        .bug-bounty {
+            padding: var(--neo-space-16) 0;
+            background: var(--neo-gray-900);
+        }
+
+        .bounty-content {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--neo-space-12);
+            align-items: center;
+        }
+
+        .bounty-info h2 {
+            font-size: var(--neo-text-4xl);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .bounty-info p {
+            font-size: var(--neo-text-lg);
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-8);
+        }
+
+        .bounty-rewards h3 {
+            font-size: var(--neo-text-xl);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .reward-tier {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: var(--neo-space-3) 0;
+            border-bottom: 1px solid var(--neo-gray-800);
+        }
+
+        .tier-level {
+            padding: var(--neo-space-1) var(--neo-space-3);
+            border-radius: var(--neo-radius-full);
+            font-size: var(--neo-text-sm);
+            font-weight: var(--neo-font-semibold);
+        }
+
+        .tier-level.critical {
+            background: rgba(255, 71, 87, 0.2);
+            color: var(--neo-error);
+        }
+
+        .tier-level.high {
+            background: rgba(255, 184, 0, 0.2);
+            color: var(--neo-warning);
+        }
+
+        .tier-level.medium {
+            background: rgba(0, 168, 232, 0.2);
+            color: var(--neo-info);
+        }
+
+        .tier-level.low {
+            background: rgba(0, 212, 170, 0.2);
+            color: var(--neo-success);
+        }
+
+        .tier-amount {
+            font-weight: var(--neo-font-bold);
+            color: var(--neo-white);
+        }
+
+        .bounty-cta {
+            text-align: center;
+            padding: var(--neo-space-8);
+            background: var(--neo-black);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+        }
+
+        .bounty-cta h3 {
+            font-size: var(--neo-text-2xl);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .bounty-cta p {
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-6);
+        }
+
+        .bounty-cta .neo-btn {
+            margin: var(--neo-space-2);
+        }
+
+        /* Security Resources */
+        .security-resources {
+            padding: var(--neo-space-16) 0;
+        }
+
+        .resources-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--neo-space-6);
+            margin-top: var(--neo-space-8);
+        }
+
+        .resource-card {
+            background: var(--neo-gray-900);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-xl);
+            padding: var(--neo-space-8);
+            text-align: center;
+            text-decoration: none;
+            transition: all var(--neo-duration-300) var(--neo-ease-out);
+        }
+
+        .resource-card:hover {
+            transform: translateY(-5px);
+            border-color: var(--neo-primary);
+            box-shadow: var(--neo-shadow-lg);
+        }
+
+        .resource-icon {
+            width: 60px;
+            height: 60px;
+            margin: 0 auto var(--neo-space-4);
+            background: var(--neo-gradient-primary);
+            border-radius: var(--neo-radius-lg);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .resource-icon svg {
+            color: var(--neo-white);
+        }
+
+        .resource-card h3 {
+            font-size: var(--neo-text-lg);
+            color: var(--neo-white);
+            margin-bottom: var(--neo-space-3);
+        }
+
+        .resource-card p {
+            font-size: var(--neo-text-sm);
+            color: var(--neo-gray-400);
+            line-height: var(--neo-leading-relaxed);
+        }
+
+        /* Responsive */
+        @media (max-width: 1024px) {
+            .bounty-content {
+                grid-template-columns: 1fr;
+                gap: var(--neo-space-8);
+            }
+        }
+
+        @media (max-width: 768px) {
+            .security-title {
+                font-size: var(--neo-text-4xl);
+            }
+
+            .features-grid,
+            .measures-grid,
+            .audits-grid,
+            .resources-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+
+    <script src="/src/scripts/main.js"></script>
+</body>
+</html>

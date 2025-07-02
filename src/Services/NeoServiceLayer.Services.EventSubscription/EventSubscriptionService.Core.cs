@@ -1,8 +1,10 @@
-﻿using System.Text.Json;
+﻿using System.Collections.Concurrent;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.Services.EventSubscription.Models;
 
 namespace NeoServiceLayer.Services.EventSubscription;
 
@@ -15,6 +17,13 @@ public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IE
     private readonly IServiceConfiguration _configuration;
     private readonly Dictionary<string, EventSubscription> _subscriptionCache = new();
     private readonly Dictionary<string, List<EventData>> _eventCache = new();
+    private readonly ConcurrentDictionary<string, EventSubscription> _subscriptions = new();
+    private readonly ConcurrentDictionary<string, HashSet<string>> _userSubscriptionIndex = new();
+    private readonly ConcurrentDictionary<string, HashSet<string>> _eventTypeIndex = new();
+    private readonly IServiceProvider? _serviceProvider;
+    private long _totalEventsProcessed;
+    private long _totalNotificationsSent;
+    private long _totalErrors;
     private int _requestCount;
     private int _successCount;
     private int _failureCount;
@@ -26,18 +35,24 @@ public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IE
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public EventSubscriptionService(
         IEnclaveManager enclaveManager,
         IServiceConfiguration configuration,
-        ILogger<EventSubscriptionService> logger)
+        ILogger<EventSubscriptionService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("EventSubscription", "Event Subscription Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
         _lastRequestTime = DateTime.MinValue;
+        _totalEventsProcessed = 0;
+        _totalNotificationsSent = 0;
+        _totalErrors = 0;
 
         // Add capabilities
         AddCapability<IEventSubscriptionService>();
@@ -58,6 +73,9 @@ public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IE
         try
         {
             Logger.LogInformation("Initializing Event Subscription Service...");
+
+            // Initialize persistent storage
+            await InitializePersistentStorageAsync();
 
             // Initialize service-specific components
             await RefreshSubscriptionCacheAsync();
@@ -366,5 +384,15 @@ public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IE
             Logger.LogError(ex, "Health check failed");
             return ServiceHealth.Unhealthy;
         }
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.EventSubscription.Models;
 
 namespace NeoServiceLayer.Services.EventSubscription;
 
@@ -49,14 +50,14 @@ public interface IEventSubscriptionService : IEnclaveService, IBlockchainService
     Task<IEnumerable<EventSubscription>> ListSubscriptionsAsync(int skip, int take, BlockchainType blockchainType);
 
     /// <summary>
-    /// Gets events for a subscription.
+    /// Lists events for a subscription.
     /// </summary>
     /// <param name="subscriptionId">The subscription ID.</param>
     /// <param name="skip">The number of events to skip.</param>
     /// <param name="take">The number of events to take.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The list of events.</returns>
-    Task<IEnumerable<EventData>> GetEventsAsync(string subscriptionId, int skip, int take, BlockchainType blockchainType);
+    Task<IEnumerable<EventData>> ListEventsAsync(string subscriptionId, int skip, int take, BlockchainType blockchainType);
 
     /// <summary>
     /// Acknowledges an event.
@@ -146,6 +147,26 @@ public class EventSubscription
     /// Gets or sets the custom metadata.
     /// </summary>
     public Dictionary<string, string> CustomMetadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the event filters.
+    /// </summary>
+    public List<EventFilter> Filters { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the webhook configuration.
+    /// </summary>
+    public WebhookConfig? WebhookConfig { get; set; }
+    
+    /// <summary>
+    /// Gets or sets whether the subscription is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+    
+    /// <summary>
+    /// Gets or sets the user ID who owns this subscription.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
 }
 
 /// <summary>

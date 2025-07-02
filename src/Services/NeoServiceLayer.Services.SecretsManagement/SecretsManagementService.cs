@@ -11,7 +11,7 @@ namespace NeoServiceLayer.Services.SecretsManagement;
 /// <summary>
 /// Implementation of the Secrets Management service.
 /// </summary>
-public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsManagementService, ISecretsManager
+public partial class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsManagementService, ISecretsManager
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
@@ -21,6 +21,9 @@ public class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsMa
     private int _successCount;
     private int _failureCount;
     private DateTime _lastRequestTime;
+    private int _totalSecretsCreated;
+    private int _totalSecretsAccessed;
+    private int _totalSecretsRotated;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="SecretsManagementService"/> class.

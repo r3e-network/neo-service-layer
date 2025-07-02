@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>API Complete Reference - Neo Service Layer</title>
+    <meta name="description" content="Complete REST API documentation for Neo Service Layer with authentication, endpoints, and service specifications.">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/components.css">
+    <link rel="stylesheet" href="../src/styles/navigation.css">
+    <link rel="stylesheet" href="../src/styles/docs.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <a href="#main-content" class="skip-link">Skip to main content</a>
+    
+    <nav class="navbar" id="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">⚡</span>
+                Neo Service Layer
+            </a>
+            
+            <div class="nav-menu" id="nav-menu">
+                <a href="/" class="nav-link">Home</a>
+                <div class="nav-dropdown">
+                    <a href="/docs/" class="nav-link active">Documentation</a>
+                    <div class="nav-dropdown-menu">
+                        <a href="/docs/quick-start.html" class="nav-dropdown-item">Quick Start</a>
+                        <a href="/docs/sdk-v2-reference.html" class="nav-dropdown-item">SDK v2 Reference</a>
+                        <a href="/docs/api-complete-reference.html" class="nav-dropdown-item">API Reference</a>
+                        <a href="/docs/deployment-complete-guide.html" class="nav-dropdown-item">Deployment Guide</a>
+                        <a href="/docs/migration-guide.html" class="nav-dropdown-item">Migration Guide</a>
+                    </div>
+                </div>
+                <a href="/app.html" class="nav-link">Dashboard</a>
+                <a href="https://github.com/neo-service-layer" class="nav-link" target="_blank">
+                    <i class="fab fa-github"></i> GitHub
+                </a>
+            </div>
+            
+            <div class="nav-actions">
+                <button class="neo-btn neo-btn-ghost neo-btn-sm" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="fas fa-moon"></i>
+                </button>
+                <a href="/app.html" class="neo-btn neo-btn-primary neo-btn-sm">Launch App</a>
+                <button class="nav-toggle" id="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="docs-layout">
+        <aside class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3>API Reference</h3>
+                <button class="docs-sidebar-toggle" id="sidebar-toggle" aria-label="Toggle sidebar">
+                    <i class="fas fa-bars"></i>
+                </button>
+            </div>
+            
+            <nav class="docs-nav">
+                <div class="docs-nav-section">
+                    <h4>Getting Started</h4>
+                    <ul>
+                        <li><a href="#introduction" class="docs-nav-link active">Introduction</a></li>
+                        <li><a href="#authentication" class="docs-nav-link">Authentication</a></li>
+                        <li><a href="#base-urls" class="docs-nav-link">Base URLs</a></li>
+                        <li><a href="#rate-limiting" class="docs-nav-link">Rate Limiting</a></li>
+                    </ul>
+                </div>
+                
+                <div class="docs-nav-section">
+                    <h4>Core Services</h4>
+                    <ul>
+                        <li><a href="#storage-api" class="docs-nav-link">Storage API</a></li>
+                        <li><a href="#oracle-api" class="docs-nav-link">Oracle API</a></li>
+                        <li><a href="#compute-api" class="docs-nav-link">Compute API</a></li>
+                        <li><a href="#identity-api" class="docs-nav-link">Identity API</a></li>
+                        <li><a href="#analytics-api" class="docs-nav-link">Analytics API</a></li>
+                    </ul>
+                </div>
+                
+                <div class="docs-nav-section">
+                    <h4>DeFi Services</h4>
+                    <ul>
+                        <li><a href="#lending-api" class="docs-nav-link">Lending API</a></li>
+                        <li><a href="#marketplace-api" class="docs-nav-link">Marketplace API</a></li>
+                        <li><a href="#tokenization-api" class="docs-nav-link">Tokenization API</a></li>
+                        <li><a href="#insurance-api" class="docs-nav-link">Insurance API</a></li>
+                    </ul>
+                </div>
+                
+                <div class="docs-nav-section">
+                    <h4>Advanced</h4>
+                    <ul>
+                        <li><a href="#websocket-api" class="docs-nav-link">WebSocket API</a></li>
+                        <li><a href="#error-responses" class="docs-nav-link">Error Responses</a></li>
+                        <li><a href="#webhooks" class="docs-nav-link">Webhooks</a></li>
+                        <li><a href="#openapi-spec" class="docs-nav-link">OpenAPI Spec</a></li>
+                    </ul>
+                </div>
+            </nav>
+        </aside>
+
+        <main class="docs-main" id="main-content">
+            <div class="docs-content">
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ol>
+                        <li><a href="/docs/">Documentation</a></li>
+                        <li><a href="/docs/api-complete-reference.html" aria-current="page">API Reference</a></li>
+                    </ol>
+                </nav>
+
+                <header class="docs-header">
+                    <h1>Neo Service Layer API Complete Reference</h1>
+                    <p class="docs-lead">
+                        Comprehensive REST API documentation for all 22+ Neo Service Layer microservices, 
+                        including authentication, endpoints, and complete request/response specifications.
+                    </p>
+                    <div class="docs-meta">
+                        <span><i class="fas fa-clock"></i> Last updated: January 30, 2024</span>
+                        <span><i class="fas fa-code-branch"></i> Version: 1.5.0</span>
+                        <span><i class="fas fa-book"></i> Reading time: 60 min</span>
+                    </div>
+                </header>
+
+                <div class="neo-alert neo-alert-info">
+                    <i class="fas fa-info-circle"></i>
+                    <div>
+                        <strong>API v1.5 Features:</strong> JWT authentication, rate limiting, WebSocket support, 
+                        and comprehensive error handling. <a href="/docs/migration-guide.html">Migration guide →</a>
+                    </div>
+                </div>
+
+                <div id="markdown-content" class="markdown-body">
+                    <div class="neo-loading">
+                        <div class="neo-spinner"></div>
+                        <p>Loading API documentation...</p>
+                    </div>
+                </div>
+
+                <nav class="docs-footer-nav">
+                    <a href="/docs/sdk-v2-reference.html" class="docs-footer-link docs-footer-prev">
+                        <i class="fas fa-arrow-left"></i>
+                        <div>
+                            <span>Previous</span>
+                            <strong>SDK v2 Reference</strong>
+                        </div>
+                    </a>
+                    <a href="/docs/deployment-complete-guide.html" class="docs-footer-link docs-footer-next">
+                        <div>
+                            <span>Next</span>
+                            <strong>Deployment Guide</strong>
+                        </div>
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <aside class="docs-toc">
+                <h4>On this page</h4>
+                <nav id="table-of-contents"></nav>
+            </aside>
+        </main>
+    </div>
+
+    <button class="back-to-top" id="back-to-top" aria-label="Back to top">
+        <i class="fas fa-arrow-up"></i>
+    </button>
+
+    <script src="../src/scripts/navigation.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+    <script>
+        async function loadMarkdown() {
+            try {
+                const response = await fetch('/docs/api-complete-reference.md');
+                const markdown = await response.text();
+                
+                marked.setOptions({
+                    highlight: function(code, lang) {
+                        if (Prism.languages[lang]) {
+                            return Prism.highlight(code, Prism.languages[lang], lang);
+                        }
+                        return code;
+                    },
+                    breaks: true,
+                    gfm: true
+                });
+                
+                const html = marked.parse(markdown);
+                document.getElementById('markdown-content').innerHTML = html;
+                
+                generateTOC();
+                Prism.highlightAll();
+                setupSmoothScrolling();
+                
+            } catch (error) {
+                console.error('Error loading documentation:', error);
+                document.getElementById('markdown-content').innerHTML = `
+                    <div class="neo-alert neo-alert-error">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <div>
+                            <strong>Error loading documentation</strong>
+                            <p>Please try refreshing the page or contact support if the issue persists.</p>
+                        </div>
+                    </div>
+                `;
+            }
+        }
+        
+        function generateTOC() {
+            const toc = document.getElementById('table-of-contents');
+            const headings = document.querySelectorAll('#markdown-content h2, #markdown-content h3');
+            const tocHTML = [];
+            
+            headings.forEach(heading => {
+                const id = heading.textContent.toLowerCase()
+                    .replace(/[^\w\s-]/g, '')
+                    .replace(/\s+/g, '-');
+                heading.id = id;
+                
+                const level = heading.tagName.toLowerCase();
+                const className = level === 'h2' ? 'toc-h2' : 'toc-h3';
+                
+                tocHTML.push(`
+                    <a href="#${id}" class="toc-link ${className}">
+                        ${heading.textContent}
+                    </a>
+                `);
+            });
+            
+            toc.innerHTML = tocHTML.join('');
+        }
+        
+        function setupSmoothScrolling() {
+            document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+                anchor.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    const target = document.querySelector(this.getAttribute('href'));
+                    if (target) {
+                        const offset = 100;
+                        const targetPosition = target.offsetTop - offset;
+                        window.scrollTo({
+                            top: targetPosition,
+                            behavior: 'smooth'
+                        });
+                    }
+                });
+            });
+        }
+        
+        // Theme toggle functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'dark';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            if (themeToggle) {
+                themeToggle.addEventListener('click', () => {
+                    const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                    document.documentElement.setAttribute('data-theme', theme);
+                    localStorage.setItem('theme', theme);
+                    
+                    const icon = themeToggle.querySelector('i');
+                    icon.className = theme === 'dark' ? 'fas fa-moon' : 'fas fa-sun';
+                });
+            }
+        });
+        
+        // Initialize
+        loadMarkdown();
+    </script>
+</body>
+</html>

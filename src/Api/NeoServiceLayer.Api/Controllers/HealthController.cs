@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Health;
 
 namespace NeoServiceLayer.Api.Controllers;
 

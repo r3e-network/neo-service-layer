@@ -60,7 +60,7 @@ public class VerifiableRandomResult
 /// <summary>
 /// Implementation of the Randomness service.
 /// </summary>
-public class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessService
+public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessService
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IBlockchainClientFactory _blockchainClientFactory;
@@ -78,16 +78,19 @@ public class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessServic
     /// <param name="blockchainClientFactory">The blockchain client factory.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="serviceProvider">The service provider.</param>
     public RandomnessService(
         IEnclaveManager enclaveManager,
         IBlockchainClientFactory blockchainClientFactory,
         IServiceConfiguration configuration,
-        ILogger<RandomnessService> logger)
+        ILogger<RandomnessService> logger,
+        IServiceProvider? serviceProvider = null)
         : base("Randomness", "Provably Fair Randomness Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _blockchainClientFactory = blockchainClientFactory;
         _configuration = configuration;
+        _serviceProvider = serviceProvider;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
@@ -399,6 +402,9 @@ public class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessServic
         // Initialize the service
         Logger.LogInformation("Initializing Randomness service...");
 
+        // Initialize persistent storage
+        await InitializePersistentStorageAsync();
+
         // Load configuration
         var maxRandomNumberRange = _configuration.GetValue("Randomness:MaxRandomNumberRange", "1000000");
         var maxRandomBytesLength = _configuration.GetValue("Randomness:MaxRandomBytesLength", "1024");
@@ -464,5 +470,15 @@ public class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessServic
         UpdateMetric("StoredResultCount", _results.Count);
 
         return Task.CompletedTask;
+    }
+
+    /// <inheritdoc/>
+    protected override void Dispose(bool disposing)
+    {
+        if (disposing)
+        {
+            DisposePersistenceResources();
+        }
+        base.Dispose(disposing);
     }
 }

@@ -37,7 +37,7 @@ public class HealthStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(NodesStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(NodesStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);
@@ -61,7 +61,7 @@ public class HealthStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(AlertsStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(AlertsStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);
@@ -85,7 +85,7 @@ public class HealthStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(ThresholdsStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(ThresholdsStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);

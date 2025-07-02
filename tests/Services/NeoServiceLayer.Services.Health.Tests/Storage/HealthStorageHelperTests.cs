@@ -42,7 +42,7 @@ public class HealthStorageHelperTests
         var jsonData = JsonSerializer.Serialize(testNodes);
         var data = System.Text.Encoding.UTF8.GetBytes(jsonData);
 
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("health:nodes", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("health:nodes", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act
@@ -59,7 +59,7 @@ public class HealthStorageHelperTests
     public async Task LoadMonitoredNodesAsync_NoData_ReturnsEmptyDictionary()
     {
         // Arrange
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("health:nodes", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("health:nodes", BlockchainType.NeoN3))
             .ThrowsAsync(new KeyNotFoundException("No data found"));
 
         // Act
@@ -76,7 +76,7 @@ public class HealthStorageHelperTests
         // Arrange
         var invalidData = System.Text.Encoding.UTF8.GetBytes("invalid json");
 
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("health:nodes", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("health:nodes", BlockchainType.NeoN3))
             .Returns(Task.FromResult(invalidData));
 
         // Act
@@ -106,7 +106,7 @@ public class HealthStorageHelperTests
         var jsonData = JsonSerializer.Serialize(testAlerts);
         var data = System.Text.Encoding.UTF8.GetBytes(jsonData);
 
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("health:alerts", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("health:alerts", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act
@@ -135,7 +135,7 @@ public class HealthStorageHelperTests
         var jsonData = JsonSerializer.Serialize(testThresholds);
         var data = System.Text.Encoding.UTF8.GetBytes(jsonData);
 
-        _mockStorageService.Setup(x => x.RetrieveDataAsync("health:thresholds", BlockchainType.NeoN3))
+        _mockStorageService.Setup(x => x.GetDataAsync("health:thresholds", BlockchainType.NeoN3))
             .Returns(Task.FromResult(data));
 
         // Act

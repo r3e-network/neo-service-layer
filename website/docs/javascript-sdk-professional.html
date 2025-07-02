@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JavaScript SDK - Neo Service Layer</title>
+    <meta name="description" content="Complete JavaScript SDK documentation for Neo Service Layer with TypeScript support, real-time features, and comprehensive examples.">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    
+    <!-- Search Styles -->
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Meta -->
+    <meta property="og:title" content="JavaScript SDK - Neo Service Layer">
+    <meta property="og:description" content="Complete JavaScript SDK documentation with TypeScript support">
+    <meta property="og:type" content="website">
+</head>
+<body>
+    <!-- Documentation Header -->
+    <header class="docs-header-nav">
+        <div class="docs-header-container">
+            <div class="docs-header-left">
+                <a href="/" class="docs-brand">
+                    <div class="docs-brand-icon">⚡</div>
+                    <div class="docs-brand-text">
+                        <div class="docs-brand-name">Neo Service Layer</div>
+                        <div class="docs-brand-subtitle">Documentation</div>
+                    </div>
+                </a>
+                
+                <div class="docs-version-selector">
+                    <button class="docs-version-button" id="version-selector">
+                        <span>v2.0</span>
+                        <i class="ti ti-chevron-down"></i>
+                    </button>
+                    <div class="docs-version-menu" id="version-menu">
+                        <a href="#" class="docs-version-item active">
+                            <span>v2.0</span>
+                            <span class="version-badge">Latest</span>
+                        </a>
+                        <a href="#" class="docs-version-item">
+                            <span>v1.5</span>
+                            <span class="version-badge-old">Stable</span>
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-center">
+                <div class="docs-search-container">
+                    <div class="docs-search-input-wrapper">
+                        <i class="ti ti-search docs-search-icon"></i>
+                        <input 
+                            type="text" 
+                            placeholder="Search SDK documentation..." 
+                            class="docs-search-input"
+                            id="docs-search"
+                        >
+                        <div class="docs-search-shortcut">
+                            <kbd>⌘</kbd><kbd>K</kbd>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="docs-header-right">
+                <button class="docs-theme-toggle" id="theme-toggle" aria-label="Toggle theme">
+                    <i class="ti ti-sun docs-theme-icon-light"></i>
+                    <i class="ti ti-moon docs-theme-icon-dark"></i>
+                </button>
+                <a href="https://github.com/neo-service-layer/javascript-sdk" class="docs-github-link" target="_blank" rel="noopener">
+                    <i class="ti ti-brand-github"></i>
+                </a>
+                <a href="/app.html" class="docs-cta-button">
+                    Try Live Demo
+                    <i class="ti ti-external-link"></i>
+                </a>
+                <button class="docs-mobile-menu-toggle" id="mobile-menu-toggle" aria-label="Toggle navigation">
+                    <i class="ti ti-menu-2"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Documentation Container -->
+    <div class="docs-container">
+        <!-- Sidebar Navigation -->
+        <nav class="docs-sidebar" id="docs-sidebar">
+            <div class="docs-sidebar-header">
+                <h3 class="docs-sidebar-title">JavaScript SDK</h3>
+                <div class="docs-sidebar-version">
+                    <span class="version-badge">v2.0.0</span>
+                    <span>Latest</span>
+                </div>
+            </div>
+            
+            <div class="docs-nav">
+                <!-- Getting Started -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Getting Started</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#installation" class="docs-nav-link active">
+                                <i class="ti ti-download"></i>
+                                Installation
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#quick-start" class="docs-nav-link">
+                                <i class="ti ti-zap"></i>
+                                Quick Start
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#configuration" class="docs-nav-link">
+                                <i class="ti ti-settings"></i>
+                                Configuration
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#authentication" class="docs-nav-link">
+                                <i class="ti ti-shield-check"></i>
+                                Authentication
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Core Services -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Core Services</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#storage-service" class="docs-nav-link">
+                                <i class="ti ti-database"></i>
+                                Storage Service
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#storage-store" class="docs-nav-sublink">store()</a></li>
+                                <li><a href="#storage-get" class="docs-nav-sublink">get()</a></li>
+                                <li><a href="#storage-update" class="docs-nav-sublink">update()</a></li>
+                                <li><a href="#storage-delete" class="docs-nav-sublink">delete()</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#oracle-service" class="docs-nav-link">
+                                <i class="ti ti-cloud-data-connection"></i>
+                                Oracle Service
+                            </a>
+                            <ul class="docs-nav-sublist">
+                                <li><a href="#oracle-request" class="docs-nav-sublink">requestData()</a></li>
+                                <li><a href="#oracle-subscribe" class="docs-nav-sublink">subscribe()</a></li>
+                                <li><a href="#oracle-feeds" class="docs-nav-sublink">getFeeds()</a></li>
+                            </ul>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#compute-service" class="docs-nav-link">
+                                <i class="ti ti-cpu"></i>
+                                Compute Service
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#identity-service" class="docs-nav-link">
+                                <i class="ti ti-user-check"></i>
+                                Identity Service
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- DeFi Services -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">DeFi Services</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#lending-service" class="docs-nav-link">
+                                <i class="ti ti-coins"></i>
+                                Lending Service
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#marketplace-service" class="docs-nav-link">
+                                <i class="ti ti-shopping-cart"></i>
+                                Marketplace Service
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#tokenization-service" class="docs-nav-link">
+                                <i class="ti ti-diamond"></i>
+                                Tokenization Service
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Advanced Features -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Advanced Features</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#websockets" class="docs-nav-link">
+                                <i class="ti ti-plug-connected"></i>
+                                WebSocket Events
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#batch-operations" class="docs-nav-link">
+                                <i class="ti ti-stack-2"></i>
+                                Batch Operations
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#error-handling" class="docs-nav-link">
+                                <i class="ti ti-alert-triangle"></i>
+                                Error Handling
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#typescript" class="docs-nav-link">
+                                <i class="ti ti-brand-typescript"></i>
+                                TypeScript Support
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Reference -->
+                <div class="docs-nav-section">
+                    <h4 class="docs-nav-section-title">Reference</h4>
+                    <ul class="docs-nav-list">
+                        <li class="docs-nav-item">
+                            <a href="#api-reference" class="docs-nav-link">
+                                <i class="ti ti-book"></i>
+                                API Reference
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#examples" class="docs-nav-link">
+                                <i class="ti ti-code-dots"></i>
+                                Examples
+                            </a>
+                        </li>
+                        <li class="docs-nav-item">
+                            <a href="#migration" class="docs-nav-link">
+                                <i class="ti ti-arrows-exchange"></i>
+                                Migration Guide
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+
+        <!-- Main Content -->
+        <main class="docs-main">
+            <div class="docs-content">
+                <!-- Breadcrumb -->
+                <nav class="docs-breadcrumb" aria-label="Breadcrumb">
+                    <ul class="docs-breadcrumb-list">
+                        <li class="docs-breadcrumb-item">
+                            <a href="/docs" class="docs-breadcrumb-link">Documentation</a>
+                        </li>
+                        <li class="docs-breadcrumb-separator">/</li>
+                        <li class="docs-breadcrumb-item">
+                            <span>JavaScript SDK</span>
+                        </li>
+                    </ul>
+                </nav>
+
+                <!-- Article Header -->
+                <header class="docs-article-header">
+                    <h1 class="docs-article-title">JavaScript SDK</h1>
+                    <p class="docs-article-description">
+                        The official JavaScript SDK for Neo Service Layer provides a comprehensive, type-safe interface 
+                        for interacting with all blockchain services. Built with modern JavaScript and full TypeScript support.
+                    </p>
+                    <div class="docs-article-meta">
+                        <div class="docs-meta-item">
+                            <i class="ti ti-package"></i>
+                            <span>@neo-service-layer/sdk</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-git-branch"></i>
+                            <span>v2.0.0</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-download"></i>
+                            <span>10K+ downloads/week</span>
+                        </div>
+                        <div class="docs-meta-item">
+                            <i class="ti ti-license"></i>
+                            <span>MIT License</span>
+                        </div>
+                    </div>
+                </header>
+
+                <!-- Installation Section -->
+                <section id="installation" class="docs-section">
+                    <h2>Installation</h2>
+                    <p>
+                        Install the Neo Service Layer JavaScript SDK using your preferred package manager. 
+                        The SDK supports Node.js 14+ and all modern browsers.
+                    </p>
+
+                    <div class="docs-alert docs-alert-info">
+                        <i class="ti ti-info-circle docs-alert-icon"></i>
+                        <div>
+                            <strong>TypeScript Support:</strong> The SDK includes full TypeScript definitions 
+                            and is written in TypeScript for the best developer experience.
+                        </div>
+                    </div>
+
+                    <h3>Package Managers</h3>
+                    
+                    <!-- npm installation -->
+                    <div class="code-block-header">
+                        <div class="code-block-title">npm</div>
+                        <button class="code-copy-button" onclick="copyCode('install-npm')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-npm" class="language-bash">npm install @neo-service-layer/sdk</code></pre>
+
+                    <!-- yarn installation -->
+                    <div class="code-block-header">
+                        <div class="code-block-title">Yarn</div>
+                        <button class="code-copy-button" onclick="copyCode('install-yarn')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-yarn" class="language-bash">yarn add @neo-service-layer/sdk</code></pre>
+
+                    <!-- pnpm installation -->
+                    <div class="code-block-header">
+                        <div class="code-block-title">pnpm</div>
+                        <button class="code-copy-button" onclick="copyCode('install-pnpm')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-pnpm" class="language-bash">pnpm add @neo-service-layer/sdk</code></pre>
+
+                    <h3>CDN Usage</h3>
+                    <p>For browser-only usage without a build step, you can use the CDN version:</p>
+
+                    <div class="code-block-header">
+                        <div class="code-block-title">CDN</div>
+                        <button class="code-copy-button" onclick="copyCode('install-cdn')">
+                            <i class="ti ti-copy"></i>
+                            Copy
+                        </button>
+                    </div>
+                    <pre><code id="install-cdn" class="language-html">&lt;script src="https://unpkg.com/@neo-service-layer/sdk@2.0.0/dist/neo-service-layer.min.js"&gt;&lt;/script&gt;</code></pre>
+
+                    <h3>Requirements</h3>
+                    <div class="docs-requirements-table">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>Environment</th>
+                                    <th>Minimum Version</th>
+                                    <th>Recommended</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Node.js</td>
+                                    <td>14.x</td>
+                                    <td>18.x or higher</td>
+                                </tr>
+                                <tr>
+                                    <td>TypeScript</td>
+                                    <td>4.0</td>
+                                    <td>5.0 or higher</td>
+                                </tr>
+                                <tr>
+                                    <td>Browsers</td>
+                                    <td>Chrome 90+, Firefox 88+, Safari 14+</td>
+                                    <td>Latest stable versions</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+
+                <!-- More sections would continue here... -->
+
+                <!-- Footer Navigation -->
+                <nav class="docs-footer-nav">
+                    <a href="/docs/index-professional.html" class="docs-footer-link docs-footer-link-prev">
+                        <i class="ti ti-arrow-left"></i>
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Previous</div>
+                            <div class="docs-footer-link-title">Documentation Home</div>
+                        </div>
+                    </a>
+                    <a href="/docs/api-complete-reference.html" class="docs-footer-link docs-footer-link-next">
+                        <div class="docs-footer-link-content">
+                            <div class="docs-footer-link-label">Next</div>
+                            <div class="docs-footer-link-title">API Reference</div>
+                        </div>
+                        <i class="ti ti-arrow-right"></i>
+                    </a>
+                </nav>
+            </div>
+
+            <!-- Table of Contents -->
+            <aside class="docs-toc">
+                <h4 class="docs-toc-title">On this page</h4>
+                <ul class="docs-toc-list" id="table-of-contents">
+                    <li class="docs-toc-item">
+                        <a href="#installation" class="docs-toc-link active">Installation</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#quick-start" class="docs-toc-link">Quick Start</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#configuration" class="docs-toc-link">Configuration</a>
+                    </li>
+                    <li class="docs-toc-item">
+                        <a href="#storage-service" class="docs-toc-link">Storage Service</a>
+                    </li>
+                </ul>
+            </aside>
+        </main>
+    </div>
+
+    <!-- Mobile overlay -->
+    <div class="docs-overlay" id="docs-overlay"></div>
+
+    <!-- Scripts -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-typescript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="../src/scripts/docs-search.js"></script>
+    
+    <script>
+        // Copy code function
+        function copyCode(elementId) {
+            const codeElement = document.getElementById(elementId);
+            const text = codeElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                const button = event.target.closest('.code-copy-button');
+                const originalHTML = button.innerHTML;
+                button.innerHTML = '<i class="ti ti-check"></i> Copied!';
+                button.style.color = 'var(--docs-accent-green)';
+                
+                setTimeout(() => {
+                    button.innerHTML = originalHTML;
+                    button.style.color = '';
+                }, 2000);
+            }).catch(err => {
+                console.error('Failed to copy: ', err);
+            });
+        }
+
+        // Initialize documentation functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // Theme toggle
+            const themeToggle = document.getElementById('theme-toggle');
+            const currentTheme = localStorage.getItem('theme') || 'light';
+            
+            document.documentElement.setAttribute('data-theme', currentTheme);
+            
+            themeToggle.addEventListener('click', () => {
+                const theme = document.documentElement.getAttribute('data-theme') === 'dark' ? 'light' : 'dark';
+                document.documentElement.setAttribute('data-theme', theme);
+                localStorage.setItem('theme', theme);
+            });
+
+            // Mobile menu toggle
+            const mobileMenuToggle = document.getElementById('mobile-menu-toggle');
+            const sidebar = document.getElementById('docs-sidebar');
+            const overlay = document.getElementById('docs-overlay');
+
+            mobileMenuToggle.addEventListener('click', () => {
+                sidebar.classList.toggle('open');
+                overlay.classList.toggle('open');
+            });
+
+            overlay.addEventListener('click', () => {
+                sidebar.classList.remove('open');
+                overlay.classList.remove('open');
+            });
+
+            // Initialize syntax highlighting
+            Prism.highlightAll();
+        });
+    </script>
+
+    <style>
+        /* Include all the header navigation styles from the previous example */
+        .docs-header-nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 64px;
+            background: var(--docs-bg-primary);
+            border-bottom: 1px solid var(--docs-border-light);
+            z-index: 50;
+        }
+
+        .docs-header-container {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            height: 100%;
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 0 24px;
+        }
+
+        .docs-header-left {
+            display: flex;
+            align-items: center;
+            gap: 24px;
+        }
+
+        .docs-brand {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-decoration: none;
+            color: var(--docs-text-primary);
+        }
+
+        .docs-brand-icon {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, #00d4aa 0%, #5f4bb6 100%);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 18px;
+            color: white;
+        }
+
+        .docs-brand-name {
+            font-size: 16px;
+            font-weight: 600;
+            line-height: 1;
+        }
+
+        .docs-brand-subtitle {
+            font-size: 12px;
+            color: var(--docs-text-secondary);
+            line-height: 1;
+        }
+
+        .docs-version-selector {
+            position: relative;
+        }
+
+        .docs-version-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 12px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-header-center {
+            flex: 1;
+            max-width: 600px;
+            margin: 0 48px;
+        }
+
+        .docs-search-container {
+            position: relative;
+        }
+
+        .docs-search-input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .docs-search-input {
+            width: 100%;
+            padding: 12px 16px 12px 44px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 8px;
+            font-size: 14px;
+            color: var(--docs-text-primary);
+            transition: all 0.15s ease;
+        }
+
+        .docs-search-icon {
+            position: absolute;
+            left: 16px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-search-shortcut {
+            position: absolute;
+            right: 12px;
+            display: flex;
+            gap: 2px;
+        }
+
+        .docs-search-shortcut kbd {
+            background: var(--docs-bg-tertiary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 4px;
+            padding: 2px 6px;
+            font-size: 11px;
+            color: var(--docs-text-muted);
+        }
+
+        .docs-header-right {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+
+        .docs-theme-toggle,
+        .docs-github-link {
+            width: 36px;
+            height: 36px;
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-medium);
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .docs-cta-button {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px 16px;
+            background: var(--docs-accent-blue);
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 500;
+            transition: all 0.15s ease;
+        }
+
+        .version-badge {
+            background: var(--docs-accent-green);
+            color: white;
+            padding: 2px 8px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+
+        @media (max-width: 768px) {
+            .docs-header-center {
+                display: none;
+            }
+        }
+    </style>
+</body>
+</html>

@@ -144,7 +144,7 @@ public class StorageOptions
     /// <summary>
     /// Gets or sets the compression algorithm to use.
     /// </summary>
-    public CompressionAlgorithm CompressionAlgorithm { get; set; } = CompressionAlgorithm.LZ4;
+    public CompressionAlgorithm CompressionAlgorithm { get; set; } = CompressionAlgorithm.GZip;
 
     /// <summary>
     /// Gets or sets the time-to-live for the data.

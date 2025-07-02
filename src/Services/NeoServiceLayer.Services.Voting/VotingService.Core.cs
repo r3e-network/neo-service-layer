@@ -192,7 +192,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             // Load voting strategies
             try
             {
-                var strategiesData = await _storageService.RetrieveDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
+                var strategiesData = await _storageService.GetDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
                 var strategiesJson = System.Text.Encoding.UTF8.GetString(strategiesData);
                 var strategies = JsonSerializer.Deserialize<Dictionary<string, VotingStrategy>>(strategiesJson);
                 if (strategies != null)
@@ -214,7 +214,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             // Load voting results
             try
             {
-                var resultsData = await _storageService.RetrieveDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
+                var resultsData = await _storageService.GetDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
                 var resultsJson = System.Text.Encoding.UTF8.GetString(resultsData);
                 var results = JsonSerializer.Deserialize<Dictionary<string, VotingResult>>(resultsJson);
                 if (results != null)
@@ -236,7 +236,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             // Load candidates
             try
             {
-                var candidatesData = await _storageService.RetrieveDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
+                var candidatesData = await _storageService.GetDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
                 var candidatesJson = System.Text.Encoding.UTF8.GetString(candidatesData);
                 var candidates = JsonSerializer.Deserialize<Dictionary<string, CandidateInfo>>(candidatesJson);
                 if (candidates != null)

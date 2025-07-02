@@ -6,10 +6,20 @@
     <title>Neo Service Layer - Dashboard</title>
     <meta name="description" content="Interactive dashboard for Neo Service Layer - Execute smart contracts, monitor transactions, and manage blockchain services">
     
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
     <!-- Styles -->
+    <link href="src/styles/design-system.css" rel="stylesheet">
+    <link href="src/styles/components.css" rel="stylesheet">
     <link href="src/styles/main.css" rel="stylesheet">
     <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    
+    <!-- SEO -->
+    <meta property="og:title" content="Neo Service Layer Dashboard">
+    <meta property="og:description" content="Interactive dashboard for Neo Service Layer">
+    <meta property="og:type" content="website">
+    <link rel="canonical" href="https://neoservicelayer.com/app">
     
     <style>
         /* Dashboard Specific Styles */
@@ -962,6 +972,486 @@
                         <div class="result-box" style="display: none;"></div>
                     </div>
 
+                    <!-- DeFi Lending Service -->
+                    <div class="service-card" data-service="lending">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-piggy-bank"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">DeFi Lending</h3>
+                                <p class="service-description">Lend and borrow assets with smart contract automation</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'lending')">
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required onchange="updateLendingForm(this.value)">
+                                    <option value="">Select action...</option>
+                                    <option value="lend">Lend Assets</option>
+                                    <option value="borrow">Borrow Assets</option>
+                                    <option value="repay">Repay Loan</option>
+                                    <option value="withdraw">Withdraw Collateral</option>
+                                </select>
+                            </div>
+                            
+                            <div id="lendingFields"></div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-handshake"></i> Execute
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- NFT Marketplace Service -->
+                    <div class="service-card" data-service="marketplace">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-store"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">NFT Marketplace</h3>
+                                <p class="service-description">Create, buy, sell, and trade NFTs on the marketplace</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'marketplace')">
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required onchange="updateMarketplaceForm(this.value)">
+                                    <option value="">Select action...</option>
+                                    <option value="mint">Mint NFT</option>
+                                    <option value="list">List for Sale</option>
+                                    <option value="buy">Buy NFT</option>
+                                    <option value="cancel">Cancel Listing</option>
+                                </select>
+                            </div>
+                            
+                            <div id="marketplaceFields"></div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-shopping-cart"></i> Execute
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Token Creation Service -->
+                    <div class="service-card" data-service="tokenization">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-coins"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Token Creation</h3>
+                                <p class="service-description">Create and manage NEP-17 tokens with advanced features</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'tokenization')">
+                            <div class="form-group">
+                                <label class="form-label">Token Name</label>
+                                <input type="text" class="form-input" name="name" required placeholder="My Token">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Token Symbol</label>
+                                <input type="text" class="form-input" name="symbol" required placeholder="MTK" maxlength="8">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Decimals</label>
+                                <input type="number" class="form-input" name="decimals" required value="8" min="0" max="18">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Total Supply</label>
+                                <input type="number" class="form-input" name="totalSupply" required placeholder="1000000">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Features</label>
+                                <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.5rem;">
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.7);">
+                                        <input type="checkbox" name="features" value="mintable">
+                                        Mintable
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.7);">
+                                        <input type="checkbox" name="features" value="burnable">
+                                        Burnable
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.7);">
+                                        <input type="checkbox" name="features" value="pausable">
+                                        Pausable
+                                    </label>
+                                    <label style="display: flex; align-items: center; gap: 0.5rem; color: rgba(255,255,255,0.7);">
+                                        <input type="checkbox" name="features" value="governance">
+                                        Governance
+                                    </label>
+                                </div>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-plus-circle"></i> Create Token
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Insurance Service -->
+                    <div class="service-card" data-service="insurance">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-shield-alt"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Smart Insurance</h3>
+                                <p class="service-description">Decentralized insurance with automated claims</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'insurance')">
+                            <div class="form-group">
+                                <label class="form-label">Insurance Type</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Select type...</option>
+                                    <option value="smart_contract">Smart Contract Coverage</option>
+                                    <option value="defi_protocol">DeFi Protocol Protection</option>
+                                    <option value="asset_protection">Asset Protection</option>
+                                    <option value="yield_farming">Yield Farming Insurance</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Coverage Amount (GAS)</label>
+                                <input type="number" class="form-input" name="coverage" required step="0.1" placeholder="100">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Duration (Days)</label>
+                                <select class="form-select" name="duration" required>
+                                    <option value="30">30 Days</option>
+                                    <option value="90">90 Days</option>
+                                    <option value="180">180 Days</option>
+                                    <option value="365">1 Year</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Protected Contract/Asset</label>
+                                <input type="text" class="form-input" name="target" required placeholder="0x...">
+                                <p class="form-help">Contract address or asset to protect</p>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-umbrella"></i> Purchase Insurance
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Zero Knowledge Proofs -->
+                    <div class="service-card" data-service="zk">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-eye-slash"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Zero Knowledge Proofs</h3>
+                                <p class="service-description">Generate and verify ZK proofs for private computations</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'zk')">
+                            <div class="form-group">
+                                <label class="form-label">Proof Type</label>
+                                <select class="form-select" name="proofType" required>
+                                    <option value="">Select type...</option>
+                                    <option value="membership">Set Membership</option>
+                                    <option value="range">Range Proof</option>
+                                    <option value="knowledge">Knowledge Proof</option>
+                                    <option value="signature">Signature Proof</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Private Input</label>
+                                <textarea class="form-textarea" name="privateInput" required placeholder="Enter private data (will not be revealed)"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Public Parameters</label>
+                                <textarea class="form-textarea" name="publicParams" placeholder="Public parameters for verification"></textarea>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Circuit</label>
+                                <select class="form-select" name="circuit">
+                                    <option value="default">Default Circuit</option>
+                                    <option value="custom">Custom Circuit (Advanced)</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-lock"></i> Generate Proof
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Automation Service -->
+                    <div class="service-card" data-service="automation">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-robot"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Smart Automation</h3>
+                                <p class="service-description">Automate blockchain operations with conditional triggers</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'automation')">
+                            <div class="form-group">
+                                <label class="form-label">Trigger Type</label>
+                                <select class="form-select" name="triggerType" required>
+                                    <option value="">Select trigger...</option>
+                                    <option value="time">Time-based (Cron)</option>
+                                    <option value="price">Price Threshold</option>
+                                    <option value="event">Contract Event</option>
+                                    <option value="balance">Balance Change</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Trigger Condition</label>
+                                <input type="text" class="form-input" name="condition" required placeholder="e.g., 0 0 12 * * (daily at noon)">
+                                <p class="form-help">Condition format depends on trigger type</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Target Contract</label>
+                                <input type="text" class="form-input" name="contract" required placeholder="0x...">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Method</label>
+                                <input type="text" class="form-input" name="method" required placeholder="transfer">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Parameters (JSON)</label>
+                                <textarea class="form-textarea" name="params" placeholder='["param1", "param2"]'></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-play"></i> Create Automation
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Key Management Service -->
+                    <div class="service-card" data-service="keys">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-key"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Key Management</h3>
+                                <p class="service-description">Secure key generation, storage, and rotation with SGX</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'keys')">
+                            <div class="form-group">
+                                <label class="form-label">Operation</label>
+                                <select class="form-select" name="operation" required>
+                                    <option value="">Select operation...</option>
+                                    <option value="generate">Generate Key Pair</option>
+                                    <option value="import">Import Existing Key</option>
+                                    <option value="rotate">Rotate Keys</option>
+                                    <option value="backup">Create Backup</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Key Type</label>
+                                <select class="form-select" name="keyType" required>
+                                    <option value="secp256r1">SECP256R1 (Neo Default)</option>
+                                    <option value="secp256k1">SECP256K1 (Ethereum Compatible)</option>
+                                    <option value="ed25519">Ed25519</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Security Level</label>
+                                <select class="form-select" name="security" required>
+                                    <option value="standard">Standard (Software)</option>
+                                    <option value="sgx">Intel SGX (Hardware)</option>
+                                    <option value="hsm">HSM (Enterprise)</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Access Policy</label>
+                                <textarea class="form-textarea" name="policy" placeholder="Define who can access this key"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-shield-alt"></i> Execute Operation
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Voting/Governance Service -->
+                    <div class="service-card" data-service="voting">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-vote-yea"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Governance & Voting</h3>
+                                <p class="service-description">Create proposals and participate in decentralized governance</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'voting')">
+                            <div class="form-group">
+                                <label class="form-label">Action</label>
+                                <select class="form-select" name="action" required onchange="updateVotingForm(this.value)">
+                                    <option value="">Select action...</option>
+                                    <option value="create">Create Proposal</option>
+                                    <option value="vote">Cast Vote</option>
+                                    <option value="delegate">Delegate Voting Power</option>
+                                    <option value="execute">Execute Proposal</option>
+                                </select>
+                            </div>
+                            
+                            <div id="votingFields"></div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-check-circle"></i> Execute
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Randomness Service -->
+                    <div class="service-card" data-service="randomness">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-dice"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Randomness Oracle</h3>
+                                <p class="service-description">Generate verifiable random numbers for gaming and lotteries</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'randomness')">
+                            <div class="form-group">
+                                <label class="form-label">Randomness Type</label>
+                                <select class="form-select" name="type" required>
+                                    <option value="">Select type...</option>
+                                    <option value="uint256">256-bit Integer</option>
+                                    <option value="range">Range (Min-Max)</option>
+                                    <option value="bytes">Random Bytes</option>
+                                    <option value="seed">Seeded Random</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Parameters</label>
+                                <input type="text" class="form-input" name="params" placeholder="e.g., min=1,max=100 or length=32">
+                                <p class="form-help">Format depends on randomness type</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Callback Contract</label>
+                                <input type="text" class="form-input" name="callback" placeholder="0x... (optional)">
+                                <p class="form-help">Contract to receive the random value</p>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Verification Required</label>
+                                <select class="form-select" name="verify">
+                                    <option value="true">Yes (VRF - Recommended)</option>
+                                    <option value="false">No (Basic Random)</option>
+                                </select>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-random"></i> Generate Random
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
+                    <!-- Gaming Service -->
+                    <div class="service-card" data-service="gaming">
+                        <div class="service-header">
+                            <div class="service-icon">
+                                <i class="fas fa-gamepad"></i>
+                            </div>
+                            <div>
+                                <h3 class="service-title">Gaming Platform</h3>
+                                <p class="service-description">Build blockchain games with rewards and tournaments</p>
+                            </div>
+                        </div>
+                        
+                        <form onsubmit="executeService(event, 'gaming')">
+                            <div class="form-group">
+                                <label class="form-label">Game Action</label>
+                                <select class="form-select" name="action" required>
+                                    <option value="">Select action...</option>
+                                    <option value="create_game">Create Game</option>
+                                    <option value="join_game">Join Game</option>
+                                    <option value="submit_score">Submit Score</option>
+                                    <option value="claim_reward">Claim Reward</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Game Type</label>
+                                <select class="form-select" name="gameType">
+                                    <option value="puzzle">Puzzle Game</option>
+                                    <option value="strategy">Strategy Game</option>
+                                    <option value="lottery">Lottery</option>
+                                    <option value="tournament">Tournament</option>
+                                </select>
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Entry Fee (GAS)</label>
+                                <input type="number" class="form-input" name="entryFee" step="0.001" placeholder="0.1">
+                            </div>
+                            
+                            <div class="form-group">
+                                <label class="form-label">Game Data</label>
+                                <textarea class="form-textarea" name="gameData" placeholder="Game-specific data in JSON format"></textarea>
+                            </div>
+                            
+                            <button type="submit" class="btn btn-primary btn-block">
+                                <i class="fas fa-play"></i> Execute
+                            </button>
+                        </form>
+                        
+                        <div class="result-box" style="display: none;"></div>
+                    </div>
+
                     <!-- More services can be added here -->
                 </div>
             </section>
@@ -1275,6 +1765,120 @@
                             parseInt(formData.get('amount'))
                         );
                         break;
+                        
+                    case 'lending':
+                        const lendingAction = formData.get('action');
+                        if (lendingAction === 'lend') {
+                            result = await neoServiceLayer.lending.supply(
+                                formData.get('asset'),
+                                formData.get('amount')
+                            );
+                        } else if (lendingAction === 'borrow') {
+                            result = await neoServiceLayer.lending.borrow(
+                                formData.get('asset'),
+                                formData.get('amount'),
+                                formData.get('collateral')
+                            );
+                        }
+                        break;
+                        
+                    case 'marketplace':
+                        const marketAction = formData.get('action');
+                        if (marketAction === 'mint') {
+                            result = await neoServiceLayer.marketplace.mintNFT(
+                                formData.get('name'),
+                                formData.get('description'),
+                                formData.get('image')
+                            );
+                        } else if (marketAction === 'list') {
+                            result = await neoServiceLayer.marketplace.listNFT(
+                                formData.get('tokenId'),
+                                formData.get('price')
+                            );
+                        }
+                        break;
+                        
+                    case 'tokenization':
+                        const features = Array.from(form.querySelectorAll('input[name="features"]:checked')).map(cb => cb.value);
+                        result = await neoServiceLayer.tokenization.createToken({
+                            name: formData.get('name'),
+                            symbol: formData.get('symbol'),
+                            decimals: parseInt(formData.get('decimals')),
+                            totalSupply: parseInt(formData.get('totalSupply')),
+                            features: features
+                        });
+                        break;
+                        
+                    case 'insurance':
+                        result = await neoServiceLayer.insurance.purchasePolicy(
+                            formData.get('type'),
+                            formData.get('coverage'),
+                            formData.get('duration'),
+                            formData.get('target')
+                        );
+                        break;
+                        
+                    case 'zk':
+                        result = await neoServiceLayer.zeroKnowledge.generateProof(
+                            formData.get('proofType'),
+                            formData.get('privateInput'),
+                            formData.get('publicParams'),
+                            formData.get('circuit')
+                        );
+                        break;
+                        
+                    case 'automation':
+                        result = await neoServiceLayer.automation.createJob({
+                            triggerType: formData.get('triggerType'),
+                            condition: formData.get('condition'),
+                            contract: formData.get('contract'),
+                            method: formData.get('method'),
+                            params: JSON.parse(formData.get('params') || '[]')
+                        });
+                        break;
+                        
+                    case 'keys':
+                        result = await neoServiceLayer.keyManagement.executeOperation(
+                            formData.get('operation'),
+                            formData.get('keyType'),
+                            formData.get('security'),
+                            formData.get('policy')
+                        );
+                        break;
+                        
+                    case 'voting':
+                        const votingAction = formData.get('action');
+                        if (votingAction === 'create') {
+                            result = await neoServiceLayer.governance.createProposal(
+                                formData.get('title'),
+                                formData.get('description'),
+                                formData.get('actions')
+                            );
+                        } else if (votingAction === 'vote') {
+                            result = await neoServiceLayer.governance.vote(
+                                formData.get('proposalId'),
+                                formData.get('choice')
+                            );
+                        }
+                        break;
+                        
+                    case 'randomness':
+                        result = await neoServiceLayer.randomness.generateRandom(
+                            formData.get('type'),
+                            formData.get('params'),
+                            formData.get('callback'),
+                            formData.get('verify') === 'true'
+                        );
+                        break;
+                        
+                    case 'gaming':
+                        result = await neoServiceLayer.gaming.executeAction(
+                            formData.get('action'),
+                            formData.get('gameType'),
+                            formData.get('entryFee'),
+                            JSON.parse(formData.get('gameData') || '{}')
+                        );
+                        break;
                 }
                 
                 // Add transaction
@@ -1494,7 +2098,17 @@
                 compute: 'Compute Service',
                 analytics: 'Analytics Service',
                 identity: 'Identity Management',
-                crosschain: 'Cross-Chain Bridge'
+                crosschain: 'Cross-Chain Bridge',
+                lending: 'DeFi Lending',
+                marketplace: 'NFT Marketplace',
+                tokenization: 'Token Creation',
+                insurance: 'Smart Insurance',
+                zk: 'Zero Knowledge Proofs',
+                automation: 'Smart Automation',
+                keys: 'Key Management',
+                voting: 'Governance & Voting',
+                randomness: 'Randomness Oracle',
+                gaming: 'Gaming Platform'
             };
             return names[service] || service;
         }
@@ -1579,6 +2193,311 @@
             }
         }
 
+        // Additional form update functions
+        function updateLendingForm(action) {
+            const container = document.getElementById('lendingFields');
+            
+            switch (action) {
+                case 'lend':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Asset</label>
+                            <select class="form-select" name="asset" required>
+                                <option value="neo">NEO</option>
+                                <option value="gas">GAS</option>
+                                <option value="usdt">USDT</option>
+                                <option value="usdc">USDC</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-input" name="amount" required step="0.00000001" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">APY</label>
+                            <input type="text" class="form-input" value="5.2%" readonly>
+                            <p class="form-help">Current lending rate</p>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'borrow':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Borrow Asset</label>
+                            <select class="form-select" name="asset" required>
+                                <option value="usdt">USDT</option>
+                                <option value="usdc">USDC</option>
+                                <option value="gas">GAS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Collateral Asset</label>
+                            <select class="form-select" name="collateral" required>
+                                <option value="neo">NEO</option>
+                                <option value="gas">GAS</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Borrow Amount</label>
+                            <input type="number" class="form-input" name="amount" required step="0.01" placeholder="0.0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Collateral Ratio</label>
+                            <input type="text" class="form-input" value="150%" readonly>
+                            <p class="form-help">Minimum collateral ratio</p>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    container.innerHTML = '';
+            }
+        }
+
+        function updateMarketplaceForm(action) {
+            const container = document.getElementById('marketplaceFields');
+            
+            switch (action) {
+                case 'mint':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">NFT Name</label>
+                            <input type="text" class="form-input" name="name" required placeholder="My Awesome NFT">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-textarea" name="description" required placeholder="Describe your NFT..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Image URL</label>
+                            <input type="url" class="form-input" name="image" required placeholder="https://...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Attributes (JSON)</label>
+                            <textarea class="form-textarea" name="attributes" placeholder='{"trait_type": "Color", "value": "Blue"}'></textarea>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'list':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Token ID</label>
+                            <input type="number" class="form-input" name="tokenId" required placeholder="123">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Price (GAS)</label>
+                            <input type="number" class="form-input" name="price" required step="0.001" placeholder="10.0">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Duration (Days)</label>
+                            <select class="form-select" name="duration">
+                                <option value="7">7 Days</option>
+                                <option value="14">14 Days</option>
+                                <option value="30">30 Days</option>
+                                <option value="90">90 Days</option>
+                            </select>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'buy':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Token ID</label>
+                            <input type="number" class="form-input" name="tokenId" required placeholder="123">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Max Price (GAS)</label>
+                            <input type="number" class="form-input" name="maxPrice" required step="0.001" placeholder="10.0">
+                            <p class="form-help">Transaction will fail if price exceeds this amount</p>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    container.innerHTML = '';
+            }
+        }
+
+        function updateVotingForm(action) {
+            const container = document.getElementById('votingFields');
+            
+            switch (action) {
+                case 'create':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Proposal Title</label>
+                            <input type="text" class="form-input" name="title" required placeholder="Proposal title...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Description</label>
+                            <textarea class="form-textarea" name="description" required placeholder="Detailed proposal description..."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Voting Duration (Days)</label>
+                            <select class="form-select" name="duration">
+                                <option value="3">3 Days</option>
+                                <option value="7">7 Days</option>
+                                <option value="14">14 Days</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Actions (JSON)</label>
+                            <textarea class="form-textarea" name="actions" placeholder='[{"contract": "0x...", "method": "transfer", "params": [...]}]'></textarea>
+                            <p class="form-help">Actions to execute if proposal passes</p>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'vote':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Proposal ID</label>
+                            <input type="number" class="form-input" name="proposalId" required placeholder="1">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Vote Choice</label>
+                            <select class="form-select" name="choice" required>
+                                <option value="">Select your vote...</option>
+                                <option value="yes">Yes (Support)</option>
+                                <option value="no">No (Against)</option>
+                                <option value="abstain">Abstain</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Voting Power</label>
+                            <input type="text" class="form-input" value="Loading..." readonly>
+                            <p class="form-help">Your current voting power</p>
+                        </div>
+                    `;
+                    break;
+                    
+                case 'delegate':
+                    container.innerHTML = `
+                        <div class="form-group">
+                            <label class="form-label">Delegate Address</label>
+                            <input type="text" class="form-input" name="delegate" required placeholder="0x...">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">Amount</label>
+                            <input type="number" class="form-input" name="amount" required step="0.00000001" placeholder="0.0">
+                            <p class="form-help">Amount of voting power to delegate</p>
+                        </div>
+                    `;
+                    break;
+                    
+                default:
+                    container.innerHTML = '';
+            }
+        }
+
+        // SDK Status and Utility Functions
+        function updateSDKStatus(data) {
+            // Update network indicator
+            const networkIndicator = document.querySelector('.network-indicator');
+            if (networkIndicator) {
+                networkIndicator.textContent = data.network.toUpperCase();
+                networkIndicator.className = 'network-indicator network-' + data.network;
+            }
+            
+            // Update status in console or UI
+            console.log('📊 SDK Status:', neoServiceLayerSDK.getStatus());
+        }
+
+        function addTransactionToHistory(tx) {
+            transactions.unshift(tx);
+            localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+            updateTransactionsList();
+            updateStats();
+            updateRecentActivity();
+        }
+
+        function updateTransactionInHistory(txid, status) {
+            const tx = transactions.find(t => t.txid === txid);
+            if (tx) {
+                tx.status = status;
+                localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+                updateTransactionsList();
+                updateRecentActivity();
+            }
+        }
+
+        // Enhanced service execution with v2 SDK features
+        async function executeServiceV2(serviceName, method, params = {}, options = {}) {
+            try {
+                if (!neoServiceLayerSDK.wallet) {
+                    throw new Error('Please connect your wallet first');
+                }
+
+                console.log(`🔄 Executing ${serviceName}.${method}...`);
+                
+                // Use the v2 SDK service methods
+                const service = neoServiceLayerSDK[serviceName];
+                if (!service || typeof service[method] !== 'function') {
+                    throw new Error(`Service method ${serviceName}.${method} not found`);
+                }
+
+                const result = await service[method](...Object.values(params), options);
+                console.log(`✅ ${serviceName}.${method} completed:`, result);
+                
+                return result;
+            } catch (error) {
+                console.error(`❌ ${serviceName}.${method} failed:`, error);
+                throw error;
+            }
+        }
+
+        // Gas optimization helper
+        async function optimizeGasForOperations(operations) {
+            try {
+                const optimization = await neoServiceLayerSDK.optimizeGas(operations);
+                console.log('⛽ Gas optimization results:', optimization);
+                
+                if (optimization.optimizations.length > 0) {
+                    showNotification(`💡 Gas optimization suggestions available`, 'info');
+                }
+                
+                return optimization;
+            } catch (error) {
+                console.warn('Gas optimization failed:', error);
+                return null;
+            }
+        }
+
+        // Batch operations helper
+        async function batchOperations(operations) {
+            try {
+                console.log('📦 Executing batch operations:', operations);
+                const result = await neoServiceLayerSDK.batchExecute(operations);
+                console.log('✅ Batch execution completed:', result);
+                showNotification('Batch operations completed successfully!', 'success');
+                return result;
+            } catch (error) {
+                console.error('❌ Batch execution failed:', error);
+                showNotification('Batch operations failed: ' + error.message, 'error');
+                throw error;
+            }
+        }
+
+        // Health check function
+        async function performHealthCheck() {
+            try {
+                const health = await neoServiceLayerSDK.healthCheck();
+                console.log('🏥 Health check results:', health);
+                
+                if (!health.isHealthy) {
+                    showNotification('SDK health check failed - some features may not work', 'warning');
+                }
+                
+                return health;
+            } catch (error) {
+                console.error('Health check failed:', error);
+                return null;
+            }
+        }
+
         // Export functions
         function exportTransactions() {
             const dataStr = JSON.stringify(transactions, null, 2);
@@ -1640,6 +2559,458 @@
                 loadContractsList();
             }, 2000);
         }
+    </script>
+
+    <!-- Neo Service Layer Configuration -->
+    <script src="config/neo-config.js"></script>
+    
+    <!-- Wallet Integration -->
+    <script src="src/scripts/wallet-integration.js"></script>
+    
+    <!-- Neo Service Layer SDK -->
+    <script src="src/scripts/neo-service-layer-sdk-v2.js"></script>
+    
+    <!-- SDK Integration Script -->
+    <script>
+        // Initialize Neo Service Layer SDK
+        let neoServiceLayerSDK;
+        let wallet;
+        let transactions = JSON.parse(localStorage.getItem('nsl_transactions') || '[]');
+
+        // Initialize SDK when page loads
+        document.addEventListener('DOMContentLoaded', async function() {
+            try {
+                // Initialize SDK with configuration
+                const config = window.NEO_SERVICE_LAYER_CONFIG;
+                const currentNetwork = config.getCurrentNetwork();
+                const currentContracts = config.getCurrentContracts();
+                
+                neoServiceLayerSDK = new NeoServiceLayerSDK({
+                    network: config.currentNetwork,
+                    rpcUrl: currentNetwork.rpcUrl,
+                    networkMagic: currentNetwork.networkMagic,
+                    contracts: currentContracts,
+                    enableMetrics: true,
+                    enableCache: true,
+                    timeout: 30000,
+                    retryAttempts: 3
+                });
+
+                // SDK Event Handlers
+                neoServiceLayerSDK.on('wallet-connected', (walletData) => {
+                    console.log('Wallet connected:', walletData);
+                    wallet = walletData;
+                    handleWalletConnected(walletData);
+                });
+
+                neoServiceLayerSDK.on('wallet-disconnected', () => {
+                    console.log('Wallet disconnected');
+                    wallet = null;
+                    resetWalletUI();
+                });
+
+                neoServiceLayerSDK.on('transaction-sent', (tx) => {
+                    console.log('📤 Transaction sent:', tx);
+                    addTransactionToHistory({
+                        id: Date.now().toString(),
+                        service: tx.service,
+                        txid: tx.txid,
+                        timestamp: tx.timestamp,
+                        status: 'pending'
+                    });
+                    showNotification('Transaction submitted successfully!', 'success');
+                });
+
+                neoServiceLayerSDK.on('transaction-confirmed', (tx) => {
+                    console.log('✅ Transaction confirmed:', tx);
+                    updateTransactionInHistory(tx.txid, 'confirmed');
+                    showNotification(`Transaction confirmed! Gas used: ${tx.gasConsumed || 'N/A'}`, 'success');
+                });
+
+                neoServiceLayerSDK.on('transaction-failed', (tx) => {
+                    console.error('❌ Transaction failed:', tx);
+                    updateTransactionInHistory(tx.txid, 'failed');
+                    showNotification(`Transaction failed: ${tx.reason}`, 'error');
+                });
+
+                neoServiceLayerSDK.on('error', (error) => {
+                    console.error('💥 SDK Error:', error);
+                    showNotification(`Error: ${error.message}`, 'error');
+                });
+
+                neoServiceLayerSDK.on('ready', (data) => {
+                    console.log('🚀 Neo Service Layer SDK ready:', data);
+                    updateSDKStatus(data);
+                });
+
+                console.log('Neo Service Layer SDK initialized successfully');
+            } catch (error) {
+                console.error('Failed to initialize SDK:', error);
+                showNotification('Failed to initialize Neo Service Layer SDK', 'error');
+            }
+        });
+
+        // Update wallet connection function to use SDK v2
+        async function connectWallet() {
+            try {
+                if (!neoServiceLayerSDK) {
+                    showNotification('SDK not initialized yet', 'error');
+                    return;
+                }
+                
+                // Use SDK v2 auto-connect or show wallet selector
+                try {
+                    const wallet = await neoServiceLayerSDK.connectWallet('auto');
+                    console.log('Auto-connected to wallet:', wallet);
+                } catch (error) {
+                    // Fallback to manual wallet selector
+                    const walletIntegration = new WalletIntegration();
+                    walletIntegration.showWalletSelector();
+                }
+            } catch (error) {
+                console.error('Failed to connect wallet:', error);
+                showNotification('Failed to connect wallet: ' + error.message, 'error');
+            }
+        }
+
+        // Handle successful wallet connection
+        function handleWalletConnected(walletData) {
+            const btn = document.getElementById('connectBtn');
+            
+            // Update UI
+            updateWalletUI(walletData);
+            btn.innerHTML = '<i class="fas fa-check-circle"></i> Connected';
+            btn.classList.remove('neo-btn-primary');
+            btn.classList.add('neo-btn-secondary');
+            
+            // Update balance
+            updateBalanceDisplay(walletData.balance);
+            
+            showNotification(`Connected to ${walletData.label}!`, 'success');
+            localStorage.setItem('nsl_wallet_connected', 'true');
+            localStorage.setItem('nsl_wallet_type', walletData.walletType);
+        }
+
+        // Update wallet UI
+        function updateWalletUI(walletData) {
+            document.getElementById('walletCard').style.display = 'flex';
+            document.getElementById('walletAddress').textContent = formatAddress(walletData.address, 10);
+        }
+
+        // Reset wallet UI
+        function resetWalletUI() {
+            document.getElementById('walletCard').style.display = 'none';
+            const btn = document.getElementById('connectBtn');
+            btn.innerHTML = '<i class="fas fa-wallet"></i> Connect Wallet';
+            btn.classList.remove('neo-btn-secondary');
+            btn.classList.add('neo-btn-primary');
+            btn.disabled = false;
+            localStorage.removeItem('nsl_wallet_connected');
+        }
+
+        // Update balance display
+        function updateBalanceDisplay(balance) {
+            document.getElementById('neoBalance').textContent = balance.NEO || '0';
+            document.getElementById('gasBalance').textContent = parseFloat(balance.GAS || '0').toFixed(4);
+        }
+
+        // Format address for display
+        function formatAddress(address, length = 8) {
+            if (!address) return '';
+            return address.substring(0, length) + '...' + address.substring(address.length - 4);
+        }
+
+        // Enhanced executeService function using real SDK
+        async function executeService(event, serviceName) {
+            event.preventDefault();
+            
+            if (!wallet) {
+                showNotification('Please connect your wallet first', 'error');
+                return;
+            }
+
+            const form = event.target;
+            const submitBtn = form.querySelector('button[type="submit"]');
+            const resultBox = form.parentElement.querySelector('.result-box');
+            const originalBtnText = submitBtn.innerHTML;
+            
+            // Disable form
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="loading"></span> Processing...';
+            
+            try {
+                let result;
+                const formData = new FormData(form);
+                
+                // Use real SDK methods
+                switch (serviceName) {
+                    case 'storage':
+                        result = await neoServiceLayerSDK.storage.store(
+                            formData.get('key'),
+                            formData.get('value'),
+                            { 
+                                encrypted: formData.get('access') === 'private',
+                                accessLevel: formData.get('access')
+                            }
+                        );
+                        break;
+                        
+                    case 'oracle':
+                        result = await neoServiceLayerSDK.oracle.requestData(
+                            formData.get('url'),
+                            formData.get('path'),
+                            formData.get('callback')
+                        );
+                        break;
+                        
+                    case 'compute':
+                        result = await neoServiceLayerSDK.compute.execute(
+                            formData.get('type'),
+                            formData.get('input'),
+                            formData.get('verify') === 'true'
+                        );
+                        break;
+                        
+                    case 'identity':
+                        const action = formData.get('action');
+                        if (action === 'create') {
+                            result = await neoServiceLayerSDK.identity.createDID(
+                                formData.get('name'),
+                                formData.get('email'),
+                                formData.get('publicKey')
+                            );
+                        } else if (action === 'verify') {
+                            result = await neoServiceLayerSDK.identity.verifyIdentity(
+                                formData.get('did'),
+                                formData.get('proof')
+                            );
+                        }
+                        break;
+                        
+                    case 'analytics':
+                        result = await neoServiceLayerSDK.analytics.trackEvent(
+                            formData.get('eventType'),
+                            JSON.parse(formData.get('eventData') || '{}'),
+                            formData.get('tags') ? formData.get('tags').split(',') : []
+                        );
+                        break;
+                        
+                    case 'crosschain':
+                        result = await neoServiceLayerSDK.crosschain.bridge(
+                            formData.get('targetChain'),
+                            formData.get('asset'),
+                            parseFloat(formData.get('amount')),
+                            formData.get('destination')
+                        );
+                        break;
+                        
+                    case 'lending':
+                        const lendingAction = formData.get('action');
+                        if (lendingAction === 'lend') {
+                            result = await neoServiceLayerSDK.lending.supply(
+                                formData.get('asset'),
+                                parseFloat(formData.get('amount'))
+                            );
+                        } else if (lendingAction === 'borrow') {
+                            result = await neoServiceLayerSDK.lending.borrow(
+                                formData.get('asset'),
+                                parseFloat(formData.get('amount')),
+                                formData.get('collateral')
+                            );
+                        }
+                        break;
+                        
+                    case 'marketplace':
+                        const marketAction = formData.get('action');
+                        if (marketAction === 'mint') {
+                            result = await neoServiceLayerSDK.marketplace.mint(
+                                formData.get('name'),
+                                formData.get('description'),
+                                formData.get('image'),
+                                JSON.parse(formData.get('attributes') || '{}')
+                            );
+                        } else if (marketAction === 'list') {
+                            result = await neoServiceLayerSDK.marketplace.list(
+                                parseInt(formData.get('tokenId')),
+                                parseFloat(formData.get('price')),
+                                parseInt(formData.get('duration') || '30')
+                            );
+                        }
+                        break;
+                        
+                    case 'tokenization':
+                        const features = Array.from(form.querySelectorAll('input[name="features"]:checked')).map(cb => cb.value);
+                        result = await neoServiceLayerSDK.tokenization.createToken(
+                            formData.get('name'),
+                            formData.get('symbol'),
+                            parseInt(formData.get('decimals')),
+                            parseInt(formData.get('totalSupply')),
+                            features
+                        );
+                        break;
+                        
+                    case 'insurance':
+                        result = await neoServiceLayerSDK.insurance.purchasePolicy(
+                            formData.get('type'),
+                            parseFloat(formData.get('coverage')),
+                            parseInt(formData.get('duration')),
+                            formData.get('target')
+                        );
+                        break;
+                        
+                    case 'zk':
+                        result = await neoServiceLayerSDK.zeroknowledge.generateProof(
+                            formData.get('proofType'),
+                            formData.get('privateInput'),
+                            formData.get('publicParams'),
+                            formData.get('circuit')
+                        );
+                        break;
+                        
+                    case 'automation':
+                        result = await neoServiceLayerSDK.automation.createJob(
+                            formData.get('triggerType'),
+                            formData.get('condition'),
+                            formData.get('contract'),
+                            formData.get('method'),
+                            JSON.parse(formData.get('params') || '[]')
+                        );
+                        break;
+                        
+                    case 'keys':
+                        result = await neoServiceLayerSDK.keymanagement.generateKeyPair(
+                            formData.get('keyType'),
+                            formData.get('security'),
+                            formData.get('policy')
+                        );
+                        break;
+                        
+                    case 'voting':
+                        const votingAction = formData.get('action');
+                        if (votingAction === 'create') {
+                            result = await neoServiceLayerSDK.voting.createProposal(
+                                formData.get('title'),
+                                formData.get('description'),
+                                JSON.parse(formData.get('actions') || '[]'),
+                                parseInt(formData.get('duration') || '7')
+                            );
+                        } else if (votingAction === 'vote') {
+                            result = await neoServiceLayerSDK.voting.vote(
+                                parseInt(formData.get('proposalId')),
+                                formData.get('choice')
+                            );
+                        }
+                        break;
+                        
+                    case 'randomness':
+                        result = await neoServiceLayerSDK.randomness.generateRandom(
+                            formData.get('type'),
+                            formData.get('params'),
+                            formData.get('callback'),
+                            formData.get('verify') === 'true'
+                        );
+                        break;
+                        
+                    case 'gaming':
+                        result = await neoServiceLayerSDK.gaming.createGame(
+                            formData.get('gameType'),
+                            parseFloat(formData.get('entryFee') || '0'),
+                            JSON.parse(formData.get('gameData') || '{}')
+                        );
+                        break;
+                        
+                    default:
+                        throw new Error(`Service ${serviceName} not implemented`);
+                }
+                
+                // Show success result
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box success';
+                resultBox.innerHTML = `
+                    <div class="result-header">
+                        <i class="fas fa-check-circle"></i>
+                        <strong>Transaction Submitted Successfully</strong>
+                    </div>
+                    <div class="result-details">
+                        <p><strong>TX ID:</strong> <code>${result.txid}</code></p>
+                        <p><strong>Gas Consumed:</strong> ${result.gasConsumed} GAS</p>
+                        <p><strong>Block Height:</strong> ${result.blockHeight}</p>
+                        ${result.result ? `<p><strong>Result:</strong> <code>${JSON.stringify(result.result)}</code></p>` : ''}
+                    </div>
+                    <div class="result-actions">
+                        <button onclick="copyToClipboard('${result.txid}')" class="neo-btn neo-btn-ghost neo-btn-sm">
+                            <i class="fas fa-copy"></i> Copy TX ID
+                        </button>
+                    </div>
+                `;
+                
+                showNotification('Transaction submitted successfully!', 'success');
+                
+            } catch (error) {
+                console.error('Service execution failed:', error);
+                resultBox.style.display = 'block';
+                resultBox.className = 'result-box error';
+                resultBox.innerHTML = `
+                    <div class="result-header">
+                        <i class="fas fa-exclamation-circle"></i>
+                        <strong>Transaction Failed</strong>
+                    </div>
+                    <div class="result-details">
+                        <p>${error.message}</p>
+                    </div>
+                `;
+                showNotification('Transaction failed: ' + error.message, 'error');
+            } finally {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalBtnText;
+            }
+        }
+
+        // Transaction history management
+        function addTransactionToHistory(tx) {
+            transactions.unshift(tx);
+            localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+            updateTransactionsList();
+            updateStats();
+            updateRecentActivity();
+        }
+
+        function updateTransactionInHistory(txid, status) {
+            const tx = transactions.find(t => t.txid === txid);
+            if (tx) {
+                tx.status = status;
+                localStorage.setItem('nsl_transactions', JSON.stringify(transactions));
+                updateTransactionsList();
+                updateRecentActivity();
+            }
+        }
+
+        // Utility function to copy text to clipboard
+        function copyToClipboard(text) {
+            navigator.clipboard.writeText(text).then(() => {
+                showNotification('Copied to clipboard!', 'success');
+            }).catch(() => {
+                showNotification('Failed to copy to clipboard', 'error');
+            });
+        }
+
+        // Auto-connect wallet on page load
+        document.addEventListener('DOMContentLoaded', async function() {
+            if (localStorage.getItem('nsl_wallet_connected') === 'true') {
+                try {
+                    const walletType = localStorage.getItem('nsl_wallet_type') || 'demo';
+                    // Small delay to ensure SDK is initialized
+                    setTimeout(async () => {
+                        const integration = new WalletIntegration();
+                        const walletData = await integration.connectWallet(walletType);
+                        handleWalletConnected(walletData);
+                    }, 1000);
+                } catch (error) {
+                    console.error('Auto-connect failed:', error);
+                    localStorage.removeItem('nsl_wallet_connected');
+                }
+            }
+        });
     </script>
 </body>
 </html>

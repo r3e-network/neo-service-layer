@@ -1,0 +1,2907 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Disaster Recovery & Backup Strategies - Neo Service Layer</title>
+    <meta name="description" content="Enterprise disaster recovery and backup strategies for Neo Service Layer with RTO/RPO targets, automated backup systems, multi-region failover, and comprehensive business continuity planning.">
+    
+    <!-- Open Graph / Facebook -->
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://docs.neoservicelayer.com/disaster-recovery">
+    <meta property="og:title" content="Neo Service Layer Disaster Recovery Guide">
+    <meta property="og:description" content="Complete disaster recovery and backup strategies with automated tools and business continuity planning">
+    <meta property="og:image" content="https://docs.neoservicelayer.com/images/disaster-recovery-og.png">
+
+    <!-- Twitter -->
+    <meta property="twitter:card" content="summary_large_image">
+    <meta property="twitter:url" content="https://docs.neoservicelayer.com/disaster-recovery">
+    <meta property="twitter:title" content="Neo Service Layer Disaster Recovery Guide">
+    <meta property="twitter:description" content="Enterprise disaster recovery with RTO/RPO targets and automated failover">
+    <meta property="twitter:image" content="https://docs.neoservicelayer.com/images/disaster-recovery-twitter.png">
+
+    <!-- Canonical URL -->
+    <link rel="canonical" href="https://docs.neoservicelayer.com/disaster-recovery">
+    
+    <!-- Favicon -->
+    <link rel="icon" type="image/svg+xml" href="../public/favicon.svg">
+    <link rel="icon" type="image/png" href="../public/favicon-32x32.png" sizes="32x32">
+    <link rel="icon" type="image/png" href="../public/favicon-16x16.png" sizes="16x16">
+    <link rel="apple-touch-icon" href="../public/apple-touch-icon.png">
+    
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../src/styles/design-system.css">
+    <link rel="stylesheet" href="../src/styles/docs-professional.css">
+    <link rel="stylesheet" href="../src/styles/code-playground.css">
+    <link rel="stylesheet" href="../src/styles/docs-search.css">
+    
+    <!-- Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons@2.40.0/tabler-icons.min.css">
+    
+    <!-- Code Highlighting -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-one-light.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.css">
+    
+    <!-- Disaster Recovery Specific Styles -->
+    <style>
+        .dr-overview {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .rto-rpo-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin: 24px 0;
+        }
+        
+        .rto-rpo-card {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+        }
+        
+        .rto-rpo-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .rto-rpo-icon {
+            width: 40px;
+            height: 40px;
+            background: var(--docs-accent-blue);
+            color: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .rto-rpo-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+        
+        .rto-rpo-value {
+            font-size: 32px;
+            font-weight: 700;
+            color: var(--docs-accent-blue);
+            margin: 16px 0 8px 0;
+        }
+        
+        .rto-rpo-description {
+            color: var(--docs-text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .backup-strategy {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .strategy-timeline {
+            position: relative;
+            padding: 20px 0;
+        }
+        
+        .timeline-item {
+            display: flex;
+            gap: 24px;
+            margin: 20px 0;
+            position: relative;
+        }
+        
+        .timeline-item:not(:last-child)::after {
+            content: '';
+            position: absolute;
+            left: 19px;
+            top: 40px;
+            bottom: -20px;
+            width: 2px;
+            background: var(--docs-border-light);
+        }
+        
+        .timeline-dot {
+            width: 40px;
+            height: 40px;
+            background: var(--docs-accent-green);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .timeline-content {
+            flex: 1;
+        }
+        
+        .timeline-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 8px 0;
+        }
+        
+        .timeline-description {
+            color: var(--docs-text-secondary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .dr-scenario {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .scenario-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 16px;
+        }
+        
+        .scenario-severity {
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+        
+        .severity-critical {
+            background: rgba(239, 68, 68, 0.1);
+            color: #ef4444;
+        }
+        
+        .severity-high {
+            background: rgba(245, 158, 11, 0.1);
+            color: #f59e0b;
+        }
+        
+        .severity-medium {
+            background: rgba(59, 130, 246, 0.1);
+            color: #3b82f6;
+        }
+        
+        .severity-low {
+            background: rgba(34, 197, 94, 0.1);
+            color: #22c55e;
+        }
+        
+        .dr-checklist {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .checklist-section {
+            margin: 24px 0;
+        }
+        
+        .checklist-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 16px 0;
+        }
+        
+        .checklist-item {
+            display: flex;
+            align-items: flex-start;
+            gap: 12px;
+            padding: 8px 0;
+        }
+        
+        .checklist-checkbox {
+            width: 20px;
+            height: 20px;
+            border: 2px solid var(--docs-border-medium);
+            border-radius: 4px;
+            flex-shrink: 0;
+            margin-top: 2px;
+            cursor: pointer;
+            position: relative;
+        }
+        
+        .checklist-checkbox.checked::after {
+            content: '✓';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            color: var(--docs-accent-green);
+            font-weight: bold;
+        }
+        
+        .checklist-label {
+            flex: 1;
+            color: var(--docs-text-primary);
+            font-size: 14px;
+            line-height: 1.6;
+        }
+        
+        .backup-architecture {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+            overflow-x: auto;
+        }
+        
+        .architecture-diagram {
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 14px;
+            line-height: 1.4;
+            color: var(--docs-text-primary);
+            white-space: pre;
+        }
+        
+        .dr-automation {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .automation-tool {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .tool-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 16px;
+        }
+        
+        .tool-name {
+            font-size: 18px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+        }
+        
+        .tool-badge {
+            padding: 4px 12px;
+            background: var(--docs-bg-tertiary);
+            border-radius: 20px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--docs-text-secondary);
+        }
+        
+        .dr-metrics {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 12px;
+            padding: 24px;
+            margin: 32px 0;
+        }
+        
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 16px;
+            margin: 20px 0;
+        }
+        
+        .metric-card {
+            background: var(--docs-bg-primary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 16px;
+            text-align: center;
+        }
+        
+        .metric-value {
+            font-size: 28px;
+            font-weight: 700;
+            color: var(--docs-accent-blue);
+            margin: 8px 0;
+        }
+        
+        .metric-label {
+            font-size: 14px;
+            color: var(--docs-text-secondary);
+        }
+        
+        .recovery-runbook {
+            background: var(--docs-bg-code);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 8px;
+            padding: 20px;
+            margin: 16px 0;
+        }
+        
+        .runbook-step {
+            display: flex;
+            gap: 16px;
+            margin: 16px 0;
+        }
+        
+        .runbook-number {
+            width: 32px;
+            height: 32px;
+            background: var(--docs-accent-blue);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: 600;
+            flex-shrink: 0;
+        }
+        
+        .runbook-content {
+            flex: 1;
+        }
+        
+        .runbook-title {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--docs-text-primary);
+            margin: 0 0 8px 0;
+        }
+        
+        .runbook-command {
+            background: var(--docs-bg-secondary);
+            border: 1px solid var(--docs-border-light);
+            border-radius: 4px;
+            padding: 12px;
+            margin: 8px 0;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 13px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav id="navbar" class="navbar"></nav>
+
+    <!-- Main Content -->
+    <main class="docs-main">
+        <!-- Sidebar Navigation -->
+        <aside class="docs-sidebar">
+            <div class="sidebar-header">
+                <h3>Disaster Recovery Guide</h3>
+            </div>
+            <nav class="sidebar-nav">
+                <ul>
+                    <li><a href="#overview" class="active">Overview</a></li>
+                    <li><a href="#rto-rpo-targets">RTO/RPO Targets</a></li>
+                    <li><a href="#backup-strategies">Backup Strategies</a></li>
+                    <li><a href="#disaster-scenarios">Disaster Scenarios</a></li>
+                    <li><a href="#backup-architecture">Backup Architecture</a></li>
+                    <li><a href="#automated-backups">Automated Backups</a></li>
+                    <li><a href="#multi-region-failover">Multi-Region Failover</a></li>
+                    <li><a href="#data-recovery">Data Recovery</a></li>
+                    <li><a href="#service-recovery">Service Recovery</a></li>
+                    <li><a href="#testing-procedures">Testing Procedures</a></li>
+                    <li><a href="#business-continuity">Business Continuity</a></li>
+                    <li><a href="#incident-response">Incident Response</a></li>
+                    <li><a href="#recovery-runbooks">Recovery Runbooks</a></li>
+                    <li><a href="#monitoring-alerts">Monitoring & Alerts</a></li>
+                    <li><a href="#compliance">Compliance Requirements</a></li>
+                    <li><a href="#automation-tools">Automation Tools</a></li>
+                    <li><a href="#metrics-reporting">Metrics & Reporting</a></li>
+                    <li><a href="#best-practices">Best Practices</a></li>
+                </ul>
+            </nav>
+        </aside>
+
+        <!-- Content Area -->
+        <article class="docs-content">
+            <!-- Header -->
+            <header class="content-header">
+                <h1 class="page-title">Disaster Recovery & Backup Strategies</h1>
+                <p class="page-description">
+                    Enterprise-grade disaster recovery and backup strategies for Neo Service Layer with comprehensive business continuity planning, automated failover systems, and proven recovery procedures.
+                </p>
+                
+                <div class="header-badges">
+                    <span class="badge badge-version">v3.0.0</span>
+                    <span class="badge badge-updated">Updated: 2024-01-15</span>
+                    <span class="badge badge-reading-time">45 min read</span>
+                </div>
+            </header>
+
+            <!-- Overview Section -->
+            <section id="overview" class="content-section">
+                <h2>Overview</h2>
+                
+                <div class="dr-overview">
+                    <h3>Comprehensive Disaster Recovery Framework</h3>
+                    <p>
+                        Neo Service Layer implements a multi-layered disaster recovery strategy designed to ensure business continuity 
+                        and data integrity across all failure scenarios. Our approach combines automated backup systems, multi-region 
+                        failover capabilities, and proven recovery procedures to achieve industry-leading RTO/RPO targets.
+                    </p>
+                    
+                    <div class="feature-grid">
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="ti ti-shield-check"></i>
+                            </div>
+                            <h4>99.99% Uptime SLA</h4>
+                            <p>Guaranteed availability with automatic failover and redundancy at every layer</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="ti ti-clock"></i>
+                            </div>
+                            <h4>15-Minute RTO</h4>
+                            <p>Recovery Time Objective for critical services with automated failover procedures</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="ti ti-database"></i>
+                            </div>
+                            <h4>5-Minute RPO</h4>
+                            <p>Recovery Point Objective with continuous replication and point-in-time recovery</p>
+                        </div>
+                        
+                        <div class="feature-card">
+                            <div class="feature-icon">
+                                <i class="ti ti-world"></i>
+                            </div>
+                            <h4>Multi-Region Support</h4>
+                            <p>Geographic redundancy across AWS, Azure, and GCP with automatic failover</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="alert alert-info">
+                    <i class="ti ti-info-circle"></i>
+                    <div>
+                        <strong>Enterprise Support Available</strong>
+                        <p>24/7 disaster recovery support with dedicated incident response team for enterprise customers.</p>
+                    </div>
+                </div>
+            </section>
+
+            <!-- RTO/RPO Targets -->
+            <section id="rto-rpo-targets" class="content-section">
+                <h2>RTO/RPO Targets</h2>
+                
+                <div class="rto-rpo-grid">
+                    <div class="rto-rpo-card">
+                        <div class="rto-rpo-header">
+                            <div class="rto-rpo-icon">
+                                <i class="ti ti-clock-play"></i>
+                            </div>
+                            <h3 class="rto-rpo-title">Recovery Time Objective (RTO)</h3>
+                        </div>
+                        <div class="rto-rpo-value">15 minutes</div>
+                        <p class="rto-rpo-description">
+                            Maximum acceptable downtime for critical services. Achieved through:
+                        </p>
+                        <ul>
+                            <li>Automated failover orchestration</li>
+                            <li>Pre-warmed standby environments</li>
+                            <li>Continuous health monitoring</li>
+                            <li>Automated DNS updates</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="rto-rpo-card">
+                        <div class="rto-rpo-header">
+                            <div class="rto-rpo-icon">
+                                <i class="ti ti-database-export"></i>
+                            </div>
+                            <h3 class="rto-rpo-title">Recovery Point Objective (RPO)</h3>
+                        </div>
+                        <div class="rto-rpo-value">5 minutes</div>
+                        <p class="rto-rpo-description">
+                            Maximum acceptable data loss window. Implemented via:
+                        </p>
+                        <ul>
+                            <li>Continuous data replication</li>
+                            <li>Transaction log shipping</li>
+                            <li>Point-in-time recovery</li>
+                            <li>Blockchain state snapshots</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <h3>Service-Level Targets</h3>
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Service Category</th>
+                            <th>RTO Target</th>
+                            <th>RPO Target</th>
+                            <th>Backup Frequency</th>
+                            <th>Retention Period</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Core Blockchain Services</strong></td>
+                            <td>15 minutes</td>
+                            <td>5 minutes</td>
+                            <td>Continuous</td>
+                            <td>90 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Transaction Processing</strong></td>
+                            <td>10 minutes</td>
+                            <td>1 minute</td>
+                            <td>Real-time</td>
+                            <td>365 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Analytics Services</strong></td>
+                            <td>30 minutes</td>
+                            <td>15 minutes</td>
+                            <td>Every 15 min</td>
+                            <td>30 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>API Gateway</strong></td>
+                            <td>5 minutes</td>
+                            <td>0 minutes</td>
+                            <td>Stateless</td>
+                            <td>N/A</td>
+                        </tr>
+                        <tr>
+                            <td><strong>User Data</strong></td>
+                            <td>20 minutes</td>
+                            <td>5 minutes</td>
+                            <td>Every 5 min</td>
+                            <td>90 days</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Configuration Data</strong></td>
+                            <td>10 minutes</td>
+                            <td>1 hour</td>
+                            <td>On change</td>
+                            <td>Indefinite</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Backup Strategies -->
+            <section id="backup-strategies" class="content-section">
+                <h2>Backup Strategies</h2>
+                
+                <div class="backup-strategy">
+                    <h3>3-2-1 Backup Rule Implementation</h3>
+                    
+                    <div class="strategy-timeline">
+                        <div class="timeline-item">
+                            <div class="timeline-dot">3</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Three Copies of Data</h4>
+                                <p class="timeline-description">
+                                    Primary production data plus two backup copies across different storage systems:
+                                    production database, hot standby replica, and cold storage archive.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot">2</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">Two Different Storage Media</h4>
+                                <p class="timeline-description">
+                                    Backups stored on both high-performance SSDs for quick recovery and object storage
+                                    for long-term retention with 11 nines durability.
+                                </p>
+                            </div>
+                        </div>
+                        
+                        <div class="timeline-item">
+                            <div class="timeline-dot">1</div>
+                            <div class="timeline-content">
+                                <h4 class="timeline-title">One Offsite Location</h4>
+                                <p class="timeline-description">
+                                    Geographic separation with backups replicated to a different region, protecting
+                                    against regional disasters and data center failures.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Backup Types and Schedules</h3>
+                
+                <div class="code-example">
+                    <div class="example-header">
+                        <span class="example-title">Automated Backup Configuration</span>
+                        <button class="copy-button" onclick="copyCode(this)">
+                            <i class="ti ti-copy"></i> Copy
+                        </button>
+                    </div>
+                    <pre class="line-numbers"><code class="language-yaml"># backup-config.yaml
+apiVersion: backup.neoservicelayer.com/v1
+kind: BackupPolicy
+metadata:
+  name: production-backup-policy
+  namespace: neo-service-layer
+spec:
+  # Full System Backups
+  fullBackup:
+    schedule: "0 2 * * 0"  # Weekly on Sunday at 2 AM
+    retention:
+      count: 4             # Keep 4 weekly backups
+      deleteOlderThan: 30d # Delete backups older than 30 days
+    destinations:
+      - type: s3
+        bucket: neo-backups-primary
+        region: us-east-1
+        storageClass: GLACIER_IR
+      - type: azure-blob
+        container: neo-backups-secondary
+        region: eastus2
+        tier: Archive
+    compression:
+      enabled: true
+      algorithm: zstd
+      level: 3
+    encryption:
+      enabled: true
+      keyId: arn:aws:kms:us-east-1:123456789:key/backup-key
+  
+  # Incremental Backups
+  incrementalBackup:
+    schedule: "0 */6 * * *"  # Every 6 hours
+    retention:
+      count: 28              # Keep 7 days of incrementals
+    baseBackup: fullBackup
+    destinations:
+      - type: s3
+        bucket: neo-backups-incremental
+        region: us-east-1
+        storageClass: STANDARD_IA
+    
+  # Transaction Log Backups
+  transactionLogs:
+    continuous: true
+    interval: 5m
+    retention: 14d
+    destinations:
+      - type: s3
+        bucket: neo-transaction-logs
+        region: us-east-1
+        storageClass: STANDARD
+      - type: gcs
+        bucket: neo-tx-logs-replica
+        region: us-central1
+        storageClass: NEARLINE
+    
+  # Database-Specific Backups
+  databases:
+    postgresql:
+      method: pg_basebackup
+      walArchiving:
+        enabled: true
+        command: |
+          aws s3 cp %p s3://neo-wal-archive/%f \
+            --storage-class STANDARD_IA \
+            --sse aws:kms \
+            --sse-kms-key-id ${KMS_KEY_ID}
+      pointInTimeRecovery:
+        enabled: true
+        window: 7d
+    
+    mongodb:
+      method: mongodump
+      oplogBackup:
+        enabled: true
+        continuous: true
+      sharding:
+        backupConfigServers: true
+        parallelCollections: 4
+    
+    redis:
+      method: bgsave
+      aofBackup:
+        enabled: true
+        fsync: everysec
+      rdbCompression: true
+      
+  # Blockchain State Backups
+  blockchainState:
+    neo:
+      schedule: "0 */4 * * *"  # Every 4 hours
+      components:
+        - leveldb-state
+        - block-storage
+        - index-files
+      snapshotMethod: consistent-checkpoint
+      verifyIntegrity: true
+    
+    ethereum:
+      schedule: "0 */2 * * *"  # Every 2 hours
+      components:
+        - chaindata
+        - ancient-data
+      exportFormat: geth-export
+      pruningMode: archive
+  
+  # Application Data Backups
+  applicationData:
+    volumes:
+      - name: user-uploads
+        path: /data/uploads
+        schedule: "0 */1 * * *"  # Hourly
+        incremental: true
+      - name: logs
+        path: /var/log/neo
+        schedule: "0 0 * * *"    # Daily
+        retention: 30d
+      - name: configs
+        path: /etc/neo
+        schedule: "0 */12 * * *" # Twice daily
+        versioning: true
+    
+  # Intel SGX Enclave Backups
+  sgxEnclaves:
+    sealed-data:
+      schedule: "0 */1 * * *"   # Hourly
+      sealingKey: platform-key
+      attestation:
+        required: true
+        pceVersion: latest
+    secrets:
+      method: distributed-shares
+      threshold: 3
+      shares: 5
+      locations:
+        - hsm-1.secure.neo
+        - hsm-2.secure.neo
+        - hsm-3.secure.neo
+        - vault.secure.neo
+        - offline-storage
+  
+  # Verification and Testing
+  verification:
+    enabled: true
+    schedule: "0 4 * * *"      # Daily at 4 AM
+    tests:
+      - type: restore-test
+        sample: 5%             # Test restore 5% of backups
+      - type: integrity-check
+        checksum: sha256
+      - type: encryption-verify
+        validateKeys: true
+    
+  # Notifications
+  notifications:
+    slack:
+      webhook: ${SLACK_WEBHOOK_URL}
+      events:
+        - backup-failed
+        - verification-failed
+        - retention-policy-applied
+    pagerduty:
+      integrationKey: ${PAGERDUTY_KEY}
+      severity:
+        backup-failed: critical
+        verification-failed: warning
+    email:
+      smtp:
+        host: smtp.sendgrid.net
+        port: 587
+        auth:
+          username: apikey
+          password: ${SENDGRID_API_KEY}
+      recipients:
+        - ops-team@neoservicelayer.com
+        - backup-alerts@neoservicelayer.com</code></pre>
+                </div>
+            </section>
+
+            <!-- Disaster Scenarios -->
+            <section id="disaster-scenarios" class="content-section">
+                <h2>Disaster Scenarios</h2>
+                
+                <div class="dr-scenario">
+                    <div class="scenario-header">
+                        <h3>Data Center Failure</h3>
+                        <span class="scenario-severity severity-critical">Critical</span>
+                    </div>
+                    <p><strong>Scenario:</strong> Complete loss of primary data center due to natural disaster, power grid failure, or physical damage.</p>
+                    
+                    <h4>Recovery Procedure:</h4>
+                    <ol>
+                        <li><strong>Detection:</strong> Automated monitoring detects data center unreachability within 30 seconds</li>
+                        <li><strong>Verification:</strong> Secondary monitoring confirms total DC failure (1-2 minutes)</li>
+                        <li><strong>Failover Initiation:</strong> Automatic DR orchestration begins (2-3 minutes)</li>
+                        <li><strong>Traffic Redirection:</strong> DNS updates and load balancer reconfiguration (3-5 minutes)</li>
+                        <li><strong>Service Restoration:</strong> Secondary DC takes over all operations (10-15 minutes)</li>
+                    </ol>
+                    
+                    <div class="code-example">
+                        <div class="example-header">
+                            <span class="example-title">Automated DC Failover Script</span>
+                        </div>
+                        <pre class="line-numbers"><code class="language-python">#!/usr/bin/env python3
+"""
+Data Center Failover Orchestration
+Handles automatic failover to secondary DC
+"""
+
+import asyncio
+import logging
+from datetime import datetime
+from typing import Dict, List, Optional
+
+import boto3
+import requests
+from kubernetes import client, config
+
+class DataCenterFailover:
+    def __init__(self):
+        self.primary_dc = "us-east-1"
+        self.secondary_dc = "us-west-2"
+        self.route53 = boto3.client('route53')
+        self.elb = boto3.client('elbv2')
+        self.k8s_primary = self._init_k8s_client(self.primary_dc)
+        self.k8s_secondary = self._init_k8s_client(self.secondary_dc)
+        
+    async def execute_failover(self) -> Dict[str, any]:
+        """Execute complete DC failover procedure"""
+        start_time = datetime.utcnow()
+        results = {
+            'start_time': start_time,
+            'status': 'initiated',
+            'steps': []
+        }
+        
+        try:
+            # Step 1: Verify DC failure
+            if not await self._verify_dc_failure():
+                results['status'] = 'aborted'
+                results['reason'] = 'Primary DC still responsive'
+                return results
+            
+            # Step 2: Activate secondary DC
+            await self._activate_secondary_dc()
+            results['steps'].append({
+                'step': 'activate_secondary',
+                'status': 'completed',
+                'duration': self._elapsed_time(start_time)
+            })
+            
+            # Step 3: Update DNS records
+            await self._update_dns_records()
+            results['steps'].append({
+                'step': 'update_dns',
+                'status': 'completed',
+                'duration': self._elapsed_time(start_time)
+            })
+            
+            # Step 4: Redirect traffic
+            await self._redirect_traffic()
+            results['steps'].append({
+                'step': 'redirect_traffic',
+                'status': 'completed',
+                'duration': self._elapsed_time(start_time)
+            })
+            
+            # Step 5: Verify services
+            await self._verify_services()
+            results['steps'].append({
+                'step': 'verify_services',
+                'status': 'completed',
+                'duration': self._elapsed_time(start_time)
+            })
+            
+            # Step 6: Update monitoring
+            await self._update_monitoring()
+            results['steps'].append({
+                'step': 'update_monitoring',
+                'status': 'completed',
+                'duration': self._elapsed_time(start_time)
+            })
+            
+            results['status'] = 'completed'
+            results['total_duration'] = self._elapsed_time(start_time)
+            results['end_time'] = datetime.utcnow()
+            
+        except Exception as e:
+            results['status'] = 'failed'
+            results['error'] = str(e)
+            logging.error(f"Failover failed: {e}")
+            await self._trigger_manual_intervention()
+            
+        return results
+    
+    async def _verify_dc_failure(self) -> bool:
+        """Verify primary DC is truly down"""
+        health_endpoints = [
+            f"https://api-{self.primary_dc}.neoservicelayer.com/health",
+            f"https://monitor-{self.primary_dc}.neoservicelayer.com/status",
+            f"https://k8s-{self.primary_dc}.neoservicelayer.com/healthz"
+        ]
+        
+        failed_checks = 0
+        for endpoint in health_endpoints:
+            try:
+                response = requests.get(endpoint, timeout=5)
+                if response.status_code != 200:
+                    failed_checks += 1
+            except:
+                failed_checks += 1
+        
+        # Require all health checks to fail
+        return failed_checks == len(health_endpoints)
+    
+    async def _activate_secondary_dc(self):
+        """Activate all services in secondary DC"""
+        # Scale up deployments
+        apps_v1 = client.AppsV1Api(self.k8s_secondary)
+        deployments = apps_v1.list_namespaced_deployment(
+            namespace="neo-service-layer"
+        )
+        
+        for deployment in deployments.items:
+            # Check if deployment is in standby mode
+            if deployment.spec.replicas == 0:
+                deployment.spec.replicas = deployment.metadata.annotations.get(
+                    'failover.neo/desired-replicas', 3
+                )
+                apps_v1.patch_namespaced_deployment(
+                    name=deployment.metadata.name,
+                    namespace="neo-service-layer",
+                    body=deployment
+                )
+                
+        # Wait for pods to be ready
+        await self._wait_for_pods_ready()
+        
+    async def _update_dns_records(self):
+        """Update Route53 DNS records to point to secondary DC"""
+        hosted_zone_id = "Z1234567890ABC"
+        
+        changes = []
+        dns_records = [
+            {'name': 'api.neoservicelayer.com', 'type': 'A'},
+            {'name': 'app.neoservicelayer.com', 'type': 'A'},
+            {'name': '*.neoservicelayer.com', 'type': 'A'}
+        ]
+        
+        for record in dns_records:
+            changes.append({
+                'Action': 'UPSERT',
+                'ResourceRecordSet': {
+                    'Name': record['name'],
+                    'Type': record['type'],
+                    'AliasTarget': {
+                        'HostedZoneId': 'Z215JYRZR1TBD5',  # ELB zone
+                        'DNSName': f'neo-lb-{self.secondary_dc}.elb.amazonaws.com',
+                        'EvaluateTargetHealth': True
+                    }
+                }
+            })
+        
+        self.route53.change_resource_record_sets(
+            HostedZoneId=hosted_zone_id,
+            ChangeBatch={'Changes': changes}
+        )
+        
+    async def _redirect_traffic(self):
+        """Update load balancers and CDN"""
+        # Update ALB target groups
+        target_groups = self.elb.describe_target_groups()
+        
+        for tg in target_groups['TargetGroups']:
+            if 'primary' in tg['TargetGroupName']:
+                # Deregister primary targets
+                primary_targets = self.elb.describe_target_health(
+                    TargetGroupArn=tg['TargetGroupArn']
+                )
+                
+                if primary_targets['TargetHealthDescriptions']:
+                    self.elb.deregister_targets(
+                        TargetGroupArn=tg['TargetGroupArn'],
+                        Targets=[t['Target'] for t in primary_targets['TargetHealthDescriptions']]
+                    )
+                
+                # Register secondary targets
+                secondary_tg_name = tg['TargetGroupName'].replace('primary', 'secondary')
+                # ... register secondary instances
+        
+        # Update CloudFront origins
+        cloudfront = boto3.client('cloudfront')
+        distribution_id = 'E1234567890ABC'
+        
+        dist_config = cloudfront.get_distribution_config(Id=distribution_id)
+        config = dist_config['DistributionConfig']
+        
+        # Update origin to point to secondary DC
+        for origin in config['Origins']['Items']:
+            if self.primary_dc in origin['DomainName']:
+                origin['DomainName'] = origin['DomainName'].replace(
+                    self.primary_dc, self.secondary_dc
+                )
+        
+        cloudfront.update_distribution(
+            Id=distribution_id,
+            DistributionConfig=config,
+            IfMatch=dist_config['ETag']
+        )
+    
+    async def _verify_services(self):
+        """Verify all services are operational in secondary DC"""
+        service_checks = [
+            {'name': 'API Gateway', 'endpoint': '/health', 'expected': 200},
+            {'name': 'Block Service', 'endpoint': '/api/blocks/latest', 'expected': 200},
+            {'name': 'Transaction Service', 'endpoint': '/api/transactions/count', 'expected': 200},
+            {'name': 'WebSocket Service', 'endpoint': '/ws/health', 'expected': 101}
+        ]
+        
+        base_url = f"https://api-{self.secondary_dc}.neoservicelayer.com"
+        
+        for check in service_checks:
+            response = requests.get(f"{base_url}{check['endpoint']}")
+            if response.status_code != check['expected']:
+                raise Exception(f"{check['name']} health check failed")
+    
+    async def _update_monitoring(self):
+        """Update monitoring and alerting configuration"""
+        # Update Prometheus targets
+        prometheus_config = {
+            'global': {
+                'external_labels': {
+                    'datacenter': self.secondary_dc,
+                    'failover_state': 'active'
+                }
+            },
+            'scrape_configs': [
+                {
+                    'job_name': 'neo-services',
+                    'kubernetes_sd_configs': [{
+                        'role': 'pod',
+                        'namespaces': {'names': ['neo-service-layer']}
+                    }]
+                }
+            ]
+        }
+        
+        # Update alert rules
+        alert_rules = {
+            'groups': [{
+                'name': 'failover',
+                'rules': [{
+                    'alert': 'FailoverActive',
+                    'expr': 'up{datacenter="' + self.secondary_dc + '"}',
+                    'for': '5m',
+                    'labels': {
+                        'severity': 'warning',
+                        'component': 'datacenter'
+                    },
+                    'annotations': {
+                        'summary': 'Failover to secondary DC is active',
+                        'description': 'Running on secondary DC {{ $labels.datacenter }}'
+                    }
+                }]
+            }]
+        }
+        
+        # Send notifications
+        await self._send_notifications({
+            'event': 'datacenter_failover_completed',
+            'primary_dc': self.primary_dc,
+            'secondary_dc': self.secondary_dc,
+            'duration': self._elapsed_time(start_time)
+        })
+
+# Additional helper methods...
+
+if __name__ == "__main__":
+    failover = DataCenterFailover()
+    asyncio.run(failover.execute_failover())</code></pre>
+                    </div>
+                </div>
+
+                <div class="dr-scenario">
+                    <div class="scenario-header">
+                        <h3>Ransomware Attack</h3>
+                        <span class="scenario-severity severity-critical">Critical</span>
+                    </div>
+                    <p><strong>Scenario:</strong> Malicious encryption of production data and systems by ransomware.</p>
+                    
+                    <h4>Recovery Procedure:</h4>
+                    <ol>
+                        <li><strong>Isolation:</strong> Immediately isolate affected systems to prevent spread</li>
+                        <li><strong>Assessment:</strong> Determine scope and impact of encryption</li>
+                        <li><strong>Clean Room Recovery:</strong> Restore from immutable backups in isolated environment</li>
+                        <li><strong>Validation:</strong> Verify data integrity and absence of malware</li>
+                        <li><strong>Staged Restoration:</strong> Gradually restore services with enhanced monitoring</li>
+                    </ol>
+                </div>
+
+                <div class="dr-scenario">
+                    <div class="scenario-header">
+                        <h3>Database Corruption</h3>
+                        <span class="scenario-severity severity-high">High</span>
+                    </div>
+                    <p><strong>Scenario:</strong> Critical database corruption affecting transaction integrity.</p>
+                    
+                    <h4>Recovery Procedure:</h4>
+                    <div class="code-example">
+                        <div class="example-header">
+                            <span class="example-title">Database Recovery Script</span>
+                        </div>
+                        <pre class="line-numbers"><code class="language-bash">#!/bin/bash
+# Database Corruption Recovery Procedure
+# Restores database to last known good state
+
+set -euo pipefail
+
+# Configuration
+DB_NAME="neo_production"
+BACKUP_BUCKET="s3://neo-backups-primary"
+RECOVERY_POINT="${1:-latest}"
+PARALLEL_JOBS=8
+
+echo "[$(date)] Starting database recovery for $DB_NAME"
+
+# Step 1: Stop application services
+echo "[$(date)] Stopping application services..."
+kubectl scale deployment --all --replicas=0 -n neo-service-layer
+
+# Step 2: Create recovery environment
+echo "[$(date)] Creating clean recovery environment..."
+RECOVERY_HOST="recovery-$(date +%s).neo.internal"
+aws rds create-db-instance-read-replica \
+  --db-instance-identifier "$RECOVERY_HOST" \
+  --source-db-instance-identifier "$DB_NAME" \
+  --db-instance-class db.r5.4xlarge
+
+# Step 3: Identify recovery point
+if [ "$RECOVERY_POINT" == "latest" ]; then
+    RECOVERY_POINT=$(aws s3 ls "$BACKUP_BUCKET/postgresql/" \
+      --recursive | grep "base.tar.gz" | sort | tail -1 | awk '{print $4}')
+fi
+
+echo "[$(date)] Using recovery point: $RECOVERY_POINT"
+
+# Step 4: Download and verify backup
+echo "[$(date)] Downloading backup..."
+aws s3 cp "$BACKUP_BUCKET/$RECOVERY_POINT" /tmp/recovery.tar.gz \
+  --expected-size 10737418240 # 10GB minimum
+
+echo "[$(date)] Verifying backup integrity..."
+if ! tar -tzf /tmp/recovery.tar.gz > /dev/null; then
+    echo "ERROR: Backup verification failed!"
+    exit 1
+fi
+
+# Step 5: Restore database
+echo "[$(date)] Restoring database..."
+systemctl stop postgresql
+rm -rf /var/lib/postgresql/13/main/*
+cd /var/lib/postgresql/13/main
+tar -xzf /tmp/recovery.tar.gz
+
+# Step 6: Apply WAL logs for point-in-time recovery
+echo "[$(date)] Applying transaction logs..."
+cat > /var/lib/postgresql/13/main/recovery.conf <<EOF
+restore_command = 'aws s3 cp s3://neo-wal-archive/%f %p'
+recovery_target_time = '$(date -d "5 minutes ago" --iso-8601=seconds)'
+recovery_target_action = 'promote'
+recovery_target_timeline = 'latest'
+EOF
+
+# Step 7: Start PostgreSQL in recovery mode
+systemctl start postgresql
+
+# Step 8: Verify data consistency
+echo "[$(date)] Verifying data consistency..."
+psql -U postgres -d "$DB_NAME" <<SQL
+-- Check table integrity
+SELECT schemaname, tablename, 
+       pg_size_pretty(pg_total_relation_size(schemaname||'.'||tablename)) as size
+FROM pg_tables 
+WHERE schemaname NOT IN ('pg_catalog', 'information_schema')
+ORDER BY pg_total_relation_size(schemaname||'.'||tablename) DESC;
+
+-- Verify foreign key constraints
+SELECT conname, conrelid::regclass AS table_name, 
+       confrelid::regclass AS referenced_table
+FROM pg_constraint
+WHERE contype = 'f'
+AND NOT EXISTS (
+    SELECT 1 FROM pg_constraint AS c2
+    WHERE c2.conname = pg_constraint.conname
+    AND c2.contype = 'f'
+);
+
+-- Check for corruption
+SELECT relname, n_dead_tup, n_live_tup, 
+       round(n_dead_tup::numeric / NULLIF(n_live_tup + n_dead_tup, 0) * 100, 2) AS dead_ratio
+FROM pg_stat_user_tables
+WHERE n_dead_tup > 1000
+ORDER BY dead_ratio DESC;
+SQL
+
+# Step 9: Run application-specific validation
+echo "[$(date)] Running application validation..."
+/opt/neo/scripts/validate-blockchain-state.py \
+  --database "$DB_NAME" \
+  --check-merkle-roots \
+  --verify-transaction-hashes \
+  --parallel-workers "$PARALLEL_JOBS"
+
+# Step 10: Switchover to recovered database
+echo "[$(date)] Switching to recovered database..."
+aws rds modify-db-instance \
+  --db-instance-identifier "$DB_NAME-old" \
+  --new-db-instance-identifier "$DB_NAME-corrupted-$(date +%s)" \
+  --apply-immediately
+
+aws rds modify-db-instance \
+  --db-instance-identifier "$RECOVERY_HOST" \
+  --new-db-instance-identifier "$DB_NAME" \
+  --apply-immediately
+
+# Step 11: Update connection strings
+kubectl create secret generic db-connection \
+  --from-literal=url="postgresql://neo:${DB_PASSWORD}@${DB_NAME}.cluster-xyz.us-east-1.rds.amazonaws.com:5432/neo_production" \
+  --dry-run=client -o yaml | kubectl apply -f -
+
+# Step 12: Restart services
+echo "[$(date)] Restarting application services..."
+kubectl rollout restart deployment --all -n neo-service-layer
+kubectl wait --for=condition=ready pod --all -n neo-service-layer --timeout=300s
+
+# Step 13: Verify service health
+echo "[$(date)] Verifying service health..."
+for service in api-gateway block-service transaction-service; do
+    if ! curl -f "http://$service.neo-service-layer.svc.cluster.local/health"; then
+        echo "ERROR: $service health check failed!"
+        exit 1
+    fi
+done
+
+echo "[$(date)] Database recovery completed successfully!"
+echo "[$(date)] Total recovery time: $(($(date +%s) - $START_TIME)) seconds"
+
+# Send notification
+aws sns publish \
+  --topic-arn "arn:aws:sns:us-east-1:123456789:neo-ops-alerts" \
+  --subject "Database Recovery Completed" \
+  --message "Database $DB_NAME has been successfully recovered from corruption. Recovery point: $RECOVERY_POINT"</code></pre>
+                    </div>
+                </div>
+
+                <div class="dr-scenario">
+                    <div class="scenario-header">
+                        <h3>Service Degradation</h3>
+                        <span class="scenario-severity severity-medium">Medium</span>
+                    </div>
+                    <p><strong>Scenario:</strong> Partial service degradation due to resource exhaustion or component failure.</p>
+                    
+                    <h4>Automatic Remediation:</h4>
+                    <ul>
+                        <li>Horizontal pod autoscaling based on CPU/memory metrics</li>
+                        <li>Circuit breaker activation for failing dependencies</li>
+                        <li>Request rate limiting and quality of service controls</li>
+                        <li>Automatic cache warming and connection pool adjustment</li>
+                    </ul>
+                </div>
+            </section>
+
+            <!-- Backup Architecture -->
+            <section id="backup-architecture" class="content-section">
+                <h2>Backup Architecture</h2>
+                
+                <div class="backup-architecture">
+                    <div class="architecture-diagram">
+┌─────────────────────────────────────────────────────────────────────────┐
+│                          Production Environment                          │
+├─────────────────────────────────────────────────────────────────────────┤
+│                                                                         │
+│  ┌─────────────┐     ┌─────────────┐     ┌─────────────┐             │
+│  │   Neo N3    │     │   Neo X     │     │ PostgreSQL  │             │
+│  │  Blockchain │     │ Blockchain  │     │  Cluster    │             │
+│  └──────┬──────┘     └──────┬──────┘     └──────┬──────┘             │
+│         │                    │                    │                     │
+│         └────────────────────┴────────────────────┘                    │
+│                              │                                          │
+│                    ┌─────────┴─────────┐                              │
+│                    │   Backup Agent    │                              │
+│                    │   (Kubernetes)    │                              │
+│                    └─────────┬─────────┘                              │
+│                              │                                          │
+└──────────────────────────────┼──────────────────────────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │   Backup Gateway    │
+                    │  (Deduplication)    │
+                    └──────────┬──────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+┌─────────┴─────────┐ ┌───────┴────────┐ ┌────────┴────────┐
+│   Primary S3      │ │  Secondary     │ │   Tertiary      │
+│   us-east-1       │ │  Azure Blob    │ │   GCS Archive   │
+│                   │ │  eastus2       │ │   us-central1   │
+├───────────────────┤ ├────────────────┤ ├─────────────────┤
+│ • Hot backups     │ │ • Warm backups │ │ • Cold archives │
+│ • 7-day retention │ │ • 30-day ret.  │ │ • 365-day ret.  │
+│ • Instant access  │ │ • 4-hour RTO   │ │ • 24-hour RTO   │
+│ • S3 Standard     │ │ • Cool tier    │ │ • Archive tier  │
+└───────────────────┘ └────────────────┘ └─────────────────┘
+          │                    │                    │
+          └────────────────────┴────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │  Backup Catalog DB  │
+                    │    (DynamoDB)       │
+                    └─────────────────────┘
+                               │
+                    ┌──────────┴──────────┐
+                    │  Monitoring Stack   │
+                    │  • Prometheus       │
+                    │  • Grafana          │
+                    │  • AlertManager     │
+                    └─────────────────────┘</div>
+                </div>
+
+                <h3>Component Details</h3>
+                
+                <div class="component-grid">
+                    <div class="component-card">
+                        <h4>Backup Agent</h4>
+                        <p>Kubernetes-native backup operator that:</p>
+                        <ul>
+                            <li>Orchestrates backup jobs across all services</li>
+                            <li>Handles incremental and differential backups</li>
+                            <li>Manages backup lifecycle and retention</li>
+                            <li>Performs pre/post backup hooks</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>Backup Gateway</h4>
+                        <p>Intelligent backup routing layer featuring:</p>
+                        <ul>
+                            <li>Content-aware deduplication (40-60% reduction)</li>
+                            <li>Compression with adaptive algorithms</li>
+                            <li>Encryption at rest and in transit</li>
+                            <li>Multi-destination replication</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="component-card">
+                        <h4>Storage Tiers</h4>
+                        <p>Three-tier storage strategy:</p>
+                        <ul>
+                            <li><strong>Hot:</strong> Immediate access for recent backups</li>
+                            <li><strong>Warm:</strong> Cost-optimized for monthly backups</li>
+                            <li><strong>Cold:</strong> Long-term compliance archives</li>
+                            <li><strong>Immutable:</strong> WORM storage for ransomware protection</li>
+                        </ul>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Automated Backups -->
+            <section id="automated-backups" class="content-section">
+                <h2>Automated Backup Systems</h2>
+                
+                <div class="dr-automation">
+                    <h3>Backup Automation Tools</h3>
+                    
+                    <div class="automation-tool">
+                        <div class="tool-header">
+                            <h4 class="tool-name">Neo Backup Operator</h4>
+                            <span class="tool-badge">Kubernetes Native</span>
+                        </div>
+                        
+                        <p>Custom Kubernetes operator for managing backup lifecycle:</p>
+                        
+                        <div class="code-example">
+                            <div class="example-header">
+                                <span class="example-title">Backup Operator Deployment</span>
+                            </div>
+                            <pre class="line-numbers"><code class="language-go">package main
+
+import (
+    "context"
+    "fmt"
+    "time"
+    
+    "github.com/neo-service-layer/backup-operator/pkg/apis"
+    backupv1 "github.com/neo-service-layer/backup-operator/pkg/apis/backup/v1"
+    "k8s.io/apimachinery/pkg/runtime"
+    "sigs.k8s.io/controller-runtime/pkg/client"
+    "sigs.k8s.io/controller-runtime/pkg/controller"
+    "sigs.k8s.io/controller-runtime/pkg/handler"
+    "sigs.k8s.io/controller-runtime/pkg/manager"
+    "sigs.k8s.io/controller-runtime/pkg/reconcile"
+    "sigs.k8s.io/controller-runtime/pkg/source"
+)
+
+// BackupReconciler reconciles a Backup object
+type BackupReconciler struct {
+    client.Client
+    Scheme *runtime.Scheme
+}
+
+// Reconcile handles backup creation and management
+func (r *BackupReconciler) Reconcile(ctx context.Context, req reconcile.Request) (reconcile.Result, error) {
+    log := r.Log.WithValues("backup", req.NamespacedName)
+    
+    // Fetch the Backup instance
+    backup := &backupv1.Backup{}
+    err := r.Get(ctx, req.NamespacedName, backup)
+    if err != nil {
+        return reconcile.Result{}, client.IgnoreNotFound(err)
+    }
+    
+    // Check if backup is due
+    if !r.isBackupDue(backup) {
+        nextRun := r.calculateNextRun(backup)
+        return reconcile.Result{RequeueAfter: time.Until(nextRun)}, nil
+    }
+    
+    // Execute backup workflow
+    if err := r.executeBackup(ctx, backup); err != nil {
+        backup.Status.Phase = backupv1.BackupPhaseFailed
+        backup.Status.Message = err.Error()
+        r.Status().Update(ctx, backup)
+        return reconcile.Result{}, err
+    }
+    
+    // Update status
+    backup.Status.Phase = backupv1.BackupPhaseCompleted
+    backup.Status.LastBackupTime = &metav1.Time{Time: time.Now()}
+    backup.Status.NextBackupTime = &metav1.Time{Time: r.calculateNextRun(backup)}
+    
+    return reconcile.Result{
+        RequeueAfter: time.Until(backup.Status.NextBackupTime.Time),
+    }, r.Status().Update(ctx, backup)
+}
+
+func (r *BackupReconciler) executeBackup(ctx context.Context, backup *backupv1.Backup) error {
+    log := r.Log.WithValues("backup", backup.Name)
+    
+    // Create backup job
+    job := r.constructBackupJob(backup)
+    if err := r.Create(ctx, job); err != nil {
+        return fmt.Errorf("failed to create backup job: %w", err)
+    }
+    
+    // Wait for job completion
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+    
+    timeout := time.After(backup.Spec.Timeout)
+    
+    for {
+        select {
+        case <-ticker.C:
+            if err := r.Get(ctx, client.ObjectKeyFromObject(job), job); err != nil {
+                return err
+            }
+            
+            if job.Status.Succeeded > 0 {
+                log.Info("Backup completed successfully")
+                return r.postBackupTasks(ctx, backup, job)
+            }
+            
+            if job.Status.Failed > 0 {
+                return fmt.Errorf("backup job failed")
+            }
+            
+        case <-timeout:
+            return fmt.Errorf("backup timed out after %v", backup.Spec.Timeout)
+        }
+    }
+}
+
+func (r *BackupReconciler) constructBackupJob(backup *backupv1.Backup) *batchv1.Job {
+    backoffLimit := int32(2)
+    ttl := int32(3600) // 1 hour
+    
+    return &batchv1.Job{
+        ObjectMeta: metav1.ObjectMeta{
+            Name:      fmt.Sprintf("%s-%d", backup.Name, time.Now().Unix()),
+            Namespace: backup.Namespace,
+            Labels: map[string]string{
+                "backup.neo/name": backup.Name,
+                "backup.neo/type": string(backup.Spec.Type),
+            },
+        },
+        Spec: batchv1.JobSpec{
+            BackoffLimit: &backoffLimit,
+            TTLSecondsAfterFinished: &ttl,
+            Template: corev1.PodTemplateSpec{
+                Spec: corev1.PodSpec{
+                    ServiceAccountName: "backup-operator",
+                    RestartPolicy: corev1.RestartPolicyOnFailure,
+                    Containers: []corev1.Container{
+                        {
+                            Name:  "backup",
+                            Image: "neo-service-layer/backup-tool:v2.0.0",
+                            Command: []string{
+                                "/usr/local/bin/neo-backup",
+                                "--type", string(backup.Spec.Type),
+                                "--source", backup.Spec.Source,
+                                "--destination", backup.Spec.Destination,
+                                "--compression", backup.Spec.Compression.Algorithm,
+                                "--encryption-key", backup.Spec.Encryption.KeyID,
+                            },
+                            Env: []corev1.EnvVar{
+                                {
+                                    Name: "AWS_REGION",
+                                    Value: "us-east-1",
+                                },
+                                {
+                                    Name: "BACKUP_METRICS_ENABLED",
+                                    Value: "true",
+                                },
+                            },
+                            Resources: corev1.ResourceRequirements{
+                                Requests: corev1.ResourceList{
+                                    corev1.ResourceCPU:    resource.MustParse("2"),
+                                    corev1.ResourceMemory: resource.MustParse("4Gi"),
+                                },
+                                Limits: corev1.ResourceList{
+                                    corev1.ResourceCPU:    resource.MustParse("4"),
+                                    corev1.ResourceMemory: resource.MustParse("8Gi"),
+                                },
+                            },
+                            VolumeMounts: []corev1.VolumeMount{
+                                {
+                                    Name:      "data",
+                                    MountPath: "/data",
+                                    ReadOnly:  true,
+                                },
+                                {
+                                    Name:      "temp",
+                                    MountPath: "/tmp",
+                                },
+                            },
+                        },
+                    },
+                    Volumes: r.constructVolumes(backup),
+                },
+            },
+        },
+    }
+}
+
+func (r *BackupReconciler) postBackupTasks(ctx context.Context, backup *backupv1.Backup, job *batchv1.Job) error {
+    // Verify backup integrity
+    if backup.Spec.Verification.Enabled {
+        if err := r.verifyBackup(ctx, backup); err != nil {
+            return fmt.Errorf("backup verification failed: %w", err)
+        }
+    }
+    
+    // Apply retention policy
+    if err := r.applyRetentionPolicy(ctx, backup); err != nil {
+        return fmt.Errorf("failed to apply retention policy: %w", err)
+    }
+    
+    // Update backup catalog
+    if err := r.updateBackupCatalog(ctx, backup, job); err != nil {
+        return fmt.Errorf("failed to update backup catalog: %w", err)
+    }
+    
+    // Send notifications
+    if err := r.sendNotifications(ctx, backup, "completed"); err != nil {
+        // Non-critical error, just log it
+        r.Log.Error(err, "Failed to send notifications")
+    }
+    
+    return nil
+}
+
+// Additional methods for verification, retention, catalog updates...
+
+func main() {
+    mgr, err := manager.New(config.GetConfigOrDie(), manager.Options{
+        Scheme: scheme.Scheme,
+        Port:   9443,
+    })
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    if err = (&BackupReconciler{
+        Client: mgr.GetClient(),
+        Scheme: mgr.GetScheme(),
+    }).SetupWithManager(mgr); err != nil {
+        log.Fatal(err)
+    }
+    
+    log.Info("Starting backup operator")
+    if err := mgr.Start(ctrl.SetupSignalHandler()); err != nil {
+        log.Fatal(err)
+    }
+}</code></pre>
+                        </div>
+                    </div>
+                    
+                    <div class="automation-tool">
+                        <div class="tool-header">
+                            <h4 class="tool-name">Backup Verification System</h4>
+                            <span class="tool-badge">Python</span>
+                        </div>
+                        
+                        <p>Automated backup verification and integrity checking:</p>
+                        
+                        <div class="code-example">
+                            <div class="example-header">
+                                <span class="example-title">backup-verification.py</span>
+                            </div>
+                            <pre class="line-numbers"><code class="language-python">#!/usr/bin/env python3
+"""
+Backup Verification System
+Validates backup integrity and performs test restores
+"""
+
+import asyncio
+import hashlib
+import json
+import logging
+import os
+import tempfile
+from datetime import datetime, timedelta
+from typing import Dict, List, Optional, Tuple
+
+import aioboto3
+import asyncpg
+import click
+from prometheus_client import Counter, Histogram, Gauge
+
+# Metrics
+verification_duration = Histogram(
+    'backup_verification_duration_seconds',
+    'Time spent verifying backups',
+    ['backup_type', 'status']
+)
+verification_counter = Counter(
+    'backup_verifications_total',
+    'Total number of backup verifications',
+    ['backup_type', 'status']
+)
+backup_age_gauge = Gauge(
+    'backup_age_hours',
+    'Age of backups in hours',
+    ['backup_type', 'location']
+)
+
+class BackupVerifier:
+    def __init__(self, config_path: str):
+        self.config = self._load_config(config_path)
+        self.s3_client = None
+        self.db_pool = None
+        self.logger = logging.getLogger(__name__)
+        
+    async def initialize(self):
+        """Initialize connections and resources"""
+        session = aioboto3.Session()
+        self.s3_client = await session.client('s3').__aenter__()
+        
+        self.db_pool = await asyncpg.create_pool(
+            self.config['catalog_db']['connection_string'],
+            min_size=5,
+            max_size=20
+        )
+    
+    async def verify_all_backups(self) -> Dict[str, any]:
+        """Verify all backups according to policy"""
+        results = {
+            'timestamp': datetime.utcnow().isoformat(),
+            'verified': 0,
+            'failed': 0,
+            'warnings': [],
+            'errors': []
+        }
+        
+        # Get list of backups to verify
+        backups = await self._get_pending_verifications()
+        
+        # Verify backups in parallel
+        tasks = []
+        for backup in backups:
+            task = self._verify_backup(backup)
+            tasks.append(task)
+        
+        verification_results = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        # Process results
+        for backup, result in zip(backups, verification_results):
+            if isinstance(result, Exception):
+                results['failed'] += 1
+                results['errors'].append({
+                    'backup_id': backup['id'],
+                    'error': str(result)
+                })
+                verification_counter.labels(
+                    backup_type=backup['type'],
+                    status='failed'
+                ).inc()
+            else:
+                results['verified'] += 1
+                if result.get('warnings'):
+                    results['warnings'].extend(result['warnings'])
+                verification_counter.labels(
+                    backup_type=backup['type'],
+                    status='success'
+                ).inc()
+        
+        return results
+    
+    async def _verify_backup(self, backup: Dict) -> Dict:
+        """Verify individual backup"""
+        start_time = asyncio.get_event_loop().time()
+        
+        try:
+            # Check backup exists
+            if not await self._backup_exists(backup):
+                raise Exception(f"Backup file not found: {backup['path']}")
+            
+            # Verify checksum
+            if not await self._verify_checksum(backup):
+                raise Exception("Checksum verification failed")
+            
+            # Test restore (sampling)
+            if backup['type'] in ['database', 'critical'] or self._should_test_restore(backup):
+                await self._test_restore(backup)
+            
+            # Check backup age
+            age_hours = (datetime.utcnow() - backup['created_at']).total_seconds() / 3600
+            backup_age_gauge.labels(
+                backup_type=backup['type'],
+                location=backup['location']
+            ).set(age_hours)
+            
+            # Update verification timestamp
+            await self._update_verification_status(backup['id'], 'verified')
+            
+            duration = asyncio.get_event_loop().time() - start_time
+            verification_duration.labels(
+                backup_type=backup['type'],
+                status='success'
+            ).observe(duration)
+            
+            return {
+                'backup_id': backup['id'],
+                'status': 'verified',
+                'duration': duration,
+                'warnings': []
+            }
+            
+        except Exception as e:
+            duration = asyncio.get_event_loop().time() - start_time
+            verification_duration.labels(
+                backup_type=backup['type'],
+                status='failed'
+            ).observe(duration)
+            
+            await self._update_verification_status(backup['id'], 'failed', str(e))
+            raise
+    
+    async def _test_restore(self, backup: Dict):
+        """Perform test restore of backup"""
+        self.logger.info(f"Starting test restore for backup {backup['id']}")
+        
+        with tempfile.TemporaryDirectory() as tmpdir:
+            # Download backup
+            local_path = os.path.join(tmpdir, 'backup.tar.gz')
+            await self._download_backup(backup['path'], local_path)
+            
+            # Extract and verify based on type
+            if backup['type'] == 'database':
+                await self._test_database_restore(local_path, tmpdir)
+            elif backup['type'] == 'blockchain':
+                await self._test_blockchain_restore(local_path, tmpdir)
+            elif backup['type'] == 'application':
+                await self._test_application_restore(local_path, tmpdir)
+    
+    async def _test_database_restore(self, backup_path: str, workdir: str):
+        """Test database restore"""
+        # Create test database
+        test_db = f"test_restore_{int(datetime.utcnow().timestamp())}"
+        
+        async with self.db_pool.acquire() as conn:
+            await conn.execute(f"CREATE DATABASE {test_db}")
+        
+        try:
+            # Restore backup to test database
+            restore_cmd = f"""
+                pg_restore -d {test_db} -j 4 --no-owner --no-privileges {backup_path}
+            """
+            
+            process = await asyncio.create_subprocess_shell(
+                restore_cmd,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE
+            )
+            
+            stdout, stderr = await process.communicate()
+            
+            if process.returncode != 0:
+                raise Exception(f"Database restore failed: {stderr.decode()}")
+            
+            # Run validation queries
+            async with self.db_pool.acquire() as conn:
+                # Check table counts
+                tables = await conn.fetch("""
+                    SELECT tablename FROM pg_tables 
+                    WHERE schemaname = 'public'
+                """)
+                
+                if len(tables) < 10:  # Expected minimum tables
+                    raise Exception(f"Insufficient tables restored: {len(tables)}")
+                
+                # Verify data integrity
+                for table in tables:
+                    count = await conn.fetchval(
+                        f"SELECT COUNT(*) FROM {table['tablename']}"
+                    )
+                    self.logger.debug(f"Table {table['tablename']} has {count} rows")
+            
+        finally:
+            # Cleanup test database
+            async with self.db_pool.acquire() as conn:
+                await conn.execute(f"DROP DATABASE IF EXISTS {test_db}")
+    
+    async def _test_blockchain_restore(self, backup_path: str, workdir: str):
+        """Test blockchain state restore"""
+        # Extract blockchain data
+        extract_cmd = f"tar -xzf {backup_path} -C {workdir}"
+        
+        process = await asyncio.create_subprocess_shell(
+            extract_cmd,
+            stdout=asyncio.subprocess.PIPE,
+            stderr=asyncio.subprocess.PIPE
+        )
+        
+        await process.communicate()
+        
+        # Verify blockchain files
+        required_files = [
+            'blocks.dat',
+            'chainstate',
+            'indexes/txindex',
+            'wallet.dat'
+        ]
+        
+        for file in required_files:
+            file_path = os.path.join(workdir, file)
+            if not os.path.exists(file_path):
+                raise Exception(f"Missing blockchain file: {file}")
+        
+        # Verify block integrity
+        latest_block = self._read_latest_block(workdir)
+        if not self._verify_block_hash(latest_block):
+            raise Exception("Block hash verification failed")
+    
+    async def _verify_checksum(self, backup: Dict) -> bool:
+        """Verify backup checksum"""
+        expected_checksum = backup.get('checksum')
+        if not expected_checksum:
+            self.logger.warning(f"No checksum found for backup {backup['id']}")
+            return True
+        
+        # Calculate actual checksum
+        actual_checksum = await self._calculate_s3_checksum(backup['path'])
+        
+        return actual_checksum == expected_checksum
+    
+    async def _calculate_s3_checksum(self, s3_path: str) -> str:
+        """Calculate checksum for S3 object"""
+        bucket, key = self._parse_s3_path(s3_path)
+        
+        # For large files, use multipart checksum
+        response = await self.s3_client.head_object(Bucket=bucket, Key=key)
+        size = response['ContentLength']
+        
+        if size > 100 * 1024 * 1024:  # 100MB
+            # Use S3 ETag for large files
+            return response['ETag'].strip('"')
+        else:
+            # Download and calculate SHA256 for small files
+            response = await self.s3_client.get_object(Bucket=bucket, Key=key)
+            body = await response['Body'].read()
+            return hashlib.sha256(body).hexdigest()
+    
+    async def _update_verification_status(self, backup_id: str, status: str, error: str = None):
+        """Update backup verification status in catalog"""
+        async with self.db_pool.acquire() as conn:
+            await conn.execute("""
+                UPDATE backups
+                SET 
+                    verification_status = $1,
+                    last_verified = $2,
+                    verification_error = $3
+                WHERE id = $4
+            """, status, datetime.utcnow(), error, backup_id)
+    
+    def _should_test_restore(self, backup: Dict) -> bool:
+        """Determine if backup should be test restored"""
+        # Test restore 5% of backups randomly
+        import random
+        return random.random() < 0.05
+
+@click.command()
+@click.option('--config', default='/etc/neo/backup-verify.yaml', help='Configuration file')
+@click.option('--continuous', is_flag=True, help='Run continuously')
+@click.option('--interval', default=3600, help='Verification interval in seconds')
+async def main(config: str, continuous: bool, interval: int):
+    """Backup verification service"""
+    logging.basicConfig(level=logging.INFO)
+    
+    verifier = BackupVerifier(config)
+    await verifier.initialize()
+    
+    if continuous:
+        while True:
+            try:
+                results = await verifier.verify_all_backups()
+                logging.info(f"Verification complete: {results}")
+            except Exception as e:
+                logging.error(f"Verification failed: {e}")
+            
+            await asyncio.sleep(interval)
+    else:
+        results = await verifier.verify_all_backups()
+        print(json.dumps(results, indent=2))
+
+if __name__ == "__main__":
+    asyncio.run(main())</code></pre>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Multi-Region Failover -->
+            <section id="multi-region-failover" class="content-section">
+                <h2>Multi-Region Failover</h2>
+                
+                <div class="alert alert-info">
+                    <i class="ti ti-world"></i>
+                    <div>
+                        <strong>Geographic Redundancy</strong>
+                        <p>Neo Service Layer operates across multiple regions with automatic failover capabilities, ensuring service availability even during regional outages.</p>
+                    </div>
+                </div>
+
+                <h3>Regional Architecture</h3>
+                
+                <div class="code-example">
+                    <div class="example-header">
+                        <span class="example-title">Multi-Region Configuration</span>
+                    </div>
+                    <pre class="line-numbers"><code class="language-yaml"># multi-region-config.yaml
+apiVersion: neo.service.layer/v1
+kind: MultiRegionDeployment
+metadata:
+  name: neo-global-deployment
+spec:
+  regions:
+    primary:
+      name: us-east-1
+      provider: aws
+      role: active
+      capacity:
+        minReplicas: 10
+        maxReplicas: 100
+        targetUtilization: 70
+      services:
+        - name: api-gateway
+          replicas: 5
+          resources:
+            cpu: 4
+            memory: 8Gi
+        - name: block-service
+          replicas: 3
+          resources:
+            cpu: 8
+            memory: 16Gi
+        - name: transaction-service
+          replicas: 5
+          resources:
+            cpu: 4
+            memory: 8Gi
+      database:
+        primary: true
+        replicas: 3
+        storage: 1Ti
+        backupRetention: 30d
+    
+    secondary:
+      name: us-west-2
+      provider: aws
+      role: standby
+      capacity:
+        minReplicas: 5
+        maxReplicas: 50
+        targetUtilization: 50
+      services:
+        - name: api-gateway
+          replicas: 2
+          resources:
+            cpu: 4
+            memory: 8Gi
+        - name: block-service
+          replicas: 2
+          resources:
+            cpu: 8
+            memory: 16Gi
+        - name: transaction-service
+          replicas: 2
+          resources:
+            cpu: 4
+            memory: 8Gi
+      database:
+        primary: false
+        readReplica: true
+        replicationLag: 5s
+    
+    tertiary:
+      name: europe-west1
+      provider: gcp
+      role: read-only
+      capacity:
+        minReplicas: 3
+        maxReplicas: 30
+        targetUtilization: 60
+      services:
+        - name: api-gateway
+          replicas: 2
+          resources:
+            cpu: 2
+            memory: 4Gi
+        - name: analytics-service
+          replicas: 3
+          resources:
+            cpu: 4
+            memory: 8Gi
+      database:
+        primary: false
+        readReplica: true
+        replicationLag: 30s
+  
+  failover:
+    automatic: true
+    healthCheckInterval: 10s
+    failureThreshold: 3
+    strategy: active-passive
+    priorities:
+      - us-east-1
+      - us-west-2
+      - europe-west1
+    
+  trafficDistribution:
+    method: geo-proximity
+    weights:
+      us-east-1: 60
+      us-west-2: 30
+      europe-west1: 10
+    stickySession:
+      enabled: true
+      duration: 1h
+  
+  dataReplication:
+    mode: asynchronous
+    targets:
+      - from: us-east-1
+        to: [us-west-2, europe-west1]
+        compression: true
+        encryption: true
+    conflictResolution: last-write-wins
+    
+  monitoring:
+    crossRegionLatency:
+      enabled: true
+      threshold: 100ms
+    replicationLag:
+      enabled: true
+      threshold: 30s
+    availability:
+      sla: 99.99
+      measurementWindow: 30d</code></pre>
+                </div>
+
+                <h3>Failover Orchestration</h3>
+                
+                <div class="code-example">
+                    <div class="example-header">
+                        <span class="example-title">Regional Failover Controller</span>
+                    </div>
+                    <pre class="line-numbers"><code class="language-go">package failover
+
+import (
+    "context"
+    "fmt"
+    "sync"
+    "time"
+    
+    "github.com/neo-service-layer/core/pkg/health"
+    "github.com/neo-service-layer/core/pkg/regions"
+)
+
+type RegionalFailoverController struct {
+    regions        map[string]*Region
+    currentPrimary string
+    healthChecker  *health.Checker
+    mu             sync.RWMutex
+}
+
+func (rfc *RegionalFailoverController) MonitorAndFailover(ctx context.Context) {
+    ticker := time.NewTicker(10 * time.Second)
+    defer ticker.Stop()
+    
+    consecutiveFailures := 0
+    
+    for {
+        select {
+        case <-ctx.Done():
+            return
+        case <-ticker.C:
+            healthy, err := rfc.checkPrimaryHealth()
+            if err != nil || !healthy {
+                consecutiveFailures++
+                
+                if consecutiveFailures >= 3 {
+                    if err := rfc.initiateFailover(); err != nil {
+                        log.Errorf("Failover failed: %v", err)
+                    } else {
+                        consecutiveFailures = 0
+                    }
+                }
+            } else {
+                consecutiveFailures = 0
+            }
+        }
+    }
+}
+
+func (rfc *RegionalFailoverController) initiateFailover() error {
+    rfc.mu.Lock()
+    defer rfc.mu.Unlock()
+    
+    log.Warnf("Initiating failover from %s", rfc.currentPrimary)
+    
+    // Find next healthy region
+    nextPrimary := rfc.selectNextPrimary()
+    if nextPrimary == "" {
+        return fmt.Errorf("no healthy regions available")
+    }
+    
+    // Pre-failover checks
+    if err := rfc.preFailoverChecks(nextPrimary); err != nil {
+        return fmt.Errorf("pre-failover checks failed: %w", err)
+    }
+    
+    // Execute failover steps
+    steps := []func() error{
+        func() error { return rfc.promoteSecondaryDatabase(nextPrimary) },
+        func() error { return rfc.scaleUpServices(nextPrimary) },
+        func() error { return rfc.updateDNS(nextPrimary) },
+        func() error { return rfc.updateLoadBalancers(nextPrimary) },
+        func() error { return rfc.drainConnections(rfc.currentPrimary) },
+        func() error { return rfc.updateMonitoring(nextPrimary) },
+    }
+    
+    for i, step := range steps {
+        if err := step(); err != nil {
+            // Attempt rollback
+            rfc.rollbackFailover(i)
+            return fmt.Errorf("failover step %d failed: %w", i, err)
+        }
+    }
+    
+    // Update primary
+    oldPrimary := rfc.currentPrimary
+    rfc.currentPrimary = nextPrimary
+    
+    // Demote old primary
+    if err := rfc.demoteRegion(oldPrimary); err != nil {
+        log.Errorf("Failed to demote old primary: %v", err)
+    }
+    
+    log.Infof("Failover completed: %s -> %s", oldPrimary, nextPrimary)
+    
+    // Send notifications
+    rfc.notifyFailoverComplete(oldPrimary, nextPrimary)
+    
+    return nil
+}
+
+func (rfc *RegionalFailoverController) promoteSecondaryDatabase(region string) error {
+    db := rfc.regions[region].Database
+    
+    // Check replication lag
+    lag, err := db.GetReplicationLag()
+    if err != nil {
+        return err
+    }
+    
+    if lag > 30*time.Second {
+        return fmt.Errorf("replication lag too high: %v", lag)
+    }
+    
+    // Promote to primary
+    if err := db.PromoteToPrimary(); err != nil {
+        return fmt.Errorf("database promotion failed: %w", err)
+    }
+    
+    // Wait for promotion to complete
+    timeout := time.After(2 * time.Minute)
+    ticker := time.NewTicker(5 * time.Second)
+    defer ticker.Stop()
+    
+    for {
+        select {
+        case <-timeout:
+            return fmt.Errorf("database promotion timeout")
+        case <-ticker.C:
+            if db.IsPrimary() {
+                return nil
+            }
+        }
+    }
+}
+
+func (rfc *RegionalFailoverController) scaleUpServices(region string) error {
+    r := rfc.regions[region]
+    
+    // Scale services to handle full load
+    for _, service := range r.Services {
+        currentReplicas := service.GetReplicas()
+        targetReplicas := service.GetTargetReplicasForPrimary()
+        
+        if currentReplicas < targetReplicas {
+            log.Infof("Scaling %s from %d to %d replicas", 
+                service.Name, currentReplicas, targetReplicas)
+            
+            if err := service.Scale(targetReplicas); err != nil {
+                return fmt.Errorf("failed to scale %s: %w", service.Name, err)
+            }
+        }
+    }
+    
+    // Wait for services to be ready
+    return rfc.waitForServicesReady(region, 5*time.Minute)
+}
+
+func (rfc *RegionalFailoverController) updateDNS(region string) error {
+    dnsUpdates := []DNSUpdate{
+        {
+            RecordName: "api.neoservicelayer.com",
+            RecordType: "A",
+            Target:     rfc.regions[region].LoadBalancer.IP,
+            TTL:        60,
+        },
+        {
+            RecordName: "*.neoservicelayer.com",
+            RecordType: "CNAME",
+            Target:     rfc.regions[region].LoadBalancer.DNS,
+            TTL:        60,
+        },
+    }
+    
+    for _, update := range dnsUpdates {
+        if err := rfc.dnsProvider.UpdateRecord(update); err != nil {
+            return fmt.Errorf("DNS update failed for %s: %w", update.RecordName, err)
+        }
+    }
+    
+    // Wait for DNS propagation
+    time.Sleep(30 * time.Second)
+    
+    return nil
+}
+
+// Additional methods...</code></pre>
+                </div>
+            </section>
+
+            <!-- Business Continuity -->
+            <section id="business-continuity" class="content-section">
+                <h2>Business Continuity Planning</h2>
+                
+                <div class="dr-checklist">
+                    <h3>Business Continuity Checklist</h3>
+                    
+                    <div class="checklist-section">
+                        <h4 class="checklist-title">Preparation Phase</h4>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Risk Assessment</strong> - Identify and document all potential disaster scenarios
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Business Impact Analysis</strong> - Determine critical services and acceptable downtime
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Recovery Strategies</strong> - Define recovery procedures for each scenario
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Team Training</strong> - Ensure all team members understand their roles
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Communication Plan</strong> - Establish internal and external communication protocols
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="checklist-section">
+                        <h4 class="checklist-title">Response Phase</h4>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Incident Detection</strong> - Automated monitoring identifies the issue
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Initial Assessment</strong> - Determine scope and severity of incident
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Activation Decision</strong> - Decide whether to activate DR procedures
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Team Mobilization</strong> - Alert and assemble recovery team
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Execute Recovery</strong> - Implement recovery procedures
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="checklist-section">
+                        <h4 class="checklist-title">Recovery Phase</h4>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Service Restoration</strong> - Bring critical services back online
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Data Validation</strong> - Verify data integrity and consistency
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Performance Testing</strong> - Ensure services meet performance targets
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>User Communication</strong> - Update users on service status
+                            </div>
+                        </div>
+                        
+                        <div class="checklist-item">
+                            <div class="checklist-checkbox" onclick="toggleCheck(this)"></div>
+                            <div class="checklist-label">
+                                <strong>Full Operations</strong> - Resume normal business operations
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Key Personnel and Responsibilities</h3>
+                
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Role</th>
+                            <th>Primary Responsibilities</th>
+                            <th>Contact Priority</th>
+                            <th>Backup Personnel</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>Incident Commander</strong></td>
+                            <td>Overall coordination and decision-making</td>
+                            <td>Immediate</td>
+                            <td>VP of Engineering</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Technical Lead</strong></td>
+                            <td>Technical recovery execution</td>
+                            <td>Immediate</td>
+                            <td>Senior SRE</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Communications Lead</strong></td>
+                            <td>Internal/external communications</td>
+                            <td>Within 15 min</td>
+                            <td>PR Manager</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Database Admin</strong></td>
+                            <td>Database recovery and validation</td>
+                            <td>Within 15 min</td>
+                            <td>Senior DBA</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Security Lead</strong></td>
+                            <td>Security assessment and response</td>
+                            <td>Within 30 min</td>
+                            <td>Security Analyst</td>
+                        </tr>
+                        <tr>
+                            <td><strong>Business Liaison</strong></td>
+                            <td>Business impact assessment</td>
+                            <td>Within 30 min</td>
+                            <td>Product Manager</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </section>
+
+            <!-- Recovery Runbooks -->
+            <section id="recovery-runbooks" class="content-section">
+                <h2>Recovery Runbooks</h2>
+                
+                <div class="recovery-runbook">
+                    <h3>Complete System Recovery Runbook</h3>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">1</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Initial Assessment</h4>
+                            <p>Determine the scope and severity of the outage:</p>
+                            <div class="runbook-command">
+# Check all regional health endpoints
+for region in us-east-1 us-west-2 eu-west-1; do
+    echo "Checking $region..."
+    curl -s https://health-$region.neoservicelayer.com/status | jq .
+done
+
+# Check database cluster status
+kubectl get pods -n neo-database -o wide
+psql -h db.neo.internal -c "SELECT * FROM pg_stat_replication;"</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">2</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Activate Disaster Recovery Mode</h4>
+                            <p>Switch to DR configuration and notify team:</p>
+                            <div class="runbook-command">
+# Activate DR mode
+kubectl apply -f /etc/neo/disaster-recovery/dr-mode.yaml
+
+# Scale down non-critical services
+kubectl scale deployment analytics-service reporting-service \
+    --replicas=0 -n neo-service-layer
+
+# Send team notifications
+./scripts/notify-team.sh --severity=critical \
+    --message="DR mode activated - all hands on deck"</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">3</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Database Recovery</h4>
+                            <p>Restore database from latest backup:</p>
+                            <div class="runbook-command">
+# Find latest backup
+export LATEST_BACKUP=$(aws s3 ls s3://neo-backups-primary/postgresql/ \
+    --recursive | grep base.tar.gz | sort | tail -1 | awk '{print $4}')
+
+# Restore database
+./scripts/restore-database.sh --backup=$LATEST_BACKUP \
+    --target-time="$(date -d '5 minutes ago' --iso-8601)" \
+    --verify-integrity=true</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">4</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Service Recovery</h4>
+                            <p>Restore services in priority order:</p>
+                            <div class="runbook-command">
+# Restore core services first
+for service in api-gateway auth-service transaction-service; do
+    kubectl rollout restart deployment/$service -n neo-service-layer
+    kubectl wait --for=condition=ready pod -l app=$service \
+        -n neo-service-layer --timeout=300s
+done
+
+# Verify service health
+./scripts/verify-services.sh --critical-only</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">5</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Data Validation</h4>
+                            <p>Verify data integrity and consistency:</p>
+                            <div class="runbook-command">
+# Run integrity checks
+./scripts/validate-blockchain-state.py \
+    --full-validation \
+    --compare-with-backup \
+    --generate-report
+
+# Check transaction continuity
+psql -d neo_production -c "
+    SELECT COUNT(*) as missing_transactions
+    FROM generate_series(
+        (SELECT MIN(block_number) FROM transactions),
+        (SELECT MAX(block_number) FROM transactions)
+    ) AS expected(block_number)
+    LEFT JOIN transactions t ON t.block_number = expected.block_number
+    WHERE t.block_number IS NULL;
+"</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">6</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Performance Verification</h4>
+                            <p>Ensure system meets performance targets:</p>
+                            <div class="runbook-command">
+# Run performance tests
+./scripts/performance-test.sh \
+    --endpoints=api-gateway,transaction-service \
+    --duration=300 \
+    --target-rps=1000
+
+# Monitor key metrics
+watch -n 5 'kubectl top pods -n neo-service-layer | head -20'</div>
+                        </div>
+                    </div>
+                    
+                    <div class="runbook-step">
+                        <div class="runbook-number">7</div>
+                        <div class="runbook-content">
+                            <h4 class="runbook-title">Exit DR Mode</h4>
+                            <p>Return to normal operations:</p>
+                            <div class="runbook-command">
+# Scale up all services
+kubectl scale deployment --all --replicas=3 -n neo-service-layer
+
+# Remove DR mode configuration
+kubectl delete -f /etc/neo/disaster-recovery/dr-mode.yaml
+
+# Update status page
+./scripts/update-status-page.sh --status=operational \
+    --message="All systems restored and operational"</div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Metrics and Reporting -->
+            <section id="metrics-reporting" class="content-section">
+                <h2>Metrics & Reporting</h2>
+                
+                <div class="dr-metrics">
+                    <h3>Key DR Metrics</h3>
+                    
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="metric-label">Backup Success Rate</div>
+                            <div class="metric-value">99.8%</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-label">Average Recovery Time</div>
+                            <div class="metric-value">12.3 min</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-label">Data Recovery Rate</div>
+                            <div class="metric-value">100%</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-label">DR Tests Passed</div>
+                            <div class="metric-value">48/50</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-label">Failover Success</div>
+                            <div class="metric-value">100%</div>
+                        </div>
+                        
+                        <div class="metric-card">
+                            <div class="metric-label">Alert Response Time</div>
+                            <div class="metric-value">< 2 min</div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3>Disaster Recovery Dashboard</h3>
+                
+                <div class="code-example">
+                    <div class="example-header">
+                        <span class="example-title">Grafana Dashboard Configuration</span>
+                    </div>
+                    <pre class="line-numbers"><code class="language-json">{
+  "dashboard": {
+    "title": "Neo Service Layer - Disaster Recovery",
+    "panels": [
+      {
+        "title": "Backup Status Overview",
+        "type": "stat",
+        "targets": [{
+          "expr": "sum(backup_success_total) / sum(backup_attempts_total) * 100"
+        }],
+        "thresholds": {
+          "steps": [
+            {"value": 0, "color": "red"},
+            {"value": 95, "color": "yellow"},
+            {"value": 99, "color": "green"}
+          ]
+        }
+      },
+      {
+        "title": "Recovery Time Objective (RTO)",
+        "type": "gauge",
+        "targets": [{
+          "expr": "avg(recovery_duration_seconds) / 60"
+        }],
+        "max": 30,
+        "thresholds": {
+          "steps": [
+            {"value": 0, "color": "green"},
+            {"value": 15, "color": "yellow"},
+            {"value": 20, "color": "red"}
+          ]
+        }
+      },
+      {
+        "title": "Backup Size Trend",
+        "type": "graph",
+        "targets": [{
+          "expr": "backup_size_bytes",
+          "legendFormat": "{{backup_type}} - {{location}}"
+        }]
+      },
+      {
+        "title": "Replication Lag",
+        "type": "graph",
+        "targets": [{
+          "expr": "replication_lag_seconds",
+          "legendFormat": "{{source}} → {{destination}}"
+        }],
+        "alert": {
+          "conditions": [{
+            "evaluator": {"params": [300], "type": "gt"},
+            "query": {"params": ["A", "5m", "now"]}
+          }]
+        }
+      },
+      {
+        "title": "DR Test Results",
+        "type": "table",
+        "targets": [{
+          "expr": "dr_test_results{status='passed'}"
+        }],
+        "columns": [
+          {"text": "Test Name", "value": "test_name"},
+          {"text": "Last Run", "value": "timestamp"},
+          {"text": "Duration", "value": "duration"},
+          {"text": "Status", "value": "status"}
+        ]
+      }
+    ],
+    "refresh": "30s",
+    "time": {"from": "now-24h", "to": "now"}
+  }
+}</code></pre>
+                </div>
+            </section>
+
+            <!-- Best Practices -->
+            <section id="best-practices" class="content-section">
+                <h2>Best Practices</h2>
+                
+                <div class="best-practices-grid">
+                    <div class="practice-card">
+                        <div class="practice-icon">
+                            <i class="ti ti-calendar-event"></i>
+                        </div>
+                        <h3>Regular Testing</h3>
+                        <ul>
+                            <li>Conduct monthly DR drills</li>
+                            <li>Test restore procedures weekly</li>
+                            <li>Validate backups daily</li>
+                            <li>Document test results</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="practice-card">
+                        <div class="practice-icon">
+                            <i class="ti ti-file-text"></i>
+                        </div>
+                        <h3>Documentation</h3>
+                        <ul>
+                            <li>Keep runbooks up-to-date</li>
+                            <li>Document all procedures</li>
+                            <li>Maintain contact lists</li>
+                            <li>Version control everything</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="practice-card">
+                        <div class="practice-icon">
+                            <i class="ti ti-shield-lock"></i>
+                        </div>
+                        <h3>Security</h3>
+                        <ul>
+                            <li>Encrypt all backups</li>
+                            <li>Use immutable storage</li>
+                            <li>Implement access controls</li>
+                            <li>Audit all operations</li>
+                        </ul>
+                    </div>
+                    
+                    <div class="practice-card">
+                        <div class="practice-icon">
+                            <i class="ti ti-refresh"></i>
+                        </div>
+                        <h3>Continuous Improvement</h3>
+                        <ul>
+                            <li>Review incidents thoroughly</li>
+                            <li>Update procedures based on lessons</li>
+                            <li>Optimize recovery times</li>
+                            <li>Enhance automation</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="alert alert-warning">
+                    <i class="ti ti-alert-triangle"></i>
+                    <div>
+                        <strong>Remember:</strong> The best disaster recovery plan is one that's never needed. 
+                        Invest in prevention, monitoring, and redundancy to minimize the likelihood of disasters.
+                    </div>
+                </div>
+            </section>
+
+            <!-- Call to Action -->
+            <section class="cta-section">
+                <div class="cta-container">
+                    <h2>Ready to Implement Enterprise DR?</h2>
+                    <p>Get expert guidance on implementing disaster recovery for your Neo Service Layer deployment.</p>
+                    <div class="cta-buttons">
+                        <a href="/contact" class="btn btn-primary">Get DR Assessment</a>
+                        <a href="/docs/production-deployment-guide" class="btn btn-secondary">Deployment Guide</a>
+                    </div>
+                </div>
+            </section>
+        </article>
+    </main>
+
+    <!-- Footer -->
+    <footer id="footer" class="footer"></footer>
+
+    <!-- Scripts -->
+    <script src="../src/scripts/navigation.js"></script>
+    <script src="../src/scripts/docs-navigation.js"></script>
+    <script src="../src/scripts/code-examples.js"></script>
+    <script src="../src/scripts/search.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-yaml.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-go.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-json.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/plugins/line-numbers/prism-line-numbers.min.js"></script>
+    
+    <script>
+        // Initialize navigation
+        document.addEventListener('DOMContentLoaded', function() {
+            initNavigation();
+            initDocsNavigation();
+            initCodeExamples();
+            
+            // Initialize checklist functionality
+            window.toggleCheck = function(checkbox) {
+                checkbox.classList.toggle('checked');
+            };
+        });
+    </script>
+</body>
+</html>

@@ -42,7 +42,7 @@ public partial class BackupService
             {
                 RestoreId = restoreId,
                 Success = true,
-                Status = RestoreStatus.Completed,
+                Status = Models.RestoreStatus.Completed,
                 StartTime = DateTime.UtcNow.AddMinutes(-5), // Simulate start time
                 CompletionTime = DateTime.UtcNow,
                 ItemsRestored = 1,
@@ -59,7 +59,7 @@ public partial class BackupService
             {
                 RestoreId = restoreId,
                 Success = false,
-                Status = RestoreStatus.Failed,
+                Status = Models.RestoreStatus.Failed,
                 ErrorMessage = ex.Message,
                 StartTime = DateTime.UtcNow,
                 CompletionTime = DateTime.UtcNow
@@ -205,7 +205,7 @@ public partial class BackupService
                 throw new InvalidOperationException($"Backup metadata for {backupId} not found");
             }
 
-            var metadata = System.Text.Json.JsonSerializer.Deserialize<BackupMetadata>(metadataJson);
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<RestoreBackupMetadata>(metadataJson);
             if (metadata == null)
             {
                 throw new InvalidOperationException($"Invalid backup metadata for {backupId}");
@@ -425,7 +425,7 @@ public partial class BackupService
         await _enclaveManager.StorageDeleteDataAsync(key, CancellationToken.None);
     }
 
-    private async Task<byte[]> DecryptAndDecompressBackupAsync(string encryptedDataJson, BackupMetadata metadata)
+    private async Task<byte[]> DecryptAndDecompressBackupAsync(string encryptedDataJson, RestoreBackupMetadata metadata)
     {
         // Deserialize encrypted data
         var encryptedData = Convert.FromBase64String(encryptedDataJson);
@@ -443,7 +443,7 @@ public partial class BackupService
         return decryptedData;
     }
 
-    private async Task VerifyBackupIntegrityAsync(byte[] backupData, BackupMetadata metadata)
+    private async Task VerifyBackupIntegrityAsync(byte[] backupData, RestoreBackupMetadata metadata)
     {
         // Compute hash of backup data
         using var sha256 = System.Security.Cryptography.SHA256.Create();
@@ -608,7 +608,7 @@ public partial class BackupService
     /// <summary>
     /// Backup metadata structure for integrity verification
     /// </summary>
-    private class BackupMetadata
+    private class RestoreBackupMetadata
     {
         public string BackupId { get; set; } = string.Empty;
         public string DataHash { get; set; } = string.Empty;

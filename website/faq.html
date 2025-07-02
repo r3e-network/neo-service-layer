@@ -1,0 +1,668 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Frequently Asked Questions about Neo Service Layer - Get answers to common questions">
+    <title>FAQ | Neo Service Layer</title>
+    
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;900&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+    
+    <!-- Styles -->
+    <link rel="stylesheet" href="/src/styles/design-system.css">
+    <link rel="stylesheet" href="/src/styles/components.css">
+    <link rel="stylesheet" href="/src/styles/main.css">
+    
+    <!-- SEO -->
+    <meta property="og:title" content="FAQ - Neo Service Layer">
+    <meta property="og:description" content="Get answers to frequently asked questions about Neo Service Layer">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://neoservicelayer.com/faq">
+    <link rel="canonical" href="https://neoservicelayer.com/faq">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar">
+        <div class="nav-container">
+            <a href="/" class="nav-brand">
+                <span class="brand-icon">⚡</span>
+                Neo Service Layer
+            </a>
+            
+            <div class="nav-menu">
+                <a href="/#features" class="nav-link">Features</a>
+                <a href="/#services" class="nav-link">Services</a>
+                <a href="/docs/quick-start.html" class="nav-link">Documentation</a>
+                <a href="/docs/api-reference.html" class="nav-link">API</a>
+                <a href="https://github.com/r3e-network/neo-service-layer" class="nav-link">GitHub</a>
+            </div>
+            
+            <div class="nav-actions">
+                <a href="/app.html" class="neo-btn neo-btn-primary">Launch App</a>
+                <button class="nav-toggle" aria-label="Toggle navigation">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <!-- FAQ Content -->
+    <main class="faq-page">
+        <!-- Hero Section -->
+        <section class="faq-hero">
+            <div class="container">
+                <div class="faq-hero-content">
+                    <h1 class="faq-title">Frequently Asked <span class="neo-text-gradient">Questions</span></h1>
+                    <p class="faq-subtitle">
+                        Find answers to the most common questions about Neo Service Layer
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Search -->
+        <section class="faq-search">
+            <div class="container">
+                <div class="search-container">
+                    <div class="search-box">
+                        <svg width="20" height="20" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd"/>
+                        </svg>
+                        <input type="text" id="faq-search" placeholder="Search frequently asked questions..." class="neo-input">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- FAQ Categories -->
+        <section class="faq-categories">
+            <div class="container">
+                <div class="category-tabs">
+                    <button class="category-tab active" data-category="all">All Questions</button>
+                    <button class="category-tab" data-category="getting-started">Getting Started</button>
+                    <button class="category-tab" data-category="technical">Technical</button>
+                    <button class="category-tab" data-category="security">Security</button>
+                    <button class="category-tab" data-category="pricing">Pricing</button>
+                    <button class="category-tab" data-category="support">Support</button>
+                </div>
+
+                <div class="faq-content">
+                    <!-- Getting Started -->
+                    <div class="faq-section" data-category="getting-started">
+                        <h2>Getting Started</h2>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What is Neo Service Layer?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Neo Service Layer is a comprehensive blockchain infrastructure platform that provides 22+ smart contracts, Intel SGX integration, and enterprise-grade security for building decentralized applications on the Neo N3 network.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How do I get started with Neo Service Layer?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Start by reading our <a href="/docs/quick-start.html" class="neo-link">Quick Start Guide</a>. You can also launch our interactive dashboard to explore the services without any setup required.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Do I need to know blockchain development to use Neo Service Layer?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>While blockchain knowledge helps, our platform abstracts much of the complexity. We provide comprehensive documentation, examples, and SDKs that make it accessible to developers with traditional web development experience.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What programming languages are supported?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Neo Service Layer primarily uses C# for smart contracts (Neo N3 native) and provides JavaScript/TypeScript SDKs for client-side integration. We're expanding to support Python, Go, and Java SDKs.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Technical -->
+                    <div class="faq-section" data-category="technical">
+                        <h2>Technical Questions</h2>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What networks does Neo Service Layer support?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Currently, we support Neo N3 mainnet and testnet. Our cross-chain bridges enable interaction with Ethereum, Binance Smart Chain, and Polygon networks.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How does Intel SGX integration work?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Intel SGX provides hardware-level security for sensitive computations. Our platform uses SGX enclaves for private key operations, confidential smart contract execution, and secure data processing. This ensures maximum security for enterprise applications.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What are the system requirements?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>For development: Any modern computer with Node.js 18+ and .NET 6+. For production deployment with SGX: Intel processors with SGX support, minimum 8GB RAM, and Linux-based systems (Ubuntu 20.04+ recommended).</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How do I deploy to mainnet?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Follow our <a href="/docs/advanced-setup.html" class="neo-link">Advanced Setup Guide</a> for mainnet deployment. Ensure you have sufficient GAS for deployment, complete security audits, and follow our production checklist.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Security -->
+                    <div class="faq-section" data-category="security">
+                        <h2>Security</h2>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Has Neo Service Layer been audited?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Yes, our smart contracts have been audited by leading security firms including CertiK, Trail of Bits, and Consensys Diligence. All audit reports are available on our <a href="/security.html" class="neo-link">Security page</a>.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How secure are private keys in SGX enclaves?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>SGX enclaves provide hardware-level isolation where even privileged software cannot access the enclave's memory. Private keys are generated, stored, and used entirely within the enclave, providing maximum security against both software and physical attacks.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Do you have a bug bounty program?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Yes, we offer bug bounties up to $100,000 for critical vulnerabilities. Visit our <a href="/security.html#bug-bounty" class="neo-link">Bug Bounty page</a> for more details and submission guidelines.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How do you handle emergency situations?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>We have emergency pause functionality built into critical contracts, multi-signature requirements for sensitive operations, and a 24/7 monitoring system. Our incident response procedures are documented and regularly tested.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Pricing -->
+                    <div class="faq-section" data-category="pricing">
+                        <h2>Pricing & Costs</h2>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How much does it cost to use Neo Service Layer?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Neo Service Layer is open source and free to use. You only pay standard Neo network fees (GAS) for transactions and smart contract execution. There are no additional service fees for most operations.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What are the typical transaction costs?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Transaction costs depend on the complexity of operations. Simple transfers cost ~0.001 GAS, smart contract interactions range from 0.01-0.1 GAS, and complex operations may cost up to 1 GAS. Current GAS prices are very affordable.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Are there enterprise pricing options?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>We offer enterprise support packages including dedicated support, custom development, priority bug fixes, and enhanced SLAs. Contact our <a href="/contact.html" class="neo-link">sales team</a> for custom pricing.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Support -->
+                    <div class="faq-section" data-category="support">
+                        <h2>Support</h2>
+                        
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How can I get help if I'm stuck?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Join our <a href="https://discord.gg/neoservicelayer" class="neo-link">Discord community</a> for real-time help, check our comprehensive documentation, or submit issues on <a href="https://github.com/r3e-network/neo-service-layer" class="neo-link">GitHub</a>.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>What's the difference between community and enterprise support?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Community support is free through Discord, GitHub, and documentation. Enterprise support includes dedicated support channels, guaranteed response times, priority bug fixes, and direct access to our engineering team.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>Do you offer training or consulting services?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>Yes, we provide training workshops, architecture consulting, and custom development services. Our team can help with platform integration, security reviews, and optimization strategies.</p>
+                            </div>
+                        </div>
+
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <h3>How often is Neo Service Layer updated?</h3>
+                                <span class="faq-toggle">+</span>
+                            </div>
+                            <div class="faq-answer">
+                                <p>We release minor updates monthly and major releases quarterly. Security patches are released immediately when needed. Check our <a href="/roadmap.html" class="neo-link">roadmap</a> for upcoming features and our <a href="https://github.com/r3e-network/neo-service-layer/releases" class="neo-link">GitHub releases</a> for changelogs.</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Still Have Questions -->
+        <section class="faq-cta">
+            <div class="container">
+                <div class="cta-content">
+                    <h2>Still Have Questions?</h2>
+                    <p>Can't find what you're looking for? Our team is here to help.</p>
+                    <div class="cta-actions">
+                        <a href="/contact.html" class="neo-btn neo-btn-primary neo-btn-lg">Contact Support</a>
+                        <a href="https://discord.gg/neoservicelayer" class="neo-btn neo-btn-ghost neo-btn-lg">Join Discord</a>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <h4>Product</h4>
+                    <ul class="footer-links">
+                        <li><a href="/#features">Features</a></li>
+                        <li><a href="/#services">Services</a></li>
+                        <li><a href="/docs/quick-start.html">Documentation</a></li>
+                        <li><a href="/app.html">Launch App</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul class="footer-links">
+                        <li><a href="/docs/api-reference.html">API Reference</a></li>
+                        <li><a href="https://github.com/r3e-network/neo-service-layer">GitHub</a></li>
+                        <li><a href="/security.html">Security</a></li>
+                        <li><a href="/roadmap.html">Roadmap</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Company</h4>
+                    <ul class="footer-links">
+                        <li><a href="/about.html">About</a></li>
+                        <li><a href="/contact.html">Contact</a></li>
+                        <li><a href="/privacy.html">Privacy Policy</a></li>
+                        <li><a href="/terms.html">Terms of Service</a></li>
+                    </ul>
+                </div>
+                
+                <div class="footer-section">
+                    <h4>Community</h4>
+                    <ul class="footer-links">
+                        <li><a href="https://twitter.com/neoservicelayer">Twitter</a></li>
+                        <li><a href="https://discord.gg/neoservicelayer">Discord</a></li>
+                        <li><a href="https://t.me/neoservicelayer">Telegram</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="footer-bottom">
+                <p>&copy; 2025 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <style>
+        /* FAQ Page Specific Styles */
+        .faq-page {
+            padding-top: 80px;
+            background: var(--neo-black);
+        }
+
+        /* FAQ Hero */
+        .faq-hero {
+            padding: var(--neo-space-16) 0 var(--neo-space-8);
+            text-align: center;
+        }
+
+        .faq-title {
+            font-size: var(--neo-text-5xl);
+            font-weight: var(--neo-font-black);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .faq-subtitle {
+            font-size: var(--neo-text-xl);
+            color: var(--neo-gray-300);
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        /* Search */
+        .faq-search {
+            padding: var(--neo-space-8) 0;
+            background: var(--neo-gray-900);
+        }
+
+        .search-container {
+            max-width: 600px;
+            margin: 0 auto;
+        }
+
+        .search-box {
+            position: relative;
+        }
+
+        .search-box svg {
+            position: absolute;
+            left: var(--neo-space-4);
+            top: 50%;
+            transform: translateY(-50%);
+            color: var(--neo-gray-400);
+        }
+
+        .search-box input {
+            padding-left: var(--neo-space-12);
+        }
+
+        /* Categories */
+        .faq-categories {
+            padding: var(--neo-space-8) 0 var(--neo-space-16);
+        }
+
+        .category-tabs {
+            display: flex;
+            gap: var(--neo-space-2);
+            margin-bottom: var(--neo-space-12);
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .category-tab {
+            padding: var(--neo-space-3) var(--neo-space-6);
+            background: transparent;
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-lg);
+            color: var(--neo-gray-300);
+            font-weight: var(--neo-font-medium);
+            cursor: pointer;
+            transition: all var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .category-tab:hover,
+        .category-tab.active {
+            background: var(--neo-primary);
+            border-color: var(--neo-primary);
+            color: var(--neo-white);
+        }
+
+        /* FAQ Content */
+        .faq-content {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .faq-section {
+            margin-bottom: var(--neo-space-12);
+        }
+
+        .faq-section h2 {
+            font-size: var(--neo-text-3xl);
+            margin-bottom: var(--neo-space-8);
+            text-align: center;
+        }
+
+        .faq-item {
+            background: var(--neo-gray-900);
+            border: 1px solid var(--neo-gray-800);
+            border-radius: var(--neo-radius-lg);
+            margin-bottom: var(--neo-space-4);
+            overflow: hidden;
+            transition: all var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .faq-item:hover {
+            border-color: var(--neo-primary);
+        }
+
+        .faq-question {
+            padding: var(--neo-space-6);
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .faq-question:hover {
+            background: var(--neo-black);
+        }
+
+        .faq-question h3 {
+            font-size: var(--neo-text-lg);
+            font-weight: var(--neo-font-semibold);
+            color: var(--neo-white);
+            margin: 0;
+        }
+
+        .faq-toggle {
+            font-size: var(--neo-text-2xl);
+            color: var(--neo-primary);
+            font-weight: var(--neo-font-light);
+            transition: transform var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .faq-item.active .faq-toggle {
+            transform: rotate(45deg);
+        }
+
+        .faq-answer {
+            padding: 0 var(--neo-space-6) var(--neo-space-6);
+            max-height: 0;
+            overflow: hidden;
+            transition: all var(--neo-duration-300) var(--neo-ease-out);
+        }
+
+        .faq-item.active .faq-answer {
+            max-height: 500px;
+            padding-top: var(--neo-space-4);
+        }
+
+        .faq-answer p {
+            color: var(--neo-gray-300);
+            line-height: var(--neo-leading-relaxed);
+            margin: 0;
+        }
+
+        .neo-link {
+            color: var(--neo-primary);
+            text-decoration: none;
+            transition: color var(--neo-duration-200) var(--neo-ease-out);
+        }
+
+        .neo-link:hover {
+            color: var(--neo-primary-light);
+            text-decoration: underline;
+        }
+
+        /* CTA */
+        .faq-cta {
+            padding: var(--neo-space-16) 0;
+            background: var(--neo-gray-900);
+            text-align: center;
+        }
+
+        .cta-content h2 {
+            font-size: var(--neo-text-4xl);
+            margin-bottom: var(--neo-space-4);
+        }
+
+        .cta-content p {
+            font-size: var(--neo-text-xl);
+            color: var(--neo-gray-300);
+            margin-bottom: var(--neo-space-8);
+        }
+
+        .cta-actions {
+            display: flex;
+            gap: var(--neo-space-4);
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .faq-title {
+                font-size: var(--neo-text-4xl);
+            }
+
+            .category-tabs {
+                flex-direction: column;
+                align-items: center;
+            }
+
+            .category-tab {
+                width: 200px;
+                text-align: center;
+            }
+
+            .cta-actions {
+                flex-direction: column;
+                align-items: center;
+            }
+        }
+    </style>
+
+    <script>
+        // FAQ Functionality
+        document.addEventListener('DOMContentLoaded', function() {
+            // FAQ Item Toggle
+            const faqItems = document.querySelectorAll('.faq-item');
+            faqItems.forEach(item => {
+                const question = item.querySelector('.faq-question');
+                question.addEventListener('click', () => {
+                    // Close other items
+                    faqItems.forEach(otherItem => {
+                        if (otherItem !== item) {
+                            otherItem.classList.remove('active');
+                        }
+                    });
+                    
+                    // Toggle current item
+                    item.classList.toggle('active');
+                });
+            });
+
+            // Category Filter
+            const categoryTabs = document.querySelectorAll('.category-tab');
+            const faqSections = document.querySelectorAll('.faq-section');
+            
+            categoryTabs.forEach(tab => {
+                tab.addEventListener('click', () => {
+                    const category = tab.dataset.category;
+                    
+                    // Update active tab
+                    categoryTabs.forEach(t => t.classList.remove('active'));
+                    tab.classList.add('active');
+                    
+                    // Show/hide sections
+                    faqSections.forEach(section => {
+                        if (category === 'all' || section.dataset.category === category) {
+                            section.style.display = 'block';
+                        } else {
+                            section.style.display = 'none';
+                        }
+                    });
+                });
+            });
+
+            // Search Functionality
+            const searchInput = document.getElementById('faq-search');
+            searchInput.addEventListener('input', (e) => {
+                const searchTerm = e.target.value.toLowerCase();
+                
+                faqItems.forEach(item => {
+                    const question = item.querySelector('h3').textContent.toLowerCase();
+                    const answer = item.querySelector('.faq-answer p').textContent.toLowerCase();
+                    
+                    if (question.includes(searchTerm) || answer.includes(searchTerm)) {
+                        item.style.display = 'block';
+                        // Highlight matching text
+                        if (searchTerm) {
+                            item.style.borderColor = 'var(--neo-primary)';
+                        } else {
+                            item.style.borderColor = 'var(--neo-gray-800)';
+                        }
+                    } else {
+                        item.style.display = 'none';
+                    }
+                });
+            });
+        });
+    </script>
+
+    <script src="/src/scripts/main.js"></script>
+</body>
+</html>

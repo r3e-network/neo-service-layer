@@ -1,6 +1,7 @@
 ﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Storage.Models;
 using NeoServiceLayer.Tee.Host.Services;
@@ -26,14 +27,17 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="persistentStorage">The persistent storage provider.</param>
     public StorageService(
         IEnclaveManager enclaveManager,
         IServiceConfiguration configuration,
-        ILogger<StorageService> logger)
+        ILogger<StorageService> logger,
+        IPersistentStorageProvider? persistentStorage = null)
         : base("Storage", "Privacy-Preserving Data Storage Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
+        _persistentMetadataStorage = persistentStorage;
         _requestCount = 0;
         _successCount = 0;
         _failureCount = 0;
@@ -62,6 +66,9 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
 
             // Initialize service-specific components
             await RefreshMetadataCacheAsync();
+            
+            // Initialize persistent storage if available
+            await InitializePersistentMetadataAsync();
 
             Logger.LogInformation("Storage Service initialized successfully");
             return true;
@@ -172,11 +179,11 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     /// Gets storage statistics.
     /// </summary>
     /// <returns>Storage statistics.</returns>
-    public StorageStatistics GetStatistics()
+    public Models.StorageStatistics GetStatistics()
     {
         lock (_metadataCache)
         {
-            return new StorageStatistics
+            return new Models.StorageStatistics
             {
                 TotalItems = _metadataCache.Count,
                 TotalSizeBytes = _metadataCache.Values.Sum(m => m.SizeBytes),

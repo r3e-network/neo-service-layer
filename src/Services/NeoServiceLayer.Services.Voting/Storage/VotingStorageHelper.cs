@@ -37,7 +37,7 @@ public class VotingStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);
@@ -61,7 +61,7 @@ public class VotingStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);
@@ -85,7 +85,7 @@ public class VotingStorageHelper
     {
         try
         {
-            var data = await _storageService.RetrieveDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
+            var data = await _storageService.GetDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);

@@ -12,10 +12,10 @@ namespace NeoServiceLayer.Web.Controllers;
 [Authorize]
 public class ZeroKnowledgeController : ControllerBase
 {
-    private readonly IZeroKnowledgeService _zeroKnowledgeService;
+    private readonly NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService _zeroKnowledgeService;
     private readonly ILogger<ZeroKnowledgeController> _logger;
 
-    public ZeroKnowledgeController(IZeroKnowledgeService zeroKnowledgeService, ILogger<ZeroKnowledgeController> logger)
+    public ZeroKnowledgeController(NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService zeroKnowledgeService, ILogger<ZeroKnowledgeController> logger)
     {
         _zeroKnowledgeService = zeroKnowledgeService;
         _logger = logger;

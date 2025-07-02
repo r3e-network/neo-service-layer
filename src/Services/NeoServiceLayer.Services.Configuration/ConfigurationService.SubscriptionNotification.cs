@@ -30,6 +30,7 @@ public partial class ConfigurationService
                 SubscriptionId = subscriptionId,
                 ConfigurationKey = request.KeyPattern,
                 SubscriberEndpoint = request.CallbackUrl,
+                CallbackUrl = request.CallbackUrl,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow
             };
@@ -38,6 +39,9 @@ public partial class ConfigurationService
             {
                 _subscriptions[subscriptionId] = subscription;
             }
+
+            // Persist subscription
+            await PersistSubscriptionAsync(subscription);
 
             return new ConfigurationSubscriptionResult
             {
