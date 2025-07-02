@@ -298,11 +298,21 @@ public class StorageHealthCheck : IHealthCheck
 {
     private readonly ILogger<StorageHealthCheck> _logger;
 
+    /// <summary>
+    /// Initializes a new instance of the <see cref="StorageHealthCheck"/> class.
+    /// </summary>
+    /// <param name="logger">The logger.</param>
     public StorageHealthCheck(ILogger<StorageHealthCheck> logger)
     {
         _logger = logger;
     }
 
+    /// <summary>
+    /// Performs the health check for storage service.
+    /// </summary>
+    /// <param name="context">The health check context.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The health check result.</returns>
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         try

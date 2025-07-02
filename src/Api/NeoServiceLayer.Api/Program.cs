@@ -296,4 +296,7 @@ finally
 }
 
 // Make Program accessible for integration tests
+/// <summary>
+/// The main program class for the Neo Service Layer API.
+/// </summary>
 public partial class Program { }
