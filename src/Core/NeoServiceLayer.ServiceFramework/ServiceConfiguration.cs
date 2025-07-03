@@ -125,4 +125,13 @@ public class ServiceConfiguration : IServiceConfiguration
             return section;
         }
     }
+
+    /// <inheritdoc/>
+    public string GetConnectionString(string name)
+    {
+        ArgumentException.ThrowIfNullOrEmpty(name);
+
+        var connectionString = GetValue<string>($"ConnectionStrings:{name}");
+        return connectionString ?? string.Empty;
+    }
 }

@@ -157,14 +157,25 @@ public partial class SmartContractsService
     /// <summary>
     /// Persists contract events to storage.
     /// </summary>
-    private async Task PersistContractEventAsync(ContractEvent contractEvent)
+    private async Task PersistContractEventAsync(Core.SmartContracts.ContractEvent contractEvent)
     {
         if (_persistentStorage == null) return;
 
         try
         {
-            var key = $"{EVENT_PREFIX}{contractEvent.EventId}";
-            var data = JsonSerializer.SerializeToUtf8Bytes(contractEvent);
+            // Convert to persistent contract event
+            var eventId = $"{contractEvent.ContractHash}_{contractEvent.TransactionHash}_{contractEvent.Name}_{DateTime.UtcNow.Ticks}";
+            var persistentEvent = new PersistentContractEvent
+            {
+                EventId = eventId,
+                ContractHash = contractEvent.ContractHash,
+                EventName = contractEvent.Name,
+                Timestamp = DateTime.UtcNow,
+                EventData = contractEvent.Parameters.Select((p, i) => new KeyValuePair<string, object>($"param{i}", p)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
+            };
+            
+            var key = $"{EVENT_PREFIX}{eventId}";
+            var data = JsonSerializer.SerializeToUtf8Bytes(persistentEvent);
 
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
@@ -174,13 +185,13 @@ public partial class SmartContractsService
             });
 
             // Update event index by contract
-            await UpdateEventIndexAsync(contractEvent.ContractHash, contractEvent.EventId);
+            await UpdateEventIndexAsync(contractEvent.ContractHash, eventId);
 
-            Logger.LogDebug("Persisted contract event {EventId} to storage", contractEvent.EventId);
+            Logger.LogDebug("Persisted contract event {EventId} to storage", eventId);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist contract event {EventId}", contractEvent.EventId);
+            Logger.LogError(ex, "Failed to persist contract event {EventName} for contract {ContractHash}", contractEvent.Name, contractEvent.ContractHash);
         }
     }
 
@@ -194,7 +205,7 @@ public partial class SmartContractsService
         try
         {
             var key = $"{INDEX_PREFIX}blockchain:{blockchainType}";
-            var existingData = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+            var existingData = await _persistentStorage.RetrieveAsync(key);
             
             var contractHashes = existingData != null 
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
@@ -225,7 +236,7 @@ public partial class SmartContractsService
         try
         {
             var key = $"{INDEX_PREFIX}deployments:{contractHash}";
-            var existingData = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+            var existingData = await _persistentStorage.RetrieveAsync(key);
             
             var deploymentIds = existingData != null 
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
@@ -256,7 +267,7 @@ public partial class SmartContractsService
         try
         {
             var key = $"{INDEX_PREFIX}events:{contractHash}";
-            var existingData = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+            var existingData = await _persistentStorage.RetrieveAsync(key);
             
             var eventIds = existingData != null 
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
@@ -287,7 +298,7 @@ public partial class SmartContractsService
         try
         {
             var key = $"{STATS_PREFIX}invocations:{contractHash}:{method}";
-            var existingData = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+            var existingData = await _persistentStorage.RetrieveAsync(key);
             
             var stats = existingData != null 
                 ? JsonSerializer.Deserialize<InvocationStatistics>(existingData) ?? new InvocationStatistics()
@@ -353,11 +364,7 @@ public partial class SmartContractsService
             {
                 try
                 {
-                    var data = await _persistentStorage.RetrieveAsync(key, new StorageOptions
-                    {
-                        Encrypt = true,
-                        Compress = true
-                    });
+                    var data = await _persistentStorage.RetrieveAsync(key);
 
                     if (data != null)
                     {
@@ -404,7 +411,7 @@ public partial class SmartContractsService
                 {
                     if (key.StartsWith($"{STATS_PREFIX}usage:"))
                     {
-                        var data = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+                        var data = await _persistentStorage.RetrieveAsync(key);
                         if (data != null)
                         {
                             var contractHash = key.Replace($"{STATS_PREFIX}usage:", "");
@@ -440,7 +447,7 @@ public partial class SmartContractsService
         try
         {
             var key = $"{STATS_PREFIX}service";
-            var data = await _persistentStorage.RetrieveAsync(key, new StorageOptions());
+            var data = await _persistentStorage.RetrieveAsync(key);
 
             if (data != null)
             {
@@ -563,10 +570,7 @@ public partial class SmartContractsService
             {
                 try
                 {
-                    var data = await _persistentStorage.RetrieveAsync(key, new StorageOptions
-                    {
-                        Compress = true
-                    });
+                    var data = await _persistentStorage.RetrieveAsync(key);
 
                     if (data != null)
                     {
@@ -590,14 +594,11 @@ public partial class SmartContractsService
             {
                 try
                 {
-                    var data = await _persistentStorage.RetrieveAsync(key, new StorageOptions
-                    {
-                        Compress = true
-                    });
+                    var data = await _persistentStorage.RetrieveAsync(key);
 
                     if (data != null)
                     {
-                        var contractEvent = JsonSerializer.Deserialize<ContractEvent>(data);
+                        var contractEvent = JsonSerializer.Deserialize<PersistentContractEvent>(data);
                         if (contractEvent != null && contractEvent.Timestamp < DateTime.UtcNow.AddDays(-30))
                         {
                             await _persistentStorage.DeleteAsync(key);
@@ -675,7 +676,7 @@ internal class InvocationHistory
 /// <summary>
 /// Contract event.
 /// </summary>
-internal class ContractEvent
+internal class PersistentContractEvent
 {
     public string EventId { get; set; } = string.Empty;
     public string ContractHash { get; set; } = string.Empty;

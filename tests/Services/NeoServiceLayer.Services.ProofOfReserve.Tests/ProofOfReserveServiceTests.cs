@@ -235,7 +235,7 @@ public class ProofOfReserveServiceTests : TestBase
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeAssignableTo<IEnumerable<ReserveSnapshot>>();
+        result.Should().BeAssignableTo<IEnumerable<Models.ReserveSnapshot>>();
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
     }
 

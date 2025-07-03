@@ -95,7 +95,7 @@ dotnet run --project src/Web/NeoServiceLayer.Web
    - **🎮 Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Interactive service testing
    - **📚 API Documentation**: `http://localhost:5000/swagger` - Complete API reference
 
-## 📊 Service Portfolio (24 Services)
+## 📊 Service Portfolio (25 Services)
 
 The Neo Service Layer provides a comprehensive suite of production-ready services organized into six categories:
 
@@ -110,43 +110,42 @@ The Neo Service Layer provides a comprehensive suite of production-ready service
 6. **Backup Service** - Automated backup and restore operations
 7. **Configuration Service** - Dynamic system configuration management
 
-### **🔒 Security Services (4)**
+### **🔒 Security Services (5)**
 8. **Zero Knowledge Service** - ZK proof generation and verification
 9. **Abstract Account Service** - Smart contract account management
 10. **Compliance Service** - Regulatory compliance and AML/KYC checks
 11. **Proof of Reserve Service** - Cryptographic asset verification
+12. **Secrets Management Service** - Secure secrets storage and rotation
 
 ### **⚙️ Operations Services (4)**
-12. **Automation Service** - Workflow automation and scheduling
-13. **Monitoring Service** - System metrics and performance analytics
-14. **Health Service** - System health diagnostics and reporting
-15. **Notification Service** - Multi-channel notification system
+13. **Automation Service** - Workflow automation and scheduling
+14. **Monitoring Service** - System metrics and performance analytics
+15. **Health Service** - System health diagnostics and reporting
+16. **Notification Service** - Multi-channel notification system
 
-### **🌐 Infrastructure Services (3)**
-16. **Cross-Chain Service** - Multi-blockchain interoperability
-17. **Compute Service** - Secure TEE computations
-18. **Event Subscription Service** - Blockchain event monitoring
+### **🌐 Infrastructure Services (4)**
+17. **Cross-Chain Service** - Multi-blockchain interoperability
+18. **Compute Service** - Secure TEE computations
+19. **Event Subscription Service** - Blockchain event monitoring
+20. **Smart Contracts Service** - Smart contract deployment and management
 
 ### **🤖 AI Services (2)**
-19. **Pattern Recognition Service** - AI-powered analysis and fraud detection
-20. **Prediction Service** - Machine learning forecasting and analytics
+21. **Pattern Recognition Service** - AI-powered analysis and fraud detection
+22. **Prediction Service** - Machine learning forecasting and analytics
 
-### **🚀 Advanced Services (2)**
-21. **Fair Ordering Service** - Transaction fairness and MEV protection
-22. **Secrets Management Service** - Secure secrets storage and rotation
-
-### **🔌 Additional Services (2)**
-23. **Smart Contracts Service** - Smart contract deployment and management
-24. **Demo Service** - Service demonstration and testing capabilities
+### **🚀 Advanced Services (3)**
+23. **Fair Ordering Service** - Transaction fairness and MEV protection
+24. **Attestation Service** - SGX remote attestation and verification
+25. **Network Security Service** - Secure enclave network communication
 
 ## 🌐 Interactive Web Application
 
 The Neo Service Layer includes a **comprehensive web application** that provides:
 
 ### **🔴 Live Service Demonstrations**
-- **Real-time Testing**: Interactive testing of all 24 services
+- **Real-time Testing**: Interactive testing of all 25 services
 - **Professional UI**: Modern, responsive interface built with Bootstrap 5
-- **Service Categories**: Organized into 6 categories for easy navigation
+- **Service Categories**: Organized into 7 categories for easy navigation
 - **Direct Integration**: Real communication with actual service endpoints
 
 ### **🔐 Security & Authentication**
@@ -218,7 +217,7 @@ dotnet test --filter Category=Integration
 - **[Troubleshooting Guide](docs/troubleshooting/README.md)** - Common issues and solutions
 
 ### **📊 Service Documentation**
-- **[Services Overview](docs/services/README.md)** - Complete documentation for all 20+ services
+- **[Services Overview](docs/services/README.md)** - Complete documentation for all 25 services
 - **[API Reference](docs/api/README.md)** - RESTful API documentation
 
 ## 🐳 Docker Deployment

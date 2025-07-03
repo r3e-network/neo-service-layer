@@ -65,6 +65,18 @@ public abstract class BaseApiController : ControllerBase
     }
 
     /// <summary>
+    /// Creates a standardized success response.
+    /// </summary>
+    /// <typeparam name="T">The response data type.</typeparam>
+    /// <param name="data">The response data.</param>
+    /// <param name="message">Optional message.</param>
+    /// <returns>The success response.</returns>
+    protected ApiResponse<T> CreateSuccessResponse<T>(T data, string? message = null)
+    {
+        return CreateResponse(data, message, true);
+    }
+
+    /// <summary>
     /// Creates a standardized error response.
     /// </summary>
     /// <param name="message">The error message.</param>
@@ -125,6 +137,20 @@ public abstract class BaseApiController : ControllerBase
             throw new ArgumentException($"Invalid blockchain type: {blockchainType}");
         }
         return result;
+    }
+
+    /// <summary>
+    /// Gets validation errors from ModelState.
+    /// </summary>
+    /// <returns>Dictionary of validation errors.</returns>
+    protected Dictionary<string, List<string>> GetModelStateErrors()
+    {
+        return ModelState
+            .Where(x => x.Value?.Errors.Count > 0)
+            .ToDictionary(
+                kvp => kvp.Key,
+                kvp => kvp.Value!.Errors.Select(e => e.ErrorMessage).ToList()
+            );
     }
 
     /// <summary>

@@ -60,10 +60,17 @@
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Automation\NeoServiceLayer.Services.Automation.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.CrossChain\NeoServiceLayer.Services.CrossChain.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EventSubscription\NeoServiceLayer.Services.EventSubscription.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SmartContracts\NeoServiceLayer.Services.SmartContracts.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.NetworkSecurity\NeoServiceLayer.Services.NetworkSecurity.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EnclaveStorage\NeoServiceLayer.Services.EnclaveStorage.csproj" />
     
     <!-- AI Services -->
     <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.Prediction\NeoServiceLayer.AI.Prediction.csproj" />
     <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.PatternRecognition\NeoServiceLayer.AI.PatternRecognition.csproj" />
+    
+    <!-- Advanced Services -->
+    <ProjectReference Include="..\..\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
     
     <!-- TEE and Infrastructure -->
     <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />

@@ -98,7 +98,7 @@ public interface ISmartContractsService : IService
     /// <param name="toBlock">The ending block number (optional, defaults to latest).</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of contract events.</returns>
-    Task<IEnumerable<ContractEvent>> GetContractEventsAsync(
+    Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         BlockchainType blockchainType,
         string contractHash,
         string? eventName = null,

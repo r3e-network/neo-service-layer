@@ -89,6 +89,12 @@ public class MockServiceConfiguration : IServiceConfiguration
         // For testing, return a new instance
         return new MockServiceConfiguration();
     }
+
+    public string GetConnectionString(string name)
+    {
+        var connectionString = GetValue<string>($"ConnectionStrings:{name}");
+        return connectionString ?? string.Empty;
+    }
 }
 
 /// <summary>

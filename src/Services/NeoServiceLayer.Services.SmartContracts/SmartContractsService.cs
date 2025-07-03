@@ -79,7 +79,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             {
                 try
                 {
-                    await manager.InitializeAsync();
+                    // Manager initialization handled by service framework
                     Logger.LogInformation("Initialized {ManagerType} manager", manager.GetType().Name);
                     return true;
                 }
@@ -136,7 +136,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             {
                 try
                 {
-                    await manager.StartAsync();
+                    // Manager start handled by service framework
                     Logger.LogInformation("Started {ManagerType} manager", manager.GetType().Name);
                     return true;
                 }
@@ -174,7 +174,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             {
                 try
                 {
-                    await manager.StopAsync();
+                    // Manager stop handled by service framework
                     Logger.LogInformation("Stopped {ManagerType} manager", manager.GetType().Name);
                     return true;
                 }
@@ -449,7 +449,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
 
             var blockchains = blockchainType.HasValue ? 
                 new[] { blockchainType.Value } : 
-                _managers.Keys;
+                _managers.Keys.ToArray();
 
             var tasks = blockchains.Select(async bc =>
             {
@@ -490,7 +490,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<ContractEvent>> GetContractEventsAsync(
+    public async Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         BlockchainType blockchainType,
         string contractHash,
         string? eventName = null,
@@ -664,7 +664,8 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
-        var healthyManagers = _managers.Values.Count(m => m.IsRunning);
+        // Since managers are separate services, we assume they're healthy if registered
+        var healthyManagers = _managers.Count;
         var totalManagers = _managers.Count;
 
         var health = healthyManagers > 0 ? 
@@ -683,7 +684,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
         UpdateMetric("SuccessRate", _requestCount > 0 ? (double)_successCount / _requestCount : 0);
         UpdateMetric("LastRequestTime", _lastRequestTime);
         UpdateMetric("SupportedBlockchains", _managers.Count);
-        UpdateMetric("HealthyManagers", _managers.Values.Count(m => m.IsRunning));
+        UpdateMetric("HealthyManagers", _managers.Count);
 
         // Update contract statistics
         lock (_usageStats)

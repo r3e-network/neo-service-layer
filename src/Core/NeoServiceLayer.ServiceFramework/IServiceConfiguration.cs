@@ -56,4 +56,11 @@ public interface IServiceConfiguration
     /// <param name="sectionName">The section name.</param>
     /// <returns>The configuration section, or null if it was not found.</returns>
     IServiceConfiguration? GetSection(string sectionName);
+
+    /// <summary>
+    /// Gets a connection string.
+    /// </summary>
+    /// <param name="name">The connection string name.</param>
+    /// <returns>The connection string, or empty string if not found.</returns>
+    string GetConnectionString(string name);
 }

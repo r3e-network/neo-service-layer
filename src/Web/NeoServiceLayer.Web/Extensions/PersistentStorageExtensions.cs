@@ -361,4 +361,9 @@ public class ServiceConfiguration : IServiceConfiguration
         }
         return section;
     }
+    
+    public string GetConnectionString(string name)
+    {
+        return GetValue($"ConnectionStrings:{name}", string.Empty);
+    }
 }

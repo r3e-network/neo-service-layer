@@ -175,29 +175,8 @@ builder.Configuration.AddJsonFile("appsettings.PersistentStorage.json", optional
 builder.Services.AddPersistentStorageServices(builder.Configuration);
 builder.Services.ConfigureServicesWithPersistentStorage(builder.Configuration);
 
-// Register all Neo Service Layer services
-builder.Services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Randomness.IRandomnessService, NeoServiceLayer.Services.Randomness.RandomnessService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Oracle.IOracleService, NeoServiceLayer.Services.Oracle.OracleService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Storage.IStorageService, NeoServiceLayer.Services.Storage.StorageService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Voting.IVotingService, NeoServiceLayer.Services.Voting.VotingService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService, NeoServiceLayer.Services.ZeroKnowledge.ZeroKnowledgeService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Backup.IBackupService, NeoServiceLayer.Services.Backup.BackupService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Health.IHealthService, NeoServiceLayer.Services.Health.HealthService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService, NeoServiceLayer.Services.Monitoring.MonitoringService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService, NeoServiceLayer.Services.Notification.NotificationService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService, NeoServiceLayer.Services.AbstractAccount.AbstractAccountService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Configuration.IConfigurationService, NeoServiceLayer.Services.Configuration.ConfigurationService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
-builder.Services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
-
-// Register AI Services
-builder.Services.AddScoped<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService, NeoServiceLayer.AI.PatternRecognition.PatternRecognitionService>();
-builder.Services.AddScoped<NeoServiceLayer.AI.Prediction.IPredictionService, NeoServiceLayer.AI.Prediction.PredictionService>();
+// Register all Neo Service Layer services (all 25 services)
+builder.Services.AddNeoServiceLayerServices(builder.Configuration);
 
 // Register TEE Services - Use production wrapper with environment-aware configuration
 builder.Services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.OcclumEnclaveWrapper>();

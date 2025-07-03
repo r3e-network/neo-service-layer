@@ -1,6 +1,6 @@
 # Neo Service Layer Services
 
-The Neo Service Layer provides **20+ production-ready services** organized into six categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability, with full integration through an interactive web application.
+The Neo Service Layer provides **25 production-ready services** organized into seven categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability, with full integration through an interactive web application.
 
 ## 🌐 Interactive Web Application
 
@@ -97,7 +97,7 @@ Dynamic system configuration management with validation.
 - Environment-specific configuration profiles
 - Audit trail for configuration changes
 
-## 🔒 Security Services (4)
+## 🔒 Security Services (5)
 
 Advanced security and privacy features:
 
@@ -144,6 +144,17 @@ Cryptographic asset verification and reserve monitoring.
 - Cryptographic proofs of reserve adequacy
 - Automated monitoring and alerting
 - Audit trail and transparency reports
+
+### 12. [Secrets Management Service](secrets-management-service.md)
+
+Secure storage and management of sensitive data.
+
+**Key Features:**
+- Hardware-protected secret storage in SGX enclave
+- Automated secret rotation with version history
+- Fine-grained access control and audit logging
+- Shamir's Secret Sharing for multi-party access
+- HSM integration and dynamic secret generation
 
 ## ⚙️ Operations Services (4)
 
@@ -193,7 +204,7 @@ Multi-channel notification and alert system.
 - Delivery confirmation and retry mechanisms
 - Notification analytics and optimization
 
-## 🌐 Infrastructure Services (3)
+## 🌐 Infrastructure Services (4)
 
 Multi-chain and compute services:
 
@@ -230,11 +241,22 @@ Blockchain event monitoring and subscription management.
 - Subscription management and lifecycle
 - Event replay and historical data access
 
+### 19. [Smart Contracts Service](smart-contracts-service.md)
+
+Smart contract deployment and lifecycle management.
+
+**Key Features:**
+- Multi-chain support (Neo N3 and Neo X)
+- Template library with audited contracts
+- Automated testing and verification
+- Gas optimization and estimation
+- Version management and upgrades
+
 ## 🤖 AI Services (2)
 
 Machine learning and analytics:
 
-### 19. [Pattern Recognition Service](pattern-recognition-service.md)
+### 20. [Pattern Recognition Service](pattern-recognition-service.md)
 
 AI-powered analysis and fraud detection.
 
@@ -245,7 +267,7 @@ AI-powered analysis and fraud detection.
 - Real-time ML model inference
 - Model verification and explainable AI
 
-### 20. [Prediction Service](prediction-service.md)
+### 21. [Prediction Service](prediction-service.md)
 
 Machine learning forecasting and analytics.
 
@@ -256,11 +278,11 @@ Machine learning forecasting and analytics.
 - Risk prediction and probability assessment
 - Confidence intervals and uncertainty quantification
 
-## 🚀 Advanced Services (2+)
+## 🚀 Advanced Services (3)
 
 Specialized blockchain features:
 
-### 21. [Fair Ordering Service](fair-ordering-service.md)
+### 22. [Fair Ordering Service](fair-ordering-service.md)
 
 Transaction fairness and MEV protection.
 
@@ -271,14 +293,43 @@ Transaction fairness and MEV protection.
 - Cryptographic fairness guarantees
 - Transaction privacy and batching
 
-### 22. Additional Services
+### 23. [Attestation Service](attestation-service.md)
 
-The Neo Service Layer is continuously expanding with new services based on ecosystem needs and technological advances.
+SGX remote attestation and verification.
+
+**Key Features:**
+- Remote attestation for enclave integrity
+- Quote generation with custom user data
+- Attestation report verification
+- Certificate chain validation
+- Real-time enclave status monitoring
+
+### 24. [Network Security Service](network-security-service.md)
+
+Secure enclave network communication.
+
+**Key Features:**
+- TLS 1.3 encrypted channels
+- Enclave-to-enclave communication
+- Automated certificate management
+- Configurable firewall rules
+- DDoS protection and rate limiting
+
+### 25. [Enclave Storage Service](enclave-storage-service.md)
+
+Hardware-protected persistent storage within SGX.
+
+**Key Features:**
+- SGX sealing for data protection
+- Persistent encryption at rest
+- Versioned sealed data storage
+- Enclave-based access control
+- Secure backup and recovery
 
 ## 📊 Service Status & Integration
 
 ### Current Implementation Status
-- **Total Services**: 20+ production-ready services
+- **Total Services**: 25 production-ready services
 - **Web Integration**: All services fully integrated with interactive web application
 - **API Coverage**: Complete RESTful API access for all services
 - **Authentication**: JWT-based security with role-based access control
@@ -287,11 +338,11 @@ The Neo Service Layer is continuously expanding with new services based on ecosy
 ### Service Categories
 1. **Core Services (4)**: Essential blockchain operations
 2. **Storage & Data (3)**: Data management and persistence
-3. **Security Services (4)**: Advanced security and privacy
+3. **Security Services (5)**: Advanced security and privacy
 4. **Operations (4)**: System management and monitoring
-5. **Infrastructure (3)**: Multi-chain and compute services
+5. **Infrastructure (4)**: Multi-chain and compute services
 6. **AI Services (2)**: Machine learning and analytics
-7. **Advanced Services (2+)**: Specialized blockchain features
+7. **Advanced Services (1)**: Specialized blockchain features
 
 ### Web Application Access
 All services are accessible through:
@@ -352,7 +403,7 @@ The Neo Service Layer is built on a modular service framework that provides comm
 1. **Start the Application**: `dotnet run --project src/Web/NeoServiceLayer.Web`
 2. **Access Web Interface**: `http://localhost:5000/servicepages/servicedemo`
 3. **Get Authentication Token**: Use the demo token endpoint
-4. **Test Services**: Interactive testing of all 20+ services
+4. **Test Services**: Interactive testing of all 25 services
 
 ### API Integration
 1. **Review API Documentation**: `http://localhost:5000/swagger`

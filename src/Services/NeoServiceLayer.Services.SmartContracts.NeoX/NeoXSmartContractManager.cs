@@ -7,6 +7,7 @@ using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
+using ContractEvent = NeoServiceLayer.Core.SmartContracts.ContractEvent;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using System.Numerics;
@@ -19,7 +20,7 @@ namespace NeoServiceLayer.Services.SmartContracts.NeoX;
 /// </summary>
 public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartContractManager
 {
-    private readonly Web3 _web3;
+    private Web3 _web3;
     private readonly IServiceConfiguration _configuration;
     private new readonly IEnclaveManager _enclaveManager;
     private readonly Dictionary<string, ContractMetadata> _contractCache = new();
@@ -170,7 +171,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
 
                 // Estimate gas for deployment
                 var gasEstimate = await EstimateDeploymentGasAsync(bytecode, constructorParameters);
-                var gasLimit = options?.GasLimit ?? (long)(gasEstimate * 1.2); // Add 20% buffer
+                var gasLimit = options?.GasLimit ?? (long)((double)gasEstimate * 1.2); // Add 20% buffer
 
                 // Create deployment transaction
                 var transactionInput = new TransactionInput
@@ -290,7 +291,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
 
                 // Estimate gas
                 var gasEstimate = await function.EstimateGasAsync(_account.Address, null, null, parameters);
-                var gasLimit = options?.GasLimit ?? (long)(gasEstimate.Value * 1.2); // Add 20% buffer
+                var gasLimit = options?.GasLimit ?? (long)((double)gasEstimate.Value * 1.2); // Add 20% buffer
 
                 // Create transaction input
                 var transactionInput = function.CreateTransactionInput(_account.Address, null, null, parameters);
@@ -584,7 +585,9 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             }
 
             // Create filter
-            var filter = _web3.Eth.GetEvent(metadata.Abi, eventName ?? "").CreateFilterInput(
+            var contract = _web3.Eth.GetContract(metadata.Abi, contractHash);
+            var eventDefinition = contract.GetEvent(eventName ?? "");
+            var filter = eventDefinition.CreateFilterInput(
                 contractHash, 
                 fromBlock.HasValue ? new BlockParameter((ulong)fromBlock.Value) : BlockParameter.CreateEarliest(),
                 toBlock.HasValue ? new BlockParameter((ulong)toBlock.Value) : BlockParameter.CreateLatest());
@@ -745,8 +748,9 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             // Create account from enclave data
             _account = CreateAccountFromEnclaveData(accountData);
             
-            // Update Web3 with account
-            _web3.TransactionManager.Account = _account;
+            // Create new Web3 instance with account
+            var rpcUrl = _configuration.GetValue("NeoX:RpcUrl", "https://testnet.neox.evmnode.org");
+            _web3 = new Web3(_account, rpcUrl);
             
             Logger.LogInformation("Account initialized with address: {Address}", _account.Address);
         }
@@ -980,7 +984,8 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         
         foreach (var log in receipt.Logs)
         {
-            if (log.Address.Equals(contractHash, StringComparison.OrdinalIgnoreCase))
+            var logAddress = log["address"]?.ToString() ?? string.Empty;
+            if (logAddress.Equals(contractHash, StringComparison.OrdinalIgnoreCase))
             {
                 events.Add(new ContractEvent
                 {
@@ -988,7 +993,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                     ContractHash = contractHash,
                     BlockNumber = (long)receipt.BlockNumber.Value,
                     TransactionHash = receipt.TransactionHash,
-                    Parameters = new List<object> { log.Data }
+                    Parameters = new List<object> { log["data"]?.ToString() ?? string.Empty }
                 });
             }
         }

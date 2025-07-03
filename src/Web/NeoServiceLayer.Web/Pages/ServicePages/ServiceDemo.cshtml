@@ -620,6 +620,222 @@
                     </div>
                 </div>
             </div>
+
+            <!-- Pattern Recognition Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-brain me-2"></i>Pattern Recognition Service
+                            <span class="status-dot status-success" id="patternrecognition-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">AI-powered analysis and fraud detection.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoDetectFraud()">
+                                <i class="fas fa-search-dollar me-2"></i>Detect Fraud
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoAnalyzePattern()">
+                                <i class="fas fa-chart-line me-2"></i>Analyze Pattern
+                            </button>
+                        </div>
+                        <div id="patternrecognition-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="patternrecognition-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Prediction Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-chart-area me-2"></i>Prediction Service
+                            <span class="status-dot status-success" id="prediction-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Machine learning forecasting and analytics.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoPredictPrice()">
+                                <i class="fas fa-dollar-sign me-2"></i>Predict Price
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoAnalyzeTrend()">
+                                <i class="fas fa-trending-up me-2"></i>Analyze Trend
+                            </button>
+                        </div>
+                        <div id="prediction-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="prediction-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Fair Ordering Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-balance-scale me-2"></i>Fair Ordering Service
+                            <span class="status-dot status-success" id="fairordering-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Transaction fairness and MEV protection.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoOrderTransactions()">
+                                <i class="fas fa-sort me-2"></i>Order Transactions
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoCheckFairness()">
+                                <i class="fas fa-check-circle me-2"></i>Check Fairness
+                            </button>
+                        </div>
+                        <div id="fairordering-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="fairordering-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Smart Contracts Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-file-code me-2"></i>Smart Contracts Service
+                            <span class="status-dot status-success" id="smartcontracts-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Smart contract deployment and management.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoDeployContract()">
+                                <i class="fas fa-upload me-2"></i>Deploy Contract
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoInvokeContract()">
+                                <i class="fas fa-play me-2"></i>Invoke Contract
+                            </button>
+                        </div>
+                        <div id="smartcontracts-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="smartcontracts-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Secrets Management Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-user-secret me-2"></i>Secrets Management Service
+                            <span class="status-dot status-success" id="secretsmanagement-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Secure storage and management of sensitive data.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoStoreSecret()">
+                                <i class="fas fa-lock me-2"></i>Store Secret
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoRetrieveSecret()">
+                                <i class="fas fa-unlock me-2"></i>Retrieve Secret
+                            </button>
+                        </div>
+                        <div id="secretsmanagement-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="secretsmanagement-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Attestation Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-certificate me-2"></i>Attestation Service
+                            <span class="status-dot status-success" id="attestation-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">SGX remote attestation and verification.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoGenerateAttestation()">
+                                <i class="fas fa-stamp me-2"></i>Generate Attestation
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoVerifyAttestation()">
+                                <i class="fas fa-check-double me-2"></i>Verify Attestation
+                            </button>
+                        </div>
+                        <div id="attestation-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="attestation-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Network Security Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-network-wired me-2"></i>Network Security Service
+                            <span class="status-dot status-success" id="networksecurity-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Secure enclave network communication.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoCreateChannel()">
+                                <i class="fas fa-shield-alt me-2"></i>Create Secure Channel
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoMonitorNetwork()">
+                                <i class="fas fa-chart-network me-2"></i>Monitor Network
+                            </button>
+                        </div>
+                        <div id="networksecurity-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="networksecurity-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Enclave Storage Service Demo -->
+            <div class="col-md-6 mb-4">
+                <div class="card service-card demo-section">
+                    <div class="card-header">
+                        <h5 class="mb-0">
+                            <i class="fas fa-hdd me-2"></i>Enclave Storage Service
+                            <span class="status-dot status-success" id="enclavestorage-status"></span>
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <p class="card-text">Hardware-protected persistent storage within SGX.</p>
+                        <div class="d-grid gap-2">
+                            <button class="btn btn-primary" onclick="demoSealData()">
+                                <i class="fas fa-lock me-2"></i>Seal Data
+                            </button>
+                            <button class="btn btn-outline-primary" onclick="demoUnsealData()">
+                                <i class="fas fa-unlock-alt me-2"></i>Unseal Data
+                            </button>
+                        </div>
+                        <div id="enclavestorage-result" class="mt-3" style="display: none;">
+                            <h6>Response:</h6>
+                            <pre class="response-json p-3"><code id="enclavestorage-output"></code></pre>
+                        </div>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <!-- System Information -->
@@ -721,8 +937,8 @@
 
         function updateServiceStatus() {
             // Update service status with actual counts
-            document.getElementById('total-services').textContent = '20';
-            document.getElementById('active-services').textContent = '20';
+            document.getElementById('total-services').textContent = '25';
+            document.getElementById('active-services').textContent = '25';
             document.getElementById('api-calls-today').textContent = Math.floor(Math.random() * 1000) + 500;
             document.getElementById('uptime-hours').textContent = Math.floor(Math.random() * 100) + 200;
             
@@ -1532,6 +1748,398 @@
                 displayResult('proofofreserve', result);
             } catch (error) {
                 displayError('proofofreserve', error);
+            }
+        }
+
+        // Pattern Recognition Service Demos
+        async function demoDetectFraud() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/ai/pattern/detect-fraud', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        transactionData: {
+                            amount: 10000,
+                            from: 'address1',
+                            to: 'address2',
+                            timestamp: new Date().toISOString()
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('patternrecognition', result);
+                showNotification('Fraud detection completed!', 'success');
+            } catch (error) {
+                displayError('patternrecognition', error);
+                showNotification('Fraud detection failed', 'error');
+            }
+        }
+
+        async function demoAnalyzePattern() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/ai/pattern/analyze', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        data: [1, 2, 3, 5, 8, 13, 21],
+                        patternType: 'fibonacci'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('patternrecognition', result);
+            } catch (error) {
+                displayError('patternrecognition', error);
+            }
+        }
+
+        // Prediction Service Demos
+        async function demoPredictPrice() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/ai/prediction/price', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        asset: 'NEO',
+                        timeframe: '24h',
+                        features: ['volume', 'market_cap', 'sentiment']
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('prediction', result);
+                showNotification('Price prediction generated!', 'success');
+            } catch (error) {
+                displayError('prediction', error);
+                showNotification('Price prediction failed', 'error');
+            }
+        }
+
+        async function demoAnalyzeTrend() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/ai/prediction/trend', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        dataset: 'market_data',
+                        period: '30d'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('prediction', result);
+            } catch (error) {
+                displayError('prediction', error);
+            }
+        }
+
+        // Fair Ordering Service Demos
+        async function demoOrderTransactions() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/fairordering/order', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        transactions: [
+                            { id: 'tx1', fee: 100, timestamp: Date.now() - 1000 },
+                            { id: 'tx2', fee: 150, timestamp: Date.now() - 500 },
+                            { id: 'tx3', fee: 120, timestamp: Date.now() }
+                        ],
+                        orderingMethod: 'fair_random'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('fairordering', result);
+                showNotification('Transactions ordered fairly!', 'success');
+            } catch (error) {
+                displayError('fairordering', error);
+                showNotification('Fair ordering failed', 'error');
+            }
+        }
+
+        async function demoCheckFairness() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/fairordering/verify', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        blockHeight: 1000000,
+                        transactions: ['tx1', 'tx2', 'tx3']
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('fairordering', result);
+            } catch (error) {
+                displayError('fairordering', error);
+            }
+        }
+
+        // Smart Contracts Service Demos
+        async function demoDeployContract() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/smartcontracts/deploy/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        contractCode: 'demo_contract_bytecode',
+                        contractName: 'DemoToken',
+                        parameters: {
+                            totalSupply: 1000000,
+                            decimals: 8
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('smartcontracts', result);
+                showNotification('Contract deployed!', 'success');
+            } catch (error) {
+                displayError('smartcontracts', error);
+                showNotification('Contract deployment failed', 'error');
+            }
+        }
+
+        async function demoInvokeContract() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/smartcontracts/invoke/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        contractAddress: '0x123...',
+                        method: 'transfer',
+                        parameters: ['recipient_address', 100]
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('smartcontracts', result);
+            } catch (error) {
+                displayError('smartcontracts', error);
+            }
+        }
+
+        // Secrets Management Service Demos
+        async function demoStoreSecret() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/secrets/create/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        name: `demo-secret-${Date.now()}`,
+                        value: 'super_secret_value',
+                        type: 'API_KEY',
+                        metadata: {
+                            environment: 'demo',
+                            service: 'demo-service'
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('secretsmanagement', result);
+                showNotification('Secret stored securely!', 'success');
+            } catch (error) {
+                displayError('secretsmanagement', error);
+                showNotification('Secret storage failed', 'error');
+            }
+        }
+
+        async function demoRetrieveSecret() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/secrets/demo-secret/retrieve/neon3', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('secretsmanagement', result);
+            } catch (error) {
+                displayError('secretsmanagement', error);
+            }
+        }
+
+        // Attestation Service Demos
+        async function demoGenerateAttestation() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/attestation/generate/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        userData: btoa('demo_user_data'),
+                        reportType: 'QUOTE'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('attestation', result);
+                showNotification('Attestation generated!', 'success');
+            } catch (error) {
+                displayError('attestation', error);
+                showNotification('Attestation generation failed', 'error');
+            }
+        }
+
+        async function demoVerifyAttestation() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/attestation/verify/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        attestationReport: 'demo_attestation_report',
+                        expectedMeasurement: 'c29b7e7ba3ac...'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('attestation', result);
+            } catch (error) {
+                displayError('attestation', error);
+            }
+        }
+
+        // Network Security Service Demos
+        async function demoCreateChannel() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/networksecurity/channel/create/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        channelName: `demo-channel-${Date.now()}`,
+                        targetEndpoint: 'https://api.example.com',
+                        protocol: 'HTTPS'
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('networksecurity', result);
+                showNotification('Secure channel created!', 'success');
+            } catch (error) {
+                displayError('networksecurity', error);
+                showNotification('Channel creation failed', 'error');
+            }
+        }
+
+        async function demoMonitorNetwork() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/networksecurity/monitor/neon3', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('networksecurity', result);
+            } catch (error) {
+                displayError('networksecurity', error);
+            }
+        }
+
+        // Enclave Storage Service Demos
+        async function demoSealData() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/enclavestorage/seal/neon3', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${authToken}`
+                    },
+                    body: JSON.stringify({
+                        key: `demo-key-${Date.now()}`,
+                        data: btoa('sensitive demo data'),
+                        policy: {
+                            type: 'MRENCLAVE',
+                            expirationHours: 24
+                        }
+                    })
+                });
+                
+                const result = await response.json();
+                displayResult('enclavestorage', result);
+                showNotification('Data sealed in enclave!', 'success');
+            } catch (error) {
+                displayError('enclavestorage', error);
+                showNotification('Data sealing failed', 'error');
+            }
+        }
+
+        async function demoUnsealData() {
+            try {
+                if (!authToken) await getAuthToken();
+                
+                const response = await fetch('/api/enclavestorage/unseal/demo-key/neon3', {
+                    headers: { 'Authorization': `Bearer ${authToken}` }
+                });
+                
+                const result = await response.json();
+                displayResult('enclavestorage', result);
+            } catch (error) {
+                displayError('enclavestorage', error);
             }
         }
     </script>
