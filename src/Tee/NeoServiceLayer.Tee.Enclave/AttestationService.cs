@@ -966,19 +966,58 @@ public class AttestationReportData
 }
 
 /// <summary>
-/// Attestation report structure.
+/// Represents an attestation report for SGX enclaves.
 /// </summary>
 public class AttestationReport
 {
+    /// <summary>
+    /// Gets or sets the unique identifier of the attestation report.
+    /// </summary>
     public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the version of the attestation report format.
+    /// </summary>
     public int Version { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when the report was generated.
+    /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the ISV enclave quote status.
+    /// </summary>
     public string IsvEnclaveQuoteStatus { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the platform information blob.
+    /// </summary>
     public string PlatformInfoBlob { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the ISV enclave quote body.
+    /// </summary>
     public string IsvEnclaveQuoteBody { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the signature of the attestation report.
+    /// </summary>
     public string? Signature { get; set; }
+
+    /// <summary>
+    /// Gets or sets the EPID pseudonym for the platform.
+    /// </summary>
     public string? EpidPseudonym { get; set; }
+
+    /// <summary>
+    /// Gets or sets the list of security advisory IDs.
+    /// </summary>
     public List<string> AdvisoryIds { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the URL for security advisories.
+    /// </summary>
     public string? AdvisoryUrl { get; set; }
 }
 
