@@ -88,10 +88,10 @@ jobs:
     - name: Generate coverage report
       if: always()
       run: |
-        export PATH="$HOME/.dotnet/tools:$PATH"
         dotnet tool install -g dotnet-reportgenerator-globaltool || true
         if [ -f "./TestResults/**/coverage.cobertura.xml" ] || ls ./TestResults/**/coverage.cobertura.xml 1> /dev/null 2>&1; then
-          reportgenerator \
+          # Use the full path to reportgenerator
+          $HOME/.dotnet/tools/reportgenerator \
             -reports:"./TestResults/**/coverage.cobertura.xml" \
             -targetdir:"./CoverageReport" \
             -reporttypes:"Html;Badges;TextSummary;MarkdownSummaryGithub" \

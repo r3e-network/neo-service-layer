@@ -72,8 +72,8 @@ jobs:
       if: always()
       run: |
         dotnet tool install -g dotnet-reportgenerator-globaltool || true
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        reportgenerator \
+        # Use the full path to reportgenerator
+        $HOME/.dotnet/tools/reportgenerator \
           -reports:"**/coverage.cobertura.xml" \
           -targetdir:"TestResults/CoverageReport" \
           -reporttypes:"HtmlInline_AzurePipelines;Cobertura;MarkdownSummaryGithub" \
