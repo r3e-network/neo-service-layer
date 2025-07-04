@@ -232,9 +232,9 @@ jobs:
     - name: Publish application for Docker
       run: |
         echo "Publishing .NET application for Docker..."
-        dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+        dotnet publish src/Web/NeoServiceLayer.Web/NeoServiceLayer.Web.csproj \
           -c Release \
-          -o src/Api/NeoServiceLayer.Api/bin/Release/net9.0/publish/ \
+          -o src/Web/NeoServiceLayer.Web/bin/Release/net9.0/publish/ \
           --verbosity minimal
 
     - name: Set up Docker Buildx
