@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <!-- Import parent directory targets -->
+  <Import Project="..\Directory.Build.targets" Condition="Exists('..\Directory.Build.targets')" />
+  
+  <!-- Coverage settings for all test projects -->
+  <PropertyGroup Condition="'$(IsTestProject)' == 'true'">
+    <!-- Enable code coverage collection -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>opencover,cobertura</CoverletOutputFormat>
+    <CoverletOutput>$(MSBuildProjectDirectory)/TestResults/</CoverletOutput>
+    
+    <!-- Exclude test assemblies and generated code from coverage -->
+    <ExcludeByFile>**/obj/**/*;**/bin/**/*;**/*Designer.cs;**/Migrations/*.cs</ExcludeByFile>
+    <ExcludeByAttribute>Obsolete;GeneratedCodeAttribute;CompilerGeneratedAttribute;ExcludeFromCodeCoverageAttribute</ExcludeByAttribute>
+    <IncludeTestAssembly>false</IncludeTestAssembly>
+    
+    <!-- Use source link for better debugging -->
+    <UseSourceLink>true</UseSourceLink>
+  </PropertyGroup>
+
+  <!-- Add coverlet.msbuild to all test projects -->
+  <ItemGroup Condition="'$(IsTestProject)' == 'true'">
+    <PackageReference Include="coverlet.msbuild">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
+  </ItemGroup>
+</Project>
