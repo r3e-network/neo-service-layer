@@ -276,6 +276,7 @@ jobs:
         context: .
         file: ./docker/Dockerfile.minimal
         push: false
+        load: true
         tags: neo-service-layer:test
         cache-from: type=gha
         cache-to: type=gha,mode=max
