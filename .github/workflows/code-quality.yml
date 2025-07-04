@@ -71,6 +71,12 @@ jobs:
       uses: actions/setup-dotnet@v4
       with:
         dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: 🔧 Configure .NET Tools
+      run: |
+        echo "DOTNET_ROOT=$HOME/.dotnet" >> $GITHUB_ENV
+        echo "$HOME/.dotnet/tools" >> $GITHUB_PATH
+        mkdir -p $HOME/.dotnet/tools
 
     - name: 🔒 Install SGX SDK (Simulation Mode)
       run: |
@@ -128,16 +134,34 @@ jobs:
     - name: 📈 Generate coverage report
       run: |
         echo "::group::Installing ReportGenerator"
-        dotnet tool install -g dotnet-reportgenerator-globaltool || true
+        # Install globally without requiring a project context
+        dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.* || true
+        # Also try to update if already installed
+        dotnet tool update --global dotnet-reportgenerator-globaltool || true
         echo "::endgroup::"
         
         echo "::group::Generating coverage report"
-        # Use the full path to reportgenerator
-        $HOME/.dotnet/tools/reportgenerator \
-          -reports:"TestResults/**/coverage.cobertura.xml" \
-          -targetdir:"TestResults/CoverageReport" \
-          -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
-          -verbosity:"Warning" || echo "Warning: Coverage report generation failed"
+        # Try multiple approaches to find and run reportgenerator
+        if command -v reportgenerator &> /dev/null; then
+          reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"TestResults/CoverageReport" \
+            -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+            -verbosity:"Warning"
+        elif [ -f "$HOME/.dotnet/tools/reportgenerator" ]; then
+          $HOME/.dotnet/tools/reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"TestResults/CoverageReport" \
+            -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+            -verbosity:"Warning"
+        else
+          echo "Warning: ReportGenerator not found, trying direct dotnet tool run"
+          dotnet tool run reportgenerator \
+            -reports:"TestResults/**/coverage.cobertura.xml" \
+            -targetdir:"TestResults/CoverageReport" \
+            -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+            -verbosity:"Warning"
+        fi || echo "Warning: Coverage report generation failed"
         echo "::endgroup::"
 
     - name: 📊 Check coverage thresholds
