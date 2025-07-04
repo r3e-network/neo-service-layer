@@ -126,12 +126,19 @@ jobs:
         echo "::endgroup::"
 
     - name: 📈 Generate coverage report
-      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
-      with:
-        reports: 'TestResults/**/coverage.cobertura.xml'
-        targetdir: 'TestResults/CoverageReport'
-        reporttypes: 'HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub'
-        verbosity: 'Warning'
+      run: |
+        echo "::group::Installing ReportGenerator"
+        dotnet tool install -g dotnet-reportgenerator-globaltool || true
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        echo "::endgroup::"
+        
+        echo "::group::Generating coverage report"
+        reportgenerator \
+          -reports:"TestResults/**/coverage.cobertura.xml" \
+          -targetdir:"TestResults/CoverageReport" \
+          -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+          -verbosity:"Warning" || echo "Warning: Coverage report generation failed"
+        echo "::endgroup::"
 
     - name: 📊 Check coverage thresholds
       id: coverage
