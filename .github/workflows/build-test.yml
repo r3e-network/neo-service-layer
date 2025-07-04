@@ -1,0 +1,110 @@
+name: Build and Test
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_NOLOGO: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NUGET_PACKAGES: ${{ github.workspace }}/.nuget/packages
+
+jobs:
+  build-and-test:
+    name: Build and Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: 📦 Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ${{ env.NUGET_PACKAGES }}
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj', '**/Directory.Packages.props') }}-v2
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: 🔄 Restore dependencies
+      run: |
+        dotnet nuget add source https://api.nuget.org/v3/index.json -n nuget.org --configfile NuGet.Config || true
+        dotnet restore NeoServiceLayer.sln --verbosity minimal
+
+    - name: 🏗️ Build solution
+      run: dotnet build NeoServiceLayer.sln --configuration Release --no-restore --verbosity minimal
+
+    - name: 🧪 Run tests
+      run: |
+        dotnet test NeoServiceLayer.sln \
+          --configuration Release \
+          --no-build \
+          --verbosity normal \
+          --logger "trx;LogFileName=test-results.trx" \
+          --logger "console;verbosity=minimal" \
+          --collect:"XPlat Code Coverage" \
+          --settings tests/codecoverage.runsettings \
+          --results-directory ./TestResults
+
+    - name: 📊 Upload test results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: test-results
+        path: |
+          **/TestResults/*.trx
+          **/TestResults/*.xml
+        retention-days: 7
+
+    - name: 📈 Generate coverage report
+      if: always()
+      run: |
+        dotnet tool install -g dotnet-reportgenerator-globaltool || true
+        export PATH="$PATH:$HOME/.dotnet/tools"
+        reportgenerator \
+          -reports:"**/coverage.cobertura.xml" \
+          -targetdir:"TestResults/CoverageReport" \
+          -reporttypes:"HtmlInline_AzurePipelines;Cobertura;MarkdownSummaryGithub" \
+          -verbosity:"Warning" || echo "Coverage report generation failed"
+
+    - name: 📋 Coverage summary
+      if: always()
+      run: |
+        if [ -f "TestResults/CoverageReport/Summary.md" ]; then
+          echo "## 📊 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          cat TestResults/CoverageReport/Summary.md >> $GITHUB_STEP_SUMMARY
+        fi
+
+  docker-build:
+    name: Docker Build Test
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    
+    steps:
+    - name: 📥 Checkout code
+      uses: actions/checkout@v4
+
+    - name: 🐳 Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: 🏗️ Build Docker image (minimal)
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: docker/Dockerfile.minimal
+        push: false
+        tags: neo-service-layer:test
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
