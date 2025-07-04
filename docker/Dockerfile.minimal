@@ -1,0 +1,45 @@
+# Minimal Docker image for testing and CI/CD
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
+WORKDIR /app
+EXPOSE 8080
+EXPOSE 8443
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build
+WORKDIR /src
+
+# Copy solution and project files
+COPY *.sln ./
+COPY src/Core/NeoServiceLayer.Core/*.csproj ./src/Core/NeoServiceLayer.Core/
+COPY src/Core/NeoServiceLayer.ServiceFramework/*.csproj ./src/Core/NeoServiceLayer.ServiceFramework/
+COPY src/Core/NeoServiceLayer.Shared/*.csproj ./src/Core/NeoServiceLayer.Shared/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/*.csproj ./src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/*.csproj ./src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/
+COPY src/Infrastructure/NeoServiceLayer.Infrastructure.Security/*.csproj ./src/Infrastructure/NeoServiceLayer.Infrastructure.Security/
+COPY src/Api/NeoServiceLayer.Api/*.csproj ./src/Api/NeoServiceLayer.Api/
+COPY Directory.*.props ./
+
+# Restore dependencies
+RUN dotnet restore src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj
+
+# Copy source code
+COPY src/ ./src/
+
+# Build the API project
+RUN dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+    -c Release \
+    -o /app/publish \
+    --no-restore \
+    /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=build /app/publish .
+
+# Create a non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Switch to non-root user
+USER appuser
+
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Api.dll"]
