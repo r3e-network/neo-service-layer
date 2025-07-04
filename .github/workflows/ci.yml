@@ -94,13 +94,21 @@ jobs:
     - name: Generate coverage report
       if: always()
       run: |
-        # Install globally without requiring a project context
+        # Change to temp directory to avoid project context issues
+        cd /tmp
+        
+        # Install globally from a neutral directory
         dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.* || true
-        dotnet tool update --global dotnet-reportgenerator-globaltool || true
+        
+        # Return to workspace
+        cd $GITHUB_WORKSPACE
+        
+        # Add tools to PATH
+        export PATH="$PATH:$HOME/.dotnet/tools"
         
         if [ -f "./TestResults/**/coverage.cobertura.xml" ] || ls ./TestResults/**/coverage.cobertura.xml 1> /dev/null 2>&1; then
-          # Run reportgenerator (should be in PATH now)
-          reportgenerator \
+          # Run reportgenerator with full path
+          $HOME/.dotnet/tools/reportgenerator \
             -reports:"./TestResults/**/coverage.cobertura.xml" \
             -targetdir:"./CoverageReport" \
             -reporttypes:"Html;Badges;TextSummary;MarkdownSummaryGithub" \
