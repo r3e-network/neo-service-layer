@@ -1,4 +1,4 @@
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.EnclaveStorage.Models;
 

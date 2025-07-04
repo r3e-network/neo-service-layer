@@ -1,4 +1,4 @@
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Core;

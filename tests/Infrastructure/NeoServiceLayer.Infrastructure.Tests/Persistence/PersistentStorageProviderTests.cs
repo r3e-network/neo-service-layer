@@ -1,8 +1,8 @@
+﻿using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Infrastructure.Persistence;
-using System.Text;
 using Xunit;
 
 namespace NeoServiceLayer.Infrastructure.Tests.Persistence;
@@ -21,7 +21,7 @@ public class PersistentStorageProviderTests : IDisposable
     {
         // Set test encryption key for OcclumFileStorageProvider
         Environment.SetEnvironmentVariable("ENCLAVE_MASTER_KEY", "test-encryption-key-for-unit-tests");
-        
+
         _mockLogger = new Mock<ILogger<OcclumFileStorageProvider>>();
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"test-storage-{Guid.NewGuid():N}");
         _provider = new OcclumFileStorageProvider(_testStoragePath, _mockLogger.Object);
@@ -50,7 +50,7 @@ public class PersistentStorageProviderTests : IDisposable
         // Arrange
         await _provider.InitializeAsync();
         var firstInitTime = Directory.GetCreationTime(_testStoragePath);
-        
+
         // Wait a moment to see if time changes
         await Task.Delay(10);
 
@@ -374,7 +374,7 @@ public class PersistentStorageProviderTests : IDisposable
         await _provider.InitializeAsync();
         var keys = new[] { "key1", "key2", "key3" };
         var options = new StorageOptions();
-        
+
         foreach (var key in keys)
         {
             var data = System.Text.Encoding.UTF8.GetBytes($"data_for_{key}");

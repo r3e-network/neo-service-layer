@@ -1,8 +1,8 @@
+﻿using System.IO.Compression;
+using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
-using System.IO.Compression;
-using System.Text.Json;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -25,14 +25,14 @@ public class BackupRecoveryTests : IDisposable
         _output = output;
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"backup-test-storage-{Guid.NewGuid():N}");
         _backupBasePath = Path.Combine(Path.GetTempPath(), $"backup-test-backups-{Guid.NewGuid():N}");
-        
+
         // Set test encryption key for OcclumFileStorageProvider
         Environment.SetEnvironmentVariable("ENCLAVE_MASTER_KEY", "test-encryption-key-for-integration-tests");
-        
+
         _logger = new TestLogger<OcclumFileStorageProvider>(_output);
         _provider = new OcclumFileStorageProvider(_testStoragePath, _logger);
         _provider.InitializeAsync().GetAwaiter().GetResult();
-        
+
         Directory.CreateDirectory(_backupBasePath);
     }
 
@@ -70,7 +70,7 @@ public class BackupRecoveryTests : IDisposable
         // Verify backup contains expected files
         using var archive = ZipFile.OpenRead(backupPath);
         archive.Entries.Should().HaveCountGreaterOrEqualTo(testData.Count * 2 + 1); // data + metadata + manifest
-        
+
         foreach (var key in testData.Keys)
         {
             // Check for data file
@@ -78,7 +78,7 @@ public class BackupRecoveryTests : IDisposable
             // Check for metadata file
             archive.Entries.Should().Contain(e => e.FullName == $"metadata/{key}.json");
         }
-        
+
         // Check for manifest
         archive.Entries.Should().Contain(e => e.FullName == "manifest.json");
 
@@ -180,7 +180,7 @@ public class BackupRecoveryTests : IDisposable
         // Assert
         File.Exists(expandedBackupPath).Should().BeTrue();
         var expandedBackupSize = new FileInfo(expandedBackupPath).Length;
-        
+
         // Expanded backup should be larger than original backup (contains more data)
         expandedBackupSize.Should().BeGreaterThan(fullBackupSize);
 
@@ -443,10 +443,10 @@ public class BackupRecoveryTests : IDisposable
 
         // Act & Assert - Try to restore from corrupted backup
         var restoreResult = await _provider.RestoreAsync(backupPath);
-        
+
         // The restore should fail or succeed but validation should detect corruption
         var validationResult = await _provider.ValidateIntegrityAsync();
-        
+
         validationResult.Should().NotBeNull();
         // If restore succeeded, validation should detect corruption in the restored data
         // If restore failed, we should have other indicators of corruption
@@ -508,7 +508,7 @@ public class BackupRecoveryTests : IDisposable
             var dataSize = random.Next(100, 5000); // Random size between 100B and 5KB
             var bytes = new byte[dataSize];
             random.NextBytes(bytes);
-            
+
             // Make some data more realistic
             if (i % 3 == 0)
             {
@@ -522,7 +522,7 @@ public class BackupRecoveryTests : IDisposable
                 });
                 bytes = System.Text.Encoding.UTF8.GetBytes(jsonData);
             }
-            
+
             data[key] = bytes;
         }
 
@@ -536,12 +536,12 @@ public class BackupRecoveryTests : IDisposable
         try
         {
             _provider?.Dispose();
-            
+
             if (Directory.Exists(_testStoragePath))
             {
                 Directory.Delete(_testStoragePath, true);
             }
-            
+
             if (Directory.Exists(_backupBasePath))
             {
                 Directory.Delete(_backupBasePath, true);

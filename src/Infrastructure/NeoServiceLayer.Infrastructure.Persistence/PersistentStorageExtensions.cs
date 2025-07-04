@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Infrastructure.Persistence;
@@ -51,13 +51,13 @@ public static class PersistentStorageExtensions
         try
         {
             await storage.StoreAsync(key, data, options);
-            logger?.LogDebug("Successfully stored {OperationName} data at key {Key}", 
+            logger?.LogDebug("Successfully stored {OperationName} data at key {Key}",
                 operationName ?? "persistent", key);
             return true;
         }
         catch (Exception ex)
         {
-            logger?.LogError(ex, "Failed to store {OperationName} data at key {Key}", 
+            logger?.LogError(ex, "Failed to store {OperationName} data at key {Key}",
                 operationName ?? "persistent", key);
             return false;
         }
@@ -153,7 +153,7 @@ public static class PersistentStorageExtensions
         try
         {
             var existingData = await storage.RetrieveAsync(indexKey);
-            
+
             HashSet<string> items;
             if (existingData != null)
             {
@@ -165,7 +165,7 @@ public static class PersistentStorageExtensions
             }
 
             bool changed = add ? items.Add(itemId) : items.Remove(itemId);
-            
+
             if (changed)
             {
                 var data = JsonSerializer.SerializeToUtf8Bytes(items);
@@ -174,11 +174,11 @@ public static class PersistentStorageExtensions
                     Encrypt = false,
                     Compress = true
                 });
-                
+
                 logger?.LogDebug("{Action} item {ItemId} in index {IndexKey}",
                     add ? "Added" : "Removed", itemId, indexKey);
             }
-            
+
             return changed;
         }
         catch (Exception ex)
@@ -208,7 +208,7 @@ public static class PersistentStorageExtensions
             foreach (var key in keys)
             {
                 DateTime? timestamp = null;
-                
+
                 if (timestampExtractor != null)
                 {
                     timestamp = timestampExtractor(key);
@@ -263,7 +263,7 @@ public static class PersistentStorageExtensions
         try
         {
             var validationResult = await storage.ValidateIntegrityAsync();
-            
+
             if (validationResult.IsValid)
             {
                 logger?.LogInformation("Storage validation passed");
@@ -273,7 +273,7 @@ public static class PersistentStorageExtensions
                 logger?.LogWarning("Storage validation failed: {Errors}",
                     string.Join(", ", validationResult.Errors ?? new List<string>()));
             }
-            
+
             return validationResult;
         }
         catch (Exception ex)
@@ -300,9 +300,9 @@ public static class PersistentStorageExtensions
         {
             logger?.LogInformation("Starting backup of service data with prefix {Prefix} to {Path}",
                 servicePrefix, backupPath);
-            
+
             var success = await storage.BackupAsync(backupPath);
-            
+
             if (success)
             {
                 logger?.LogInformation("Successfully backed up service data to {Path}", backupPath);
@@ -311,7 +311,7 @@ public static class PersistentStorageExtensions
             {
                 logger?.LogError("Failed to backup service data to {Path}", backupPath);
             }
-            
+
             return success;
         }
         catch (Exception ex)
@@ -332,9 +332,9 @@ public static class PersistentStorageExtensions
         try
         {
             logger?.LogInformation("Starting restore of service data from {Path}", backupPath);
-            
+
             var success = await storage.RestoreAsync(backupPath);
-            
+
             if (success)
             {
                 logger?.LogInformation("Successfully restored service data from {Path}", backupPath);
@@ -343,7 +343,7 @@ public static class PersistentStorageExtensions
             {
                 logger?.LogError("Failed to restore service data from {Path}", backupPath);
             }
-            
+
             return success;
         }
         catch (Exception ex)
@@ -363,9 +363,9 @@ public static class PersistentStorageExtensions
         try
         {
             logger?.LogInformation("Starting storage compaction");
-            
+
             var success = await storage.CompactAsync();
-            
+
             if (success)
             {
                 logger?.LogInformation("Successfully compacted storage");
@@ -374,7 +374,7 @@ public static class PersistentStorageExtensions
             {
                 logger?.LogWarning("Storage compaction completed with warnings or was not needed");
             }
-            
+
             return success;
         }
         catch (Exception ex)
@@ -395,10 +395,10 @@ public static class PersistentStorageExtensions
         try
         {
             var stats = await storage.GetStatisticsAsync();
-            
+
             logger?.LogDebug("Retrieved storage statistics: TotalSize={TotalSize}",
                 stats.TotalSize);
-            
+
             return stats;
         }
         catch (Exception ex)

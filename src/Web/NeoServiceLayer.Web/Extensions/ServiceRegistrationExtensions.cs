@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
@@ -53,6 +53,10 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
         services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
         services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
+
+        // Smart Contracts Service with dependencies
+        services.AddScoped<NeoServiceLayer.Services.SmartContracts.NeoN3.NeoN3SmartContractManager>();
+        services.AddScoped<NeoServiceLayer.Services.SmartContracts.NeoX.NeoXSmartContractManager>();
         services.AddScoped<NeoServiceLayer.Services.SmartContracts.ISmartContractsService, NeoServiceLayer.Services.SmartContracts.SmartContractsService>();
 
         // AI Services (2)

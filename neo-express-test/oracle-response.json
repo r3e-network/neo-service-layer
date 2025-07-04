@@ -1,0 +1,5 @@
+{
+  "contract": "0x4bc7eef13faf033dbb3429372b43f791f657efd8",
+  "operation": "submitResponse",
+  "args": ["request-1751559549074", "{\"price\": 42.50, \"currency\": \"USD\"}"]
+}

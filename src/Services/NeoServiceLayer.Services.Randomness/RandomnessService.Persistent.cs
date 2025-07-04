@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -185,8 +185,8 @@ public partial class RandomnessService
         {
             var key = $"{INDEX_PREFIX}blockchain:{blockchainType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var requestIds = existingData != null 
+
+            var requestIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -293,7 +293,7 @@ public partial class RandomnessService
                     _requestCount = stats.TotalRequests;
                     _successCount = stats.SuccessfulRequests;
                     _failureCount = stats.FailedRequests;
-                    
+
                     Logger.LogInformation("Restored randomness service statistics from storage");
                 }
             }

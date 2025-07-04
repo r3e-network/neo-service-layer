@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -168,7 +168,7 @@ public partial class EventSubscriptionService
                 TimeToLive = TimeSpan.FromDays(30) // Keep history for 30 days
             });
 
-            Logger.LogDebug("Persisted delivery history {DeliveryId} for subscription {SubscriptionId}", 
+            Logger.LogDebug("Persisted delivery history {DeliveryId} for subscription {SubscriptionId}",
                 delivery.DeliveryId, subscriptionId);
         }
         catch (Exception ex)
@@ -188,8 +188,8 @@ public partial class EventSubscriptionService
         {
             var key = $"{USER_INDEX_PREFIX}{userId}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var subscriptionIds = existingData != null 
+
+            var subscriptionIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -219,8 +219,8 @@ public partial class EventSubscriptionService
         {
             var key = $"{EVENT_INDEX_PREFIX}{eventType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var subscriptionIds = existingData != null 
+
+            var subscriptionIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -265,13 +265,13 @@ public partial class EventSubscriptionService
                         if (subscription != null)
                         {
                             _subscriptions[subscription.SubscriptionId] = subscription;
-                            
+
                             // Restore filters
                             await RestoreFiltersForSubscriptionAsync(subscription.SubscriptionId);
-                            
+
                             // Restore webhook config
                             await RestoreWebhookForSubscriptionAsync(subscription.SubscriptionId);
-                            
+
                             restoredCount++;
                         }
                     }
@@ -374,7 +374,7 @@ public partial class EventSubscriptionService
             {
                 var userId = key.Replace(USER_INDEX_PREFIX, "");
                 _userSubscriptionIndex[userId] = new HashSet<string>();
-                
+
                 var data = await _persistentStorage.RetrieveAsync(key);
                 if (data != null)
                 {
@@ -392,7 +392,7 @@ public partial class EventSubscriptionService
             {
                 var eventType = key.Replace(EVENT_INDEX_PREFIX, "");
                 _eventTypeIndex[eventType] = new HashSet<string>();
-                
+
                 var data = await _persistentStorage.RetrieveAsync(key);
                 if (data != null)
                 {
@@ -558,7 +558,7 @@ public partial class EventSubscriptionService
         {
             var key = $"{USER_INDEX_PREFIX}{userId}";
             var data = await _persistentStorage.RetrieveAsync(key);
-            
+
             if (data != null)
             {
                 var subscriptionIds = JsonSerializer.Deserialize<HashSet<string>>(data) ?? new HashSet<string>();
@@ -592,7 +592,7 @@ public partial class EventSubscriptionService
         {
             var key = $"{EVENT_INDEX_PREFIX}{eventType}";
             var data = await _persistentStorage.RetrieveAsync(key);
-            
+
             if (data != null)
             {
                 var subscriptionIds = JsonSerializer.Deserialize<HashSet<string>>(data) ?? new HashSet<string>();

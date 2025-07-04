@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.ServiceFramework;
@@ -93,7 +93,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             var results = await Task.WhenAll(initTasks);
             var successCount = results.Count(r => r);
 
-            Logger.LogInformation("Initialized {SuccessCount}/{TotalCount} blockchain managers", 
+            Logger.LogInformation("Initialized {SuccessCount}/{TotalCount} blockchain managers",
                 successCount, _managers.Count);
 
             // Load usage statistics
@@ -150,7 +150,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             var results = await Task.WhenAll(startTasks);
             var successCount = results.Count(r => r);
 
-            Logger.LogInformation("Started {SuccessCount}/{TotalCount} blockchain managers", 
+            Logger.LogInformation("Started {SuccessCount}/{TotalCount} blockchain managers",
                 successCount, _managers.Count);
 
             return successCount > 0;
@@ -267,7 +267,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
                 UpdateMetric("LastSuccessTime", DateTime.UtcNow);
                 UpdateMetric("TotalDeployments", _successCount);
 
-                Logger.LogInformation("Successfully deployed contract {ContractHash} to {BlockchainType}", 
+                Logger.LogInformation("Successfully deployed contract {ContractHash} to {BlockchainType}",
                     result.ContractHash, blockchainType);
 
                 return result;
@@ -307,7 +307,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Invoking contract {ContractHash} method {Method} on {BlockchainType}", 
+            Logger.LogDebug("Invoking contract {ContractHash} method {Method} on {BlockchainType}",
                 contractHash, method, blockchainType);
 
             try
@@ -325,7 +325,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
                 UpdateMetric("LastSuccessTime", DateTime.UtcNow);
                 UpdateMetric("TotalInvocations", _successCount);
 
-                Logger.LogDebug("Successfully invoked contract {ContractHash} method {Method} on {BlockchainType}", 
+                Logger.LogDebug("Successfully invoked contract {ContractHash} method {Method} on {BlockchainType}",
                     contractHash, method, blockchainType);
 
                 return result;
@@ -335,7 +335,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
                 _failureCount++;
                 UpdateMetric("LastFailureTime", DateTime.UtcNow);
                 UpdateMetric("LastErrorMessage", ex.Message);
-                Logger.LogError(ex, "Error invoking contract {ContractHash} method {Method} on {BlockchainType}", 
+                Logger.LogError(ex, "Error invoking contract {ContractHash} method {Method} on {BlockchainType}",
                     contractHash, method, blockchainType);
                 throw;
             }
@@ -365,7 +365,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Calling contract {ContractHash} method {Method} on {BlockchainType} (read-only)", 
+            Logger.LogDebug("Calling contract {ContractHash} method {Method} on {BlockchainType} (read-only)",
                 contractHash, method, blockchainType);
 
             var manager = GetManager(blockchainType);
@@ -374,7 +374,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogDebug("Successfully called contract {ContractHash} method {Method} on {BlockchainType}", 
+            Logger.LogDebug("Successfully called contract {ContractHash} method {Method} on {BlockchainType}",
                 contractHash, method, blockchainType);
 
             return result;
@@ -384,7 +384,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error calling contract {ContractHash} method {Method} on {BlockchainType}", 
+            Logger.LogError(ex, "Error calling contract {ContractHash} method {Method} on {BlockchainType}",
                 contractHash, method, blockchainType);
             throw;
         }
@@ -424,7 +424,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error getting contract metadata for {ContractHash} on {BlockchainType}", 
+            Logger.LogError(ex, "Error getting contract metadata for {ContractHash} on {BlockchainType}",
                 contractHash, blockchainType);
             throw;
         }
@@ -442,13 +442,13 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
 
         try
         {
-            Logger.LogDebug("Listing deployed contracts for {BlockchainType}", 
+            Logger.LogDebug("Listing deployed contracts for {BlockchainType}",
                 blockchainType?.ToString() ?? "all blockchains");
 
             var result = new Dictionary<BlockchainType, IEnumerable<ContractMetadata>>();
 
-            var blockchains = blockchainType.HasValue ? 
-                new[] { blockchainType.Value } : 
+            var blockchains = blockchainType.HasValue ?
+                new[] { blockchainType.Value } :
                 _managers.Keys.ToArray();
 
             var tasks = blockchains.Select(async bc =>
@@ -513,7 +513,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Getting events for contract {ContractHash} on {BlockchainType}", 
+            Logger.LogDebug("Getting events for contract {ContractHash} on {BlockchainType}",
                 contractHash, blockchainType);
 
             var manager = GetManager(blockchainType);
@@ -522,7 +522,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogDebug("Retrieved {EventCount} events for contract {ContractHash} on {BlockchainType}", 
+            Logger.LogDebug("Retrieved {EventCount} events for contract {ContractHash} on {BlockchainType}",
                 result.Count(), contractHash, blockchainType);
 
             return result;
@@ -532,7 +532,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error getting events for contract {ContractHash} on {BlockchainType}", 
+            Logger.LogError(ex, "Error getting events for contract {ContractHash} on {BlockchainType}",
                 contractHash, blockchainType);
             throw;
         }
@@ -574,7 +574,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error estimating gas for contract {ContractHash} method {Method} on {BlockchainType}", 
+            Logger.LogError(ex, "Error estimating gas for contract {ContractHash} method {Method} on {BlockchainType}",
                 contractHash, method, blockchainType);
             throw;
         }
@@ -599,16 +599,16 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
                 {
                     var contracts = await manager.ListDeployedContractsAsync(cancellationToken);
                     var contractCount = contracts.Count();
-                    
+
                     // Calculate statistics from usage data
                     long invocations = 0;
                     long gasConsumed = 0;
-                    
+
                     lock (_usageStats)
                     {
                         var blockchainContracts = _usageStats.Values
                             .Where(u => u.BlockchainType == blockchainType);
-                        
+
                         invocations = blockchainContracts.Sum(u => u.InvocationCount);
                         gasConsumed = blockchainContracts.Sum(u => u.TotalGasConsumed);
                     }
@@ -646,7 +646,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogDebug("Generated statistics for {ContractCount} contracts across {BlockchainCount} blockchains", 
+            Logger.LogDebug("Generated statistics for {ContractCount} contracts across {BlockchainCount} blockchains",
                 statistics.TotalContractsDeployed, statistics.ByBlockchain.Count);
 
             return statistics;
@@ -668,7 +668,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
         var healthyManagers = _managers.Count;
         var totalManagers = _managers.Count;
 
-        var health = healthyManagers > 0 ? 
+        var health = healthyManagers > 0 ?
             (healthyManagers == totalManagers ? ServiceHealth.Healthy : ServiceHealth.Degraded) :
             ServiceHealth.Unhealthy;
 
@@ -735,7 +735,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
         try
         {
             var data = await _enclaveManager.CallEnclaveFunctionAsync("getSmartContractUsageStats", "");
-            
+
             if (!string.IsNullOrEmpty(data) && data != "null")
             {
                 var stats = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, ContractUsageInfo>>(data);
@@ -749,7 +749,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
                             _usageStats[kvp.Key] = kvp.Value;
                         }
                     }
-                    
+
                     Logger.LogInformation("Loaded usage statistics for {ContractCount} contracts", stats.Count);
                 }
             }
@@ -772,7 +772,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
 
             var data = System.Text.Json.JsonSerializer.Serialize(statsToSave);
             await _enclaveManager.CallEnclaveFunctionAsync("saveSmartContractUsageStats", data);
-            
+
             Logger.LogDebug("Saved usage statistics for {ContractCount} contracts", statsToSave.Count);
         }
         catch (Exception ex)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -110,10 +110,10 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
             }
 
             var storageId = $"seal_{Guid.NewGuid():N}";
-            
+
             // Seal the data using enclave capabilities
             var sealedData = await SealDataInEnclaveAsync(request.Data, request.Policy);
-            
+
             // Calculate fingerprint
             using var sha256 = SHA256.Create();
             var fingerprint = Convert.ToBase64String(sha256.ComputeHash(request.Data));
@@ -337,10 +337,10 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
             {
                 // Re-seal with backup key
                 var backupData = await ResealForBackupAsync(item);
-                
+
                 // Save to backup location
                 await SaveToPersistentStorageAsync($"{request.BackupLocation}/{backupId}/{item.Key}", backupData);
-                
+
                 backedUpItems++;
                 totalSize += item.SealedSize;
             }
@@ -376,35 +376,35 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         // In a real implementation, this would use SGX sealing APIs
         // For now, simulate sealing with encryption
         await Task.CompletedTask;
-        
+
         using (var aes = Aes.Create())
         {
             aes.GenerateKey();
             aes.GenerateIV();
-            
+
             // Encrypt the data
             byte[] encrypted;
             using (var encryptor = aes.CreateEncryptor())
             {
                 encrypted = encryptor.TransformFinalBlock(data, 0, data.Length);
             }
-            
+
             // Calculate total size
             int ivLength = aes.IV.Length;
             int totalLength = 1 + ivLength + encrypted.Length;
-            
+
             // Create sealed data array
             byte[] sealedData = new byte[totalLength];
-            
+
             // Store policy type as first byte
             sealedData[0] = (byte)policy.Type;
-            
+
             // Copy IV
             Array.Copy(aes.IV, 0, sealedData, 1, ivLength);
-            
+
             // Copy encrypted data
             Array.Copy(encrypted, 0, sealedData, 1 + ivLength, encrypted.Length);
-            
+
             return sealedData;
         }
     }
@@ -413,25 +413,25 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     {
         // In a real implementation, this would use SGX unsealing APIs
         await Task.CompletedTask;
-        
+
         byte policyTypeByte = (byte)policyType;
         if (sealedData[0] != policyTypeByte)
         {
             throw new InvalidOperationException("Policy type mismatch");
         }
-        
+
         var iv = new byte[16];
         Buffer.BlockCopy(sealedData, 1, iv, 0, iv.Length);
-        
+
         var encrypted = new byte[sealedData.Length - 17];
         Buffer.BlockCopy(sealedData, 17, encrypted, 0, encrypted.Length);
-        
+
         using (var aes = Aes.Create())
         {
             aes.IV = iv;
             // In production, key would be derived from enclave sealing key
             aes.GenerateKey();
-            
+
             byte[] decrypted;
             using (var decryptor = aes.CreateDecryptor())
             {
@@ -451,11 +451,11 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     private void UpdateServiceStorage(string service, long sizeChange)
     {
         _serviceStorage.AddOrUpdate(service,
-            new ServiceStorageInfo 
-            { 
-                ServiceName = service, 
-                ItemCount = sizeChange > 0 ? 1 : 0, 
-                TotalSize = Math.Max(0, sizeChange) 
+            new ServiceStorageInfo
+            {
+                ServiceName = service,
+                ItemCount = sizeChange > 0 ? 1 : 0,
+                TotalSize = Math.Max(0, sizeChange)
             },
             (key, existing) =>
             {
@@ -537,7 +537,7 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     private async Task<T?> LoadFromPersistentStorageAsync<T>(string key) where T : class
     {
         if (_persistentStorage == null) return null;
-        
+
         try
         {
             return await _persistentStorage.RetrieveObjectAsync<T>(key, Logger, $"Loading {key}");
@@ -552,7 +552,7 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     private async Task SaveToPersistentStorageAsync<T>(string key, T obj)
     {
         if (_persistentStorage == null) return;
-        
+
         try
         {
             await _persistentStorage.StoreObjectAsync(key, obj, new StorageOptions

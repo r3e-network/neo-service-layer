@@ -789,13 +789,13 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
             await cryptoStream.CopyToAsync(output);
             var result = output.ToArray();
-            
+
             _logger.LogDebug("Decryption successful. Input size: {InputSize}, Output size: {OutputSize}", encryptedData.Length, result.Length);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Decryption failed. Input size: {InputSize}, Exception: {ExceptionType}: {ExceptionMessage}", 
+            _logger.LogError(ex, "Decryption failed. Input size: {InputSize}, Exception: {ExceptionType}: {ExceptionMessage}",
                 encryptedData.Length, ex.GetType().Name, ex.Message);
             throw;
         }
@@ -928,7 +928,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     {
         if (IsExpired) throw new TimeoutException("Transaction has expired");
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
-        
+
         try
         {
             _pendingOperations[key] = data;
@@ -946,7 +946,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     {
         if (IsExpired) throw new TimeoutException("Transaction has expired");
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
-        
+
         try
         {
             _pendingDeletes.Add(key);
@@ -965,7 +965,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     {
         if (IsExpired) throw new TimeoutException("Transaction has expired");
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
-        
+
         try
         {
             // Apply all pending operations
@@ -973,7 +973,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
             {
                 var filePath = GetFilePath(operation.Key);
                 var metadataPath = GetMetadataPath(operation.Key);
-                
+
                 // Create storage metadata
                 var metadata = new StorageMetadata
                 {
@@ -999,7 +999,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
             {
                 var filePath = GetFilePath(key);
                 var metadataPath = GetMetadataPath(key);
-                
+
                 if (File.Exists(filePath)) File.Delete(filePath);
                 if (File.Exists(metadataPath)) File.Delete(metadataPath);
             }
@@ -1022,7 +1022,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     public Task<bool> RollbackAsync()
     {
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
-        
+
         try
         {
             _isActive = false;

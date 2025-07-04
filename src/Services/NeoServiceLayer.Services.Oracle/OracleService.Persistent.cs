@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -216,8 +216,8 @@ public partial class OracleService
         {
             var key = $"{INDEX_PREFIX}source_type:{sourceType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var sourceIds = existingData != null 
+
+            var sourceIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -247,8 +247,8 @@ public partial class OracleService
         {
             var key = $"{INDEX_PREFIX}user:{userId}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var subscriptionIds = existingData != null 
+
+            var subscriptionIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -443,7 +443,7 @@ public partial class OracleService
                     _requestCount = stats.TotalRequests;
                     _successCount = stats.SuccessfulRequests;
                     _failureCount = stats.FailedRequests;
-                    
+
                     Logger.LogInformation("Restored oracle statistics from storage");
                 }
             }
@@ -599,7 +599,7 @@ public partial class OracleService
         try
         {
             await _persistentStorage.DeleteAsync($"{DATA_SOURCE_PREFIX}{dataSourceId}");
-            
+
             Logger.LogDebug("Removed data source {DataSourceId} from storage", dataSourceId);
         }
         catch (Exception ex)

@@ -1,0 +1,5 @@
+{
+  "contract": "0xa44b6791ae38f8c2599df3b85ecab682412bcf7c",
+  "operation": "getNodeMetrics",
+  "args": ["0xab114ef10a7e9256b3a29e50124544db0ebde75f"]
+}

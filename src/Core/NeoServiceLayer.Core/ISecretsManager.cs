@@ -71,17 +71,17 @@ public class SecretMetadata
     /// Gets or sets the access control information.
     /// </summary>
     public SecretAccessControl AccessControl { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets whether the secret is deleted.
     /// </summary>
     public bool IsDeleted { get; set; } = false;
-    
+
     /// <summary>
     /// Gets or sets when the secret was deleted.
     /// </summary>
     public DateTime? DeletedAt { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the type of the secret.
     /// </summary>

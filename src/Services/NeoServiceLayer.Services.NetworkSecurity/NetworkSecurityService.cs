@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -18,7 +18,7 @@ namespace NeoServiceLayer.Services.NetworkSecurity;
 /// <summary>
 /// Service providing secure network communication capabilities for SGX enclaves.
 /// </summary>
-public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecurityService
+public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecurityService
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
@@ -109,11 +109,11 @@ public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecu
         try
         {
             var channelId = $"ch_{Guid.NewGuid():N}";
-            
+
             // Generate key pair for the channel
             using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
             var publicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
-            
+
             var channel = new SecureChannel
             {
                 Id = channelId,
@@ -190,7 +190,7 @@ public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecu
             var latency = (int)(DateTime.UtcNow - startTime).TotalMilliseconds;
             channel.Statistics.TotalRequests++;
             channel.Statistics.SuccessfulRequests++;
-            channel.Statistics.AverageLatency = 
+            channel.Statistics.AverageLatency =
                 ((channel.Statistics.AverageLatency * (channel.Statistics.TotalRequests - 1)) + latency) / channel.Statistics.TotalRequests;
             channel.Statistics.BandwidthUsed += Encoding.UTF8.GetByteCount(message.Payload);
             channel.LastActivity = DateTime.UtcNow;
@@ -307,9 +307,9 @@ public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecu
             channel.ClosedAt = DateTime.UtcNow;
 
             await SaveToPersistentStorageAsync($"channel_{channelId}", channel);
-            
+
             LogSecurityEvent("CHANNEL_CLOSED", "system", $"Channel {channelId} closed");
-            
+
             return true;
         }
 
@@ -390,7 +390,7 @@ public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecu
     private async Task<T?> LoadFromPersistentStorageAsync<T>(string key) where T : class
     {
         if (_persistentStorage == null) return null;
-        
+
         try
         {
             return await _persistentStorage.RetrieveObjectAsync<T>(key, Logger, $"Loading {key}");
@@ -405,7 +405,7 @@ public class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecu
     private async Task SaveToPersistentStorageAsync<T>(string key, T obj)
     {
         if (_persistentStorage == null) return;
-        
+
         try
         {
             await _persistentStorage.StoreObjectAsync(key, obj, new StorageOptions

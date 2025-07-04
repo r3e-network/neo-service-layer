@@ -61,7 +61,7 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
 
             // Initialize service-specific components
             await RefreshKeyCacheAsync();
-            
+
             // Load persistent keys if storage is available
             await LoadPersistentKeysAsync();
 
@@ -174,10 +174,10 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
             {
                 _keyCache[keyId] = keyMetadata;
             }
-            
+
             // Persist to storage if available
             await PersistKeyMetadataAsync(keyMetadata);
-            
+
             // Record key creation audit log
             await RecordKeyUsageAsync(keyId, "CreateKey", $"Created {keyType} key for {keyUsage}");
 

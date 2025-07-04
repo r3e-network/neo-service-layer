@@ -1,4 +1,4 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 
 namespace NeoServiceLayer.Services.EventSubscription.Models;
 
@@ -196,7 +196,7 @@ public class NotificationDelivery
     /// Gets or sets the response body.
     /// </summary>
     public string? ResponseBody { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the timestamp for the delivery.
     /// </summary>

@@ -1,0 +1,5 @@
+{
+  "contract": "0xa44b6791ae38f8c2599df3b85ecab682412bcf7c",
+  "operation": "getPerformanceBasedRecommendation",
+  "args": [5, 80]
+}

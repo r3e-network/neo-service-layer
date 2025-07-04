@@ -103,7 +103,7 @@ The Neo Service Layer provides a comprehensive suite of production-ready service
 1. **Key Management Service** - Generate and manage cryptographic keys securely
 2. **Randomness Service** - Cryptographically secure random number generation
 3. **Oracle Service** - External data feeds with cryptographic proofs
-4. **Voting Service** - Decentralized voting and governance proposals
+4. **Voting Service** - Advanced voting with ML strategies and council node monitoring
 
 ### **💾 Storage & Data Services (3)**
 5. **Storage Service** - Encrypted data storage and retrieval

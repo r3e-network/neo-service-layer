@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -52,7 +52,7 @@ public partial class MonitoringService
             // Load recent health status (last hour)
             var healthKeys = await _persistentStorage.ListKeysAsync(HEALTH_PREFIX);
             var recentHealthKeys = healthKeys.Where(k => IsRecentKey(k, TimeSpan.FromHours(1)));
-            
+
             foreach (var key in recentHealthKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -101,7 +101,7 @@ public partial class MonitoringService
             // Use timestamp in key for time-series data
             var key = $"{METRICS_PREFIX}{serviceName}:{metric.Timestamp.Ticks}";
             var data = JsonSerializer.SerializeToUtf8Bytes(metric);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = false,
@@ -133,7 +133,7 @@ public partial class MonitoringService
         {
             var key = $"{HEALTH_PREFIX}{healthStatus.ServiceName}:{DateTime.UtcNow.Ticks}";
             var data = JsonSerializer.SerializeToUtf8Bytes(healthStatus);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = false,
@@ -165,7 +165,7 @@ public partial class MonitoringService
         {
             var key = $"{ALERT_PREFIX}{alert.Id}";
             var data = JsonSerializer.SerializeToUtf8Bytes(alert);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -226,7 +226,7 @@ public partial class MonitoringService
         {
             var key = $"{SESSION_PREFIX}{session.SessionId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(session);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -257,7 +257,7 @@ public partial class MonitoringService
         {
             var now = DateTime.UtcNow;
             var hourlyKey = $"{AGGREGATE_PREFIX}hourly:{now:yyyyMMddHH}";
-            
+
             var aggregateData = new AggregatedMetrics
             {
                 Period = "hourly",
@@ -272,7 +272,7 @@ public partial class MonitoringService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(aggregateData);
-            
+
             await _persistentStorage.StoreAsync(hourlyKey, data, new StorageOptions
             {
                 Encrypt = false,
@@ -300,12 +300,12 @@ public partial class MonitoringService
         if (_persistentStorage == null) return new List<ServiceMetric>();
 
         var metrics = new List<ServiceMetric>();
-        
+
         try
         {
             var prefix = $"{METRICS_PREFIX}{serviceName}:";
             var keys = await _persistentStorage.ListKeysAsync(prefix);
-            
+
             foreach (var key in keys)
             {
                 // Extract timestamp from key
@@ -347,10 +347,10 @@ public partial class MonitoringService
         {
             // Clean up old metrics (older than 7 days)
             await CleanupOldKeysAsync(METRICS_PREFIX, TimeSpan.FromDays(7));
-            
+
             // Clean up old health status (older than 24 hours)
             await CleanupOldKeysAsync(HEALTH_PREFIX, TimeSpan.FromHours(24));
-            
+
             // Clean up resolved alerts (older than 30 days)
             var alertKeys = await _persistentStorage.ListKeysAsync(ALERT_PREFIX);
             foreach (var key in alertKeys)

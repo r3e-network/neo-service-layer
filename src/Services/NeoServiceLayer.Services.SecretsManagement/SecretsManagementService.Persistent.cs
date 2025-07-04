@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -77,7 +77,7 @@ public partial class SecretsManagementService
         {
             var key = $"{SECRET_METADATA_PREFIX}{metadata.SecretId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(metadata);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -120,7 +120,7 @@ public partial class SecretsManagementService
         try
         {
             var key = $"{SECRET_METADATA_PREFIX}{secretId}";
-            
+
             // Mark as deleted instead of removing (for audit trail)
             var data = await _persistentStorage.RetrieveAsync(key);
             if (data != null)
@@ -167,7 +167,7 @@ public partial class SecretsManagementService
                 SecretId = metadata.SecretId,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentStorage.StoreAsync(nameIndexKey, indexData, new StorageOptions
             {
                 Encrypt = false,
@@ -207,7 +207,7 @@ public partial class SecretsManagementService
         {
             var indexKeys = await _persistentStorage.ListKeysAsync(SECRET_INDEX_PREFIX);
             var keysToDelete = indexKeys.Where(k => k.Contains($":{secretId}") || k.EndsWith(secretId)).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -230,7 +230,7 @@ public partial class SecretsManagementService
         {
             var key = $"{SECRET_AUDIT_PREFIX}{entry.Timestamp.Ticks}:{entry.SecretId}:{Guid.NewGuid()}";
             var data = JsonSerializer.SerializeToUtf8Bytes(entry);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -309,7 +309,7 @@ public partial class SecretsManagementService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(stats);
-            
+
             await _persistentStorage.StoreAsync(SECRET_STATS_KEY, data, new StorageOptions
             {
                 Encrypt = false,
@@ -338,14 +338,14 @@ public partial class SecretsManagementService
         {
             // Clean up deleted secrets older than 30 days
             var metadataKeys = await _persistentStorage.ListKeysAsync(SECRET_METADATA_PREFIX);
-            
+
             foreach (var key in metadataKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
                 if (data != null)
                 {
                     var metadata = JsonSerializer.Deserialize<SecretMetadata>(data);
-                    if (metadata != null && metadata.IsDeleted && 
+                    if (metadata != null && metadata.IsDeleted &&
                         metadata.DeletedAt.HasValue &&
                         DateTime.UtcNow - metadata.DeletedAt.Value > TimeSpan.FromDays(30))
                     {

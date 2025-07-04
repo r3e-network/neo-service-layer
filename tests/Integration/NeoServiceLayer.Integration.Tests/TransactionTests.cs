@@ -1,7 +1,7 @@
+﻿using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
-using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -22,10 +22,10 @@ public class TransactionTests : IDisposable
     {
         _output = output;
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"transaction-test-storage-{Guid.NewGuid():N}");
-        
+
         // Set test encryption key for OcclumFileStorageProvider
         Environment.SetEnvironmentVariable("ENCLAVE_MASTER_KEY", "test-encryption-key-for-integration-tests");
-        
+
         _logger = new TestLogger<OcclumFileStorageProvider>(_output);
         _provider = new OcclumFileStorageProvider(_testStoragePath, _logger);
         _provider.InitializeAsync().GetAwaiter().GetResult();
@@ -269,7 +269,7 @@ public class TransactionTests : IDisposable
                     _output.WriteLine("Skipping test - Transaction support not implemented");
                     return;
                 }
-                
+
                 try
                 {
                     for (int opIndex = 0; opIndex < operationsPerTransaction; opIndex++)
@@ -300,7 +300,7 @@ public class TransactionTests : IDisposable
             {
                 var key = $"concurrent_tx{txIndex}_op{opIndex}";
                 var expectedData = System.Text.Encoding.UTF8.GetBytes($"data_tx{txIndex}_op{opIndex}");
-                
+
                 var retrievedData = await _provider.RetrieveAsync(key);
                 retrievedData.Should().NotBeNull();
                 retrievedData.Should().BeEquivalentTo(expectedData);
@@ -333,7 +333,7 @@ public class TransactionTests : IDisposable
                     _output.WriteLine("Skipping test - Transaction support not implemented");
                     return false;
                 }
-                
+
                 try
                 {
                     // Store data
@@ -405,7 +405,7 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Transaction support not implemented");
             return;
         }
-        
+
         // Store some data
         await transaction.StoreAsync("timeout_key", System.Text.Encoding.UTF8.GetBytes("timeout_data"), options);
 
@@ -478,10 +478,10 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Transaction support not implemented");
             return;
         }
-        
+
         // Parent transaction operations
         await parentTransaction.StoreAsync("parent_key1", System.Text.Encoding.UTF8.GetBytes("parent_data1"), options);
-        
+
         // Child transaction - Note: Nested transactions are not supported in current implementation
         var childTransaction = await _provider.BeginTransactionAsync();
         if (childTransaction == null)
@@ -490,10 +490,10 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Nested transaction support not implemented");
             return;
         }
-        
+
         await childTransaction.StoreAsync("child_key1", System.Text.Encoding.UTF8.GetBytes("child_data1"), options);
         await childTransaction.StoreAsync("child_key2", System.Text.Encoding.UTF8.GetBytes("child_data2"), options);
-        
+
         // Rollback child, commit parent
         await childTransaction.RollbackAsync();
         await parentTransaction.StoreAsync("parent_key2", System.Text.Encoding.UTF8.GetBytes("parent_data2"), options);
@@ -554,7 +554,7 @@ public class TransactionTests : IDisposable
 
         // Assert
         var operationsPerSecond = operationCount / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Large transaction ({operationCount} ops) took: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Transaction ops per second: {operationsPerSecond:F2}");
 
@@ -568,7 +568,7 @@ public class TransactionTests : IDisposable
             var key = $"large_tx_key_{i}";
             var expectedData = System.Text.Encoding.UTF8.GetBytes($"large_tx_data_{i}");
             var retrievedData = await _provider.RetrieveAsync(key);
-            
+
             retrievedData.Should().NotBeNull();
             retrievedData.Should().BeEquivalentTo(expectedData);
         }
@@ -607,7 +607,7 @@ public class TransactionTests : IDisposable
                     return new TransactionResult { Success = false, Operations = new List<string>() };
                 }
                 var operations = new List<string>();
-                
+
                 try
                 {
                     for (int opIndex = 0; opIndex < operationsPerTransaction; opIndex++)
@@ -644,7 +644,7 @@ public class TransactionTests : IDisposable
             foreach (var operation in result.Operations)
             {
                 var retrievedData = await _provider.RetrieveAsync(operation);
-                
+
                 if (result.Success)
                 {
                     // Successful transactions should have all data persisted
@@ -660,7 +660,7 @@ public class TransactionTests : IDisposable
 
         // Test Durability - Restart provider and verify data survives
         var successfulResults = results.Where(r => r.Success).ToList();
-        
+
         _provider.Dispose();
         var newProvider = new OcclumFileStorageProvider(_testStoragePath, _logger);
         await newProvider.InitializeAsync();

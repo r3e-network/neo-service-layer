@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Backup.Models;
@@ -188,8 +188,8 @@ public partial class BackupService
         {
             var key = $"{INDEX_PREFIX}datatype:{dataType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var backupIds = existingData != null 
+
+            var backupIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -219,8 +219,8 @@ public partial class BackupService
         {
             var key = $"{INDEX_PREFIX}job_status:{status}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var jobIds = existingData != null 
+
+            var jobIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -580,7 +580,7 @@ public partial class BackupService
         {
             await _persistentStorage.DeleteAsync($"{METADATA_PREFIX}{backupId}");
             await _persistentStorage.DeleteAsync($"{BACKUP_PREFIX}{backupId}");
-            
+
             Logger.LogDebug("Removed backup {BackupId} from storage", backupId);
         }
         catch (Exception ex)

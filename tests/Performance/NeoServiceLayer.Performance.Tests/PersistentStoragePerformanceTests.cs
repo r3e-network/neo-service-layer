@@ -1,9 +1,9 @@
+﻿using System.Diagnostics;
 using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Running;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
-using System.Diagnostics;
 using Xunit;
 using Xunit.Abstractions;
 
@@ -27,11 +27,11 @@ public class PersistentStoragePerformanceTests : IDisposable
     {
         _output = output;
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"perf-test-storage-{Guid.NewGuid():N}");
-        
+
         var logger = new TestLogger<OcclumFileStorageProvider>(_output);
         _provider = new OcclumFileStorageProvider(_testStoragePath, logger);
         _provider.InitializeAsync().GetAwaiter().GetResult();
-        
+
         _defaultOptions = new StorageOptions
         {
             Encrypt = false,
@@ -111,10 +111,10 @@ public class PersistentStoragePerformanceTests : IDisposable
 
         // Assert
         var operationsPerSecond = operationCount / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Bulk store ({operationCount} ops) took: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Operations per second: {operationsPerSecond:F2}");
-        
+
         // Performance targets (adjust based on hardware)
         operationsPerSecond.Should().BeGreaterThan(50); // At least 50 ops/sec
     }
@@ -149,10 +149,10 @@ public class PersistentStoragePerformanceTests : IDisposable
 
         // Assert
         var operationsPerSecond = operationCount / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Bulk retrieve ({operationCount} ops) took: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Operations per second: {operationsPerSecond:F2}");
-        
+
         results.Should().AllSatisfy(r => r.Should().NotBeNull());
         operationsPerSecond.Should().BeGreaterThan(100); // Should be faster than store
     }
@@ -183,10 +183,10 @@ public class PersistentStoragePerformanceTests : IDisposable
 
         // Assert
         var mbPerSecond = (dataSize / 1024.0 / 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Stored {dataSize / 1024.0:F2}KB in {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Throughput: {mbPerSecond:F2} MB/s");
-        
+
         // Should maintain reasonable throughput even for large files
         if (dataSize <= 102400) // For smaller files
         {
@@ -211,7 +211,7 @@ public class PersistentStoragePerformanceTests : IDisposable
         var data = new byte[dataSize];
         new Random().NextBytes(data);
         const string key = "size_retrieve_test_key";
-        
+
         await _provider.StoreAsync(key, data, _defaultOptions);
 
         var stopwatch = Stopwatch.StartNew();
@@ -223,12 +223,12 @@ public class PersistentStoragePerformanceTests : IDisposable
         // Assert
         retrievedData.Should().NotBeNull();
         retrievedData!.Length.Should().Be(dataSize);
-        
+
         var mbPerSecond = (dataSize / 1024.0 / 1024.0) / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Retrieved {dataSize / 1024.0:F2}KB in {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Throughput: {mbPerSecond:F2} MB/s");
-        
+
         // Retrieval should be faster than storage
         if (dataSize <= 102400)
         {
@@ -271,7 +271,7 @@ public class PersistentStoragePerformanceTests : IDisposable
 
         // Assert
         _output.WriteLine($"Encrypted store ({algorithm}, {dataSize / 1024.0:F2}KB) took: {stopwatch.ElapsedMilliseconds}ms");
-        
+
         // Encryption should add minimal overhead
         var expectedMaxTime = Math.Max(200, dataSize / 1024 * 50); // Base 200ms + 50ms per KB
         stopwatch.ElapsedMilliseconds.Should().BeLessThan((long)expectedMaxTime);
@@ -307,7 +307,7 @@ public class PersistentStoragePerformanceTests : IDisposable
 
         // Assert
         _output.WriteLine($"Compressed store ({algorithm}, {dataSize / 1024.0:F2}KB) took: {stopwatch.ElapsedMilliseconds}ms");
-        
+
         // For highly compressible data, should be faster due to smaller I/O
         var maxExpectedTime = dataSize / 1024 * 30; // 30ms per KB (should be faster due to compression)
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(maxExpectedTime);
@@ -345,10 +345,10 @@ public class PersistentStoragePerformanceTests : IDisposable
 
             // Assert
             var operationsPerSecond = operationCount / (stopwatch.ElapsedMilliseconds / 1000.0);
-            
+
             _output.WriteLine($"Transaction with {operationCount} ops took: {stopwatch.ElapsedMilliseconds}ms");
             _output.WriteLine($"Transaction ops per second: {operationsPerSecond:F2}");
-            
+
             // Transactions should still maintain reasonable performance
             operationsPerSecond.Should().BeGreaterThan(20); // At least 20 ops/sec with transactions
         }
@@ -396,10 +396,10 @@ public class PersistentStoragePerformanceTests : IDisposable
         // Assert
         var totalOperations = threadCount * operationsPerThread;
         var operationsPerSecond = totalOperations / (stopwatch.ElapsedMilliseconds / 1000.0);
-        
+
         _output.WriteLine($"Concurrent operations ({threadCount} threads, {totalOperations} total ops) took: {stopwatch.ElapsedMilliseconds}ms");
         _output.WriteLine($"Concurrent ops per second: {operationsPerSecond:F2}");
-        
+
         // Should handle concurrency efficiently
         operationsPerSecond.Should().BeGreaterThan(30); // At least 30 ops/sec under concurrency
     }
@@ -423,10 +423,10 @@ public class PersistentStoragePerformanceTests : IDisposable
         {
             var data = new byte[dataSize];
             new Random().NextBytes(data);
-            
+
             var key = $"memory_test_key_{i}";
             await _provider.StoreAsync(key, data, _defaultOptions);
-            
+
             // Retrieve and discard to test cleanup
             var retrieved = await _provider.RetrieveAsync(key);
             retrieved.Should().NotBeNull();
@@ -442,9 +442,9 @@ public class PersistentStoragePerformanceTests : IDisposable
         // Assert
         var memoryIncrease = finalMemory - initialMemory;
         var memoryIncreaseKB = memoryIncrease / 1024.0;
-        
+
         _output.WriteLine($"Memory increase after {operationCount} operations: {memoryIncreaseKB:F2}KB");
-        
+
         // Memory increase should be reasonable (not proportional to all data processed)
         memoryIncreaseKB.Should().BeLessThan(operationCount * dataSize / 1024.0 * 0.1); // Less than 10% of total data
     }
@@ -516,7 +516,7 @@ public class PersistentStorageBenchmarks
         var logger = new NullLogger<OcclumFileStorageProvider>();
         _provider = new OcclumFileStorageProvider(_testPath, logger);
         _provider.InitializeAsync().GetAwaiter().GetResult();
-        
+
         _options = new StorageOptions
         {
             Encrypt = false,

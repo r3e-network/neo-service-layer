@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
@@ -79,7 +79,7 @@ public partial class ProofOfReserveService
         {
             var key = $"{ASSET_PREFIX}{asset.AssetId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(asset);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -145,7 +145,7 @@ public partial class ProofOfReserveService
                 AssetId = asset.AssetId,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentStorage.StoreAsync(typeIndexKey, indexData, new StorageOptions
             {
                 Encrypt = false,
@@ -185,7 +185,7 @@ public partial class ProofOfReserveService
         {
             var indexKeys = await _persistentStorage.ListKeysAsync(INDEX_PREFIX);
             var keysToDelete = indexKeys.Where(k => k.EndsWith($":{assetId}")).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -208,7 +208,7 @@ public partial class ProofOfReserveService
         {
             var key = $"{SNAPSHOT_PREFIX}{assetId}:{snapshot.SnapshotId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(snapshot);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -241,7 +241,7 @@ public partial class ProofOfReserveService
         try
         {
             var snapshotKeys = await _persistentStorage.ListKeysAsync(SNAPSHOT_PREFIX);
-            
+
             foreach (var key in snapshotKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -274,7 +274,7 @@ public partial class ProofOfReserveService
                 foreach (var kvp in _reserveHistory)
                 {
                     kvp.Value.Sort((a, b) => b.Timestamp.CompareTo(a.Timestamp));
-                    
+
                     // Keep only last 100 snapshots per asset
                     if (kvp.Value.Count > 100)
                     {
@@ -301,7 +301,7 @@ public partial class ProofOfReserveService
         try
         {
             var alertKeys = await _persistentStorage.ListKeysAsync(ALERT_PREFIX);
-            
+
             foreach (var key in alertKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -337,7 +337,7 @@ public partial class ProofOfReserveService
         {
             var key = $"{ALERT_PREFIX}{alertConfig.AssetId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(alertConfig);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -367,7 +367,7 @@ public partial class ProofOfReserveService
         try
         {
             var subscriptionKeys = await _persistentStorage.ListKeysAsync(SUBSCRIPTION_PREFIX);
-            
+
             foreach (var key in subscriptionKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -413,7 +413,7 @@ public partial class ProofOfReserveService
         {
             var key = $"{SUBSCRIPTION_PREFIX}{assetId}:{subscription.SubscriptionId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(subscription);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -446,7 +446,7 @@ public partial class ProofOfReserveService
         {
             var key = $"{VERIFICATION_PREFIX}{assetId}:{verification.VerificationId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(verification);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -490,7 +490,7 @@ public partial class ProofOfReserveService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(stats);
-            
+
             await _persistentStorage.StoreAsync(STATS_KEY, data, new StorageOptions
             {
                 Encrypt = false,
@@ -559,7 +559,7 @@ public partial class ProofOfReserveService
             // Clean up old snapshots (older than 90 days)
             var snapshotKeys = await _persistentStorage.ListKeysAsync(SNAPSHOT_PREFIX);
             var cutoffDate = DateTime.UtcNow.AddDays(-90);
-            
+
             foreach (var key in snapshotKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
@@ -574,7 +574,7 @@ public partial class ProofOfReserveService
 
             // Clean up inactive subscriptions
             var subscriptionKeys = await _persistentStorage.ListKeysAsync(SUBSCRIPTION_PREFIX);
-            
+
             foreach (var key in subscriptionKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);

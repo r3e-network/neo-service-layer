@@ -9,10 +9,11 @@ namespace NeoServiceLayer.Services.Voting;
 public partial class VotingService
 {
     /// <inheritdoc/>
-    public async Task<bool> ExecuteVotingAsync(string strategyId, string voterAddress, BlockchainType blockchainType)
+    public async Task<VotingResult> ExecuteVotingAsync(string strategyId, string voterAddress, ExecutionOptions options, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(strategyId);
         ArgumentException.ThrowIfNullOrEmpty(voterAddress);
+        ArgumentNullException.ThrowIfNull(options);
 
         if (!SupportsBlockchain(blockchainType))
         {
@@ -27,7 +28,7 @@ public partial class VotingService
                 if (!_votingStrategies.TryGetValue(strategyId, out strategy))
                 {
                     Logger.LogWarning("Voting strategy {StrategyId} not found", strategyId);
-                    return false;
+                    throw new ArgumentException($"Voting strategy {strategyId} not found", nameof(strategyId));
                 }
             }
 
@@ -46,7 +47,10 @@ public partial class VotingService
                 var selectedCandidates = ApplyVotingRules(eligibleCandidates, strategy.Rules);
 
                 // Simulate voting execution (in real implementation, this would interact with Neo N3 blockchain)
-                await Task.Delay(1000); // Simulate blockchain interaction
+                if (!options.DryRun)
+                {
+                    await Task.Delay(1000); // Simulate blockchain interaction
+                }
 
                 var votingResult = new VotingResult
                 {
@@ -66,26 +70,30 @@ public partial class VotingService
                     }
                 };
 
-                lock (_resultsLock)
+                if (!options.DryRun)
                 {
-                    _votingResults[executionId] = votingResult;
+                    lock (_resultsLock)
+                    {
+                        _votingResults[executionId] = votingResult;
+                    }
+
+                    // Update strategy execution info
+                    strategy.LastExecuted = DateTime.UtcNow;
+                    strategy.ExecutionCount++;
+                    if (strategy.AutoExecute)
+                    {
+                        strategy.NextExecution = DateTime.UtcNow.Add(strategy.ExecutionInterval);
+                    }
+
+                    // Persist to storage
+                    await PersistVotingResultsAsync();
+                    await PersistVotingStrategiesAsync();
                 }
 
-                // Update strategy execution info
-                strategy.LastExecuted = DateTime.UtcNow;
-                if (strategy.AutoExecute)
-                {
-                    strategy.NextExecution = DateTime.UtcNow.Add(strategy.ExecutionInterval);
-                }
+                Logger.LogInformation("Successfully executed voting strategy {StrategyId}, voted for {CandidateCount} candidates{DryRun}",
+                    strategyId, selectedCandidates.Count(), options.DryRun ? " (dry run)" : "");
 
-                // Persist to storage
-                await PersistVotingResultsAsync();
-                await PersistVotingStrategiesAsync();
-
-                Logger.LogInformation("Successfully executed voting strategy {StrategyId}, voted for {CandidateCount} candidates",
-                    strategyId, selectedCandidates.Count());
-
-                return true;
+                return votingResult;
             }
             catch (Exception ex)
             {
@@ -109,7 +117,7 @@ public partial class VotingService
                 // Persist error result to storage
                 await PersistVotingResultsAsync();
 
-                return false;
+                return errorResult;
             }
         });
     }

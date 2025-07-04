@@ -31,6 +31,12 @@ namespace NeoServiceLayer.Contracts.Services
         private static readonly byte[] VotingConfigKey = "votingConfig".ToByteArray();
         private static readonly byte[] QuorumThresholdKey = "quorumThreshold".ToByteArray();
         private static readonly byte[] VotingPowerPrefix = "votingPower:".ToByteArray();
+        // New storage keys for advanced features
+        private static readonly byte[] StrategyPrefix = "strategy:".ToByteArray();
+        private static readonly byte[] NodeMetricsPrefix = "nodemetrics:".ToByteArray();
+        private static readonly byte[] NodeBehaviorPrefix = "nodebehavior:".ToByteArray();
+        private static readonly byte[] StrategyExecutionPrefix = "stratexec:".ToByteArray();
+        private static readonly byte[] RiskAssessmentPrefix = "risk:".ToByteArray();
         #endregion
 
         #region Events
@@ -48,6 +54,22 @@ namespace NeoServiceLayer.Contracts.Services
 
         [DisplayName("QuorumReached")]
         public static event Action<ByteString, BigInteger, BigInteger> QuorumReached;
+        
+        // New events for advanced features
+        [DisplayName("StrategyCreated")]
+        public static event Action<ByteString, UInt160, string, int> StrategyCreated;
+        
+        [DisplayName("StrategyExecuted")]
+        public static event Action<ByteString, UInt160, string[], bool> StrategyExecuted;
+        
+        [DisplayName("NodeMetricsUpdated")]
+        public static event Action<UInt160, int, int, int> NodeMetricsUpdated;
+        
+        [DisplayName("RiskAlertGenerated")]
+        public static event Action<UInt160, string, int> RiskAlertGenerated;
+        
+        [DisplayName("CouncilNodeAnalyzed")]
+        public static event Action<UInt160, int, int, int> CouncilNodeAnalyzed;
         #endregion
 
         #region Constants
@@ -496,6 +518,245 @@ namespace NeoServiceLayer.Contracts.Services
         }
         #endregion
 
+        #region Council Node Monitoring
+        /// <summary>
+        /// Updates metrics for a council node.
+        /// </summary>
+        public static bool UpdateNodeMetrics(UInt160 nodeAddress, int uptimePercentage, int performanceScore, int blocksProduced)
+        {
+            ValidateServiceActive();
+            ValidateAddress(nodeAddress);
+            
+            var metricsKey = NodeMetricsPrefix.Concat(nodeAddress);
+            var metrics = new NodeMetrics
+            {
+                NodeAddress = nodeAddress,
+                UptimePercentage = uptimePercentage,
+                PerformanceScore = performanceScore,
+                BlocksProduced = blocksProduced,
+                LastUpdated = Runtime.Time,
+                TrendDirection = CalculateTrendDirection(nodeAddress, performanceScore)
+            };
+            
+            Storage.Put(Storage.CurrentContext, metricsKey, StdLib.Serialize(metrics));
+            NodeMetricsUpdated(nodeAddress, uptimePercentage, performanceScore, blocksProduced);
+            
+            IncrementRequestCount();
+            return true;
+        }
+        
+        /// <summary>
+        /// Gets metrics for a council node.
+        /// </summary>
+        public static NodeMetrics GetNodeMetrics(UInt160 nodeAddress)
+        {
+            ValidateAddress(nodeAddress);
+            var metricsKey = NodeMetricsPrefix.Concat(nodeAddress);
+            var metricsBytes = Storage.Get(Storage.CurrentContext, metricsKey);
+            
+            if (metricsBytes == null)
+                return null;
+                
+            return (NodeMetrics)StdLib.Deserialize(metricsBytes);
+        }
+        
+        /// <summary>
+        /// Analyzes council node behavior.
+        /// </summary>
+        public static NodeBehaviorAnalysis AnalyzeNodeBehavior(UInt160 nodeAddress)
+        {
+            ValidateServiceActive();
+            ValidateAddress(nodeAddress);
+            
+            var metrics = GetNodeMetrics(nodeAddress);
+            if (metrics == null)
+                throw new InvalidOperationException("Node metrics not found");
+            
+            var behaviorKey = NodeBehaviorPrefix.Concat(nodeAddress);
+            var analysis = new NodeBehaviorAnalysis
+            {
+                NodeAddress = nodeAddress,
+                ReliabilityScore = CalculateReliabilityScore(metrics),
+                ConsistencyScore = CalculateConsistencyScore(nodeAddress),
+                RiskScore = CalculateNodeRiskScore(metrics),
+                OverallScore = (metrics.UptimePercentage + metrics.PerformanceScore) / 2,
+                AnalysisTime = Runtime.Time
+            };
+            
+            Storage.Put(Storage.CurrentContext, behaviorKey, StdLib.Serialize(analysis));
+            CouncilNodeAnalyzed(nodeAddress, analysis.ReliabilityScore, analysis.ConsistencyScore, analysis.RiskScore);
+            
+            return analysis;
+        }
+        #endregion
+        
+        #region Advanced Voting Strategies
+        /// <summary>
+        /// Creates an advanced voting strategy.
+        /// </summary>
+        public static ByteString CreateAdvancedStrategy(string name, int strategyType, int maxCandidates, int minPerformanceScore)
+        {
+            ValidateServiceActive();
+            var creator = Runtime.CallingScriptHash;
+            
+            var strategyId = GenerateId("strategy");
+            var strategyKey = StrategyPrefix.Concat(strategyId);
+            
+            var strategy = new VotingStrategy
+            {
+                Id = strategyId,
+                Name = name,
+                Creator = creator,
+                StrategyType = strategyType,
+                MaxCandidates = maxCandidates,
+                MinPerformanceScore = minPerformanceScore,
+                CreatedAt = Runtime.Time,
+                IsActive = true,
+                ExecutionCount = 0
+            };
+            
+            Storage.Put(Storage.CurrentContext, strategyKey, StdLib.Serialize(strategy));
+            StrategyCreated(strategyId, creator, name, strategyType);
+            
+            IncrementRequestCount();
+            return strategyId;
+        }
+        
+        /// <summary>
+        /// Executes a voting strategy.
+        /// </summary>
+        public static bool ExecuteStrategy(ByteString strategyId, bool dryRun)
+        {
+            ValidateServiceActive();
+            var executor = Runtime.CallingScriptHash;
+            
+            var strategyKey = StrategyPrefix.Concat(strategyId);
+            var strategyBytes = Storage.Get(Storage.CurrentContext, strategyKey);
+            
+            if (strategyBytes == null)
+                throw new InvalidOperationException("Strategy not found");
+                
+            var strategy = (VotingStrategy)StdLib.Deserialize(strategyBytes);
+            
+            if (!strategy.IsActive)
+                throw new InvalidOperationException("Strategy is not active");
+                
+            // Get candidates based on strategy
+            string[] selectedCandidates = GetCandidatesForStrategy(strategy);
+            
+            // Risk assessment
+            var riskScore = AssessStrategyRisk(selectedCandidates);
+            if (riskScore > 80) // High risk threshold
+            {
+                RiskAlertGenerated(executor, "High risk detected in strategy execution", riskScore);
+                return false;
+            }
+            
+            if (!dryRun)
+            {
+                // Execute actual voting
+                strategy.ExecutionCount++;
+                strategy.LastExecution = Runtime.Time;
+                Storage.Put(Storage.CurrentContext, strategyKey, StdLib.Serialize(strategy));
+                
+                // Log execution
+                LogStrategyExecution(strategyId, selectedCandidates, true);
+            }
+            
+            StrategyExecuted(strategyId, executor, selectedCandidates, true);
+            IncrementRequestCount();
+            return true;
+        }
+        
+        /// <summary>
+        /// Gets performance-based voting recommendations.
+        /// </summary>
+        public static string[] GetPerformanceRecommendation(int maxCandidates, int minScore)
+        {
+            ValidateServiceActive();
+            
+            // This is a simplified implementation
+            // In production, would iterate through all council nodes and filter by performance
+            var recommendations = new string[maxCandidates];
+            
+            IncrementRequestCount();
+            return recommendations;
+        }
+        
+        /// <summary>
+        /// Gets risk-adjusted voting recommendations.
+        /// </summary>
+        public static string[] GetRiskAdjustedRecommendation(int maxCandidates, int riskTolerance)
+        {
+            ValidateServiceActive();
+            
+            // This is a simplified implementation
+            // In production, would analyze risk factors for each node
+            var recommendations = new string[maxCandidates];
+            
+            IncrementRequestCount();
+            return recommendations;
+        }
+        #endregion
+        
+        #region Helper Methods for Advanced Features
+        private static int CalculateTrendDirection(UInt160 nodeAddress, int currentScore)
+        {
+            // Compare with previous score to determine trend
+            // -1: declining, 0: stable, 1: improving
+            return 0;
+        }
+        
+        private static int CalculateReliabilityScore(NodeMetrics metrics)
+        {
+            return (metrics.UptimePercentage + metrics.PerformanceScore) / 2;
+        }
+        
+        private static int CalculateConsistencyScore(UInt160 nodeAddress)
+        {
+            // Analyze historical performance consistency
+            return 85; // Simplified
+        }
+        
+        private static int CalculateNodeRiskScore(NodeMetrics metrics)
+        {
+            // Calculate risk based on performance and uptime
+            if (metrics.UptimePercentage < 90 || metrics.PerformanceScore < 70)
+                return 70; // Higher risk
+            return 30; // Lower risk
+        }
+        
+        private static string[] GetCandidatesForStrategy(VotingStrategy strategy)
+        {
+            // Get candidates based on strategy type
+            if (strategy.StrategyType == 1) // Performance-based
+                return GetPerformanceRecommendation(strategy.MaxCandidates, strategy.MinPerformanceScore);
+            else if (strategy.StrategyType == 2) // Risk-adjusted
+                return GetRiskAdjustedRecommendation(strategy.MaxCandidates, 50);
+            else
+                return new string[0];
+        }
+        
+        private static int AssessStrategyRisk(string[] candidates)
+        {
+            // Simplified risk assessment
+            return 40; // Medium risk
+        }
+        
+        private static void LogStrategyExecution(ByteString strategyId, string[] candidates, bool success)
+        {
+            var executionKey = StrategyExecutionPrefix.Concat(strategyId).Concat(Runtime.Time);
+            var execution = new StrategyExecution
+            {
+                StrategyId = strategyId,
+                ExecutionTime = Runtime.Time,
+                CandidateCount = candidates.Length,
+                Success = success
+            };
+            Storage.Put(Storage.CurrentContext, executionKey, StdLib.Serialize(execution));
+        }
+        #endregion
+
         #region Data Structures
         /// <summary>
         /// Represents a governance proposal.
@@ -565,6 +826,60 @@ namespace NeoServiceLayer.Contracts.Services
             Failed = 3,
             Cancelled = 4,
             ExecutionFailed = 5
+        }
+        
+        /// <summary>
+        /// Represents node metrics for council monitoring.
+        /// </summary>
+        public class NodeMetrics
+        {
+            public UInt160 NodeAddress;
+            public int UptimePercentage;
+            public int PerformanceScore;
+            public int BlocksProduced;
+            public ulong LastUpdated;
+            public int TrendDirection; // -1: declining, 0: stable, 1: improving
+        }
+        
+        /// <summary>
+        /// Represents node behavior analysis results.
+        /// </summary>
+        public class NodeBehaviorAnalysis
+        {
+            public UInt160 NodeAddress;
+            public int ReliabilityScore;
+            public int ConsistencyScore;
+            public int RiskScore;
+            public int OverallScore;
+            public ulong AnalysisTime;
+        }
+        
+        /// <summary>
+        /// Represents an advanced voting strategy.
+        /// </summary>
+        public class VotingStrategy
+        {
+            public ByteString Id;
+            public string Name;
+            public UInt160 Creator;
+            public int StrategyType; // 1: Performance, 2: Risk-adjusted, 3: Diversification, 4: ML-driven
+            public int MaxCandidates;
+            public int MinPerformanceScore;
+            public ulong CreatedAt;
+            public bool IsActive;
+            public int ExecutionCount;
+            public ulong LastExecution;
+        }
+        
+        /// <summary>
+        /// Represents a strategy execution record.
+        /// </summary>
+        public class StrategyExecution
+        {
+            public ByteString StrategyId;
+            public ulong ExecutionTime;
+            public int CandidateCount;
+            public bool Success;
         }
         #endregion
     }

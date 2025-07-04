@@ -65,7 +65,7 @@ public class SubscriptionPreferences
     /// Gets or sets additional preferences.
     /// </summary>
     public Dictionary<string, object> AdditionalPreferences { get; set; } = new();
-    
+
     /// <summary>
     /// Implicit conversion to Dictionary for compatibility.
     /// </summary>
@@ -79,12 +79,12 @@ public class SubscriptionPreferences
             ["BatchNotifications"] = preferences.BatchNotifications,
             ["BatchInterval"] = preferences.BatchInterval
         };
-        
+
         foreach (var kvp in preferences.AdditionalPreferences)
         {
             dict[kvp.Key] = kvp.Value;
         }
-        
+
         return dict;
     }
 }

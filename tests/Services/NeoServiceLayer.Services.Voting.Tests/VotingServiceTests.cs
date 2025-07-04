@@ -99,20 +99,20 @@ public class VotingServiceTests : IDisposable
         var strategyId = await _votingService.CreateVotingStrategyAsync(request, BlockchainType.NeoN3);
 
         // Act
-        var result = await _votingService.ExecuteVotingAsync(strategyId, "test-voter-address", BlockchainType.NeoN3);
+        var result = await _votingService.ExecuteVotingAsync(strategyId, "test-voter-address", new ExecutionOptions(), BlockchainType.NeoN3);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
     }
 
     [Fact]
-    public async Task ExecuteVotingAsync_NonExistentStrategy_ReturnsFalse()
+    public async Task ExecuteVotingAsync_NonExistentStrategy_ThrowsException()
     {
-        // Act
-        var result = await _votingService.ExecuteVotingAsync("non-existent-strategy", "test-voter-address", BlockchainType.NeoN3);
-
-        // Assert
-        result.Should().BeFalse();
+        // Act & Assert
+        await Assert.ThrowsAsync<ArgumentException>(async () =>
+            await _votingService.ExecuteVotingAsync("non-existent-strategy", "test-voter-address", new ExecutionOptions(), BlockchainType.NeoN3)
+        );
     }
 
     [Fact]
@@ -288,7 +288,7 @@ public class VotingServiceTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _votingService.ExecuteVotingAsync(strategyId, "test-voter", BlockchainType.NeoN3));
+            _votingService.ExecuteVotingAsync(strategyId, "test-voter", new ExecutionOptions(), BlockchainType.NeoN3));
     }
 
     [Fact]
@@ -296,7 +296,7 @@ public class VotingServiceTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _votingService.ExecuteVotingAsync(null!, "test-voter", BlockchainType.NeoN3));
+            _votingService.ExecuteVotingAsync(null!, "test-voter", new ExecutionOptions(), BlockchainType.NeoN3));
     }
 
     [Theory]
@@ -305,7 +305,7 @@ public class VotingServiceTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentException>(() =>
-            _votingService.ExecuteVotingAsync("test-strategy", voterAddress, BlockchainType.NeoN3));
+            _votingService.ExecuteVotingAsync("test-strategy", voterAddress, new ExecutionOptions(), BlockchainType.NeoN3));
     }
 
     [Fact]
@@ -313,7 +313,7 @@ public class VotingServiceTests : IDisposable
     {
         // Act & Assert
         await Assert.ThrowsAsync<ArgumentNullException>(() =>
-            _votingService.ExecuteVotingAsync("test-strategy", null!, BlockchainType.NeoN3));
+            _votingService.ExecuteVotingAsync("test-strategy", null!, new ExecutionOptions(), BlockchainType.NeoN3));
     }
 
     [Fact]

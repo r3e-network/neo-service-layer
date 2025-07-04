@@ -177,7 +177,7 @@ public class ServiceHealthStatus
     /// Gets or sets the last check timestamp.
     /// </summary>
     public DateTime LastCheck { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the last check time (alias for LastCheck).
     /// </summary>

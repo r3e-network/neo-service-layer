@@ -1,0 +1,5 @@
+{
+  "contract": "0xa44b6791ae38f8c2599df3b85ecab682412bcf7c",
+  "operation": "createAdvancedStrategy",
+  "args": ["Performance Optimizer", "Strategy focused on high-performing council nodes", 1, 7, 80, true, 3600]
+}

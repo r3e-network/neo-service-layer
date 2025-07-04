@@ -1,4 +1,4 @@
-using Microsoft.Extensions.Configuration;
+﻿using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -16,7 +16,7 @@ public static class PersistentStorageExtensions
     /// Adds persistent storage services with production-ready configuration.
     /// </summary>
     public static IServiceCollection AddPersistentStorageServices(
-        this IServiceCollection services, 
+        this IServiceCollection services,
         IConfiguration configuration)
     {
         // Add persistent storage provider
@@ -35,7 +35,7 @@ public static class PersistentStorageExtensions
                     try
                     {
                         var connection = ConnectionMultiplexer.Connect(redisConnectionString);
-                        logger.LogInformation("Successfully connected to Redis at {Endpoint}", 
+                        logger.LogInformation("Successfully connected to Redis at {Endpoint}",
                             connection.Configuration);
                         return connection;
                     }
@@ -84,7 +84,7 @@ public static class PersistentStorageExtensions
         services.AddSingleton<IServiceConfiguration>(sp =>
         {
             var config = new ServiceConfiguration();
-            
+
             // Notification Service
             if (servicesConfig.GetValue<bool>("Notification:UsePersistentStorage", false))
             {
@@ -241,7 +241,7 @@ public class PersistentStorageHealthCheck : Microsoft.Extensions.Diagnostics.Hea
             // Test write and read
             var testKey = $"health-check-{Guid.NewGuid()}";
             var testData = System.Text.Encoding.UTF8.GetBytes("health-check");
-            
+
             var writeSuccess = await _storageProvider.StoreAsync(testKey, testData);
             if (!writeSuccess)
             {
@@ -260,7 +260,7 @@ public class PersistentStorageHealthCheck : Microsoft.Extensions.Diagnostics.Hea
 
             // Get storage statistics
             var stats = await _storageProvider.GetStatisticsAsync();
-            
+
             return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(
                 $"Persistent storage is healthy. Keys: {stats.TotalKeys}, Size: {stats.TotalSize} bytes");
         }
@@ -305,7 +305,7 @@ public class ServiceConfiguration : IServiceConfiguration
     {
         _values[key] = value;
     }
-    
+
     public T GetValue<T>(string key)
     {
         if (_values.TryGetValue(key, out var value))
@@ -314,7 +314,7 @@ public class ServiceConfiguration : IServiceConfiguration
         }
         throw new KeyNotFoundException($"Configuration key '{key}' not found");
     }
-    
+
     public T GetValue<T>(string key, T defaultValue)
     {
         if (_values.TryGetValue(key, out var value))
@@ -330,27 +330,27 @@ public class ServiceConfiguration : IServiceConfiguration
         }
         return defaultValue;
     }
-    
+
     public void SetValue<T>(string key, T value)
     {
         _values[key] = value?.ToString() ?? string.Empty;
     }
-    
+
     public bool ContainsKey(string key)
     {
         return _values.ContainsKey(key);
     }
-    
+
     public bool RemoveKey(string key)
     {
         return _values.Remove(key);
     }
-    
+
     public IEnumerable<string> GetAllKeys()
     {
         return _values.Keys;
     }
-    
+
     public IServiceConfiguration GetSection(string sectionName)
     {
         var section = new ServiceConfiguration();
@@ -361,7 +361,7 @@ public class ServiceConfiguration : IServiceConfiguration
         }
         return section;
     }
-    
+
     public string GetConnectionString(string name)
     {
         return GetValue($"ConnectionStrings:{name}", string.Empty);

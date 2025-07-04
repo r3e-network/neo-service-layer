@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Neo.SmartContract.Framework" Version="3.6.2" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Message Text="TestContract.cs -&gt; TestContract.nef" Importance="high" />
+    <Exec WorkingDirectory="$(TargetDir)" Command="nccs $(MSBuildProjectDirectory)\TestContract.cs -o TestContract.nef" />
+  </Target>
+
+</Project>

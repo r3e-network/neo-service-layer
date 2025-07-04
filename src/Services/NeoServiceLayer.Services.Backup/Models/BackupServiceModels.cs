@@ -124,7 +124,7 @@ public class BackupServiceStatistics
 public class BackupJob
 {
     public string BackupId { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the job ID (alias for BackupId).
     /// </summary>
@@ -136,12 +136,12 @@ public class BackupJob
     public string? StorageLocation { get; set; }
     public string? ErrorMessage { get; set; }
     public BlockchainType BlockchainType { get; set; }
-    
+
     /// <summary>
     /// Gets or sets when the job was created.
     /// </summary>
     public DateTime CreatedTime { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// Gets or sets when the job was completed (alias for CompletedAt).
     /// </summary>

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -129,7 +129,7 @@ public partial class NotificationService
         {
             var key = $"{SUBSCRIPTION_PREFIX}{subscription.Id}";
             var data = JsonSerializer.SerializeToUtf8Bytes(subscription);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -178,7 +178,7 @@ public partial class NotificationService
         {
             var key = $"{TEMPLATE_PREFIX}{template.TemplateId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(template);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -209,7 +209,7 @@ public partial class NotificationService
             // Use timestamp in key for chronological ordering
             var key = $"{HISTORY_PREFIX}{result.SentAt.Ticks}:{result.NotificationId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(result);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = false, // History doesn't need encryption
@@ -262,7 +262,7 @@ public partial class NotificationService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(metrics);
-            
+
             await _persistentStorage.StoreAsync(METRICS_KEY, data, new StorageOptions
             {
                 Encrypt = false,
@@ -291,7 +291,7 @@ public partial class NotificationService
         {
             var key = $"{CHANNEL_PREFIX}{channel.ChannelName}";
             var data = JsonSerializer.SerializeToUtf8Bytes(channel);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,

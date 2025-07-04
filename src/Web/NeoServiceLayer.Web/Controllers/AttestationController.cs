@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Tee.Enclave;
@@ -104,7 +104,7 @@ public class AttestationController : BaseApiController
         {
             // In a real implementation, this would query the enclave status
             await Task.CompletedTask;
-            
+
             var status = new EnclaveStatusResponse
             {
                 EnclaveRunning = true,

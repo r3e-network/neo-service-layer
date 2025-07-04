@@ -1,0 +1,5 @@
+{
+  "contract": "0x918dc5e53f237015fae0dad532655efff9834cbd",
+  "operation": "add",
+  "args": [10, 25]
+}

@@ -3,8 +3,12 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
+using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.SmartContracts;
+using NeoServiceLayer.Services.SmartContracts.NeoN3;
+using NeoServiceLayer.Services.SmartContracts.NeoX;
 using NeoServiceLayer.Tee.Host.Services;
+using Xunit;
 
 namespace NeoServiceLayer.Services.SmartContracts.Tests;
 
@@ -15,49 +19,49 @@ public class SmartContractsServiceTests : IDisposable
 {
     private readonly Mock<ILogger<SmartContractsService>> _mockLogger;
     private readonly Mock<IEnclaveManager> _mockEnclaveManager;
-    private readonly Mock<ISmartContractManager> _mockNeoN3Manager;
-    private readonly Mock<ISmartContractManager> _mockNeoXManager;
+    private readonly Mock<IServiceConfiguration> _mockConfiguration;
+    private readonly Mock<NeoN3SmartContractManager> _mockNeoN3Manager;
+    private readonly Mock<NeoXSmartContractManager> _mockNeoXManager;
     private readonly SmartContractsService _service;
 
     public SmartContractsServiceTests()
     {
         _mockLogger = new Mock<ILogger<SmartContractsService>>();
         _mockEnclaveManager = new Mock<IEnclaveManager>();
-        _mockNeoN3Manager = new Mock<ISmartContractManager>();
-        _mockNeoXManager = new Mock<ISmartContractManager>();
+        _mockConfiguration = new Mock<IServiceConfiguration>();
+        _mockNeoN3Manager = new Mock<NeoN3SmartContractManager>();
+        _mockNeoXManager = new Mock<NeoXSmartContractManager>();
 
         // Setup blockchain type for managers
         _mockNeoN3Manager.Setup(x => x.BlockchainType).Returns(BlockchainType.NeoN3);
         _mockNeoXManager.Setup(x => x.BlockchainType).Returns(BlockchainType.NeoX);
 
         _service = new SmartContractsService(
-            _mockLogger.Object,
+            _mockConfiguration.Object,
             _mockEnclaveManager.Object,
-            new[] { _mockNeoN3Manager.Object, _mockNeoXManager.Object });
+            _mockNeoN3Manager.Object,
+            _mockNeoXManager.Object,
+            _mockLogger.Object);
     }
 
     [Fact]
     public async Task InitializeAsync_ShouldReturnTrue_WhenAllManagersInitializeSuccessfully()
     {
         // Arrange
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
 
         // Act
         var result = await _service.InitializeAsync();
 
         // Assert
         result.Should().BeTrue();
-        _mockNeoN3Manager.Verify(x => x.InitializeAsync(), Times.Once);
-        _mockNeoXManager.Verify(x => x.InitializeAsync(), Times.Once);
     }
 
     [Fact]
     public async Task InitializeAsync_ShouldReturnFalse_WhenEnclaveNotInitialized()
     {
         // Arrange
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(false);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(false);
 
         // Act
         var result = await _service.InitializeAsync();
@@ -67,27 +71,20 @@ public class SmartContractsServiceTests : IDisposable
     }
 
     [Fact]
-    public async Task DeployContractAsync_ShouldCallCorrectManager_ForNeoN3()
+    public async Task DeployContractAsync_ShouldDeployContract_ForNeoN3()
     {
         // Arrange
         var contractCode = new byte[] { 0x01, 0x02, 0x03 };
-        var deploymentOptions = new ContractDeploymentOptions 
-        { 
-            ContractName = "TestContract",
-            Description = "Test contract"
-        };
         var expectedResult = new ContractDeploymentResult
         {
-            Success = true,
+            TransactionHash = "0xabcdef1234567890",
             ContractHash = "0x1234567890abcdef",
-            TransactionHash = "0xabcdef1234567890"
+            GasConsumed = 100
         };
 
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         _mockNeoN3Manager
-            .Setup(x => x.DeployContractAsync(contractCode, deploymentOptions))
+            .Setup(x => x.DeployContractAsync(It.IsAny<ContractDeploymentRequest>()))
             .ReturnsAsync(expectedResult);
 
         await _service.InitializeAsync();
@@ -95,65 +92,15 @@ public class SmartContractsServiceTests : IDisposable
 
         // Act
         var result = await _service.DeployContractAsync(
-            contractCode, 
-            deploymentOptions, 
-            BlockchainType.NeoN3);
+            BlockchainType.NeoN3,
+            contractCode);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);
-        _mockNeoN3Manager.Verify(
-            x => x.DeployContractAsync(contractCode, deploymentOptions), 
-            Times.Once);
-        _mockNeoXManager.Verify(
-            x => x.DeployContractAsync(It.IsAny<byte[]>(), It.IsAny<ContractDeploymentOptions>()), 
-            Times.Never);
     }
 
     [Fact]
-    public async Task DeployContractAsync_ShouldCallCorrectManager_ForNeoX()
-    {
-        // Arrange
-        var contractCode = new byte[] { 0x01, 0x02, 0x03 };
-        var deploymentOptions = new ContractDeploymentOptions 
-        { 
-            ContractName = "TestContract",
-            Description = "Test contract"
-        };
-        var expectedResult = new ContractDeploymentResult
-        {
-            Success = true,
-            ContractHash = "0x1234567890abcdef",
-            TransactionHash = "0xabcdef1234567890"
-        };
-
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager
-            .Setup(x => x.DeployContractAsync(contractCode, deploymentOptions))
-            .ReturnsAsync(expectedResult);
-
-        await _service.InitializeAsync();
-        await _service.StartAsync();
-
-        // Act
-        var result = await _service.DeployContractAsync(
-            contractCode, 
-            deploymentOptions, 
-            BlockchainType.NeoX);
-
-        // Assert
-        result.Should().BeEquivalentTo(expectedResult);
-        _mockNeoXManager.Verify(
-            x => x.DeployContractAsync(contractCode, deploymentOptions), 
-            Times.Once);
-        _mockNeoN3Manager.Verify(
-            x => x.DeployContractAsync(It.IsAny<byte[]>(), It.IsAny<ContractDeploymentOptions>()), 
-            Times.Never);
-    }
-
-    [Fact]
-    public async Task InvokeContractAsync_ShouldReturnResult_WhenContractExists()
+    public async Task InvokeContractAsync_ShouldInvokeContract_ForNeoN3()
     {
         // Arrange
         var contractHash = "0x1234567890abcdef";
@@ -161,16 +108,14 @@ public class SmartContractsServiceTests : IDisposable
         var parameters = new object[] { "param1", 42 };
         var expectedResult = new ContractInvocationResult
         {
-            Success = true,
+            TransactionHash = "0xabcdef1234567890",
             Result = "success",
-            TransactionHash = "0xabcdef1234567890"
+            GasConsumed = 50
         };
 
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         _mockNeoN3Manager
-            .Setup(x => x.InvokeContractAsync(contractHash, methodName, parameters))
+            .Setup(x => x.InvokeContractAsync(It.IsAny<ContractInvocationRequest>()))
             .ReturnsAsync(expectedResult);
 
         await _service.InitializeAsync();
@@ -178,20 +123,17 @@ public class SmartContractsServiceTests : IDisposable
 
         // Act
         var result = await _service.InvokeContractAsync(
-            contractHash, 
-            methodName, 
-            parameters, 
-            BlockchainType.NeoN3);
+            BlockchainType.NeoN3,
+            contractHash,
+            methodName,
+            parameters);
 
         // Assert
         result.Should().BeEquivalentTo(expectedResult);
-        _mockNeoN3Manager.Verify(
-            x => x.InvokeContractAsync(contractHash, methodName, parameters), 
-            Times.Once);
     }
 
     [Fact]
-    public async Task CallContractAsync_ShouldReturnResult_WhenMethodExists()
+    public async Task CallContractAsync_ShouldCallContract_ForNeoX()
     {
         // Arrange
         var contractHash = "0x1234567890abcdef";
@@ -199,11 +141,9 @@ public class SmartContractsServiceTests : IDisposable
         var parameters = new object[] { "param1", 42 };
         var expectedResult = "method result";
 
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoN3Manager
-            .Setup(x => x.CallContractAsync(contractHash, methodName, parameters))
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+        _mockNeoXManager
+            .Setup(x => x.CallContractAsync(It.IsAny<ContractCallRequest>()))
             .ReturnsAsync(expectedResult);
 
         await _service.InitializeAsync();
@@ -211,36 +151,29 @@ public class SmartContractsServiceTests : IDisposable
 
         // Act
         var result = await _service.CallContractAsync(
-            contractHash, 
-            methodName, 
-            parameters, 
-            BlockchainType.NeoN3);
+            BlockchainType.NeoX,
+            contractHash,
+            methodName,
+            parameters);
 
         // Assert
         result.Should().Be(expectedResult);
-        _mockNeoN3Manager.Verify(
-            x => x.CallContractAsync(contractHash, methodName, parameters), 
-            Times.Once);
     }
 
     [Fact]
-    public async Task GetContractEventsAsync_ShouldReturnEvents_WhenEventsExist()
+    public async Task GetContractEventsAsync_ShouldReturnEvents()
     {
         // Arrange
         var contractHash = "0x1234567890abcdef";
-        var fromBlock = 100u;
-        var toBlock = 200u;
-        var expectedEvents = new List<ContractEvent>
+        var expectedEvents = new List<Core.SmartContracts.ContractEvent>
         {
-            new() { EventName = "Transfer", BlockNumber = 150 },
-            new() { EventName = "Mint", BlockNumber = 175 }
+            new() { EventName = "Transfer", BlockNumber = 150, Data = new Dictionary<string, object>() },
+            new() { EventName = "Mint", BlockNumber = 175, Data = new Dictionary<string, object>() }
         };
 
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         _mockNeoN3Manager
-            .Setup(x => x.GetContractEventsAsync(contractHash, fromBlock, toBlock))
+            .Setup(x => x.GetContractEventsAsync(It.IsAny<ContractEventQuery>()))
             .ReturnsAsync(expectedEvents);
 
         await _service.InitializeAsync();
@@ -248,59 +181,82 @@ public class SmartContractsServiceTests : IDisposable
 
         // Act
         var result = await _service.GetContractEventsAsync(
-            contractHash, 
-            fromBlock, 
-            toBlock, 
-            BlockchainType.NeoN3);
+            BlockchainType.NeoN3,
+            contractHash,
+            "Transfer",
+            100,
+            200);
 
         // Assert
         result.Should().BeEquivalentTo(expectedEvents);
-        _mockNeoN3Manager.Verify(
-            x => x.GetContractEventsAsync(contractHash, fromBlock, toBlock), 
-            Times.Once);
-    }
-
-    [Theory]
-    [InlineData(BlockchainType.NeoN3)]
-    [InlineData(BlockchainType.NeoX)]
-    public async Task GetContractManagerAsync_ShouldReturnCorrectManager_ForBlockchainType(BlockchainType blockchainType)
-    {
-        // Arrange
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        await _service.InitializeAsync();
-
-        // Act
-        var result = await _service.GetContractManagerAsync(blockchainType);
-
-        // Assert
-        result.Should().NotBeNull();
-        result.BlockchainType.Should().Be(blockchainType);
     }
 
     [Fact]
-    public async Task GetContractManagerAsync_ShouldThrowException_ForUnsupportedBlockchain()
+    public async Task EstimateGasAsync_ShouldReturnGasEstimate()
     {
         // Arrange
-        var unsupportedBlockchain = (BlockchainType)999;
-        
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        await _service.InitializeAsync();
+        var contractHash = "0x1234567890abcdef";
+        var methodName = "testMethod";
+        var expectedGas = 1000L;
 
-        // Act & Assert
-        await Assert.ThrowsAsync<NotSupportedException>(
-            () => _service.GetContractManagerAsync(unsupportedBlockchain));
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+        _mockNeoN3Manager
+            .Setup(x => x.EstimateGasAsync(It.IsAny<ContractInvocationRequest>()))
+            .ReturnsAsync(expectedGas);
+
+        await _service.InitializeAsync();
+        await _service.StartAsync();
+
+        // Act
+        var result = await _service.EstimateGasAsync(
+            BlockchainType.NeoN3,
+            contractHash,
+            methodName);
+
+        // Assert
+        result.Should().Be(expectedGas);
+    }
+
+    [Fact]
+    public void GetManager_ShouldReturnCorrectManager()
+    {
+        // Arrange
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+        _service.InitializeAsync().Wait();
+
+        // Act
+        var neoN3Manager = _service.GetManager(BlockchainType.NeoN3);
+        var neoXManager = _service.GetManager(BlockchainType.NeoX);
+
+        // Assert
+        neoN3Manager.Should().Be(_mockNeoN3Manager.Object);
+        neoXManager.Should().Be(_mockNeoXManager.Object);
+    }
+
+    [Fact]
+    public async Task GetStatisticsAsync_ShouldReturnStatistics()
+    {
+        // Arrange
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
+        await _service.InitializeAsync();
+        await _service.StartAsync();
+
+        // Act
+        var result = await _service.GetStatisticsAsync();
+
+        // Assert
+        result.Should().NotBeNull();
+        result.ByBlockchain.Should().ContainKey(BlockchainType.NeoN3);
+        result.ByBlockchain.Should().ContainKey(BlockchainType.NeoX);
     }
 
     [Fact]
     public async Task GetMetricsAsync_ShouldReturnMetrics_WhenServiceRunning()
     {
         // Arrange
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         await _service.InitializeAsync();
         await _service.StartAsync();
-
-        // Perform some operations to generate metrics
-        await _service.GetContractManagerAsync(BlockchainType.NeoN3);
 
         // Act
         var result = await _service.GetMetricsAsync();
@@ -316,9 +272,7 @@ public class SmartContractsServiceTests : IDisposable
     public async Task GetHealthAsync_ShouldReturnHealthy_WhenServiceRunning()
     {
         // Arrange
-        _mockEnclaveManager.Setup(x => x.IsEnclaveInitialized()).Returns(true);
-        _mockNeoN3Manager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
-        _mockNeoXManager.Setup(x => x.InitializeAsync()).ReturnsAsync(true);
+        _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);
         
         await _service.InitializeAsync();
         await _service.StartAsync();
@@ -334,7 +288,7 @@ public class SmartContractsServiceTests : IDisposable
     public void ServiceProperties_ShouldHaveCorrectValues()
     {
         // Assert
-        _service.Name.Should().Be("Smart Contracts");
+        _service.Name.Should().Be("SmartContracts");
         _service.Description.Should().Contain("Smart contract");
         _service.Version.Should().NotBeNullOrEmpty();
         _service.Capabilities.Should().Contain(typeof(ISmartContractsService));

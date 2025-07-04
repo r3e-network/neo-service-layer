@@ -109,7 +109,7 @@ public partial class MonitoringService
     /// <param name="serviceName">The service name.</param>
     /// <param name="timeRange">The time range to analyze.</param>
     /// <returns>Performance trend data.</returns>
-    public async Task<PerformanceTrend> CalculatePerformanceTrendAsync(string serviceName, TimeSpan timeRange)
+    public async Task<Models.PerformanceTrend> CalculatePerformanceTrendAsync(string serviceName, TimeSpan timeRange)
     {
         ArgumentException.ThrowIfNullOrEmpty(serviceName);
 
@@ -131,7 +131,7 @@ public partial class MonitoringService
 
             if (metrics.Count == 0)
             {
-                return new PerformanceTrend
+                return new Models.PerformanceTrend
                 {
                     ServiceName = serviceName,
                     TimeRange = timeRange,
@@ -160,7 +160,7 @@ public partial class MonitoringService
             // Determine overall trend
             var overallTrend = DetermineOverallTrend(responseTimeTrend, errorRateTrend, requestRateTrend);
 
-            return new PerformanceTrend
+            return new Models.PerformanceTrend
             {
                 ServiceName = serviceName,
                 TimeRange = timeRange,
@@ -177,7 +177,7 @@ public partial class MonitoringService
         {
             Logger.LogError(ex, "Failed to calculate performance trend for service {ServiceName}", serviceName);
 
-            return new PerformanceTrend
+            return new Models.PerformanceTrend
             {
                 ServiceName = serviceName,
                 TimeRange = timeRange,

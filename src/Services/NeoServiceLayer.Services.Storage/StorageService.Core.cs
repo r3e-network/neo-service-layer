@@ -66,7 +66,7 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
 
             // Initialize service-specific components
             await RefreshMetadataCacheAsync();
-            
+
             // Initialize persistent storage if available
             await InitializePersistentMetadataAsync();
 

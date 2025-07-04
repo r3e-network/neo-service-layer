@@ -143,7 +143,7 @@ public partial class StorageService
             {
                 _metadataCache[key] = metadata;
             }
-            
+
             // Persist metadata to storage if available
             await PersistMetadataAsync(key, metadata);
 

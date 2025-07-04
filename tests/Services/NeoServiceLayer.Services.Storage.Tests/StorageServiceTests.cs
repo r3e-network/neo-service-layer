@@ -707,15 +707,15 @@ public class StorageServiceTests : IDisposable
 
         using var encryptor = aes.CreateEncryptor();
         using var output = new MemoryStream();
-        
+
         // Write IV to the beginning
         output.Write(aes.IV, 0, aes.IV.Length);
-        
+
         using (var cryptoStream = new System.Security.Cryptography.CryptoStream(output, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
         {
             cryptoStream.Write(data, 0, data.Length);
         }
-        
+
         return output.ToArray();
     }
 

@@ -147,22 +147,22 @@ public class EventSubscription
     /// Gets or sets the custom metadata.
     /// </summary>
     public Dictionary<string, string> CustomMetadata { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the event filters.
     /// </summary>
     public List<EventFilter> Filters { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the webhook configuration.
     /// </summary>
     public WebhookConfig? WebhookConfig { get; set; }
-    
+
     /// <summary>
     /// Gets or sets whether the subscription is active.
     /// </summary>
     public bool IsActive { get; set; } = true;
-    
+
     /// <summary>
     /// Gets or sets the user ID who owns this subscription.
     /// </summary>

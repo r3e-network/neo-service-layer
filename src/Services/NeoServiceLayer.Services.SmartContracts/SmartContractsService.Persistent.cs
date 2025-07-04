@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
@@ -173,7 +173,7 @@ public partial class SmartContractsService
                 Timestamp = DateTime.UtcNow,
                 EventData = contractEvent.Parameters.Select((p, i) => new KeyValuePair<string, object>($"param{i}", p)).ToDictionary(kvp => kvp.Key, kvp => kvp.Value)
             };
-            
+
             var key = $"{EVENT_PREFIX}{eventId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(persistentEvent);
 
@@ -206,8 +206,8 @@ public partial class SmartContractsService
         {
             var key = $"{INDEX_PREFIX}blockchain:{blockchainType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var contractHashes = existingData != null 
+
+            var contractHashes = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -237,8 +237,8 @@ public partial class SmartContractsService
         {
             var key = $"{INDEX_PREFIX}deployments:{contractHash}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var deploymentIds = existingData != null 
+
+            var deploymentIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -268,8 +268,8 @@ public partial class SmartContractsService
         {
             var key = $"{INDEX_PREFIX}events:{contractHash}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var eventIds = existingData != null 
+
+            var eventIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -299,8 +299,8 @@ public partial class SmartContractsService
         {
             var key = $"{STATS_PREFIX}invocations:{contractHash}:{method}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var stats = existingData != null 
+
+            var stats = existingData != null
                 ? JsonSerializer.Deserialize<InvocationStatistics>(existingData) ?? new InvocationStatistics()
                 : new InvocationStatistics();
 
@@ -404,7 +404,7 @@ public partial class SmartContractsService
         try
         {
             var statsKeys = await _persistentStorage.ListKeysAsync($"{STATS_PREFIX}*");
-            
+
             foreach (var key in statsKeys)
             {
                 try
@@ -457,7 +457,7 @@ public partial class SmartContractsService
                     _requestCount = stats.TotalRequests;
                     _successCount = stats.SuccessfulRequests;
                     _failureCount = stats.FailedRequests;
-                    
+
                     Logger.LogInformation("Restored smart contract service statistics from storage");
                 }
             }

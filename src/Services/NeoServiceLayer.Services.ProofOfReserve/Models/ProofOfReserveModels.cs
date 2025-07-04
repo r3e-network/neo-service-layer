@@ -52,12 +52,12 @@ public class ProofOfReserve
     /// Gets or sets whether the proof is verified.
     /// </summary>
     public bool IsVerified { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the merkle root.
     /// </summary>
     public string MerkleRoot { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets when the proof was generated.
     /// </summary>
@@ -103,27 +103,27 @@ public class MonitoredAsset
     /// Gets or sets the creation timestamp.
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// Gets or sets the current reserve ratio.
     /// </summary>
     public decimal CurrentReserveRatio { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the minimum reserve ratio.
     /// </summary>
     public decimal MinReserveRatio { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the asset health status.
     /// </summary>
     public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
-    
+
     /// <summary>
     /// Gets or sets when the asset was last updated.
     /// </summary>
     public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// Gets or sets the blockchain type.
     /// </summary>
@@ -169,42 +169,42 @@ public class ReserveSnapshot
     /// Gets or sets additional data.
     /// </summary>
     public Dictionary<string, object> AdditionalData { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the total supply.
     /// </summary>
     public decimal TotalSupply { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the total reserves.
     /// </summary>
     public decimal TotalReserves { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the reserve addresses.
     /// </summary>
     public string[] ReserveAddresses { get; set; } = Array.Empty<string>();
-    
+
     /// <summary>
     /// Gets or sets the reserve balances.
     /// </summary>
     public decimal[] ReserveBalances { get; set; } = Array.Empty<decimal>();
-    
+
     /// <summary>
     /// Gets or sets the health status of this snapshot.
     /// </summary>
     public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
-    
+
     /// <summary>
     /// Gets or sets the verification status.
     /// </summary>
     public VerificationStatus VerificationStatus { get; set; } = VerificationStatus.Pending;
-    
+
     /// <summary>
     /// Gets or sets the block height.
     /// </summary>
     public long BlockHeight { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the block hash.
     /// </summary>

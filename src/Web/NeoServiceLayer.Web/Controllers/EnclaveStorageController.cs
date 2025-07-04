@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.EnclaveStorage;
@@ -159,7 +159,7 @@ public class EnclaveStorageController : BaseApiController
         try
         {
             var result = await _enclaveStorageService.DeleteSealedDataAsync(key, blockchainType);
-            
+
             if (!result.Deleted)
             {
                 return NotFound(CreateErrorResponse("Data not found", $"No sealed data found for key: {key}"));

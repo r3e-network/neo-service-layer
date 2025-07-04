@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Storage.Models;
@@ -58,7 +58,7 @@ public partial class StorageService
             Logger.LogInformation("Loading metadata from persistent storage...");
 
             var metadataKeys = await _persistentMetadataStorage.ListKeysAsync(METADATA_PREFIX);
-            
+
             foreach (var key in metadataKeys)
             {
                 var data = await _persistentMetadataStorage.RetrieveAsync(key);
@@ -93,7 +93,7 @@ public partial class StorageService
         {
             var key = $"{METADATA_PREFIX}{storageKey}";
             var data = JsonSerializer.SerializeToUtf8Bytes(metadata);
-            
+
             await _persistentMetadataStorage.StoreAsync(key, data, new Infrastructure.Persistence.StorageOptions
             {
                 Encrypt = true,
@@ -128,7 +128,7 @@ public partial class StorageService
         {
             var key = $"{METADATA_PREFIX}{storageKey}";
             await _persistentMetadataStorage.DeleteAsync(key);
-            
+
             // Remove from indexes
             await RemoveFromMetadataIndexesAsync(storageKey);
         }
@@ -156,7 +156,7 @@ public partial class StorageService
                     StorageKey = storageKey,
                     IndexedAt = DateTime.UtcNow
                 });
-                
+
                 await _persistentMetadataStorage.StoreAsync(ownerIndexKey, indexData, new Infrastructure.Persistence.StorageOptions
                 {
                     Encrypt = false,
@@ -171,7 +171,7 @@ public partial class StorageService
                 StorageKey = storageKey,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentMetadataStorage.StoreAsync(classIndexKey, classIndexData, new Infrastructure.Persistence.StorageOptions
             {
                 Encrypt = false,
@@ -185,7 +185,7 @@ public partial class StorageService
                 StorageKey = storageKey,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentMetadataStorage.StoreAsync(dateIndexKey, dateIndexData, new Infrastructure.Persistence.StorageOptions
             {
                 Encrypt = false,
@@ -210,7 +210,7 @@ public partial class StorageService
             // Find and remove all index entries for this storage key
             var indexKeys = await _persistentMetadataStorage.ListKeysAsync(INDEX_PREFIX);
             var keysToDelete = indexKeys.Where(k => k.EndsWith($":{storageKey}")).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentMetadataStorage.DeleteAsync(key);
@@ -227,7 +227,7 @@ public partial class StorageService
     /// </summary>
     private async Task<List<StorageMetadata>> QueryMetadataByOwnerAsync(string owner)
     {
-        if (_persistentMetadataStorage == null) 
+        if (_persistentMetadataStorage == null)
         {
             // Fallback to in-memory cache
             return _metadataCache.Values.Where(m => m.Owner == owner).ToList();
@@ -239,16 +239,16 @@ public partial class StorageService
         {
             var ownerIndexPrefix = $"{INDEX_PREFIX}owner:{owner}:";
             var indexKeys = await _persistentMetadataStorage.ListKeysAsync(ownerIndexPrefix);
-            
+
             foreach (var indexKey in indexKeys)
             {
                 // Extract storage key from index key
                 var storageKey = indexKey.Substring(ownerIndexPrefix.Length);
-                
+
                 // Load metadata
                 var metadataKey = $"{METADATA_PREFIX}{storageKey}";
                 var data = await _persistentMetadataStorage.RetrieveAsync(metadataKey);
-                
+
                 if (data != null)
                 {
                     var metadata = JsonSerializer.Deserialize<StorageMetadata>(data);
@@ -296,7 +296,7 @@ public partial class StorageService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(stats);
-            
+
             await _persistentMetadataStorage.StoreAsync(STATS_KEY, data, new Infrastructure.Persistence.StorageOptions
             {
                 Encrypt = false,
@@ -329,7 +329,7 @@ public partial class StorageService
             var validationResult = await _persistentMetadataStorage.ValidateIntegrityAsync();
             if (!validationResult.IsValid)
             {
-                Logger.LogWarning("Metadata storage validation failed: {Errors}", 
+                Logger.LogWarning("Metadata storage validation failed: {Errors}",
                     string.Join(", ", validationResult.Errors));
             }
 

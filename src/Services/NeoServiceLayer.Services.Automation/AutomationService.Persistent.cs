@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 
@@ -45,7 +45,7 @@ public partial class AutomationService
                         lock (_jobsLock)
                         {
                             _jobs[job.Id] = job;
-                            
+
                             // Initialize execution history
                             if (!_executionHistory.ContainsKey(job.Id))
                             {
@@ -77,7 +77,7 @@ public partial class AutomationService
         {
             var key = $"{JOB_PREFIX}{job.Id}";
             var data = JsonSerializer.SerializeToUtf8Bytes(job);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -143,7 +143,7 @@ public partial class AutomationService
                 JobId = job.Id,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentStorage.StoreAsync(ownerIndexKey, indexData, new StorageOptions
             {
                 Encrypt = false,
@@ -176,7 +176,7 @@ public partial class AutomationService
             // Remove from owner index
             var ownerIndexKeys = await _persistentStorage.ListKeysAsync(OWNER_INDEX_PREFIX);
             var keysToDelete = ownerIndexKeys.Where(k => k.EndsWith($":{jobId}")).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -185,7 +185,7 @@ public partial class AutomationService
             // Remove from trigger index
             var triggerIndexKeys = await _persistentStorage.ListKeysAsync(TRIGGER_INDEX_PREFIX);
             keysToDelete = triggerIndexKeys.Where(k => k.EndsWith($":{jobId}")).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -208,7 +208,7 @@ public partial class AutomationService
         {
             var key = $"{EXECUTION_PREFIX}{jobId}:{execution.Id}";
             var data = JsonSerializer.SerializeToUtf8Bytes(execution);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = false,
@@ -240,7 +240,7 @@ public partial class AutomationService
         try
         {
             var executionKeys = await _persistentStorage.ListKeysAsync(EXECUTION_PREFIX);
-            
+
             foreach (var key in executionKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -273,7 +273,7 @@ public partial class AutomationService
                 foreach (var kvp in _executionHistory)
                 {
                     kvp.Value.Sort((a, b) => b.ExecutedAt.CompareTo(a.ExecutedAt));
-                    
+
                     // Keep only last 100 entries per job
                     if (kvp.Value.Count > 100)
                     {
@@ -300,7 +300,7 @@ public partial class AutomationService
         try
         {
             var executionKeys = await _persistentStorage.ListKeysAsync($"{EXECUTION_PREFIX}{jobId}:");
-            
+
             foreach (var key in executionKeys)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -338,7 +338,7 @@ public partial class AutomationService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(stats);
-            
+
             await _persistentStorage.StoreAsync(STATS_KEY, data, new StorageOptions
             {
                 Encrypt = false,
@@ -367,7 +367,7 @@ public partial class AutomationService
         {
             var cutoffDate = DateTime.UtcNow.AddDays(-30);
             var executionKeys = await _persistentStorage.ListKeysAsync(EXECUTION_PREFIX);
-            
+
             foreach (var key in executionKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
@@ -400,7 +400,7 @@ public partial class AutomationService
         try
         {
             var indexKeys = await _persistentStorage.ListKeysAsync($"{OWNER_INDEX_PREFIX}{ownerAddress}:");
-            
+
             foreach (var indexKey in indexKeys)
             {
                 // Extract job ID from index key

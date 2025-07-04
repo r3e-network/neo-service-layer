@@ -13,27 +13,27 @@ public class ProofOfReserve
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
     public long BlockHeight { get; set; }
     public string BlockHash { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the reserve amount.
     /// </summary>
     public decimal ReserveAmount { get => TotalReserves; set => TotalReserves = value; }
-    
+
     /// <summary>
     /// Gets or sets the liability amount.
     /// </summary>
     public decimal LiabilityAmount { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the proof data.
     /// </summary>
     public Dictionary<string, object> ProofData { get; set; } = new();
-    
+
     /// <summary>
     /// Gets or sets the timestamp (alias for GeneratedAt).
     /// </summary>
     public DateTime Timestamp { get => GeneratedAt; set => GeneratedAt = value; }
-    
+
     /// <summary>
     /// Gets or sets whether the proof is verified.
     /// </summary>
@@ -241,27 +241,27 @@ public class ReserveAlertConfig
     /// Gets or sets when the alert was created.
     /// </summary>
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
-    
+
     /// <summary>
     /// Gets or sets the minimum threshold for alerts.
     /// </summary>
     public decimal MinimumThreshold { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the warning threshold for alerts.
     /// </summary>
     public decimal WarningThreshold { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the critical threshold for alerts.
     /// </summary>
     public decimal CriticalThreshold { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the alert recipients.
     /// </summary>
     public string[] AlertRecipients { get; set; } = Array.Empty<string>();
-    
+
     /// <summary>
     /// Gets or sets the threshold percentage.
     /// </summary>

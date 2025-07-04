@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 
@@ -159,8 +159,8 @@ public partial class ComputeService
         {
             var key = $"{INDEX_PREFIX}type:{computationType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var computationIds = existingData != null 
+
+            var computationIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -190,8 +190,8 @@ public partial class ComputeService
         {
             var key = $"{INDEX_PREFIX}job_status:{status}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var jobIds = existingData != null 
+
+            var jobIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -395,7 +395,7 @@ public partial class ComputeService
                     _requestCount = stats.TotalRequests;
                     _successCount = stats.SuccessfulRequests;
                     _failureCount = stats.FailedRequests;
-                    
+
                     Logger.LogInformation("Restored compute service statistics from storage");
                 }
             }
@@ -546,7 +546,7 @@ public partial class ComputeService
         {
             await _persistentStorage.DeleteAsync($"{METADATA_PREFIX}{computationId}");
             await _persistentStorage.DeleteAsync($"{RESULT_PREFIX}{computationId}");
-            
+
             Logger.LogDebug("Removed computation {ComputationId} from storage", computationId);
         }
         catch (Exception ex)

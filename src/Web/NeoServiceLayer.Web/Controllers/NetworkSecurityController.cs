@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.NetworkSecurity;
@@ -178,7 +178,7 @@ public class NetworkSecurityController : BaseApiController
         try
         {
             var result = await _networkSecurityService.CloseChannelAsync(channelId, blockchainType);
-            
+
             if (!result)
             {
                 return NotFound(CreateErrorResponse("Channel not found", $"Channel {channelId} does not exist"));

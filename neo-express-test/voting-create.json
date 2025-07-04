@@ -1,0 +1,5 @@
+{
+  "contract": "0xfc57c138340617820b46e8c318f1a9b27734c2da",
+  "operation": "createProposal",
+  "args": ["Increase block time", "Proposal to increase block generation time", 1735948800]
+}

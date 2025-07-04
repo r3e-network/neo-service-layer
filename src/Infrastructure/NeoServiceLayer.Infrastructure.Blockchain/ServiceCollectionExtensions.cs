@@ -26,7 +26,7 @@ public static class ServiceCollectionExtensions
 
         // Add TEE Enclave services
         services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.ProductionSGXEnclaveWrapper>();
-        
+
         // Add TEE Host services
         services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveManager, NeoServiceLayer.Tee.Host.Services.EnclaveManager>();
         services.AddScoped<NeoServiceLayer.Tee.Host.Services.EnclaveManager>(serviceProvider =>

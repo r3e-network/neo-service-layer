@@ -1,17 +1,17 @@
+﻿using System.Numerics;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.SmartContracts;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Tee.Host.Services;
 using Nethereum.ABI.FunctionEncoding.Attributes;
 using Nethereum.Contracts;
 using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
-using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.SmartContracts;
 using ContractEvent = NeoServiceLayer.Core.SmartContracts.ContractEvent;
-using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Tee.Host.Services;
-using System.Numerics;
-using System.Text.Json;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoX;
 
@@ -52,7 +52,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         // Initialize Web3 client
         var rpcUrl = _configuration.GetValue("NeoX:RpcUrl", "https://mainnet1.neo.coz.io:4435");
         var chainId = _configuration.GetValue("NeoX:ChainId", "47763");
-        
+
         _web3 = new Web3(rpcUrl);
 
         // Add capabilities
@@ -115,7 +115,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         try
         {
             Logger.LogInformation("Starting Neo X Smart Contract Manager...");
-            
+
             // Test connection
             var blockNumber = await _web3.Eth.Blocks.GetBlockNumber.SendRequestAsync();
             Logger.LogInformation("Connected to Neo X network at block: {BlockNumber}", blockNumber.Value);
@@ -233,7 +233,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                 UpdateMetric("LastSuccessTime", DateTime.UtcNow);
                 UpdateMetric("TotalContractsDeployed", _contractCache.Count);
 
-                Logger.LogInformation("Successfully deployed contract {ContractAddress} with transaction {TxHash}", 
+                Logger.LogInformation("Successfully deployed contract {ContractAddress} with transaction {TxHash}",
                     result.ContractHash, result.TransactionHash);
 
                 return result;
@@ -318,7 +318,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                 if (options?.WaitForConfirmation != false)
                 {
                     var receipt = await WaitForTransactionReceiptAsync(txHash);
-                    
+
                     result.BlockNumber = (long)receipt.BlockNumber.Value;
                     result.GasConsumed = (long)receipt.GasUsed.Value;
                     result.IsSuccess = receipt.Status.Value == 1;
@@ -347,7 +347,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                     else
                     {
                         result.ErrorMessage = "Transaction failed (status = 0)";
-                        
+
                         // Try to get revert reason
                         try
                         {
@@ -458,7 +458,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             Logger.LogDebug("Retrieving contract metadata for {ContractAddress}", contractHash);
 
             // Try to get from enclave storage
-            var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("getContractMetadata", 
+            var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("getContractMetadata",
                 JsonSerializer.Serialize(new { contractHash, blockchain = "NeoX" }));
 
             if (!string.IsNullOrEmpty(enclaveData) && enclaveData != "null")
@@ -524,7 +524,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
 
             // Get from enclave storage
             var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("listDeployedContracts", "NeoX");
-            
+
             if (!string.IsNullOrEmpty(enclaveData) && enclaveData != "null")
             {
                 var contracts = JsonSerializer.Deserialize<List<ContractMetadata>>(enclaveData);
@@ -588,7 +588,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             var contract = _web3.Eth.GetContract(metadata.Abi, contractHash);
             var eventDefinition = contract.GetEvent(eventName ?? "");
             var filter = eventDefinition.CreateFilterInput(
-                contractHash, 
+                contractHash,
                 fromBlock.HasValue ? new BlockParameter((ulong)fromBlock.Value) : BlockParameter.CreateEarliest(),
                 toBlock.HasValue ? new BlockParameter((ulong)toBlock.Value) : BlockParameter.CreateLatest());
 
@@ -596,7 +596,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             var logs = await _web3.Eth.Filters.GetLogs.SendRequestAsync(filter);
 
             var events = new List<ContractEvent>();
-            
+
             foreach (var log in logs)
             {
                 try
@@ -669,7 +669,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogDebug("Estimated gas: {GasEstimate} for contract {ContractAddress} method {Method}", 
+            Logger.LogDebug("Estimated gas: {GasEstimate} for contract {ContractAddress} method {Method}",
                 gasEstimate.Value, contractHash, method);
 
             return (long)gasEstimate.Value;
@@ -738,7 +738,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         {
             // Get account information from enclave
             var accountData = await _enclaveManager.CallEnclaveFunctionAsync("getAccountForBlockchain", "NeoX");
-            
+
             if (string.IsNullOrEmpty(accountData))
             {
                 // Create new account in enclave
@@ -747,11 +747,11 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
 
             // Create account from enclave data
             _account = CreateAccountFromEnclaveData(accountData);
-            
+
             // Create new Web3 instance with account
             var rpcUrl = _configuration.GetValue("NeoX:RpcUrl", "https://testnet.neox.evmnode.org");
             _web3 = new Web3(_account, rpcUrl);
-            
+
             Logger.LogInformation("Account initialized with address: {Address}", _account.Address);
         }
         catch (Exception ex)
@@ -765,10 +765,10 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
     {
         // In production, this would parse the secure account data from the enclave
         // For now, creating a new account (in production, the private key would come from the enclave)
-        
+
         // Parse the account data (this is a simplified implementation)
         var accountInfo = JsonSerializer.Deserialize<Dictionary<string, string>>(accountData);
-        
+
         if (accountInfo?.TryGetValue("privateKey", out var privateKey) == true)
         {
             return new Account(privateKey);
@@ -786,7 +786,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         {
             // Load contract metadata from enclave storage
             var contractsData = await _enclaveManager.CallEnclaveFunctionAsync("listDeployedContracts", "NeoX");
-            
+
             if (!string.IsNullOrEmpty(contractsData) && contractsData != "null")
             {
                 var contracts = JsonSerializer.Deserialize<List<ContractMetadata>>(contractsData);
@@ -800,7 +800,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                             _contractCache[contract.ContractHash] = contract;
                         }
                     }
-                    
+
                     Logger.LogInformation("Loaded {ContractCount} contracts from cache", contracts.Count);
                 }
             }
@@ -817,9 +817,9 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         {
             // Parse the contract code to extract bytecode and ABI
             // This assumes the contract code contains both bytecode and ABI in JSON format
-            
+
             var contractData = JsonSerializer.Deserialize<Dictionary<string, object>>(contractCode);
-            
+
             if (contractData == null)
             {
                 throw new ArgumentException("Invalid contract code format");
@@ -847,7 +847,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
         try
         {
             var deploymentData = EncodeConstructorCall(bytecode, string.Empty, constructorParameters);
-            
+
             var gasEstimate = await _web3.Eth.Transactions.EstimateGas.SendRequestAsync(new CallInput
             {
                 Data = deploymentData,
@@ -883,7 +883,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
     {
         // In production, this would sign the transaction within the enclave
         // For now, using the account to sign
-        
+
         if (_account == null)
         {
             throw new InvalidOperationException("Account not initialized");
@@ -897,31 +897,31 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
     {
         const int maxAttempts = 60;
         const int delayMs = 2000;
-        
+
         for (int attempt = 0; attempt < maxAttempts; attempt++)
         {
             var receipt = await _web3.Eth.Transactions.GetTransactionReceipt.SendRequestAsync(txHash);
-            
+
             if (receipt != null)
             {
                 return receipt;
             }
-            
+
             if (attempt == maxAttempts - 1)
             {
                 throw new TimeoutException("Transaction confirmation timeout");
             }
-            
+
             await Task.Delay(delayMs);
         }
-        
+
         throw new TimeoutException("Transaction confirmation timeout");
     }
 
     private List<ContractMethod> ParseContractMethods(string abi)
     {
         var methods = new List<ContractMethod>();
-        
+
         try
         {
             if (string.IsNullOrEmpty(abi))
@@ -930,7 +930,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             }
 
             var abiArray = JsonSerializer.Deserialize<JsonElement[]>(abi);
-            
+
             if (abiArray != null)
             {
                 foreach (var item in abiArray)
@@ -940,7 +940,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                         var method = new ContractMethod
                         {
                             Name = item.TryGetProperty("name", out var name) ? name.GetString() ?? "Unknown" : "Unknown",
-                            IsSafe = item.TryGetProperty("stateMutability", out var stateMutability) && 
+                            IsSafe = item.TryGetProperty("stateMutability", out var stateMutability) &&
                                     (stateMutability.GetString() == "view" || stateMutability.GetString() == "pure"),
                             IsPayable = item.TryGetProperty("payable", out var payable) && payable.GetBoolean()
                         };
@@ -981,7 +981,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
     private List<ContractEvent> ParseContractEvents(TransactionReceipt receipt, string contractHash)
     {
         var events = new List<ContractEvent>();
-        
+
         foreach (var log in receipt.Logs)
         {
             var logAddress = log["address"]?.ToString() ?? string.Empty;
@@ -997,7 +997,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
                 });
             }
         }
-        
+
         return events;
     }
 

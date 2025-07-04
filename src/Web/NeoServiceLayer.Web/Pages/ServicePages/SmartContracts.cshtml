@@ -1,0 +1,443 @@
+@page
+@model NeoServiceLayer.Web.Pages.ServicePages.SmartContractsModel
+@{
+    ViewData["Title"] = "Smart Contracts Service";
+}
+
+<div class="container-fluid">
+    <div class="row">
+        <div class="col-lg-12">
+            <h1 class="mt-4"><i class="fas fa-file-contract"></i> Smart Contracts Service</h1>
+            <p class="lead">Deploy, invoke, and manage smart contracts on Neo N3 and Neo X blockchains.</p>
+        </div>
+    </div>
+
+    <!-- Service Status Card -->
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-heartbeat"></i> Service Status</h5>
+                </div>
+                <div class="card-body">
+                    <div id="serviceStatus" class="alert alert-info">
+                        <i class="fas fa-spinner fa-spin"></i> Checking service status...
+                    </div>
+                    <div id="serviceStats" class="row mt-3" style="display:none;">
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6>Total Requests</h6>
+                                <h3 id="totalRequests">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6>Success Rate</h6>
+                                <h3 id="successRate">0%</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6>Active Contracts</h6>
+                                <h3 id="activeContracts">0</h3>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="text-center">
+                                <h6>Supported Chains</h6>
+                                <h3>Neo N3, Neo X</h3>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Operations Section -->
+    <div class="row mt-4">
+        <!-- Deploy Contract -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-upload"></i> Deploy Contract</h5>
+                </div>
+                <div class="card-body">
+                    <form id="deployForm">
+                        <div class="form-group">
+                            <label for="deployBlockchain">Blockchain</label>
+                            <select class="form-control" id="deployBlockchain" required>
+                                <option value="1">Neo N3</option>
+                                <option value="2">Neo X</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="contractName">Contract Name</label>
+                            <input type="text" class="form-control" id="contractName" placeholder="MyContract" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="contractCode">Contract Code (Base64)</label>
+                            <textarea class="form-control" id="contractCode" rows="3" placeholder="Base64 encoded contract bytecode" required></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="contractManifest">Manifest (JSON)</label>
+                            <textarea class="form-control" id="contractManifest" rows="3" placeholder="Contract manifest JSON" required></textarea>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-rocket"></i> Deploy Contract
+                        </button>
+                    </form>
+                    <div id="deployResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Call/Invoke Contract -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-play"></i> Call/Invoke Contract</h5>
+                </div>
+                <div class="card-body">
+                    <form id="invokeForm">
+                        <div class="form-group">
+                            <label for="invokeBlockchain">Blockchain</label>
+                            <select class="form-control" id="invokeBlockchain" required>
+                                <option value="1">Neo N3</option>
+                                <option value="2">Neo X</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="contractHash">Contract Hash</label>
+                            <input type="text" class="form-control" id="contractHash" placeholder="0x..." required>
+                        </div>
+                        <div class="form-group">
+                            <label for="methodName">Method Name</label>
+                            <input type="text" class="form-control" id="methodName" placeholder="transfer" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="methodParams">Parameters (JSON Array)</label>
+                            <textarea class="form-control" id="methodParams" rows="2" placeholder='["param1", "param2"]'></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="operationType">Operation Type</label>
+                            <select class="form-control" id="operationType" required>
+                                <option value="call">Call (Read-only)</option>
+                                <option value="invoke">Invoke (Write)</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary">
+                            <i class="fas fa-execute"></i> Execute
+                        </button>
+                    </form>
+                    <div id="invokeResult" class="mt-3"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Events and Statistics -->
+    <div class="row mt-4">
+        <!-- Contract Events -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-bell"></i> Contract Events</h5>
+                </div>
+                <div class="card-body">
+                    <form id="eventsForm">
+                        <div class="form-row">
+                            <div class="col">
+                                <select class="form-control" id="eventsBlockchain" required>
+                                    <option value="1">Neo N3</option>
+                                    <option value="2">Neo X</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <input type="text" class="form-control" id="eventsContractHash" placeholder="Contract Hash" required>
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-search"></i> Get Events
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="eventsResult" class="mt-3">
+                        <div class="text-muted">No events loaded</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Contract Statistics -->
+        <div class="col-lg-6">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0"><i class="fas fa-chart-bar"></i> Contract Statistics</h5>
+                </div>
+                <div class="card-body">
+                    <form id="statsForm">
+                        <div class="form-row">
+                            <div class="col">
+                                <select class="form-control" id="statsBlockchain" required>
+                                    <option value="1">Neo N3</option>
+                                    <option value="2">Neo X</option>
+                                </select>
+                            </div>
+                            <div class="col">
+                                <input type="text" class="form-control" id="statsContractHash" placeholder="Contract Hash" required>
+                            </div>
+                            <div class="col">
+                                <button type="submit" class="btn btn-primary btn-block">
+                                    <i class="fas fa-chart-line"></i> Get Stats
+                                </button>
+                            </div>
+                        </div>
+                    </form>
+                    <div id="statsResult" class="mt-3">
+                        <div class="text-muted">No statistics loaded</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script>
+        $(document).ready(function() {
+            // Check service health on load
+            checkServiceHealth();
+            loadServiceStats();
+            
+            // Refresh status every 30 seconds
+            setInterval(function() {
+                checkServiceHealth();
+                loadServiceStats();
+            }, 30000);
+            
+            // Deploy form submission
+            $('#deployForm').on('submit', function(e) {
+                e.preventDefault();
+                deployContract();
+            });
+            
+            // Invoke form submission
+            $('#invokeForm').on('submit', function(e) {
+                e.preventDefault();
+                executeContract();
+            });
+            
+            // Events form submission
+            $('#eventsForm').on('submit', function(e) {
+                e.preventDefault();
+                getContractEvents();
+            });
+            
+            // Stats form submission
+            $('#statsForm').on('submit', function(e) {
+                e.preventDefault();
+                getContractStats();
+            });
+        });
+        
+        function checkServiceHealth() {
+            $.ajax({
+                url: '/api/smartcontracts/health',
+                method: 'GET',
+                success: function(response) {
+                    if (response.status === 'Healthy') {
+                        $('#serviceStatus').removeClass('alert-info alert-danger').addClass('alert-success')
+                            .html('<i class="fas fa-check-circle"></i> Service is healthy and running');
+                    } else {
+                        $('#serviceStatus').removeClass('alert-info alert-success').addClass('alert-warning')
+                            .html('<i class="fas fa-exclamation-triangle"></i> Service status: ' + response.status);
+                    }
+                },
+                error: function() {
+                    $('#serviceStatus').removeClass('alert-info alert-success').addClass('alert-danger')
+                        .html('<i class="fas fa-times-circle"></i> Service is not responding');
+                }
+            });
+        }
+        
+        function loadServiceStats() {
+            $.ajax({
+                url: '/api/smartcontracts/service-stats',
+                method: 'GET',
+                success: function(response) {
+                    if (response.success && response.statistics) {
+                        $('#totalRequests').text(response.statistics.totalRequests || 0);
+                        const successRate = response.statistics.totalRequests > 0 
+                            ? Math.round((response.statistics.successCount / response.statistics.totalRequests) * 100) 
+                            : 0;
+                        $('#successRate').text(successRate + '%');
+                        $('#activeContracts').text(response.statistics.activeContracts || 0);
+                        $('#serviceStats').show();
+                    }
+                }
+            });
+        }
+        
+        function deployContract() {
+            const request = {
+                blockchain: parseInt($('#deployBlockchain').val()),
+                name: $('#contractName').val(),
+                script: $('#contractCode').val(),
+                manifest: $('#contractManifest').val()
+            };
+            
+            $('#deployResult').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Deploying contract...</div>');
+            
+            $.ajax({
+                url: '/api/smartcontracts/deploy',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                headers: {
+                    'Authorization': 'Bearer ' + localStorage.getItem('jwtToken')
+                },
+                success: function(response) {
+                    $('#deployResult').html(
+                        '<div class="alert alert-success">' +
+                        '<h6>Contract Deployed Successfully!</h6>' +
+                        '<p><strong>Contract Hash:</strong> ' + response.contractHash + '</p>' +
+                        '<p><strong>Transaction Hash:</strong> ' + response.transactionHash + '</p>' +
+                        '<p><strong>Gas Consumed:</strong> ' + response.gasConsumed + '</p>' +
+                        '</div>'
+                    );
+                    $('#deployForm')[0].reset();
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to deploy contract';
+                    $('#deployResult').html('<div class="alert alert-danger"><i class="fas fa-times"></i> ' + error + '</div>');
+                }
+            });
+        }
+        
+        function executeContract() {
+            const operationType = $('#operationType').val();
+            const request = {
+                blockchain: parseInt($('#invokeBlockchain').val()),
+                contractHash: $('#contractHash').val(),
+                method: $('#methodName').val(),
+                params: $('#methodParams').val() ? JSON.parse($('#methodParams').val()) : []
+            };
+            
+            $('#invokeResult').html('<div class="alert alert-info"><i class="fas fa-spinner fa-spin"></i> Executing...</div>');
+            
+            const url = operationType === 'call' ? '/api/smartcontracts/call' : '/api/smartcontracts/invoke';
+            const headers = operationType === 'invoke' ? { 'Authorization': 'Bearer ' + localStorage.getItem('jwtToken') } : {};
+            
+            $.ajax({
+                url: url,
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                headers: headers,
+                success: function(response) {
+                    let resultHtml = '<div class="alert alert-success">' +
+                        '<h6>Execution Successful!</h6>';
+                    
+                    if (response.transactionHash) {
+                        resultHtml += '<p><strong>Transaction Hash:</strong> ' + response.transactionHash + '</p>';
+                    }
+                    
+                    resultHtml += '<p><strong>Gas Consumed:</strong> ' + response.gasConsumed + '</p>' +
+                        '<p><strong>Result:</strong> <code>' + JSON.stringify(response.result) + '</code></p>';
+                    
+                    if (response.state) {
+                        resultHtml += '<p><strong>State:</strong> ' + response.state + '</p>';
+                    }
+                    
+                    resultHtml += '</div>';
+                    $('#invokeResult').html(resultHtml);
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to execute contract';
+                    $('#invokeResult').html('<div class="alert alert-danger"><i class="fas fa-times"></i> ' + error + '</div>');
+                }
+            });
+        }
+        
+        function getContractEvents() {
+            const request = {
+                blockchain: parseInt($('#eventsBlockchain').val()),
+                contractHash: $('#eventsContractHash').val(),
+                eventName: null,
+                fromBlock: 0,
+                toBlock: 0,
+                maxResults: 20
+            };
+            
+            $('#eventsResult').html('<div class="text-info"><i class="fas fa-spinner fa-spin"></i> Loading events...</div>');
+            
+            $.ajax({
+                url: '/api/smartcontracts/events',
+                method: 'POST',
+                contentType: 'application/json',
+                data: JSON.stringify(request),
+                success: function(response) {
+                    if (response.success && response.events && response.events.length > 0) {
+                        let html = '<div class="events-list">';
+                        response.events.forEach(function(event, index) {
+                            html += '<div class="border rounded p-2 mb-2">' +
+                                '<strong>' + event.eventName + '</strong> - Block ' + event.blockHeight +
+                                '<br><small class="text-muted">' + JSON.stringify(event.data) + '</small>' +
+                                '</div>';
+                        });
+                        html += '</div>';
+                        $('#eventsResult').html(html);
+                    } else {
+                        $('#eventsResult').html('<div class="text-muted">No events found</div>');
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to get events';
+                    $('#eventsResult').html('<div class="text-danger"><i class="fas fa-times"></i> ' + error + '</div>');
+                }
+            });
+        }
+        
+        function getContractStats() {
+            const blockchain = parseInt($('#statsBlockchain').val());
+            const contractHash = $('#statsContractHash').val();
+            
+            $('#statsResult').html('<div class="text-info"><i class="fas fa-spinner fa-spin"></i> Loading statistics...</div>');
+            
+            $.ajax({
+                url: '/api/smartcontracts/statistics/' + contractHash + '?blockchain=' + blockchain,
+                method: 'GET',
+                success: function(response) {
+                    if (response.success && response.statistics) {
+                        const stats = response.statistics;
+                        let html = '<div class="stats-display">' +
+                            '<div class="row">' +
+                            '<div class="col-6"><strong>Total Calls:</strong> ' + (stats.totalCalls || 0) + '</div>' +
+                            '<div class="col-6"><strong>Total Invocations:</strong> ' + (stats.totalInvocations || 0) + '</div>' +
+                            '</div>' +
+                            '<div class="row mt-2">' +
+                            '<div class="col-6"><strong>Total Gas:</strong> ' + (stats.totalGasConsumed || 0) + '</div>' +
+                            '<div class="col-6"><strong>Success Rate:</strong> ' + (stats.successRate || 0) + '%</div>' +
+                            '</div>';
+                        
+                        if (stats.lastAccessed) {
+                            html += '<div class="mt-2"><small class="text-muted">Last accessed: ' + 
+                                new Date(stats.lastAccessed).toLocaleString() + '</small></div>';
+                        }
+                        
+                        html += '</div>';
+                        $('#statsResult').html(html);
+                    } else {
+                        $('#statsResult').html('<div class="text-muted">No statistics available</div>');
+                    }
+                },
+                error: function(xhr) {
+                    const error = xhr.responseJSON?.error || 'Failed to get statistics';
+                    $('#statsResult').html('<div class="text-danger"><i class="fas fa-times"></i> ' + error + '</div>');
+                }
+            });
+        }
+    </script>
+}

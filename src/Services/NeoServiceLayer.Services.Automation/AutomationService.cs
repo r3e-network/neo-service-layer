@@ -26,8 +26,8 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
     /// <param name="configuration">The service configuration.</param>
     /// <param name="persistentStorage">The persistent storage provider.</param>
     public AutomationService(
-        ILogger<AutomationService> logger, 
-        IEnclaveManager? enclaveManager = null, 
+        ILogger<AutomationService> logger,
+        IEnclaveManager? enclaveManager = null,
         IServiceConfiguration? configuration = null,
         IPersistentStorageProvider? persistentStorage = null)
         : base("AutomationService", "Smart contract automation and scheduling service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)

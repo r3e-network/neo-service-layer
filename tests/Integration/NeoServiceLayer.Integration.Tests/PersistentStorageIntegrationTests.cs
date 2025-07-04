@@ -1,19 +1,19 @@
-using FluentAssertions;
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.Storage;
-using NeoServiceLayer.Services.KeyManagement;
-using NeoServiceLayer.Services.Notification;
-using NeoServiceLayer.Services.Notification.Models;
-using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Services.Configuration.Models;
+using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Services.Monitoring;
+using NeoServiceLayer.Services.Notification;
+using NeoServiceLayer.Services.Notification.Models;
+using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
-using Moq;
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -32,29 +32,29 @@ public class PersistentStorageIntegrationTests : IDisposable
     {
         _testStoragePath = Path.Combine(Path.GetTempPath(), $"integration-test-storage-{Guid.NewGuid():N}");
         _mockEnclaveManager = new Mock<IEnclaveManager>();
-        
+
         // Set test encryption key for OcclumFileStorageProvider
         Environment.SetEnvironmentVariable("ENCLAVE_MASTER_KEY", "test-encryption-key-for-integration-tests");
-        
+
         var services = new ServiceCollection();
-        
+
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        
+
         // Add HTTP client factory
         services.AddHttpClient();
-        
+
         // Add persistent storage
         services.AddSingleton<IPersistentStorageProvider>(provider =>
         {
             var logger = provider.GetRequiredService<ILogger<OcclumFileStorageProvider>>();
             return new OcclumFileStorageProvider(_testStoragePath, logger);
         });
-        
+
         // Add mock enclave manager
         SetupEnclaveManager();
         services.AddSingleton(_mockEnclaveManager.Object);
-        
+
         // Add service configurations
         services.AddSingleton<IServiceConfiguration>(provider =>
         {
@@ -63,20 +63,20 @@ public class PersistentStorageIntegrationTests : IDisposable
                      .Returns((string key, string defaultValue) => defaultValue);
             return mockConfig.Object;
         });
-        
+
         // Add services with persistent storage
         services.AddSingleton<IStorageService>(provider => new StorageService(
             provider.GetRequiredService<IEnclaveManager>(),
             provider.GetRequiredService<IServiceConfiguration>(),
             provider.GetRequiredService<ILogger<StorageService>>(),
             provider.GetRequiredService<IPersistentStorageProvider>()));
-        
+
         services.AddSingleton<IKeyManagementService>(provider => new KeyManagementService(
             provider.GetRequiredService<IEnclaveManager>(),
             provider.GetRequiredService<IServiceConfiguration>(),
             provider.GetRequiredService<ILogger<KeyManagementService>>(),
             provider.GetRequiredService<IPersistentStorageProvider>()));
-        
+
         services.AddSingleton<INotificationService, NotificationService>();
         services.AddSingleton<IMonitoringService, MonitoringService>();
         services.AddSingleton<IConfigurationService>(provider => new ConfigurationService(
@@ -84,10 +84,10 @@ public class PersistentStorageIntegrationTests : IDisposable
             provider.GetRequiredService<IEnclaveManager>(),
             provider.GetRequiredService<IServiceConfiguration>(),
             provider.GetRequiredService<IPersistentStorageProvider>()));
-        
+
         _serviceProvider = services.BuildServiceProvider();
         _logger = _serviceProvider.GetRequiredService<ILogger<PersistentStorageIntegrationTests>>();
-        
+
         // Initialize persistent storage
         InitializeStorageAsync().GetAwaiter().GetResult();
     }
@@ -117,15 +117,15 @@ public class PersistentStorageIntegrationTests : IDisposable
                               _mockStorage[key] = data;
                               return Task.FromResult("{\"success\": true}");
                           });
-        
+
         _mockEnclaveManager.Setup(x => x.StorageRetrieveDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .Returns<string, string, CancellationToken>((key, encKey, ct) => 
+                          .Returns<string, string, CancellationToken>((key, encKey, ct) =>
                           {
                               if (_mockStorage.TryGetValue(key, out var data))
                                   return Task.FromResult(data);
                               throw new KeyNotFoundException($"Key '{key}' not found in mock storage");
                           });
-        
+
         _mockEnclaveManager.Setup(x => x.StorageDeleteDataAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .Returns<string, CancellationToken>((key, ct) =>
                           {
@@ -171,7 +171,7 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Setup key management operations with complete KeyMetadata JSON
         _mockEnclaveManager.Setup(x => x.KmsGenerateKeyAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<bool>(), It.IsAny<string>()))
-                          .Returns<string, string, string, bool, string>((keyId, keyType, keyUsage, exportable, description) => 
+                          .Returns<string, string, string, bool, string>((keyId, keyType, keyUsage, exportable, description) =>
                           {
                               // Complete KeyMetadata JSON response matching the class properties
                               var response = $@"{{
@@ -189,9 +189,9 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         _mockEnclaveManager.Setup(x => x.KmsEncryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
                           .ReturnsAsync((string keyId, string data, string alg, CancellationToken ct) => data + "encrypted");
-        
+
         _mockEnclaveManager.Setup(x => x.KmsDecryptDataAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
-                          .ReturnsAsync((string keyId, string encData, string alg, CancellationToken ct) => 
+                          .ReturnsAsync((string keyId, string encData, string alg, CancellationToken ct) =>
                               encData.Replace("encrypted", ""));
     }
 
@@ -246,7 +246,7 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Act - Store data in different services
         var storageData = System.Text.Encoding.UTF8.GetBytes("storage_data");
-        await storageService.StoreDataAsync("storage_key", storageData, 
+        await storageService.StoreDataAsync("storage_key", storageData,
             new NeoServiceLayer.Services.Storage.StorageOptions(), BlockchainType.NeoN3);
 
         var keyData = await keyService.CreateKeyAsync("test_key", "AES256", "256", false, "test_description", BlockchainType.NeoN3);
@@ -307,7 +307,7 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Verify configurations are stored and persisted to storage
         var storageProvider = _serviceProvider.GetRequiredService<IPersistentStorageProvider>();
         var allKeys = await storageProvider.ListKeysAsync();
-        
+
         // Check that configuration entries are persisted with the correct prefix
         foreach (var setting in originalSettings)
         {
@@ -337,7 +337,7 @@ public class PersistentStorageIntegrationTests : IDisposable
             _mockEnclaveManager.Object,
             _serviceProvider.GetRequiredService<IServiceConfiguration>(),
             storageProvider);
-        
+
         await newConfigService.InitializeAsync();
         await newConfigService.StartAsync();
 
@@ -475,7 +475,7 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Arrange
         var storageService = _serviceProvider.GetRequiredService<IStorageService>();
         var keyService = _serviceProvider.GetRequiredService<IKeyManagementService>();
-        
+
         await storageService.InitializeAsync();
         await storageService.StartAsync();
         await keyService.InitializeAsync();
@@ -488,12 +488,12 @@ public class PersistentStorageIntegrationTests : IDisposable
         for (int i = 0; i < operationCount; i++)
         {
             var index = i;
-            
+
             // Storage operations
             tasks.Add(Task.Run(async () =>
             {
                 var data = System.Text.Encoding.UTF8.GetBytes($"concurrent_data_{index}");
-                await storageService.StoreDataAsync($"concurrent_key_{index}", data, 
+                await storageService.StoreDataAsync($"concurrent_key_{index}", data,
                     new NeoServiceLayer.Services.Storage.StorageOptions(), BlockchainType.NeoN3);
             }));
 
@@ -509,7 +509,7 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Assert - Verify storage provider integrity
         var storageProvider = _serviceProvider.GetRequiredService<IPersistentStorageProvider>();
         var validationResult = await storageProvider.ValidateIntegrityAsync();
-        
+
         validationResult.Should().NotBeNull();
         validationResult.IsValid.Should().BeTrue();
         validationResult.Errors.Should().BeEmpty();
@@ -543,7 +543,7 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Act - Create backup
         var backupPath = Path.Combine(Path.GetTempPath(), $"backup-{Guid.NewGuid():N}.zip");
-        
+
         await storageProvider.BackupAsync(backupPath);
 
         // Simulate data loss by clearing storage
@@ -582,14 +582,14 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Arrange
         var storageProvider = _serviceProvider.GetRequiredService<IPersistentStorageProvider>();
         var monitoringService = _serviceProvider.GetRequiredService<IMonitoringService>();
-        
+
         await monitoringService.InitializeAsync();
         await monitoringService.StartAsync();
 
         // Act - Check storage health
         var statistics = await storageProvider.GetStatisticsAsync();
         var validationResult = await storageProvider.ValidateIntegrityAsync();
-        
+
         // Create some monitoring metrics
         var metrics = new Dictionary<string, object>
         {

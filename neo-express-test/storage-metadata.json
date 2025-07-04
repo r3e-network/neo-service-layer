@@ -1,0 +1,5 @@
+{
+  "contract": "0xf213e3afd676e5d375305b0a5d1a5124e1c5fcd0",
+  "operation": "getFileMetadata",
+  "args": ["file-1751559804615"]
+}

@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -230,8 +230,8 @@ public partial class ComplianceService
         {
             var key = $"{INDEX_PREFIX}rule_type:{ruleType}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var ruleIds = existingData != null 
+
+            var ruleIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -261,8 +261,8 @@ public partial class ComplianceService
         {
             var key = $"{INDEX_PREFIX}entity:{entityId}";
             var existingData = await _persistentStorage.RetrieveAsync(key);
-            
-            var violationIds = existingData != null 
+
+            var violationIds = existingData != null
                 ? JsonSerializer.Deserialize<HashSet<string>>(existingData) ?? new HashSet<string>()
                 : new HashSet<string>();
 
@@ -460,7 +460,7 @@ public partial class ComplianceService
                     _totalChecksPerformed = stats.TotalChecksPerformed;
                     _totalViolationsDetected = stats.TotalViolationsDetected;
                     _totalRulesEvaluated = stats.TotalRulesEvaluated;
-                    
+
                     Logger.LogInformation("Restored compliance statistics from storage");
                 }
             }
@@ -586,7 +586,7 @@ public partial class ComplianceService
         try
         {
             await _persistentStorage.DeleteAsync($"{RULE_PREFIX}{ruleId}");
-            
+
             Logger.LogDebug("Removed compliance rule {RuleId} from storage", ruleId);
         }
         catch (Exception ex)

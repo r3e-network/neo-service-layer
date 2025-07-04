@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Configuration.Models;
@@ -72,7 +72,7 @@ public partial class ConfigurationService
         {
             var key = $"{CONFIG_PREFIX}{entry.Key}";
             var data = JsonSerializer.SerializeToUtf8Bytes(entry);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = entry.EncryptValue,
@@ -137,7 +137,7 @@ public partial class ConfigurationService
                 Key = entry.Key,
                 IndexedAt = DateTime.UtcNow
             });
-            
+
             await _persistentStorage.StoreAsync(typeIndexKey, indexData, new StorageOptions
             {
                 Encrypt = false,
@@ -178,7 +178,7 @@ public partial class ConfigurationService
         {
             var indexKeys = await _persistentStorage.ListKeysAsync(INDEX_PREFIX);
             var keysToDelete = indexKeys.Where(k => k.EndsWith($":{configKey}")).ToList();
-            
+
             foreach (var key in keysToDelete)
             {
                 await _persistentStorage.DeleteAsync(key);
@@ -211,7 +211,7 @@ public partial class ConfigurationService
             };
 
             var data = JsonSerializer.SerializeToUtf8Bytes(historyEntry);
-            
+
             await _persistentStorage.StoreAsync(historyKey, data, new StorageOptions
             {
                 Encrypt = entry.EncryptValue,
@@ -242,7 +242,7 @@ public partial class ConfigurationService
         try
         {
             var subscriptionKeys = await _persistentStorage.ListKeysAsync(SUBSCRIPTION_PREFIX);
-            
+
             foreach (var key in subscriptionKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
@@ -278,7 +278,7 @@ public partial class ConfigurationService
         {
             var key = $"{SUBSCRIPTION_PREFIX}{subscription.SubscriptionId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(subscription);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -329,7 +329,7 @@ public partial class ConfigurationService
         {
             var key = $"{AUDIT_PREFIX}{DateTime.UtcNow.Ticks}:{auditEntry.ConfigurationKey}";
             var data = JsonSerializer.SerializeToUtf8Bytes(auditEntry);
-            
+
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
             {
                 Encrypt = true,
@@ -362,7 +362,7 @@ public partial class ConfigurationService
         {
             var stats = GetStatistics();
             var data = JsonSerializer.SerializeToUtf8Bytes(stats);
-            
+
             await _persistentStorage.StoreAsync(STATS_KEY, data, new StorageOptions
             {
                 Encrypt = false,
@@ -394,7 +394,7 @@ public partial class ConfigurationService
             // Clean up old history entries (older than 90 days)
             var historyKeys = await _persistentStorage.ListKeysAsync(HISTORY_PREFIX);
             var cutoffDate = DateTime.UtcNow.AddDays(-90);
-            
+
             foreach (var key in historyKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
@@ -409,7 +409,7 @@ public partial class ConfigurationService
 
             // Clean up inactive subscriptions
             var subscriptionKeys = await _persistentStorage.ListKeysAsync(SUBSCRIPTION_PREFIX);
-            
+
             foreach (var key in subscriptionKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
@@ -443,7 +443,7 @@ public partial class ConfigurationService
         {
             var historyKeys = await _persistentStorage.ListKeysAsync($"{HISTORY_PREFIX}{configKey}:");
             var sortedKeys = historyKeys.OrderByDescending(k => k).Take(limit);
-            
+
             foreach (var key in sortedKeys)
             {
                 var data = await _persistentStorage.RetrieveAsync(key);
