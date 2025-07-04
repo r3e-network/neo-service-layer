@@ -600,7 +600,7 @@ jobs:
 
     - name: 🐳 Build Docker image (minimal approach)
       if: ${{ github.event.inputs.docker_build_type == 'minimal' || github.event.inputs.docker_build_type == '' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./docker/Dockerfile.minimal
@@ -615,7 +615,7 @@ jobs:
 
     - name: 🐳 Build Docker image (complete approach)
       if: ${{ github.event.inputs.docker_build_type == 'complete' }}
-      uses: docker/build-push-action@v5
+      uses: docker/build-push-action@v6
       with:
         context: .
         file: ./docker/Dockerfile
