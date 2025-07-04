@@ -140,39 +140,22 @@ jobs:
     - name: 📈 Generate coverage report
       run: |
         echo "::group::Installing ReportGenerator"
-        # Change to temp directory to avoid project context issues
-        CURRENT_DIR=$(pwd)
-        cd /tmp
-        
-        # Install globally from a neutral directory
-        dotnet tool install --global dotnet-reportgenerator-globaltool --version 5.* || true
-        
-        # Return to original directory
-        cd "$CURRENT_DIR"
+        # Install as local tool to avoid global tool issues
+        dotnet new tool-manifest --force || true
+        dotnet tool install dotnet-reportgenerator-globaltool --version 5.*
         echo "::endgroup::"
         
         echo "::group::Generating coverage report"
-        # Add tools to PATH for this step
-        export PATH="$PATH:$HOME/.dotnet/tools"
-        
-        # Debug: Check if tool exists
-        echo "Checking for reportgenerator..."
-        which reportgenerator || echo "reportgenerator not in PATH"
-        ls -la $HOME/.dotnet/tools/ || echo "Tools directory not found"
-        
-        # Try to run reportgenerator
-        if [ -f "$HOME/.dotnet/tools/reportgenerator" ]; then
-          echo "Found reportgenerator at $HOME/.dotnet/tools/reportgenerator"
-          $HOME/.dotnet/tools/reportgenerator \
-            -reports:"TestResults/**/coverage.cobertura.xml" \
-            -targetdir:"TestResults/CoverageReport" \
-            -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
-            -verbosity:"Warning"
-        else
-          echo "Warning: ReportGenerator not found, creating minimal report"
-          mkdir -p TestResults/CoverageReport
-          echo '{"coverage":{"linecoverage":0,"branchcoverage":0}}' > TestResults/CoverageReport/Summary.json
-        fi || echo "Warning: Coverage report generation failed"
+        # Use dotnet tool run to execute with proper runtime
+        dotnet tool run reportgenerator \
+          -reports:"TestResults/**/coverage.cobertura.xml" \
+          -targetdir:"TestResults/CoverageReport" \
+          -reporttypes:"HtmlInline_AzurePipelines;Cobertura;JsonSummary;MarkdownSummaryGithub" \
+          -verbosity:"Warning" || {
+            echo "Warning: Coverage report generation failed, creating minimal report"
+            mkdir -p TestResults/CoverageReport
+            echo '{"coverage":{"linecoverage":0,"branchcoverage":0}}' > TestResults/CoverageReport/Summary.json
+          }
         echo "::endgroup::"
 
     - name: 📊 Check coverage thresholds
