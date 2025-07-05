@@ -66,6 +66,9 @@ public static class ServiceCollectionExtensions
         // Register HTTP client
         services.AddHttpClient();
 
+        // Register HTTP client service
+        services.AddSingleton<IHttpClientService, HttpClientService>();
+
         // Register blockchain configuration
         services.Configure<BlockchainConfiguration>(configuration.GetSection("Blockchain"));
 

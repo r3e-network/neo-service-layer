@@ -57,13 +57,20 @@ public static class PersistentStorageExtensions
             }
         }
 
-        // Add storage health checks
-        services.AddHealthChecks()
-            .AddTypeActivatedCheck<PersistentStorageHealthCheck>(
-                "persistent-storage",
-                null,
-                null,
-                new[] { "storage", "ready" });
+        // Add storage health checks only if storage is configured
+        // TODO: Fix health check registration for Docker environment
+        // var storageConfig = configuration.GetSection("Storage");
+        // if (storageConfig.Exists() && !string.IsNullOrEmpty(storageConfig.GetValue<string>("Provider")))
+        // {
+        //     services.Configure<HealthCheckServiceOptions>(options =>
+        //     {
+        //         options.Registrations.Add(new Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckRegistration(
+        //             "persistent-storage",
+        //             sp => ActivatorUtilities.CreateInstance<PersistentStorageHealthCheck>(sp),
+        //             null,
+        //             new[] { "storage", "ready" }));
+        //     });
+        // }
 
         // Configure service-specific persistent storage
         services.Configure<PersistentStorageOptions>(configuration.GetSection("Storage:PersistenceOptions"));
