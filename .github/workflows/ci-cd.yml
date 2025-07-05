@@ -177,24 +177,26 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-node-
 
-    - name: 🔧 Install Build Dependencies
+    - name: 🔧 Install Build Dependencies and SGX SDK
+      timeout-minutes: 10
       run: |
-        echo "::group::Installing build dependencies"
-        # Install Protocol Buffers compiler (needed for Rust build)
-        sudo apt-get update
-        sudo apt-get install -y protobuf-compiler
+        echo "::group::Installing build dependencies and Intel SGX SDK"
+        # Add Intel SGX repository
+        wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
+        echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
+        
+        # Update apt cache once and install all dependencies
+        sudo apt-get update -qq
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          protobuf-compiler \
+          libsgx-urts \
+          libsgx-enclave-common-dev \
+          libsgx-dcap-ql-dev \
+          sgx-aesm-service \
+          libsgx-aesm-launch-plugin
         
         # Verify protoc installation
         protoc --version
-        echo "::endgroup::"
-
-    - name: 🔒 Install SGX SDK (Simulation Mode)
-      run: |
-        echo "::group::Installing Intel SGX SDK for CI simulation"
-        wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
-        echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
-        sudo apt-get update
-        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev sgx-aesm-service libsgx-aesm-launch-plugin
         
         # Set SGX environment variables
         echo "SGX_MODE=SIM" >> $GITHUB_ENV

@@ -151,10 +151,32 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        
+        if (builder.Environment.IsDevelopment())
+        {
+            // Allow localhost origins in development
+            policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else if (corsOrigins.Length > 0)
+        {
+            // Use configured origins in production
+            policy.WithOrigins(corsOrigins)
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // No CORS in production by default
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .DisallowCredentials();
+        }
     });
 });
 
@@ -194,12 +216,42 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseDeveloperExceptionPage();
+}
+
+// Configure Swagger with authentication in production
+var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled", app.Environment.IsDevelopment());
+if (swaggerEnabled)
+{
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer Web API v1");
         c.RoutePrefix = "swagger";
+        
+        // Require authentication for Swagger UI in production
+        if (!app.Environment.IsDevelopment())
+        {
+            c.ConfigObject.AdditionalItems["persistAuthorization"] = true;
+        }
     });
+    
+    // Protect Swagger endpoints in production
+    if (!app.Environment.IsDevelopment())
+    {
+        app.Use(async (context, next) =>
+        {
+            if (context.Request.Path.StartsWithSegments("/swagger"))
+            {
+                if (!context.User.Identity?.IsAuthenticated ?? true)
+                {
+                    context.Response.StatusCode = 401;
+                    await context.Response.WriteAsync("Unauthorized");
+                    return;
+                }
+            }
+            await next();
+        });
+    }
 }
 
 // Serve static files
@@ -256,29 +308,34 @@ app.MapGet("/api/info", () => new
 }).AllowAnonymous();
 
 // Authentication endpoints
-app.MapPost("/api/auth/demo-token", () =>
+// NOTE: Production authentication should be handled by a proper identity provider
+// This endpoint is disabled in production for security reasons
+if (app.Environment.IsDevelopment())
 {
-    var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-    var key = Encoding.UTF8.GetBytes(secretKey);
-    var tokenDescriptor = new SecurityTokenDescriptor
+    app.MapPost("/api/auth/demo-token", () =>
     {
-        Subject = new ClaimsIdentity(new[]
+        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
+        var key = Encoding.UTF8.GetBytes(secretKey);
+        var tokenDescriptor = new SecurityTokenDescriptor
         {
-            new Claim(ClaimTypes.Name, "demo-user"),
-            new Claim(ClaimTypes.Role, "Admin"),
-            new Claim(ClaimTypes.Role, "KeyManager"),
-            new Claim(ClaimTypes.Role, "ServiceUser")
-        }),
-        Expires = DateTime.UtcNow.AddHours(24),
-        Issuer = issuer,
-        Audience = audience,
-        SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
-    };
-    var token = tokenHandler.CreateToken(tokenDescriptor);
-    var tokenString = tokenHandler.WriteToken(token);
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim(ClaimTypes.Name, "demo-user"),
+                new Claim(ClaimTypes.Role, "Admin"),
+                new Claim(ClaimTypes.Role, "KeyManager"),
+                new Claim(ClaimTypes.Role, "ServiceUser")
+            }),
+            Expires = DateTime.UtcNow.AddHours(24),
+            Issuer = issuer,
+            Audience = audience,
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+        var token = tokenHandler.CreateToken(tokenDescriptor);
+        var tokenString = tokenHandler.WriteToken(token);
 
-    return new { token = tokenString, expires = tokenDescriptor.Expires };
-}).AllowAnonymous();
+        return new { token = tokenString, expires = tokenDescriptor.Expires };
+    }).AllowAnonymous();
+}
 
 // Default route serves the main page
 app.MapFallbackToPage("/Index");

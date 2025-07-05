@@ -79,12 +79,21 @@ jobs:
         mkdir -p $HOME/.dotnet/tools
 
     - name: 🔒 Install SGX SDK (Simulation Mode)
+      timeout-minutes: 10
       run: |
         echo "::group::Installing Intel SGX SDK for CI simulation"
+        # Add Intel SGX repository
         wget -qO - https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo apt-key add -
         echo "deb [arch=amd64] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
-        sudo apt-get update
-        sudo apt-get install -y libsgx-urts libsgx-enclave-common-dev libsgx-dcap-ql-dev sgx-aesm-service libsgx-aesm-launch-plugin
+        
+        # Update and install with timeout and retry
+        sudo apt-get update -qq
+        sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+          libsgx-urts \
+          libsgx-enclave-common-dev \
+          libsgx-dcap-ql-dev \
+          sgx-aesm-service \
+          libsgx-aesm-launch-plugin
         
         # Create SGX SDK directory structure (needed for simulation)
         sudo mkdir -p /opt/intel/sgxsdk/lib64
