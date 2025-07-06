@@ -154,9 +154,27 @@ public class Transaction
     public string Sender { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the transaction sender (alias for Sender).
+    /// </summary>
+    public string From 
+    { 
+        get => Sender; 
+        set => Sender = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the transaction recipient.
     /// </summary>
     public string Recipient { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction recipient (alias for Recipient).
+    /// </summary>
+    public string To 
+    { 
+        get => Recipient; 
+        set => Recipient = value; 
+    }
 
     /// <summary>
     /// Gets or sets the transaction value.

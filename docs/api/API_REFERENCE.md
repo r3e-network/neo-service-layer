@@ -49,7 +49,7 @@ All API responses follow a consistent format:
 }
 ```
 
-### Error Response Format
+## Error Responses
 
 ```json
 {
@@ -64,39 +64,49 @@ All API responses follow a consistent format:
 }
 ```
 
+## Common HTTP Status Codes
+
+- `200 OK` - Request successful
+- `201 Created` - Resource created successfully
+- `400 Bad Request` - Invalid request parameters
+- `401 Unauthorized` - Missing or invalid authentication
+- `403 Forbidden` - Insufficient permissions
+- `404 Not Found` - Resource not found
+- `429 Too Many Requests` - Rate limit exceeded
+- `500 Internal Server Error` - Server error
+
 ## Rate Limiting
 
-API endpoints are rate-limited to ensure fair usage:
+API requests are rate limited to prevent abuse:
 
-- **General endpoints**: 1000 requests per minute
-- **Key Management**: 100 requests per minute
-- **AI Services**: 200 requests per minute
+- **Standard tier**: 100 requests per minute
+- **Premium tier**: 1000 requests per minute
 
 Rate limit headers are included in responses:
 
-```http
-X-RateLimit-Limit: 1000
-X-RateLimit-Remaining: 999
+```
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
 X-RateLimit-Reset: 1642248600
 ```
 
 ## Pagination
 
-List endpoints support pagination with the following parameters:
+List endpoints support pagination using query parameters:
 
-- `page`: Page number (default: 1)
-- `pageSize`: Items per page (default: 20, max: 100)
+```http
+GET /api/v1/resource?page=2&pageSize=50
+```
 
 Paginated responses include metadata:
 
 ```json
 {
-  "success": true,
-  "data": [/* items */],
+  "data": [...],
   "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 150,
+    "page": 2,
+    "pageSize": 50,
+    "totalCount": 387,
     "totalPages": 8,
     "hasNext": true,
     "hasPrevious": false
@@ -152,18 +162,15 @@ POST /api/v1/keymanagement/keys/{blockchainType}
 
 ## List Keys
 
-Retrieves a paginated list of keys for the specified blockchain.
+Retrieves all keys for a blockchain type.
 
 ```http
-GET /api/v1/keymanagement/keys/{blockchainType}?page=1&pageSize=20
+GET /api/v1/keymanagement/keys/{blockchainType}
 ```
 
-### Query Parameters
+### Parameters
 
-- `page` (optional): Page number (default: 1)
-- `pageSize` (optional): Items per page (default: 20, max: 100)
-- `keyType` (optional): Filter by key type
-- `keyUsage` (optional): Filter by key usage
+- `blockchainType` (path): Blockchain type (`NeoN3` or `NeoX`)
 
 ### Response
 
@@ -174,43 +181,32 @@ GET /api/v1/keymanagement/keys/{blockchainType}?page=1&pageSize=20
     {
       "keyId": "my-key-001",
       "keyType": "Secp256k1",
-      "keyUsage": "Sign,Verify",
       "publicKeyHex": "0x03a1b2c3d4e5f6...",
       "address": "NX1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0",
       "createdAt": "2024-01-15T10:30:00Z"
     }
-  ],
-  "pagination": {
-    "page": 1,
-    "pageSize": 20,
-    "totalItems": 5,
-    "totalPages": 1
-  }
+  ]
 }
-```
-
-## Get Key
-
-Retrieves details of a specific key.
-
-```http
-GET /api/v1/keymanagement/keys/{keyId}/{blockchainType}
 ```
 
 ## Sign Data
 
-Signs data using the specified key.
+Signs data using a specified key.
 
 ```http
-POST /api/v1/keymanagement/keys/{keyId}/sign/{blockchainType}
+POST /api/v1/keymanagement/keys/{blockchainType}/{keyId}/sign
 ```
+
+### Parameters
+
+- `blockchainType` (path): Blockchain type
+- `keyId` (path): Key identifier
 
 ### Request Body
 
 ```json
 {
-  "data": "0x1234567890abcdef",
-  "algorithm": "ECDSA"
+  "data": "0x1234567890abcdef"
 }
 ```
 
@@ -220,9 +216,8 @@ POST /api/v1/keymanagement/keys/{keyId}/sign/{blockchainType}
 {
   "success": true,
   "data": {
-    "signature": "0xabcdef1234567890...",
-    "algorithm": "ECDSA",
-    "keyId": "my-key-001",
+    "signature": "0x9a8b7c6d5e4f3a2b1c0d...",
+    "publicKey": "0x03a1b2c3d4e5f6...",
     "signedAt": "2024-01-15T10:30:00Z"
   }
 }
@@ -230,28 +225,392 @@ POST /api/v1/keymanagement/keys/{keyId}/sign/{blockchainType}
 
 ---
 
-# Pattern Recognition API
+# Oracle Service API
 
-## Fraud Detection
+## Get Price Feed
 
-Analyzes transaction data for potential fraud patterns.
+Retrieves current price data for specified assets.
 
 ```http
-POST /api/v1/patternrecognition/fraud-detection/{blockchainType}
+GET /api/v1/oracle/prices/{assetPair}
 ```
+
+### Parameters
+
+- `assetPair` (path): Asset pair (e.g., `NEO-USD`, `GAS-USD`)
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "assetPair": "NEO-USD",
+    "price": 12.34,
+    "timestamp": "2024-01-15T10:30:00Z",
+    "sources": ["binance", "coinbase", "kraken"],
+    "aggregationMethod": "median"
+  }
+}
+```
+
+## Submit External Data
+
+Submits external data to the oracle service.
+
+```http
+POST /api/v1/oracle/data
+```
+
+### Request Body
+
+```json
+{
+  "dataType": "weather",
+  "source": "openweathermap",
+  "data": {
+    "city": "New York",
+    "temperature": 22.5,
+    "humidity": 65
+  },
+  "timestamp": "2024-01-15T10:30:00Z"
+}
+```
+
+---
+
+# Social Recovery API
+
+## Enroll as Guardian
+
+Enrolls a new guardian in the social recovery network.
+
+```http
+POST /api/social-recovery/guardians/enroll
+```
+
+### Request Body
+
+```json
+{
+  "address": "0x1234567890abcdef...",
+  "stakeAmount": "10000000000",
+  "blockchain": "neo-n3"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "guardian": {
+    "address": "0x1234567890abcdef...",
+    "reputationScore": 100,
+    "successfulRecoveries": 0,
+    "failedAttempts": 0,
+    "stakedAmount": "10000000000",
+    "isActive": true,
+    "totalEndorsements": 0,
+    "trustScore": 25.0
+  },
+  "message": "Successfully enrolled as guardian"
+}
+```
+
+## Initiate Recovery
+
+Initiates an account recovery request.
+
+```http
+POST /api/social-recovery/recovery/initiate
+```
+
+### Request Body
+
+```json
+{
+  "accountAddress": "0xabc...",
+  "newOwner": "0xdef...",
+  "strategyId": "standard",
+  "isEmergency": false,
+  "recoveryFee": "100000000",
+  "authFactors": [
+    {
+      "factorType": "email",
+      "factorHash": "hash...",
+      "proof": "cHJvb2Y="
+    }
+  ],
+  "blockchain": "neo-n3"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "recoveryRequest": {
+    "recoveryId": "0x123...",
+    "accountAddress": "0xabc...",
+    "newOwner": "0xdef...",
+    "strategyId": "standard",
+    "requiredConfirmations": 3,
+    "currentConfirmations": 1,
+    "initiatedAt": "2024-01-15T10:30:00Z",
+    "expiresAt": "2024-01-22T10:30:00Z",
+    "isEmergency": false,
+    "recoveryFee": "100000000",
+    "status": "Pending"
+  },
+  "message": "Recovery initiated successfully"
+}
+```
+
+## Confirm Recovery
+
+Confirms a recovery request as a guardian.
+
+```http
+POST /api/social-recovery/recovery/{recoveryId}/confirm?blockchain=neo-n3
+```
+
+### Parameters
+
+- `recoveryId` (path): Recovery request identifier
+- `blockchain` (query): Blockchain type (default: neo-n3)
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Recovery confirmed successfully"
+}
+```
+
+## Get Guardian Info
+
+Retrieves information about a guardian.
+
+```http
+GET /api/social-recovery/guardians/{address}?blockchain=neo-n3
+```
+
+### Parameters
+
+- `address` (path): Guardian address
+- `blockchain` (query): Blockchain type
+
+### Response
+
+```json
+{
+  "address": "0x1234...",
+  "reputationScore": 2500,
+  "successfulRecoveries": 15,
+  "failedAttempts": 1,
+  "stakedAmount": "50000000000",
+  "isActive": true,
+  "totalEndorsements": 25,
+  "trustScore": 85.5
+}
+```
+
+## Get Recovery Info
+
+Retrieves information about a recovery request.
+
+```http
+GET /api/social-recovery/recovery/{recoveryId}?blockchain=neo-n3
+```
+
+### Response
+
+```json
+{
+  "recoveryId": "0x123...",
+  "accountAddress": "0xabc...",
+  "newOwner": "0xdef...",
+  "currentConfirmations": 2,
+  "requiredConfirmations": 3,
+  "expiresAt": "2024-01-22T10:30:00Z",
+  "isExecuted": false,
+  "isEmergency": false,
+  "recoveryFee": "100000000",
+  "progress": 66.67
+}
+```
+
+## Get Recovery Strategies
+
+Retrieves available recovery strategies.
+
+```http
+GET /api/social-recovery/strategies?blockchain=neo-n3
+```
+
+### Response
+
+```json
+[
+  {
+    "strategyId": "standard",
+    "name": "Standard Guardian Recovery",
+    "description": "Standard recovery with multiple guardian confirmations and 7-day timeout",
+    "minGuardians": 3,
+    "timeoutPeriod": "7.00:00:00",
+    "requiresReputation": true,
+    "minReputationRequired": 100,
+    "allowsEmergency": false,
+    "requiresAttestation": false
+  },
+  {
+    "strategyId": "emergency",
+    "name": "Emergency Recovery",
+    "description": "Fast-track recovery for urgent situations",
+    "minGuardians": 5,
+    "timeoutPeriod": "1.00:00:00",
+    "requiresReputation": true,
+    "minReputationRequired": 500,
+    "allowsEmergency": true,
+    "requiresAttestation": false
+  }
+]
+```
+
+## Establish Trust
+
+Establishes a trust relationship with another guardian.
+
+```http
+POST /api/social-recovery/trust/establish
+```
+
+### Request Body
+
+```json
+{
+  "trustee": "0x789...",
+  "trustLevel": 80,
+  "blockchain": "neo-n3"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Trust established successfully"
+}
+```
+
+## Add Authentication Factor
+
+Adds a multi-factor authentication factor to an account.
+
+```http
+POST /api/social-recovery/auth/factor
+```
+
+### Request Body
+
+```json
+{
+  "factorType": "email",
+  "factorHash": "0xabc123...",
+  "blockchain": "neo-n3"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Authentication factor added successfully"
+}
+```
+
+## Configure Account Recovery
+
+Configures recovery preferences for an account.
+
+```http
+POST /api/social-recovery/accounts/{accountAddress}/configure
+```
+
+### Request Body
+
+```json
+{
+  "preferredStrategy": "standard",
+  "recoveryThreshold": "3",
+  "allowNetworkGuardians": true,
+  "minGuardianReputation": "500",
+  "blockchain": "neo-n3"
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "message": "Recovery configuration updated successfully"
+}
+```
+
+## Get Network Statistics
+
+Retrieves social recovery network statistics.
+
+```http
+GET /api/social-recovery/stats?blockchain=neo-n3
+```
+
+### Response
+
+```json
+{
+  "totalGuardians": 142,
+  "totalRecoveries": 1523,
+  "successfulRecoveries": 1498,
+  "totalStaked": "15420000000000",
+  "averageReputationScore": 2834.5,
+  "successRate": 98.36
+}
+```
+
+---
+
+# Pattern Recognition API
+
+## Detect Fraud
+
+Analyzes transaction patterns to detect potential fraud.
+
+```http
+POST /api/v1/ai/pattern-recognition/fraud-detection/{blockchainType}
+```
+
+### Parameters
+
+- `blockchainType` (path): Blockchain type
 
 ### Request Body
 
 ```json
 {
   "transactionData": {
+    "fromAddress": "NX...",
+    "toAddress": "NX...",
     "amount": 1000,
-    "fromAddress": "NX1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p7q8r9s0",
-    "toAddress": "NX9z8y7x6w5v4u3t2s1r0q9p8o7n6m5l4k3j2i1h0",
     "timestamp": "2024-01-15T10:30:00Z"
   },
-  "sensitivity": "Standard",
-  "includeHistoricalData": true
+  "historicalTransactions": [...]
 }
 ```
 
@@ -261,287 +620,115 @@ POST /api/v1/patternrecognition/fraud-detection/{blockchainType}
 {
   "success": true,
   "data": {
-    "detectionId": "fraud-det-001",
-    "riskScore": 0.75,
-    "isFraudulent": true,
+    "isFraudulent": false,
+    "riskScore": 0.15,
+    "patterns": ["normal_transfer"],
+    "recommendations": []
+  }
+}
+```
+
+---
+
+# Prediction Service API
+
+## Create Prediction
+
+Generates predictions based on historical data.
+
+```http
+POST /api/v1/ai/prediction/{blockchainType}
+```
+
+### Request Body
+
+```json
+{
+  "predictionType": "price",
+  "asset": "NEO",
+  "timeframe": "24h",
+  "historicalData": [...]
+}
+```
+
+### Response
+
+```json
+{
+  "success": true,
+  "data": {
+    "prediction": 15.67,
     "confidence": 0.85,
-    "detectedPatterns": [
-      {
-        "patternId": "unusual-amount",
-        "name": "Unusual Transaction Amount",
-        "severity": "High",
-        "description": "Transaction amount significantly higher than user's typical pattern"
-      }
-    ],
-    "detectedAt": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
-## Pattern Analysis
-
-Performs general pattern analysis on provided data.
-
-```http
-POST /api/v1/patternrecognition/pattern-analysis/{blockchainType}
-```
-
-### Request Body
-
-```json
-{
-  "data": {
-    "transactions": [
-      {"amount": 100, "timestamp": "2024-01-15T10:00:00Z"},
-      {"amount": 200, "timestamp": "2024-01-15T10:15:00Z"}
-    ]
-  },
-  "analysisType": "General",
-  "minimumConfidence": 0.7
-}
-```
-
-## Behavior Analysis
-
-Analyzes user behavior patterns for anomaly detection.
-
-```http
-POST /api/v1/patternrecognition/behavior-analysis/{blockchainType}
-```
-
----
-
-# Prediction API
-
-## Make Prediction
-
-Generates predictions using AI models.
-
-```http
-POST /api/v1/prediction/predict/{blockchainType}
-```
-
-### Request Body
-
-```json
-{
-  "modelId": "price-prediction-v1",
-  "inputData": {
-    "price": 100.50,
-    "volume": 1000000,
-    "timestamp": "2024-01-15T10:30:00Z"
-  },
-  "parameters": {
-    "horizon": 24,
-    "confidence_level": 0.95
-  }
-}
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "predictionId": "pred-001",
-    "modelId": "price-prediction-v1",
-    "predictedValue": 105.75,
-    "confidence": 0.87,
-    "predictionInterval": {
-      "lower": 98.20,
-      "upper": 113.30
-    },
-    "predictedAt": "2024-01-15T10:30:00Z",
-    "metadata": {
-      "model_version": "1.2.3",
-      "features_used": ["price", "volume", "timestamp"]
+    "range": {
+      "min": 14.50,
+      "max": 16.90
     }
   }
 }
 ```
 
-## Sentiment Analysis
-
-Analyzes sentiment of text data.
-
-```http
-POST /api/v1/prediction/sentiment-analysis/{blockchainType}
-```
-
-### Request Body
-
-```json
-{
-  "text": "Neo blockchain is showing great potential for the future!",
-  "source": "social_media",
-  "language": "en",
-  "context": {
-    "platform": "twitter",
-    "user_followers": 1000
-  }
-}
-```
-
-### Response
-
-```json
-{
-  "success": true,
-  "data": {
-    "sentiment": {
-      "overall": "Positive",
-      "positive": 0.85,
-      "negative": 0.10,
-      "neutral": 0.05,
-      "compound": 0.75
-    },
-    "confidence": 0.92,
-    "emotions": {
-      "joy": 0.8,
-      "trust": 0.7,
-      "anticipation": 0.6
-    },
-    "keyPhrases": ["Neo blockchain", "great potential", "future"],
-    "analyzedAt": "2024-01-15T10:30:00Z"
-  }
-}
-```
-
-## Market Forecast
-
-Generates market forecasts for specified assets.
-
-```http
-POST /api/v1/prediction/market-forecast/{blockchainType}
-```
-
 ---
 
-# Health and Monitoring
+# WebSocket API
 
-## Health Check
-
-Returns the overall health status of the service.
-
-```http
-GET /health
-```
-
-### Response
-
-```json
-{
-  "status": "Healthy",
-  "totalDuration": "00:00:00.1234567",
-  "entries": {
-    "database": {
-      "status": "Healthy",
-      "description": "Database is accessible",
-      "duration": "00:00:00.0123456"
-    },
-    "redis": {
-      "status": "Healthy",
-      "description": "Redis is accessible",
-      "duration": "00:00:00.0098765"
-    },
-    "blockchain": {
-      "status": "Healthy",
-      "description": "Blockchain connectivity: Neo N3: Block height 1234567; Neo X: Block height 987654",
-      "duration": "00:00:00.0567890"
-    }
-  }
-}
-```
-
-## Ready Check
-
-Returns readiness status for load balancer health checks.
-
-```http
-GET /health/ready
-```
-
-## Live Check
-
-Returns liveness status for container orchestration.
-
-```http
-GET /health/live
-```
-
----
-
-# Error Codes
-
-## Common Error Codes
-
-| Code | Description |
-|------|-------------|
-| `INVALID_REQUEST` | Request validation failed |
-| `UNAUTHORIZED` | Authentication required |
-| `FORBIDDEN` | Insufficient permissions |
-| `NOT_FOUND` | Resource not found |
-| `RATE_LIMITED` | Rate limit exceeded |
-| `INTERNAL_ERROR` | Internal server error |
-
-## Service-Specific Error Codes
-
-### Key Management
-
-| Code | Description |
-|------|-------------|
-| `KEY_NOT_FOUND` | Specified key does not exist |
-| `KEY_ALREADY_EXISTS` | Key with the same ID already exists |
-| `INVALID_KEY_TYPE` | Unsupported key type |
-| `SIGNING_FAILED` | Key signing operation failed |
-| `KEY_EXPORT_DENIED` | Key is not exportable |
-
-### Pattern Recognition
-
-| Code | Description |
-|------|-------------|
-| `MODEL_NOT_FOUND` | AI model not found |
-| `INSUFFICIENT_DATA` | Not enough data for analysis |
-| `ANALYSIS_FAILED` | Pattern analysis failed |
-| `INVALID_SENSITIVITY` | Invalid sensitivity level |
-
-### Prediction
-
-| Code | Description |
-|------|-------------|
-| `PREDICTION_FAILED` | Prediction generation failed |
-| `MODEL_UNAVAILABLE` | AI model is not available |
-| `INVALID_INPUT_DATA` | Input data format is invalid |
-| `CONFIDENCE_TOO_LOW` | Prediction confidence below threshold |
-
----
-
-# SDK and Client Libraries
-
-## Official SDKs
-
-- **JavaScript/TypeScript**: `@neo-service-layer/js-sdk`
-- **Python**: `neo-service-layer-python`
-- **C#**: `NeoServiceLayer.Client`
-- **Go**: `github.com/neo-service-layer/go-client`
-
-## Example Usage (JavaScript)
+## Connection
 
 ```javascript
-import { NeoServiceLayerClient } from '@neo-service-layer/js-sdk';
+const ws = new WebSocket('wss://api.neo-service-layer.com/ws');
+
+ws.on('open', () => {
+  // Authenticate
+  ws.send(JSON.stringify({
+    type: 'auth',
+    token: 'your-jwt-token'
+  }));
+  
+  // Subscribe to events
+  ws.send(JSON.stringify({
+    type: 'subscribe',
+    channels: ['prices', 'fraud-alerts']
+  }));
+});
+
+ws.on('message', (data) => {
+  const message = JSON.parse(data);
+  console.log('Received:', message);
+});
+```
+
+## Event Types
+
+- `price-update` - Real-time price updates
+- `fraud-alert` - Fraud detection alerts
+- `key-event` - Key management events
+- `system-status` - System health updates
+
+---
+
+# SDK Usage
+
+## JavaScript/TypeScript
+
+```bash
+npm install @neo-service-layer/sdk
+```
+
+```typescript
+import { NeoServiceLayerClient } from '@neo-service-layer/sdk';
 
 const client = new NeoServiceLayerClient({
-  baseUrl: 'https://api.neo-service-layer.com',
-  apiKey: 'your-api-key'
+  apiKey: 'your-api-key',
+  baseUrl: 'https://api.neo-service-layer.com'
 });
 
-// Generate a key
+// Generate key
 const key = await client.keyManagement.generateKey('NeoN3', {
-  keyId: 'my-key-001',
-  keyType: 'Secp256k1',
-  keyUsage: 'Sign,Verify'
+  keyId: 'my-key',
+  keyType: 'Secp256k1'
 });
+
+// Get oracle data
+const price = await client.oracle.getPrice('NEO-USD');
 
 // Detect fraud
 const fraudResult = await client.patternRecognition.detectFraud('NeoN3', {
@@ -550,6 +737,20 @@ const fraudResult = await client.patternRecognition.detectFraud('NeoN3', {
     fromAddress: 'NX...',
     toAddress: 'NX...'
   }
+});
+
+// Social Recovery operations
+const guardian = await client.socialRecovery.enrollGuardian({
+  address: '0x123...',
+  stakeAmount: '10000000000',
+  blockchain: 'neo-n3'
+});
+
+const recovery = await client.socialRecovery.initiateRecovery({
+  accountAddress: '0xabc...',
+  newOwner: '0xdef...',
+  strategyId: 'standard',
+  recoveryFee: '100000000'
 });
 ```
 
@@ -565,6 +766,10 @@ The service can send webhook notifications for various events:
 - `fraud.detected` - Fraud pattern detected
 - `prediction.completed` - Prediction generated
 - `system.alert` - System alert triggered
+- `guardian.enrolled` - New guardian enrolled
+- `recovery.initiated` - Recovery request initiated
+- `recovery.confirmed` - Recovery confirmation received
+- `recovery.executed` - Recovery successfully executed
 
 ## Webhook Configuration
 
@@ -575,7 +780,7 @@ Configure webhooks in your application settings:
   "webhooks": {
     "url": "https://your-app.com/webhooks/neo-service-layer",
     "secret": "your-webhook-secret",
-    "events": ["fraud.detected", "system.alert"]
+    "events": ["fraud.detected", "system.alert", "recovery.executed"]
   }
 }
 ```
@@ -594,52 +799,3 @@ Configure webhooks in your application settings:
   "signature": "sha256=..."
 }
 ```
-
----
-
-# Best Practices
-
-## Security
-
-1. **Always use HTTPS** in production
-2. **Rotate API keys** regularly
-3. **Implement proper rate limiting** on your client
-4. **Validate webhook signatures** to ensure authenticity
-5. **Use least privilege** principle for API access
-
-## Performance
-
-1. **Implement caching** for frequently accessed data
-2. **Use pagination** for large result sets
-3. **Batch operations** when possible
-4. **Monitor rate limits** and implement backoff strategies
-5. **Use appropriate timeouts** for API calls
-
-## Error Handling
-
-1. **Implement retry logic** with exponential backoff
-2. **Handle rate limiting** gracefully
-3. **Log errors** with sufficient context
-4. **Provide meaningful error messages** to users
-5. **Monitor error rates** and set up alerts
-
----
-
-# Support
-
-## Documentation
-
-- **API Reference**: This document
-- **Developer Guide**: `/docs/development/`
-- **Architecture Overview**: `/docs/architecture/`
-- **Deployment Guide**: `/docs/deployment/`
-
-## Community
-
-- **GitHub**: https://github.com/neo-service-layer
-- **Discord**: https://discord.gg/neo-service-layer
-- **Stack Overflow**: Tag `neo-service-layer`
-
-## Enterprise Support
-
-For enterprise support, contact: enterprise@neo-service-layer.com 

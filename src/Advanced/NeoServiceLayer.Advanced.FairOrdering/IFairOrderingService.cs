@@ -73,4 +73,12 @@ public interface IFairOrderingService : IEnclaveService, IBlockchainService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if successful, false otherwise.</returns>
     Task<bool> UpdatePoolConfigAsync(string poolId, OrderingPoolConfig config, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets the ordering result for a specific transaction.
+    /// </summary>
+    /// <param name="transactionId">The transaction ID.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The ordering result.</returns>
+    Task<OrderingResult> GetOrderingResultAsync(string transactionId, BlockchainType blockchainType);
 }

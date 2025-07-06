@@ -1,10 +1,14 @@
-﻿using System.Text.Json;
+﻿using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Configuration.Models;
+using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Host.Services;
+using NeoServiceLayer.Tee.Enclave;
 
 namespace NeoServiceLayer.Services.Configuration;
 
@@ -18,6 +22,10 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     private readonly object _configLock = new();
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration? _configuration;
+    private readonly IKeyManagementService? _keyManagementService;
+    private readonly IAttestationService? _attestationService;
+    private const string ConfigurationEncryptionKeyId = "configuration-encryption-key";
+    private string? _cachedEncryptionKey;
     private Timer? _cleanupTimer;
 
     /// <summary>
@@ -27,16 +35,22 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <param name="enclaveManager">The enclave manager for secure configuration operations.</param>
     /// <param name="configuration">The service configuration.</param>
     /// <param name="persistentStorage">The persistent storage provider.</param>
+    /// <param name="keyManagementService">The key management service.</param>
+    /// <param name="attestationService">The attestation service.</param>
     public ConfigurationService(
         ILogger<ConfigurationService> logger,
         IEnclaveManager enclaveManager,
         IServiceConfiguration? configuration = null,
-        IPersistentStorageProvider? persistentStorage = null)
+        IPersistentStorageProvider? persistentStorage = null,
+        IKeyManagementService? keyManagementService = null,
+        IAttestationService? attestationService = null)
         : base("ConfigurationService", "Dynamic configuration management service with enclave security", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
         _persistentStorage = persistentStorage;
+        _keyManagementService = keyManagementService;
+        _attestationService = attestationService;
 
         // Add capabilities
         AddCapability<IConfigurationService>();
@@ -206,7 +220,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 ["configuration.encryption.enabled"] = ("true", ConfigurationValueType.Boolean, false),
                 ["configuration.audit.enabled"] = ("true", ConfigurationValueType.Boolean, false),
                 ["configuration.subscription.maxSubscribers"] = ("1000", ConfigurationValueType.Integer, false),
-                ["configuration.storage.encryptionKey"] = ("default-encryption-key", ConfigurationValueType.String, true)
+                // Note: encryption key is now managed by KeyManagementService
             };
 
             foreach (var (key, (value, type, encrypt)) in defaultConfigs)
@@ -251,7 +265,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             await _enclaveManager.StorageStoreDataAsync(
                 "config:initialization",
                 DateTime.UtcNow.ToString("O"),
-                GetStorageEncryptionKey(),
+                await GetStorageEncryptionKeyAsync(),
                 CancellationToken.None);
 
             Logger.LogInformation("Configuration storage initialized successfully");
@@ -284,7 +298,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                     {
                         var configData = await _enclaveManager.StorageRetrieveDataAsync(
                             key,
-                            GetStorageEncryptionKey(),
+                            await GetStorageEncryptionKeyAsync(),
                             CancellationToken.None);
 
                         if (!string.IsNullOrEmpty(configData))
@@ -385,10 +399,56 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// Gets the storage encryption key for configuration data.
     /// </summary>
     /// <returns>The encryption key.</returns>
-    private string GetStorageEncryptionKey()
+    private async Task<string> GetStorageEncryptionKeyAsync()
     {
-        // In production, this would derive from enclave identity or configuration
-        return "config-storage-encryption-key-v1";
+        // Check if we have a cached key
+        if (!string.IsNullOrEmpty(_cachedEncryptionKey))
+        {
+            return _cachedEncryptionKey;
+        }
+
+        // If key management service is available, use it
+        if (_keyManagementService != null)
+        {
+            try
+            {
+                // Check if the encryption key exists
+                var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(ConfigurationEncryptionKeyId, BlockchainType.NeoN3);
+                _cachedEncryptionKey = ConfigurationEncryptionKeyId;
+                return _cachedEncryptionKey;
+            }
+            catch
+            {
+                // Key doesn't exist, create it
+                Logger.LogInformation("Creating configuration encryption key");
+                await _keyManagementService.CreateKeyAsync(
+                    ConfigurationEncryptionKeyId,
+                    "AES256",
+                    "Encrypt,Decrypt",
+                    false, // Not exportable for security
+                    "Configuration service encryption key for securing sensitive configuration values",
+                    BlockchainType.NeoN3);
+                _cachedEncryptionKey = ConfigurationEncryptionKeyId;
+                return _cachedEncryptionKey;
+            }
+        }
+
+        // Fallback: derive key from enclave identity
+        Logger.LogWarning("KeyManagementService not available. Using enclave-derived key.");
+        if (_attestationService == null)
+        {
+            throw new InvalidOperationException("Neither KeyManagementService nor AttestationService is available for encryption key derivation");
+        }
+        var enclaveInfo = await _attestationService.GetEnclaveInfoAsync();
+        if (enclaveInfo == null)
+        {
+            throw new InvalidOperationException("Unable to retrieve enclave information for encryption key derivation");
+        }
+        using var sha256 = SHA256.Create();
+        var keyMaterial = $"config-encryption-{enclaveInfo.MrEnclave}-{enclaveInfo.MrSigner}";
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(keyMaterial));
+        _cachedEncryptionKey = Convert.ToBase64String(hash);
+        return _cachedEncryptionKey;
     }
 
     /// <summary>

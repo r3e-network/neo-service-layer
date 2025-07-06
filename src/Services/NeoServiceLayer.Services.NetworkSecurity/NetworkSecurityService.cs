@@ -472,10 +472,48 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
 
     private async Task<string> EncryptMessageAsync(string payload, string publicKey)
     {
-        // In production, this would use actual encryption with the public key
-        await Task.CompletedTask;
-        var encrypted = Convert.ToBase64String(Encoding.UTF8.GetBytes(payload));
-        return encrypted;
+        try
+        {
+            using var rsa = RSA.Create();
+            
+            // Import the public key
+            var publicKeyBytes = Convert.FromBase64String(publicKey);
+            rsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
+            
+            // Encrypt the payload
+            var payloadBytes = Encoding.UTF8.GetBytes(payload);
+            var encryptedBytes = rsa.Encrypt(payloadBytes, RSAEncryptionPadding.OaepSHA256);
+            
+            return Convert.ToBase64String(encryptedBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to encrypt message");
+            throw new InvalidOperationException("Encryption failed", ex);
+        }
+    }
+
+    private async Task<string> DecryptMessageAsync(string encryptedPayload, string privateKey)
+    {
+        try
+        {
+            using var rsa = RSA.Create();
+            
+            // Import the private key
+            var privateKeyBytes = Convert.FromBase64String(privateKey);
+            rsa.ImportPkcs8PrivateKey(privateKeyBytes, out _);
+            
+            // Decrypt the payload
+            var encryptedBytes = Convert.FromBase64String(encryptedPayload);
+            var decryptedBytes = rsa.Decrypt(encryptedBytes, RSAEncryptionPadding.OaepSHA256);
+            
+            return Encoding.UTF8.GetString(decryptedBytes);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to decrypt message");
+            throw new InvalidOperationException("Decryption failed", ex);
+        }
     }
 
     private void LogSecurityEvent(string type, string source, string description)

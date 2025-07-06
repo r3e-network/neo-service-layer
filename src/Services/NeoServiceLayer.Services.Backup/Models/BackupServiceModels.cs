@@ -104,6 +104,7 @@ public class BackupInfo
     public long SizeBytes { get; set; }
     public BackupStatus Status { get; set; }
     public string? StorageLocation { get; set; }
+    public string? UserId { get; set; }
 }
 
 /// <summary>
@@ -136,6 +137,9 @@ public class BackupJob
     public string? StorageLocation { get; set; }
     public string? ErrorMessage { get; set; }
     public BlockchainType BlockchainType { get; set; }
+    public string? UserId { get; set; }
+    public long? BackupSizeBytes { get; set; }
+    public long? CompressedSizeBytes { get; set; }
 
     /// <summary>
     /// Gets or sets when the job was created.

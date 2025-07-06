@@ -12,7 +12,7 @@ Welcome to the comprehensive documentation for the Neo Service Layer Web Applica
 3. **Access Interface**: `http://localhost:5000/servicepages/servicedemo`
 
 ### **Key Features**
-- **20+ Interactive Service Demonstrations**
+- **26 Interactive Service Demonstrations**
 - **Real-time API Integration**
 - **Professional UI with Bootstrap 5**
 - **JWT Authentication System**
@@ -32,7 +32,7 @@ Complete overview of the web application including:
 
 #### **[Service Integration Guide](SERVICE_INTEGRATION.md)**
 Detailed technical documentation for:
-- How all 20+ services integrate with the web app
+- How all 26 services integrate with the web app
 - Service registration patterns
 - Controller implementation guidelines
 - Adding new services to the web interface

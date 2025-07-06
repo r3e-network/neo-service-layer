@@ -14,7 +14,7 @@ The Neo Service Layer is a comprehensive, enterprise-grade blockchain service pl
 │              (ASP.NET Core + Razor Pages)                      │
 ├─────────────────────────────────────────────────────────────────┤
 │                    RESTful API Layer                           │
-│                 (20+ Service Controllers)                      │
+│                 (26 Service Controllers)                       │
 ├─────────────────────────────────────────────────────────────────┤
 │                  Service Framework & Registry                   │
 │               (JWT Auth + Service Lifecycle)                   │
@@ -78,7 +78,7 @@ The Neo Service Layer is a comprehensive, enterprise-grade blockchain service pl
 The web application provides a complete interactive interface for all services.
 
 #### Responsibilities
-- **Service Demonstrations**: Interactive testing of all 20+ services
+- **Service Demonstrations**: Interactive testing of all 26 services
 - **Real-time Integration**: Direct communication with actual service endpoints
 - **User Interface**: Professional, responsive design with Bootstrap 5
 - **Authentication Management**: JWT token handling and user session management
@@ -235,9 +235,9 @@ public interface IBlockchainClient
 - **Cross-Chain Bridges**: Support for asset transfers between chains
 - **Gas Management**: Optimize gas usage for transactions
 
-### 5. Service Portfolio (20+ Services)
+### 5. Service Portfolio (26 Services)
 
-The Neo Service Layer includes 20+ production-ready services organized into six categories:
+The Neo Service Layer includes 26 production-ready services organized into seven categories:
 
 #### Core Services (4)
 - **Key Management Service**: Generate and manage cryptographic keys securely
@@ -250,11 +250,13 @@ The Neo Service Layer includes 20+ production-ready services organized into six 
 - **Backup Service**: Automated backup and restore operations
 - **Configuration Service**: Dynamic system configuration management
 
-#### Security Services (4)
+#### Security Services (6)
 - **Zero Knowledge Service**: ZK proof generation and verification
 - **Abstract Account Service**: Smart contract account management
 - **Compliance Service**: Regulatory compliance and AML/KYC checks
 - **Proof of Reserve Service**: Cryptographic asset verification
+- **Secrets Management Service**: Secure secrets storage and rotation
+- **Social Recovery Service**: Decentralized account recovery with reputation-based guardians
 
 #### Operations Services (4)
 - **Automation Service**: Workflow automation and scheduling
@@ -262,18 +264,20 @@ The Neo Service Layer includes 20+ production-ready services organized into six 
 - **Health Service**: System health diagnostics and reporting
 - **Notification Service**: Multi-channel notification system
 
-#### Infrastructure Services (3)
+#### Infrastructure Services (4)
 - **Cross-Chain Service**: Multi-blockchain interoperability
 - **Compute Service**: Secure TEE computations
 - **Event Subscription Service**: Blockchain event monitoring
+- **Smart Contracts Service**: Smart contract deployment and management
 
 #### AI Services (2)
 - **Pattern Recognition Service**: AI-powered analysis and fraud detection
 - **Prediction Service**: Machine learning forecasting and analytics
 
-#### Advanced Services (2+)
+#### Advanced Services (3)
 - **Fair Ordering Service**: Transaction fairness and MEV protection
-- **Additional Services**: Continuously expanding based on ecosystem needs
+- **Attestation Service**: SGX remote attestation and verification
+- **Network Security Service**: Secure enclave network communication
 
 ### 6. Service Implementation Details
 

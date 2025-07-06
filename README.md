@@ -17,7 +17,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 - **🌐 Interactive Web Application**: Full-featured web interface with real-time service interaction
 - **🤖 AI-Powered Services**: Pattern recognition, fraud detection, and predictive analytics
 - **⛓️ Multi-Chain Support**: Neo N3 and Neo X blockchain integration
-- **🏗️ Microservices Architecture**: 25 production-ready services
+- **🏗️ Microservices Architecture**: 26 production-ready services
 - **📊 Enterprise-Grade Quality**: 80%+ test coverage, comprehensive documentation
 - **🚀 Production Ready**: Docker containerization, monitoring, and CI/CD
 
@@ -39,9 +39,9 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 │     • Service Lifecycle      • Dependency Injection        │
 │     • Health Monitoring      • Configuration Management    │
 ├─────────────────────────────────────────────────────────────┤
-│  🏢 Microservices Portfolio (25 Services)                 │
+│  🏢 Microservices Portfolio (26 Services)                 │
 │  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
-│  │   Core (4)  │ │Security (5) │ │    AI (2)   │ │Advanced │ │
+│  │   Core (4)  │ │Security (6) │ │    AI (2)   │ │Advanced │ │
 │  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │   (1)   │ │
 │  └─────────────┘ └─────────────┘ └───(4)────────┘ └─────────┘ │
 ├─────────────────────────────────────────────────────────────┤
@@ -95,7 +95,7 @@ dotnet run --project src/Web/NeoServiceLayer.Web
    - **🎮 Service Demo**: `http://localhost:5000/servicepages/servicedemo` - Interactive service testing
    - **📚 API Documentation**: `http://localhost:5000/swagger` - Complete API reference
 
-## 📊 Service Portfolio (25 Services)
+## 📊 Service Portfolio (26 Services)
 
 The Neo Service Layer provides a comprehensive suite of production-ready services organized into six categories:
 
@@ -110,40 +110,41 @@ The Neo Service Layer provides a comprehensive suite of production-ready service
 6. **Backup Service** - Automated backup and restore operations
 7. **Configuration Service** - Dynamic system configuration management
 
-### **🔒 Security Services (5)**
+### **🔒 Security Services (6)**
 8. **Zero Knowledge Service** - ZK proof generation and verification
 9. **Abstract Account Service** - Smart contract account management
 10. **Compliance Service** - Regulatory compliance and AML/KYC checks
 11. **Proof of Reserve Service** - Cryptographic asset verification
 12. **Secrets Management Service** - Secure secrets storage and rotation
+13. **Social Recovery Service** - Decentralized account recovery with reputation-based guardians
 
 ### **⚙️ Operations Services (4)**
-13. **Automation Service** - Workflow automation and scheduling
-14. **Monitoring Service** - System metrics and performance analytics
-15. **Health Service** - System health diagnostics and reporting
-16. **Notification Service** - Multi-channel notification system
+14. **Automation Service** - Workflow automation and scheduling
+15. **Monitoring Service** - System metrics and performance analytics
+16. **Health Service** - System health diagnostics and reporting
+17. **Notification Service** - Multi-channel notification system
 
 ### **🌐 Infrastructure Services (4)**
-17. **Cross-Chain Service** - Multi-blockchain interoperability
-18. **Compute Service** - Secure TEE computations
-19. **Event Subscription Service** - Blockchain event monitoring
-20. **Smart Contracts Service** - Smart contract deployment and management
+18. **Cross-Chain Service** - Multi-blockchain interoperability
+19. **Compute Service** - Secure TEE computations
+20. **Event Subscription Service** - Blockchain event monitoring
+21. **Smart Contracts Service** - Smart contract deployment and management
 
 ### **🤖 AI Services (2)**
-21. **Pattern Recognition Service** - AI-powered analysis and fraud detection
-22. **Prediction Service** - Machine learning forecasting and analytics
+22. **Pattern Recognition Service** - AI-powered analysis and fraud detection
+23. **Prediction Service** - Machine learning forecasting and analytics
 
 ### **🚀 Advanced Services (3)**
-23. **Fair Ordering Service** - Transaction fairness and MEV protection
-24. **Attestation Service** - SGX remote attestation and verification
-25. **Network Security Service** - Secure enclave network communication
+24. **Fair Ordering Service** - Transaction fairness and MEV protection
+25. **Attestation Service** - SGX remote attestation and verification
+26. **Network Security Service** - Secure enclave network communication
 
 ## 🌐 Interactive Web Application
 
 The Neo Service Layer includes a **comprehensive web application** that provides:
 
 ### **🔴 Live Service Demonstrations**
-- **Real-time Testing**: Interactive testing of all 25 services
+- **Real-time Testing**: Interactive testing of all 26 services
 - **Professional UI**: Modern, responsive interface built with Bootstrap 5
 - **Service Categories**: Organized into 7 categories for easy navigation
 - **Direct Integration**: Real communication with actual service endpoints
@@ -217,7 +218,7 @@ dotnet test --filter Category=Integration
 - **[Troubleshooting Guide](docs/troubleshooting/README.md)** - Common issues and solutions
 
 ### **📊 Service Documentation**
-- **[Services Overview](docs/services/README.md)** - Complete documentation for all 25 services
+- **[Services Overview](docs/services/README.md)** - Complete documentation for all 26 services
 - **[API Reference](docs/api/README.md)** - RESTful API documentation
 
 ## 🐳 Docker Deployment

@@ -19,6 +19,7 @@ NeoServiceLayer.Services.SecretsManagement
 NeoServiceLayer.Services.SmartContracts
 NeoServiceLayer.Services.SmartContracts.NeoN3
 NeoServiceLayer.Services.SmartContracts.NeoX
+NeoServiceLayer.Services.SocialRecovery
 NeoServiceLayer.Services.Storage
 NeoServiceLayer.Services.Voting
 NeoServiceLayer.Services.ZeroKnowledge

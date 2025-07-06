@@ -8,7 +8,6 @@ namespace NeoServiceLayer.Services.Randomness;
 public partial class RandomnessService
 {
     private IPersistentStorageProvider? _persistentStorage;
-    private readonly IServiceProvider? _serviceProvider;
     private Timer? _persistenceTimer;
     private Timer? _cleanupTimer;
 

@@ -12,7 +12,7 @@ This is a placeholder for the og-image.png file that should be created for socia
 2. Tagline: "Enterprise-Grade Blockchain Services"
 3. Key features icons:
    - Intel SGX Security
-   - 20+ Microservices
+   - 26 Microservices
    - Multi-blockchain Support (Neo N3 & Neo X)
    - Smart Contract Integration
 4. Dark theme matching the website design

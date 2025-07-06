@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Host.Services;
 
 // Use Infrastructure namespace for IBlockchainClientFactory
@@ -66,6 +67,9 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     private readonly IBlockchainClientFactory _blockchainClientFactory;
     private readonly IServiceConfiguration _configuration;
     private readonly Dictionary<string, VerifiableRandomResult> _results = new();
+    private readonly IServiceProvider? _serviceProvider;
+    private IKeyManagementService? _keyManagementService;
+    private const string RandomnessSigningKeyId = "randomness-signing-key";
     private int _requestCount;
     private int _successCount;
     private int _failureCount;
@@ -324,8 +328,28 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
 
             // Create a proof by signing the seed, block hash, and random value
             string dataToSign = $"{seed}:{blockHash}:{randomValue}";
-            string privateKeyHex = "72616e646f6d6e6573732d736572766963652d6b6579"; // "randomness-service-key" in hex
-            string signatureHex = await _enclaveManager.SignDataAsync(dataToSign, privateKeyHex);
+            string signatureHex;
+            
+            if (_keyManagementService != null)
+            {
+                // Use key management service for secure key handling
+                var dataBytes = Encoding.UTF8.GetBytes(dataToSign);
+                var dataHex = Convert.ToHexString(dataBytes);
+                signatureHex = await _keyManagementService.SignDataAsync(
+                    RandomnessSigningKeyId, 
+                    dataHex, 
+                    "ECDSA_SHA256", 
+                    blockchainType);
+            }
+            else
+            {
+                // Fallback: use enclave manager with a generated key
+                // This should only be used in development/testing
+                Logger.LogWarning("Using fallback key management. This is not secure for production!");
+                string privateKeyHex = GenerateDevelopmentKey();
+                signatureHex = await _enclaveManager.SignDataAsync(dataToSign, privateKeyHex);
+            }
+            
             byte[] signature = Convert.FromHexString(signatureHex);
 
             var requestId = Guid.NewGuid().ToString();
@@ -383,8 +407,36 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             // Verify the proof
             string dataToVerify = $"{result.Seed}:{result.BlockHash}:{result.Value}";
             byte[] signature = Convert.FromBase64String(result.Proof);
-            string publicKeyHex = "72616e646f6d6e6573732d736572766963652d7075626b6579"; // "randomness-service-pubkey" in hex
-            bool isValid = await _enclaveManager.VerifySignatureAsync(dataToVerify, result.Proof, publicKeyHex);
+            bool isValid;
+            
+            if (_keyManagementService != null)
+            {
+                // Use key management service for verification
+                var dataBytes = Encoding.UTF8.GetBytes(dataToVerify);
+                var dataHex = Convert.ToHexString(dataBytes);
+                var signatureHex = Convert.ToHexString(signature);
+                
+                // Get the public key for verification
+                var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(RandomnessSigningKeyId, result.BlockchainType);
+                if (keyMetadata?.PublicKeyHex == null)
+                {
+                    throw new InvalidOperationException("Public key not available for verification");
+                }
+                
+                isValid = await _keyManagementService.VerifySignatureAsync(
+                    keyMetadata.PublicKeyHex,
+                    dataHex,
+                    signatureHex,
+                    "ECDSA_SHA256",
+                    result.BlockchainType);
+            }
+            else
+            {
+                // Fallback: use enclave manager
+                Logger.LogWarning("Using fallback key verification. This is not secure for production!");
+                string publicKeyHex = GenerateDevelopmentPublicKey();
+                isValid = await _enclaveManager.VerifySignatureAsync(dataToVerify, result.Proof, publicKeyHex);
+            }
 
             return isValid;
         }
@@ -429,6 +481,22 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     {
         // Start the service
         Logger.LogInformation("Starting Randomness service...");
+        
+        // Get key management service from service provider
+        if (_serviceProvider != null)
+        {
+            _keyManagementService = _serviceProvider.GetService(typeof(IKeyManagementService)) as IKeyManagementService;
+            if (_keyManagementService != null)
+            {
+                // Ensure the signing key exists
+                await EnsureSigningKeyExistsAsync();
+            }
+            else
+            {
+                Logger.LogWarning("KeyManagementService not available. Will use legacy key management.");
+            }
+        }
+        
         return await Task.FromResult(true);
     }
 
@@ -480,5 +548,48 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             DisposePersistenceResources();
         }
         base.Dispose(disposing);
+    }
+    
+    private async Task EnsureSigningKeyExistsAsync()
+    {
+        if (_keyManagementService == null) return;
+
+        try
+        {
+            // Check if key exists
+            var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(RandomnessSigningKeyId, BlockchainType.NeoN3);
+        }
+        catch (Exception)
+        {
+            // Key doesn't exist, create it
+            Logger.LogInformation("Creating randomness signing key");
+            await _keyManagementService.CreateKeyAsync(
+                RandomnessSigningKeyId,
+                "Secp256k1",
+                "Sign,Verify",
+                false, // Not exportable for security
+                "Randomness service signing key for verifiable random number generation",
+                BlockchainType.NeoN3);
+        }
+    }
+    
+    private string GenerateDevelopmentKey()
+    {
+        // Generate a deterministic development key based on service instance
+        // This is NOT secure and should only be used in development
+        using var sha256 = SHA256.Create();
+        var instanceId = $"dev-randomness-{Environment.MachineName}-{Environment.ProcessId}";
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(instanceId));
+        return Convert.ToHexString(hash);
+    }
+    
+    private string GenerateDevelopmentPublicKey()
+    {
+        // Generate a deterministic development public key
+        // This is NOT secure and should only be used in development
+        using var sha256 = SHA256.Create();
+        var instanceId = $"dev-randomness-pubkey-{Environment.MachineName}-{Environment.ProcessId}";
+        var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(instanceId));
+        return Convert.ToHexString(hash);
     }
 }

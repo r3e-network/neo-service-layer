@@ -1,6 +1,13 @@
 ﻿namespace NeoServiceLayer.Services.Notification.Models;
 
 /// <summary>
+/// Simple subscription request alias.
+/// </summary>
+public class SubscribeRequest : SubscribeToNotificationsRequest
+{
+}
+
+/// <summary>
 /// Subscribe to notifications request.
 /// </summary>
 public class SubscribeToNotificationsRequest

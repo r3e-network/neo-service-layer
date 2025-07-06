@@ -197,7 +197,7 @@ builder.Configuration.AddJsonFile("appsettings.PersistentStorage.json", optional
 builder.Services.AddPersistentStorageServices(builder.Configuration);
 builder.Services.ConfigureServicesWithPersistentStorage(builder.Configuration);
 
-// Register all Neo Service Layer services (all 25 services)
+// Register all Neo Service Layer services (all 26 services)
 builder.Services.AddNeoServiceLayerServices(builder.Configuration);
 
 // Register TEE Services - Use production wrapper with environment-aware configuration

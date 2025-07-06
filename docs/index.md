@@ -10,7 +10,7 @@ The Neo Service Layer (NSL) is a **production-ready, enterprise-grade platform**
 
 The Neo Service Layer includes a **full-featured web application** that provides:
 
-- **🔴 Live Service Demonstrations**: Interactive testing of all 20+ services
+- **🔴 Live Service Demonstrations**: Interactive testing of all 26 services
 - **🔐 JWT Authentication**: Secure API access with role-based permissions
 - **📊 Real-time Monitoring**: Service status and system health indicators
 - **🎨 Professional UI**: Modern, responsive interface with service-specific designs
@@ -25,7 +25,7 @@ For complete web application documentation, see **[Web Application Guide](web/WE
 
 ## Service Portfolio
 
-The Neo Service Layer consists of **20+ production-ready services** organized into six categories:
+The Neo Service Layer consists of **26 production-ready services** organized into seven categories:
 
 ### **🔧 Core Services (4)**
 Essential blockchain operations:
@@ -40,12 +40,14 @@ Data management and persistence:
 6. **[Backup Service](services/backup-service.md)** - Automated backup and restore operations
 7. **[Configuration Service](services/configuration-service.md)** - Dynamic system configuration management
 
-### **🔒 Security Services (4)**
+### **🔒 Security Services (6)**
 Advanced security and privacy features:
 8. **[Zero Knowledge Service](services/zero-knowledge-service.md)** - ZK proof generation and verification
 9. **[Abstract Account Service](services/abstract-account-service.md)** - Smart contract account management
 10. **[Compliance Service](services/compliance-service.md)** - Regulatory compliance and AML/KYC checks
 11. **[Proof of Reserve Service](services/proof-of-reserve-service.md)** - Cryptographic asset verification
+12. **[Secrets Management Service](services/secrets-management-service.md)** - Secure secrets storage and rotation
+13. **[Social Recovery Service](services/social-recovery-service.md)** - Decentralized account recovery with reputation-based guardians
 
 ### **⚙️ Operations Services (4)**
 System management and monitoring:
@@ -54,21 +56,23 @@ System management and monitoring:
 14. **[Health Service](services/health-service.md)** - System health diagnostics and reporting
 15. **[Notification Service](services/notification-service.md)** - Multi-channel notification system
 
-### **🌐 Infrastructure Services (3)**
+### **🌐 Infrastructure Services (4)**
 Multi-chain and compute services:
 16. **[Cross-Chain Service](services/cross-chain-service.md)** - Multi-blockchain interoperability
 17. **[Compute Service](services/compute-service.md)** - Secure TEE computations
 18. **[Event Subscription Service](services/event-subscription-service.md)** - Blockchain event monitoring
+19. **[Smart Contracts Service](services/smart-contracts-service.md)** - Smart contract deployment and management
 
 ### **🤖 AI Services (2)**
 Machine learning and analytics:
-19. **[Pattern Recognition Service](services/pattern-recognition-service.md)** - AI-powered analysis and fraud detection
-20. **[Prediction Service](services/prediction-service.md)** - Machine learning forecasting and analytics
+20. **[Pattern Recognition Service](services/pattern-recognition-service.md)** - AI-powered analysis and fraud detection
+21. **[Prediction Service](services/prediction-service.md)** - Machine learning forecasting and analytics
 
-### **🚀 Advanced Services (2+)**
+### **🚀 Advanced Services (3)**
 Specialized blockchain features:
-21. **[Fair Ordering Service](services/fair-ordering-service.md)** - Transaction fairness and MEV protection
-22. **Additional Services** - Continuously expanding based on ecosystem needs
+22. **[Fair Ordering Service](services/fair-ordering-service.md)** - Transaction fairness and MEV protection
+23. **[Attestation Service](services/attestation-service.md)** - SGX remote attestation and verification
+24. **[Network Security Service](services/network-security-service.md)** - Secure enclave network communication
 
 For detailed information about all services, see [Services Overview](services/README.md).
 
@@ -83,7 +87,7 @@ The Neo Service Layer is built on a modern, production-ready architecture that c
 ├─────────────────────────────────────────────────────────────┤
 │  Interactive Web Application (ASP.NET Core + Razor Pages)  │
 ├─────────────────────────────────────────────────────────────┤
-│  RESTful API Layer (20+ Service Controllers)               │
+│  RESTful API Layer (26 Service Controllers)                │
 ├─────────────────────────────────────────────────────────────┤
 │  Service Framework & Registry                               │
 ├─────────────────────────────────────────────────────────────┤
@@ -108,7 +112,7 @@ The Neo Service Layer is built on a modern, production-ready architecture that c
 - **🌐 Interactive Web Interface**: Complete service testing and management interface
 - **🔒 Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
 - **⛓️ Multi-Blockchain Support**: Native support for both Neo N3 and NeoX
-- **🏗️ Microservices Architecture**: 20+ independent, scalable services
+- **🏗️ Microservices Architecture**: 26 independent, scalable services
 - **🔐 JWT Authentication**: Secure API access with role-based permissions
 - **📊 Real-time Monitoring**: Comprehensive health and performance monitoring
 - **🚀 Production Ready**: Docker containerization, CI/CD, and comprehensive testing

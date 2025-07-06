@@ -178,7 +178,7 @@ jobs:
           ${{ runner.os }}-node-
 
     - name: 🔧 Install Build Dependencies and SGX SDK
-      timeout-minutes: 10
+      timeout-minutes: 15
       run: |
         echo "::group::Installing build dependencies and Intel SGX SDK"
         
@@ -190,21 +190,9 @@ jobs:
           gnupg \
           lsb-release
         
-        # Add Intel SGX repository (with error handling)
-        if wget -qO- https://download.01.org/intel-sgx/sgx_repo/ubuntu/intel-sgx-deb.key | sudo tee /etc/apt/trusted.gpg.d/intel-sgx.asc > /dev/null; then
-          echo "deb [arch=amd64 signed-by=/etc/apt/trusted.gpg.d/intel-sgx.asc] https://download.01.org/intel-sgx/sgx_repo/ubuntu $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/intel-sgx.list
-          
-          # Update and try to install SGX packages
-          sudo apt-get update -qq || true
-          sudo DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
-            libsgx-urts \
-            libsgx-enclave-common-dev \
-            libsgx-dcap-ql-dev \
-            sgx-aesm-service \
-            libsgx-aesm-launch-plugin || echo "Warning: SGX packages not available, will use simulation mode"
-        else
-          echo "Warning: Could not add Intel SGX repository, will use simulation mode"
-        fi
+        # Skip Intel SGX repository in CI - use simulation mode directly
+        echo "CI detected - skipping Intel SGX repository installation to avoid timeouts"
+        echo "Will use simulation mode with mock libraries"
         
         # Verify protoc installation
         protoc --version
@@ -247,7 +235,6 @@ jobs:
         echo "PATH=/opt/intel/sgxsdk/bin/x64:$PATH" >> $GITHUB_ENV
         
         echo "SGX SDK installed and configured for simulation mode"
-        echo "::endgroup::"
 
     - name: 📦 Restore dependencies
       run: |

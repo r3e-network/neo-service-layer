@@ -342,19 +342,58 @@ public partial class CrossChainService
             // Update status to pending
             UpdateMessageStatus(messageId, CrossChainMessageState.Pending);
 
-            // Simulate confirmation waiting
-            await Task.Delay(TimeSpan.FromSeconds(30));
-            UpdateMessageStatus(messageId, CrossChainMessageState.Confirmed);
-
-            // Simulate processing
-            await Task.Delay(TimeSpan.FromSeconds(60));
-            UpdateMessageStatus(messageId, CrossChainMessageState.Processing);
-
-            // Simulate completion
-            await Task.Delay(TimeSpan.FromSeconds(30));
-            UpdateMessageStatus(messageId, CrossChainMessageState.Completed);
-
-            Logger.LogInformation("Cross-chain message {MessageId} processed successfully", messageId);
+            if (_blockchainClientFactory != null)
+            {
+                // Use real blockchain clients
+                var sourceClient = _blockchainClientFactory.CreateClient(sourceBlockchain);
+                var targetClient = _blockchainClientFactory.CreateClient(targetBlockchain);
+                
+                // Submit message to source chain bridge contract
+                var bridgeContract = GetBridgeContract(sourceBlockchain, targetBlockchain);
+                var messageData = SerializeMessage(request);
+                
+                var txHash = await sourceClient.InvokeContractMethodAsync(
+                    bridgeContract,
+                    "submitMessage",
+                    targetBlockchain.ToString(),
+                    request.Recipient,
+                    messageData,
+                    request.Payload
+                );
+                
+                Logger.LogInformation("Submitted cross-chain message {MessageId} to source chain, tx: {TxHash}", 
+                    messageId, txHash);
+                
+                // Wait for confirmations
+                var confirmations = GetRequiredConfirmations(sourceBlockchain);
+                await WaitForConfirmationsAsync(sourceClient, txHash, confirmations);
+                UpdateMessageStatus(messageId, CrossChainMessageState.Confirmed);
+                
+                // Monitor target chain for message arrival
+                UpdateMessageStatus(messageId, CrossChainMessageState.Processing);
+                var delivered = await MonitorTargetChainAsync(targetClient, messageId, targetBlockchain);
+                
+                if (delivered)
+                {
+                    UpdateMessageStatus(messageId, CrossChainMessageState.Completed);
+                    Logger.LogInformation("Cross-chain message {MessageId} delivered successfully", messageId);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Message delivery timeout");
+                }
+            }
+            else
+            {
+                // Fallback to simulation
+                Logger.LogWarning("Blockchain client not available, simulating message processing");
+                await Task.Delay(TimeSpan.FromSeconds(30));
+                UpdateMessageStatus(messageId, CrossChainMessageState.Confirmed);
+                await Task.Delay(TimeSpan.FromSeconds(60));
+                UpdateMessageStatus(messageId, CrossChainMessageState.Processing);
+                await Task.Delay(TimeSpan.FromSeconds(30));
+                UpdateMessageStatus(messageId, CrossChainMessageState.Completed);
+            }
         }
         catch (Exception ex)
         {
@@ -374,30 +413,103 @@ public partial class CrossChainService
     {
         try
         {
-            // Simulate transfer processing
-            await Task.Delay(TimeSpan.FromMinutes(2));
-
-            // Update transaction status
-            lock (_messagesLock)
+            // Update status to processing
+            UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Processing);
+            
+            if (_blockchainClientFactory != null)
             {
-                if (_transactionHistory.TryGetValue(request.Sender, out var history))
+                // Use real blockchain clients for transfer
+                var sourceClient = _blockchainClientFactory.CreateClient(sourceBlockchain);
+                var targetClient = _blockchainClientFactory.CreateClient(targetBlockchain);
+                
+                // Get bridge contracts
+                var sourceBridge = GetBridgeContract(sourceBlockchain, targetBlockchain);
+                
+                // Lock tokens on source chain
+                Logger.LogInformation("Locking {Amount} {Token} on {Source} chain for transfer {TransferId}",
+                    request.Amount, request.TokenAddress, sourceBlockchain, transferId);
+                    
+                var lockTxHash = await sourceClient.InvokeContractMethodAsync(
+                    sourceBridge,
+                    "lockTokens",
+                    request.TokenAddress,
+                    request.Amount.ToString(),
+                    request.Receiver,
+                    targetBlockchain.ToString()
+                );
+                
+                // Wait for confirmations on source chain
+                var sourceConfirmations = GetRequiredConfirmations(sourceBlockchain);
+                await WaitForConfirmationsAsync(sourceClient, lockTxHash, sourceConfirmations);
+                
+                UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Confirmed);
+                Logger.LogInformation("Tokens locked on source chain: {TxHash}", lockTxHash);
+                
+                // Generate cross-chain proof
+                var proof = await GenerateTransferProofAsync(lockTxHash, request, sourceBlockchain, targetBlockchain);
+                
+                // Monitor for relay completion on target chain
+                var targetBridge = GetBridgeContract(targetBlockchain, sourceBlockchain);
+                var relayCompleted = await MonitorRelayCompletionAsync(
+                    targetClient, targetBridge, transferId, proof);
+                
+                if (relayCompleted)
                 {
-                    var transaction = history.FirstOrDefault(t => t.Id == transferId);
-                    if (transaction != null)
+                    // Get target chain transaction hash
+                    var targetTxHash = await GetTargetTransactionHashAsync(
+                        targetClient, targetBridge, transferId);
+                    
+                    // Update transaction with hashes
+                    lock (_messagesLock)
                     {
-                        transaction.Status = CrossChainMessageState.Completed;
-                        transaction.CompletedAt = DateTime.UtcNow;
-                        transaction.SourceTransactionHash = Guid.NewGuid().ToString();
-                        transaction.TargetTransactionHash = Guid.NewGuid().ToString();
+                        if (_transactionHistory.TryGetValue(request.Sender, out var history))
+                        {
+                            var transaction = history.FirstOrDefault(t => t.Id == transferId);
+                            if (transaction != null)
+                            {
+                                transaction.Status = CrossChainMessageState.Completed;
+                                transaction.CompletedAt = DateTime.UtcNow;
+                                transaction.SourceTransactionHash = lockTxHash;
+                                transaction.TargetTransactionHash = targetTxHash ?? "pending";
+                            }
+                        }
+                    }
+                    
+                    Logger.LogInformation("Cross-chain transfer {TransferId} completed: {SourceTx} -> {TargetTx}",
+                        transferId, lockTxHash, targetTxHash);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Transfer relay timeout on target chain");
+                }
+            }
+            else
+            {
+                // Fallback simulation
+                Logger.LogWarning("Blockchain client not available, simulating transfer");
+                await Task.Delay(TimeSpan.FromMinutes(2));
+                
+                UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Completed);
+                
+                lock (_messagesLock)
+                {
+                    if (_transactionHistory.TryGetValue(request.Sender, out var history))
+                    {
+                        var transaction = history.FirstOrDefault(t => t.Id == transferId);
+                        if (transaction != null)
+                        {
+                            transaction.SourceTransactionHash = Guid.NewGuid().ToString();
+                            transaction.TargetTransactionHash = Guid.NewGuid().ToString();
+                            transaction.CompletedAt = DateTime.UtcNow;
+                        }
                     }
                 }
             }
-
-            Logger.LogInformation("Cross-chain transfer {TransferId} completed successfully", transferId);
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to process cross-chain transfer {TransferId}", transferId);
+            UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Failed);
         }
     }
 
@@ -554,9 +666,221 @@ public partial class CrossChainService
 
     private string GetKeyEncryptionKey()
     {
-        // Return a deterministic key for encrypting stored keys
-        // In production, this would be derived from enclave attestation
+        // In production, derive from enclave attestation
+        if (_enclaveManager != null)
+        {
+            var enclaveInfo = _enclaveManager.GetEnclaveInfoAsync().GetAwaiter().GetResult();
+            if (enclaveInfo != null)
+            {
+                using var sha256 = System.Security.Cryptography.SHA256.Create();
+                var keyMaterial = $"crosschain-kek-{enclaveInfo.MrEnclave}-{enclaveInfo.MrSigner}";
+                var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(keyMaterial));
+                return Convert.ToBase64String(hash);
+            }
+        }
+        
+        // Fallback for development
+        Logger.LogWarning("Using development key encryption key. Configure enclave for production.");
         return "crosschain_key_encryption_key_v1";
+    }
+    
+    private string GetBridgeContract(BlockchainType source, BlockchainType target)
+    {
+        var key = $"CrossChain:BridgeContracts:{source}To{target}";
+        var contract = Configuration?.GetValue(key, "");
+        
+        if (string.IsNullOrEmpty(contract))
+        {
+            throw new InvalidOperationException($"Bridge contract not configured for {source} to {target}. Configure '{key}' in appsettings.json");
+        }
+        
+        return contract;
+    }
+    
+    private string SerializeMessage(CoreModels.CrossChainMessageRequest request)
+    {
+        return System.Text.Json.JsonSerializer.Serialize(request);
+    }
+    
+    private int GetRequiredConfirmations(BlockchainType blockchain)
+    {
+        var key = $"CrossChain:Confirmations:{blockchain}";
+        return Configuration?.GetValue(key, blockchain switch
+        {
+            BlockchainType.NeoN3 => 6,
+            BlockchainType.NeoX => 12,
+            _ => 10
+        }) ?? 10;
+    }
+    
+    private async Task WaitForConfirmationsAsync(IBlockchainClient client, string txHash, int requiredConfirmations)
+    {
+        var startTime = DateTime.UtcNow;
+        var timeout = TimeSpan.FromMinutes(30);
+        
+        while (DateTime.UtcNow - startTime < timeout)
+        {
+            var tx = await client.GetTransactionAsync(txHash);
+            if (tx?.Confirmations >= requiredConfirmations)
+            {
+                return;
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(10));
+        }
+        
+        throw new TimeoutException($"Transaction {txHash} did not reach {requiredConfirmations} confirmations within timeout");
+    }
+    
+    private async Task<bool> MonitorTargetChainAsync(IBlockchainClient client, string messageId, BlockchainType targetChain)
+    {
+        var bridgeContract = GetBridgeContract(targetChain, targetChain); // Target chain bridge
+        var startTime = DateTime.UtcNow;
+        var timeout = TimeSpan.FromMinutes(60);
+        
+        while (DateTime.UtcNow - startTime < timeout)
+        {
+            try
+            {
+                var delivered = await client.CallContractMethodAsync(
+                    bridgeContract,
+                    "isMessageDelivered",
+                    messageId
+                );
+                
+                if (bool.TryParse(delivered, out var isDelivered) && isDelivered)
+                {
+                    return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Error checking message delivery status");
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(30));
+        }
+        
+        return false;
+    }
+    
+    private void UpdateTransferStatus(string transferId, string sender, CrossChainMessageState state)
+    {
+        lock (_messagesLock)
+        {
+            if (_transactionHistory.TryGetValue(sender, out var history))
+            {
+                var transaction = history.FirstOrDefault(t => t.Id == transferId);
+                if (transaction != null)
+                {
+                    transaction.Status = state;
+                }
+            }
+        }
+    }
+    
+    private async Task<string> GenerateTransferProofAsync(
+        string lockTxHash, 
+        CoreModels.CrossChainTransferRequest request,
+        BlockchainType sourceChain,
+        BlockchainType targetChain)
+    {
+        // Generate cryptographic proof of the lock transaction
+        var proofData = new
+        {
+            TransferId = lockTxHash,
+            Sender = request.Sender,
+            Receiver = request.Receiver,
+            Amount = request.Amount,
+            TokenAddress = request.TokenAddress,
+            SourceChain = sourceChain.ToString(),
+            TargetChain = targetChain.ToString(),
+            Timestamp = DateTime.UtcNow.ToString("O")
+        };
+        
+        var proofJson = System.Text.Json.JsonSerializer.Serialize(proofData);
+        var proofBytes = System.Text.Encoding.UTF8.GetBytes(proofJson);
+        
+        // Sign the proof
+        var keyId = await GenerateKeyAsync(CryptoKeyType.ECDSA, 256, CryptoKeyUsage.Signing);
+        var signature = await SignDataAsync(keyId, proofBytes);
+        
+        return Convert.ToBase64String(signature);
+    }
+    
+    private async Task<bool> MonitorRelayCompletionAsync(
+        IBlockchainClient client,
+        string bridgeContract,
+        string transferId,
+        string proof)
+    {
+        var startTime = DateTime.UtcNow;
+        var timeout = Configuration?.GetValue("CrossChain:TransferTimeout", TimeSpan.FromHours(2)) ?? TimeSpan.FromHours(2);
+        
+        while (DateTime.UtcNow - startTime < timeout)
+        {
+            try
+            {
+                var relayed = await client.CallContractMethodAsync(
+                    bridgeContract,
+                    "isTransferRelayed",
+                    transferId
+                );
+                
+                if (bool.TryParse(relayed, out var isRelayed) && isRelayed)
+                {
+                    return true;
+                }
+                
+                // Check if we need to submit the proof ourselves
+                var needsRelay = await client.CallContractMethodAsync(
+                    bridgeContract,
+                    "needsRelay",
+                    transferId
+                );
+                
+                if (bool.TryParse(needsRelay, out var shouldRelay) && shouldRelay)
+                {
+                    Logger.LogInformation("Submitting relay proof for transfer {TransferId}", transferId);
+                    await client.InvokeContractMethodAsync(
+                        bridgeContract,
+                        "relayTransfer",
+                        transferId,
+                        proof
+                    );
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Error monitoring relay completion");
+            }
+            
+            await Task.Delay(TimeSpan.FromSeconds(30));
+        }
+        
+        return false;
+    }
+    
+    private async Task<string?> GetTargetTransactionHashAsync(
+        IBlockchainClient client,
+        string bridgeContract,
+        string transferId)
+    {
+        try
+        {
+            var txHash = await client.CallContractMethodAsync(
+                bridgeContract,
+                "getRelayTransactionHash",
+                transferId
+            );
+            
+            return string.IsNullOrEmpty(txHash) ? null : txHash;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Could not get target transaction hash for transfer {TransferId}", transferId);
+            return null;
+        }
     }
 }
 

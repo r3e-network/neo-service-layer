@@ -2,7 +2,7 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for developing the Neo Service Layer with its **20+ services** and **interactive web application**. It covers development environment setup, project structure, coding standards, testing strategies, and contribution guidelines for the complete ecosystem.
+This guide provides comprehensive instructions for developing the Neo Service Layer with its **26 services** and **interactive web application**. It covers development environment setup, project structure, coding standards, testing strategies, and contribution guidelines for the complete ecosystem.
 
 ## 🌐 Web Application Development
 
@@ -12,7 +12,7 @@ The Neo Service Layer includes a full-featured web application built with:
 - **JavaScript ES6+** for client-side functionality
 - **JWT Authentication** with role-based authorization
 - **OpenAPI/Swagger** for API documentation
-- **Real-time Service Integration** with all 20+ services
+- **Real-time Service Integration** with all 26 services
 
 ## Prerequisites
 

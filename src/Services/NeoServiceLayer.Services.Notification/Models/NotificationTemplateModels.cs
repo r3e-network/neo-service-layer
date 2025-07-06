@@ -252,6 +252,138 @@ public class NotificationHistoryResult
 }
 
 /// <summary>
+/// Update template request.
+/// </summary>
+public class UpdateTemplateRequest
+{
+    /// <summary>
+    /// Gets or sets the template name.
+    /// </summary>
+    public string? TemplateName { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template subject.
+    /// </summary>
+    public string? Subject { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template body.
+    /// </summary>
+    public string? Body { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template variables.
+    /// </summary>
+    public string[]? Variables { get; set; }
+
+    /// <summary>
+    /// Gets or sets the supported channels.
+    /// </summary>
+    public NotificationChannel[]? SupportedChannels { get; set; }
+
+    /// <summary>
+    /// Gets or sets the template category.
+    /// </summary>
+    public string? Category { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the template is active.
+    /// </summary>
+    public bool? IsActive { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Get history request.
+/// </summary>
+public class GetHistoryRequest : NotificationHistoryRequest
+{
+}
+
+/// <summary>
+/// Notification history.
+/// </summary>
+public class NotificationHistory : NotificationHistoryResult
+{
+}
+
+/// <summary>
+/// Broadcast request.
+/// </summary>
+public class BroadcastRequest
+{
+    /// <summary>
+    /// Gets or sets the notification content.
+    /// </summary>
+    public string Content { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the subject.
+    /// </summary>
+    public string Subject { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the target channels.
+    /// </summary>
+    public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
+
+    /// <summary>
+    /// Gets or sets the target categories.
+    /// </summary>
+    public string[] Categories { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the priority.
+    /// </summary>
+    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Broadcast result.
+/// </summary>
+public class BroadcastResult
+{
+    /// <summary>
+    /// Gets or sets the broadcast ID.
+    /// </summary>
+    public string BroadcastId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the broadcast was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of notifications sent.
+    /// </summary>
+    public int NotificationsSent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if the broadcast failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the broadcast timestamp.
+    /// </summary>
+    public DateTime BroadcastAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
 /// Notification history entry.
 /// </summary>
 public class NotificationHistoryEntry

@@ -242,6 +242,11 @@ public class CreateBackupRequest
     public bool VerifyAfterCreation { get; set; } = true;
 
     /// <summary>
+    /// Gets or sets the user ID associated with this backup.
+    /// </summary>
+    public string? UserId { get; set; }
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();

@@ -168,6 +168,80 @@ public interface IComplianceService : IEnclaveService, IBlockchainService
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The certification result.</returns>
     Task<CertificationResult> RequestCertificationAsync(RequestCertificationRequest request, BlockchainType blockchainType);
+
+    // AML/KYC Methods
+
+    /// <summary>
+    /// Verifies KYC for a user.
+    /// </summary>
+    /// <param name="request">The KYC verification request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The KYC verification result.</returns>
+    Task<KycVerificationResult> VerifyKycAsync(KycVerificationRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets KYC status for a user.
+    /// </summary>
+    /// <param name="request">The get KYC status request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The KYC status result.</returns>
+    Task<KycStatusResult> GetKycStatusAsync(GetKycStatusRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Screens a transaction for AML compliance.
+    /// </summary>
+    /// <param name="request">The AML screening request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The AML screening result.</returns>
+    Task<AmlScreeningResult> ScreenTransactionAsync(AmlScreeningRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Reports suspicious activity.
+    /// </summary>
+    /// <param name="request">The suspicious activity request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The suspicious activity report result.</returns>
+    Task<SuspiciousActivityResult> ReportSuspiciousActivityAsync(SuspiciousActivityRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets the AML watchlist.
+    /// </summary>
+    /// <param name="request">The get watchlist request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The watchlist result.</returns>
+    Task<WatchlistResult> GetWatchlistAsync(GetWatchlistRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Adds an address to the watchlist.
+    /// </summary>
+    /// <param name="request">The add to watchlist request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The watchlist operation result.</returns>
+    Task<WatchlistOperationResult> AddToWatchlistAsync(AddToWatchlistRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Removes an address from the watchlist.
+    /// </summary>
+    /// <param name="request">The remove from watchlist request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The watchlist operation result.</returns>
+    Task<WatchlistOperationResult> RemoveFromWatchlistAsync(RemoveFromWatchlistRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Assesses risk for an entity or transaction.
+    /// </summary>
+    /// <param name="request">The risk assessment request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The risk assessment result.</returns>
+    Task<Models.RiskAssessmentResult> AssessRiskAsync(Models.RiskAssessmentRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets the risk profile for an entity.
+    /// </summary>
+    /// <param name="request">The get risk profile request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The risk profile result.</returns>
+    Task<RiskProfileResult> GetRiskProfileAsync(GetRiskProfileRequest request, BlockchainType blockchainType);
 }
 
 

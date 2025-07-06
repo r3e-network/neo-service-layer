@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
+using NeoServiceLayer.Infrastructure.Blockchain;
 
 namespace NeoServiceLayer.Infrastructure;
 

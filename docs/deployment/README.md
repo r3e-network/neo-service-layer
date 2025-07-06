@@ -2,12 +2,12 @@
 
 ## Overview
 
-This guide provides comprehensive instructions for deploying the Neo Service Layer with its **20+ services** and **interactive web application**. The deployment includes the complete service ecosystem with Intel SGX + Occlum LibOS enclave support.
+This guide provides comprehensive instructions for deploying the Neo Service Layer with its **26 services** and **interactive web application**. The deployment includes the complete service ecosystem with Intel SGX + Occlum LibOS enclave support.
 
 ## 🌐 Web Application Deployment
 
 The Neo Service Layer includes a **full-featured web application** that provides:
-- **Interactive Service Testing**: All 20+ services accessible via web interface
+- **Interactive Service Testing**: All 26 services accessible via web interface
 - **Real-time API Integration**: Direct communication with actual service endpoints
 - **JWT Authentication**: Secure access with role-based permissions
 - **Professional UI**: Modern, responsive interface with Bootstrap 5

@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Neo Service Layer Web Application exposes a comprehensive RESTful API that provides access to all 20+ services in the ecosystem. This document provides complete API documentation for all endpoints.
+The Neo Service Layer Web Application exposes a comprehensive RESTful API that provides access to all 26 services in the ecosystem. This document provides complete API documentation for all endpoints.
 
 ## 🌐 Base Information
 

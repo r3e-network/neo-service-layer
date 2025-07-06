@@ -2,7 +2,7 @@
 
 ## Overview
 
-The Neo Service Layer provides a comprehensive RESTful API for interacting with all 20+ services. The API is accessible through both programmatic integration and an interactive web application interface.
+The Neo Service Layer provides a comprehensive RESTful API for interacting with all 26 services. The API is accessible through both programmatic integration and an interactive web application interface.
 
 ## 🌐 Interactive Web Application
 

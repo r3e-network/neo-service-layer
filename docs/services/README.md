@@ -1,6 +1,6 @@
 # Neo Service Layer Services
 
-The Neo Service Layer provides **25 production-ready services** organized into seven categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability, with full integration through an interactive web application.
+The Neo Service Layer provides **26 production-ready services** organized into seven categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability, with full integration through an interactive web application.
 
 ## 🌐 Interactive Web Application
 
@@ -97,7 +97,7 @@ Dynamic system configuration management with validation.
 - Environment-specific configuration profiles
 - Audit trail for configuration changes
 
-## 🔒 Security Services (5)
+## 🔒 Security Services (6)
 
 Advanced security and privacy features:
 
@@ -156,11 +156,22 @@ Secure storage and management of sensitive data.
 - Shamir's Secret Sharing for multi-party access
 - HSM integration and dynamic secret generation
 
+### 13. [Social Recovery Service](social-recovery-service.md)
+
+Decentralized account recovery with reputation-based guardian network.
+
+**Key Features:**
+- Reputation-based guardian system with weighted voting
+- Multi-factor authentication support (email, SMS, TOTP, biometric)
+- Trust network for establishing guardian relationships
+- Economic incentives with staking and slashing mechanisms
+- Multiple recovery strategies (standard, emergency, multi-factor)
+
 ## ⚙️ Operations Services (4)
 
 System management and monitoring:
 
-### 12. [Automation Service](automation-service.md)
+### 15. [Automation Service](automation-service.md)
 
 Workflow automation and smart contract scheduling.
 
@@ -171,7 +182,7 @@ Workflow automation and smart contract scheduling.
 - Gas optimization for automated transactions
 - Custom automation logic and workflows
 
-### 13. [Monitoring Service](monitoring-service.md)
+### 16. [Monitoring Service](monitoring-service.md)
 
 System metrics and performance analytics.
 
@@ -182,7 +193,7 @@ System metrics and performance analytics.
 - Service health monitoring and SLA tracking
 - Historical data analysis and reporting
 
-### 14. [Health Service](health-service.md)
+### 17. [Health Service](health-service.md)
 
 System health diagnostics and reporting.
 
@@ -193,7 +204,7 @@ System health diagnostics and reporting.
 - Automated health issue detection
 - Health trend analysis and predictions
 
-### 15. [Notification Service](notification-service.md)
+### 18. [Notification Service](notification-service.md)
 
 Multi-channel notification and alert system.
 
@@ -208,7 +219,7 @@ Multi-channel notification and alert system.
 
 Multi-chain and compute services:
 
-### 16. [Cross-Chain Service](cross-chain-service.md)
+### 19. [Cross-Chain Service](cross-chain-service.md)
 
 Multi-blockchain interoperability and asset transfers.
 
@@ -219,7 +230,7 @@ Multi-blockchain interoperability and asset transfers.
 - Support for multiple blockchain networks
 - Programmable cross-chain transactions
 
-### 17. [Compute Service](compute-service.md)
+### 20. [Compute Service](compute-service.md)
 
 Secure TEE computations with confidential computing.
 
@@ -230,7 +241,7 @@ Secure TEE computations with confidential computing.
 - Verifiable computation results
 - Gas accounting and resource management
 
-### 18. [Event Subscription Service](event-subscription-service.md)
+### 21. [Event Subscription Service](event-subscription-service.md)
 
 Blockchain event monitoring and subscription management.
 
@@ -241,7 +252,7 @@ Blockchain event monitoring and subscription management.
 - Subscription management and lifecycle
 - Event replay and historical data access
 
-### 19. [Smart Contracts Service](smart-contracts-service.md)
+### 22. [Smart Contracts Service](smart-contracts-service.md)
 
 Smart contract deployment and lifecycle management.
 
@@ -256,7 +267,7 @@ Smart contract deployment and lifecycle management.
 
 Machine learning and analytics:
 
-### 20. [Pattern Recognition Service](pattern-recognition-service.md)
+### 23. [Pattern Recognition Service](pattern-recognition-service.md)
 
 AI-powered analysis and fraud detection.
 
@@ -267,7 +278,7 @@ AI-powered analysis and fraud detection.
 - Real-time ML model inference
 - Model verification and explainable AI
 
-### 21. [Prediction Service](prediction-service.md)
+### 24. [Prediction Service](prediction-service.md)
 
 Machine learning forecasting and analytics.
 
@@ -282,7 +293,7 @@ Machine learning forecasting and analytics.
 
 Specialized blockchain features:
 
-### 22. [Fair Ordering Service](fair-ordering-service.md)
+### 25. [Fair Ordering Service](fair-ordering-service.md)
 
 Transaction fairness and MEV protection.
 
@@ -293,7 +304,7 @@ Transaction fairness and MEV protection.
 - Cryptographic fairness guarantees
 - Transaction privacy and batching
 
-### 23. [Attestation Service](attestation-service.md)
+### 26. [Attestation Service](attestation-service.md)
 
 SGX remote attestation and verification.
 
@@ -304,7 +315,7 @@ SGX remote attestation and verification.
 - Certificate chain validation
 - Real-time enclave status monitoring
 
-### 24. [Network Security Service](network-security-service.md)
+### 27. [Network Security Service](network-security-service.md)
 
 Secure enclave network communication.
 
@@ -315,7 +326,7 @@ Secure enclave network communication.
 - Configurable firewall rules
 - DDoS protection and rate limiting
 
-### 25. [Enclave Storage Service](enclave-storage-service.md)
+### 28. [Enclave Storage Service](enclave-storage-service.md)
 
 Hardware-protected persistent storage within SGX.
 
@@ -329,7 +340,7 @@ Hardware-protected persistent storage within SGX.
 ## 📊 Service Status & Integration
 
 ### Current Implementation Status
-- **Total Services**: 25 production-ready services
+- **Total Services**: 28 production-ready services
 - **Web Integration**: All services fully integrated with interactive web application
 - **API Coverage**: Complete RESTful API access for all services
 - **Authentication**: JWT-based security with role-based access control
@@ -338,11 +349,11 @@ Hardware-protected persistent storage within SGX.
 ### Service Categories
 1. **Core Services (4)**: Essential blockchain operations
 2. **Storage & Data (3)**: Data management and persistence
-3. **Security Services (5)**: Advanced security and privacy
+3. **Security Services (6)**: Advanced security and privacy
 4. **Operations (4)**: System management and monitoring
 5. **Infrastructure (4)**: Multi-chain and compute services
 6. **AI Services (2)**: Machine learning and analytics
-7. **Advanced Services (1)**: Specialized blockchain features
+7. **Advanced Services (4)**: Specialized blockchain features
 
 ### Web Application Access
 All services are accessible through:
@@ -403,7 +414,7 @@ The Neo Service Layer is built on a modular service framework that provides comm
 1. **Start the Application**: `dotnet run --project src/Web/NeoServiceLayer.Web`
 2. **Access Web Interface**: `http://localhost:5000/servicepages/servicedemo`
 3. **Get Authentication Token**: Use the demo token endpoint
-4. **Test Services**: Interactive testing of all 25 services
+4. **Test Services**: Interactive testing of all 28 services
 
 ### API Integration
 1. **Review API Documentation**: `http://localhost:5000/swagger`

@@ -102,21 +102,21 @@ public class AttestationController : BaseApiController
     {
         try
         {
-            // In a real implementation, this would query the enclave status
-            await Task.CompletedTask;
-
+            // Get actual enclave status
+            var enclaveInfo = await _attestationService.GetEnclaveInfoAsync();
+            
             var status = new EnclaveStatusResponse
             {
-                EnclaveRunning = true,
-                Measurements = new EnclaveMeasurements
+                EnclaveRunning = enclaveInfo != null,
+                Measurements = enclaveInfo != null ? new EnclaveMeasurements
                 {
-                    MrEnclave = "c29b7e7ba3ac...",
-                    MrSigner = "83d719e77dea...",
-                    IsvProdId = 1,
-                    IsvSvn = 1
-                },
-                AttestationAvailable = true,
-                LastAttestationTime = DateTime.UtcNow.AddHours(-1)
+                    MrEnclave = enclaveInfo.MrEnclave,
+                    MrSigner = enclaveInfo.MrSigner,
+                    IsvProdId = enclaveInfo.IsvProdId,
+                    IsvSvn = enclaveInfo.IsvSvn
+                } : null,
+                AttestationAvailable = enclaveInfo?.AttestationSupported ?? false,
+                LastAttestationTime = enclaveInfo?.LastAttestationTime
             };
 
             return Ok(CreateSuccessResponse(status, "Enclave status retrieved"));

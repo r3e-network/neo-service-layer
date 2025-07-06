@@ -999,3 +999,506 @@ public enum LogLevel
     /// </summary>
     Critical
 }
+
+// AML/KYC Supporting Types
+
+/// <summary>
+/// Identity document information.
+/// </summary>
+public class IdentityDocument
+{
+    /// <summary>
+    /// Gets or sets the document type.
+    /// </summary>
+    public string DocumentType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the document number.
+    /// </summary>
+    public string DocumentNumber { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the issuing country.
+    /// </summary>
+    public string IssuingCountry { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the issue date.
+    /// </summary>
+    public DateTime IssueDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expiry date.
+    /// </summary>
+    public DateTime? ExpiryDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the document data.
+    /// </summary>
+    public string DocumentData { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Personal information for KYC.
+/// </summary>
+public class PersonalInformation
+{
+    /// <summary>
+    /// Gets or sets the first name.
+    /// </summary>
+    public string FirstName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the last name.
+    /// </summary>
+    public string LastName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the date of birth.
+    /// </summary>
+    public DateTime DateOfBirth { get; set; }
+
+    /// <summary>
+    /// Gets or sets the nationality.
+    /// </summary>
+    public string Nationality { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the address.
+    /// </summary>
+    public ComplianceAddress Address { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the phone number.
+    /// </summary>
+    public string? PhoneNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the email address.
+    /// </summary>
+    public string? EmailAddress { get; set; }
+}
+
+/// <summary>
+/// Transaction data for AML screening.
+/// </summary>
+public class TransactionData
+{
+    /// <summary>
+    /// Gets or sets the transaction hash.
+    /// </summary>
+    public string TransactionHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the from address.
+    /// </summary>
+    public string FromAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the to address.
+    /// </summary>
+    public string ToAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the amount.
+    /// </summary>
+    public decimal Amount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the currency.
+    /// </summary>
+    public string Currency { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, string> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Suspicious activity details.
+/// </summary>
+public class SuspiciousActivityDetails
+{
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the indicators.
+    /// </summary>
+    public List<string> Indicators { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the related transactions.
+    /// </summary>
+    public List<string> RelatedTransactions { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the evidence.
+    /// </summary>
+    public Dictionary<string, string> Evidence { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the activity occurred.
+    /// </summary>
+    public DateTime OccurredAt { get; set; }
+}
+
+/// <summary>
+/// Watchlist filter criteria.
+/// </summary>
+public class WatchlistFilter
+{
+    /// <summary>
+    /// Gets or sets the risk level filter.
+    /// </summary>
+    public string? RiskLevel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date added from filter.
+    /// </summary>
+    public DateTime? AddedFrom { get; set; }
+
+    /// <summary>
+    /// Gets or sets the date added to filter.
+    /// </summary>
+    public DateTime? AddedTo { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reason filter.
+    /// </summary>
+    public string? ReasonContains { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to include expired entries.
+    /// </summary>
+    public bool IncludeExpired { get; set; } = false;
+}
+
+/// <summary>
+/// Risk factor information.
+/// </summary>
+public class RiskFactor
+{
+    /// <summary>
+    /// Gets or sets the factor name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the factor value.
+    /// </summary>
+    public string Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the weight.
+    /// </summary>
+    public double Weight { get; set; } = 1.0;
+
+    /// <summary>
+    /// Gets or sets the category.
+    /// </summary>
+    public string Category { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Verification details.
+/// </summary>
+public class VerificationDetails
+{
+    /// <summary>
+    /// Gets or sets the verification method.
+    /// </summary>
+    public string Method { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the verification steps.
+    /// </summary>
+    public List<VerificationStep> Steps { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the confidence score.
+    /// </summary>
+    public double ConfidenceScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional notes.
+    /// </summary>
+    public string? Notes { get; set; }
+}
+
+/// <summary>
+/// Verification step information.
+/// </summary>
+public class VerificationStep
+{
+    /// <summary>
+    /// Gets or sets the step name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the step passed.
+    /// </summary>
+    public bool Passed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the step details.
+    /// </summary>
+    public string? Details { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the step was completed.
+    /// </summary>
+    public DateTime CompletedAt { get; set; }
+}
+
+/// <summary>
+/// KYC history entry.
+/// </summary>
+public class KycHistoryEntry
+{
+    /// <summary>
+    /// Gets or sets the entry ID.
+    /// </summary>
+    public string EntryId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the action.
+    /// </summary>
+    public string Action { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the performed by user.
+    /// </summary>
+    public string? PerformedBy { get; set; }
+}
+
+/// <summary>
+/// Screening result information.
+/// </summary>
+public class ScreeningResult
+{
+    /// <summary>
+    /// Gets or sets the screening type.
+    /// </summary>
+    public string ScreeningType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether a match was found.
+    /// </summary>
+    public bool MatchFound { get; set; }
+
+    /// <summary>
+    /// Gets or sets the match details.
+    /// </summary>
+    public List<string> Matches { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the confidence level.
+    /// </summary>
+    public double Confidence { get; set; }
+}
+
+/// <summary>
+/// Notification details.
+/// </summary>
+public class NotificationDetails
+{
+    /// <summary>
+    /// Gets or sets the notification ID.
+    /// </summary>
+    public string NotificationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the recipients.
+    /// </summary>
+    public List<string> Recipients { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the notification was sent.
+    /// </summary>
+    public DateTime SentAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the notification method.
+    /// </summary>
+    public string Method { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Watchlist entry information.
+/// </summary>
+public class WatchlistEntry
+{
+    /// <summary>
+    /// Gets or sets the address.
+    /// </summary>
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason.
+    /// </summary>
+    public string Reason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets when it was added.
+    /// </summary>
+    public DateTime AddedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets who added it.
+    /// </summary>
+    public string AddedBy { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets when it expires.
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, string> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Risk factor result.
+/// </summary>
+public class RiskFactorResult
+{
+    /// <summary>
+    /// Gets or sets the factor name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the score contribution.
+    /// </summary>
+    public int ScoreContribution { get; set; }
+
+    /// <summary>
+    /// Gets or sets the severity.
+    /// </summary>
+    public string Severity { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the description.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Risk history entry.
+/// </summary>
+public class RiskHistoryEntry
+{
+    /// <summary>
+    /// Gets or sets the timestamp.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk score.
+    /// </summary>
+    public int RiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets what triggered the change.
+    /// </summary>
+    public string Trigger { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Risk analysis details.
+/// </summary>
+public class RiskAnalysis
+{
+    /// <summary>
+    /// Gets or sets the analysis ID.
+    /// </summary>
+    public string AnalysisId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the methodology.
+    /// </summary>
+    public string Methodology { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the data sources.
+    /// </summary>
+    public List<string> DataSources { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the findings.
+    /// </summary>
+    public List<string> Findings { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the analysis was performed.
+    /// </summary>
+    public DateTime PerformedAt { get; set; }
+}
+
+/// <summary>
+/// Compliance address information.
+/// </summary>
+public class ComplianceAddress
+{
+    /// <summary>
+    /// Gets or sets the street address.
+    /// </summary>
+    public string Street { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the city.
+    /// </summary>
+    public string City { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the state or province.
+    /// </summary>
+    public string State { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the postal code.
+    /// </summary>
+    public string PostalCode { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the country.
+    /// </summary>
+    public string Country { get; set; } = string.Empty;
+}

@@ -5,7 +5,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Neo.N3;
 using NeoServiceLayer.Neo.X;
 
-namespace NeoServiceLayer.Infrastructure;
+namespace NeoServiceLayer.Infrastructure.Blockchain;
 
 /// <summary>
 /// Factory for creating blockchain clients.
@@ -66,24 +66,18 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     private IBlockchainClient CreateNeoN3Client()
     {
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<Neo.N3.NeoN3Client>>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<NeoN3Client>>();
+        var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoN3ClientAdapter>>();
         var rpcUrl = _configuration.NeoN3?.RpcUrl ?? "http://localhost:20332";
 
-        // Use reflection to create the client since we can't directly reference the implementation
-        var clientType = Type.GetType("NeoServiceLayer.Neo.N3.NeoN3Client, NeoServiceLayer.Neo.N3");
-        if (clientType == null)
-        {
-            throw new InvalidOperationException("Neo N3 client type not found. Ensure NeoServiceLayer.Neo.N3 assembly is loaded.");
-        }
-
-        var client = Activator.CreateInstance(clientType, logger, httpClient, rpcUrl) as IBlockchainClient;
-        if (client == null)
-        {
-            throw new InvalidOperationException("Failed to create Neo N3 client instance.");
-        }
+        // Create the Neo N3 client directly
+        var neoN3Client = new NeoN3Client(logger, httpClient, rpcUrl);
+        
+        // Wrap it in the adapter
+        var adapter = new NeoN3ClientAdapter(adapterLogger, neoN3Client);
 
         _logger.LogInformation("Created Neo N3 client with RPC URL: {RpcUrl}", rpcUrl);
-        return client;
+        return adapter;
     }
 
     /// <summary>
@@ -93,24 +87,18 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     private IBlockchainClient CreateNeoXClient()
     {
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<Neo.X.NeoXClient>>();
+        var logger = _serviceProvider.GetRequiredService<ILogger<NeoXClient>>();
+        var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoXClientAdapter>>();
         var rpcUrl = _configuration.NeoX?.RpcUrl ?? "http://localhost:8545";
 
-        // Use reflection to create the client since we can't directly reference the implementation
-        var clientType = Type.GetType("NeoServiceLayer.Neo.X.NeoXClient, NeoServiceLayer.Neo.X");
-        if (clientType == null)
-        {
-            throw new InvalidOperationException("Neo X client type not found. Ensure NeoServiceLayer.Neo.X assembly is loaded.");
-        }
-
-        var client = Activator.CreateInstance(clientType, logger, httpClient, rpcUrl) as IBlockchainClient;
-        if (client == null)
-        {
-            throw new InvalidOperationException("Failed to create Neo X client instance.");
-        }
+        // Create the Neo X client directly
+        var neoXClient = new NeoXClient(logger, httpClient, rpcUrl);
+        
+        // Wrap it in the adapter
+        var adapter = new NeoXClientAdapter(adapterLogger, neoXClient);
 
         _logger.LogInformation("Created Neo X client with RPC URL: {RpcUrl}", rpcUrl);
-        return client;
+        return adapter;
     }
 }
 
@@ -234,15 +222,13 @@ public class NeoN3ClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<decimal> EstimateGasAsync(Transaction transaction)
     {
-        // Not implemented in the Neo N3 client
-        return Task.FromResult(10.0m);
+        return _client.EstimateGasAsync(transaction);
     }
 
     /// <inheritdoc/>
     public Task<decimal> GetBalanceAsync(string address, string assetId)
     {
-        // Not implemented in the Neo N3 client
-        return Task.FromResult(100.0m);
+        return _client.GetBalanceAsync(address, assetId);
     }
 
     /// <inheritdoc/>
@@ -260,8 +246,7 @@ public class NeoN3ClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<string> GetBlockHashAsync(long height)
     {
-        // Not implemented in the Neo N3 client
-        return Task.FromResult($"0x{Guid.NewGuid():N}");
+        return _client.GetBlockHashAsync(height);
     }
 
     /// <inheritdoc/>
@@ -273,8 +258,7 @@ public class NeoN3ClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<decimal> GetGasPriceAsync()
     {
-        // Not implemented in the Neo N3 client
-        return Task.FromResult(0.1m);
+        return _client.GetGasPriceAsync();
     }
 
     /// <inheritdoc/>
@@ -375,15 +359,13 @@ public class NeoXClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<decimal> EstimateGasAsync(Transaction transaction)
     {
-        // Not implemented in the NeoX client
-        return Task.FromResult(10.0m);
+        return _client.EstimateGasAsync(transaction);
     }
 
     /// <inheritdoc/>
     public Task<decimal> GetBalanceAsync(string address, string assetId)
     {
-        // Not implemented in the NeoX client
-        return Task.FromResult(100.0m);
+        return _client.GetBalanceAsync(address, assetId);
     }
 
     /// <inheritdoc/>
@@ -401,8 +383,7 @@ public class NeoXClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<string> GetBlockHashAsync(long height)
     {
-        // Not implemented in the NeoX client
-        return Task.FromResult($"0x{Guid.NewGuid():N}");
+        return _client.GetBlockHashAsync(height);
     }
 
     /// <inheritdoc/>
@@ -414,8 +395,7 @@ public class NeoXClientAdapter : IBlockchainClient
     /// <inheritdoc/>
     public Task<decimal> GetGasPriceAsync()
     {
-        // Not implemented in the NeoX client
-        return Task.FromResult(0.1m);
+        return _client.GetGasPriceAsync();
     }
 
     /// <inheritdoc/>

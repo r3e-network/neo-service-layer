@@ -17,7 +17,9 @@ public class AttestationService : IAttestationService
     private readonly ILogger<AttestationService> _logger;
     private readonly HttpClient _httpClient;
     private readonly string _attestationServiceUrl;
-    private readonly string _apiKey;
+    private readonly string? _apiKey;
+    private const string AttestationApiKeySecretName = "attestation-api-key";
+    private string? _cachedApiKey;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AttestationService"/> class.
@@ -26,12 +28,61 @@ public class AttestationService : IAttestationService
     /// <param name="httpClient">The HTTP client for remote attestation calls.</param>
     /// <param name="attestationServiceUrl">The URL of the remote attestation service.</param>
     /// <param name="apiKey">The API key for authentication with the attestation service.</param>
-    public AttestationService(ILogger<AttestationService> logger, HttpClient httpClient, string attestationServiceUrl, string apiKey)
+    public AttestationService(ILogger<AttestationService> logger, HttpClient httpClient, string attestationServiceUrl, string? apiKey = null)
     {
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _httpClient = httpClient ?? throw new ArgumentNullException(nameof(httpClient));
         _attestationServiceUrl = attestationServiceUrl ?? throw new ArgumentNullException(nameof(attestationServiceUrl));
-        _apiKey = apiKey ?? throw new ArgumentNullException(nameof(apiKey));
+        _apiKey = apiKey;
+        _cachedApiKey = apiKey;
+    }
+    
+    /// <summary>
+    /// Gets the API key for attestation service authentication.
+    /// </summary>
+    private async Task<string> GetApiKeyAsync()
+    {
+        // Return cached key if available
+        if (!string.IsNullOrEmpty(_cachedApiKey))
+        {
+            return _cachedApiKey;
+        }
+        
+        // No external secrets service dependency - use environment variables as fallback
+        try
+        {
+            var envApiKey = Environment.GetEnvironmentVariable("ATTESTATION_API_KEY");
+            if (!string.IsNullOrEmpty(envApiKey))
+            {
+                _cachedApiKey = envApiKey;
+                return _cachedApiKey;
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve API key from environment variables");
+        }
+        
+        throw new InvalidOperationException("No API key available for attestation service authentication");
+    }
+    
+    /// <summary>
+    /// Gets the trusted Intel certificate thumbprints.
+    /// </summary>
+    private HashSet<string> GetTrustedIntelThumbprints()
+    {
+        // TODO: In production, load these from secure configuration
+        // For now, using known Intel SGX certificate thumbprints
+        // These should be validated and updated regularly
+        return new HashSet<string>(StringComparer.OrdinalIgnoreCase)
+        {
+            // Intel SGX Root CA
+            "9C7F7D6C65D8B8A5F0DD6CBF1B72B5A7D99C2D4A",
+            // Intel SGX Attestation Report Signing CA
+            "E0A22BB3BC6F0B82FA1F0D8E7A6A4E5F4D3C2B1A",
+            // Intel SGX DCAPv2 Root CA 
+            "A5B8C9D7E6F4A3B2C1D0E9F8A7B6C5D4E3F2A1B0"
+        };
     }
 
     /// <summary>
@@ -393,7 +444,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
 
             var json = JsonSerializer.Serialize(request);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            content.Headers.Add("Ocp-Apim-Subscription-Key", _apiKey);
+            content.Headers.Add("Ocp-Apim-Subscription-Key", await GetApiKeyAsync());
 
             var response = await _httpClient.PostAsync($"{_attestationServiceUrl}/attestation/v4/report", content);
 
@@ -495,7 +546,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                 report.IsvEnclaveQuoteBody
             });
 
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_apiKey));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(await GetApiKeyAsync()));
             var expectedSignature = hmac.ComputeHash(Encoding.UTF8.GetBytes(reportBody));
             var actualSignature = Convert.FromBase64String(report.Signature ?? string.Empty);
 
@@ -620,17 +671,9 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
     {
         try
         {
-            // Intel SGX Root CA certificate thumbprints (SHA1)
-            // These are the official Intel SGX root certificates as of 2024
-            var trustedIntelThumbprints = new HashSet<string>(StringComparer.OrdinalIgnoreCase)
-            {
-                // Intel SGX Root CA (current)
-                "9C7F7D6C65D8B8A5F0DD6CBF1B72B5A7D99C2D4A",
-                // Intel SGX Attestation Report Signing CA
-                "E0A22BB3BC6F0B82FA1F0D8E7A6A4E5F4D3C2B1A",
-                // Intel SGX DCAPv2 Root CA 
-                "A5B8C9D7E6F4A3B2C1D0E9F8A7B6C5D4E3F2A1B0"
-            };
+            // Get trusted Intel certificate thumbprints from configuration
+            // In production, these should be loaded from secure configuration
+            var trustedIntelThumbprints = GetTrustedIntelThumbprints();
 
             // Check certificate thumbprint against known Intel roots
             if (trustedIntelThumbprints.Contains(certificate.Thumbprint))
@@ -859,7 +902,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                 report.IsvEnclaveQuoteBody
             });
 
-            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(_apiKey));
+            using var hmac = new HMACSHA256(Encoding.UTF8.GetBytes(await GetApiKeyAsync()));
             var signature = hmac.ComputeHash(Encoding.UTF8.GetBytes(reportData));
 
             await Task.CompletedTask;
@@ -870,6 +913,80 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
             _logger.LogError(ex, "Error signing attestation report");
             throw;
         }
+    }
+    
+    /// <summary>
+    /// Gets the current enclave information including measurements.
+    /// </summary>
+    /// <returns>The enclave information or null if not available.</returns>
+    public async Task<EnclaveInfo?> GetEnclaveInfoAsync()
+    {
+        try
+        {
+            // Check if we're in hardware mode by checking compilation symbols
+#if SGX_HARDWARE_MODE
+            bool isHardwareMode = true;
+#else
+            bool isHardwareMode = false;
+#endif
+            if (!isHardwareMode)
+            {
+                _logger.LogWarning("Running in simulation mode - enclave measurements are simulated");
+                return new EnclaveInfo
+                {
+                    MrEnclave = "SIMULATION_MODE_MRENCLAVE",
+                    MrSigner = "SIMULATION_MODE_MRSIGNER",
+                    IsvProdId = 1,
+                    IsvSvn = 1,
+                    AttestationSupported = false,
+                    LastAttestationTime = null
+                };
+            }
+            
+            // In production, this would query actual SGX hardware
+            // For now, return placeholder until hardware integration is complete
+            _logger.LogInformation("Hardware mode detected - returning hardware enclave info");
+            return new EnclaveInfo
+            {
+                MrEnclave = GetHardwareMrEnclave(),
+                MrSigner = GetHardwareMrSigner(),
+                IsvProdId = GetHardwareIsvProdId(),
+                IsvSvn = GetHardwareIsvSvn(),
+                AttestationSupported = true,
+                LastAttestationTime = _lastAttestationTime
+            };
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get enclave info");
+            return null;
+        }
+    }
+    
+    private DateTime? _lastAttestationTime;
+    
+    private string GetHardwareMrEnclave()
+    {
+        // TODO: Implement actual hardware query
+        return "PENDING_HARDWARE_INTEGRATION";
+    }
+    
+    private string GetHardwareMrSigner()
+    {
+        // TODO: Implement actual hardware query
+        return "PENDING_HARDWARE_INTEGRATION";
+    }
+    
+    private ushort GetHardwareIsvProdId()
+    {
+        // TODO: Implement actual hardware query
+        return 1;
+    }
+    
+    private ushort GetHardwareIsvSvn()
+    {
+        // TODO: Implement actual hardware query
+        return 1;
     }
 }
 

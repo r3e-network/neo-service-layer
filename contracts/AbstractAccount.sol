@@ -4,6 +4,7 @@ pragma solidity ^0.8.19;
 import "@openzeppelin/contracts/security/ReentrancyGuard.sol";
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "./AbstractAccountFactory.sol";
+import "./SocialRecoveryNetwork.sol";
 
 /**
  * @title AbstractAccount
@@ -17,6 +18,8 @@ contract AbstractAccount is ReentrancyGuard {
     address[] public guardians;
     uint256 public recoveryThreshold;
     AbstractAccountFactory public immutable factory;
+    SocialRecoveryNetwork public socialRecoveryNetwork;
+    bool public useSocialRecoveryNetwork;
     
     struct SessionKey {
         address keyAddress;
@@ -87,6 +90,10 @@ contract AbstractAccount is ReentrancyGuard {
     );
     
     event OwnershipTransferred(address indexed previousOwner, address indexed newOwner);
+    
+    event SocialRecoveryEnabled(address indexed socialRecoveryNetwork);
+    
+    event SocialRecoveryDisabled();
     
     // Modifiers
     modifier onlyOwner() {
@@ -365,4 +372,115 @@ contract AbstractAccount is ReentrancyGuard {
      * @dev Fallback function
      */
     fallback() external payable {}
+    
+    /**
+     * @dev Enables social recovery network for this account
+     * @param _socialRecoveryNetwork The address of the social recovery network contract
+     */
+    function enableSocialRecovery(address _socialRecoveryNetwork) external onlyOwner {
+        require(_socialRecoveryNetwork != address(0), "Invalid social recovery network");
+        socialRecoveryNetwork = SocialRecoveryNetwork(_socialRecoveryNetwork);
+        useSocialRecoveryNetwork = true;
+        
+        emit SocialRecoveryEnabled(_socialRecoveryNetwork);
+    }
+    
+    /**
+     * @dev Disables social recovery network for this account
+     */
+    function disableSocialRecovery() external onlyOwner {
+        useSocialRecoveryNetwork = false;
+        socialRecoveryNetwork = SocialRecoveryNetwork(address(0));
+        
+        emit SocialRecoveryDisabled();
+    }
+    
+    /**
+     * @dev Executes recovery from Social Recovery Network
+     * @param newOwner The new owner address
+     * @param recoveryId The recovery ID from the social recovery network
+     * @return success Whether the recovery was successful
+     */
+    function executeRecovery(address newOwner, bytes32 recoveryId) 
+        external 
+        nonReentrant 
+        returns (bool success) 
+    {
+        require(useSocialRecoveryNetwork, "Social recovery not enabled");
+        require(msg.sender == address(socialRecoveryNetwork), "Only social recovery network");
+        require(newOwner != address(0), "Invalid new owner");
+        require(newOwner != owner, "New owner must be different");
+        
+        // Get recovery info from social recovery network
+        (
+            address accountAddress,
+            address recoveryNewOwner,
+            ,
+            ,
+            ,
+            bool isExecuted
+        ) = socialRecoveryNetwork.getRecoveryInfo(recoveryId);
+        
+        require(accountAddress == address(this), "Recovery not for this account");
+        require(recoveryNewOwner == newOwner, "Owner mismatch");
+        require(!isExecuted, "Recovery already executed");
+        
+        address oldOwner = owner;
+        owner = newOwner;
+        
+        // Revoke all session keys
+        for (uint256 i = 0; i < activeSessionKeys.length; i++) {
+            sessionKeys[activeSessionKeys[i]].isActive = false;
+        }
+        delete activeSessionKeys;
+        
+        emit RecoveryCompleted(recoveryId, oldOwner, newOwner);
+        emit OwnershipTransferred(oldOwner, newOwner);
+        
+        return true;
+    }
+    
+    /**
+     * @dev Configures recovery preferences in the social recovery network
+     * @param preferredStrategy The preferred recovery strategy
+     * @param recoveryThreshold The recovery threshold
+     * @param allowNetworkGuardians Whether to allow network guardians
+     * @param minGuardianReputation Minimum guardian reputation required
+     */
+    function configureRecoveryPreferences(
+        string memory preferredStrategy,
+        uint256 recoveryThreshold,
+        bool allowNetworkGuardians,
+        uint256 minGuardianReputation
+    ) external onlyOwner {
+        require(useSocialRecoveryNetwork, "Social recovery not enabled");
+        
+        socialRecoveryNetwork.configureRecovery(
+            preferredStrategy,
+            recoveryThreshold,
+            allowNetworkGuardians,
+            minGuardianReputation
+        );
+    }
+    
+    /**
+     * @dev Adds a trusted guardian in the social recovery network
+     * @param guardian The guardian address to add
+     */
+    function addTrustedGuardianToNetwork(address guardian) external onlyOwner {
+        require(useSocialRecoveryNetwork, "Social recovery not enabled");
+        
+        socialRecoveryNetwork.addTrustedGuardian(guardian);
+    }
+    
+    /**
+     * @dev Adds multi-factor authentication to the account
+     * @param factorType The type of authentication factor
+     * @param factorHash The hash of the authentication factor
+     */
+    function addAuthFactor(bytes32 factorType, bytes32 factorHash) external onlyOwner {
+        require(useSocialRecoveryNetwork, "Social recovery not enabled");
+        
+        socialRecoveryNetwork.addAuthFactor(factorType, factorHash);
+    }
 }

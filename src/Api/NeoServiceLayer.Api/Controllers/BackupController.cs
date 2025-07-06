@@ -11,8 +11,10 @@ namespace NeoServiceLayer.Api.Controllers;
 /// <summary>
 /// API controller for backup and restore operations.
 /// </summary>
+[ApiController]
 [ApiVersion("1.0")]
 [Route("api/v{version:apiVersion}/[controller]")]
+[Authorize]
 [Tags("Backup")]
 public class BackupController : BaseApiController
 {
@@ -26,7 +28,7 @@ public class BackupController : BaseApiController
     public BackupController(ILogger<BackupController> logger, IBackupService backupService)
         : base(logger)
     {
-        _backupService = backupService;
+        _backupService = backupService ?? throw new ArgumentNullException(nameof(backupService));
     }
 
     /// <summary>
@@ -90,8 +92,34 @@ public class BackupController : BaseApiController
         try
         {
             var userId = GetCurrentUserId();
-            // GetBackupsAsync method doesn't exist - return not implemented
-            return StatusCode(501, CreateResponse<object>(null, "Get backups operation not yet implemented", false));
+            var request = new ListBackupsRequest 
+            { 
+                PageNumber = page, 
+                PageSize = pageSize,
+                FilterCriteria = new BackupFilterCriteria
+                {
+                    UserId = userId,
+                    IncludeExpired = false
+                },
+                SortBy = "CreatedAt",
+                SortDescending = true
+            };
+            
+            var result = await _backupService.ListBackupsAsync(request, BlockchainType.NeoN3);
+            
+            var paginatedResponse = new PaginatedResponse<BackupEntry>
+            {
+                Data = result.Backups,
+                TotalItems = result.TotalCount,
+                Page = result.PageNumber,
+                PageSize = result.PageSize,
+                TotalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize),
+                Success = result.Success,
+                Message = result.Success ? "Backups retrieved successfully" : result.ErrorMessage,
+                Timestamp = DateTime.UtcNow
+            };
+            
+            return Ok(paginatedResponse);
         }
         catch (Exception ex)
         {

@@ -13,6 +13,7 @@ namespace NeoServiceLayer.Web.Controllers;
 public class AIController : BaseApiController
 {
     private readonly IPredictionService _predictionService;
+    private readonly IPatternRecognitionService? _patternRecognitionService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AIController"/> class.
@@ -21,9 +22,11 @@ public class AIController : BaseApiController
     /// <param name="logger">The logger.</param>
     public AIController(
         IPredictionService predictionService,
-        ILogger<AIController> logger) : base(logger)
+        ILogger<AIController> logger,
+        IPatternRecognitionService? patternRecognitionService = null) : base(logger)
     {
         _predictionService = predictionService;
+        _patternRecognitionService = patternRecognitionService;
     }
 
     /// <summary>
@@ -55,16 +58,31 @@ public class AIController : BaseApiController
                 return BadRequest(CreateErrorResponse("Historical data is required"));
             }
 
-            // Create a mock prediction result for production mode
+            // Create prediction request for the service
+            var predictionRequest = new Core.Models.PredictionRequest
+            {
+                ModelId = request.ModelType,
+                InputData = request.HistoricalData.ToDictionary(
+                    data => data.Date.ToString("yyyy-MM-dd"),
+                    data => (object)data.Value),
+                UseEnclave = request.UseEnclave
+            };
+            
+            // Call the actual prediction service
+            var serviceResult = await _predictionService.PredictAsync(
+                predictionRequest, 
+                request.BlockchainType ?? BlockchainType.NeoN3);
+            
+            // Convert service result to API response model
             var result = new PredictionResult
             {
-                PredictedValue = 15.75 + (new Random().NextDouble() * 5 - 2.5),
-                Confidence = 0.87,
-                Trend = "Bullish",
+                PredictedValue = serviceResult.PredictedValue,
+                Confidence = serviceResult.Confidence,
+                Trend = serviceResult.Metadata?.GetValueOrDefault("trend")?.ToString() ?? "Unknown",
                 ModelUsed = request.ModelType,
                 ComputedInEnclave = request.UseEnclave,
-                Timestamp = DateTime.UtcNow,
-                Factors = new[] { "market_sentiment", "volume_analysis", "technical_indicators" }
+                Timestamp = serviceResult.Timestamp,
+                Factors = serviceResult.Metadata?.GetValueOrDefault("factors") as string[] ?? Array.Empty<string>()
             };
 
             Logger.LogInformation("Generated prediction for {AssetSymbol} using {ModelType} for user {UserId}",
@@ -102,21 +120,41 @@ public class AIController : BaseApiController
                 return BadRequest(CreateErrorResponse("Data points are required"));
             }
 
-            // Create a mock pattern analysis result for production mode
-            var result = new PatternAnalysisResult
+            // Use pattern recognition service if available
+            if (_patternRecognitionService != null)
             {
-                DetectedPatterns = new[] { "ascending_triangle", "bullish_divergence" },
-                Confidence = 0.85,
-                AnomaliesDetected = 2,
-                TrendStrength = 0.73,
-                AnalyzedInEnclave = request.UseEnclave,
-                Timestamp = DateTime.UtcNow
-            };
-
-            Logger.LogInformation("Analyzed pattern using {AnalysisType} for user {UserId}",
-                request.AnalysisType, GetCurrentUserId());
-
-            return Ok(CreateResponse(result, "Pattern analysis completed successfully"));
+                var patternRequest = new Core.Models.PatternRequest
+                {
+                    Data = request.DataPoints.Select(p => (double)p.Value).ToArray(),
+                    PatternType = request.PatternType ?? "general",
+                    UseEnclave = request.UseEnclave
+                };
+                
+                var patterns = await _patternRecognitionService.RecognizePatternAsync(
+                    patternRequest,
+                    request.BlockchainType ?? BlockchainType.NeoN3);
+                
+                var result = new PatternAnalysisResult
+                {
+                    DetectedPatterns = patterns.DetectedPatterns.ToArray(),
+                    Confidence = patterns.Confidence,
+                    AnomaliesDetected = patterns.Metadata?.GetValueOrDefault("anomalies") as int? ?? 0,
+                    TrendStrength = patterns.Metadata?.GetValueOrDefault("trendStrength") as double? ?? 0.0,
+                    AnalyzedInEnclave = request.UseEnclave,
+                    Timestamp = patterns.Timestamp
+                };
+                
+                Logger.LogInformation("Analyzed pattern using {AnalysisType} for user {UserId}",
+                    request.PatternType, GetCurrentUserId());
+                
+                return Ok(CreateResponse(result, "Pattern analysis completed"));
+            }
+            else
+            {
+                // Fallback if pattern recognition service is not available
+                Logger.LogWarning("Pattern recognition service not available, returning error");
+                return StatusCode(503, CreateErrorResponse("Pattern recognition service is not available"));
+            }
         }
         catch (Exception ex)
         {
@@ -140,37 +178,62 @@ public class AIController : BaseApiController
     {
         try
         {
-            // Return mock models for production mode
-            var models = new[]
+            // Get registered models from prediction service
+            var registeredModels = new List<AIModelInfo>();
+            
+            // Get models for Neo N3
+            var modelsN3 = await GetModelsForBlockchain(BlockchainType.NeoN3);
+            registeredModels.AddRange(modelsN3);
+            
+            // Get models for Neo X
+            var modelsX = await GetModelsForBlockchain(BlockchainType.NeoX);
+            registeredModels.AddRange(modelsX);
+            
+            if (!registeredModels.Any())
             {
-                new AIModelInfo
-                {
-                    Name = "Neo Price Predictor",
-                    Type = "LinearRegression",
-                    Description = "Predicts NEO token price movements",
-                    Version = "1.0.0",
-                    SupportsEnclave = true,
-                    Accuracy = 0.87,
-                    LastTrained = DateTime.UtcNow.AddDays(-7)
-                },
-                new AIModelInfo
-                {
-                    Name = "Market Sentiment Analyzer",
-                    Type = "NeuralNetwork",
-                    Description = "Analyzes market sentiment from social media",
-                    Version = "2.1.0",
-                    SupportsEnclave = true,
-                    Accuracy = 0.92,
-                    LastTrained = DateTime.UtcNow.AddDays(-3)
-                }
-            };
+                Logger.LogWarning("No AI models found in prediction service");
+                return Ok(CreateResponse(Array.Empty<AIModelInfo>(), "No models available"));
+            }
 
-            return Ok(CreateResponse(models, "Models retrieved successfully"));
+            return Ok(CreateResponse(registeredModels, "Models retrieved successfully"));
         }
         catch (Exception ex)
         {
             return HandleException(ex, "GetAvailableModels");
         }
+    }
+    
+    private async Task<List<AIModelInfo>> GetModelsForBlockchain(BlockchainType blockchainType)
+    {
+        var models = new List<AIModelInfo>();
+        
+        try
+        {
+            // Check if we have the extended prediction service
+            if (_predictionService is AI.Prediction.IPredictionService extendedService)
+            {
+                var serviceModels = await extendedService.GetModelsAsync(blockchainType);
+                foreach (var model in serviceModels)
+                {
+                    models.Add(new AIModelInfo
+                    {
+                        Name = model.Name,
+                        Type = model.ModelType,
+                        Description = model.Description,
+                        Version = model.Version,
+                        SupportsEnclave = model.SupportsEnclave,
+                        Accuracy = model.Metrics?.GetValueOrDefault("accuracy") as double? ?? 0.0,
+                        LastTrained = model.LastUpdated
+                    });
+                }
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get models for blockchain {Blockchain}", blockchainType);
+        }
+        
+        return models;
     }
 }
 

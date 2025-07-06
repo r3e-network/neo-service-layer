@@ -246,9 +246,60 @@ public class ListBackupsRequest
     public SortOrder SortOrder { get; set; } = SortOrder.Descending;
 
     /// <summary>
+    /// Gets or sets the sort by field.
+    /// </summary>
+    public string? SortBy { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to sort in descending order.
+    /// </summary>
+    public bool SortDescending { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the filter criteria.
+    /// </summary>
+    public BackupFilterCriteria? FilterCriteria { get; set; }
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Backup filter criteria.
+/// </summary>
+public class BackupFilterCriteria
+{
+    /// <summary>
+    /// Gets or sets the user ID filter.
+    /// </summary>
+    public string? UserId { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether to include expired backups.
+    /// </summary>
+    public bool IncludeExpired { get; set; }
+
+    /// <summary>
+    /// Gets or sets the status filter.
+    /// </summary>
+    public BackupStatus? Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the backup type filter.
+    /// </summary>
+    public BackupType? BackupType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the minimum size filter in bytes.
+    /// </summary>
+    public long? MinSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum size filter in bytes.
+    /// </summary>
+    public long? MaxSizeBytes { get; set; }
 }
 
 /// <summary>

@@ -11,18 +11,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NeoServiceLayer.AI.PatternRecognition;
-// using NeoServiceLayer.Services.Compute;
-// using NeoServiceLayer.Services.Storage;
-// using NeoServiceLayer.Services.Compliance;
-// using NeoServiceLayer.Services.EventSubscription;
-// using NeoServiceLayer.Services.AbstractAccount;
-// using NeoServiceLayer.Services.Automation;
-// using NeoServiceLayer.Services.CrossChain;
-// using NeoServiceLayer.Services.ProofOfReserve;
-// using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.AI.Prediction;
+using NeoServiceLayer.Api.Extensions;
 using NeoServiceLayer.Api.Filters;
 using NeoServiceLayer.Api.Middleware;
+using NeoServiceLayer.Api.HealthChecks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 // using NeoServiceLayer.Advanced.FairOrdering;
@@ -216,30 +209,27 @@ builder.Services.AddRateLimiter(options =>
     });
 });
 
-// Add Health Checks
+// Add Comprehensive Health Checks
 builder.Services.AddHealthChecks()
-    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy(), tags: new[] { "ready", "live" })
-    .AddCheck("database", () =>
-    {
-        // Check database connectivity
-        // This is a placeholder - in production, use AddNpgsql() or similar
-        return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Database is accessible");
-    }, tags: new[] { "ready", "database" })
-    .AddCheck("redis", () =>
-    {
-        // Check Redis connectivity
-        // This is a placeholder - in production, use AddRedis() or similar
-        return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Redis is accessible");
-    }, tags: new[] { "ready", "cache" })
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is running"), tags: new[] { "ready", "live" })
+    .AddCheck<BlockchainHealthCheck>("blockchain", tags: new[] { "ready", "blockchain" })
+    .AddCheck<StorageHealthCheck>("storage", tags: new[] { "ready", "storage" })
+    .AddCheck<ConfigurationHealthCheck>("configuration", tags: new[] { "ready", "configuration" })
+    .AddCheck<NeoServicesHealthCheck>("neo-services", tags: new[] { "ready", "services" })
+    .AddCheck<ResourceHealthCheck>("resources", tags: new[] { "ready", "resources" })
     .AddCheck("sgx", () =>
     {
         // Check SGX enclave status
         var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE") ?? "Unknown";
-        return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy($"SGX Mode: {sgxMode}");
+        var data = new Dictionary<string, object> { ["SGXMode"] = sgxMode };
+        return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy($"SGX Mode: {sgxMode}", data);
     }, tags: new[] { "ready", "security" });
 
 // Add Neo Service Layer
 builder.Services.AddNeoServiceLayer(builder.Configuration);
+
+// Add all Neo Service Layer services
+builder.Services.AddNeoServiceLayerServices(builder.Configuration);
 
 var app = builder.Build();
 
@@ -268,8 +258,43 @@ app.UseAuthorization();
 
 app.MapControllers().RequireRateLimiting("ApiRateLimit");
 
-// Map Health Checks
-app.MapHealthChecks("/health");
+// Map Health Checks with detailed responses
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            Status = report.Status.ToString(),
+            TotalDuration = report.TotalDuration.TotalMilliseconds,
+            Checks = report.Entries.Select(x => new
+            {
+                Name = x.Key,
+                Status = x.Value.Status.ToString(),
+                Duration = x.Value.Duration.TotalMilliseconds,
+                Description = x.Value.Description,
+                Data = x.Value.Data,
+                Exception = x.Value.Exception?.Message,
+                Tags = x.Value.Tags
+            }),
+            Timestamp = DateTime.UtcNow
+        };
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response, new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+    }
+});
+
+// Map simple health check for load balancers
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
+
+// Map liveness probe
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("live")
+});
 
 // Map info endpoint
 app.MapGet("/api/info", () => new

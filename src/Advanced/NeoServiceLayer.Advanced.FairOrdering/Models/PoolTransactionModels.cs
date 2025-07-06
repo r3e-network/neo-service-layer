@@ -298,4 +298,162 @@ public class ProcessedBatch
     public double MevProtectionEffectiveness { get; set; }
 }
 
+/// <summary>
+/// Represents the result of getting an ordering status for a transaction.
+/// </summary>
+public class OrderingResult
+{
+    /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction hash.
+    /// </summary>
+    public string TransactionHash { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the ordering status.
+    /// </summary>
+    public OrderingStatus Status { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pool ID where the transaction is ordered.
+    /// </summary>
+    public string? PoolId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the batch ID if the transaction is in a batch.
+    /// </summary>
+    public string? BatchId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the position in the ordering queue.
+    /// </summary>
+    public int? QueuePosition { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the transaction was submitted.
+    /// </summary>
+    public DateTime SubmittedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the transaction was ordered.
+    /// </summary>
+    public DateTime? OrderedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the transaction was executed.
+    /// </summary>
+    public DateTime? ExecutedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the fairness score.
+    /// </summary>
+    public double FairnessScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the MEV protection score.
+    /// </summary>
+    public double MevProtectionScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution details.
+    /// </summary>
+    public ExecutionDetails? ExecutionDetails { get; set; }
+
+    /// <summary>
+    /// Gets or sets any errors that occurred.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the blockchain type.
+    /// </summary>
+    public BlockchainType BlockchainType { get; set; }
+}
+
+/// <summary>
+/// Represents execution details for an ordered transaction.
+/// </summary>
+public class ExecutionDetails
+{
+    /// <summary>
+    /// Gets or sets the block number where the transaction was included.
+    /// </summary>
+    public long? BlockNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the position in the block.
+    /// </summary>
+    public int? BlockPosition { get; set; }
+
+    /// <summary>
+    /// Gets or sets the actual gas used.
+    /// </summary>
+    public decimal? GasUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the actual gas price paid.
+    /// </summary>
+    public decimal? ActualGasPrice { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether MEV protection was applied.
+    /// </summary>
+    public bool MevProtectionApplied { get; set; }
+
+    /// <summary>
+    /// Gets or sets the slippage that occurred.
+    /// </summary>
+    public decimal? ActualSlippage { get; set; }
+}
+
+/// <summary>
+/// Represents the ordering status of a transaction.
+/// </summary>
+public enum OrderingStatus
+{
+    /// <summary>
+    /// Transaction is pending in the pool.
+    /// </summary>
+    Pending,
+
+    /// <summary>
+    /// Transaction is being ordered.
+    /// </summary>
+    Ordering,
+
+    /// <summary>
+    /// Transaction has been ordered and is ready for execution.
+    /// </summary>
+    Ordered,
+
+    /// <summary>
+    /// Transaction is being executed.
+    /// </summary>
+    Executing,
+
+    /// <summary>
+    /// Transaction has been executed successfully.
+    /// </summary>
+    Executed,
+
+    /// <summary>
+    /// Transaction failed during execution.
+    /// </summary>
+    Failed,
+
+    /// <summary>
+    /// Transaction was cancelled.
+    /// </summary>
+    Cancelled,
+
+    /// <summary>
+    /// Transaction expired before execution.
+    /// </summary>
+    Expired
+}
+
 

@@ -62,6 +62,7 @@
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SocialRecovery\NeoServiceLayer.Services.SocialRecovery.csproj" />
     <ProjectReference Include="..\..\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
     <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>

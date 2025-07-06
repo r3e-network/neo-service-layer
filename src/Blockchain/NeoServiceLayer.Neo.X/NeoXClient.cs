@@ -1,5 +1,6 @@
 ﻿using System.Collections.Concurrent;
 using System.Numerics;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using Nethereum.Contracts;
@@ -789,6 +790,231 @@ public class NeoXClient : IBlockchainClient, IDisposable
         }
 
         return events;
+    }
+
+    /// <summary>
+    /// Gets the balance of an address for a specific asset.
+    /// </summary>
+    /// <param name="address">The address to query.</param>
+    /// <param name="assetId">The asset ID (token contract address or native asset).</param>
+    /// <returns>The balance.</returns>
+    public async Task<decimal> GetBalanceAsync(string address, string assetId)
+    {
+        try
+        {
+            _logger.LogDebug("Getting balance for address {Address}, asset {AssetId}", address, assetId);
+
+            if (string.IsNullOrEmpty(assetId) || assetId.Equals("GAS", StringComparison.OrdinalIgnoreCase))
+            {
+                // Get native GAS balance
+                var result = await CallRpcMethodAsync<string>("eth_getBalance", address, "latest");
+                if (result.StartsWith("0x"))
+                {
+                    var balance = Convert.ToUInt64(result, 16);
+                    return balance / 1000000000000000000m; // Convert from wei to GAS
+                }
+            }
+            else
+            {
+                // Get ERC-20 token balance
+                var data = "0x70a08231" + address.Substring(2).PadLeft(64, '0'); // balanceOf(address)
+                var callParams = new
+                {
+                    to = assetId,
+                    data = data
+                };
+                
+                var result = await CallRpcMethodAsync<string>("eth_call", callParams, "latest");
+                if (result.StartsWith("0x"))
+                {
+                    var balance = Convert.ToUInt64(result, 16);
+                    
+                    // Get token decimals
+                    var decimalsData = "0x313ce567"; // decimals()
+                    var decimalsCall = new { to = assetId, data = decimalsData };
+                    var decimalsResult = await CallRpcMethodAsync<string>("eth_call", decimalsCall, "latest");
+                    var decimals = decimalsResult.StartsWith("0x") ? Convert.ToInt32(decimalsResult, 16) : 18;
+                    
+                    return balance / (decimal)Math.Pow(10, decimals);
+                }
+            }
+
+            return 0m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get balance for address {Address}, asset {AssetId}", address, assetId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Estimates the gas required for a transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction to estimate.</param>
+    /// <returns>The estimated gas amount.</returns>
+    public async Task<decimal> EstimateGasAsync(NeoServiceLayer.Core.Transaction transaction)
+    {
+        try
+        {
+            _logger.LogDebug("Estimating gas for transaction");
+
+            var txParams = new
+            {
+                from = transaction.From,
+                to = transaction.To,
+                value = "0x" + ((long)(transaction.Value * 1000000000000000000m)).ToString("x"),
+                data = transaction.Data
+            };
+
+            var result = await CallRpcMethodAsync<string>("eth_estimateGas", txParams);
+            if (result.StartsWith("0x"))
+            {
+                var gasUnits = Convert.ToUInt64(result, 16);
+                // Convert gas units to GAS amount (units * gas price)
+                var gasPrice = await GetGasPriceAsync();
+                return gasUnits * gasPrice;
+            }
+
+            // Default gas estimate
+            return 0.001m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to estimate gas for transaction");
+            // Return a default gas estimate on error
+            return 0.001m;
+        }
+    }
+
+    /// <summary>
+    /// Gets the block hash for a given height.
+    /// </summary>
+    /// <param name="height">The block height.</param>
+    /// <returns>The block hash.</returns>
+    public async Task<string> GetBlockHashAsync(long height)
+    {
+        try
+        {
+            _logger.LogDebug("Getting block hash for height {Height}", height);
+
+            var blockNumber = "0x" + height.ToString("x");
+            var result = await CallRpcMethodAsync<JsonElement>("eth_getBlockByNumber", blockNumber, false);
+            
+            if (result.TryGetProperty("hash", out var hash))
+            {
+                return hash.GetString() ?? string.Empty;
+            }
+
+            throw new InvalidOperationException($"Block not found at height {height}");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get block hash for height {Height}", height);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current gas price.
+    /// </summary>
+    /// <returns>The current gas price in GAS per unit.</returns>
+    public async Task<decimal> GetGasPriceAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Getting current gas price");
+
+            var result = await CallRpcMethodAsync<string>("eth_gasPrice");
+            if (result.StartsWith("0x"))
+            {
+                var gasPriceWei = Convert.ToUInt64(result, 16);
+                // Convert from wei to GAS
+                return gasPriceWei / 1000000000000000000m;
+            }
+
+            // Default gas price
+            return 0.000000001m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get gas price");
+            // Return default gas price on error
+            return 0.000000001m;
+        }
+    }
+
+    /// <summary>
+    /// Calls an RPC method and returns the result.
+    /// </summary>
+    /// <typeparam name="T">The type of the result.</typeparam>
+    /// <param name="method">The RPC method name.</param>
+    /// <param name="parameters">The method parameters.</param>
+    /// <returns>The result of the RPC call.</returns>
+    private async Task<T> CallRpcMethodAsync<T>(string method, params object[] parameters)
+    {
+        try
+        {
+            // Use Web3's built-in RPC capabilities
+            if (method == "eth_getBalance")
+            {
+                var balance = await _web3.Eth.GetBalance.SendRequestAsync(parameters[0].ToString());
+                return (T)(object)balance.Value.ToString();
+            }
+            else if (method == "eth_call")
+            {
+                var callInput = new CallInput
+                {
+                    Data = parameters[1].ToString(),
+                    To = parameters[0].ToString()
+                };
+                var result = await _web3.Eth.Transactions.Call.SendRequestAsync(callInput, new HexBigInteger(parameters[2].ToString()));
+                return (T)(object)result;
+            }
+            else if (method == "eth_estimateGas")
+            {
+                // Create transaction input from parameters
+                var txInput = new TransactionInput
+                {
+                    From = parameters[0].ToString(),
+                    To = parameters[1].ToString(),
+                    Value = new HexBigInteger(parameters[2].ToString()),
+                    Data = parameters[3].ToString()
+                };
+                var gasEstimate = await _web3.Eth.TransactionManager.EstimateGasAsync(txInput);
+                return (T)(object)gasEstimate.Value.ToString();
+            }
+            else if (method == "eth_gasPrice")
+            {
+                var gasPrice = await _web3.Eth.GasPrice.SendRequestAsync();
+                return (T)(object)gasPrice.Value.ToString();
+            }
+            else if (method == "eth_getBlockByNumber")
+            {
+                var blockNumber = new HexBigInteger(parameters[0].ToString());
+                var fullTransactionObjects = (bool)parameters[1];
+                var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(blockNumber);
+                
+                if (typeof(T) == typeof(JsonElement))
+                {
+                    var jsonString = JsonSerializer.Serialize(new { 
+                        number = block.Number?.Value.ToString("X"),
+                        hash = block.BlockHash,
+                        timestamp = block.Timestamp?.Value.ToString("X")
+                    });
+                    return (T)(object)JsonSerializer.Deserialize<JsonElement>(jsonString);
+                }
+                return (T)(object)block;
+            }
+            
+            // Fallback for unknown methods
+            throw new NotSupportedException($"RPC method {method} is not supported");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to call RPC method {Method}", method);
+            throw;
+        }
     }
 
     /// <summary>

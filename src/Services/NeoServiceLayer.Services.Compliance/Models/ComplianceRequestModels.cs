@@ -588,3 +588,254 @@ public class RequestCertificationRequest
     /// </summary>
     public ContactInformation? ContactInfo { get; set; }
 }
+
+// AML/KYC Request Models
+
+/// <summary>
+/// Request model for KYC verification.
+/// </summary>
+public class KycVerificationRequest
+{
+    /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the verification type.
+    /// </summary>
+    [Required]
+    public string VerificationType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the identity documents.
+    /// </summary>
+    public List<IdentityDocument> Documents { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the personal information.
+    /// </summary>
+    [Required]
+    public PersonalInformation PersonalInfo { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the verification level requested.
+    /// </summary>
+    public string VerificationLevel { get; set; } = "Standard";
+}
+
+/// <summary>
+/// Request model for getting KYC status.
+/// </summary>
+public class GetKycStatusRequest
+{
+    /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    [Required]
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether to include verification history.
+    /// </summary>
+    public bool IncludeHistory { get; set; } = false;
+}
+
+/// <summary>
+/// Request model for AML screening.
+/// </summary>
+public class AmlScreeningRequest
+{
+    /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    [Required]
+    public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction data.
+    /// </summary>
+    [Required]
+    public TransactionData Transaction { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the screening types to perform.
+    /// </summary>
+    public List<string> ScreeningTypes { get; set; } = new() { "Sanctions", "PEP", "Watchlist" };
+
+    /// <summary>
+    /// Gets or sets the risk threshold.
+    /// </summary>
+    [Range(0, 100)]
+    public int RiskThreshold { get; set; } = 70;
+}
+
+/// <summary>
+/// Request model for reporting suspicious activity.
+/// </summary>
+public class SuspiciousActivityRequest
+{
+    /// <summary>
+    /// Gets or sets the activity type.
+    /// </summary>
+    [Required]
+    public string ActivityType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the related entity.
+    /// </summary>
+    [Required]
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the activity details.
+    /// </summary>
+    [Required]
+    public SuspiciousActivityDetails Details { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the severity level.
+    /// </summary>
+    public string Severity { get; set; } = "Medium";
+
+    /// <summary>
+    /// Gets or sets whether to notify authorities.
+    /// </summary>
+    public bool NotifyAuthorities { get; set; } = false;
+}
+
+/// <summary>
+/// Request model for getting watchlist.
+/// </summary>
+public class GetWatchlistRequest
+{
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    [Range(1, 100)]
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    [Range(1, int.MaxValue)]
+    public int PageNumber { get; set; } = 1;
+
+    /// <summary>
+    /// Gets or sets the filter criteria.
+    /// </summary>
+    public WatchlistFilter? Filter { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sort order.
+    /// </summary>
+    public string SortBy { get; set; } = "DateAdded";
+}
+
+/// <summary>
+/// Request model for adding to watchlist.
+/// </summary>
+public class AddToWatchlistRequest
+{
+    /// <summary>
+    /// Gets or sets the address to add.
+    /// </summary>
+    [Required]
+    [StringLength(42)]
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason for adding.
+    /// </summary>
+    [Required]
+    public string Reason { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = "Medium";
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, string> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the expiration date.
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
+}
+
+/// <summary>
+/// Request model for removing from watchlist.
+/// </summary>
+public class RemoveFromWatchlistRequest
+{
+    /// <summary>
+    /// Gets or sets the address to remove.
+    /// </summary>
+    [Required]
+    [StringLength(42)]
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the reason for removal.
+    /// </summary>
+    public string? RemovalReason { get; set; }
+}
+
+/// <summary>
+/// Request model for risk assessment.
+/// </summary>
+public class RiskAssessmentRequest
+{
+    /// <summary>
+    /// Gets or sets the entity type.
+    /// </summary>
+    [Required]
+    public string EntityType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the entity ID.
+    /// </summary>
+    [Required]
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the assessment factors.
+    /// </summary>
+    public List<RiskFactor> Factors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether to include historical data.
+    /// </summary>
+    public bool IncludeHistory { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the assessment depth.
+    /// </summary>
+    public string AssessmentDepth { get; set; } = "Standard";
+}
+
+/// <summary>
+/// Request model for getting risk profile.
+/// </summary>
+public class GetRiskProfileRequest
+{
+    /// <summary>
+    /// Gets or sets the entity ID.
+    /// </summary>
+    [Required]
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether to include detailed analysis.
+    /// </summary>
+    public bool IncludeDetails { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the time range for historical data.
+    /// </summary>
+    public DateRange? TimeRange { get; set; }
+}

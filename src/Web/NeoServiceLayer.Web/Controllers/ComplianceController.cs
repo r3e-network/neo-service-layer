@@ -221,4 +221,145 @@ public class ComplianceController : ControllerBase
             return StatusCode(500, new { error = ex.Message });
         }
     }
+
+    // AML/KYC Endpoints
+
+    [HttpPost("kyc/verify")]
+    public async Task<IActionResult> VerifyKyc([FromBody] KycVerificationRequest request)
+    {
+        try
+        {
+            var result = await _complianceService.VerifyKycAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error verifying KYC");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("kyc/status/{userId}")]
+    public async Task<IActionResult> GetKycStatus(string userId)
+    {
+        try
+        {
+            var request = new GetKycStatusRequest { UserId = userId };
+            var result = await _complianceService.GetKycStatusAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting KYC status");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("aml/screen")]
+    public async Task<IActionResult> ScreenTransaction([FromBody] AmlScreeningRequest request)
+    {
+        try
+        {
+            var result = await _complianceService.ScreenTransactionAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error screening transaction");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("aml/report")]
+    public async Task<IActionResult> ReportSuspiciousActivity([FromBody] SuspiciousActivityRequest request)
+    {
+        try
+        {
+            var result = await _complianceService.ReportSuspiciousActivityAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error reporting suspicious activity");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("aml/watchlist")]
+    public async Task<IActionResult> GetWatchlist([FromQuery] int pageSize = 20, [FromQuery] int pageNumber = 1)
+    {
+        try
+        {
+            var request = new GetWatchlistRequest { PageSize = pageSize, PageNumber = pageNumber };
+            var result = await _complianceService.GetWatchlistAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting watchlist");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("aml/watchlist")]
+    public async Task<IActionResult> AddToWatchlist([FromBody] AddToWatchlistRequest request)
+    {
+        try
+        {
+            var result = await _complianceService.AddToWatchlistAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error adding to watchlist");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpDelete("aml/watchlist/{address}")]
+    public async Task<IActionResult> RemoveFromWatchlist(string address)
+    {
+        try
+        {
+            var request = new RemoveFromWatchlistRequest { Address = address };
+            var result = await _complianceService.RemoveFromWatchlistAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error removing from watchlist");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpPost("risk/assess")]
+    public async Task<IActionResult> AssessRisk([FromBody] RiskAssessmentRequest request)
+    {
+        try
+        {
+            var result = await _complianceService.AssessRiskAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error assessing risk");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
+
+    [HttpGet("risk/profile/{entityId}")]
+    public async Task<IActionResult> GetRiskProfile(string entityId)
+    {
+        try
+        {
+            var request = new GetRiskProfileRequest { EntityId = entityId };
+            var result = await _complianceService.GetRiskProfileAsync(request, BlockchainType.NeoN3);
+            return Ok(result);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting risk profile");
+            return StatusCode(500, new { error = ex.Message });
+        }
+    }
 }

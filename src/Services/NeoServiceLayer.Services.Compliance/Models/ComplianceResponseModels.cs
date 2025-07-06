@@ -662,3 +662,308 @@ public class ComplianceRule
     /// </summary>
     public string LastModifiedBy { get; set; } = string.Empty;
 }
+
+// AML/KYC Response Models
+
+/// <summary>
+/// Response model for KYC verification.
+/// </summary>
+public class KycVerificationResult
+{
+    /// <summary>
+    /// Gets or sets the verification ID.
+    /// </summary>
+    public string VerificationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the verification was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the KYC status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the verification level achieved.
+    /// </summary>
+    public string VerificationLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the verification details.
+    /// </summary>
+    public VerificationDetails Details { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the error message if failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the verification timestamp.
+    /// </summary>
+    public DateTime VerifiedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Response model for KYC status.
+/// </summary>
+public class KycStatusResult
+{
+    /// <summary>
+    /// Gets or sets the user ID.
+    /// </summary>
+    public string UserId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the current KYC status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the verification level.
+    /// </summary>
+    public string VerificationLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets when the KYC was last updated.
+    /// </summary>
+    public DateTime LastUpdated { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expiration date.
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the verification history.
+    /// </summary>
+    public List<KycHistoryEntry>? History { get; set; }
+}
+
+/// <summary>
+/// Response model for AML screening.
+/// </summary>
+public class AmlScreeningResult
+{
+    /// <summary>
+    /// Gets or sets the screening ID.
+    /// </summary>
+    public string ScreeningId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether screening passed.
+    /// </summary>
+    public bool Passed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk score (0-100).
+    /// </summary>
+    public int RiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the screening results.
+    /// </summary>
+    public List<ScreeningResult> Results { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the screening timestamp.
+    /// </summary>
+    public DateTime ScreenedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Response model for suspicious activity report.
+/// </summary>
+public class SuspiciousActivityResult
+{
+    /// <summary>
+    /// Gets or sets the report ID.
+    /// </summary>
+    public string ReportId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the report was filed successfully.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the report status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the case number if applicable.
+    /// </summary>
+    public string? CaseNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether authorities were notified.
+    /// </summary>
+    public bool AuthoritiesNotified { get; set; }
+
+    /// <summary>
+    /// Gets or sets the notification details.
+    /// </summary>
+    public NotificationDetails? NotificationDetails { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the report was created.
+    /// </summary>
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Response model for watchlist operations.
+/// </summary>
+public class WatchlistResult
+{
+    /// <summary>
+    /// Gets or sets the watchlist entries.
+    /// </summary>
+    public List<WatchlistEntry> Entries { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total count.
+    /// </summary>
+    public int TotalCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page number.
+    /// </summary>
+    public int PageNumber { get; set; }
+
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the operation was successful.
+    /// </summary>
+    public bool Success { get; set; }
+}
+
+/// <summary>
+/// Response model for watchlist operations.
+/// </summary>
+public class WatchlistOperationResult
+{
+    /// <summary>
+    /// Gets or sets whether the operation was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the affected address.
+    /// </summary>
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the operation type.
+    /// </summary>
+    public string Operation { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the message.
+    /// </summary>
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the operation occurred.
+    /// </summary>
+    public DateTime OperationTime { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Response model for risk assessment.
+/// </summary>
+public class RiskAssessmentResult
+{
+    /// <summary>
+    /// Gets or sets the assessment ID.
+    /// </summary>
+    public string AssessmentId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the entity ID.
+    /// </summary>
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the overall risk score (0-100).
+    /// </summary>
+    public int OverallRiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk factors.
+    /// </summary>
+    public List<RiskFactorResult> Factors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets mitigation recommendations.
+    /// </summary>
+    public List<string> Mitigations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the assessment was performed.
+    /// </summary>
+    public DateTime AssessedAt { get; set; } = DateTime.UtcNow;
+}
+
+/// <summary>
+/// Response model for risk profile.
+/// </summary>
+public class RiskProfileResult
+{
+    /// <summary>
+    /// Gets or sets the entity ID.
+    /// </summary>
+    public string EntityId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the current risk score.
+    /// </summary>
+    public int CurrentRiskScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk history.
+    /// </summary>
+    public List<RiskHistoryEntry> History { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the risk categories.
+    /// </summary>
+    public Dictionary<string, int> RiskCategories { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets when the profile was last updated.
+    /// </summary>
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the detailed analysis.
+    /// </summary>
+    public RiskAnalysis? DetailedAnalysis { get; set; }
+}

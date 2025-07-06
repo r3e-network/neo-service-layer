@@ -391,8 +391,12 @@ public class FairOrderingController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            // GetOrderingResultAsync method is not available in service interface - return not implemented
-            return StatusCode(501, CreateResponse<object>(null, "Ordering result retrieval not implemented in current interface"));
+            var result = await _fairOrderingService.GetOrderingResultAsync(transactionId, blockchain);
+
+            Logger.LogInformation("Retrieved ordering result for transaction {TransactionId}: Status={Status}",
+                transactionId, result.Status);
+
+            return Ok(CreateResponse(result, "Ordering result retrieved successfully"));
         }
         catch (ArgumentException ex) when (ex.Message.Contains("not found"))
         {

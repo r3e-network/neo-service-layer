@@ -25,6 +25,9 @@ public static class ServiceRegistrationExtensions
         // Add persistent storage
         services.AddPersistentStorage(configuration);
 
+        // Add blockchain client factory
+        services.AddSingleton<IBlockchainClientFactory, NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
+
         // Core Services (4)
         services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
         services.AddScoped<NeoServiceLayer.Services.Randomness.IRandomnessService, NeoServiceLayer.Services.Randomness.RandomnessService>();
@@ -42,6 +45,8 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
         services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
         services.AddScoped<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService, NeoServiceLayer.Services.SecretsManagement.SecretsManagementService>();
+        services.AddScoped<NeoServiceLayer.Services.Abstractions.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryService>();
+        services.Configure<NeoServiceLayer.Services.SocialRecovery.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery"));
 
         // Operations Services (4)
         services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();

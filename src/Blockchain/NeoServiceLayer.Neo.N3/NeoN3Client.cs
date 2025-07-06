@@ -926,6 +926,132 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     }
 
     /// <summary>
+    /// Gets the balance of an address for a specific asset.
+    /// </summary>
+    /// <param name="address">The address to query.</param>
+    /// <param name="assetId">The asset ID (contract hash).</param>
+    /// <returns>The balance.</returns>
+    public async Task<decimal> GetBalanceAsync(string address, string assetId)
+    {
+        try
+        {
+            _logger.LogDebug("Getting balance for address {Address}, asset {AssetId}", address, assetId);
+
+            // Call NEP-17 balanceOf method
+            var result = await CallContractMethodAsync(assetId, "balanceOf", address);
+            
+            // Parse the result - NEP-17 returns integer balance
+            if (long.TryParse(result, out var balance))
+            {
+                // Get decimals for the asset
+                var decimalsResult = await CallContractMethodAsync(assetId, "decimals");
+                if (int.TryParse(decimalsResult, out var decimals))
+                {
+                    return balance / (decimal)Math.Pow(10, decimals);
+                }
+            }
+
+            return 0m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get balance for address {Address}, asset {AssetId}", address, assetId);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Estimates the gas required for a transaction.
+    /// </summary>
+    /// <param name="transaction">The transaction to estimate.</param>
+    /// <returns>The estimated gas amount.</returns>
+    public async Task<decimal> EstimateGasAsync(Transaction transaction)
+    {
+        try
+        {
+            _logger.LogDebug("Estimating gas for transaction");
+
+            // Use invokefunction to test the transaction and get gas consumption
+            var script = Convert.ToBase64String(Encoding.UTF8.GetBytes(transaction.Data));
+            var result = await CallRpcMethodAsync<JsonElement>("invokescript", script, 
+                new[] { new { account = transaction.From, scopes = "CalledByEntry" } });
+
+            if (result.TryGetProperty("gasconsumed", out var gasConsumed))
+            {
+                if (decimal.TryParse(gasConsumed.GetString(), out var gas))
+                {
+                    // Convert from GAS fraction to GAS (Neo N3 uses 8 decimal places for GAS)
+                    return gas / 100000000m;
+                }
+            }
+
+            // Default gas estimate if unable to calculate
+            return 0.1m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to estimate gas for transaction");
+            // Return a default gas estimate on error
+            return 0.1m;
+        }
+    }
+
+    /// <summary>
+    /// Gets the block hash for a given height.
+    /// </summary>
+    /// <param name="height">The block height.</param>
+    /// <returns>The block hash.</returns>
+    public async Task<string> GetBlockHashAsync(long height)
+    {
+        try
+        {
+            _logger.LogDebug("Getting block hash for height {Height}", height);
+
+            var hash = await CallRpcMethodAsync<string>("getblockhash", height);
+            return hash;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get block hash for height {Height}", height);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets the current gas price.
+    /// </summary>
+    /// <returns>The current gas price.</returns>
+    public async Task<decimal> GetGasPriceAsync()
+    {
+        try
+        {
+            _logger.LogDebug("Getting current gas price");
+
+            // Neo N3 doesn't have dynamic gas pricing like Ethereum
+            // Get the current network fee per byte
+            var result = await CallRpcMethodAsync<JsonElement>("getnetworkfee");
+            
+            if (result.TryGetProperty("feePerByte", out var feePerByte))
+            {
+                if (decimal.TryParse(feePerByte.GetString(), out var fee))
+                {
+                    // Convert from GAS fraction to GAS
+                    return fee / 100000000m;
+                }
+            }
+
+            // Default network fee
+            return 0.00001m;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get gas price");
+            // Return default gas price on error
+            return 0.00001m;
+        }
+    }
+
+    /// <summary>
     /// Disposes the client.
     /// </summary>
     public void Dispose()
