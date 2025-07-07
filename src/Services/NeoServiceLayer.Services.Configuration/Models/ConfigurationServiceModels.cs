@@ -12,6 +12,63 @@ public class ConfigurationStatistics
 }
 
 /// <summary>
+/// Request to update configuration
+/// </summary>
+public class ConfigurationUpdateRequest
+{
+    public string Key { get; set; } = string.Empty;
+    public object Value { get; set; } = new();
+    public string Environment { get; set; } = string.Empty;
+    public string Comment { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Result of configuration update
+/// </summary>
+public class ConfigurationUpdateResult
+{
+    public bool Success { get; set; }
+    public string Key { get; set; } = string.Empty;
+    public string Error { get; set; } = string.Empty;
+    public DateTime UpdatedAt { get; set; }
+}
+
+/// <summary>
+/// Request to restore configuration
+/// </summary>
+public class ConfigurationRestoreRequest
+{
+    public string BackupId { get; set; } = string.Empty;
+    public List<string> SelectedKeys { get; set; } = new();
+    public bool OverwriteExisting { get; set; } = false;
+}
+
+/// <summary>
+/// Result of configuration restore
+/// </summary>
+public class ConfigurationRestoreResult
+{
+    public bool Success { get; set; }
+    public int RestoredCount { get; set; }
+    public List<string> RestoredKeys { get; set; } = new();
+    public string Error { get; set; } = string.Empty;
+    public DateTime RestoredAt { get; set; }
+}
+
+/// <summary>
+/// Result of configuration backup
+/// </summary>
+public class ConfigurationBackupResult
+{
+    public bool Success { get; set; }
+    public string BackupId { get; set; } = string.Empty;
+    public int BackedUpCount { get; set; }
+    public string BackupLocation { get; set; } = string.Empty;
+    public string Error { get; set; } = string.Empty;
+    public DateTime BackedUpAt { get; set; }
+}
+
+/// <summary>
 /// Batch configuration operation result.
 /// </summary>
 public class BatchConfigurationResult

@@ -631,7 +631,7 @@ internal class VerificationRecord
     public Dictionary<string, string> Details { get; set; } = new();
 }
 
-internal enum VerificationResult
+public enum VerificationResult
 {
     Passed,
     Failed,

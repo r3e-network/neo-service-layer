@@ -365,14 +365,9 @@ public class BlockchainClientFactoryTests
         public Task<long> GetBlockHeightAsync() => Task.FromResult(1000000L);
         public Task<Block> GetBlockAsync(long height) => Task.FromResult(new Block());
         public Task<Block> GetBlockAsync(string hash) => Task.FromResult(new Block());
-        public static Task<string> GetBlockHashAsync(long height) => Task.FromResult("0x123");
         public Task<Transaction> GetTransactionAsync(string hash) => Task.FromResult(new Transaction());
         public Task<string> SendTransactionAsync(Transaction transaction) => Task.FromResult("0x123");
-        public static Task<decimal> GetBalanceAsync(string address, string assetId) => Task.FromResult(100m);
-        public static Task<decimal> GetGasPriceAsync() => Task.FromResult(0.001m);
-        public static Task<decimal> EstimateGasAsync(Transaction transaction) => Task.FromResult(0.01m);
-        public static Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("result");
-        public static Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("0x456");
+        public Task<decimal> GetBalanceAsync(string address, string assetId = "") => Task.FromResult(100m);
         public Task<string> SubscribeToBlocksAsync(Func<Block, Task> callback) => Task.FromResult("sub1");
         public Task<bool> UnsubscribeFromBlocksAsync(string subscriptionId) => Task.FromResult(true);
         public Task<string> SubscribeToTransactionsAsync(Func<Transaction, Task> callback) => Task.FromResult("sub2");

@@ -15,9 +15,9 @@ internal class DeliverySimulationResult
 }
 
 /// <summary>
-/// Notification template.
+/// Internal notification template model.
 /// </summary>
-internal class NotificationTemplate
+internal class InternalNotificationTemplate
 {
     public string TemplateId { get; set; } = string.Empty;
     public string TemplateName { get; set; } = string.Empty;
@@ -26,7 +26,10 @@ internal class NotificationTemplate
     public string[] Variables { get; set; } = Array.Empty<string>();
     public NotificationChannel[] SupportedChannels { get; set; } = Array.Empty<NotificationChannel>();
     public string Category { get; set; } = string.Empty;
+    public bool IsActive { get; set; } = true;
+    public string Description { get; set; } = string.Empty;
     public DateTime CreatedAt { get; set; }
+    public DateTime UpdatedAt { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
@@ -63,4 +66,14 @@ public class NotificationSubscription
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the event types to subscribe to.
+    /// </summary>
+    public string[] EventTypes { get; set; } = Array.Empty<string>();
 }

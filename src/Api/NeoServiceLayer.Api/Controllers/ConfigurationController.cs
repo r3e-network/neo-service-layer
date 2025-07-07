@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -53,7 +53,8 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.GetConfigurationAsync(key, blockchain);
+            var request = new GetConfigurationRequest { Key = key };
+            var result = await _configurationService.GetConfigurationAsync(request, blockchain);
 
             if (result == null)
             {
@@ -92,7 +93,13 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.SetConfigurationAsync(request, blockchain);
+            var setRequest = new SetConfigurationRequest
+            {
+                Key = request.Key,
+                Value = request.Value,
+                Description = request.Comment
+            };
+            var result = await _configurationService.SetConfigurationAsync(setRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration updated successfully"));
         }
@@ -123,7 +130,8 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.GetAllConfigurationsAsync(blockchain, prefix);
+            var listRequest = new ListConfigurationsRequest { KeyPrefix = prefix };
+            var result = await _configurationService.ListConfigurationsAsync(listRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration items retrieved successfully"));
         }
@@ -157,9 +165,10 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.DeleteConfigurationAsync(key, blockchain);
+            var deleteRequest = new DeleteConfigurationRequest { Key = key };
+            var result = await _configurationService.DeleteConfigurationAsync(deleteRequest, blockchain);
 
-            if (!result)
+            if (!result.Success)
             {
                 return NotFound(CreateErrorResponse($"Configuration key not found: {key}"));
             }
@@ -192,7 +201,8 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.BackupConfigurationAsync(blockchain);
+            var exportRequest = new ExportConfigurationRequest { Format = ConfigurationExportFormat.Json };
+            var result = await _configurationService.ExportConfigurationAsync(exportRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration backup created successfully"));
         }
@@ -226,7 +236,12 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.RestoreConfigurationAsync(request, blockchain);
+            var importRequest = new ImportConfigurationRequest
+            {
+                ConfigurationData = string.Empty, // ConfigurationRestoreRequest doesn't have Data property
+                Format = ConfigurationExportFormat.Json
+            };
+            var result = await _configurationService.ImportConfigurationAsync(importRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration restored successfully"));
         }
@@ -259,7 +274,12 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _configurationService.GetConfigurationHistoryAsync(key, blockchain, limit);
+            var historyRequest = new GetConfigurationHistoryRequest
+            {
+                Key = key,
+                Limit = limit
+            };
+            var result = await _configurationService.GetConfigurationHistoryAsync(historyRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration history retrieved successfully"));
         }

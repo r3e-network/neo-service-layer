@@ -1,4 +1,5 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
@@ -18,11 +19,11 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     private readonly IOptions<CoreModels.NotificationOptions> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ConcurrentDictionary<string, NotificationSubscription> _subscriptions = new();
-    private readonly ConcurrentQueue<NotificationRequest> _notificationQueue = new();
+    private readonly ConcurrentQueue<SendNotificationRequest> _notificationQueue = new();
     private readonly Timer _processingTimer;
     private readonly SemaphoreSlim _processingLock = new(1, 1);
     private readonly object _cacheLock = new();
-    private readonly ConcurrentDictionary<string, NotificationTemplate> _templates = new();
+    private readonly ConcurrentDictionary<string, InternalNotificationTemplate> _templates = new();
     private readonly ConcurrentDictionary<string, NotificationResult> _notificationHistory = new();
     private readonly ConcurrentDictionary<string, ChannelInfo> _registeredChannels = new();
     private int _totalNotificationsSent;
@@ -138,60 +139,9 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<NotificationResult> SendNotificationAsync(NotificationRequest request, BlockchainType blockchainType)
-    {
-        if (!SupportsBlockchain(blockchainType))
-        {
-            throw new NotSupportedException($"Blockchain type {blockchainType} is not supported.");
-        }
-
-        if (!IsRunning)
-        {
-            throw new InvalidOperationException("Service is not running.");
-        }
-
-        try
-        {
-            Logger.LogDebug("Sending notification to {Recipient} via {Channel}",
-                request.Recipient, request.Channel);
-
-            var result = await ProcessNotificationAsync(request);
-
-            if (result.Success)
-            {
-                Interlocked.Increment(ref _totalNotificationsSent);
-                Logger.LogInformation("Notification sent successfully to {Recipient} via {Channel}",
-                    request.Recipient, request.Channel);
-            }
-            else
-            {
-                Interlocked.Increment(ref _totalNotificationsFailed);
-                Logger.LogWarning("Failed to send notification to {Recipient} via {Channel}: {Error}",
-                    request.Recipient, request.Channel, result.ErrorMessage);
-            }
-
-            return result;
-        }
-        catch (Exception ex)
-        {
-            Interlocked.Increment(ref _totalNotificationsFailed);
-            Logger.LogError(ex, "Error sending notification to {Recipient} via {Channel}",
-                request.Recipient, request.Channel);
-
-            return new NotificationResult
-            {
-                NotificationId = Guid.NewGuid().ToString(),
-                Success = false,
-                Status = DeliveryStatus.Failed,
-                ErrorMessage = ex.Message,
-                SentAt = DateTime.UtcNow
-            };
-        }
-    }
 
     /// <inheritdoc/>
-    public async Task<string> SubscribeAsync(NotificationSubscription subscription, BlockchainType blockchainType)
+    public async Task<Models.SubscriptionResult> SubscribeAsync(SubscribeRequest request, BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -206,27 +156,58 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         try
         {
             var subscriptionId = Guid.NewGuid().ToString();
-            subscription.Id = subscriptionId;
-            subscription.CreatedAt = DateTime.UtcNow;
-            subscription.IsActive = true;
+            var subscription = new NotificationSubscription
+            {
+                Id = subscriptionId,
+                Recipient = request.Recipient,
+                Channel = request.Channel,
+                EventTypes = request.EventTypes,
+                CreatedAt = DateTime.UtcNow,
+                IsActive = true
+            };
 
             _subscriptions[subscriptionId] = subscription;
 
             Logger.LogInformation("Created notification subscription {SubscriptionId} for {Recipient}",
                 subscriptionId, subscription.Recipient);
 
-            return subscriptionId;
+            // Convert internal subscription to public model
+            var publicSubscription = new Models.NotificationSubscription
+            {
+                Id = subscription.Id,
+                Recipient = subscription.Recipient,
+                SubscriberId = subscription.SubscriberId,
+                Channels = subscription.Channels,
+                Categories = subscription.Categories,
+                Channel = subscription.Channel,
+                EventTypes = subscription.EventTypes,
+                IsActive = subscription.IsActive,
+                CreatedAt = subscription.CreatedAt,
+                Metadata = subscription.Metadata
+            };
+
+            return new Models.SubscriptionResult
+            {
+                SubscriptionId = subscriptionId,
+                Success = true,
+                Subscription = publicSubscription,
+                CreatedAt = DateTime.UtcNow
+            };
         }
         catch (Exception ex)
         {
             Logger.LogError(ex, "Error creating notification subscription for {Recipient}",
-                subscription.Recipient);
-            throw;
+                request.Recipient);
+            return new Models.SubscriptionResult
+            {
+                Success = false,
+                ErrorMessage = ex.Message
+            };
         }
     }
 
     /// <inheritdoc/>
-    public Task<bool> UnsubscribeAsync(string subscriptionId, BlockchainType blockchainType)
+    public async Task<UnsubscribeResult> UnsubscribeAsync(UnsubscribeRequest request, BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -240,29 +221,39 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
         try
         {
-            var removed = _subscriptions.TryRemove(subscriptionId, out var subscription);
+            var removed = _subscriptions.TryRemove(request.SubscriptionId, out var subscription);
 
             if (removed && subscription != null)
             {
                 Logger.LogInformation("Removed notification subscription {SubscriptionId} for {Recipient}",
-                    subscriptionId, subscription.Recipient);
+                    request.SubscriptionId, subscription.Recipient);
             }
             else
             {
-                Logger.LogWarning("Subscription {SubscriptionId} not found for removal", subscriptionId);
+                Logger.LogWarning("Subscription {SubscriptionId} not found for removal", request.SubscriptionId);
             }
 
-            return Task.FromResult(removed);
+            return await Task.FromResult(new UnsubscribeResult
+            {
+                Success = removed,
+                SubscriptionId = request.SubscriptionId,
+                UnsubscribedAt = DateTime.UtcNow
+            });
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing notification subscription {SubscriptionId}", subscriptionId);
-            throw;
+            Logger.LogError(ex, "Error removing notification subscription {SubscriptionId}", request.SubscriptionId);
+            return new UnsubscribeResult
+            {
+                Success = false,
+                SubscriptionId = request.SubscriptionId,
+                ErrorMessage = ex.Message
+            };
         }
     }
 
     /// <inheritdoc/>
-    public Task<IEnumerable<NotificationSubscription>> GetSubscriptionsAsync(string recipient, BlockchainType blockchainType)
+    public Task<IEnumerable<NotificationSubscription>> GetSubscriptionsAsync(string address, BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -277,85 +268,21 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
         try
         {
             var subscriptions = _subscriptions.Values
-                .Where(s => s.Recipient.Equals(recipient, StringComparison.OrdinalIgnoreCase) && s.IsActive)
+                .Where(s => s.Recipient.Equals(address, StringComparison.OrdinalIgnoreCase) && s.IsActive)
                 .ToList();
 
             Logger.LogDebug("Found {Count} active subscriptions for {Recipient}",
-                subscriptions.Count, recipient);
+                subscriptions.Count, address);
 
             return Task.FromResult<IEnumerable<NotificationSubscription>>(subscriptions);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error getting subscriptions for {Recipient}", recipient);
+            Logger.LogError(ex, "Error getting subscriptions for {Recipient}", address);
             throw;
         }
     }
 
-    /// <inheritdoc/>
-    public async Task<NotificationResult> SendBulkNotificationAsync(BulkNotificationRequest request, BlockchainType blockchainType)
-    {
-        if (!SupportsBlockchain(blockchainType))
-        {
-            throw new NotSupportedException($"Blockchain type {blockchainType} is not supported.");
-        }
-
-        if (!IsRunning)
-        {
-            throw new InvalidOperationException("Service is not running.");
-        }
-
-        try
-        {
-            Logger.LogInformation("Sending bulk notification to {RecipientCount} recipients",
-                request.Recipients.Count);
-
-            var tasks = new List<Task<NotificationResult>>();
-            var batchId = Guid.NewGuid().ToString();
-
-            foreach (var recipient in request.Recipients)
-            {
-                var individualRequest = new NotificationRequest
-                {
-                    Recipient = recipient,
-                    Subject = request.Subject,
-                    Message = request.Message,
-                    Channel = request.Channel,
-                    Priority = request.Priority,
-                    Metadata = new Dictionary<string, object>(request.Metadata)
-                    {
-                        ["BatchId"] = batchId
-                    }
-                };
-
-                tasks.Add(ProcessNotificationAsync(individualRequest));
-            }
-
-            var results = await Task.WhenAll(tasks);
-            var successCount = results.Count(r => r.Success);
-            var failureCount = results.Length - successCount;
-
-            Interlocked.Add(ref _totalNotificationsSent, successCount);
-            Interlocked.Add(ref _totalNotificationsFailed, failureCount);
-
-            Logger.LogInformation("Bulk notification completed: {SuccessCount} successful, {FailureCount} failed",
-                successCount, failureCount);
-
-            return new NotificationResult
-            {
-                NotificationId = batchId,
-                Success = successCount > 0,
-                Status = successCount == results.Length ? DeliveryStatus.Delivered :
-                         successCount > 0 ? DeliveryStatus.Pending : DeliveryStatus.Failed,
-                SentAt = DateTime.UtcNow
-            };
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error sending bulk notification");
-            throw;
-        }
-    }
 
     /// <inheritdoc/>
     protected override Task<ServiceHealth> OnGetHealthAsync()
@@ -580,7 +507,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <summary>
     /// Processes a notification request.
     /// </summary>
-    private async Task<NotificationResult> ProcessNotificationAsync(NotificationRequest request)
+    private async Task<NotificationResult> ProcessNotificationAsync(SendNotificationRequest request)
     {
         var notificationId = Guid.NewGuid().ToString();
 
@@ -592,17 +519,17 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
                 throw new ArgumentException("Recipient is required");
             }
 
-            if (!_options.Value.EnabledChannels.Contains(request.Channel, StringComparer.OrdinalIgnoreCase))
+            if (!_options.Value.EnabledChannels.Any(c => c.Equals(request.Channel.ToString(), StringComparison.OrdinalIgnoreCase)))
             {
                 throw new NotSupportedException($"Notification channel {request.Channel} is not enabled");
             }
 
             // Process based on channel
-            var result = request.Channel.ToLowerInvariant() switch
+            var result = request.Channel switch
             {
-                "email" => await SendEmailNotificationAsync(request, notificationId),
-                "webhook" => await SendWebhookNotificationAsync(request, notificationId),
-                "sms" => await SendSmsNotificationAsync(request, notificationId),
+                NotificationChannel.Email => await SendEmailNotificationAsync(request, notificationId),
+                NotificationChannel.Webhook => await SendWebhookNotificationAsync(request, notificationId),
+                NotificationChannel.SMS => await SendSmsNotificationAsync(request, notificationId),
                 _ => throw new NotSupportedException($"Notification channel {request.Channel} is not supported")
             };
 
@@ -626,7 +553,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <summary>
     /// Sends email notification.
     /// </summary>
-    private async Task<NotificationResult> SendEmailNotificationAsync(NotificationRequest request, string notificationId)
+    private async Task<NotificationResult> SendEmailNotificationAsync(SendNotificationRequest request, string notificationId)
     {
         try
         {
@@ -657,7 +584,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <summary>
     /// Sends webhook notification.
     /// </summary>
-    private async Task<NotificationResult> SendWebhookNotificationAsync(NotificationRequest request, string notificationId)
+    private async Task<NotificationResult> SendWebhookNotificationAsync(SendNotificationRequest request, string notificationId)
     {
         try
         {
@@ -701,7 +628,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <summary>
     /// Sends SMS notification.
     /// </summary>
-    private async Task<NotificationResult> SendSmsNotificationAsync(NotificationRequest request, string notificationId)
+    private async Task<NotificationResult> SendSmsNotificationAsync(SendNotificationRequest request, string notificationId)
     {
         try
         {
@@ -749,7 +676,15 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
             {
                 try
                 {
-                    await ProcessNotificationAsync(request);
+                    var result = await ProcessNotificationAsync(request);
+                    if (result.Success)
+                    {
+                        Interlocked.Increment(ref _totalNotificationsSent);
+                    }
+                    else
+                    {
+                        Interlocked.Increment(ref _totalNotificationsFailed);
+                    }
                     processedCount++;
                 }
                 catch (Exception ex)

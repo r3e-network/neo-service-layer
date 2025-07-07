@@ -206,16 +206,16 @@ public abstract class TestBase
     /// <summary>
     /// Creates a test blockchain configuration.
     /// </summary>
-    protected static NeoServiceLayer.Infrastructure.BlockchainConfiguration CreateTestBlockchainConfiguration()
+    protected static NeoServiceLayer.Infrastructure.Blockchain.BlockchainConfiguration CreateTestBlockchainConfiguration()
     {
-        return new NeoServiceLayer.Infrastructure.BlockchainConfiguration
+        return new NeoServiceLayer.Infrastructure.Blockchain.BlockchainConfiguration
         {
-            NeoN3 = new NeoN3Configuration
+            NeoN3 = new NeoServiceLayer.Infrastructure.Blockchain.NeoN3Configuration
             {
                 RpcUrl = "http://localhost:20332",
                 NetworkMagic = 860833102
             },
-            NeoX = new NeoXConfiguration
+            NeoX = new NeoServiceLayer.Infrastructure.Blockchain.NeoXConfiguration
             {
                 RpcUrl = "http://localhost:8545",
                 ChainId = 12227332

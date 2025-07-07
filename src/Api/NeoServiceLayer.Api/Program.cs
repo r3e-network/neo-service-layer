@@ -14,8 +14,8 @@ using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.Api.Extensions;
 using NeoServiceLayer.Api.Filters;
-using NeoServiceLayer.Api.Middleware;
 using NeoServiceLayer.Api.HealthChecks;
+using NeoServiceLayer.Api.Middleware;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 // using NeoServiceLayer.Advanced.FairOrdering;
@@ -214,16 +214,20 @@ builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is running"), tags: new[] { "ready", "live" })
     .AddCheck<BlockchainHealthCheck>("blockchain", tags: new[] { "ready", "blockchain" })
     .AddCheck<StorageHealthCheck>("storage", tags: new[] { "ready", "storage" })
-    .AddCheck<ConfigurationHealthCheck>("configuration", tags: new[] { "ready", "configuration" })
-    .AddCheck<NeoServicesHealthCheck>("neo-services", tags: new[] { "ready", "services" })
-    .AddCheck<ResourceHealthCheck>("resources", tags: new[] { "ready", "resources" })
+    // .AddCheck<ConfigurationHealthCheck>("configuration", tags: new[] { "ready", "configuration" })
+    // .AddCheck<NeoServicesHealthCheck>("neo-services", tags: new[] { "ready", "services" })
+    // .AddCheck<ResourceHealthCheck>("resources", tags: new[] { "ready", "resources" })
     .AddCheck("sgx", () =>
     {
         // Check SGX enclave status
         var sgxMode = Environment.GetEnvironmentVariable("SGX_MODE") ?? "Unknown";
         var data = new Dictionary<string, object> { ["SGXMode"] = sgxMode };
         return Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy($"SGX Mode: {sgxMode}", data);
-    }, tags: new[] { "ready", "security" });
+    }, tags: new[] { "ready", "security" })
+    .AddCheck<SecurityServicesHealthCheck>("security-services", tags: new[] { "ready", "security", "services" })
+    .AddCheck<BlockchainServicesHealthCheck>("blockchain-services", tags: new[] { "ready", "blockchain", "services" })
+    .AddCheck<DataServicesHealthCheck>("data-services", tags: new[] { "ready", "data", "services" })
+    .AddCheck<AdvancedServicesHealthCheck>("advanced-services", tags: new[] { "ready", "advanced", "services" });
 
 // Add Neo Service Layer
 builder.Services.AddNeoServiceLayer(builder.Configuration);

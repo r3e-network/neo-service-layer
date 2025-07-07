@@ -152,7 +152,7 @@ builder.Services.AddCors(options =>
     options.AddPolicy("AllowedOrigins", policy =>
     {
         var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-        
+
         if (builder.Environment.IsDevelopment())
         {
             // Allow localhost origins in development
@@ -227,14 +227,14 @@ if (swaggerEnabled)
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer Web API v1");
         c.RoutePrefix = "swagger";
-        
+
         // Require authentication for Swagger UI in production
         if (!app.Environment.IsDevelopment())
         {
             c.ConfigObject.AdditionalItems["persistAuthorization"] = true;
         }
     });
-    
+
     // Protect Swagger endpoints in production
     if (!app.Environment.IsDevelopment())
     {

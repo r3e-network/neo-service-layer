@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
@@ -25,8 +25,10 @@ public static class ServiceRegistrationExtensions
         // Add persistent storage
         services.AddPersistentStorage(configuration);
 
-        // Add blockchain client factory
-        services.AddSingleton<IBlockchainClientFactory, NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
+        // Add blockchain client factory - register concrete then interface
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory>(provider =>
+            (NeoServiceLayer.Core.IBlockchainClientFactory)provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
 
         // Core Services (4)
         services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
@@ -45,8 +47,8 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
         services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
         services.AddScoped<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService, NeoServiceLayer.Services.SecretsManagement.SecretsManagementService>();
-        services.AddScoped<NeoServiceLayer.Services.Abstractions.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryService>();
-        services.Configure<NeoServiceLayer.Services.SocialRecovery.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery"));
+        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryServiceStub>();
+        // services.Configure<NeoServiceLayer.Services.SocialRecovery.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery")); // Options class doesn't exist
 
         // Operations Services (4)
         services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();

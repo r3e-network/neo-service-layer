@@ -475,20 +475,20 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
         try
         {
             using var rsa = RSA.Create();
-            
+
             // Import the public key
             var publicKeyBytes = Convert.FromBase64String(publicKey);
             rsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
-            
+
             // Encrypt the payload
             var payloadBytes = Encoding.UTF8.GetBytes(payload);
             var encryptedBytes = rsa.Encrypt(payloadBytes, RSAEncryptionPadding.OaepSHA256);
-            
+
             return Convert.ToBase64String(encryptedBytes);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to encrypt message");
+            Logger.LogError(ex, "Failed to encrypt message");
             throw new InvalidOperationException("Encryption failed", ex);
         }
     }
@@ -498,20 +498,20 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
         try
         {
             using var rsa = RSA.Create();
-            
+
             // Import the private key
             var privateKeyBytes = Convert.FromBase64String(privateKey);
             rsa.ImportPkcs8PrivateKey(privateKeyBytes, out _);
-            
+
             // Decrypt the payload
             var encryptedBytes = Convert.FromBase64String(encryptedPayload);
             var decryptedBytes = rsa.Decrypt(encryptedBytes, RSAEncryptionPadding.OaepSHA256);
-            
+
             return Encoding.UTF8.GetString(decryptedBytes);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to decrypt message");
+            Logger.LogError(ex, "Failed to decrypt message");
             throw new InvalidOperationException("Decryption failed", ex);
         }
     }

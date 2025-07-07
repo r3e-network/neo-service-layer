@@ -21,7 +21,7 @@ public interface IAttestationService
     /// <param name="userData">User data to include in the attestation report.</param>
     /// <returns>The generated attestation report.</returns>
     Task<AttestationReport> GenerateAttestationReportAsync(byte[] userData);
-    
+
     /// <summary>
     /// Gets the current enclave information including measurements.
     /// </summary>
@@ -38,27 +38,27 @@ public class EnclaveInfo
     /// Gets or sets the MR_ENCLAVE measurement.
     /// </summary>
     public string MrEnclave { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the MR_SIGNER measurement.
     /// </summary>
     public string MrSigner { get; set; } = string.Empty;
-    
+
     /// <summary>
     /// Gets or sets the ISV product ID.
     /// </summary>
     public ushort IsvProdId { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the ISV security version number.
     /// </summary>
     public ushort IsvSvn { get; set; }
-    
+
     /// <summary>
     /// Gets or sets whether attestation is supported.
     /// </summary>
     public bool AttestationSupported { get; set; }
-    
+
     /// <summary>
     /// Gets or sets the last attestation time.
     /// </summary>

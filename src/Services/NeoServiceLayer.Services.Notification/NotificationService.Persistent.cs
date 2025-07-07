@@ -56,7 +56,7 @@ public partial class NotificationService
                 var data = await _persistentStorage.RetrieveAsync(key);
                 if (data != null)
                 {
-                    var template = JsonSerializer.Deserialize<NotificationTemplate>(data);
+                    var template = JsonSerializer.Deserialize<InternalNotificationTemplate>(data);
                     if (template != null)
                     {
                         _templates[template.TemplateId] = template;
@@ -170,7 +170,7 @@ public partial class NotificationService
     /// <summary>
     /// Persists a template to storage.
     /// </summary>
-    private async Task PersistTemplateAsync(NotificationTemplate template)
+    private async Task PersistTemplateAsync(InternalNotificationTemplate template)
     {
         if (_persistentStorage == null) return;
 

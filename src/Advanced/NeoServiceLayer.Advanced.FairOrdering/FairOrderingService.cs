@@ -147,7 +147,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingModels.FairOrderingResult> GetOrderingResultAsync(string transactionId, BlockchainType blockchainType)
+    public async Task<FairOrderingModels.FairOrderingResult> GetFairOrderingResultAsync(string transactionId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(transactionId);
 
@@ -407,7 +407,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             };
         }
 
-        Logger.LogInformation("Retrieved ordering result for transaction {TransactionId}: Status={Status}, Pool={PoolId}", 
+        Logger.LogInformation("Retrieved ordering result for transaction {TransactionId}: Status={Status}, Pool={PoolId}",
             transactionId, result.Status, result.PoolId);
 
         return await Task.FromResult(result);

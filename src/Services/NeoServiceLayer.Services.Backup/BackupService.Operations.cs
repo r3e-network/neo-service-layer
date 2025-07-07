@@ -53,7 +53,7 @@ public partial class BackupService
 
             // Process backup asynchronously
             _ = Task.Run(async () => await ProcessBackupAsync(backupJob, request));
-            
+
             // Wait a moment for the job to start
             await Task.Delay(100);
 
@@ -213,13 +213,13 @@ public partial class BackupService
                 {
                     backups = backups.Where(b => b.UserId == request.FilterCriteria.UserId).ToList();
                 }
-                
+
                 if (!request.FilterCriteria.IncludeExpired)
                 {
                     var expirationTime = DateTime.UtcNow.AddDays(-GetRetentionDays());
                     backups = backups.Where(b => b.CreatedAt > expirationTime).ToList();
                 }
-                
+
                 if (request.FilterCriteria.Status.HasValue)
                 {
                     backups = backups.Where(b => b.Status == request.FilterCriteria.Status.Value).ToList();
@@ -229,7 +229,7 @@ public partial class BackupService
             // Apply sorting
             backups = request.SortBy?.ToLower() switch
             {
-                "createdat" => request.SortDescending 
+                "createdat" => request.SortDescending
                     ? backups.OrderByDescending(b => b.CreatedAt).ToList()
                     : backups.OrderBy(b => b.CreatedAt).ToList(),
                 "size" => request.SortDescending
@@ -676,11 +676,11 @@ public partial class BackupService
         try
         {
             Logger.LogInformation("Processing backup job {BackupId}", job.BackupId);
-            
+
             // Simulate backup processing steps
             await Task.Delay(2000); // Simulate data collection
             job.BackupSizeBytes = Random.Shared.Next(1024 * 1024, 10 * 1024 * 1024); // 1MB - 10MB
-            
+
             if (request.Compression.Enabled)
             {
                 await Task.Delay(1000); // Simulate compression
@@ -690,20 +690,20 @@ public partial class BackupService
             {
                 job.CompressedSizeBytes = job.BackupSizeBytes;
             }
-            
+
             if (request.Encryption.Enabled)
             {
                 await Task.Delay(500); // Simulate encryption
             }
-            
+
             // Update job status
             job.Status = BackupStatus.Completed;
             job.CompletedAt = DateTime.UtcNow;
-            
+
             // Persist backup metadata
             await PersistBackupMetadataAsync(job);
-            
-            Logger.LogInformation("Backup job {BackupId} completed successfully. Size: {Size} bytes", 
+
+            Logger.LogInformation("Backup job {BackupId} completed successfully. Size: {Size} bytes",
                 job.BackupId, job.CompressedSizeBytes);
         }
         catch (Exception ex)

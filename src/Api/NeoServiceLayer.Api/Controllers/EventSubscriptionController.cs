@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -50,7 +50,15 @@ public class EventSubscriptionController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var subscriptionId = await _eventSubscriptionService.SubscribeAsync(request, blockchain);
+            // Convert request to EventSubscription
+            var subscription = new EventSubscription
+            {
+                Name = request.EventType ?? "Event Subscription",
+                EventType = request.EventType ?? string.Empty,
+                CallbackUrl = request.CallbackUrl ?? string.Empty,
+                Enabled = true
+            };
+            var subscriptionId = await _eventSubscriptionService.CreateSubscriptionAsync(subscription, blockchain);
 
             return Ok(CreateResponse(subscriptionId, "Subscription created successfully"));
         }
@@ -80,7 +88,7 @@ public class EventSubscriptionController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _eventSubscriptionService.UnsubscribeAsync(subscriptionId, blockchain);
+            var result = await _eventSubscriptionService.DeleteSubscriptionAsync(subscriptionId, blockchain);
 
             return Ok(CreateResponse(result, "Unsubscribed successfully"));
         }

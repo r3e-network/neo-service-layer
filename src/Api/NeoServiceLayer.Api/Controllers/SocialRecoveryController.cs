@@ -16,7 +16,6 @@ namespace NeoServiceLayer.Api.Controllers
     /// </summary>
     [ApiController]
     [Route("api/[controller]")]
-    [Tags("Social Recovery")]
     [Authorize]
     public class SocialRecoveryController : ControllerBase
     {

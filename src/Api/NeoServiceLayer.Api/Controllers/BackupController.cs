@@ -92,9 +92,9 @@ public class BackupController : BaseApiController
         try
         {
             var userId = GetCurrentUserId();
-            var request = new ListBackupsRequest 
-            { 
-                PageNumber = page, 
+            var request = new ListBackupsRequest
+            {
+                PageNumber = page,
                 PageSize = pageSize,
                 FilterCriteria = new BackupFilterCriteria
                 {
@@ -104,9 +104,9 @@ public class BackupController : BaseApiController
                 SortBy = "CreatedAt",
                 SortDescending = true
             };
-            
+
             var result = await _backupService.ListBackupsAsync(request, BlockchainType.NeoN3);
-            
+
             var paginatedResponse = new PaginatedResponse<BackupEntry>
             {
                 Data = result.Backups,
@@ -118,7 +118,7 @@ public class BackupController : BaseApiController
                 Message = result.Success ? "Backups retrieved successfully" : result.ErrorMessage,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             return Ok(paginatedResponse);
         }
         catch (Exception ex)

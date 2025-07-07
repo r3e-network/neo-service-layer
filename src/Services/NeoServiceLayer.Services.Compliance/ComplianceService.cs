@@ -1084,30 +1084,30 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         try
         {
             var verificationId = Guid.NewGuid().ToString();
-            
+
             // Simulate KYC verification process
             var verificationSteps = new List<VerificationStep>
             {
-                new VerificationStep 
-                { 
-                    Name = "Document Validation", 
-                    Passed = true, 
+                new VerificationStep
+                {
+                    Name = "Document Validation",
+                    Passed = true,
                     Details = "All documents validated successfully",
-                    CompletedAt = DateTime.UtcNow 
+                    CompletedAt = DateTime.UtcNow
                 },
-                new VerificationStep 
-                { 
-                    Name = "Identity Verification", 
-                    Passed = true, 
+                new VerificationStep
+                {
+                    Name = "Identity Verification",
+                    Passed = true,
                     Details = "Identity verified against official records",
-                    CompletedAt = DateTime.UtcNow 
+                    CompletedAt = DateTime.UtcNow
                 },
-                new VerificationStep 
-                { 
-                    Name = "Address Verification", 
-                    Passed = true, 
+                new VerificationStep
+                {
+                    Name = "Address Verification",
+                    Passed = true,
                     Details = "Address verified through utility bills",
-                    CompletedAt = DateTime.UtcNow 
+                    CompletedAt = DateTime.UtcNow
                 }
             };
 
@@ -1187,9 +1187,9 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         {
             var screeningId = Guid.NewGuid().ToString();
             var riskScore = CalculateTransactionRiskScore(request.Transaction);
-            
+
             var screeningResults = new List<ScreeningResult>();
-            
+
             foreach (var screeningType in request.ScreeningTypes)
             {
                 screeningResults.Add(new ScreeningResult
@@ -1208,7 +1208,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 Passed = riskScore < request.RiskThreshold,
                 RiskScore = riskScore,
                 Results = screeningResults,
-                Recommendations = riskScore > 50 
+                Recommendations = riskScore > 50
                     ? new List<string> { "Enhanced due diligence recommended", "Monitor future transactions" }
                     : new List<string> { "Standard monitoring sufficient" },
                 ScreenedAt = DateTime.UtcNow
@@ -1234,7 +1234,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         try
         {
             var reportId = Guid.NewGuid().ToString();
-            
+
             return new SuspiciousActivityResult
             {
                 ReportId = reportId,
@@ -1273,7 +1273,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         {
             // In production, this would query from a database
             var entries = new List<WatchlistEntry>();
-            
+
             return new WatchlistResult
             {
                 Entries = entries,
@@ -1361,7 +1361,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             var assessmentId = Guid.NewGuid().ToString();
             var riskFactors = AnalyzeRiskFactors(request);
             var overallScore = CalculateOverallRiskScore(riskFactors);
-            
+
             return new Models.RiskAssessmentResult
             {
                 AssessmentId = assessmentId,
@@ -1445,11 +1445,11 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
     {
         // Simplified risk calculation
         var score = 0;
-        
+
         // Amount-based risk
         if (transaction.Amount > 10000) score += 20;
         if (transaction.Amount > 50000) score += 30;
-        
+
         // Add more risk factors in production
         return Math.Min(score, 100);
     }
@@ -1457,7 +1457,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
     private List<RiskFactorResult> AnalyzeRiskFactors(Models.RiskAssessmentRequest request)
     {
         var results = new List<RiskFactorResult>();
-        
+
         foreach (var factor in request.Factors)
         {
             results.Add(new RiskFactorResult
@@ -1468,7 +1468,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 Description = $"Risk factor {factor.Name} analyzed"
             });
         }
-        
+
         return results;
     }
 
@@ -1491,7 +1491,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
     private List<string> GenerateMitigations(List<RiskFactorResult> factors)
     {
         var mitigations = new List<string>();
-        
+
         if (factors.Any(f => f.Severity == "High"))
         {
             mitigations.Add("Implement enhanced monitoring");
@@ -1501,7 +1501,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         {
             mitigations.Add("Continue standard monitoring procedures");
         }
-        
+
         return mitigations;
     }
 

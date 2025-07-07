@@ -5,6 +5,20 @@
 /// </summary>
 public class SubscribeRequest : SubscribeToNotificationsRequest
 {
+    /// <summary>
+    /// Gets or sets the recipient address.
+    /// </summary>
+    public string Recipient { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the event types to subscribe to.
+    /// </summary>
+    public string[] EventTypes { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -249,6 +263,16 @@ public class NotificationSubscription
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the event types to subscribe to.
+    /// </summary>
+    public string[] EventTypes { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -311,4 +335,14 @@ public class SubscriptionResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the subscription that was created.
+    /// </summary>
+    public NotificationSubscription? Subscription { get; set; }
+
+    /// <summary>
+    /// Gets or sets the created timestamp.
+    /// </summary>
+    public DateTime CreatedAt { get; set; }
 }

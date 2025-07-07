@@ -7,8 +7,8 @@ using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Configuration.Models;
 using NeoServiceLayer.Services.KeyManagement;
-using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Enclave;
+using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Configuration;
 

@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -75,7 +75,7 @@ public class AbstractAccountController : BaseApiController
     /// <response code="200">Account details retrieved successfully.</response>
     /// <response code="404">Account not found.</response>
     [HttpGet("{blockchainType}/{accountId}")]
-    [ProducesResponseType(typeof(ApiResponse<AbstractAccount>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<AbstractAccountInfo>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> GetAccount(
         [FromRoute] string accountId,
@@ -89,7 +89,7 @@ public class AbstractAccountController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _abstractAccountService.GetAccountAsync(accountId, blockchain);
+            var result = await _abstractAccountService.GetAccountInfoAsync(accountId, blockchain);
 
             if (result == null)
             {
@@ -113,7 +113,7 @@ public class AbstractAccountController : BaseApiController
     /// <response code="200">Operation executed successfully.</response>
     /// <response code="400">Invalid operation parameters.</response>
     [HttpPost("{blockchainType}/execute")]
-    [ProducesResponseType(typeof(ApiResponse<UserOperationResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<TransactionResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     public async Task<IActionResult> ExecuteUserOperation(
         [FromBody] UserOperationRequest request,
@@ -127,10 +127,16 @@ public class AbstractAccountController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _abstractAccountService.ExecuteUserOperationAsync(request, blockchain);
+            var executeRequest = new ExecuteTransactionRequest
+            {
+                AccountId = request.Sender,
+                Data = request.CallData,
+                GasLimit = long.TryParse(request.MaxFeePerGas, out var gasLimit) ? gasLimit : 21000
+            };
+            var result = await _abstractAccountService.ExecuteTransactionAsync(executeRequest, blockchain);
 
-            Logger.LogInformation("Executed user operation {OperationHash} for account {AccountId}",
-                result.OperationHash, request.AccountId);
+            Logger.LogInformation("Executed transaction {TransactionHash} for account {AccountId}",
+                result.TransactionHash, executeRequest.AccountId);
 
             return Ok(CreateResponse(result, "User operation executed successfully"));
         }
@@ -183,7 +189,7 @@ public class AbstractAccountController : BaseApiController
     /// <returns>The operation history.</returns>
     /// <response code="200">Operation history retrieved successfully.</response>
     [HttpGet("{blockchainType}/{accountId}/history")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<UserOperation>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<TransactionHistoryResult>), 200)]
     public async Task<IActionResult> GetOperationHistory(
         [FromRoute] string accountId,
         [FromRoute] string blockchainType,
@@ -197,7 +203,12 @@ public class AbstractAccountController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _abstractAccountService.GetOperationHistoryAsync(accountId, blockchain, limit);
+            var historyRequest = new TransactionHistoryRequest
+            {
+                AccountId = accountId,
+                Limit = limit
+            };
+            var result = await _abstractAccountService.GetTransactionHistoryAsync(historyRequest, blockchain);
 
             return Ok(CreateResponse(result, "Operation history retrieved successfully"));
         }
@@ -207,65 +218,5 @@ public class AbstractAccountController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// Estimates gas for a user operation.
-    /// </summary>
-    /// <param name="request">The operation to estimate.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The gas estimation.</returns>
-    /// <response code="200">Gas estimated successfully.</response>
-    [HttpPost("{blockchainType}/estimate-gas")]
-    [ProducesResponseType(typeof(ApiResponse<GasEstimation>), 200)]
-    public async Task<IActionResult> EstimateGas(
-        [FromBody] UserOperationRequest request,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
 
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _abstractAccountService.EstimateGasAsync(request, blockchain);
-
-            return Ok(CreateResponse(result, "Gas estimated successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "estimating gas");
-        }
-    }
-
-    /// <summary>
-    /// Gets abstract account nonce.
-    /// </summary>
-    /// <param name="accountId">The account ID.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The current nonce.</returns>
-    /// <response code="200">Nonce retrieved successfully.</response>
-    [HttpGet("{blockchainType}/{accountId}/nonce")]
-    [ProducesResponseType(typeof(ApiResponse<ulong>), 200)]
-    public async Task<IActionResult> GetNonce(
-        [FromRoute] string accountId,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _abstractAccountService.GetNonceAsync(accountId, blockchain);
-
-            return Ok(CreateResponse(result, "Nonce retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "retrieving nonce");
-        }
-    }
 }

@@ -18,7 +18,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
     private readonly object _jobsLock = new();
     private readonly Timer _executionTimer;
     private readonly Timer? _cleanupTimer;
-    private readonly IBlockchainClientFactory? _blockchainClientFactory;
+    private readonly Core.IBlockchainClientFactory? _blockchainClientFactory;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutomationService"/> class.
@@ -32,7 +32,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
         IEnclaveManager? enclaveManager = null,
         IServiceConfiguration? configuration = null,
         IPersistentStorageProvider? persistentStorage = null,
-        IBlockchainClientFactory? blockchainClientFactory = null)
+        Core.IBlockchainClientFactory? blockchainClientFactory = null)
         : base("AutomationService", "Smart contract automation and scheduling service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
@@ -537,18 +537,18 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 {
                     // Use real blockchain client
                     var client = _blockchainClientFactory.CreateClient(job.BlockchainType);
-                    
+
                     // Parse parameters
-                    var parameters = job.Parameters.Count > 0 
+                    var parameters = job.Parameters.Count > 0
                         ? job.Parameters.Select(p => (object)p).ToArray()
                         : Array.Empty<object>();
-                    
+
                     // Execute contract method
                     var txHash = await client.InvokeContractMethodAsync(
                         job.TargetContract,
                         job.TargetMethod,
                         parameters);
-                    
+
                     execution.TransactionHash = txHash;
                     return $"Executed {job.TargetMethod} on {job.TargetContract}, tx: {txHash}";
                 }
@@ -1216,7 +1216,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 return "false";
             }
         }
-        
+
         // Fallback to simulation
         await Task.Delay(75);
         return "true";
@@ -1238,7 +1238,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 return 0m;
             }
         }
-        
+
         // Fallback to simulation
         await Task.Delay(50);
         return 1000.5m;
@@ -1264,7 +1264,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 Logger.LogError(ex, "Failed to get price for {Symbol} from {Source}", symbol, source);
             }
         }
-        
+
         // Fallback to simulation
         await Task.Delay(100);
         return 45000.00m;
@@ -1275,7 +1275,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
         // In production, this would query blockchain event logs
         // For now, we'll keep the simulation as event querying requires
         // more complex implementation with event filters
-        
+
         // TODO: Implement actual event log querying when event subscription service is available
         await Task.Delay(50);
         return DateTime.UtcNow.Second % 3 == 0;
@@ -1285,7 +1285,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
     {
         // Custom script evaluation should be done carefully for security
         // In production, this would use a sandboxed script interpreter
-        
+
         // TODO: Implement secure script evaluation with proper sandboxing
         Logger.LogWarning("Custom script evaluation not yet implemented securely");
         await Task.Delay(25);

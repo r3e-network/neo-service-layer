@@ -333,7 +333,7 @@ public class ComplianceController : ControllerBase
     }
 
     [HttpPost("risk/assess")]
-    public async Task<IActionResult> AssessRisk([FromBody] RiskAssessmentRequest request)
+    public async Task<IActionResult> AssessRisk([FromBody] NeoServiceLayer.Services.Compliance.Models.RiskAssessmentRequest request)
     {
         try
         {

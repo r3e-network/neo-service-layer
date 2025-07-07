@@ -64,6 +64,7 @@
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.NetworkSecurity\NeoServiceLayer.Services.NetworkSecurity.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EnclaveStorage\NeoServiceLayer.Services.EnclaveStorage.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SocialRecovery\NeoServiceLayer.Services.SocialRecovery.csproj" />
     
     <!-- AI Services -->
     <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.Prediction\NeoServiceLayer.AI.Prediction.csproj" />

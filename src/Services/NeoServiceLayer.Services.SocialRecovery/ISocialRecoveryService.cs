@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -134,7 +134,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             var successRate = (double)SuccessfulRecoveries / (double)(SuccessfulRecoveries + FailedAttempts);
             var reputationFactor = (double)ReputationScore / 10000.0; // Max reputation
             var stakeFactor = Math.Min((double)StakedAmount / 1000_00000000, 1.0); // Normalize to 1000 GAS
-            
+
             return (successRate * 0.4 + reputationFactor * 0.4 + stakeFactor * 0.2) * 100;
         }
     }
@@ -167,7 +167,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
         public bool IsExecuted { get; set; }
         public bool IsEmergency { get; set; }
         public BigInteger RecoveryFee { get; set; }
-        public double Progress => RequiredConfirmations > 0 ? 
+        public double Progress => RequiredConfirmations > 0 ?
             (double)CurrentConfirmations / (double)RequiredConfirmations * 100 : 0;
     }
 
@@ -201,7 +201,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
         public long SuccessfulRecoveries { get; set; }
         public BigInteger TotalStaked { get; set; }
         public double AverageReputationScore { get; set; }
-        public double SuccessRate => TotalRecoveries > 0 ? 
+        public double SuccessRate => TotalRecoveries > 0 ?
             (double)SuccessfulRecoveries / TotalRecoveries * 100 : 0;
     }
 

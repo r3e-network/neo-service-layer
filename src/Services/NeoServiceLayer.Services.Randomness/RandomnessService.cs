@@ -329,16 +329,16 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             // Create a proof by signing the seed, block hash, and random value
             string dataToSign = $"{seed}:{blockHash}:{randomValue}";
             string signatureHex;
-            
+
             if (_keyManagementService != null)
             {
                 // Use key management service for secure key handling
                 var dataBytes = Encoding.UTF8.GetBytes(dataToSign);
                 var dataHex = Convert.ToHexString(dataBytes);
                 signatureHex = await _keyManagementService.SignDataAsync(
-                    RandomnessSigningKeyId, 
-                    dataHex, 
-                    "ECDSA_SHA256", 
+                    RandomnessSigningKeyId,
+                    dataHex,
+                    "ECDSA_SHA256",
                     blockchainType);
             }
             else
@@ -349,7 +349,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
                 string privateKeyHex = GenerateDevelopmentKey();
                 signatureHex = await _enclaveManager.SignDataAsync(dataToSign, privateKeyHex);
             }
-            
+
             byte[] signature = Convert.FromHexString(signatureHex);
 
             var requestId = Guid.NewGuid().ToString();
@@ -408,21 +408,21 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             string dataToVerify = $"{result.Seed}:{result.BlockHash}:{result.Value}";
             byte[] signature = Convert.FromBase64String(result.Proof);
             bool isValid;
-            
+
             if (_keyManagementService != null)
             {
                 // Use key management service for verification
                 var dataBytes = Encoding.UTF8.GetBytes(dataToVerify);
                 var dataHex = Convert.ToHexString(dataBytes);
                 var signatureHex = Convert.ToHexString(signature);
-                
+
                 // Get the public key for verification
                 var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(RandomnessSigningKeyId, result.BlockchainType);
                 if (keyMetadata?.PublicKeyHex == null)
                 {
                     throw new InvalidOperationException("Public key not available for verification");
                 }
-                
+
                 isValid = await _keyManagementService.VerifySignatureAsync(
                     keyMetadata.PublicKeyHex,
                     dataHex,
@@ -481,7 +481,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     {
         // Start the service
         Logger.LogInformation("Starting Randomness service...");
-        
+
         // Get key management service from service provider
         if (_serviceProvider != null)
         {
@@ -496,7 +496,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
                 Logger.LogWarning("KeyManagementService not available. Will use legacy key management.");
             }
         }
-        
+
         return await Task.FromResult(true);
     }
 
@@ -549,7 +549,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
         }
         base.Dispose(disposing);
     }
-    
+
     private async Task EnsureSigningKeyExistsAsync()
     {
         if (_keyManagementService == null) return;
@@ -572,7 +572,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
                 BlockchainType.NeoN3);
         }
     }
-    
+
     private string GenerateDevelopmentKey()
     {
         // Generate a deterministic development key based on service instance
@@ -582,7 +582,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(instanceId));
         return Convert.ToHexString(hash);
     }
-    
+
     private string GenerateDevelopmentPublicKey()
     {
         // Generate a deterministic development public key

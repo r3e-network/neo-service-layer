@@ -36,7 +36,7 @@ public class AttestationService : IAttestationService
         _apiKey = apiKey;
         _cachedApiKey = apiKey;
     }
-    
+
     /// <summary>
     /// Gets the API key for attestation service authentication.
     /// </summary>
@@ -47,7 +47,7 @@ public class AttestationService : IAttestationService
         {
             return _cachedApiKey;
         }
-        
+
         // No external secrets service dependency - use environment variables as fallback
         try
         {
@@ -62,10 +62,10 @@ public class AttestationService : IAttestationService
         {
             _logger.LogError(ex, "Failed to retrieve API key from environment variables");
         }
-        
+
         throw new InvalidOperationException("No API key available for attestation service authentication");
     }
-    
+
     /// <summary>
     /// Gets the trusted Intel certificate thumbprints.
     /// </summary>
@@ -914,7 +914,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
             throw;
         }
     }
-    
+
     /// <summary>
     /// Gets the current enclave information including measurements.
     /// </summary>
@@ -942,7 +942,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                     LastAttestationTime = null
                 };
             }
-            
+
             // In production, this would query actual SGX hardware
             // For now, return placeholder until hardware integration is complete
             _logger.LogInformation("Hardware mode detected - returning hardware enclave info");
@@ -962,27 +962,27 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
             return null;
         }
     }
-    
+
     private DateTime? _lastAttestationTime;
-    
+
     private string GetHardwareMrEnclave()
     {
         // TODO: Implement actual hardware query
         return "PENDING_HARDWARE_INTEGRATION";
     }
-    
+
     private string GetHardwareMrSigner()
     {
         // TODO: Implement actual hardware query
         return "PENDING_HARDWARE_INTEGRATION";
     }
-    
+
     private ushort GetHardwareIsvProdId()
     {
         // TODO: Implement actual hardware query
         return 1;
     }
-    
+
     private ushort GetHardwareIsvSvn()
     {
         // TODO: Implement actual hardware query

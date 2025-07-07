@@ -105,6 +105,14 @@ public interface IBlockchainClient
     /// <param name="args">The method arguments.</param>
     /// <returns>The transaction hash.</returns>
     Task<string> InvokeContractMethodAsync(string contractAddress, string method, params object[] args);
+
+    /// <summary>
+    /// Gets the balance of an address for a specific asset.
+    /// </summary>
+    /// <param name="address">The address to query.</param>
+    /// <param name="assetId">The asset identifier (optional, defaults to native token).</param>
+    /// <returns>The balance amount.</returns>
+    Task<decimal> GetBalanceAsync(string address, string assetId = "");
 }
 
 /// <summary>
@@ -156,10 +164,10 @@ public class Transaction
     /// <summary>
     /// Gets or sets the transaction sender (alias for Sender).
     /// </summary>
-    public string From 
-    { 
-        get => Sender; 
-        set => Sender = value; 
+    public string From
+    {
+        get => Sender;
+        set => Sender = value;
     }
 
     /// <summary>
@@ -170,10 +178,10 @@ public class Transaction
     /// <summary>
     /// Gets or sets the transaction recipient (alias for Recipient).
     /// </summary>
-    public string To 
-    { 
-        get => Recipient; 
-        set => Recipient = value; 
+    public string To
+    {
+        get => Recipient;
+        set => Recipient = value;
     }
 
     /// <summary>
@@ -200,6 +208,30 @@ public class Transaction
     /// Gets or sets the block height.
     /// </summary>
     public long BlockHeight { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block number (alias for BlockHeight).
+    /// </summary>
+    public long BlockNumber
+    {
+        get => BlockHeight;
+        set => BlockHeight = value;
+    }
+
+    /// <summary>
+    /// Gets or sets the number of confirmations.
+    /// </summary>
+    public int Confirmations { get; set; }
+
+    /// <summary>
+    /// Gets or sets the transaction status.
+    /// </summary>
+    public string Status { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the gas used.
+    /// </summary>
+    public long GasUsed { get; set; }
 }
 
 /// <summary>

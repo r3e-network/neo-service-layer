@@ -62,7 +62,15 @@
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Configuration\NeoServiceLayer.Services.Configuration.csproj" />
     <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SocialRecovery\NeoServiceLayer.Services.SocialRecovery.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.AbstractAccount\NeoServiceLayer.Services.AbstractAccount.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compute\NeoServiceLayer.Services.Compute.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.CrossChain\NeoServiceLayer.Services.CrossChain.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EnclaveStorage\NeoServiceLayer.Services.EnclaveStorage.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EventSubscription\NeoServiceLayer.Services.EventSubscription.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.NetworkSecurity\NeoServiceLayer.Services.NetworkSecurity.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SmartContracts\NeoServiceLayer.Services.SmartContracts.csproj" />
     <ProjectReference Include="..\..\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
     <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>

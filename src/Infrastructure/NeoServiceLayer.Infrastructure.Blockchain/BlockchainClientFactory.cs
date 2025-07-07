@@ -72,7 +72,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
 
         // Create the Neo N3 client directly
         var neoN3Client = new NeoN3Client(logger, httpClient, rpcUrl);
-        
+
         // Wrap it in the adapter
         var adapter = new NeoN3ClientAdapter(adapterLogger, neoN3Client);
 
@@ -93,7 +93,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
 
         // Create the Neo X client directly
         var neoXClient = new NeoXClient(logger, httpClient, rpcUrl);
-        
+
         // Wrap it in the adapter
         var adapter = new NeoXClientAdapter(adapterLogger, neoXClient);
 

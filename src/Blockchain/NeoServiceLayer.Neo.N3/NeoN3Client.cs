@@ -939,7 +939,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
 
             // Call NEP-17 balanceOf method
             var result = await CallContractMethodAsync(assetId, "balanceOf", address);
-            
+
             // Parse the result - NEP-17 returns integer balance
             if (long.TryParse(result, out var balance))
             {
@@ -973,7 +973,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
 
             // Use invokefunction to test the transaction and get gas consumption
             var script = Convert.ToBase64String(Encoding.UTF8.GetBytes(transaction.Data));
-            var result = await CallRpcMethodAsync<JsonElement>("invokescript", script, 
+            var result = await CallRpcMethodAsync<JsonElement>("invokescript", script,
                 new[] { new { account = transaction.From, scopes = "CalledByEntry" } });
 
             if (result.TryGetProperty("gasconsumed", out var gasConsumed))
@@ -1030,7 +1030,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
             // Neo N3 doesn't have dynamic gas pricing like Ethereum
             // Get the current network fee per byte
             var result = await CallRpcMethodAsync<JsonElement>("getnetworkfee");
-            
+
             if (result.TryGetProperty("feePerByte", out var feePerByte))
             {
                 if (decimal.TryParse(feePerByte.GetString(), out var fee))

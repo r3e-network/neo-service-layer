@@ -823,18 +823,18 @@ public class NeoXClient : IBlockchainClient, IDisposable
                     to = assetId,
                     data = data
                 };
-                
+
                 var result = await CallRpcMethodAsync<string>("eth_call", callParams, "latest");
                 if (result.StartsWith("0x"))
                 {
                     var balance = Convert.ToUInt64(result, 16);
-                    
+
                     // Get token decimals
                     var decimalsData = "0x313ce567"; // decimals()
                     var decimalsCall = new { to = assetId, data = decimalsData };
                     var decimalsResult = await CallRpcMethodAsync<string>("eth_call", decimalsCall, "latest");
                     var decimals = decimalsResult.StartsWith("0x") ? Convert.ToInt32(decimalsResult, 16) : 18;
-                    
+
                     return balance / (decimal)Math.Pow(10, decimals);
                 }
             }
@@ -900,7 +900,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
 
             var blockNumber = "0x" + height.ToString("x");
             var result = await CallRpcMethodAsync<JsonElement>("eth_getBlockByNumber", blockNumber, false);
-            
+
             if (result.TryGetProperty("hash", out var hash))
             {
                 return hash.GetString() ?? string.Empty;
@@ -994,10 +994,11 @@ public class NeoXClient : IBlockchainClient, IDisposable
                 var blockNumber = new HexBigInteger(parameters[0].ToString());
                 var fullTransactionObjects = (bool)parameters[1];
                 var block = await _web3.Eth.Blocks.GetBlockWithTransactionsByNumber.SendRequestAsync(blockNumber);
-                
+
                 if (typeof(T) == typeof(JsonElement))
                 {
-                    var jsonString = JsonSerializer.Serialize(new { 
+                    var jsonString = JsonSerializer.Serialize(new
+                    {
                         number = block.Number?.Value.ToString("X"),
                         hash = block.BlockHash,
                         timestamp = block.Timestamp?.Value.ToString("X")
@@ -1006,7 +1007,7 @@ public class NeoXClient : IBlockchainClient, IDisposable
                 }
                 return (T)(object)block;
             }
-            
+
             // Fallback for unknown methods
             throw new NotSupportedException($"RPC method {method} is not supported");
         }

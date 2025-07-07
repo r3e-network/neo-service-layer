@@ -8,6 +8,7 @@ public class CrossChainMessageRequest
     public string Receiver { get; set; } = string.Empty;
     public string Recipient { get; set; } = string.Empty;
     public byte[] Data { get; set; } = Array.Empty<byte>();
+    public string Payload { get; set; } = string.Empty;
     public long Nonce { get; set; }
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
@@ -70,7 +71,11 @@ public class CrossChainOperation
     public OperationType Type { get; set; }
     public BlockchainType SourceChain { get; set; }
     public BlockchainType DestinationChain { get; set; }
+    public BlockchainType TargetChain { get; set; }
+    public string OperationType { get; set; } = string.Empty;
     public decimal Amount { get; set; }
+    public string? Data { get; set; }
+    public string Priority { get; set; } = "Normal";
     public Dictionary<string, object> Parameters { get; set; } = new();
 }
 

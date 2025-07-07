@@ -104,7 +104,7 @@ public class AttestationController : BaseApiController
         {
             // Get actual enclave status
             var enclaveInfo = await _attestationService.GetEnclaveInfoAsync();
-            
+
             var status = new EnclaveStatusResponse
             {
                 EnclaveRunning = enclaveInfo != null,

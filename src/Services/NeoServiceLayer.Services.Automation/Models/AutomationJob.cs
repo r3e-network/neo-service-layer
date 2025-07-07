@@ -1,4 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -28,6 +29,12 @@ public class AutomationJob
     /// </summary>
     [Required]
     public string OwnerAddress { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the blockchain type for this job.
+    /// </summary>
+    [Required]
+    public BlockchainType BlockchainType { get; set; }
 
     /// <summary>
     /// Gets or sets the target contract address.

@@ -225,6 +225,21 @@ public class MockBlockchainClient : IBlockchainClient
         return txHash;
     }
 
+    /// <inheritdoc/>
+    public async Task<decimal> GetBalanceAsync(string address, string assetId = "")
+    {
+        await Task.Delay(10); // Simulate network delay
+
+        // Return a mock balance based on the address
+        var seed = address.GetHashCode();
+        var random = new Random(seed);
+        var balance = (decimal)(random.NextDouble() * 1000000);
+
+        _logger.LogDebug("Getting balance for {Address}, asset: {AssetId}, balance: {Balance}", address, assetId, balance);
+
+        return balance;
+    }
+
     #region Helper Methods
 
     private void InitializeMockData()

@@ -63,16 +63,15 @@ public class AIController : BaseApiController
             {
                 ModelId = request.ModelType,
                 InputData = request.HistoricalData.ToDictionary(
-                    data => data.Date.ToString("yyyy-MM-dd"),
-                    data => (object)data.Value),
-                UseEnclave = request.UseEnclave
+                    data => data.Timestamp.ToString("yyyy-MM-dd"),
+                    data => (object)data.Value)
             };
-            
+
             // Call the actual prediction service
             var serviceResult = await _predictionService.PredictAsync(
-                predictionRequest, 
+                predictionRequest,
                 request.BlockchainType ?? BlockchainType.NeoN3);
-            
+
             // Convert service result to API response model
             var result = new PredictionResult
             {
@@ -123,30 +122,30 @@ public class AIController : BaseApiController
             // Use pattern recognition service if available
             if (_patternRecognitionService != null)
             {
-                var patternRequest = new Core.Models.PatternRequest
+                var anomalyRequest = new Core.AnomalyDetectionRequest
                 {
-                    Data = request.DataPoints.Select(p => (double)p.Value).ToArray(),
-                    PatternType = request.PatternType ?? "general",
-                    UseEnclave = request.UseEnclave
+                    Data = request.DataPoints.Select(p => new double[] { p.Value }).ToArray(),
+                    FeatureNames = new[] { "value" },
+                    ModelId = request.PatternType ?? "general"
                 };
-                
-                var patterns = await _patternRecognitionService.RecognizePatternAsync(
-                    patternRequest,
+
+                var patterns = await _patternRecognitionService.DetectAnomaliesAsync(
+                    anomalyRequest,
                     request.BlockchainType ?? BlockchainType.NeoN3);
-                
+
                 var result = new PatternAnalysisResult
                 {
-                    DetectedPatterns = patterns.DetectedPatterns.ToArray(),
-                    Confidence = patterns.Confidence,
-                    AnomaliesDetected = patterns.Metadata?.GetValueOrDefault("anomalies") as int? ?? 0,
-                    TrendStrength = patterns.Metadata?.GetValueOrDefault("trendStrength") as double? ?? 0.0,
+                    DetectedPatterns = patterns.IsAnomaly.Select((isAnomaly, i) => isAnomaly ? $"Anomaly_{i}" : $"Normal_{i}").ToArray(),
+                    Confidence = patterns.AnomalyScores.DefaultIfEmpty(0.0).Average(),
+                    AnomaliesDetected = patterns.AnomalyCount,
+                    TrendStrength = patterns.AnomalyScores.DefaultIfEmpty(0.0).Max(),
                     AnalyzedInEnclave = request.UseEnclave,
-                    Timestamp = patterns.Timestamp
+                    Timestamp = patterns.DetectionTime
                 };
-                
+
                 Logger.LogInformation("Analyzed pattern using {AnalysisType} for user {UserId}",
                     request.PatternType, GetCurrentUserId());
-                
+
                 return Ok(CreateResponse(result, "Pattern analysis completed"));
             }
             else
@@ -180,15 +179,15 @@ public class AIController : BaseApiController
         {
             // Get registered models from prediction service
             var registeredModels = new List<AIModelInfo>();
-            
+
             // Get models for Neo N3
             var modelsN3 = await GetModelsForBlockchain(BlockchainType.NeoN3);
             registeredModels.AddRange(modelsN3);
-            
+
             // Get models for Neo X
             var modelsX = await GetModelsForBlockchain(BlockchainType.NeoX);
             registeredModels.AddRange(modelsX);
-            
+
             if (!registeredModels.Any())
             {
                 Logger.LogWarning("No AI models found in prediction service");
@@ -202,11 +201,11 @@ public class AIController : BaseApiController
             return HandleException(ex, "GetAvailableModels");
         }
     }
-    
+
     private async Task<List<AIModelInfo>> GetModelsForBlockchain(BlockchainType blockchainType)
     {
         var models = new List<AIModelInfo>();
-        
+
         try
         {
             // Check if we have the extended prediction service
@@ -221,8 +220,8 @@ public class AIController : BaseApiController
                         Type = model.ModelType,
                         Description = model.Description,
                         Version = model.Version,
-                        SupportsEnclave = model.SupportsEnclave,
-                        Accuracy = model.Metrics?.GetValueOrDefault("accuracy") as double? ?? 0.0,
+                        SupportsEnclave = false, // Default value since not available in model
+                        Accuracy = model.TrainingMetrics?.GetValueOrDefault("accuracy") as double? ?? 0.0,
                         LastTrained = model.LastUpdated
                     });
                 }
@@ -232,7 +231,7 @@ public class AIController : BaseApiController
         {
             Logger.LogError(ex, "Failed to get models for blockchain {Blockchain}", blockchainType);
         }
-        
+
         return models;
     }
 }
@@ -273,6 +272,11 @@ public class PredictionRequest
     /// Gets or sets whether to use production mode.
     /// </summary>
     public bool ProductionMode { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the blockchain type to use for prediction.
+    /// </summary>
+    public BlockchainType? BlockchainType { get; set; }
 }
 
 /// <summary>
@@ -304,6 +308,16 @@ public class PatternAnalysisRequest
     /// Gets or sets whether to use SGX enclave for secure computation.
     /// </summary>
     public bool UseEnclave { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the blockchain type to use for pattern analysis.
+    /// </summary>
+    public BlockchainType? BlockchainType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the pattern type for analysis.
+    /// </summary>
+    public string? PatternType { get; set; }
 }
 
 /// <summary>

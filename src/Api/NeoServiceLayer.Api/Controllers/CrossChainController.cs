@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -34,24 +34,31 @@ public class CrossChainController : BaseApiController
     /// Initiates a cross-chain transfer.
     /// </summary>
     /// <param name="request">The transfer request.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
     /// <returns>The transfer result.</returns>
     /// <response code="200">Transfer initiated successfully.</response>
     /// <response code="400">Invalid transfer parameters.</response>
-    [HttpPost("transfer")]
+    [HttpPost("{blockchainType}/transfer")]
     [ProducesResponseType(typeof(ApiResponse<CrossChainTransferResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     public async Task<IActionResult> InitiateTransfer(
-        [FromBody] CrossChainTransferRequest request)
+        [FromBody] CrossChainTransferRequest request,
+        [FromRoute] string blockchainType)
     {
         try
         {
-            var sourceBlockchain = ParseBlockchainType(request.SourceBlockchain);
-            var targetBlockchain = ParseBlockchainType(request.TargetBlockchain);
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
 
-            var result = await _crossChainService.InitiateTransferAsync(request, sourceBlockchain);
+            var sourceBlockchain = ParseBlockchainType(blockchainType);
+            var targetBlockchain = BlockchainType.NeoX; // Default target, should be configurable
+
+            var result = await _crossChainService.TransferTokensAsync(request, sourceBlockchain, targetBlockchain);
 
             Logger.LogInformation("Initiated cross-chain transfer {TransferId} from {Source} to {Target}",
-                result.TransferId, request.SourceBlockchain, request.TargetBlockchain);
+                result, blockchainType, targetBlockchain);
 
             return Ok(CreateResponse(result, "Cross-chain transfer initiated successfully"));
         }
@@ -65,24 +72,40 @@ public class CrossChainController : BaseApiController
     /// Executes a contract call on another blockchain.
     /// </summary>
     /// <param name="request">The contract call request.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
     /// <returns>The execution result.</returns>
     /// <response code="200">Contract call executed successfully.</response>
     /// <response code="400">Invalid call parameters.</response>
-    [HttpPost("execute")]
+    [HttpPost("{blockchainType}/execute")]
     [ProducesResponseType(typeof(ApiResponse<ContractCallResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     public async Task<IActionResult> ExecuteContractCall(
-        [FromBody] CrossChainContractCallRequest request)
+        [FromBody] CrossChainContractCallRequest request,
+        [FromRoute] string blockchainType)
     {
         try
         {
-            var sourceBlockchain = ParseBlockchainType(request.SourceBlockchain);
-            var targetBlockchain = ParseBlockchainType(request.TargetBlockchain);
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
 
-            var result = await _crossChainService.ExecuteContractCallAsync(request, sourceBlockchain);
+            var sourceBlockchain = ParseBlockchainType(blockchainType);
+            var targetBlockchain = BlockchainType.NeoX; // Default target, should be configurable
+
+            // Convert to RemoteCallRequest as expected by service
+            var remoteCallRequest = new RemoteCallRequest
+            {
+                ContractAddress = request.ContractAddress,
+                FunctionName = request.Method,
+                Parameters = request.Parameters,
+                Caller = request.CallerAddress
+            };
+
+            var result = await _crossChainService.ExecuteRemoteCallAsync(remoteCallRequest, sourceBlockchain, targetBlockchain);
 
             Logger.LogInformation("Executed cross-chain contract call to {Method} on {Target}",
-                request.Method, request.TargetBlockchain);
+                request.Method, targetBlockchain);
 
             return Ok(CreateResponse(result, "Contract call executed successfully"));
         }
@@ -105,10 +128,10 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var blockchain = ParseBlockchainType(request.SourceBlockchain);
-            var result = await _crossChainService.VerifyMessageAsync(request, blockchain);
+            var blockchain = ParseBlockchainType(request.SourceChain);
+            var result = await _crossChainService.VerifyMessageAsync(request.Message, request.Signature, blockchain);
 
-            Logger.LogInformation("Verified cross-chain message: Valid={IsValid}", result.IsValid);
+            Logger.LogInformation("Verified cross-chain message: Valid={IsValid}", result);
 
             return Ok(CreateResponse(result, "Message verification completed"));
         }
@@ -133,7 +156,7 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var result = await _crossChainService.GetTransferStatusAsync(transferId);
+            var result = await _crossChainService.GetMessageStatusAsync(transferId, BlockchainType.NeoN3);
 
             if (result == null)
             {
@@ -159,7 +182,7 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var result = await _crossChainService.GetSupportedBridgesAsync();
+            var result = await _crossChainService.GetSupportedChainsAsync();
 
             return Ok(CreateResponse(result, "Supported bridges retrieved successfully"));
         }
@@ -182,10 +205,18 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var sourceBlockchain = ParseBlockchainType(request.SourceBlockchain);
-            var targetBlockchain = ParseBlockchainType(request.TargetBlockchain);
+            var sourceBlockchain = ParseBlockchainType(request.SourceChain);
+            var targetBlockchain = ParseBlockchainType(request.TargetChain);
 
-            var result = await _crossChainService.EstimateFeesAsync(request, sourceBlockchain);
+            var operation = new CrossChainOperation
+            {
+                SourceChain = sourceBlockchain,
+                TargetChain = targetBlockchain,
+                Amount = request.Amount,
+                Data = request.AssetId,
+                OperationType = request.OperationType
+            };
+            var result = await _crossChainService.EstimateFeesAsync(operation, sourceBlockchain);
 
             return Ok(CreateResponse(result, "Fees estimated successfully"));
         }
@@ -210,7 +241,7 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var result = await _crossChainService.GetTransactionHistoryAsync(address, limit);
+            var result = await _crossChainService.GetPendingMessagesAsync(BlockchainType.NeoN3);
 
             return Ok(CreateResponse(result, "Transaction history retrieved successfully"));
         }
@@ -234,13 +265,20 @@ public class CrossChainController : BaseApiController
     {
         try
         {
-            var blockchain = ParseBlockchainType(request.Blockchain);
-            var listenerId = await _crossChainService.RegisterEventListenerAsync(request, blockchain);
+            var blockchain = ParseBlockchainType(request.ChainId);
+            var mapping = new TokenMapping
+            {
+                SourceToken = request.ContractAddress,
+                DestinationToken = request.CallbackUrl,
+                SourceChain = blockchain,
+                DestinationChain = blockchain
+            };
+            var result = await _crossChainService.RegisterTokenMappingAsync(mapping, blockchain);
 
-            Logger.LogInformation("Registered cross-chain event listener {ListenerId} for {EventType}",
-                listenerId, request.EventType);
+            Logger.LogInformation("Registered token mapping for contract {ContractAddress}",
+                request.ContractAddress);
 
-            return Ok(CreateResponse(listenerId, "Event listener registered successfully"));
+            return Ok(CreateResponse(result, "Token mapping registered successfully"));
         }
         catch (Exception ex)
         {

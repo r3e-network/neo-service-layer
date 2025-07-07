@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -31,19 +31,17 @@ public class ComputeController : BaseApiController
     }
 
     /// <summary>
-    /// Submits a compute job for execution in a trusted environment.
+    /// Executes a computation in a trusted environment.
     /// </summary>
     /// <param name="request">The compute job request.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The job submission result.</returns>
-    /// <response code="200">Job submitted successfully.</response>
-    /// <response code="400">Invalid job parameters.</response>
-    /// <response code="429">Compute quota exceeded.</response>
-    [HttpPost("{blockchainType}/jobs")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeJobResult>), 200)]
+    /// <returns>The computation result.</returns>
+    /// <response code="200">Computation executed successfully.</response>
+    /// <response code="400">Invalid computation parameters.</response>
+    [HttpPost("{blockchainType}/execute")]
+    [ProducesResponseType(typeof(ApiResponse<ComputationResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 429)]
-    public async Task<IActionResult> SubmitJob(
+    public async Task<IActionResult> ExecuteComputation(
         [FromBody] ComputeJobRequest request,
         [FromRoute] string blockchainType)
     {
@@ -55,36 +53,33 @@ public class ComputeController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.SubmitJobAsync(request, blockchain);
+            var stringParameters = request.Parameters.ToDictionary(kvp => kvp.Key, kvp => kvp.Value?.ToString() ?? string.Empty);
+            var result = await _computeService.ExecuteComputationAsync(request.JobId, stringParameters, blockchain);
 
-            Logger.LogInformation("Submitted compute job {JobId} of type {JobType} on {Blockchain}",
-                result.JobId, request.JobType, blockchainType);
+            Logger.LogInformation("Executed computation {ComputationId} on {Blockchain}",
+                request.JobId, blockchainType);
 
-            return Ok(CreateResponse(result, "Compute job submitted successfully"));
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("quota"))
-        {
-            return StatusCode(429, CreateErrorResponse("Compute quota exceeded. Please try again later."));
+            return Ok(CreateResponse(result, "Computation executed successfully"));
         }
         catch (Exception ex)
         {
-            return HandleException(ex, "submitting compute job");
+            return HandleException(ex, "executing computation");
         }
     }
 
     /// <summary>
-    /// Gets the status and results of a compute job.
+    /// Gets the status of a computation.
     /// </summary>
-    /// <param name="jobId">The job ID.</param>
+    /// <param name="computationId">The computation ID.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The job status and results.</returns>
-    /// <response code="200">Job status retrieved successfully.</response>
-    /// <response code="404">Job not found.</response>
-    [HttpGet("{blockchainType}/jobs/{jobId}")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeJobStatus>), 200)]
+    /// <returns>The computation status.</returns>
+    /// <response code="200">Computation status retrieved successfully.</response>
+    /// <response code="404">Computation not found.</response>
+    [HttpGet("{blockchainType}/computations/{computationId}/status")]
+    [ProducesResponseType(typeof(ApiResponse<ComputationStatus>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    public async Task<IActionResult> GetJobStatus(
-        [FromRoute] string jobId,
+    public async Task<IActionResult> GetComputationStatus(
+        [FromRoute] string computationId,
         [FromRoute] string blockchainType)
     {
         try
@@ -95,36 +90,34 @@ public class ComputeController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.GetJobStatusAsync(jobId, blockchain);
+            var result = await _computeService.GetComputationStatusAsync(computationId, blockchain);
 
             if (result == null)
             {
-                return NotFound(CreateErrorResponse($"Compute job not found: {jobId}"));
+                return NotFound(CreateErrorResponse($"Computation not found: {computationId}"));
             }
 
-            return Ok(CreateResponse(result, "Job status retrieved successfully"));
+            return Ok(CreateResponse(result, "Computation status retrieved successfully"));
         }
         catch (Exception ex)
         {
-            return HandleException(ex, "retrieving job status");
+            return HandleException(ex, "retrieving computation status");
         }
     }
 
     /// <summary>
-    /// Cancels a running compute job.
+    /// Registers a computation for future execution.
     /// </summary>
-    /// <param name="jobId">The job ID to cancel.</param>
+    /// <param name="request">The computation registration request.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>Cancellation result.</returns>
-    /// <response code="200">Job cancelled successfully.</response>
-    /// <response code="404">Job not found.</response>
-    /// <response code="409">Job cannot be cancelled in current state.</response>
-    [HttpDelete("{blockchainType}/jobs/{jobId}")]
+    /// <returns>Registration result.</returns>
+    /// <response code="200">Computation registered successfully.</response>
+    /// <response code="400">Invalid computation parameters.</response>
+    [HttpPost("{blockchainType}/register")]
     [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 409)]
-    public async Task<IActionResult> CancelJob(
-        [FromRoute] string jobId,
+    [ProducesResponseType(typeof(ApiResponse<object>), 400)]
+    public async Task<IActionResult> RegisterComputation(
+        [FromBody] ComputeJobRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -135,41 +128,143 @@ public class ComputeController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.CancelJobAsync(jobId, blockchain);
+            var result = await _computeService.RegisterComputationAsync(
+                request.JobId,
+                request.Code,
+                request.Language,
+                $"Compute job {request.JobId}",
+                blockchain);
+
+            Logger.LogInformation("Registered computation {ComputationId} on {Blockchain}", request.JobId, blockchainType);
+            return Ok(CreateResponse(result, "Computation registered successfully"));
+        }
+        catch (Exception ex)
+        {
+            return HandleException(ex, "registering computation");
+        }
+    }
+
+    /// <summary>
+    /// Gets metadata for a computation.
+    /// </summary>
+    /// <param name="computationId">The computation ID.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>The computation metadata.</returns>
+    /// <response code="200">Computation metadata retrieved successfully.</response>
+    /// <response code="404">Computation not found.</response>
+    [HttpGet("{blockchainType}/computations/{computationId}")]
+    [ProducesResponseType(typeof(ApiResponse<ComputationMetadata>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+    public async Task<IActionResult> GetComputationMetadata(
+        [FromRoute] string computationId,
+        [FromRoute] string blockchainType)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var result = await _computeService.GetComputationMetadataAsync(computationId, blockchain);
+
+            if (result == null)
+            {
+                return NotFound(CreateErrorResponse($"Computation not found: {computationId}"));
+            }
+
+            return Ok(CreateResponse(result, "Computation metadata retrieved successfully"));
+        }
+        catch (Exception ex)
+        {
+            return HandleException(ex, "retrieving computation metadata");
+        }
+    }
+
+    /// <summary>
+    /// Lists registered computations with pagination.
+    /// </summary>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <param name="skip">Number of computations to skip.</param>
+    /// <param name="take">Number of computations to take.</param>
+    /// <returns>List of computations.</returns>
+    /// <response code="200">Computations retrieved successfully.</response>
+    [HttpGet("{blockchainType}/computations")]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<ComputationMetadata>>), 200)]
+    public async Task<IActionResult> ListComputations(
+        [FromRoute] string blockchainType,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var result = await _computeService.ListComputationsAsync(skip, Math.Min(take, 100), blockchain);
+
+            return Ok(CreateResponse(result, "Computations retrieved successfully"));
+        }
+        catch (Exception ex)
+        {
+            return HandleException(ex, "retrieving computation list");
+        }
+    }
+
+    /// <summary>
+    /// Unregisters a computation.
+    /// </summary>
+    /// <param name="computationId">The computation ID to unregister.</param>
+    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
+    /// <returns>Unregistration result.</returns>
+    /// <response code="200">Computation unregistered successfully.</response>
+    /// <response code="404">Computation not found.</response>
+    [HttpDelete("{blockchainType}/computations/{computationId}")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
+    public async Task<IActionResult> UnregisterComputation(
+        [FromRoute] string computationId,
+        [FromRoute] string blockchainType)
+    {
+        try
+        {
+            if (!IsValidBlockchainType(blockchainType))
+            {
+                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
+            }
+
+            var blockchain = ParseBlockchainType(blockchainType);
+            var result = await _computeService.UnregisterComputationAsync(computationId, blockchain);
 
             if (!result)
             {
-                return StatusCode(409, CreateErrorResponse("Job cannot be cancelled in its current state"));
+                return NotFound(CreateErrorResponse($"Computation not found: {computationId}"));
             }
 
-            Logger.LogInformation("Cancelled compute job {JobId} on {Blockchain}", jobId, blockchainType);
-            return Ok(CreateResponse(result, "Job cancelled successfully"));
-        }
-        catch (ArgumentException ex) when (ex.Message.Contains("not found"))
-        {
-            return NotFound(CreateErrorResponse($"Compute job not found: {jobId}"));
+            Logger.LogInformation("Unregistered computation {ComputationId} on {Blockchain}", computationId, blockchainType);
+            return Ok(CreateResponse(result, "Computation unregistered successfully"));
         }
         catch (Exception ex)
         {
-            return HandleException(ex, "cancelling job");
+            return HandleException(ex, "unregistering computation");
         }
     }
 
     /// <summary>
-    /// Gets the results of a completed compute job.
+    /// Verifies a computation result.
     /// </summary>
-    /// <param name="jobId">The job ID.</param>
+    /// <param name="result">The computation result to verify.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The job results.</returns>
-    /// <response code="200">Job results retrieved successfully.</response>
-    /// <response code="404">Job not found.</response>
-    /// <response code="409">Job not completed yet.</response>
-    [HttpGet("{blockchainType}/jobs/{jobId}/results")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeJobResults>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 409)]
-    public async Task<IActionResult> GetJobResults(
-        [FromRoute] string jobId,
+    /// <returns>Verification result.</returns>
+    /// <response code="200">Verification completed successfully.</response>
+    [HttpPost("{blockchainType}/verify")]
+    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
+    public async Task<IActionResult> VerifyComputationResult(
+        [FromBody] ComputationResult result,
         [FromRoute] string blockchainType)
     {
         try
@@ -180,157 +275,14 @@ public class ComputeController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.GetJobResultsAsync(jobId, blockchain);
+            var verificationResult = await _computeService.VerifyComputationResultAsync(result, blockchain);
 
-            if (result == null)
-            {
-                return NotFound(CreateErrorResponse($"Compute job not found: {jobId}"));
-            }
-
-            return Ok(CreateResponse(result, "Job results retrieved successfully"));
-        }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("not completed"))
-        {
-            return StatusCode(409, CreateErrorResponse("Job is not completed yet. Check job status first."));
+            return Ok(CreateResponse(verificationResult, "Computation result verification completed"));
         }
         catch (Exception ex)
         {
-            return HandleException(ex, "retrieving job results");
+            return HandleException(ex, "verifying computation result");
         }
     }
 
-    /// <summary>
-    /// Lists compute jobs with filtering and pagination.
-    /// </summary>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <param name="status">Filter by job status.</param>
-    /// <param name="jobType">Filter by job type.</param>
-    /// <param name="page">Page number (1-based).</param>
-    /// <param name="pageSize">Number of items per page.</param>
-    /// <returns>List of compute jobs.</returns>
-    /// <response code="200">Jobs retrieved successfully.</response>
-    [HttpGet("{blockchainType}/jobs")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<ComputeJobSummary>>), 200)]
-    public async Task<IActionResult> ListJobs(
-        [FromRoute] string blockchainType,
-        [FromQuery] string? status = null,
-        [FromQuery] string? jobType = null,
-        [FromQuery] int page = 1,
-        [FromQuery] int pageSize = 20)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var filter = new ComputeJobFilter
-            {
-                Status = status,
-                JobType = jobType,
-                Page = page,
-                PageSize = Math.Min(pageSize, 100) // Cap at 100
-            };
-
-            var result = await _computeService.ListJobsAsync(filter, blockchain);
-
-            return Ok(CreateResponse(result, "Jobs retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "retrieving job list");
-        }
-    }
-
-    /// <summary>
-    /// Gets compute resource availability and pricing.
-    /// </summary>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>Resource availability information.</returns>
-    /// <response code="200">Resource info retrieved successfully.</response>
-    [HttpGet("{blockchainType}/resources")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeResourceInfo>), 200)]
-    public async Task<IActionResult> GetResourceInfo(
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.GetResourceInfoAsync(blockchain);
-
-            return Ok(CreateResponse(result, "Resource information retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "retrieving resource information");
-        }
-    }
-
-    /// <summary>
-    /// Estimates the cost and time for a compute job.
-    /// </summary>
-    /// <param name="request">The estimation request.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>Cost and time estimation.</returns>
-    /// <response code="200">Estimation completed successfully.</response>
-    [HttpPost("{blockchainType}/estimate")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeEstimation>), 200)]
-    public async Task<IActionResult> EstimateJob(
-        [FromBody] ComputeEstimationRequest request,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.EstimateJobAsync(request, blockchain);
-
-            return Ok(CreateResponse(result, "Job estimation completed successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "estimating job cost");
-        }
-    }
-
-    /// <summary>
-    /// Gets compute service metrics and statistics.
-    /// </summary>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>Service metrics.</returns>
-    /// <response code="200">Metrics retrieved successfully.</response>
-    [HttpGet("{blockchainType}/metrics")]
-    [Authorize(Roles = "Admin,Monitor")]
-    [ProducesResponseType(typeof(ApiResponse<ComputeMetrics>), 200)]
-    public async Task<IActionResult> GetMetrics(
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _computeService.GetMetricsAsync(blockchain);
-
-            return Ok(CreateResponse(result, "Compute metrics retrieved successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "retrieving compute metrics");
-        }
-    }
 }

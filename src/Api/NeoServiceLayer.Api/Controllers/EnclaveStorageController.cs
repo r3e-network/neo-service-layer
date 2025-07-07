@@ -1,4 +1,4 @@
-using Asp.Versioning;
+﻿using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
@@ -41,12 +41,12 @@ public class EnclaveStorageController : BaseApiController
     /// <response code="413">Data too large for enclave storage.</response>
     /// <response code="507">Enclave storage quota exceeded.</response>
     [HttpPost("{blockchainType}/store")]
-    [ProducesResponseType(typeof(ApiResponse<StorageResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<SealDataResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 413)]
     [ProducesResponseType(typeof(ApiResponse<object>), 507)]
     public async Task<IActionResult> StoreData(
-        [FromBody] StoreDataRequest request,
+        [FromBody] SealDataRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -57,7 +57,7 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.StoreDataAsync(request, blockchain);
+            var result = await _enclaveStorageService.SealDataAsync(request, blockchain);
 
             Logger.LogInformation("Stored data with key {Key} in enclave on {Blockchain} - Size: {DataSize} bytes",
                 request.Key, blockchainType, request.Data.Length);
@@ -88,7 +88,7 @@ public class EnclaveStorageController : BaseApiController
     /// <response code="404">Data not found.</response>
     /// <response code="403">Access denied to data.</response>
     [HttpGet("{blockchainType}/retrieve/{key}")]
-    [ProducesResponseType(typeof(ApiResponse<RetrievalResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<UnsealDataResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> RetrieveData(
@@ -103,7 +103,7 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.RetrieveDataAsync(key, blockchain);
+            var result = await _enclaveStorageService.UnsealDataAsync(key, blockchain);
 
             if (result == null)
             {
@@ -126,22 +126,22 @@ public class EnclaveStorageController : BaseApiController
     }
 
     /// <summary>
-    /// Updates existing data in the enclave.
+    /// Updates existing data in the enclave by re-sealing with new data.
     /// </summary>
     /// <param name="key">The data key.</param>
-    /// <param name="request">The update request.</param>
+    /// <param name="request">The seal data request with new data.</param>
     /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
     /// <returns>The update result.</returns>
     /// <response code="200">Data updated successfully.</response>
     /// <response code="404">Data not found.</response>
     /// <response code="403">Access denied to data.</response>
     [HttpPut("{blockchainType}/update/{key}")]
-    [ProducesResponseType(typeof(ApiResponse<UpdateResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<SealDataResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> UpdateData(
         [FromRoute] string key,
-        [FromBody] UpdateDataRequest request,
+        [FromBody] SealDataRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -152,12 +152,18 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.UpdateDataAsync(key, request, blockchain);
 
-            if (result == null)
+            // First check if the data exists
+            var existingData = await _enclaveStorageService.UnsealDataAsync(key, blockchain);
+            if (existingData == null || !existingData.Success)
             {
                 return NotFound(CreateErrorResponse($"Data not found for key: {key}"));
             }
+
+            // Delete old data then seal new data
+            await _enclaveStorageService.DeleteSealedDataAsync(key, blockchain);
+            request.Key = key; // Ensure the key matches
+            var result = await _enclaveStorageService.SealDataAsync(request, blockchain);
 
             Logger.LogInformation("Updated data with key {Key} in enclave on {Blockchain}",
                 key, blockchainType);
@@ -184,7 +190,7 @@ public class EnclaveStorageController : BaseApiController
     /// <response code="404">Data not found.</response>
     /// <response code="403">Access denied to data.</response>
     [HttpDelete("{blockchainType}/delete/{key}")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<DeleteSealedDataResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> DeleteData(
@@ -199,9 +205,9 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.DeleteDataAsync(key, blockchain);
+            var result = await _enclaveStorageService.DeleteSealedDataAsync(key, blockchain);
 
-            if (!result)
+            if (!result.Success)
             {
                 return NotFound(CreateErrorResponse($"Data not found for key: {key}"));
             }
@@ -230,7 +236,7 @@ public class EnclaveStorageController : BaseApiController
     /// <returns>List of data keys and metadata.</returns>
     /// <response code="200">Keys retrieved successfully.</response>
     [HttpGet("{blockchainType}/keys")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<DataKeyInfo>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<SealedItemsList>), 200)]
     public async Task<IActionResult> ListDataKeys(
         [FromRoute] string blockchainType,
         [FromQuery] string? prefix = null,
@@ -244,13 +250,13 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var filter = new DataKeyFilter
+            var request = new ListSealedItemsRequest
             {
                 Prefix = prefix,
-                Limit = Math.Min(limit, 500) // Cap at 500
+                PageSize = Math.Min(limit, 500) // Cap at 500
             };
 
-            var result = await _enclaveStorageService.ListDataKeysAsync(filter, blockchain);
+            var result = await _enclaveStorageService.ListSealedItemsAsync(request, blockchain);
 
             return Ok(CreateResponse(result, "Data keys retrieved successfully"));
         }
@@ -268,7 +274,7 @@ public class EnclaveStorageController : BaseApiController
     /// <response code="200">Metrics retrieved successfully.</response>
     [HttpGet("{blockchainType}/metrics")]
     [Authorize(Roles = "Admin,Monitor")]
-    [ProducesResponseType(typeof(ApiResponse<StorageMetrics>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<EnclaveStorageStatistics>), 200)]
     public async Task<IActionResult> GetStorageMetrics(
         [FromRoute] string blockchainType)
     {
@@ -280,7 +286,7 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.GetStorageMetricsAsync(blockchain);
+            var result = await _enclaveStorageService.GetStorageStatisticsAsync(blockchain);
 
             return Ok(CreateResponse(result, "Storage metrics retrieved successfully"));
         }
@@ -303,7 +309,7 @@ public class EnclaveStorageController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<BackupResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> CreateBackup(
-        [FromBody] CreateBackupRequest request,
+        [FromBody] BackupRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -314,7 +320,7 @@ public class EnclaveStorageController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.CreateBackupAsync(request, blockchain);
+            var result = await _enclaveStorageService.BackupSealedDataAsync(request, blockchain);
 
             Logger.LogInformation("Created enclave storage backup {BackupId} on {Blockchain}",
                 result.BackupId, blockchainType);
@@ -331,128 +337,4 @@ public class EnclaveStorageController : BaseApiController
         }
     }
 
-    /// <summary>
-    /// Restores enclave data from a backup.
-    /// </summary>
-    /// <param name="request">The restore request.</param>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <returns>The restore result.</returns>
-    /// <response code="200">Data restored successfully.</response>
-    /// <response code="404">Backup not found.</response>
-    /// <response code="403">Insufficient permissions for restore operation.</response>
-    [HttpPost("{blockchainType}/restore")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse<RestoreResult>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 404)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 403)]
-    public async Task<IActionResult> RestoreFromBackup(
-        [FromBody] RestoreFromBackupRequest request,
-        [FromRoute] string blockchainType)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.RestoreFromBackupAsync(request, blockchain);
-
-            if (result == null)
-            {
-                return NotFound(CreateErrorResponse($"Backup not found: {request.BackupId}"));
-            }
-
-            Logger.LogInformation("Restored enclave storage from backup {BackupId} on {Blockchain}",
-                request.BackupId, blockchainType);
-
-            return Ok(CreateResponse(result, "Enclave storage restored successfully"));
-        }
-        catch (UnauthorizedAccessException)
-        {
-            return StatusCode(403, CreateErrorResponse("Insufficient permissions for restore operation"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "restoring from backup");
-        }
-    }
-
-    /// <summary>
-    /// Securely purges all data from the enclave.
-    /// </summary>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <param name="confirmationCode">Security confirmation code.</param>
-    /// <returns>Purge result.</returns>
-    /// <response code="200">Data purged successfully.</response>
-    /// <response code="403">Invalid confirmation code or insufficient permissions.</response>
-    [HttpPost("{blockchainType}/purge")]
-    [Authorize(Roles = "Admin")]
-    [ProducesResponseType(typeof(ApiResponse<bool>), 200)]
-    [ProducesResponseType(typeof(ApiResponse<object>), 403)]
-    public async Task<IActionResult> PurgeEnclaveData(
-        [FromRoute] string blockchainType,
-        [FromQuery] string confirmationCode)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.PurgeAllDataAsync(confirmationCode, blockchain);
-
-            if (!result)
-            {
-                return StatusCode(403, CreateErrorResponse("Invalid confirmation code or insufficient permissions"));
-            }
-
-            Logger.LogWarning("Purged all enclave storage data on {Blockchain} - Confirmation: {Code}",
-                blockchainType, confirmationCode[..4] + "****");
-
-            return Ok(CreateResponse(result, "Enclave data purged successfully"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "purging enclave data");
-        }
-    }
-
-    /// <summary>
-    /// Validates the integrity of stored data.
-    /// </summary>
-    /// <param name="blockchainType">The blockchain type (NeoN3 or NeoX).</param>
-    /// <param name="key">Optional specific key to validate.</param>
-    /// <returns>Integrity validation result.</returns>
-    /// <response code="200">Validation completed successfully.</response>
-    [HttpPost("{blockchainType}/validate")]
-    [Authorize(Roles = "Admin,Auditor")]
-    [ProducesResponseType(typeof(ApiResponse<IntegrityValidationResult>), 200)]
-    public async Task<IActionResult> ValidateDataIntegrity(
-        [FromRoute] string blockchainType,
-        [FromQuery] string? key = null)
-    {
-        try
-        {
-            if (!IsValidBlockchainType(blockchainType))
-            {
-                return BadRequest(CreateErrorResponse($"Invalid blockchain type: {blockchainType}"));
-            }
-
-            var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _enclaveStorageService.ValidateDataIntegrityAsync(key, blockchain);
-
-            Logger.LogInformation("Validated enclave data integrity on {Blockchain} - Valid: {IsValid}",
-                blockchainType, result.IsValid);
-
-            return Ok(CreateResponse(result, "Data integrity validation completed"));
-        }
-        catch (Exception ex)
-        {
-            return HandleException(ex, "validating data integrity");
-        }
-    }
 }

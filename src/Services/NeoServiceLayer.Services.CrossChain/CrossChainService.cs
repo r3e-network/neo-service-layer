@@ -25,7 +25,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
     /// <param name="logger">The logger.</param>
     /// <param name="configuration">The service configuration.</param>
     public CrossChainService(
-        ILogger<CrossChainService> logger, 
+        ILogger<CrossChainService> logger,
         IServiceConfiguration? configuration = null,
         NeoServiceLayer.Infrastructure.IBlockchainClientFactory? blockchainClientFactory = null)
         : base("CrossChainService", "Cross-chain interoperability and messaging service", "1.0.0", logger, configuration)
@@ -35,7 +35,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
 
         // Initialize supported blockchain pairs from configuration
         _supportedChains = LoadSupportedChainsFromConfiguration();
-        
+
         // If no configuration, use defaults with warning
         if (_supportedChains.Count == 0)
         {
@@ -52,34 +52,49 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
     /// Gets the service configuration.
     /// </summary>
     protected new IServiceConfiguration? Configuration { get; }
-    
+
     private List<CrossChainPair> LoadSupportedChainsFromConfiguration()
     {
         var pairs = new List<CrossChainPair>();
-        var section = Configuration?.GetSection("CrossChain:SupportedPairs");
-        
-        if (section != null)
+
+        // Try to load configured pairs from configuration
+        var pairCount = Configuration?.GetValue("CrossChain:SupportedPairs:Count", 0) ?? 0;
+
+        for (int i = 0; i < pairCount; i++)
         {
-            foreach (var pair in section.GetChildren())
+            try
             {
-                var chainPair = new CrossChainPair
+                var prefix = $"CrossChain:SupportedPairs:{i}";
+                var sourceChainStr = Configuration?.GetValue<string>($"{prefix}:SourceChain");
+                var targetChainStr = Configuration?.GetValue<string>($"{prefix}:TargetChain");
+
+                if (!string.IsNullOrEmpty(sourceChainStr) && !string.IsNullOrEmpty(targetChainStr) &&
+                    Enum.TryParse<BlockchainType>(sourceChainStr, out var sourceChain) &&
+                    Enum.TryParse<BlockchainType>(targetChainStr, out var targetChain))
                 {
-                    SourceChain = Enum.Parse<BlockchainType>(pair["SourceChain"] ?? ""),
-                    TargetChain = Enum.Parse<BlockchainType>(pair["TargetChain"] ?? ""),
-                    IsActive = bool.Parse(pair["IsActive"] ?? "true"),
-                    MinTransferAmount = decimal.Parse(pair["MinTransferAmount"] ?? "0.001"),
-                    MaxTransferAmount = decimal.Parse(pair["MaxTransferAmount"] ?? "1000000"),
-                    BaseFee = decimal.Parse(pair["BaseFee"] ?? "0.01"),
-                    EstimatedTime = int.Parse(pair["EstimatedTime"] ?? "5"),
-                    SupportedTokens = pair.GetSection("SupportedTokens").Get<List<string>>() ?? new List<string>()
-                };
-                pairs.Add(chainPair);
+                    var chainPair = new CrossChainPair
+                    {
+                        SourceChain = sourceChain,
+                        TargetChain = targetChain,
+                        IsActive = Configuration?.GetValue($"{prefix}:IsActive", true) ?? true,
+                        MinTransferAmount = Configuration?.GetValue($"{prefix}:MinTransferAmount", 0.001m) ?? 0.001m,
+                        MaxTransferAmount = Configuration?.GetValue($"{prefix}:MaxTransferAmount", 1000000m) ?? 1000000m,
+                        BaseFee = Configuration?.GetValue($"{prefix}:BaseFee", 0.01m) ?? 0.01m,
+                        EstimatedTime = Configuration?.GetValue($"{prefix}:EstimatedTime", 5) ?? 5,
+                        SupportedTokens = new List<string> { "GAS", "NEO", "USDT" } // Default tokens
+                    };
+                    pairs.Add(chainPair);
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Error loading cross-chain pair configuration at index {Index}", i);
             }
         }
-        
+
         return pairs;
     }
-    
+
     private List<CrossChainPair> GetDefaultChainPairs()
     {
         return new List<CrossChainPair>
@@ -263,7 +278,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                     // Execute via bridge contract
                     var sourceClient = _blockchainClientFactory.CreateClient(sourceBlockchain);
                     var bridgeContract = GetBridgeContract(sourceBlockchain, targetBlockchain);
-                    
+
                     // Encode cross-chain call request
                     var callData = System.Text.Json.JsonSerializer.Serialize(new
                     {
@@ -272,7 +287,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                         parameters = request.Parameters,
                         gasLimit = request.GasLimit
                     });
-                    
+
                     // Submit cross-chain call to bridge
                     var txHash = await sourceClient.InvokeContractMethodAsync(
                         bridgeContract,
@@ -282,14 +297,14 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                         request.Method,
                         callData
                     );
-                    
+
                     // Wait for confirmations
                     var confirmations = GetRequiredConfirmations(sourceBlockchain);
                     await WaitForConfirmationsAsync(sourceClient, txHash, confirmations);
-                    
+
                     // Get transaction details
                     var tx = await sourceClient.GetTransactionAsync(txHash);
-                    
+
                     var result = new CrossChainExecutionResult
                     {
                         ExecutionId = executionId,
@@ -300,8 +315,8 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                         BlockNumber = tx?.BlockNumber ?? 0,
                         ExecutedAt = DateTime.UtcNow
                     };
-                    
-                    Logger.LogInformation("Cross-chain contract call {ExecutionId} submitted: {TxHash}", 
+
+                    Logger.LogInformation("Cross-chain contract call {ExecutionId} submitted: {TxHash}",
                         executionId, txHash);
                     return result;
                 }
@@ -463,24 +478,24 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                     Logger.LogWarning("Invalid proof format for message {MessageId}", messageId);
                     return false;
                 }
-                
+
                 // Verify the proof matches the message ID
                 if (proofData.MessageId != messageId)
                 {
-                    Logger.LogWarning("Proof message ID mismatch: expected {Expected}, got {Actual}", 
+                    Logger.LogWarning("Proof message ID mismatch: expected {Expected}, got {Actual}",
                         messageId, proofData.MessageId);
                     return false;
                 }
-                
+
                 // Verify using enclave-based proof verification
                 var isValid = await VerifyProofInEnclaveAsync(proofData);
-                
+
                 if (_blockchainClientFactory != null && isValid)
                 {
                     // Additional on-chain verification
                     var client = _blockchainClientFactory.CreateClient(blockchainType);
                     var bridgeContract = GetBridgeContract(blockchainType, blockchainType);
-                    
+
                     try
                     {
                         var onChainStatus = await client.CallContractMethodAsync(
@@ -489,7 +504,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                             messageId,
                             proofData.MessageHash
                         );
-                        
+
                         isValid = bool.TryParse(onChainStatus, out var verified) && verified;
                     }
                     catch (Exception ex)
@@ -497,7 +512,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                         Logger.LogWarning(ex, "On-chain verification failed, using enclave result only");
                     }
                 }
-                
+
                 Logger.LogInformation("Message {MessageId} verification result: {IsValid}", messageId, isValid);
                 return isValid;
             }
@@ -545,7 +560,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                 // Get base fee from configuration
                 var baseFeeKey = $"CrossChain:Fees:{blockchainType}:BaseFee";
                 var baseFee = Configuration?.GetValue(baseFeeKey, 0.001m) ?? 0.001m;
-                
+
                 // Calculate operation-specific multiplier
                 var multiplier = operation.OperationType switch
                 {
@@ -554,7 +569,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                     "Message" => 1.5m,
                     _ => 1.0m
                 };
-                
+
                 // Add data size fee if applicable
                 var dataSizeFee = 0m;
                 if (operation.Data != null)
@@ -563,7 +578,7 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                     var perByteFee = Configuration?.GetValue($"CrossChain:Fees:{blockchainType}:PerByteFee", 0.000001m) ?? 0.000001m;
                     dataSizeFee = dataSize * perByteFee;
                 }
-                
+
                 // Calculate priority fee
                 var priorityFee = operation.Priority switch
                 {
@@ -571,26 +586,23 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
                     "Low" => 0m,
                     _ => baseFee * 0.2m
                 };
-                
+
                 // Check if cross-chain pair has special fees
-                if (operation.SourceChain != null && operation.TargetChain != null)
+                var chainPair = GetChainPair(
+                    operation.SourceChain,
+                    operation.TargetChain
+                );
+
+                if (chainPair != null)
                 {
-                    var chainPair = GetChainPair(
-                        Enum.Parse<BlockchainType>(operation.SourceChain),
-                        Enum.Parse<BlockchainType>(operation.TargetChain)
-                    );
-                    
-                    if (chainPair != null)
-                    {
-                        baseFee = chainPair.BaseFee;
-                    }
+                    baseFee = chainPair.BaseFee;
                 }
-                
+
                 var totalFee = (baseFee * multiplier) + dataSizeFee + priorityFee;
-                
+
                 Logger.LogDebug("Estimated fee for {OperationType} on {Blockchain}: {Fee} (base: {Base}, data: {Data}, priority: {Priority})",
                     operation.OperationType, blockchainType, totalFee, baseFee, dataSizeFee, priorityFee);
-                
+
                 return totalFee;
             }
             catch (Exception ex)

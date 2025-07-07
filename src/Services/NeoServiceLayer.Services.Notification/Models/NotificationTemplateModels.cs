@@ -1,4 +1,6 @@
-﻿namespace NeoServiceLayer.Services.Notification.Models;
+﻿using System.Linq;
+
+namespace NeoServiceLayer.Services.Notification.Models;
 
 /// <summary>
 /// Notification template.
@@ -56,6 +58,11 @@ public class NotificationTemplate
     public DateTime UpdatedAt { get; set; }
 
     /// <summary>
+    /// Gets or sets the template description.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
@@ -72,14 +79,29 @@ public class CreateTemplateRequest
     public string TemplateName { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the template name (alias for TemplateName).
+    /// </summary>
+    public string Name { get => TemplateName; set => TemplateName = value; }
+
+    /// <summary>
     /// Gets or sets the template subject.
     /// </summary>
     public string Subject { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the subject template (alias for Subject).
+    /// </summary>
+    public string SubjectTemplate { get => Subject; set => Subject = value; }
+
+    /// <summary>
     /// Gets or sets the template body.
     /// </summary>
     public string Body { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the body template (alias for Body).
+    /// </summary>
+    public string BodyTemplate { get => Body; set => Body = value; }
 
     /// <summary>
     /// Gets or sets the template variables.
@@ -92,9 +114,19 @@ public class CreateTemplateRequest
     public NotificationChannel[] SupportedChannels { get; set; } = Array.Empty<NotificationChannel>();
 
     /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
     /// Gets or sets the template category.
     /// </summary>
     public string Category { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template description.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets additional metadata.
@@ -262,14 +294,29 @@ public class UpdateTemplateRequest
     public string? TemplateName { get; set; }
 
     /// <summary>
+    /// Gets or sets the template name (alias for TemplateName).
+    /// </summary>
+    public string? Name { get => TemplateName; set => TemplateName = value; }
+
+    /// <summary>
     /// Gets or sets the template subject.
     /// </summary>
     public string? Subject { get; set; }
 
     /// <summary>
+    /// Gets or sets the subject template (alias for Subject).
+    /// </summary>
+    public string? SubjectTemplate { get => Subject; set => Subject = value; }
+
+    /// <summary>
     /// Gets or sets the template body.
     /// </summary>
     public string? Body { get; set; }
+
+    /// <summary>
+    /// Gets or sets the body template (alias for Body).
+    /// </summary>
+    public string? BodyTemplate { get => Body; set => Body = value; }
 
     /// <summary>
     /// Gets or sets the template variables.
@@ -292,6 +339,11 @@ public class UpdateTemplateRequest
     public bool? IsActive { get; set; }
 
     /// <summary>
+    /// Gets or sets the template description.
+    /// </summary>
+    public string? Description { get; set; }
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
@@ -302,6 +354,20 @@ public class UpdateTemplateRequest
 /// </summary>
 public class GetHistoryRequest : NotificationHistoryRequest
 {
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
+
+    /// <summary>
+    /// Gets or sets the start date.
+    /// </summary>
+    public DateTime? StartDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets the end date.
+    /// </summary>
+    public DateTime? EndDate { get; set; }
 }
 
 /// <summary>
@@ -309,6 +375,15 @@ public class GetHistoryRequest : NotificationHistoryRequest
 /// </summary>
 public class NotificationHistory : NotificationHistoryResult
 {
+    /// <summary>
+    /// Gets or sets the notifications.
+    /// </summary>
+    public NotificationResult[] Notifications { get; set; } = Array.Empty<NotificationResult>();
+
+    /// <summary>
+    /// Gets or sets the page size.
+    /// </summary>
+    public int PageSize { get; set; } = 20;
 }
 
 /// <summary>
@@ -322,6 +397,11 @@ public class BroadcastRequest
     public string Content { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the message (alias for Content).
+    /// </summary>
+    public string Message { get => Content; set => Content = value; }
+
+    /// <summary>
     /// Gets or sets the subject.
     /// </summary>
     public string Subject { get; set; } = string.Empty;
@@ -330,6 +410,15 @@ public class BroadcastRequest
     /// Gets or sets the target channels.
     /// </summary>
     public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
+
+    /// <summary>
+    /// Gets or sets the channel (first channel in Channels array).
+    /// </summary>
+    public NotificationChannel Channel
+    {
+        get => Channels.FirstOrDefault();
+        set => Channels = new[] { value };
+    }
 
     /// <summary>
     /// Gets or sets the target categories.
@@ -366,6 +455,31 @@ public class BroadcastResult
     /// Gets or sets the number of notifications sent.
     /// </summary>
     public int NotificationsSent { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total recipients.
+    /// </summary>
+    public int TotalRecipients { get; set; }
+
+    /// <summary>
+    /// Gets or sets the success count.
+    /// </summary>
+    public int SuccessCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the failure count.
+    /// </summary>
+    public int FailureCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the channel used.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
+
+    /// <summary>
+    /// Gets or sets the sent timestamp.
+    /// </summary>
+    public DateTime SentAt { get; set; }
 
     /// <summary>
     /// Gets or sets the error message if the broadcast failed.
