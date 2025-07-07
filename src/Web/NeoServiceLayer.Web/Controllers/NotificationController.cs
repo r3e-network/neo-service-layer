@@ -204,49 +204,49 @@ public class NotificationController : ControllerBase
     }
 
     [HttpDelete("channel/{channelId}")]
-    public async Task<IActionResult> DeleteChannel(string channelId)
+    public Task<IActionResult> DeleteChannel(string channelId)
     {
         try
         {
             var request = new DeleteNotificationChannelRequest { ChannelId = channelId };
             // DeleteChannelAsync method is not available in service interface - return not implemented
-            return StatusCode(501, new { error = "Channel deletion functionality not implemented in current interface" });
+            return Task.FromResult<IActionResult>(StatusCode(501, new { error = "Channel deletion functionality not implemented in current interface" }));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error deleting notification channel");
-            return StatusCode(500, new { error = ex.Message });
+            return Task.FromResult<IActionResult>(StatusCode(500, new { error = ex.Message }));
         }
     }
 
     [HttpGet("channels")]
-    public async Task<IActionResult> GetChannels([FromQuery] int pageSize = 20, [FromQuery] int pageNumber = 1)
+    public Task<IActionResult> GetChannels([FromQuery] int pageSize = 20, [FromQuery] int pageNumber = 1)
     {
         try
         {
             var request = new GetNotificationChannelsRequest { PageSize = pageSize, PageNumber = pageNumber };
             // GetChannelsAsync method is not available in service interface - return not implemented
-            return StatusCode(501, new { error = "Channel listing functionality not implemented in current interface" });
+            return Task.FromResult<IActionResult>(StatusCode(501, new { error = "Channel listing functionality not implemented in current interface" }));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting notification channels");
-            return StatusCode(500, new { error = ex.Message });
+            return Task.FromResult<IActionResult>(StatusCode(500, new { error = ex.Message }));
         }
     }
 
     [HttpGet("statistics")]
-    public async Task<IActionResult> GetNotificationStatistics()
+    public Task<IActionResult> GetNotificationStatistics()
     {
         try
         {
             // GetNotificationStatisticsAsync method is not available in service interface - return not implemented
-            return StatusCode(501, new { error = "Notification statistics functionality not implemented in current interface" });
+            return Task.FromResult<IActionResult>(StatusCode(501, new { error = "Notification statistics functionality not implemented in current interface" }));
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error getting notification statistics");
-            return StatusCode(500, new { error = ex.Message });
+            return Task.FromResult<IActionResult>(StatusCode(500, new { error = ex.Message }));
         }
     }
 }

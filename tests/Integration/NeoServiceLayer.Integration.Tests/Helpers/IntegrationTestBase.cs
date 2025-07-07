@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Xunit;
 
+using NeoServiceLayer.Web;
+
 namespace NeoServiceLayer.Integration.Tests.Helpers;
 
 public abstract class IntegrationTestBase : IClassFixture<WebApplicationFactory<Program>>

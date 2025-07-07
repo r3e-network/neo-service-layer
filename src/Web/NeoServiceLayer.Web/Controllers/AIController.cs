@@ -20,6 +20,7 @@ public class AIController : BaseApiController
     /// </summary>
     /// <param name="predictionService">The prediction service.</param>
     /// <param name="logger">The logger.</param>
+    /// <param name="patternRecognitionService">The pattern recognition service.</param>
     public AIController(
         IPredictionService predictionService,
         ILogger<AIController> logger,

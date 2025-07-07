@@ -24,6 +24,8 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Console" />
     <PackageReference Include="FluentAssertions" />
     <PackageReference Include="Moq" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
   </ItemGroup>
 
   <ItemGroup>
@@ -52,6 +54,7 @@
     <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.ZeroKnowledge\NeoServiceLayer.Services.ZeroKnowledge.csproj" />
     <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Voting\NeoServiceLayer.Services.Voting.csproj" />
     <ProjectReference Include="..\..\..\src\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
+    <ProjectReference Include="..\..\..\src\Web\NeoServiceLayer.Web\NeoServiceLayer.Web.csproj" />
   </ItemGroup>
 
 </Project>

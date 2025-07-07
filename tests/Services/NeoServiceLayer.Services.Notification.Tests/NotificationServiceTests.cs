@@ -9,6 +9,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
+using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 
@@ -134,12 +135,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
             Subject = "Test Email",
             Message = "This is a test email notification",
-            Channel = "Email",
+            Channel = NotificationChannel.Email,
             Priority = Services.Notification.Models.NotificationPriority.Normal,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
@@ -165,12 +166,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "https://api.example.com/webhook",
             Subject = "Test Webhook",
             Message = "This is a test webhook notification",
-            Channel = "Webhook",
+            Channel = NotificationChannel.Webhook,
             Priority = Services.Notification.Models.NotificationPriority.High,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
@@ -196,12 +197,12 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Arrange
         await InitializeServiceAsync();
         SetupSmsConfiguration();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "+1234567890",
             Subject = "Test SMS",
             Message = "This is a test SMS notification",
-            Channel = "SMS",
+            Channel = NotificationChannel.SMS,
             Priority = Services.Notification.Models.NotificationPriority.Critical,
             Metadata = new Dictionary<string, object> { ["source"] = "unit_test" }
         };
@@ -224,12 +225,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
             Subject = "Test",
             Message = "Test message",
-            Channel = "Email"
+            Channel = NotificationChannel.Email
         };
 
         // Act & Assert
@@ -244,12 +245,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
             Subject = "Test",
             Message = "Test message",
-            Channel = "Email"
+            Channel = NotificationChannel.Email
         };
 
         // Act & Assert
@@ -264,12 +265,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "",
             Subject = "Test",
             Message = "Test message",
-            Channel = "Email"
+            Channel = NotificationChannel.Email
         };
 
         // Act
@@ -289,12 +290,12 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new NotificationRequest
+        var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
             Subject = "Test",
             Message = "Test message",
-            Channel = "UnsupportedChannel"
+            Channel = (NotificationChannel)999
         };
 
         // Act
@@ -316,22 +317,22 @@ public class NotificationServiceTests : TestBase, IDisposable
     [Trait("Component", "BulkNotifications")]
     [InlineData(BlockchainType.NeoN3)]
     [InlineData(BlockchainType.NeoX)]
-    public async Task SendBulkNotificationAsync_ValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
+    public async Task SendBatchNotificationsAsync_ValidRequest_ShouldReturnSuccess(BlockchainType blockchainType)
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new BulkNotificationRequest
+        dynamic request = new
         {
             Recipients = new List<string> { "user1@example.com", "user2@example.com", "user3@example.com" },
             Subject = "Bulk Test Email",
             Message = "This is a bulk email notification",
-            Channel = "Email",
+            Channel = NotificationChannel.Email,
             Priority = Services.Notification.Models.NotificationPriority.Normal,
             Metadata = new Dictionary<string, object> { ["batch_type"] = "promotional" }
         };
 
         // Act
-        var result = await _service.SendBulkNotificationAsync(request, blockchainType);
+        var result = await _service.SendBatchNotificationsAsync(request, blockchainType);
 
         // Assert
         result.Should().NotBeNull();
@@ -345,41 +346,41 @@ public class NotificationServiceTests : TestBase, IDisposable
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "BulkNotifications")]
-    public async Task SendBulkNotificationAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
+    public async Task SendBatchNotificationsAsync_UnsupportedBlockchain_ShouldThrowNotSupportedException()
     {
         // Arrange
         await InitializeServiceAsync();
-        var request = new BulkNotificationRequest
+        dynamic request = new
         {
             Recipients = new List<string> { "user1@example.com" },
             Subject = "Test",
             Message = "Test message",
-            Channel = "Email"
+            Channel = NotificationChannel.Email
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            _service.SendBulkNotificationAsync(request, (BlockchainType)999));
+            _service.SendBatchNotificationsAsync(request, (BlockchainType)999));
     }
 
     [Fact]
     [Trait("Category", "Unit")]
     [Trait("Component", "BulkNotifications")]
-    public async Task SendBulkNotificationAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
+    public async Task SendBatchNotificationsAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
     {
         // Arrange
         var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
-        var request = new BulkNotificationRequest
+        dynamic request = new
         {
             Recipients = new List<string> { "user1@example.com" },
             Subject = "Test",
             Message = "Test message",
-            Channel = "Email"
+            Channel = NotificationChannel.Email
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.SendBulkNotificationAsync(request, BlockchainType.NeoN3));
+            service.SendBatchNotificationsAsync(request, BlockchainType.NeoN3));
     }
 
     #endregion
@@ -395,22 +396,20 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var subscription = new NotificationSubscription
+        var request = new SubscribeRequest
         {
             Recipient = "user@example.com",
-            Channels = new[] { NotificationChannel.Email },
-            Categories = new[] { "transaction", "block" },
-            Metadata = new Dictionary<string, object> { ["amount"] = "> 1000" }
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction", "block" }
         };
 
         // Act
-        var subscriptionId = await _service.SubscribeAsync(subscription, blockchainType);
+        var result = await _service.SubscribeAsync(request, blockchainType);
 
         // Assert
-        subscriptionId.Should().NotBeNullOrEmpty();
-        subscription.Id.Should().Be(subscriptionId);
-        subscription.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
-        subscription.IsActive.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
+        result.SubscriptionId.Should().NotBeNullOrEmpty();
         VerifyLoggerCalled(LogLevel.Information, "Created notification subscription");
     }
 
@@ -423,19 +422,21 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var subscription = new NotificationSubscription
+        var request = new SubscribeRequest
         {
             Recipient = "user@example.com",
-            Channels = new[] { NotificationChannel.Email },
-            Categories = new[] { "transaction" }
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
         };
-        var subscriptionId = await _service.SubscribeAsync(subscription, blockchainType);
+        var subscribeResult = await _service.SubscribeAsync(request, blockchainType);
 
         // Act
-        var result = await _service.UnsubscribeAsync(subscriptionId, blockchainType);
+        var unsubscribeRequest = new UnsubscribeRequest { SubscriptionId = subscribeResult.SubscriptionId };
+        var result = await _service.UnsubscribeAsync(unsubscribeRequest, blockchainType);
 
         // Assert
-        result.Should().BeTrue();
+        result.Should().NotBeNull();
+        result.Success.Should().BeTrue();
         VerifyLoggerCalled(LogLevel.Information, "Removed notification subscription");
     }
 
@@ -451,10 +452,12 @@ public class NotificationServiceTests : TestBase, IDisposable
         var nonExistentId = Guid.NewGuid().ToString();
 
         // Act
-        var result = await _service.UnsubscribeAsync(nonExistentId, blockchainType);
+        var unsubscribeRequest = new UnsubscribeRequest { SubscriptionId = nonExistentId };
+        var result = await _service.UnsubscribeAsync(unsubscribeRequest, blockchainType);
 
         // Assert
-        result.Should().BeFalse();
+        result.Should().NotBeNull();
+        result.Success.Should().BeFalse();
         VerifyLoggerCalled(LogLevel.Warning, "Subscription");
         VerifyLoggerCalled(LogLevel.Warning, "not found for removal");
     }
@@ -469,21 +472,21 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Arrange
         await InitializeServiceAsync();
         var recipient = "user@example.com";
-        var subscription1 = new NotificationSubscription
+        var request1 = new SubscribeRequest
         {
             Recipient = recipient,
-            Channels = new[] { NotificationChannel.Email },
-            Categories = new[] { "transaction" }
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
         };
-        var subscription2 = new NotificationSubscription
+        var request2 = new SubscribeRequest
         {
             Recipient = recipient,
-            Channels = new[] { NotificationChannel.Webhook },
-            Categories = new[] { "block" }
+            Channel = NotificationChannel.Webhook,
+            EventTypes = new[] { "block" }
         };
 
-        await _service.SubscribeAsync(subscription1, blockchainType);
-        await _service.SubscribeAsync(subscription2, blockchainType);
+        await _service.SubscribeAsync(request1, blockchainType);
+        await _service.SubscribeAsync(request2, blockchainType);
 
         // Act
         var subscriptions = await _service.GetSubscriptionsAsync(recipient, blockchainType);
@@ -569,15 +572,16 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         await InitializeServiceAsync();
-        var subscription = new NotificationSubscription
+        var request = new SubscribeRequest
         {
             Recipient = "user@example.com",
-            Channels = new[] { NotificationChannel.Email }
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            _service.SubscribeAsync(subscription, (BlockchainType)999));
+            _service.SubscribeAsync(request, (BlockchainType)999));
     }
 
     [Fact]
@@ -587,15 +591,16 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         // Arrange
         var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
-        var subscription = new NotificationSubscription
+        var request = new SubscribeRequest
         {
             Recipient = "user@example.com",
-            Channels = new[] { NotificationChannel.Email }
+            Channel = NotificationChannel.Email,
+            EventTypes = new[] { "transaction" }
         };
 
         // Act & Assert
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
-            service.SubscribeAsync(subscription, BlockchainType.NeoN3));
+            service.SubscribeAsync(request, BlockchainType.NeoN3));
     }
 
     [Fact]
@@ -607,8 +612,9 @@ public class NotificationServiceTests : TestBase, IDisposable
         await InitializeServiceAsync();
 
         // Act & Assert
+        var unsubscribeRequest = new UnsubscribeRequest { SubscriptionId = "test-id" };
         await Assert.ThrowsAsync<NotSupportedException>(() =>
-            _service.UnsubscribeAsync("test-id", (BlockchainType)999));
+            _service.UnsubscribeAsync(unsubscribeRequest, (BlockchainType)999));
     }
 
     [Fact]
@@ -643,12 +649,12 @@ public class NotificationServiceTests : TestBase, IDisposable
 
         for (int i = 0; i < notificationCount; i++)
         {
-            var request = new NotificationRequest
+            var request = new SendNotificationRequest
             {
                 Recipient = $"user{i}@example.com",
                 Subject = $"Test Email {i}",
                 Message = $"This is test email notification {i}",
-                Channel = "Email",
+                Channel = NotificationChannel.Email,
                 Priority = Services.Notification.Models.NotificationPriority.Normal
             };
             tasks.Add(_service.SendNotificationAsync(request, BlockchainType.NeoN3));
@@ -671,28 +677,33 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Arrange
         await InitializeServiceAsync();
         const int subscriptionCount = 100;
-        var tasks = new List<Task<string>>();
+        var tasks = new List<Task<Models.SubscriptionResult>>();
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         for (int i = 0; i < subscriptionCount; i++)
         {
-            var subscription = new NotificationSubscription
+            var request = new SubscribeRequest
             {
                 Recipient = $"user{i}@example.com",
-                Channels = new[] { NotificationChannel.Email },
-                Categories = new[] { "transaction" }
+                Channel = NotificationChannel.Email,
+                EventTypes = new[] { "transaction" }
             };
-            tasks.Add(_service.SubscribeAsync(subscription, BlockchainType.NeoN3));
+            tasks.Add(_service.SubscribeAsync(request, BlockchainType.NeoN3));
         }
 
-        var subscriptionIds = await Task.WhenAll(tasks);
+        var results = await Task.WhenAll(tasks);
         stopwatch.Stop();
 
         // Assert
-        subscriptionIds.Should().HaveCount(subscriptionCount);
-        subscriptionIds.Should().AllSatisfy(id => id.Should().NotBeNullOrEmpty());
+        results.Should().HaveCount(subscriptionCount);
+        results.Should().AllSatisfy(result => 
+        {
+            result.Should().NotBeNull();
+            result.Success.Should().BeTrue();
+            result.SubscriptionId.Should().NotBeNullOrEmpty();
+        });
         stopwatch.ElapsedMilliseconds.Should().BeLessThan(5000); // Should complete within 5 seconds
     }
 

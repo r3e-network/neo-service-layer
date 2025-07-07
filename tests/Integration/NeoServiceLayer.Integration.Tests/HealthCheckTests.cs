@@ -1,6 +1,7 @@
 ﻿using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
+using NeoServiceLayer.Web;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;

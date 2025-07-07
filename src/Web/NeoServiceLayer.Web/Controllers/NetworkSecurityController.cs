@@ -129,7 +129,9 @@ public class NetworkSecurityController : BaseApiController
     /// <summary>
     /// Monitors network traffic and security events.
     /// </summary>
-    /// <param name="request">The monitoring request.</param>
+    /// <param name="startTime">The start time for monitoring.</param>
+    /// <param name="endTime">The end time for monitoring.</param>
+    /// <param name="channelId">The channel ID to monitor.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The network monitoring data.</returns>
     [HttpGet("monitor/{blockchainType}")]
