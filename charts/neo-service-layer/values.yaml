@@ -1,0 +1,258 @@
+# Default values for neo-service-layer
+replicaCount: 2
+
+image:
+  registry: docker.io
+  repository: r3enetwork
+  pullPolicy: IfNotPresent
+  tag: "latest"
+
+imagePullSecrets: []
+nameOverride: ""
+fullnameOverride: ""
+
+# Service account
+serviceAccount:
+  create: true
+  annotations: {}
+  name: "neo-service-account"
+
+# Global configuration
+global:
+  environment: production
+  consul:
+    address: "http://consul:8500"
+    datacenter: "dc1"
+  jwt:
+    issuer: "neo-service-layer"
+    audience: "neo-service-layer-clients"
+    expiryMinutes: 60
+
+# Services configuration
+services:
+  # API Gateway
+  gateway:
+    enabled: true
+    replicaCount: 3
+    image: "neo-api-gateway"
+    service:
+      type: LoadBalancer
+      port: 80
+      targetPort: 80
+    ingress:
+      enabled: true
+      className: "nginx"
+      annotations:
+        cert-manager.io/cluster-issuer: "letsencrypt-prod"
+      hosts:
+        - host: api.neoservicelayer.com
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: neo-api-tls
+          hosts:
+            - api.neoservicelayer.com
+    resources:
+      requests:
+        cpu: 200m
+        memory: 256Mi
+      limits:
+        cpu: 1000m
+        memory: 512Mi
+
+  # Core Services
+  notification:
+    enabled: true
+    replicaCount: 2
+    image: "neo-notification-service"
+    autoscaling:
+      enabled: true
+      minReplicas: 2
+      maxReplicas: 10
+      targetCPUUtilizationPercentage: 70
+    config:
+      smtp:
+        host: "smtp.gmail.com"
+        port: 587
+
+  configuration:
+    enabled: true
+    replicaCount: 2
+    image: "neo-configuration-service"
+
+  backup:
+    enabled: true
+    replicaCount: 1
+    image: "neo-backup-service"
+    persistence:
+      enabled: true
+      size: 10Gi
+      storageClass: "fast-ssd"
+
+  smartContracts:
+    enabled: true
+    replicaCount: 3
+    image: "neo-smart-contracts-service"
+    config:
+      neo:
+        n3RpcUrl: "http://seed1.neo.org:10332"
+        xRpcUrl: "http://seed1.neox.org:10332"
+
+  crossChain:
+    enabled: true
+    replicaCount: 2
+    image: "neo-cross-chain-service"
+
+  monitoring:
+    enabled: true
+    replicaCount: 1
+    image: "neo-monitoring-service"
+
+  health:
+    enabled: true
+    replicaCount: 1
+    image: "neo-health-service"
+
+  keyManagement:
+    enabled: true
+    replicaCount: 2
+    image: "neo-key-management-service"
+    sgx:
+      enabled: true
+      mode: "HW"  # or "SIM" for simulation
+
+# Infrastructure services
+consul:
+  enabled: true
+  replicas: 3
+  persistence:
+    enabled: true
+    size: 1Gi
+
+postgresql:
+  enabled: true
+  auth:
+    database: "neoservice"
+    username: "neouser"
+    existingSecret: "neo-postgres-secret"
+  primary:
+    persistence:
+      enabled: true
+      size: 20Gi
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    existingSecret: "neo-redis-secret"
+  master:
+    persistence:
+      enabled: true
+      size: 8Gi
+
+rabbitmq:
+  enabled: true
+  auth:
+    username: "neouser"
+    existingPasswordSecret: "neo-rabbitmq-secret"
+  persistence:
+    enabled: true
+    size: 8Gi
+
+prometheus:
+  enabled: true
+  pushgateway:
+    enabled: false
+  alertmanager:
+    enabled: true
+  server:
+    persistentVolume:
+      enabled: true
+      size: 10Gi
+
+grafana:
+  enabled: true
+  adminUser: admin
+  adminPassword: "" # Set via secret
+  persistence:
+    enabled: true
+    size: 1Gi
+  datasources:
+    datasources.yaml:
+      apiVersion: 1
+      datasources:
+        - name: Prometheus
+          type: prometheus
+          url: http://prometheus-server
+          access: proxy
+          isDefault: true
+
+# Resource defaults
+resources:
+  defaults:
+    requests:
+      cpu: 100m
+      memory: 256Mi
+    limits:
+      cpu: 500m
+      memory: 512Mi
+
+# Autoscaling defaults
+autoscaling:
+  enabled: false
+  minReplicas: 2
+  maxReplicas: 10
+  targetCPUUtilizationPercentage: 70
+  targetMemoryUtilizationPercentage: 80
+
+# Security
+podSecurityContext:
+  runAsNonRoot: true
+  runAsUser: 1001
+  fsGroup: 1001
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: true
+  runAsNonRoot: true
+  runAsUser: 1001
+
+# Network policies
+networkPolicy:
+  enabled: true
+  ingress:
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: neo-service-layer
+    - from:
+        - namespaceSelector:
+            matchLabels:
+              name: ingress-nginx
+
+# Pod disruption budget
+podDisruptionBudget:
+  enabled: true
+  minAvailable: 1
+
+# Monitoring
+monitoring:
+  serviceMonitor:
+    enabled: true
+    interval: 30s
+    path: /metrics
+    labels:
+      prometheus: kube-prometheus
+
+# Secrets management
+secrets:
+  create: true
+  jwt:
+    secretKey: "" # Generated if empty
+  postgres:
+    password: "" # Generated if empty
+  redis:
+    password: "" # Generated if empty
+  rabbitmq:
+    password: "" # Generated if empty

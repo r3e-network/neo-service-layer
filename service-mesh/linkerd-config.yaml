@@ -1,0 +1,111 @@
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServiceProfile
+metadata:
+  name: neo-services
+  namespace: neo-service-layer
+spec:
+  # Retry policy for all services
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 10s
+  
+  # Define routes for services
+  routes:
+  - name: notification-send
+    condition:
+      method: POST
+      pathRegex: "/api/notification/send"
+    responseClasses:
+    - condition:
+        status:
+          min: 500
+          max: 599
+      isFailure: true
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+  
+  - name: configuration-get
+    condition:
+      method: GET
+      pathRegex: "/api/configuration/.*"
+    timeout: 5s
+    
+  - name: smart-contracts-deploy
+    condition:
+      method: POST
+      pathRegex: "/api/smart-contracts/deploy"
+    timeout: 120s
+    retries:
+      attempts: 1  # No retries for deployments
+  
+  - name: health-check
+    condition:
+      method: GET
+      pathRegex: "/health"
+    timeout: 3s
+    isRetryable: false
+
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: TrafficSplit
+metadata:
+  name: canary-deployment
+  namespace: neo-service-layer
+spec:
+  service: notification-service
+  backends:
+  - service: notification-service-stable
+    weight: 90
+  - service: notification-service-canary
+    weight: 10
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linkerd-config
+  namespace: neo-service-layer
+data:
+  config.yaml: |
+    admin:
+      enabled: true
+      port: 9990
+    
+    telemetry:
+      enabled: true
+      prometheusUrl: http://prometheus:9090
+      
+    proxies:
+      - protocol: http
+        servers:
+          - port: 4140
+            ip: 0.0.0.0
+        
+    routers:
+      - protocol: http
+        servers:
+          - port: 4140
+            ip: 0.0.0.0
+        
+        # Service discovery integration
+        dtab: |
+          /svc => /#/io.l5d.consul/dc1;
+          /http => /svc;
+    
+    namers:
+      - kind: io.l5d.consul
+        host: consul
+        port: 8500
+        datacenter: dc1
+        includeTag: true
+        useHealthCheck: true
+        
+    telemetry:
+      - kind: io.l5d.prometheus
+        prefix: linkerd
+        
+    usage:
+      enabled: false

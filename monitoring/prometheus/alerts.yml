@@ -1,0 +1,97 @@
+groups:
+  - name: neo_service_alerts
+    interval: 30s
+    rules:
+      # Service availability alerts
+      - alert: ServiceDown
+        expr: up{job="neo-services"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Service {{ $labels.service_name }} is down"
+          description: "{{ $labels.service_name }} at {{ $labels.instance }} has been down for more than 2 minutes."
+
+      - alert: HighErrorRate
+        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High error rate on {{ $labels.service_name }}"
+          description: "{{ $labels.service_name }} is experiencing {{ $value | humanizePercentage }} error rate."
+
+      - alert: HighResponseTime
+        expr: histogram_quantile(0.95, http_request_duration_seconds_bucket) > 1
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High response time on {{ $labels.service_name }}"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.service_name }}."
+
+      # Resource alerts
+      - alert: HighMemoryUsage
+        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High memory usage for {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} is using {{ $value | humanizePercentage }} of its memory limit."
+
+      - alert: HighCPUUsage
+        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High CPU usage for {{ $labels.container_name }}"
+          description: "Container {{ $labels.container_name }} is using {{ $value | humanizePercentage }} CPU."
+
+      # Infrastructure alerts
+      - alert: PostgresDown
+        expr: up{job="postgres"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "PostgreSQL is down"
+          description: "PostgreSQL database has been down for more than 1 minute."
+
+      - alert: RedisDown
+        expr: up{job="redis"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Redis is down"
+          description: "Redis cache has been down for more than 1 minute."
+
+      - alert: ConsulDown
+        expr: up{job="consul"} == 0
+        for: 1m
+        labels:
+          severity: critical
+        annotations:
+          summary: "Consul is down"
+          description: "Consul service discovery has been down for more than 1 minute."
+
+      # Business metrics alerts
+      - alert: LowServiceRegistrations
+        expr: consul_agent_service_count < 5
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "Low number of registered services"
+          description: "Only {{ $value }} services are registered in Consul."
+
+      - alert: HighQueueDepth
+        expr: rabbitmq_queue_messages > 1000
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: "High message queue depth"
+          description: "Queue {{ $labels.queue }} has {{ $value }} messages pending."

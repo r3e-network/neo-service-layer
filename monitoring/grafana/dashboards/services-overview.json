@@ -1,0 +1,142 @@
+{
+  "dashboard": {
+    "title": "Neo Service Layer - Services Overview",
+    "uid": "neo-services-overview",
+    "version": 1,
+    "timezone": "browser",
+    "panels": [
+      {
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 0 },
+        "id": 1,
+        "title": "Service Health Status",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "sum(up{job=\"neo-services\"})",
+            "refId": "A",
+            "legendFormat": "Healthy Services"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                { "color": "red", "value": null },
+                { "color": "yellow", "value": 10 },
+                { "color": "green", "value": 20 }
+              ]
+            },
+            "unit": "short"
+          }
+        }
+      },
+      {
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 0 },
+        "id": 2,
+        "title": "Request Rate (per service)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) by (service_name)",
+            "refId": "A",
+            "legendFormat": "{{ service_name }}"
+          }
+        ],
+        "yaxes": [
+          { "format": "reqps", "show": true },
+          { "format": "short", "show": false }
+        ]
+      },
+      {
+        "gridPos": { "h": 8, "w": 12, "x": 0, "y": 8 },
+        "id": 3,
+        "title": "Error Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total{status=~\"5..\"}[5m])) by (service_name)",
+            "refId": "A",
+            "legendFormat": "{{ service_name }}"
+          }
+        ],
+        "yaxes": [
+          { "format": "percent", "show": true },
+          { "format": "short", "show": false }
+        ]
+      },
+      {
+        "gridPos": { "h": 8, "w": 12, "x": 12, "y": 8 },
+        "id": 4,
+        "title": "Response Time (95th percentile)",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (service_name, le))",
+            "refId": "A",
+            "legendFormat": "{{ service_name }}"
+          }
+        ],
+        "yaxes": [
+          { "format": "s", "show": true },
+          { "format": "short", "show": false }
+        ]
+      },
+      {
+        "gridPos": { "h": 8, "w": 24, "x": 0, "y": 16 },
+        "id": 5,
+        "title": "Service Instance Status",
+        "type": "table",
+        "targets": [
+          {
+            "expr": "up{job=\"neo-services\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true,
+                "job": true
+              },
+              "renameByName": {
+                "instance": "Instance",
+                "service_name": "Service",
+                "service_version": "Version",
+                "Value": "Status"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": { "id": "byName", "options": "Status" },
+              "properties": [
+                {
+                  "id": "mappings",
+                  "value": [
+                    { "type": "value", "value": "1", "text": "UP", "color": "green" },
+                    { "type": "value", "value": "0", "text": "DOWN", "color": "red" }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      }
+    ],
+    "schemaVersion": 30,
+    "refresh": "10s",
+    "time": {
+      "from": "now-30m",
+      "to": "now"
+    }
+  }
+}
