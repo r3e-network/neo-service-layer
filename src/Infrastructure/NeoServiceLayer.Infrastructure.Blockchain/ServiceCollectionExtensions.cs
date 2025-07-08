@@ -74,7 +74,7 @@ public static class ServiceCollectionExtensions
         services.Configure<BlockchainConfiguration>(configuration.GetSection("Blockchain"));
 
         // Register blockchain client factory
-        services.AddSingleton<IBlockchainClientFactory, BlockchainClientFactory>();
+        services.AddSingleton<Core.IBlockchainClientFactory, BlockchainClientFactory>();
 
         return services;
     }

@@ -7,8 +7,8 @@ using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Host.Services;
 
-// Use Infrastructure namespace for IBlockchainClientFactory
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+// Use Core namespace for IBlockchainClientFactory
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Randomness;
 
@@ -324,7 +324,8 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             // Get the latest block hash from the blockchain to use as additional entropy
             var blockchainClient = _blockchainClientFactory.CreateClient(blockchainType);
             long blockHeight = await blockchainClient.GetBlockHeightAsync();
-            var blockHash = await blockchainClient.GetBlockHashAsync(blockHeight);
+            var block = await blockchainClient.GetBlockAsync(blockHeight);
+            var blockHash = block.Hash;
 
             // Create a proof by signing the seed, block hash, and random value
             string dataToSign = $"{seed}:{blockHash}:{randomValue}";

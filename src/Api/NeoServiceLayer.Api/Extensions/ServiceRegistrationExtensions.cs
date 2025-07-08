@@ -25,10 +25,8 @@ public static class ServiceRegistrationExtensions
         // Add persistent storage
         services.AddPersistentStorage(configuration);
 
-        // Add blockchain client factory - register concrete then interface
-        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
-        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory>(provider =>
-            (NeoServiceLayer.Core.IBlockchainClientFactory)provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
+        // Add blockchain client factory
+        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory, NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
 
         // Core Services (4)
         services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();

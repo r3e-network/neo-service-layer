@@ -44,7 +44,7 @@ public class MultiServiceOrchestrationTests : IDisposable
 
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory, MockBlockchainClientFactory>();
 
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();

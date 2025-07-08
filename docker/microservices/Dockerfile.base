@@ -1,0 +1,81 @@
+# Base image for all Neo Service Layer microservices
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
+WORKDIR /app
+EXPOSE 80
+EXPOSE 443
+
+# Install common dependencies
+RUN apk add --no-cache \
+    ca-certificates \
+    curl \
+    wget \
+    libstdc++ \
+    libgcc \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Set up health check script
+COPY <<'EOF' /healthcheck.sh
+#!/bin/sh
+wget --no-verbose --tries=1 --spider http://localhost:80/health || exit 1
+EOF
+RUN chmod +x /healthcheck.sh
+
+# Common environment variables
+ENV ASPNETCORE_URLS=http://+:80;https://+:443
+ENV ASPNETCORE_ENVIRONMENT=Production
+ENV Logging__Console__FormatterName=Json
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
+    CMD /healthcheck.sh
+
+USER appuser
+
+# Build stage with common build dependencies
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build-base
+WORKDIR /src
+
+# Install build dependencies
+RUN apk add --no-cache \
+    git \
+    build-essential \
+    protobuf-compiler \
+    && rm -rf /var/cache/apk/*
+
+# Copy global files
+COPY ["NeoServiceLayer.sln", "./"]
+COPY ["Directory.Build.props", "./"]
+COPY ["Directory.Packages.props", "./"]
+COPY ["nuget.config", "./"]
+
+# Copy all project files for restore
+COPY ["src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj", "src/Core/NeoServiceLayer.Core/"]
+COPY ["src/Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj", "src/Core/NeoServiceLayer.Shared/"]
+COPY ["src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj", "src/Core/NeoServiceLayer.ServiceFramework/"]
+COPY ["src/Infrastructure/NeoServiceLayer.Infrastructure.ServiceDiscovery/NeoServiceLayer.Infrastructure.ServiceDiscovery.csproj", "src/Infrastructure/NeoServiceLayer.Infrastructure.ServiceDiscovery/"]
+COPY ["src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj", "src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/"]
+COPY ["src/Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj", "src/Infrastructure/NeoServiceLayer.Infrastructure.Security/"]
+COPY ["src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/NeoServiceLayer.Infrastructure.Blockchain.csproj", "src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/"]
+COPY ["src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj", "src/Tee/NeoServiceLayer.Tee.Enclave/"]
+COPY ["src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj", "src/Tee/NeoServiceLayer.Tee.Host/"]
+COPY ["src/Blockchain/NeoServiceLayer.Neo.N3/NeoServiceLayer.Neo.N3.csproj", "src/Blockchain/NeoServiceLayer.Neo.N3/"]
+COPY ["src/Blockchain/NeoServiceLayer.Neo.X/NeoServiceLayer.Neo.X.csproj", "src/Blockchain/NeoServiceLayer.Neo.X/"]
+
+# Restore base dependencies
+RUN dotnet restore "src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj"
+RUN dotnet restore "src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj"
+
+# Copy source files
+COPY ["src/Core/", "src/Core/"]
+COPY ["src/Infrastructure/", "src/Infrastructure/"]
+COPY ["src/Tee/", "src/Tee/"]
+COPY ["src/Blockchain/", "src/Blockchain/"]
+
+# Build core libraries
+RUN dotnet build "src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" -c Release --no-restore
+RUN dotnet build "src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" -c Release --no-restore
+RUN dotnet build "src/Infrastructure/NeoServiceLayer.Infrastructure.ServiceDiscovery/NeoServiceLayer.Infrastructure.ServiceDiscovery.csproj" -c Release --no-restore

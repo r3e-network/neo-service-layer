@@ -3,7 +3,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Oracle.Configuration;
 

@@ -160,7 +160,7 @@ public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
 
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory, MockBlockchainClientFactory>();
 
         // Add HTTP client factory
         services.AddHttpClient();

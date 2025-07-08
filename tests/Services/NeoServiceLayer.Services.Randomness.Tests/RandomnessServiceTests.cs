@@ -5,9 +5,9 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-// Use Infrastructure namespace for IBlockchainClientFactory and IBlockchainClient
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+// Use Core namespace for IBlockchainClientFactory and IBlockchainClient to match service implementation
+using IBlockchainClient = NeoServiceLayer.Core.IBlockchainClient;
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Randomness.Tests;
 
@@ -44,8 +44,14 @@ public class RandomnessServiceTests
             .ReturnsAsync(1000L);
 
         _blockchainClientMock
-            .Setup(c => c.GetBlockHashAsync(It.IsAny<long>()))
-            .ReturnsAsync("0x1234567890abcdef");
+            .Setup(c => c.GetBlockAsync(It.IsAny<long>()))
+            .ReturnsAsync(new Block
+            {
+                Hash = "0x1234567890abcdef",
+                Height = 1000L,
+                Timestamp = DateTime.UtcNow,
+                Transactions = new List<Transaction>()
+            });
 
         // Setup enclave manager mock
         _enclaveManagerMock
@@ -304,7 +310,7 @@ public class RandomnessServiceTests
         _enclaveManagerMock.Verify(e => e.GenerateRandomAsync(1, 100), Times.Once);
         _blockchainClientFactoryMock.Verify(f => f.CreateClient(BlockchainType.NeoN3), Times.Once);
         _blockchainClientMock.Verify(c => c.GetBlockHeightAsync(), Times.Once);
-        _blockchainClientMock.Verify(c => c.GetBlockHashAsync(1000L), Times.Once);
+        _blockchainClientMock.Verify(c => c.GetBlockAsync(1000L), Times.Once);
         _enclaveManagerMock.Verify(e => e.SignDataAsync(It.IsAny<string>(), It.IsAny<string>()), Times.Once);
     }
 

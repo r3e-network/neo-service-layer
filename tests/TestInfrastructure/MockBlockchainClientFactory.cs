@@ -10,7 +10,7 @@ namespace NeoServiceLayer.TestInfrastructure;
 /// Mock blockchain client factory for testing purposes.
 /// This class provides a test implementation that wraps the production factory.
 /// </summary>
-public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlockchainClientFactory
+public class MockBlockchainClientFactory : NeoServiceLayer.Core.IBlockchainClientFactory
 {
     private readonly ILoggerFactory _loggerFactory;
 
@@ -35,47 +35,20 @@ public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlock
     }
 
     /// <inheritdoc/>
-    public NeoServiceLayer.Infrastructure.IBlockchainClient CreateClient(BlockchainType blockchainType)
+    public NeoServiceLayer.Core.IBlockchainClient CreateClient(BlockchainType blockchainType)
     {
-        // Return a mock client that implements Infrastructure interface
-        return new MockInfrastructureBlockchainClient(_loggerFactory.CreateLogger<MockInfrastructureBlockchainClient>(), blockchainType);
+        // Return a mock client that implements Core interface
+        return new MockBlockchainClient(_loggerFactory.CreateLogger<MockBlockchainClient>(), blockchainType);
     }
 
-    /// <inheritdoc/>
-    public Task<NeoServiceLayer.Infrastructure.IBlockchainClient> CreateClientAsync(BlockchainType blockchainType)
-    {
-        return Task.FromResult(CreateClient(blockchainType));
-    }
 
-    /// <inheritdoc/>
-    public bool SupportsBlockchain(BlockchainType blockchainType)
-    {
-        return blockchainType == BlockchainType.NeoN3 || blockchainType == BlockchainType.NeoX;
-    }
-
-    /// <inheritdoc/>
-    public IEnumerable<BlockchainType> GetSupportedBlockchains()
-    {
-        return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
-    }
 
     /// <inheritdoc/>
     public IEnumerable<BlockchainType> GetSupportedBlockchainTypes()
     {
-        return GetSupportedBlockchains();
+        return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
     }
 
-    /// <inheritdoc/>
-    public Task<bool> ValidateConnectionAsync(BlockchainType blockchainType)
-    {
-        return Task.FromResult(SupportsBlockchain(blockchainType));
-    }
-
-    /// <inheritdoc/>
-    public Task<bool> ValidateConnectionAsync(BlockchainType blockchainType, CancellationToken cancellationToken = default)
-    {
-        return Task.FromResult(SupportsBlockchain(blockchainType));
-    }
 
     /// <summary>
     /// Gets the mock client for backward compatibility in tests.

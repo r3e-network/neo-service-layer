@@ -1,0 +1,331 @@
+version: '3.8'
+
+x-common-variables: &common-variables
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+  Consul__Address: http://consul:8500
+  Consul__Datacenter: dc1
+  ConnectionStrings__DefaultConnection: Host=postgres;Database=neoservice;Username=neouser;Password=neopass123
+  Redis__Configuration: redis:6379
+  RabbitMQ__HostName: rabbitmq
+  RabbitMQ__UserName: guest
+  RabbitMQ__Password: guest
+  Jwt__SecretKey: ${JWT_SECRET_KEY:-ChangeThisToASecureRandomKey123!}
+  Jwt__Issuer: neo-service-layer
+  Jwt__Audience: neo-service-layer-clients
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - neo-network
+  environment:
+    <<: *common-variables
+  depends_on:
+    - consul
+    - postgres
+    - redis
+    - rabbitmq
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 256M
+
+services:
+  # Infrastructure Services
+  consul:
+    image: consul:1.17
+    container_name: neo-consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    networks:
+      - neo-network
+    volumes:
+      - consul_data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    environment:
+      - POSTGRES_DB=neoservice
+      - POSTGRES_USER=neouser
+      - POSTGRES_PASSWORD=neopass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    ports:
+      - "5432:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - neo-network
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: neo-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - neo-network
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/microservices/gateway/Dockerfile
+    container_name: neo-api-gateway
+    <<: *service-defaults
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ApiGateway
+      SERVICE_TYPE: Gateway
+
+  # Core Services
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/notification/Dockerfile
+    container_name: neo-notification-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: NotificationService
+      SERVICE_TYPE: Notification
+      Email__SmtpHost: ${SMTP_HOST:-smtp.gmail.com}
+      Email__SmtpPort: ${SMTP_PORT:-587}
+      Email__SmtpUser: ${SMTP_USER}
+      Email__SmtpPassword: ${SMTP_PASSWORD}
+    ports:
+      - "5010:80"
+
+  configuration-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/configuration/Dockerfile
+    container_name: neo-configuration-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ConfigurationService
+      SERVICE_TYPE: Configuration
+    ports:
+      - "5011:80"
+
+  backup-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/backup/Dockerfile
+    container_name: neo-backup-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: BackupService
+      SERVICE_TYPE: Backup
+      Backup__S3__BucketName: ${BACKUP_S3_BUCKET}
+      Backup__S3__Region: ${AWS_REGION:-us-east-1}
+    volumes:
+      - backup_data:/app/backups
+    ports:
+      - "5012:80"
+
+  proof-of-reserve-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/proof-of-reserve/Dockerfile
+    container_name: neo-proof-of-reserve-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ProofOfReserveService
+      SERVICE_TYPE: ProofOfReserve
+    ports:
+      - "5013:80"
+
+  smart-contracts-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/smart-contracts/Dockerfile
+    container_name: neo-smart-contracts-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: SmartContractsService
+      SERVICE_TYPE: SmartContracts
+      Neo__N3__RpcUrl: ${NEO_N3_RPC_URL:-http://seed1.neo.org:10332}
+      Neo__X__RpcUrl: ${NEO_X_RPC_URL:-http://seed1.neox.org:10332}
+    ports:
+      - "5014:80"
+
+  cross-chain-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/cross-chain/Dockerfile
+    container_name: neo-cross-chain-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: CrossChainService
+      SERVICE_TYPE: CrossChain
+    ports:
+      - "5015:80"
+
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/monitoring/Dockerfile
+    container_name: neo-monitoring-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: MonitoringService
+      SERVICE_TYPE: Monitoring
+    ports:
+      - "5016:80"
+
+  health-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/health/Dockerfile
+    container_name: neo-health-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: HealthService
+      SERVICE_TYPE: Health
+    ports:
+      - "5017:80"
+
+  # Security Services
+  key-management-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/key-management/Dockerfile
+    container_name: neo-key-management-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: KeyManagementService
+      SERVICE_TYPE: KeyManagement
+      SGX_MODE: ${SGX_MODE:-SIM}
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    volumes:
+      - sgx_aesm:/var/run/aesmd
+    ports:
+      - "5018:80"
+
+  # Automation Services
+  automation-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/automation/Dockerfile
+    container_name: neo-automation-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: AutomationService
+      SERVICE_TYPE: Automation
+    ports:
+      - "5019:80"
+
+  # Service Discovery UI
+  consul-ui:
+    image: consul:1.17
+    container_name: neo-consul-ui
+    command: agent -ui -client=0.0.0.0 -join=consul
+    networks:
+      - neo-network
+    ports:
+      - "8501:8500"
+    depends_on:
+      - consul
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: neo-prometheus
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml
+      - prometheus_data:/prometheus
+    networks:
+      - neo-network
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: neo-grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - neo-network
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+
+  # Service Mesh (optional)
+  linkerd:
+    image: buoyantio/linkerd:stable-2.14.1
+    container_name: neo-linkerd
+    networks:
+      - neo-network
+    ports:
+      - "9990:9990"
+      - "4140:4140"
+      - "4141:4141"
+    command: /linkerd-config.yaml
+    volumes:
+      - ./service-mesh/linkerd-config.yaml:/linkerd-config.yaml
+    restart: unless-stopped
+
+networks:
+  neo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+
+volumes:
+  consul_data:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  backup_data:
+  prometheus_data:
+  grafana_data:
+  sgx_aesm:

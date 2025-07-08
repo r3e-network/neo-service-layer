@@ -98,6 +98,11 @@ public enum DeliveryStatus
     Failed,
 
     /// <summary>
+    /// Some notifications in a batch were delivered successfully.
+    /// </summary>
+    PartiallyDelivered,
+
+    /// <summary>
     /// Notification was scheduled for later delivery.
     /// </summary>
     Scheduled,

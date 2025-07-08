@@ -40,14 +40,14 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
         };
 
         // Setup authentication header for tests with a valid JWT token
-        var token = GenerateTestToken();
+        var token = GenerateTestToken(_factory.TestJwtSecretKey);
         _client.DefaultRequestHeaders.Authorization = new AuthenticationHeaderValue("Bearer", token);
     }
 
-    private static string GenerateTestToken()
+    private static string GenerateTestToken(string jwtSecretKey)
     {
         var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes("SuperSecretTestKeyThatIsLongEnoughForTesting123!");
+        var key = Encoding.ASCII.GetBytes(jwtSecretKey);
         var tokenDescriptor = new SecurityTokenDescriptor
         {
             Subject = new System.Security.Claims.ClaimsIdentity(new[]
@@ -75,6 +75,14 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
     {
         // Act
         var response = await _client.GetAsync("/health");
+        
+        // Log the response for debugging
+        if (!response.IsSuccessStatusCode)
+        {
+            var errorContent = await response.Content.ReadAsStringAsync();
+            _factory.Services.GetRequiredService<ILogger<ApiIntegrationTests>>()
+                .LogError("Health check failed: {StatusCode} - {Content}", response.StatusCode, errorContent);
+        }
 
         // Assert
         response.EnsureSuccessStatusCode();
@@ -466,26 +474,60 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
 /// </summary>
 public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 {
+    public string TestJwtSecretKey { get; } = "TestJwtSecretKeyForApiIntegrationTests_" + Guid.NewGuid().ToString("N");
+    
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
         {
-            // Remove existing services and add mocks
-            var descriptorsToRemove = services.Where(d =>
-                d.ServiceType == typeof(IKeyManagementService) ||
-                d.ServiceType == typeof(NeoServiceLayer.AI.Prediction.IPredictionService) ||
-                d.ServiceType == typeof(NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService)
-            ).ToList();
+            // Remove all real service implementations
+            var serviceTypesToRemove = new[]
+            {
+                typeof(IKeyManagementService),
+                typeof(NeoServiceLayer.AI.Prediction.IPredictionService),
+                typeof(NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService),
+                typeof(NeoServiceLayer.Core.IBlockchainClientFactory),
+                typeof(NeoServiceLayer.Infrastructure.Persistence.IPersistentStorageProvider),
+                typeof(NeoServiceLayer.Services.Voting.IVotingService),
+                typeof(NeoServiceLayer.Services.CrossChain.ICrossChainService),
+                typeof(NeoServiceLayer.Services.SmartContracts.ISmartContractsService),
+                typeof(NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService),
+                typeof(NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService),
+                typeof(NeoServiceLayer.Services.Notification.INotificationService),
+                typeof(NeoServiceLayer.Services.Randomness.IRandomnessService),
+                typeof(NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService),
+                typeof(NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService),
+                typeof(NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService),
+                typeof(NeoServiceLayer.Services.NetworkSecurity.INetworkSecurityService),
+                typeof(NeoServiceLayer.Services.Compliance.IComplianceService),
+                typeof(NeoServiceLayer.Tee.Enclave.IAttestationService)
+            };
 
+            var descriptorsToRemove = services.Where(d => serviceTypesToRemove.Contains(d.ServiceType)).ToList();
             foreach (var descriptor in descriptorsToRemove)
             {
                 services.Remove(descriptor);
             }
 
-            // Register mock services
+            // Create all mock services
             var mockKeyManagementService = new Mock<IKeyManagementService>();
             var mockPredictionService = new Mock<NeoServiceLayer.AI.Prediction.IPredictionService>();
             var mockPatternRecognitionService = new Mock<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService>();
+            var mockBlockchainClientFactory = new Mock<NeoServiceLayer.Core.IBlockchainClientFactory>();
+            var mockPersistentStorage = new Mock<NeoServiceLayer.Infrastructure.Persistence.IPersistentStorageProvider>();
+            var mockVotingService = new Mock<NeoServiceLayer.Services.Voting.IVotingService>();
+            var mockCrossChainService = new Mock<NeoServiceLayer.Services.CrossChain.ICrossChainService>();
+            var mockSmartContractsService = new Mock<NeoServiceLayer.Services.SmartContracts.ISmartContractsService>();
+            var mockProofOfReserveService = new Mock<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService>();
+            var mockEventSubscriptionService = new Mock<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService>();
+            var mockNotificationService = new Mock<NeoServiceLayer.Services.Notification.INotificationService>();
+            var mockRandomnessService = new Mock<NeoServiceLayer.Services.Randomness.IRandomnessService>();
+            var mockAbstractAccountService = new Mock<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService>();
+            var mockSocialRecoveryService = new Mock<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService>();
+            var mockZeroKnowledgeService = new Mock<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService>();
+            var mockNetworkSecurityService = new Mock<NeoServiceLayer.Services.NetworkSecurity.INetworkSecurityService>();
+            var mockComplianceService = new Mock<NeoServiceLayer.Services.Compliance.IComplianceService>();
+            var mockAttestationService = new Mock<NeoServiceLayer.Tee.Enclave.IAttestationService>();
 
             // Setup mock for invalid blockchain type - no need since controller validates before calling service
 
@@ -565,9 +607,35 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                     Success = true
                 });
 
+            // Setup basic mocks for health checks - just return non-null values
+            // Create a mock blockchain client
+            var mockBlockchainClient = new Mock<Core.IBlockchainClient>();
+            mockBlockchainClient.Setup(x => x.BlockchainType).Returns(BlockchainType.NeoN3);
+            mockBlockchainClientFactory.Setup(x => x.CreateClient(It.IsAny<BlockchainType>()))
+                .Returns(mockBlockchainClient.Object);
+            
+            mockPersistentStorage.Setup(x => x.IsInitialized)
+                .Returns(true);
+
+            // Register all mock services
             services.AddSingleton(mockKeyManagementService.Object);
             services.AddSingleton(mockPredictionService.Object);
             services.AddSingleton(mockPatternRecognitionService.Object);
+            services.AddSingleton(mockBlockchainClientFactory.Object);
+            services.AddSingleton(mockPersistentStorage.Object);
+            services.AddSingleton(mockVotingService.Object);
+            services.AddSingleton(mockCrossChainService.Object);
+            services.AddSingleton(mockSmartContractsService.Object);
+            services.AddSingleton(mockProofOfReserveService.Object);
+            services.AddSingleton(mockEventSubscriptionService.Object);
+            services.AddSingleton(mockNotificationService.Object);
+            services.AddSingleton(mockRandomnessService.Object);
+            services.AddSingleton(mockAbstractAccountService.Object);
+            services.AddSingleton(mockSocialRecoveryService.Object);
+            services.AddSingleton(mockZeroKnowledgeService.Object);
+            services.AddSingleton(mockNetworkSecurityService.Object);
+            services.AddSingleton(mockComplianceService.Object);
+            services.AddSingleton(mockAttestationService.Object);
 
             // Configure test logging
             services.AddLogging(logging =>
@@ -579,16 +647,16 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
         });
 
         builder.UseEnvironment("Testing");
-
+        
         // Set test JWT secret using environment variable
-        Environment.SetEnvironmentVariable("JWT_SECRET_KEY", "SuperSecretTestKeyThatIsLongEnoughForTesting123!");
+        Environment.SetEnvironmentVariable("JWT_SECRET_KEY", TestJwtSecretKey);
 
         // Set test JWT secret for testing environment
         builder.ConfigureAppConfiguration((context, config) =>
         {
             config.AddInMemoryCollection(new Dictionary<string, string?>
             {
-                {"JwtSettings:SecretKey", "SuperSecretTestKeyThatIsLongEnoughForTesting123!"},
+                {"JwtSettings:SecretKey", TestJwtSecretKey},
                 {"JwtSettings:Issuer", "NeoServiceLayer"},
                 {"JwtSettings:Audience", "NeoServiceLayerUsers"}
             });

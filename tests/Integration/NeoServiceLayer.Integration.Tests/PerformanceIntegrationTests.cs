@@ -38,7 +38,7 @@ public class PerformanceIntegrationTests : IDisposable
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory, MockBlockchainClientFactory>();
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
         services.AddSingleton<IServiceConfiguration, MockServiceConfiguration>();

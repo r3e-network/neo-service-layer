@@ -1,6 +1,7 @@
 ﻿using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
 using System.Text;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
@@ -14,11 +15,20 @@ public abstract class IntegrationTestBase : IClassFixture<WebApplicationFactory<
 {
     protected readonly WebApplicationFactory<Program> Factory;
     protected readonly HttpClient Client;
+    private readonly string _testJwtSecretKey;
 
     protected IntegrationTestBase(WebApplicationFactory<Program> factory)
     {
+        // Generate a unique test JWT secret key
+        _testJwtSecretKey = "TestJwtSecretKeyForIntegrationTests_" + Guid.NewGuid().ToString("N");
+        
         Factory = factory.WithWebHostBuilder(builder =>
         {
+            builder.UseEnvironment("Test");
+            
+            // Set JWT secret key as environment variable
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", _testJwtSecretKey);
+            
             builder.ConfigureServices(services =>
             {
                 // Override services for testing if needed
@@ -32,7 +42,7 @@ public abstract class IntegrationTestBase : IClassFixture<WebApplicationFactory<
     protected string GenerateJwtToken(string userId = "test-user", string role = "User", int expirationMinutes = 60)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes("SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024!");
+        var key = Encoding.ASCII.GetBytes(_testJwtSecretKey);
 
         var claims = new List<Claim>
         {

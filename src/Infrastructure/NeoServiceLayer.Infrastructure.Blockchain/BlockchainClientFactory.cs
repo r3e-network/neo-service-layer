@@ -10,7 +10,7 @@ namespace NeoServiceLayer.Infrastructure.Blockchain;
 /// <summary>
 /// Factory for creating blockchain clients.
 /// </summary>
-public class BlockchainClientFactory : IBlockchainClientFactory
+public class BlockchainClientFactory : Core.IBlockchainClientFactory
 {
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BlockchainClientFactory> _logger;
@@ -33,7 +33,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     }
 
     /// <inheritdoc/>
-    public IBlockchainClient CreateClient(BlockchainType blockchainType)
+    public Core.IBlockchainClient CreateClient(BlockchainType blockchainType)
     {
         try
         {
@@ -63,7 +63,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     /// Creates a Neo N3 blockchain client.
     /// </summary>
     /// <returns>The Neo N3 blockchain client.</returns>
-    private IBlockchainClient CreateNeoN3Client()
+    private Core.IBlockchainClient CreateNeoN3Client()
     {
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
         var logger = _serviceProvider.GetRequiredService<ILogger<NeoN3Client>>();
@@ -84,7 +84,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     /// Creates a Neo X blockchain client.
     /// </summary>
     /// <returns>The Neo X blockchain client.</returns>
-    private IBlockchainClient CreateNeoXClient()
+    private Core.IBlockchainClient CreateNeoXClient()
     {
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
         var logger = _serviceProvider.GetRequiredService<ILogger<NeoXClient>>();
@@ -188,7 +188,7 @@ public class NeoXConfiguration
 /// <summary>
 /// Adapter for the Neo N3 client.
 /// </summary>
-public class NeoN3ClientAdapter : IBlockchainClient
+public class NeoN3ClientAdapter : Core.IBlockchainClient
 {
     private readonly ILogger<NeoN3ClientAdapter> _logger;
     private readonly NeoN3Client _client;
@@ -325,7 +325,7 @@ public class NeoN3ClientAdapter : IBlockchainClient
 /// <summary>
 /// Adapter for the NeoX client.
 /// </summary>
-public class NeoXClientAdapter : IBlockchainClient
+public class NeoXClientAdapter : Core.IBlockchainClient
 {
     private readonly ILogger<NeoXClientAdapter> _logger;
     private readonly NeoXClient _client;

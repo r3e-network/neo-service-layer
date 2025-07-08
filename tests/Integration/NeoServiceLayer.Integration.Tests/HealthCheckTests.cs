@@ -1,6 +1,8 @@
 ﻿using System.Net;
 using System.Text.Json;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Web;
 using Xunit;
 
@@ -13,7 +15,22 @@ public class HealthCheckTests : IClassFixture<WebApplicationFactory<Program>>
 
     public HealthCheckTests(WebApplicationFactory<Program> factory)
     {
-        _factory = factory;
+        // Generate a unique test JWT secret key
+        var testJwtSecretKey = "TestJwtSecretKeyForIntegrationTests_" + Guid.NewGuid().ToString("N");
+        
+        _factory = factory.WithWebHostBuilder(builder =>
+        {
+            builder.UseEnvironment("Test");
+            
+            // Set JWT secret key as environment variable
+            Environment.SetEnvironmentVariable("JWT_SECRET_KEY", testJwtSecretKey);
+            
+            builder.ConfigureServices(services =>
+            {
+                // Override services for testing if needed
+            });
+        });
+        
         _client = _factory.CreateClient();
     }
 
@@ -23,11 +40,18 @@ public class HealthCheckTests : IClassFixture<WebApplicationFactory<Program>>
         // Act
         var response = await _client.GetAsync("/health");
 
+        // Debug output
+        var debugContent = await response.Content.ReadAsStringAsync();
+        if (response.StatusCode != System.Net.HttpStatusCode.OK)
+        {
+            throw new Exception($"Health check failed with status {response.StatusCode}: {debugContent}");
+        }
+
         // Assert
         response.EnsureSuccessStatusCode();
         Assert.Equal("application/json", response.Content.Headers.ContentType?.MediaType);
 
-        var content = await response.Content.ReadAsStringAsync();
+        var content = debugContent;
         var healthResponse = JsonSerializer.Deserialize<HealthCheckResponse>(content, new JsonSerializerOptions
         {
             PropertyNameCaseInsensitive = true
@@ -106,7 +130,7 @@ public class HealthCheckTests : IClassFixture<WebApplicationFactory<Program>>
         });
 
         Assert.NotNull(info);
-        Assert.Equal("Neo Service Layer API", info.Name);
+        Assert.Equal("Neo Service Layer Web Application", info.Name);
         Assert.Equal("1.0.0", info.Version);
         Assert.NotNull(info.Environment);
     }

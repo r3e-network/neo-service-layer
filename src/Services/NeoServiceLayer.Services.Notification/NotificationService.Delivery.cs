@@ -19,14 +19,35 @@ public partial class NotificationService
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
+        if (!IsRunning)
+        {
+            throw new InvalidOperationException("Service is not running.");
+        }
+
         try
         {
             var notificationId = Guid.NewGuid().ToString();
+            
+            // Check for empty recipient first
+            if (string.IsNullOrWhiteSpace(request.Recipient))
+            {
+                return new NotificationResult
+                {
+                    NotificationId = notificationId,
+                    Success = false,
+                    Status = DeliveryStatus.Failed,
+                    ErrorMessage = "Recipient is required",
+                    SentAt = DateTime.UtcNow,
+                    Channel = request.Channel
+                };
+            }
+            
             Logger.LogDebug("Sending notification {NotificationId} via {Channel} to {Recipient}",
                 notificationId, request.Channel, request.Recipient);
 
-            // Validate recipient format
-            if (!ValidateRecipient(request.Channel, request.Recipient))
+            // Validate recipient format first for known channels
+            var isKnownChannel = Enum.IsDefined(typeof(NotificationChannel), request.Channel);
+            if (isKnownChannel && !ValidateRecipient(request.Channel, request.Recipient))
             {
                 return new NotificationResult
                 {
@@ -34,6 +55,20 @@ public partial class NotificationService
                     Success = false,
                     Status = DeliveryStatus.Failed,
                     ErrorMessage = $"Invalid recipient format for channel {request.Channel}",
+                    SentAt = DateTime.UtcNow,
+                    Channel = request.Channel
+                };
+            }
+
+            // Check if channel is enabled
+            if (!_options.Value.EnabledChannels.Any(c => c.Equals(request.Channel.ToString(), StringComparison.OrdinalIgnoreCase)))
+            {
+                return new NotificationResult
+                {
+                    NotificationId = notificationId,
+                    Success = false,
+                    Status = DeliveryStatus.Failed,
+                    ErrorMessage = $"Notification channel {request.Channel} is not enabled",
                     SentAt = DateTime.UtcNow,
                     Channel = request.Channel
                 };

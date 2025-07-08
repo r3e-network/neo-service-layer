@@ -150,19 +150,105 @@ public partial class NotificationService
     }
 
     /// <summary>
-    /// Sends a batch of notifications - not implemented.
+    /// Sends a batch of notifications.
     /// </summary>
     public async Task<object> SendBatchNotificationsAsync(object request, BlockchainType blockchainType)
     {
-        Logger.LogWarning("SendBatchNotificationsAsync is not implemented");
-        await Task.CompletedTask;
-
-        return new
+        if (!SupportsBlockchain(blockchainType))
         {
-            Success = false,
-            ErrorMessage = "Batch notifications are not currently implemented",
-            NotImplemented = true
-        };
+            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
+        }
+
+        if (!IsRunning)
+        {
+            throw new InvalidOperationException("Service is not running.");
+        }
+
+        try
+        {
+            // Extract properties from dynamic request
+            var requestType = request.GetType();
+            var recipients = requestType.GetProperty("Recipients")?.GetValue(request) as IEnumerable<string>;
+            var subject = requestType.GetProperty("Subject")?.GetValue(request) as string;
+            var message = requestType.GetProperty("Message")?.GetValue(request) as string;
+            var channel = requestType.GetProperty("Channel")?.GetValue(request);
+            var priority = requestType.GetProperty("Priority")?.GetValue(request);
+            var metadata = requestType.GetProperty("Metadata")?.GetValue(request) as Dictionary<string, object>;
+
+            if (recipients == null || !recipients.Any())
+            {
+                return new NotificationResult
+                {
+                    NotificationId = Guid.NewGuid().ToString(),
+                    Success = false,
+                    Status = DeliveryStatus.Failed,
+                    ErrorMessage = "Recipients list is required",
+                    SentAt = DateTime.UtcNow
+                };
+            }
+
+            var notificationChannel = channel is NotificationChannel nc ? nc : NotificationChannel.Email;
+            var notificationPriority = priority is NotificationPriority np ? np : NotificationPriority.Normal;
+
+            var tasks = new List<Task<NotificationResult>>();
+            var batchId = Guid.NewGuid().ToString();
+
+            foreach (var recipient in recipients)
+            {
+                var notificationRequest = new SendNotificationRequest
+                {
+                    Recipient = recipient,
+                    Subject = subject ?? "Batch Notification",
+                    Message = message ?? "Batch notification message",
+                    Channel = notificationChannel,
+                    Priority = notificationPriority,
+                    Metadata = new Dictionary<string, object>(metadata ?? new Dictionary<string, object>())
+                    {
+                        ["batch_id"] = batchId,
+                        ["batch_notification"] = true
+                    }
+                };
+
+                tasks.Add(SendNotificationAsync(notificationRequest, blockchainType));
+            }
+
+            var results = await Task.WhenAll(tasks);
+            var successCount = results.Count(r => r.Success);
+
+            Logger.LogInformation("Bulk notification completed: {SuccessCount}/{TotalCount} successful", 
+                successCount, results.Length);
+
+            // Return a single result for the batch
+            return new NotificationResult
+            {
+                NotificationId = batchId,
+                Success = successCount == results.Length,
+                Status = successCount == results.Length ? DeliveryStatus.Delivered : 
+                        successCount > 0 ? DeliveryStatus.PartiallyDelivered : DeliveryStatus.Failed,
+                SentAt = DateTime.UtcNow,
+                Channel = notificationChannel,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["batch_id"] = batchId,
+                    ["total_recipients"] = results.Length,
+                    ["successful_deliveries"] = successCount,
+                    ["failed_deliveries"] = results.Length - successCount,
+                    ["batch_type"] = metadata?.GetValueOrDefault("batch_type", "general") ?? "general"
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to send batch notifications");
+            return new NotificationResult
+            {
+                NotificationId = Guid.NewGuid().ToString(),
+                Success = false,
+                Status = DeliveryStatus.Failed,
+                ErrorMessage = ex.Message,
+                SentAt = DateTime.UtcNow
+            };
+        }
     }
 
     /// <summary>

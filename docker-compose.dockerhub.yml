@@ -1,0 +1,71 @@
+version: '3.8'
+
+services:
+  neo-service-layer:
+    image: r3enetwork/neo-service-layer:latest
+    container_name: neo-service-layer
+    ports:
+      - "5000:8080"     # Web interface
+      - "5001:8443"     # HTTPS (if configured)
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=http://+:8080;https://+:8443
+      - ConnectionStrings__DefaultConnection=Host=postgres;Database=neoservice;Username=neouser;Password=neopass123
+      - Redis__Configuration=redis:6379
+      - Jwt__SecretKey=${JWT_SECRET_KEY:-ChangeThisToASecureRandomKey123!}
+      - Jwt__Issuer=neo-service-layer
+      - Jwt__Audience=neo-service-layer-clients
+      - Jwt__ExpiryMinutes=60
+    networks:
+      - neo-network
+    depends_on:
+      - postgres
+      - redis
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    environment:
+      - POSTGRES_DB=neoservice
+      - POSTGRES_USER=neouser
+      - POSTGRES_PASSWORD=neopass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neouser -d neoservice"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - neo-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+networks:
+  neo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

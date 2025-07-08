@@ -6,8 +6,8 @@ using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Services.Oracle.Models;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using IBlockchainClient = NeoServiceLayer.Core.IBlockchainClient;
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Oracle;
 

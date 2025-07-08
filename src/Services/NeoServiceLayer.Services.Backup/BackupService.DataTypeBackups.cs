@@ -3,8 +3,8 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Services.Backup.Models;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using IBlockchainClient = NeoServiceLayer.Core.IBlockchainClient;
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Backup;
 

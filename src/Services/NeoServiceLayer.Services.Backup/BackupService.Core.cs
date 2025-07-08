@@ -4,7 +4,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Backup.Models;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Backup;
 

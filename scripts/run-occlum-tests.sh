@@ -8,7 +8,7 @@ if [ -f /.dockerenv ]; then
     echo "Running inside Docker container"
 else
     echo "Running Occlum Docker container..."
-    docker run --rm -it \
+    docker run --rm \
         --device /dev/sgx_enclave \
         --device /dev/sgx_provision \
         -v /var/run/aesmd:/var/run/aesmd \
@@ -31,11 +31,11 @@ fi
 
 # Build the project
 echo "Building project..."
-dotnet build --configuration Release
+dotnet build NeoServiceLayer.sln --configuration Release
 
 # Run regular tests
 echo "Running unit tests..."
-dotnet test --configuration Release --filter "Category!=SGX"
+dotnet test NeoServiceLayer.sln --configuration Release --filter "Category!=SGX"
 
 # Create Occlum instance for SGX tests
 echo "Setting up Occlum instance..."

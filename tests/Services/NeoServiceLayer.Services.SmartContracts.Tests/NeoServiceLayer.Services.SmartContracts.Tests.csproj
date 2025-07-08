@@ -26,9 +26,13 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.SmartContracts\NeoServiceLayer.Services.SmartContracts.csproj" />
+    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.SmartContracts.NeoN3\NeoServiceLayer.Services.SmartContracts.NeoN3.csproj" />
+    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.SmartContracts.NeoX\NeoServiceLayer.Services.SmartContracts.NeoX.csproj" />
     <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
     <ProjectReference Include="..\..\TestInfrastructure\NeoServiceLayer.TestInfrastructure.csproj" />
+    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host.Tests\NeoServiceLayer.Tee.Host.Tests.csproj" />
   </ItemGroup>
 
 </Project>
