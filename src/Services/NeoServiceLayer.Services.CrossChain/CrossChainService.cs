@@ -630,6 +630,131 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
         return true;
     }
 
+    /// <summary>
+    /// Initiates a cross-chain transfer.
+    /// </summary>
+    public async Task<object> InitiateTransferAsync(NeoServiceLayer.Services.CrossChain.Host.CrossChainTransferRequest request)
+    {
+        var transferId = Guid.NewGuid().ToString();
+
+        // In a real implementation, this would create a cross-chain transfer
+        await Task.Delay(100);
+
+        return new
+        {
+            transferId,
+            sourceChain = request.SourceChain,
+            targetChain = request.TargetChain,
+            assetId = request.AssetId,
+            amount = request.Amount,
+            recipientAddress = request.RecipientAddress,
+            status = "pending",
+            estimatedConfirmationTime = DateTime.UtcNow.AddMinutes(5),
+            fees = new
+            {
+                networkFee = request.Options?.NetworkFee ?? "0.001",
+                systemFee = request.Options?.SystemFee ?? "0.001",
+                totalFee = "0.002"
+            }
+        };
+    }
+
+    /// <summary>
+    /// Gets the status of a cross-chain transfer.
+    /// </summary>
+    public async Task<object> GetTransferStatusAsync(string transferId)
+    {
+        await Task.Delay(50);
+
+        return new
+        {
+            transferId,
+            status = "confirmed",
+            sourceChain = "neo_n3",
+            targetChain = "neo_x",
+            sourceTransactionId = "0x1234567890abcdef1234567890abcdef12345678",
+            targetTransactionId = "0xfedcba0987654321fedcba0987654321fedcba09",
+            confirmations = 12,
+            requiredConfirmations = 6,
+            completedAt = DateTime.UtcNow.AddMinutes(-2)
+        };
+    }
+
+    /// <summary>
+    /// Gets the list of supported chains for cross-chain operations.
+    /// </summary>
+    public async Task<object> GetSupportedChainsDetailsAsync()
+    {
+        await Task.Delay(50);
+
+        return new
+        {
+            chains = _supportedChains.Select(c => new
+            {
+                id = c.SourceChain.ToString().ToLower(),
+                name = c.SourceChain.ToString(),
+                isActive = c.IsActive,
+                targetChains = new[] { c.TargetChain.ToString().ToLower() }
+            }),
+            supportedPairs = _supportedChains.Select(c => new
+            {
+                source = c.SourceChain.ToString().ToLower(),
+                target = c.TargetChain.ToString().ToLower(),
+                isActive = c.IsActive
+            })
+        };
+    }
+
+    /// <summary>
+    /// Gets the transfer fees between two chains.
+    /// </summary>
+    public async Task<object> GetTransferFeesAsync(string sourceChain, string targetChain)
+    {
+        await Task.Delay(50);
+
+        return new
+        {
+            sourceChain,
+            targetChain,
+            fees = new
+            {
+                networkFee = "0.001",
+                systemFee = "0.001",
+                bridgeFee = "0.005",
+                totalFee = "0.007"
+            },
+            estimatedTime = "5 minutes",
+            minimumAmount = "0.01",
+            maximumAmount = "1000"
+        };
+    }
+
+    /// <summary>
+    /// Gets the validators for a specific chain.
+    /// </summary>
+    public async Task<object> GetValidatorsAsync(string chainId)
+    {
+        await Task.Delay(50);
+
+        return new
+        {
+            chainId,
+            validators = new[]
+            {
+                new { address = "0x1234567890abcdef1234567890abcdef12345678", isActive = true, votes = 1000000 },
+                new { address = "0x2345678901bcdef12345678901bcdef123456789", isActive = true, votes = 950000 },
+                new { address = "0x3456789012cdef123456789012cdef12345678a", isActive = true, votes = 900000 },
+                new { address = "0x456789013def123456789013def12345678ab", isActive = true, votes = 850000 },
+                new { address = "0x56789014ef123456789014ef12345678abc", isActive = true, votes = 800000 },
+                new { address = "0x6789015f123456789015f12345678abcd", isActive = true, votes = 750000 },
+                new { address = "0x789016123456789016123456789abcde", isActive = true, votes = 700000 }
+            },
+            totalValidators = 7,
+            activeValidators = 7,
+            consensusThreshold = 5
+        };
+    }
+
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {

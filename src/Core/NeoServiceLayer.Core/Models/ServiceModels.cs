@@ -278,26 +278,6 @@ public class TokenMapping
 
 #region Notification Models
 
-/// <summary>
-/// Configuration options for notification service.
-/// </summary>
-public class NotificationOptions
-{
-    /// <summary>
-    /// Gets or sets the enabled channels.
-    /// </summary>
-    public string[] EnabledChannels { get; set; } = { "Email", "Webhook" };
-
-    /// <summary>
-    /// Gets or sets the retry attempts.
-    /// </summary>
-    public int RetryAttempts { get; set; } = 3;
-
-    /// <summary>
-    /// Gets or sets the batch size.
-    /// </summary>
-    public int BatchSize { get; set; } = 100;
-}
 
 /// <summary>
 /// Represents a notification result.

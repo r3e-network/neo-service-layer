@@ -215,7 +215,7 @@ public partial class NotificationService
             var results = await Task.WhenAll(tasks);
             var successCount = results.Count(r => r.Success);
 
-            Logger.LogInformation("Bulk notification completed: {SuccessCount}/{TotalCount} successful", 
+            Logger.LogInformation("Bulk notification completed: {SuccessCount}/{TotalCount} successful",
                 successCount, results.Length);
 
             // Return a single result for the batch
@@ -223,7 +223,7 @@ public partial class NotificationService
             {
                 NotificationId = batchId,
                 Success = successCount == results.Length,
-                Status = successCount == results.Length ? DeliveryStatus.Delivered : 
+                Status = successCount == results.Length ? DeliveryStatus.Delivered :
                         successCount > 0 ? DeliveryStatus.PartiallyDelivered : DeliveryStatus.Failed,
                 SentAt = DateTime.UtcNow,
                 Channel = notificationChannel,

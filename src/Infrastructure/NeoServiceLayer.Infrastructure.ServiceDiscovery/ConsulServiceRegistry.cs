@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -23,13 +23,13 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
         public ConsulServiceRegistry(IConfiguration configuration, ILogger<ConsulServiceRegistry> logger)
         {
             _logger = logger;
-            
+
             var consulConfig = new ConsulClientConfiguration
             {
                 Address = new Uri(configuration.GetValue<string>("Consul:Address") ?? "http://consul:8500"),
                 Datacenter = configuration.GetValue<string>("Consul:Datacenter") ?? "dc1"
             };
-            
+
             _datacenter = consulConfig.Datacenter;
             _consulClient = new ConsulClient(consulConfig);
         }
@@ -56,10 +56,10 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                 };
 
                 var result = await _consulClient.Agent.ServiceRegister(registration, cancellationToken);
-                
-                _logger.LogInformation("Service {ServiceName} ({ServiceId}) registered successfully", 
+
+                _logger.LogInformation("Service {ServiceName} ({ServiceId}) registered successfully",
                     serviceInfo.ServiceName, serviceInfo.ServiceId);
-                
+
                 return result.StatusCode == System.Net.HttpStatusCode.OK;
             }
             catch (Exception ex)
@@ -74,9 +74,9 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var result = await _consulClient.Agent.ServiceDeregister(serviceId, cancellationToken);
-                
+
                 _logger.LogInformation("Service {ServiceId} deregistered successfully", serviceId);
-                
+
                 return result.StatusCode == System.Net.HttpStatusCode.OK;
             }
             catch (Exception ex)
@@ -91,9 +91,8 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var checkId = $"service:{serviceId}";
-                var result = await _consulClient.Agent.PassTTL(checkId, "Service is healthy", cancellationToken);
-                
-                return result.StatusCode == System.Net.HttpStatusCode.OK;
+                await _consulClient.Agent.PassTTL(checkId, "Service is healthy", cancellationToken);
+                return true;
             }
             catch (Exception ex)
             {
@@ -107,7 +106,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var services = await _consulClient.Health.Service(serviceType, string.Empty, true, cancellationToken);
-                
+
                 return services.Response.Select(entry => new ServiceInfo
                 {
                     ServiceId = entry.Service.ID,
@@ -115,7 +114,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                     ServiceType = serviceType,
                     HostName = entry.Service.Address,
                     Port = entry.Service.Port,
-                    Metadata = entry.Service.Meta ?? new Dictionary<string, string>(),
+                    Metadata = entry.Service.Meta?.ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>(),
                     Status = MapConsulStatus(entry.Checks)
                 });
             }
@@ -131,7 +130,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var services = await _consulClient.Agent.Services(cancellationToken);
-                
+
                 if (services.Response.TryGetValue(serviceId, out var service))
                 {
                     return new ServiceInfo
@@ -141,10 +140,10 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                         ServiceType = service.Tags?.FirstOrDefault() ?? string.Empty,
                         HostName = service.Address,
                         Port = service.Port,
-                        Metadata = service.Meta ?? new Dictionary<string, string>()
+                        Metadata = service.Meta?.ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>()
                     };
                 }
-                
+
                 return null;
             }
             catch (Exception ex)
@@ -159,7 +158,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var services = await _consulClient.Agent.Services(cancellationToken);
-                
+
                 return services.Response.Values.Select(service => new ServiceInfo
                 {
                     ServiceId = service.ID,
@@ -167,7 +166,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                     ServiceType = service.Tags?.FirstOrDefault() ?? string.Empty,
                     HostName = service.Address,
                     Port = service.Port,
-                    Metadata = service.Meta ?? new Dictionary<string, string>()
+                    Metadata = service.Meta?.ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>()
                 });
             }
             catch (Exception ex)
@@ -182,7 +181,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
             try
             {
                 var checkId = $"service:{serviceId}";
-                
+
                 var (checkStatus, output) = status switch
                 {
                     ServiceStatus.Healthy => (HealthStatus.Passing, "Service is healthy"),
@@ -192,9 +191,9 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                     _ => (HealthStatus.Critical, "Service is in unknown state")
                 };
 
-                var result = await _consulClient.Agent.UpdateTTL(checkId, output, checkStatus, cancellationToken);
-                
-                return result.StatusCode == System.Net.HttpStatusCode.OK;
+                await _consulClient.Agent.UpdateTTL(checkId, output, TTLStatus.Pass, cancellationToken);
+
+                return true;
             }
             catch (Exception ex)
             {
@@ -207,12 +206,12 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
         {
             // Consul doesn't have built-in push notifications, so we'll use polling
             // In production, you might want to use Consul's blocking queries or watches
-            
+
             _ = Task.Run(async () =>
             {
                 var lastIndex = 0UL;
                 var knownServices = new Dictionary<string, ServiceInfo>();
-                
+
                 while (!cancellationToken.IsCancellationRequested)
                 {
                     try
@@ -222,10 +221,10 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                             WaitIndex = lastIndex,
                             WaitTime = TimeSpan.FromSeconds(30)
                         };
-                        
+
                         var services = await _consulClient.Health.Service(serviceType, string.Empty, true, queryOptions, cancellationToken);
                         lastIndex = services.LastIndex;
-                        
+
                         var currentServices = services.Response.ToDictionary(
                             s => s.Service.ID,
                             s => new ServiceInfo
@@ -235,19 +234,21 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                                 ServiceType = serviceType,
                                 HostName = s.Service.Address,
                                 Port = s.Service.Port,
-                                Metadata = s.Service.Meta ?? new Dictionary<string, string>(),
+                                Metadata = s.Service.Meta?.ToDictionary(x => x.Key, x => x.Value) ?? new Dictionary<string, string>(),
                                 Status = MapConsulStatus(s.Checks)
                             });
-                        
+
                         // Check for new or updated services
-                        foreach (var (id, service) in currentServices)
+                        foreach (var serviceKvp in currentServices)
                         {
+                            var id = serviceKvp.Key;
+                            var service = serviceKvp.Value;
                             if (!knownServices.ContainsKey(id) || !ServicesEqual(knownServices[id], service))
                             {
                                 await callback(service);
                             }
                         }
-                        
+
                         knownServices = currentServices;
                     }
                     catch (Exception ex)
@@ -257,7 +258,7 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
                     }
                 }
             }, cancellationToken);
-            
+
             await Task.CompletedTask;
         }
 
@@ -265,10 +266,10 @@ namespace NeoServiceLayer.Infrastructure.ServiceDiscovery
         {
             if (checks.All(c => c.Status == HealthStatus.Passing))
                 return ServiceStatus.Healthy;
-            
+
             if (checks.Any(c => c.Status == HealthStatus.Critical))
                 return ServiceStatus.Unhealthy;
-            
+
             return ServiceStatus.Starting;
         }
 

@@ -3,7 +3,7 @@ using System.Text.Json;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
-using NeoServiceLayer.Web;
+using NeoServiceLayer.Api;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests;
@@ -17,20 +17,20 @@ public class HealthCheckTests : IClassFixture<WebApplicationFactory<Program>>
     {
         // Generate a unique test JWT secret key
         var testJwtSecretKey = "TestJwtSecretKeyForIntegrationTests_" + Guid.NewGuid().ToString("N");
-        
+
         _factory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Test");
-            
+
             // Set JWT secret key as environment variable
             Environment.SetEnvironmentVariable("JWT_SECRET_KEY", testJwtSecretKey);
-            
+
             builder.ConfigureServices(services =>
             {
                 // Override services for testing if needed
             });
         });
-        
+
         _client = _factory.CreateClient();
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -24,7 +24,7 @@ namespace NeoServiceLayer.SDK
         private readonly NeoServiceClientOptions _options;
         private readonly Dictionary<string, IAsyncPolicy<HttpResponseMessage>> _policies;
 
-        public NeoServiceClient(HttpClient httpClient, IServiceRegistry serviceRegistry, 
+        public NeoServiceClient(HttpClient httpClient, IServiceRegistry serviceRegistry,
             ILogger<NeoServiceClient> logger, NeoServiceClientOptions? options = null)
         {
             _httpClient = httpClient;
@@ -40,13 +40,13 @@ namespace NeoServiceLayer.SDK
         public static NeoServiceClient CreateFromConfiguration(IConfiguration configuration)
         {
             var httpClient = new HttpClient();
-            var serviceRegistry = new ConsulServiceRegistry(configuration, 
+            var serviceRegistry = new ConsulServiceRegistry(configuration,
                 new LoggerFactory().CreateLogger<ConsulServiceRegistry>());
             var logger = new LoggerFactory().CreateLogger<NeoServiceClient>();
-            
+
             var options = new NeoServiceClientOptions();
             configuration.GetSection("NeoServiceClient").Bind(options);
-            
+
             return new NeoServiceClient(httpClient, serviceRegistry, logger, options);
         }
 
@@ -63,9 +63,9 @@ namespace NeoServiceLayer.SDK
         /// Call a service endpoint
         /// </summary>
         public async Task<TResponse?> CallServiceAsync<TResponse>(
-            string serviceType, 
-            string endpoint, 
-            HttpMethod method, 
+            string serviceType,
+            string endpoint,
+            HttpMethod method,
             object? payload = null,
             CancellationToken cancellationToken = default)
         {
@@ -81,7 +81,7 @@ namespace NeoServiceLayer.SDK
             var response = await policy.ExecuteAsync(async () =>
             {
                 var request = new HttpRequestMessage(method, url);
-                
+
                 if (payload != null && (method == HttpMethod.Post || method == HttpMethod.Put))
                 {
                     request.Content = JsonContent.Create(payload);
@@ -91,13 +91,13 @@ namespace NeoServiceLayer.SDK
             });
 
             response.EnsureSuccessStatusCode();
-            
+
             if (typeof(TResponse) == typeof(string))
             {
                 var content = await response.Content.ReadAsStringAsync(cancellationToken);
                 return (TResponse)(object)content;
             }
-            
+
             return await response.Content.ReadFromJsonAsync<TResponse>(cancellationToken: cancellationToken);
         }
 
@@ -105,12 +105,12 @@ namespace NeoServiceLayer.SDK
         /// Discover a healthy service instance
         /// </summary>
         private async Task<ServiceInfo?> DiscoverHealthyServiceAsync(
-            string serviceType, 
+            string serviceType,
             CancellationToken cancellationToken)
         {
             var services = await _serviceRegistry.DiscoverServicesAsync(serviceType, cancellationToken);
             var healthyServices = services.Where(s => s.Status == ServiceStatus.Healthy).ToList();
-            
+
             if (!healthyServices.Any())
             {
                 _logger.LogWarning("No healthy instances found for service type {ServiceType}", serviceType);
@@ -128,7 +128,7 @@ namespace NeoServiceLayer.SDK
         private Dictionary<string, IAsyncPolicy<HttpResponseMessage>> CreatePolicies()
         {
             var policies = new Dictionary<string, IAsyncPolicy<HttpResponseMessage>>();
-            
+
             // Default policy with retry and circuit breaker
             var defaultPolicy = Policy<HttpResponseMessage>
                 .Handle<HttpRequestException>()
@@ -161,7 +161,7 @@ namespace NeoServiceLayer.SDK
             {
                 policies[serviceType] = defaultPolicy;
             }
-            
+
             return policies;
         }
 

@@ -232,8 +232,19 @@ builder.Services.AddHealthChecks()
 // Add Neo Service Layer
 builder.Services.AddNeoServiceLayer(builder.Configuration);
 
-// Add all Neo Service Layer services
-builder.Services.AddNeoServiceLayerServices(builder.Configuration);
+// Add services based on deployment mode
+var deploymentMode = builder.Configuration["DeploymentMode"] ?? "Monolithic";
+if (deploymentMode == "Microservices")
+{
+    // Use microservices with service discovery
+    // TODO: Re-enable once microservices extension is fixed
+    // builder.Services.AddNeoServiceLayerMicroservices(builder.Configuration);
+}
+else
+{
+    // Use monolithic deployment
+    builder.Services.AddNeoServiceLayerServices(builder.Configuration);
+}
 
 var app = builder.Build();
 

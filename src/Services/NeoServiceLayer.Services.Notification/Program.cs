@@ -1,9 +1,12 @@
-using System;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
@@ -22,13 +25,13 @@ namespace NeoServiceLayer.Services.Notification.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
-            
+
             // Add notification-specific configuration
             services.Configure<NotificationOptions>(configuration.GetSection("Notification"));
-            
+
             // Add metrics collection
             services.AddSingleton<IMetricsCollector, PrometheusMetricsCollector>();
-            
+
             // Add health checks
             services.AddHealthChecks()
                 .AddCheck<NotificationHealthCheck>("notification_service");
@@ -41,14 +44,14 @@ namespace NeoServiceLayer.Services.Notification.Host
             {
                 var service = context.RequestServices.GetRequiredService<NotificationService>();
                 var request = await context.Request.ReadFromJsonAsync<SendNotificationRequest>();
-                
+
                 if (request == null)
                 {
                     context.Response.StatusCode = 400;
                     await context.Response.WriteAsJsonAsync(new { error = "Invalid request" });
                     return;
                 }
-                
+
                 var result = await service.SendNotificationAsync(request, Core.BlockchainType.NeoN3);
                 await context.Response.WriteAsJsonAsync(result);
             });
@@ -57,14 +60,14 @@ namespace NeoServiceLayer.Services.Notification.Host
             {
                 var service = context.RequestServices.GetRequiredService<NotificationService>();
                 var requests = await context.Request.ReadFromJsonAsync<BatchNotificationRequest[]>();
-                
+
                 if (requests == null)
                 {
                     context.Response.StatusCode = 400;
                     await context.Response.WriteAsJsonAsync(new { error = "Invalid request" });
                     return;
                 }
-                
+
                 var results = await service.SendBatchNotificationsAsync(requests, Core.BlockchainType.NeoN3);
                 await context.Response.WriteAsJsonAsync(results);
             });
@@ -73,21 +76,21 @@ namespace NeoServiceLayer.Services.Notification.Host
             {
                 var service = context.RequestServices.GetRequiredService<NotificationService>();
                 var notificationId = context.Request.RouteValues["notificationId"]?.ToString();
-                
+
                 if (string.IsNullOrEmpty(notificationId))
                 {
                     context.Response.StatusCode = 400;
                     await context.Response.WriteAsJsonAsync(new { error = "Invalid notification ID" });
                     return;
                 }
-                
+
                 var status = await service.GetNotificationStatusAsync(notificationId, Core.BlockchainType.NeoN3);
                 if (status == null)
                 {
                     context.Response.StatusCode = 404;
                     return;
                 }
-                
+
                 await context.Response.WriteAsJsonAsync(status);
             });
 
@@ -106,7 +109,7 @@ namespace NeoServiceLayer.Services.Notification.Host
             try
             {
                 Console.WriteLine("Starting Notification Service...");
-                
+
                 var host = new NotificationServiceHost(args);
                 return await host.RunAsync();
             }
@@ -133,11 +136,11 @@ namespace NeoServiceLayer.Services.Notification.Host
             System.Threading.CancellationToken cancellationToken = default)
         {
             var health = await _service.GetHealthAsync();
-            
+
             return health switch
             {
-                ServiceFramework.ServiceHealth.Healthy => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is healthy"),
-                ServiceFramework.ServiceHealth.Degraded => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Degraded("Service is degraded"),
+                Core.ServiceHealth.Healthy => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is healthy"),
+                Core.ServiceHealth.Degraded => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Degraded("Service is degraded"),
                 _ => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Service is unhealthy")
             };
         }
@@ -177,13 +180,13 @@ namespace NeoServiceLayer.Services.Notification.Host
         public string GetMetrics()
         {
             var sb = new System.Text.StringBuilder();
-            
+
             // Output counters
             foreach (var (key, value) in _counters)
             {
                 sb.AppendLine($"{key} {value}");
             }
-            
+
             // Output histograms (simplified - just average for now)
             foreach (var (key, values) in _histograms)
             {
@@ -193,7 +196,7 @@ namespace NeoServiceLayer.Services.Notification.Host
                     sb.AppendLine($"{key}_avg {avg:F2}");
                 }
             }
-            
+
             return sb.ToString();
         }
     }

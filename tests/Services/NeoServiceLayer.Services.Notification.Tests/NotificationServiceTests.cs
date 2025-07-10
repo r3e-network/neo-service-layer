@@ -6,12 +6,11 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
-using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
 
 namespace NeoServiceLayer.Services.Notification.Tests;
 
@@ -248,7 +247,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
         // Initialize but don't start the service
         await service.InitializeAsync();
-        
+
         var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
@@ -260,7 +259,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         // Act & Assert
         // Service should not be running after initialization
         service.IsRunning.Should().BeFalse("Service should not be running yet");
-        
+
         await Assert.ThrowsAsync<InvalidOperationException>(() =>
             service.SendNotificationAsync(request, BlockchainType.NeoN3));
     }
@@ -352,12 +351,12 @@ public class NotificationServiceTests : TestBase, IDisposable
             Services.Notification.Models.DeliveryStatus.PartiallyDelivered);
         notificationResult.NotificationId.Should().NotBeNullOrEmpty();
         notificationResult.SentAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromMinutes(1));
-        
+
         // Check metadata for successful deliveries
         notificationResult.Metadata.Should().ContainKey("successful_deliveries");
         var successCount = Convert.ToInt32(notificationResult.Metadata["successful_deliveries"]);
         successCount.Should().BeGreaterThan(0);
-        
+
         VerifyLoggerCalled(LogLevel.Information, "Bulk notification completed");
     }
 
@@ -391,7 +390,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
         // Initialize but don't start the service
         await service.InitializeAsync();
-        
+
         dynamic request = new
         {
             Recipients = new List<string> { "user1@example.com" },
@@ -722,7 +721,7 @@ public class NotificationServiceTests : TestBase, IDisposable
 
         // Assert
         results.Should().HaveCount(subscriptionCount);
-        results.Should().AllSatisfy(result => 
+        results.Should().AllSatisfy(result =>
         {
             result.Should().NotBeNull();
             result.Success.Should().BeTrue();
@@ -776,10 +775,10 @@ public class NotificationServiceTests : TestBase, IDisposable
     {
         var initResult = await _service.InitializeAsync();
         initResult.Should().BeTrue("Service initialization should succeed");
-        
+
         var startResult = await _service.StartAsync();
         startResult.Should().BeTrue("Service start should succeed");
-        
+
         _service.IsRunning.Should().BeTrue("Service should be running after start");
     }
 

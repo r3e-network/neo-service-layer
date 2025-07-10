@@ -43,8 +43,8 @@ LABEL service.type="notification"
 LABEL service.version="1.0.0"
 
 # Create service host program
-RUN echo '#!/bin/sh' > /app/run-service.sh && \
-    echo 'exec dotnet NeoServiceLayer.Services.Notification.dll' >> /app/run-service.sh && \
-    chmod +x /app/run-service.sh
+COPY --from=build /src/src/Services/ServiceHostTemplate/Program.cs /app/NotificationServiceHost.cs
+RUN sed -i "s/{ServiceName}/Notification/g" /app/NotificationServiceHost.cs && \
+    sed -i "s/{servicename}/notification/g" /app/NotificationServiceHost.cs
 
-ENTRYPOINT ["/app/run-service.sh"]
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Services.Notification.dll"]

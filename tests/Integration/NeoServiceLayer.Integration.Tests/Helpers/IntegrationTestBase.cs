@@ -5,9 +5,8 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
+using NeoServiceLayer.Api;
 using Xunit;
-
-using NeoServiceLayer.Web;
 
 namespace NeoServiceLayer.Integration.Tests.Helpers;
 
@@ -21,14 +20,14 @@ public abstract class IntegrationTestBase : IClassFixture<WebApplicationFactory<
     {
         // Generate a unique test JWT secret key
         _testJwtSecretKey = "TestJwtSecretKeyForIntegrationTests_" + Guid.NewGuid().ToString("N");
-        
+
         Factory = factory.WithWebHostBuilder(builder =>
         {
             builder.UseEnvironment("Test");
-            
+
             // Set JWT secret key as environment variable
             Environment.SetEnvironmentVariable("JWT_SECRET_KEY", _testJwtSecretKey);
-            
+
             builder.ConfigureServices(services =>
             {
                 // Override services for testing if needed

@@ -1,0 +1,287 @@
+name: Microservices CI/CD
+
+on:
+  push:
+    branches: [ main, microservices, develop ]
+  pull_request:
+    branches: [ main, microservices ]
+  workflow_dispatch:
+    inputs:
+      deploy:
+        description: 'Deploy to environment'
+        required: false
+        default: 'none'
+        type: choice
+        options:
+          - none
+          - development
+          - staging
+          - production
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOCKER_REGISTRY: 'docker.io'
+  DOCKER_NAMESPACE: 'r3enetwork'
+  BASE_IMAGE_TAG: 'latest'
+
+jobs:
+  build-base-images:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push build base image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/base/build-base.Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:latest
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:buildcache,mode=max
+      
+      - name: Build and push runtime base image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/base/runtime-base.Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:latest
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:buildcache,mode=max
+
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Restore dependencies
+        run: dotnet restore
+      
+      - name: Build
+        run: dotnet build --no-restore --configuration Release
+      
+      - name: Test
+        run: dotnet test --no-build --configuration Release --verbosity normal --collect:"XPlat Code Coverage"
+      
+      - name: Upload coverage reports
+        uses: codecov/codecov-action@v3
+        with:
+          files: '**/coverage.cobertura.xml'
+          flags: unittests
+          name: codecov-neo-service-layer
+
+  build-services:
+    needs: [build-base-images, test]
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - notification
+          - configuration
+          - backup
+          - storage
+          - smart-contracts
+          - cross-chain
+          - oracle
+          - proof-of-reserve
+          - key-management
+          - abstract-account
+          - zero-knowledge
+          - compliance
+          - secrets-management
+          - social-recovery
+          - network-security
+          - monitoring
+          - health
+          - automation
+          - event-subscription
+          - compute
+          - randomness
+          - voting
+          - enclave-storage
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push service image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/microservices/services/${{ matrix.service }}/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-${{ matrix.service }}:latest
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-${{ matrix.service }}:${{ github.sha }}
+          build-args: |
+            BUILD_BASE_IMAGE=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:${{ github.sha }}
+            RUNTIME_BASE_IMAGE=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-${{ matrix.service }}:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-${{ matrix.service }}:buildcache,mode=max
+
+  build-gateway:
+    needs: [build-base-images, test]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+        
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Build and push gateway image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/microservices/gateway/Dockerfile
+          push: true
+          tags: |
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-gateway:latest
+            ${{ env.DOCKER_NAMESPACE }}/neo-service-gateway:${{ github.sha }}
+          build-args: |
+            BUILD_BASE_IMAGE=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-build-base:${{ github.sha }}
+            RUNTIME_BASE_IMAGE=${{ env.DOCKER_NAMESPACE }}/neo-service-layer-runtime-base:${{ github.sha }}
+          cache-from: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-gateway:buildcache
+          cache-to: type=registry,ref=${{ env.DOCKER_NAMESPACE }}/neo-service-gateway:buildcache,mode=max
+
+  integration-tests:
+    needs: [build-services, build-gateway]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Start infrastructure services
+        run: |
+          docker-compose -f docker-compose.microservices-complete.yml up -d consul postgres redis rabbitmq
+          sleep 30
+      
+      - name: Start microservices
+        run: |
+          docker-compose -f docker-compose.microservices-complete.yml up -d
+          sleep 60
+      
+      - name: Run integration tests
+        run: |
+          # Check service health
+          curl -f http://localhost:5000/health || exit 1
+          curl -f http://localhost:8500/v1/status/leader || exit 1
+          
+          # Run integration test suite
+          dotnet test tests/Integration --configuration Release
+      
+      - name: Collect logs on failure
+        if: failure()
+        run: |
+          docker-compose -f docker-compose.microservices-complete.yml logs > docker-logs.txt
+        
+      - name: Upload logs
+        if: failure()
+        uses: actions/upload-artifact@v3
+        with:
+          name: docker-logs
+          path: docker-logs.txt
+
+  deploy:
+    needs: [integration-tests]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.deploy != 'none' || (github.ref == 'refs/heads/main' && github.event_name == 'push')
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Determine deployment environment
+        id: deployment
+        run: |
+          if [[ "${{ github.event.inputs.deploy }}" != "none" ]]; then
+            echo "environment=${{ github.event.inputs.deploy }}" >> $GITHUB_OUTPUT
+          elif [[ "${{ github.ref }}" == "refs/heads/main" ]]; then
+            echo "environment=staging" >> $GITHUB_OUTPUT
+          else
+            echo "environment=development" >> $GITHUB_OUTPUT
+          fi
+      
+      - name: Deploy to Kubernetes
+        run: |
+          echo "Deploying to ${{ steps.deployment.outputs.environment }} environment"
+          
+          # Set up kubectl
+          # kubectl config set-cluster ...
+          # kubectl config set-credentials ...
+          # kubectl config set-context ...
+          # kubectl config use-context ...
+          
+          # Apply Kubernetes manifests
+          # kubectl apply -f k8s/namespace.yaml
+          # kubectl apply -f k8s/configmap-${{ steps.deployment.outputs.environment }}.yaml
+          # kubectl apply -f k8s/services/
+          # kubectl apply -f k8s/deployments/
+          
+          # Update image tags
+          # kubectl set image deployment/notification-service notification=${{ env.DOCKER_NAMESPACE }}/neo-service-notification:${{ github.sha }}
+          # ... (repeat for all services)
+          
+          # Wait for rollout
+          # kubectl rollout status deployment/notification-service
+          # ... (repeat for all services)
+      
+      - name: Verify deployment
+        run: |
+          # Check deployment health
+          # kubectl get pods
+          # kubectl get services
+          # curl -f https://${{ steps.deployment.outputs.environment }}.neo-service-layer.io/health
+
+  publish-sdk:
+    needs: [test]
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: ${{ env.DOTNET_VERSION }}
+      
+      - name: Pack SDK
+        run: |
+          cd src/SDK/NeoServiceLayer.SDK
+          dotnet pack --configuration Release --output ./nupkg
+      
+      - name: Push to NuGet
+        run: |
+          dotnet nuget push src/SDK/NeoServiceLayer.SDK/nupkg/*.nupkg \
+            --api-key ${{ secrets.NUGET_API_KEY }} \
+            --source https://api.nuget.org/v3/index.json \
+            --skip-duplicate

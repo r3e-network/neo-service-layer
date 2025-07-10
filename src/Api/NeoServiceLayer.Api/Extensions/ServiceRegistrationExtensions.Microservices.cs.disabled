@@ -1,0 +1,333 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Reflection;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.ServiceDiscovery;
+using NeoServiceLayer.ServiceFramework;
+using Polly;
+using Polly.Extensions.Http;
+
+namespace NeoServiceLayer.Api.Extensions;
+
+/// <summary>
+/// Extension methods for registering microservices clients.
+/// </summary>
+public static class ServiceRegistrationMicroservicesExtensions
+{
+    /// <summary>
+    /// Adds microservices clients with service discovery to the dependency injection container.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddNeoServiceLayerMicroservices(this IServiceCollection services, IConfiguration configuration)
+    {
+        // Add Consul client
+        services.AddSingleton<Consul.IConsulClient>(p => new Consul.ConsulClient(config =>
+        {
+            config.Address = new Uri(configuration["Consul:Address"] ?? "http://consul:8500");
+            config.Datacenter = configuration["Consul:Datacenter"] ?? "dc1";
+        }));
+
+        // Add service discovery
+        services.AddSingleton<Infrastructure.ServiceDiscovery.IServiceRegistry, ConsulServiceRegistry>();
+
+        // Add HTTP clients with retry policies
+        var retryPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .WaitAndRetryAsync(3, retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)));
+
+        var circuitBreakerPolicy = HttpPolicyExtensions
+            .HandleTransientHttpError()
+            .CircuitBreakerAsync(5, TimeSpan.FromSeconds(30));
+
+        // Configure service clients
+        var serviceClients = new Dictionary<string, string>
+        {
+            ["notification"] = "INotificationService",
+            ["configuration"] = "IConfigurationService",
+            ["backup"] = "IBackupService",
+            ["storage"] = "IStorageService",
+            ["smart-contracts"] = "ISmartContractsService",
+            ["cross-chain"] = "ICrossChainService",
+            ["oracle"] = "IOracleService",
+            ["proof-of-reserve"] = "IProofOfReserveService",
+            ["key-management"] = "IKeyManagementService",
+            ["abstract-account"] = "IAbstractAccountService",
+            ["zero-knowledge"] = "IZeroKnowledgeService",
+            ["compliance"] = "IComplianceService",
+            ["secrets-management"] = "ISecretsManagementService",
+            ["social-recovery"] = "ISocialRecoveryService",
+            ["network-security"] = "INetworkSecurityService",
+            ["monitoring"] = "IMonitoringService",
+            ["health"] = "IHealthService",
+            ["automation"] = "IAutomationService",
+            ["event-subscription"] = "IEventSubscriptionService",
+            ["compute"] = "IComputeService",
+            ["randomness"] = "IRandomnessService",
+            ["voting"] = "IVotingService",
+            ["enclave-storage"] = "IEnclaveStorageService"
+        };
+
+        foreach (var (serviceName, interfaceName) in serviceClients)
+        {
+            services.AddHttpClient($"neo-service-{serviceName}", (serviceProvider, client) =>
+            {
+                var serviceRegistry = serviceProvider.GetRequiredService<Infrastructure.ServiceDiscovery.IServiceRegistry>();
+                var services = serviceRegistry.DiscoverServicesAsync(serviceName).GetAwaiter().GetResult();
+                var service = services.FirstOrDefault();
+                
+                if (service != null)
+                {
+                    client.BaseAddress = new Uri($"http://{service.HostName}:{service.Port}");
+                }
+                else
+                {
+                    // Fallback to gateway
+                    client.BaseAddress = new Uri($"http://localhost:5000/api/{serviceName}");
+                }
+                
+                client.DefaultRequestHeaders.Add("Accept", "application/json");
+                client.Timeout = TimeSpan.FromSeconds(30);
+            })
+            .AddPolicyHandler(retryPolicy)
+            .AddPolicyHandler(circuitBreakerPolicy);
+        }
+
+        // Register service proxies
+        services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Notification.INotificationService>.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-notification"));
+
+        services.AddScoped<NeoServiceLayer.Services.Configuration.IConfigurationService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Configuration.IConfigurationService>.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-configuration"));
+
+        services.AddScoped<NeoServiceLayer.Services.Backup.IBackupService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Backup.IBackupService>.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-backup"));
+
+        services.AddScoped<NeoServiceLayer.Services.Storage.IStorageService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Storage.IStorageService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-storage"));
+
+        services.AddScoped<NeoServiceLayer.Services.SmartContracts.ISmartContractsService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.SmartContracts.ISmartContractsService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-smart-contracts"));
+
+        services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.CrossChain.ICrossChainService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-cross-chain"));
+
+        services.AddScoped<NeoServiceLayer.Services.Oracle.IOracleService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Oracle.IOracleService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-oracle"));
+
+        services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-proof-of-reserve"));
+
+        services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.KeyManagement.IKeyManagementService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-key-management"));
+
+        services.AddScoped<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.AbstractAccount.IAbstractAccountService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-abstract-account"));
+
+        services.AddScoped<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.ZeroKnowledge.IZeroKnowledgeService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-zero-knowledge"));
+
+        services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Compliance.IComplianceService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-compliance"));
+
+        services.AddScoped<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-secrets-management"));
+
+        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-social-recovery"));
+
+        services.AddScoped<NeoServiceLayer.Services.NetworkSecurity.INetworkSecurityService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.NetworkSecurity.INetworkSecurityService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-network-security"));
+
+        services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Monitoring.IMonitoringService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-monitoring"));
+
+        services.AddScoped<NeoServiceLayer.Services.Health.IHealthService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Health.IHealthService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-health"));
+
+        services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Automation.IAutomationService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-automation"));
+
+        services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-event-subscription"));
+
+        services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Compute.IComputeService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-compute"));
+
+        services.AddScoped<NeoServiceLayer.Services.Randomness.IRandomnessService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Randomness.IRandomnessService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-randomness"));
+
+        services.AddScoped<NeoServiceLayer.Services.Voting.IVotingService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.Voting.IVotingService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-voting"));
+
+        services.AddScoped<NeoServiceLayer.Services.EnclaveStorage.IEnclaveStorageService>(provider =>
+            ServiceProxy<NeoServiceLayer.Services.EnclaveStorage.IEnclaveStorageService>.Create(
+.Create(
+                provider.GetRequiredService<IHttpClientFactory>(), "neo-service-enclave-storage"));
+
+        // Register service configuration
+        services.AddScoped<IServiceConfiguration>(provider =>
+        {
+            var config = provider.GetRequiredService<IConfiguration>();
+            return new ServiceConfiguration(config);
+        });
+
+        return services;
+    }
+
+    /// <summary>
+    /// Service configuration implementation.
+    /// </summary>
+    private class ServiceConfiguration : IServiceConfiguration
+    {
+        private readonly IConfiguration _configuration;
+        private readonly Dictionary<string, object> _overrides = new();
+
+        public ServiceConfiguration(IConfiguration configuration)
+        {
+            _configuration = configuration;
+        }
+
+        public T? GetValue<T>(string key)
+        {
+            if (_overrides.TryGetValue(key, out var overrideValue))
+            {
+                return (T)overrideValue;
+            }
+
+            var value = _configuration[key];
+            if (string.IsNullOrEmpty(value))
+            {
+                return default;
+            }
+
+            try
+            {
+                return (T)Convert.ChangeType(value, typeof(T));
+            }
+            catch
+            {
+                return default;
+            }
+        }
+
+        public T GetValue<T>(string key, T defaultValue)
+        {
+            var value = GetValue<T>(key);
+            return EqualityComparer<T>.Default.Equals(value, default(T)) ? defaultValue : value;
+        }
+
+        public void SetValue<T>(string key, T value)
+        {
+            _overrides[key] = value!;
+        }
+
+        public bool ContainsKey(string key)
+        {
+            return _overrides.ContainsKey(key) || _configuration[key] != null;
+        }
+
+        public bool RemoveKey(string key)
+        {
+            return _overrides.Remove(key);
+        }
+
+        public IEnumerable<string> GetAllKeys()
+        {
+            var configKeys = _configuration.AsEnumerable().Select(kvp => kvp.Key);
+            var overrideKeys = _overrides.Keys;
+            return configKeys.Union(overrideKeys).Distinct();
+        }
+
+        public IServiceConfiguration? GetSection(string sectionName)
+        {
+            var section = _configuration.GetSection(sectionName);
+            return section.Exists() ? new ServiceConfiguration(section) : null;
+        }
+
+        public string GetConnectionString(string name)
+        {
+            return _configuration.GetConnectionString(name) ?? string.Empty;
+        }
+    }
+}
+
+/// <summary>
+/// Dynamic proxy for service communication
+/// </summary>
+public class ServiceProxy<TInterface> : DispatchProxy
+{
+    private IHttpClientFactory _httpClientFactory;
+    private string _clientName;
+
+    public void Configure(IHttpClientFactory httpClientFactory, string clientName)
+    {
+        _httpClientFactory = httpClientFactory;
+        _clientName = clientName;
+    }
+    
+    protected override object? Invoke(MethodInfo? targetMethod, object?[]? args)
+    {
+        // This is a simplified implementation
+        // In a real implementation, you would:
+        // 1. Serialize the method call to HTTP request
+        // 2. Send the request to the microservice
+        // 3. Deserialize the response
+        // 4. Handle errors appropriately
+        
+        throw new NotImplementedException($"Service proxy for {targetMethod?.Name} not yet implemented");
+    }
+
+    public static TInterface Create(IHttpClientFactory httpClientFactory, string clientName)
+    {
+        var proxy = Create<TInterface, ServiceProxy<TInterface>>() as ServiceProxy<TInterface>;
+        proxy._httpClientFactory = httpClientFactory;
+        proxy._clientName = clientName;
+        return (TInterface)(object)proxy;
+    }
+}

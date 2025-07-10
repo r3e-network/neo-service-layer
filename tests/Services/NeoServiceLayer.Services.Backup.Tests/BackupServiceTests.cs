@@ -1,8 +1,8 @@
 ﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
-using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Services.Backup;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;

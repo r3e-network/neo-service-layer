@@ -4,19 +4,73 @@ using System.Numerics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Services.SocialRecovery
 {
     /// <summary>
     /// Minimal implementation of ISocialRecoveryService for compilation
     /// </summary>
-    public class SocialRecoveryServiceStub : ISocialRecoveryService
+    public class SocialRecoveryServiceStub : ISocialRecoveryService, IService
     {
         private readonly ILogger<SocialRecoveryServiceStub> _logger;
 
         public SocialRecoveryServiceStub(ILogger<SocialRecoveryServiceStub> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        }
+
+        // IService implementation
+        public string Name => "SocialRecovery";
+        public string Description => "Social Recovery Service";
+        public string Version => "1.0.0";
+        public bool IsRunning => true;
+        public IEnumerable<object> Dependencies => new object[0];
+        public IEnumerable<Type> Capabilities => new[]
+        {
+            typeof(ISocialRecoveryService)
+        };
+        public IDictionary<string, string> Metadata => new Dictionary<string, string>
+        {
+            { "GuardianManagement", "Manage recovery guardians" },
+            { "RecoveryProcess", "Handle account recovery" },
+            { "TrustNetwork", "Manage trust relationships" }
+        };
+
+        public async Task<ServiceHealth> GetHealthAsync()
+        {
+            return ServiceHealth.Healthy;
+        }
+
+        public async Task<IDictionary<string, object>> GetMetricsAsync()
+        {
+            return new Dictionary<string, object>
+            {
+                { "RequestCount", 0 },
+                { "ErrorCount", 0 },
+                { "AverageResponseTime", TimeSpan.Zero },
+                { "LastHealthCheck", DateTime.UtcNow }
+            };
+        }
+
+        public async Task<bool> InitializeAsync()
+        {
+            return true;
+        }
+
+        public async Task<bool> StartAsync()
+        {
+            return true;
+        }
+
+        public async Task<bool> StopAsync()
+        {
+            return true;
+        }
+
+        public async Task<bool> ValidateDependenciesAsync(IEnumerable<IService> availableServices)
+        {
+            return true;
         }
 
         public Task<GuardianInfo> EnrollGuardianAsync(string address, BigInteger stakeAmount, string blockchain = "neo-n3")

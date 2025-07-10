@@ -75,7 +75,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
     {
         // Act
         var response = await _client.GetAsync("/health");
-        
+
         // Log the response for debugging
         if (!response.IsSuccessStatusCode)
         {
@@ -475,7 +475,7 @@ public class ApiIntegrationTests : IClassFixture<ApiWebApplicationFactory>
 public class ApiWebApplicationFactory : WebApplicationFactory<Program>
 {
     public string TestJwtSecretKey { get; } = "TestJwtSecretKeyForApiIntegrationTests_" + Guid.NewGuid().ToString("N");
-    
+
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.ConfigureServices(services =>
@@ -613,7 +613,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
             mockBlockchainClient.Setup(x => x.BlockchainType).Returns(BlockchainType.NeoN3);
             mockBlockchainClientFactory.Setup(x => x.CreateClient(It.IsAny<BlockchainType>()))
                 .Returns(mockBlockchainClient.Object);
-            
+
             mockPersistentStorage.Setup(x => x.IsInitialized)
                 .Returns(true);
 
@@ -647,7 +647,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
         });
 
         builder.UseEnvironment("Testing");
-        
+
         // Set test JWT secret using environment variable
         Environment.SetEnvironmentVariable("JWT_SECRET_KEY", TestJwtSecretKey);
 

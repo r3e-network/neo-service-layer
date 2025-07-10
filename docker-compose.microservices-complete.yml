@@ -1,0 +1,524 @@
+version: '3.8'
+
+x-common-variables: &common-variables
+  ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
+  Consul__Address: http://consul:8500
+  Consul__Datacenter: dc1
+  ConnectionStrings__DefaultConnection: Host=postgres;Database=neoservice;Username=neouser;Password=neopass123
+  Redis__Configuration: redis:6379
+  RabbitMQ__HostName: rabbitmq
+  RabbitMQ__UserName: guest
+  RabbitMQ__Password: guest
+  Jwt__SecretKey: ${JWT_SECRET_KEY:-ChangeThisToASecureRandomKey123!}
+  Jwt__Issuer: neo-service-layer
+  Jwt__Audience: neo-service-layer-clients
+
+x-service-defaults: &service-defaults
+  restart: unless-stopped
+  networks:
+    - neo-network
+  environment:
+    <<: *common-variables
+  depends_on:
+    - consul
+    - postgres
+    - redis
+    - rabbitmq
+  deploy:
+    resources:
+      limits:
+        memory: 512M
+      reservations:
+        memory: 256M
+
+services:
+  # Infrastructure Services
+  consul:
+    image: hashicorp/consul:latest
+    container_name: neo-consul
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "8500:8500"
+      - "8600:8600/udp"
+    networks:
+      - neo-network
+    volumes:
+      - consul_data:/consul/data
+    environment:
+      - CONSUL_BIND_INTERFACE=eth0
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    environment:
+      - POSTGRES_DB=neoservice
+      - POSTGRES_USER=neouser
+      - POSTGRES_PASSWORD=neopass123
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    ports:
+      - "5433:5432"
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    networks:
+      - neo-network
+    ports:
+      - "6379:6379"
+    restart: unless-stopped
+
+  rabbitmq:
+    image: rabbitmq:3-management-alpine
+    container_name: neo-rabbitmq
+    environment:
+      - RABBITMQ_DEFAULT_USER=guest
+      - RABBITMQ_DEFAULT_PASS=guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+    networks:
+      - neo-network
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    restart: unless-stopped
+
+  # Monitoring Stack
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: neo-prometheus
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml
+      - ./monitoring/prometheus/alerts.yml:/etc/prometheus/alerts.yml
+      - prometheus_data:/prometheus
+    networks:
+      - neo-network
+    ports:
+      - "9090:9090"
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+    restart: unless-stopped
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: neo-grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources
+    networks:
+      - neo-network
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    restart: unless-stopped
+
+  # Exporters for monitoring
+  postgres-exporter:
+    image: prometheuscommunity/postgres-exporter:latest
+    container_name: neo-postgres-exporter
+    environment:
+      - DATA_SOURCE_NAME=postgresql://neouser:neopass123@postgres:5432/neoservice?sslmode=disable
+    networks:
+      - neo-network
+    ports:
+      - "9187:9187"
+    depends_on:
+      - postgres
+
+  redis-exporter:
+    image: oliver006/redis_exporter:latest
+    container_name: neo-redis-exporter
+    environment:
+      - REDIS_ADDR=redis:6379
+    networks:
+      - neo-network
+    ports:
+      - "9121:9121"
+    depends_on:
+      - redis
+
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: neo-node-exporter
+    networks:
+      - neo-network
+    ports:
+      - "9100:9100"
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - '--path.procfs=/host/proc'
+      - '--path.sysfs=/host/sys'
+      - '--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)'
+
+  # API Gateway
+  api-gateway:
+    build:
+      context: .
+      dockerfile: docker/microservices/gateway/Dockerfile
+    container_name: neo-api-gateway
+    <<: *service-defaults
+    ports:
+      - "5000:80"
+      - "5001:443"
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ApiGateway
+      SERVICE_TYPE: Gateway
+
+  # Core Services
+  notification-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/notification/Dockerfile
+    container_name: neo-notification-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: NotificationService
+      SERVICE_TYPE: Notification
+      Email__SmtpHost: ${SMTP_HOST:-smtp.gmail.com}
+      Email__SmtpPort: ${SMTP_PORT:-587}
+    ports:
+      - "5010:80"
+
+  configuration-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/configuration/Dockerfile
+    container_name: neo-configuration-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ConfigurationService
+      SERVICE_TYPE: Configuration
+    ports:
+      - "5011:80"
+
+  backup-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/backup/Dockerfile
+    container_name: neo-backup-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: BackupService
+      SERVICE_TYPE: Backup
+    volumes:
+      - backup_data:/app/backups
+    ports:
+      - "5012:80"
+
+  storage-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/storage/Dockerfile
+    container_name: neo-storage-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: StorageService
+      SERVICE_TYPE: Storage
+    volumes:
+      - storage_data:/app/storage
+    ports:
+      - "5013:80"
+
+  # Blockchain Services
+  smart-contracts-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/smart-contracts/Dockerfile
+    container_name: neo-smart-contracts-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: SmartContractsService
+      SERVICE_TYPE: SmartContracts
+      Neo__N3__RpcUrl: ${NEO_N3_RPC_URL:-http://seed1.neo.org:10332}
+      Neo__X__RpcUrl: ${NEO_X_RPC_URL:-http://seed1.neox.org:10332}
+    ports:
+      - "5014:80"
+
+  cross-chain-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/cross-chain/Dockerfile
+    container_name: neo-cross-chain-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: CrossChainService
+      SERVICE_TYPE: CrossChain
+    ports:
+      - "5015:80"
+
+  oracle-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/oracle/Dockerfile
+    container_name: neo-oracle-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: OracleService
+      SERVICE_TYPE: Oracle
+    ports:
+      - "5016:80"
+
+  proof-of-reserve-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/proof-of-reserve/Dockerfile
+    container_name: neo-proof-of-reserve-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ProofOfReserveService
+      SERVICE_TYPE: ProofOfReserve
+    ports:
+      - "5017:80"
+
+  # Security Services
+  key-management-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/key-management/Dockerfile
+    container_name: neo-key-management-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: KeyManagementService
+      SERVICE_TYPE: KeyManagement
+      SGX_MODE: ${SGX_MODE:-SIM}
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    volumes:
+      - sgx_aesm:/var/run/aesmd
+    ports:
+      - "5018:80"
+
+  abstract-account-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/abstract-account/Dockerfile
+    container_name: neo-abstract-account-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: AbstractAccountService
+      SERVICE_TYPE: AbstractAccount
+    ports:
+      - "5019:80"
+
+  zero-knowledge-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/zero-knowledge/Dockerfile
+    container_name: neo-zero-knowledge-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ZeroKnowledgeService
+      SERVICE_TYPE: ZeroKnowledge
+    ports:
+      - "5020:80"
+
+  compliance-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/compliance/Dockerfile
+    container_name: neo-compliance-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ComplianceService
+      SERVICE_TYPE: Compliance
+    ports:
+      - "5021:80"
+
+  secrets-management-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/secrets-management/Dockerfile
+    container_name: neo-secrets-management-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: SecretsManagementService
+      SERVICE_TYPE: SecretsManagement
+    ports:
+      - "5022:80"
+
+  social-recovery-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/social-recovery/Dockerfile
+    container_name: neo-social-recovery-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: SocialRecoveryService
+      SERVICE_TYPE: SocialRecovery
+    ports:
+      - "5023:80"
+
+  network-security-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/network-security/Dockerfile
+    container_name: neo-network-security-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: NetworkSecurityService
+      SERVICE_TYPE: NetworkSecurity
+    ports:
+      - "5024:80"
+
+  # Infrastructure Services
+  monitoring-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/monitoring/Dockerfile
+    container_name: neo-monitoring-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: MonitoringService
+      SERVICE_TYPE: Monitoring
+    ports:
+      - "5025:80"
+
+  health-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/health/Dockerfile
+    container_name: neo-health-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: HealthService
+      SERVICE_TYPE: Health
+    ports:
+      - "5026:80"
+
+  automation-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/automation/Dockerfile
+    container_name: neo-automation-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: AutomationService
+      SERVICE_TYPE: Automation
+    ports:
+      - "5027:80"
+
+  event-subscription-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/event-subscription/Dockerfile
+    container_name: neo-event-subscription-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: EventSubscriptionService
+      SERVICE_TYPE: EventSubscription
+    ports:
+      - "5028:80"
+
+  # Computational Services
+  compute-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/compute/Dockerfile
+    container_name: neo-compute-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: ComputeService
+      SERVICE_TYPE: Compute
+    ports:
+      - "5029:80"
+
+  randomness-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/randomness/Dockerfile
+    container_name: neo-randomness-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: RandomnessService
+      SERVICE_TYPE: Randomness
+    ports:
+      - "5030:80"
+
+  voting-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/voting/Dockerfile
+    container_name: neo-voting-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: VotingService
+      SERVICE_TYPE: Voting
+    ports:
+      - "5031:80"
+
+  enclave-storage-service:
+    build:
+      context: .
+      dockerfile: docker/microservices/services/enclave-storage/Dockerfile
+    container_name: neo-enclave-storage-service
+    <<: *service-defaults
+    environment:
+      <<: *common-variables
+      SERVICE_NAME: EnclaveStorageService
+      SERVICE_TYPE: EnclaveStorage
+      SGX_MODE: ${SGX_MODE:-SIM}
+    devices:
+      - /dev/sgx_enclave:/dev/sgx_enclave
+      - /dev/sgx_provision:/dev/sgx_provision
+    volumes:
+      - sgx_aesm:/var/run/aesmd
+      - enclave_storage_data:/app/enclave-storage
+    ports:
+      - "5032:80"
+
+networks:
+  neo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.30.0.0/16
+
+volumes:
+  consul_data:
+  postgres_data:
+  redis_data:
+  rabbitmq_data:
+  backup_data:
+  storage_data:
+  enclave_storage_data:
+  prometheus_data:
+  grafana_data:
+  sgx_aesm:

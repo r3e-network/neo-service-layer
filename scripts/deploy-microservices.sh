@@ -1,252 +1,129 @@
-#!/bin/bash
+#\!/bin/bash
 
-# Script to deploy Neo Service Layer as microservices
+# Script to deploy Neo Service Layer microservices
 
 set -e
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-NC='\033[0m' # No Color
-
 # Configuration
-COMPOSE_FILE="docker-compose.microservices.yml"
-ENV_FILE=".env.microservices"
+COMPOSE_FILE="docker-compose.microservices-complete.yml"
+BUILD_BASE_IMAGES=${BUILD_BASE_IMAGES:-true}
+PULL_IMAGES=${PULL_IMAGES:-false}
+CLEANUP=${CLEANUP:-false}
 
-echo -e "${GREEN}Neo Service Layer - Microservices Deployment${NC}"
-echo "============================================="
+echo "=========================================="
+echo "Neo Service Layer Microservices Deployment"
+echo "=========================================="
 
-# Function to check prerequisites
-check_prerequisites() {
-    echo -e "${YELLOW}Checking prerequisites...${NC}"
-    
-    # Check Docker
-    if ! command -v docker &> /dev/null; then
-        echo -e "${RED}Docker is not installed. Please install Docker first.${NC}"
-        exit 1
-    fi
-    
-    # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
-        echo -e "${RED}Docker Compose is not installed. Please install Docker Compose first.${NC}"
-        exit 1
-    fi
-    
-    echo -e "${GREEN}Prerequisites check passed!${NC}"
-}
+# Cleanup existing containers if requested
+if [ "$CLEANUP" = "true" ]; then
+    echo "Cleaning up existing containers..."
+    docker compose -f $COMPOSE_FILE down -v --remove-orphans
+    docker system prune -f
+fi
 
-# Function to create environment file
-create_env_file() {
-    if [ ! -f "$ENV_FILE" ]; then
-        echo -e "${YELLOW}Creating environment file...${NC}"
-        cat > "$ENV_FILE" << EOF
-# Neo Service Layer Microservices Configuration
+# Build base images if requested
+if [ "$BUILD_BASE_IMAGES" = "true" ]; then
+    echo "Building base images..."
+    ./scripts/build-base-images.sh
+fi
 
-# Environment
+# Pull external images if requested
+if [ "$PULL_IMAGES" = "true" ]; then
+    echo "Pulling external images..."
+    docker compose -f $COMPOSE_FILE pull consul postgres redis rabbitmq prometheus grafana
+fi
+
+# Generate environment file if it doesn't exist
+if [ \! -f .env ]; then
+    echo "Creating environment file..."
+    cat > .env << ENVEOF
+# Neo Service Layer Environment Configuration
 ASPNETCORE_ENVIRONMENT=Development
-
-# JWT Configuration
 JWT_SECRET_KEY=$(openssl rand -base64 32)
-
-# Database
-POSTGRES_PASSWORD=$(openssl rand -base64 16)
-
-# RabbitMQ
-RABBITMQ_PASSWORD=$(openssl rand -base64 16)
-
-# Grafana
 GRAFANA_PASSWORD=admin
+POSTGRES_PASSWORD=neopass123
+REDIS_PASSWORD=
+RABBITMQ_PASSWORD=guest
+SGX_MODE=SIM
 
-# Service Ports
+# Service ports (can be overridden)
 NOTIFICATION_PORT=5010
 CONFIGURATION_PORT=5011
 BACKUP_PORT=5012
-PROOF_OF_RESERVE_PORT=5013
+STORAGE_PORT=5013
 SMART_CONTRACTS_PORT=5014
 CROSS_CHAIN_PORT=5015
-MONITORING_PORT=5016
-HEALTH_PORT=5017
+ORACLE_PORT=5016
+PROOF_OF_RESERVE_PORT=5017
 KEY_MANAGEMENT_PORT=5018
-AUTOMATION_PORT=5019
+ABSTRACT_ACCOUNT_PORT=5019
+ZERO_KNOWLEDGE_PORT=5020
+COMPLIANCE_PORT=5021
+SECRETS_MANAGEMENT_PORT=5022
+SOCIAL_RECOVERY_PORT=5023
+NETWORK_SECURITY_PORT=5024
+MONITORING_PORT=5025
+HEALTH_PORT=5026
+AUTOMATION_PORT=5027
+EVENT_SUBSCRIPTION_PORT=5028
+COMPUTE_PORT=5029
+RANDOMNESS_PORT=5030
+VOTING_PORT=5031
+ENCLAVE_STORAGE_PORT=5032
+ENVEOF
+fi
 
-# Blockchain RPCs
-NEO_N3_RPC_URL=http://seed1.neo.org:10332
-NEO_X_RPC_URL=http://seed1.neox.org:10332
+# Start infrastructure services first
+echo "Starting infrastructure services..."
+docker compose -f $COMPOSE_FILE up -d consul postgres redis rabbitmq prometheus grafana
 
-# SGX Mode
-SGX_MODE=SIM
+# Wait for infrastructure to be ready
+echo "Waiting for infrastructure services to be ready..."
+sleep 30
 
-# AWS Configuration (optional)
-# AWS_REGION=us-east-1
-# AWS_ACCESS_KEY_ID=
-# AWS_SECRET_ACCESS_KEY=
-# BACKUP_S3_BUCKET=
+# Check if Consul is ready
+echo "Checking Consul health..."
+timeout 60 bash -c 'until curl -s http://localhost:8500/v1/status/leader  < /dev/null |  grep -q "\""; do sleep 2; done'
 
-# SMTP Configuration (optional)
-# SMTP_HOST=smtp.gmail.com
-# SMTP_PORT=587
-# SMTP_USER=
-# SMTP_PASSWORD=
-EOF
-        echo -e "${GREEN}Environment file created: $ENV_FILE${NC}"
-        echo -e "${YELLOW}Please review and update the configuration as needed.${NC}"
-    else
-        echo -e "${GREEN}Using existing environment file: $ENV_FILE${NC}"
-    fi
-}
+# Check if PostgreSQL is ready
+echo "Checking PostgreSQL health..."
+timeout 60 bash -c 'until docker compose -f $COMPOSE_FILE exec -T postgres pg_isready -U neouser; do sleep 2; done'
 
-# Function to build base images
-build_base_images() {
-    echo -e "${YELLOW}Building base images...${NC}"
-    
-    # Build runtime base
-    docker build -f docker/microservices/Dockerfile.base \
-        --target base \
-        -t neoservicelayer/runtime-base:latest .
-    
-    # Build build base
-    docker build -f docker/microservices/Dockerfile.base \
-        --target build-base \
-        -t neoservicelayer/build-base:latest .
-    
-    echo -e "${GREEN}Base images built successfully!${NC}"
-}
+# Start all services
+echo "Starting all microservices..."
+docker compose -f $COMPOSE_FILE up -d
 
-# Function to generate service Dockerfiles
-generate_dockerfiles() {
-    echo -e "${YELLOW}Generating service Dockerfiles...${NC}"
-    
-    if [ -f "scripts/generate-service-dockerfiles.sh" ]; then
-        bash scripts/generate-service-dockerfiles.sh
-    else
-        echo -e "${RED}Dockerfile generation script not found!${NC}"
-        exit 1
-    fi
-}
+# Wait for services to start
+echo "Waiting for services to start..."
+sleep 60
 
-# Function to deploy services
-deploy_services() {
-    echo -e "${YELLOW}Deploying services...${NC}"
-    
-    # Start infrastructure services first
-    docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d \
-        consul postgres redis rabbitmq
-    
-    echo "Waiting for infrastructure services to be ready..."
-    sleep 10
-    
-    # Build and start all services
-    docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build
-    
-    echo -e "${GREEN}Services deployed successfully!${NC}"
-}
+# Check service health
+echo "Checking service health..."
+services=(
+    "http://localhost:5000/health"  # API Gateway
+    "http://localhost:5010/health"  # Notification
+    "http://localhost:5011/health"  # Configuration
+    "http://localhost:5012/health"  # Backup
+)
 
-# Function to show service status
-show_status() {
-    echo -e "${YELLOW}Service Status:${NC}"
-    docker-compose -f "$COMPOSE_FILE" ps
-    
-    echo -e "\n${YELLOW}Service URLs:${NC}"
-    echo "API Gateway: http://localhost:5000"
-    echo "Consul UI: http://localhost:8500"
-    echo "RabbitMQ Management: http://localhost:15672"
-    echo "Grafana: http://localhost:3000"
-    echo "Prometheus: http://localhost:9090"
-}
+for service in "${services[@]}"; do
+    echo "Checking $service..."
+    curl -f "$service" || echo "Warning: $service is not responding"
+done
 
-# Function to show logs
-show_logs() {
-    SERVICE=$1
-    if [ -z "$SERVICE" ]; then
-        docker-compose -f "$COMPOSE_FILE" logs -f
-    else
-        docker-compose -f "$COMPOSE_FILE" logs -f "$SERVICE"
-    fi
-}
+# Show running services
+echo "=========================================="
+echo "Deployment completed\!"
+echo "=========================================="
+echo "Services status:"
+docker compose -f $COMPOSE_FILE ps
 
-# Function to scale service
-scale_service() {
-    SERVICE=$1
-    COUNT=$2
-    
-    if [ -z "$SERVICE" ] || [ -z "$COUNT" ]; then
-        echo -e "${RED}Usage: $0 scale <service> <count>${NC}"
-        exit 1
-    fi
-    
-    docker-compose -f "$COMPOSE_FILE" up -d --scale "$SERVICE=$COUNT"
-}
-
-# Function to stop services
-stop_services() {
-    echo -e "${YELLOW}Stopping services...${NC}"
-    docker-compose -f "$COMPOSE_FILE" down
-    echo -e "${GREEN}Services stopped!${NC}"
-}
-
-# Function to clean up
-cleanup() {
-    echo -e "${YELLOW}Cleaning up...${NC}"
-    docker-compose -f "$COMPOSE_FILE" down -v
-    docker system prune -f
-    echo -e "${GREEN}Cleanup complete!${NC}"
-}
-
-# Main menu
-case "$1" in
-    deploy)
-        check_prerequisites
-        create_env_file
-        build_base_images
-        generate_dockerfiles
-        deploy_services
-        show_status
-        ;;
-    start)
-        docker-compose -f "$COMPOSE_FILE" --env-file "$ENV_FILE" up -d
-        show_status
-        ;;
-    stop)
-        stop_services
-        ;;
-    status)
-        show_status
-        ;;
-    logs)
-        show_logs "$2"
-        ;;
-    scale)
-        scale_service "$2" "$3"
-        ;;
-    clean)
-        cleanup
-        ;;
-    rebuild)
-        stop_services
-        build_base_images
-        deploy_services
-        show_status
-        ;;
-    *)
-        echo "Neo Service Layer - Microservices Management"
-        echo ""
-        echo "Usage: $0 {deploy|start|stop|status|logs|scale|clean|rebuild}"
-        echo ""
-        echo "Commands:"
-        echo "  deploy    - Deploy all services from scratch"
-        echo "  start     - Start all services"
-        echo "  stop      - Stop all services"
-        echo "  status    - Show service status"
-        echo "  logs      - Show logs (optionally specify service)"
-        echo "  scale     - Scale a service (usage: scale <service> <count>)"
-        echo "  clean     - Clean up all resources"
-        echo "  rebuild   - Rebuild and redeploy all services"
-        echo ""
-        echo "Examples:"
-        echo "  $0 deploy"
-        echo "  $0 logs notification-service"
-        echo "  $0 scale notification-service 3"
-        exit 1
-        ;;
-esac
+echo ""
+echo "Access points:"
+echo "  - API Gateway: http://localhost:5000"
+echo "  - Consul UI: http://localhost:8500"
+echo "  - Grafana: http://localhost:3000 (admin/admin)"
+echo "  - Prometheus: http://localhost:9090"
+echo ""
+echo "To view logs: docker compose -f $COMPOSE_FILE logs -f [service-name]"
+echo "To stop all services: docker compose -f $COMPOSE_FILE down"

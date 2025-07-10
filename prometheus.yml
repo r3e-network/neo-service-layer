@@ -1,0 +1,40 @@
+global:
+  scrape_interval: 15s
+  evaluation_interval: 15s
+
+scrape_configs:
+  # Prometheus self-monitoring
+  - job_name: 'prometheus'
+    static_configs:
+      - targets: ['localhost:9090']
+
+  # Consul service discovery for microservices
+  - job_name: 'consul-services'
+    consul_sd_configs:
+      - server: 'neo-consul:8500'
+        services: []
+    relabel_configs:
+      - source_labels: [__meta_consul_service]
+        target_label: service
+      - source_labels: [__meta_consul_node]
+        target_label: node
+      - source_labels: [__meta_consul_tags]
+        target_label: tags
+      - source_labels: [__address__]
+        target_label: __address__
+        regex: '([^:]+):.*'
+        replacement: '${1}:80'
+
+  # API Gateway metrics
+  - job_name: 'api-gateway'
+    static_configs:
+      - targets: ['neo-api-gateway:80']
+    metrics_path: '/metrics'
+
+  # Neo Service Layer services
+  - job_name: 'neo-services'
+    static_configs:
+      - targets: 
+        - 'neo-notification-service-demo:80'
+        - 'neo-storage-service:80'
+    metrics_path: '/metrics'

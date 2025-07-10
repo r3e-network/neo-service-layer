@@ -1,0 +1,229 @@
+version: '3.8'
+
+services:
+  # Test infrastructure services
+  consul-test:
+    image: hashicorp/consul:latest
+    ports:
+      - "8500:8500"
+    command: agent -dev -client=0.0.0.0
+    networks:
+      - test-network
+
+  rabbitmq-test:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: test
+      RABBITMQ_DEFAULT_PASS: test123
+    networks:
+      - test-network
+
+  jaeger-test:
+    image: jaegertracing/all-in-one:latest
+    ports:
+      - "16686:16686"
+      - "4317:4317"
+    environment:
+      COLLECTOR_OTLP_ENABLED: "true"
+    networks:
+      - test-network
+
+  # Test database
+  postgres-test:
+    image: postgres:16
+    environment:
+      POSTGRES_DB: neoservicelayer_test
+      POSTGRES_USER: test
+      POSTGRES_PASSWORD: test123
+    ports:
+      - "5432:5432"
+    networks:
+      - test-network
+
+  # API Gateway for tests
+  gateway-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/gateway/Dockerfile
+    ports:
+      - "7000:8080"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      Auth__Authority: http://auth-test:8080
+      ConnectionStrings__DefaultConnection: Host=postgres-test;Database=neoservicelayer_test;Username=test;Password=test123
+    depends_on:
+      - consul-test
+      - auth-test
+    networks:
+      - test-network
+
+  # Core services for integration tests
+  auth-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/auth/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      ConnectionStrings__DefaultConnection: Host=postgres-test;Database=neoservicelayer_test;Username=test;Password=test123
+    depends_on:
+      - consul-test
+      - postgres-test
+    networks:
+      - test-network
+
+  notification-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/notification/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      RabbitMQ__HostName: rabbitmq-test
+      RabbitMQ__UserName: test
+      RabbitMQ__Password: test123
+    depends_on:
+      - consul-test
+      - rabbitmq-test
+    networks:
+      - test-network
+
+  storage-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/storage/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      ConnectionStrings__DefaultConnection: Host=postgres-test;Database=neoservicelayer_test;Username=test;Password=test123
+    depends_on:
+      - consul-test
+      - postgres-test
+    networks:
+      - test-network
+
+  configuration-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/configuration/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      ConnectionStrings__DefaultConnection: Host=postgres-test;Database=neoservicelayer_test;Username=test;Password=test123
+    depends_on:
+      - consul-test
+      - postgres-test
+    networks:
+      - test-network
+
+  health-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/health/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+    depends_on:
+      - consul-test
+    networks:
+      - test-network
+
+  monitoring-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/monitoring/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      Jaeger__AgentHost: jaeger-test
+    depends_on:
+      - consul-test
+      - jaeger-test
+    networks:
+      - test-network
+
+  keymanagement-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/keymanagement/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      Storage__ServiceUrl: http://storage-test:8080
+    depends_on:
+      - consul-test
+      - storage-test
+    networks:
+      - test-network
+
+  backup-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/backup/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      Storage__ServiceUrl: http://storage-test:8080
+      Notification__ServiceUrl: http://notification-test:8080
+    depends_on:
+      - consul-test
+      - storage-test
+      - notification-test
+    networks:
+      - test-network
+
+  eventsubscription-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/eventsubscription/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      RabbitMQ__HostName: rabbitmq-test
+      RabbitMQ__UserName: test
+      RabbitMQ__Password: test123
+    depends_on:
+      - consul-test
+      - rabbitmq-test
+    networks:
+      - test-network
+
+  compliance-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/compliance/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      ConnectionStrings__DefaultConnection: Host=postgres-test;Database=neoservicelayer_test;Username=test;Password=test123
+    depends_on:
+      - consul-test
+      - postgres-test
+    networks:
+      - test-network
+
+  crosschain-test:
+    build:
+      context: ../../../../
+      dockerfile: docker/microservices/services/crosschain/Dockerfile
+    environment:
+      ASPNETCORE_ENVIRONMENT: Test
+      Consul__Address: http://consul-test:8500
+      Monitoring__ServiceUrl: http://monitoring-test:8080
+    depends_on:
+      - consul-test
+      - monitoring-test
+    networks:
+      - test-network
+
+networks:
+  test-network:
+    driver: bridge
+
+volumes:
+  postgres-test-data:
+  consul-test-data:

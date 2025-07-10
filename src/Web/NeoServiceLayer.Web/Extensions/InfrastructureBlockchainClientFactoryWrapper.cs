@@ -1,4 +1,4 @@
-using NeoServiceLayer.Core;
+﻿using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Blockchain;
 
 namespace NeoServiceLayer.Web.Extensions;
@@ -20,7 +20,7 @@ internal class InfrastructureBlockchainClientFactoryWrapper : Infrastructure.IBl
         // The factory already returns Core.IBlockchainClient which the adapters implement
         // We need to cast it to Infrastructure.IBlockchainClient
         var coreClient = _factory.CreateClient(blockchainType);
-        
+
         // Since our adapters implement Core.IBlockchainClient, we need to wrap them
         // to provide Infrastructure.IBlockchainClient
         return new InfrastructureBlockchainClientAdapter(coreClient);

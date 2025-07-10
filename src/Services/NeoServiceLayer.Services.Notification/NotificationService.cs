@@ -16,7 +16,7 @@ namespace NeoServiceLayer.Services.Notification;
 /// </summary>
 public partial class NotificationService : EnclaveBlockchainServiceBase, INotificationService
 {
-    private readonly IOptions<CoreModels.NotificationOptions> _options;
+    private readonly IOptions<NotificationOptions> _options;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly ConcurrentDictionary<string, NotificationSubscription> _subscriptions = new();
     private readonly ConcurrentQueue<SendNotificationRequest> _notificationQueue = new();
@@ -38,7 +38,7 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
     /// <param name="logger">The logger.</param>
     /// <param name="persistentStorage">The persistent storage provider (optional).</param>
     public NotificationService(
-        IOptions<CoreModels.NotificationOptions> options,
+        IOptions<NotificationOptions> options,
         IHttpClientFactory httpClientFactory,
         ILogger<NotificationService> logger,
         IPersistentStorageProvider? persistentStorage = null)

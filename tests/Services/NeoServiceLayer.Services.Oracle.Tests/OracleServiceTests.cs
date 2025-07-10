@@ -7,9 +7,9 @@ using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-// Use Infrastructure namespace for IBlockchainClientFactory and IBlockchainClient
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using IBlockchainClient = NeoServiceLayer.Core.IBlockchainClient;
+// Use Core namespace for IBlockchainClientFactory and IBlockchainClient
+using IBlockchainClientFactory = NeoServiceLayer.Core.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Oracle.Tests;
 

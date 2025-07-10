@@ -390,6 +390,96 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
         }
     }
 
+    /// <summary>
+    /// Gets the contract state for a deployed contract.
+    /// </summary>
+    public async Task<object> GetContractStateAsync(string contractHash, string blockchainType)
+    {
+        var blockchain = Enum.Parse<BlockchainType>(blockchainType, true);
+        var metadata = await GetContractMetadataAsync(blockchain, contractHash);
+
+        return new
+        {
+            contractHash,
+            blockchain = blockchainType,
+            name = metadata?.Name,
+            version = metadata?.Version,
+            author = metadata?.Author,
+            description = metadata?.Description,
+            methods = metadata?.Methods?.Select(m => new
+            {
+                name = m.Name,
+                parameters = m.Parameters,
+                returnType = m.ReturnType,
+                offset = 0 // Offset property not available
+            }),
+            supportedStandards = new string[0], // SupportedStandards property not available
+            usageStats = _usageStats.ContainsKey(contractHash) ? _usageStats[contractHash] : null
+        };
+    }
+
+    /// <summary>
+    /// Gets list of deployed contracts.
+    /// </summary>
+    public async Task<object> GetDeployedContractsAsync(string blockchainType)
+    {
+        var deployedContracts = new List<object>();
+
+        if (blockchainType == "all" || blockchainType == "neon3")
+        {
+            // In a real implementation, this would query the blockchain or a database
+            deployedContracts.Add(new
+            {
+                contractHash = "0x1234567890abcdef1234567890abcdef12345678",
+                blockchain = "neon3",
+                name = "Sample NEP-17 Token",
+                deployedAt = DateTime.UtcNow.AddDays(-30),
+                deployedBy = "0xabcdef1234567890abcdef1234567890abcdef12"
+            });
+        }
+
+        if (blockchainType == "all" || blockchainType == "neox")
+        {
+            deployedContracts.Add(new
+            {
+                contractHash = "0xfedcba0987654321fedcba0987654321fedcba09",
+                blockchain = "neox",
+                name = "Sample DeFi Contract",
+                deployedAt = DateTime.UtcNow.AddDays(-15),
+                deployedBy = "0x1234567890abcdef1234567890abcdef12345678"
+            });
+        }
+
+        return await Task.FromResult(deployedContracts);
+    }
+
+    /// <summary>
+    /// Validates contract code before deployment.
+    /// </summary>
+    public async Task<object> ValidateContractAsync(string contractCode, string blockchainType)
+    {
+        var blockchain = Enum.Parse<BlockchainType>(blockchainType, true);
+
+        // In a real implementation, this would perform actual validation
+        var validationResult = new
+        {
+            isValid = !string.IsNullOrEmpty(contractCode) && contractCode.Length > 100,
+            errors = string.IsNullOrEmpty(contractCode) || contractCode.Length <= 100
+                ? new[] { "Contract code is too short or empty" }
+                : Array.Empty<string>(),
+            warnings = new[] { "Contract uses deprecated API" },
+            gasEstimate = new
+            {
+                deployment = "10.5",
+                invocation = "0.5"
+            },
+            securityScore = 85,
+            blockchain = blockchainType
+        };
+
+        return await Task.FromResult(validationResult);
+    }
+
     /// <inheritdoc/>
     public async Task<ContractMetadata?> GetContractMetadataAsync(
         BlockchainType blockchainType,
