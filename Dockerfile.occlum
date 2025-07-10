@@ -1,5 +1,5 @@
 # Use Occlum base image with SGX SDK pre-installed
-FROM occlum/occlum:0.30.1-ubuntu20.04
+FROM occlum/occlum:0.31.0-ubuntu20.04
 
 # Install .NET 9 SDK
 RUN apt-get update && \
