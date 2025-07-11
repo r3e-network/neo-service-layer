@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -59,7 +59,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         public async Task GatewayHealthCheck_ShouldReturnHealthy()
         {
             // This test will only run if infrastructure is available
-            
+
             // Act
             var response = await _httpClient.GetAsync("/health");
 
@@ -100,7 +100,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
 
             // Assert
             response.StatusCode.Should().BeOneOf(HttpStatusCode.OK, HttpStatusCode.Accepted);
-            
+
             if (response.IsSuccessStatusCode)
             {
                 var result = await response.Content.ReadFromJsonAsync<NotificationResult>();
@@ -112,7 +112,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         public void AlwaysRunningTest_ShouldPass()
         {
             // This test always runs regardless of infrastructure
-            
+
             // Arrange
             var testValue = "test";
 
@@ -127,7 +127,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         public void EmailValidation_ShouldPass(string email)
         {
             // This test always runs - no infrastructure needed
-            
+
             // Assert
             email.Should().Contain("@");
             email.Should().Contain("example.com");
@@ -139,13 +139,13 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         public async Task HealthEndpoints_ShouldRespond(string endpoint)
         {
             // This test only runs if infrastructure is available
-            
+
             // Act
             var response = await _httpClient.GetAsync(endpoint);
 
             // Assert
             response.StatusCode.Should().BeOneOf(
-                HttpStatusCode.OK, 
+                HttpStatusCode.OK,
                 HttpStatusCode.NotFound, // Some endpoints might not exist
                 HttpStatusCode.ServiceUnavailable); // Service might be starting
         }

@@ -1,8 +1,8 @@
 ﻿using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
-using NeoServiceLayer.Core;
 using NeoServiceLayer.Api;
+using NeoServiceLayer.Core;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests.Controllers;

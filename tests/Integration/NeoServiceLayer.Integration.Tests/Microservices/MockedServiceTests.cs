@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Net;
 using System.Net.Http;
@@ -30,7 +30,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         public MockedServiceTests(ITestOutputHelper output)
         {
             _output = output;
-            
+
             var services = new ServiceCollection();
             services.AddLogging(builder => builder.AddConsole());
             var serviceProvider = services.BuildServiceProvider();
@@ -43,7 +43,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
             // Arrange
             var handlerMock = new Mock<HttpMessageHandler>();
             var requestCount = 0;
-            
+
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
@@ -77,10 +77,10 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
             // Assert
             var successCount = responses.FindAll(r => r.StatusCode == HttpStatusCode.OK).Count;
             var rateLimitedCount = responses.FindAll(r => r.StatusCode == HttpStatusCode.TooManyRequests).Count;
-            
+
             successCount.Should().Be(100);
             rateLimitedCount.Should().Be(50);
-            
+
             // Verify retry-after header
             var rateLimitedResponse = responses.Find(r => r.StatusCode == HttpStatusCode.TooManyRequests);
             rateLimitedResponse.Should().NotBeNull();
@@ -94,7 +94,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
             var handlerMock = new Mock<HttpMessageHandler>();
             var failureCount = 0;
             var circuitOpen = false;
-            
+
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
@@ -109,13 +109,13 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
                             ReasonPhrase = "Circuit breaker is open"
                         };
                     }
-                    
+
                     failureCount++;
                     if (failureCount >= 5)
                     {
                         circuitOpen = true;
                     }
-                    
+
                     return new HttpResponseMessage(HttpStatusCode.InternalServerError);
                 });
 
@@ -136,7 +136,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
             // Assert
             var serverErrors = responses.FindAll(r => r.StatusCode == HttpStatusCode.InternalServerError).Count;
             var circuitBreakerErrors = responses.FindAll(r => r.StatusCode == HttpStatusCode.ServiceUnavailable).Count;
-            
+
             serverErrors.Should().Be(5, "First 5 requests should fail with server error");
             circuitBreakerErrors.Should().Be(5, "After 5 failures, circuit should open");
         }
@@ -147,7 +147,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
             // Arrange
             var handlerMock = new Mock<HttpMessageHandler>();
             var token = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ0ZXN0dXNlciIsImV4cCI6MTcwMDAwMDAwMH0.test";
-            
+
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
@@ -188,7 +188,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
                 {""serviceType"":""storage"",""serviceName"":""storage-1"",""hostName"":""localhost"",""port"":8082},
                 {""serviceType"":""health"",""serviceName"":""health-1"",""hostName"":""localhost"",""port"":8083}
             ]";
-            
+
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",
@@ -229,7 +229,7 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
                     ""configuration"": {""status"":""Degraded"",""lastCheck"":""2025-01-10T12:00:00Z""}
                 }
             }";
-            
+
             handlerMock.Protected()
                 .Setup<Task<HttpResponseMessage>>(
                     "SendAsync",

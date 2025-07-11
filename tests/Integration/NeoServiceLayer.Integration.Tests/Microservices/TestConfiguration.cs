@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading.Tasks;
 
@@ -55,8 +55,8 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
         /// <summary>
         /// Skip reason for tests that require infrastructure
         /// </summary>
-        public static string SkipReason => IsInfrastructureAvailable() 
-            ? null 
+        public static string SkipReason => IsInfrastructureAvailable()
+            ? null
             : "Requires running microservices infrastructure (run docker-compose up first)";
     }
 
