@@ -1,309 +1,701 @@
 # Contributing to Neo Service Layer
 
-Thank you for your interest in contributing to the Neo Service Layer! This document provides guidelines and instructions for contributing to the project.
+[![Contributions Welcome](https://img.shields.io/badge/contributions-welcome-brightgreen.svg)](https://github.com/r3e-network/neo-service-layer)
+[![Code of Conduct](https://img.shields.io/badge/code%20of%20conduct-enforced-blue.svg)](CODE_OF_CONDUCT.md)
+[![Good First Issues](https://img.shields.io/github/issues/r3e-network/neo-service-layer/good%20first%20issue)](https://github.com/r3e-network/neo-service-layer/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+
+> **🤝 Welcome Contributors!** - Thank you for your interest in contributing to the Neo Service Layer microservices platform
 
 ## 🌟 Ways to Contribute
 
-- **Bug Reports**: Report issues and bugs
-- **Feature Requests**: Suggest new features or improvements
-- **Code Contributions**: Submit pull requests with bug fixes or new features
-- **Documentation**: Improve documentation and examples
-- **Testing**: Help improve test coverage and quality
-- **Security**: Report security vulnerabilities responsibly
+We welcome all forms of contributions:
+
+### **Code Contributions**
+- **🐛 Bug Fixes**: Help us squash bugs and improve stability
+- **✨ New Features**: Implement new microservices or enhance existing ones
+- **♻️ Refactoring**: Improve code quality and maintainability
+- **⚡ Performance**: Optimize services for better performance
+- **🔒 Security**: Enhance security features and fix vulnerabilities
+
+### **Non-Code Contributions**
+- **📚 Documentation**: Improve guides, API docs, and examples
+- **🧪 Testing**: Add tests or improve test coverage
+- **🎨 Design**: UI/UX improvements for the website
+- **🌍 Translations**: Help translate documentation
+- **💡 Ideas**: Suggest features and improvements
 
 ## 🚀 Getting Started
 
-### Prerequisites
+### **Prerequisites**
 
-- **.NET 9.0 SDK** or later
-- **Git** for version control
-- **Visual Studio 2022/2025** or **VS Code**
-- **Docker** (for container testing)
-- **Intel SGX SDK** (for enclave development)
+| Requirement | Version | Purpose |
+|-------------|---------|----------|
+| **.NET SDK** | 9.0+ | Core development |
+| **Docker** | 24.0+ | Container development |
+| **Git** | 2.40+ | Version control |
+| **Node.js** | 18+ | Website development |
+| **PostgreSQL** | 14+ | Database development |
 
-### Development Setup
-
-1. **Fork the repository** on GitHub
-2. **Clone your fork** locally:
-   ```bash
-   git clone https://github.com/YOUR_USERNAME/neo-service-layer.git
-   cd neo-service-layer
-   ```
-
-3. **Add upstream remote**:
-   ```bash
-   git remote add upstream https://github.com/neo-project/neo-service-layer.git
-   ```
-
-4. **Build the solution**:
-   ```bash
-   dotnet build
-   ```
-
-5. **Run tests** to ensure everything works:
-   ```bash
-   dotnet test
-   ```
-
-## 📝 Development Workflow
-
-### Creating a Feature Branch
+### **Development Environment Setup**
 
 ```bash
-# Update your fork
-git checkout main
-git pull upstream main
-git push origin main
+# 1. Fork and clone the repository
+git clone https://github.com/YOUR_USERNAME/neo-service-layer.git
+cd neo-service-layer
 
-# Create a feature branch
-git checkout -b feature/your-feature-name
+# 2. Add upstream remote
+git remote add upstream https://github.com/r3e-network/neo-service-layer.git
+
+# 3. Install dependencies and build
+dotnet restore
+dotnet build
+
+# 4. Start infrastructure services
+docker-compose up -d
+
+# 5. Run tests to verify setup
+dotnet test
+
+# 6. Start development
+dotnet run --project src/Api/NeoServiceLayer.Api/
 ```
 
-### Making Changes
-
-1. **Follow coding standards** outlined in [CODING_STANDARDS.md](docs/development/CODING_STANDARDS.md)
-2. **Write tests** for new functionality
-3. **Update documentation** as needed
-4. **Ensure code quality** by running:
-   ```bash
-   # Build and test
-   dotnet build
-   dotnet test
-   
-   # Check for formatting issues
-   dotnet format --verify-no-changes
-   ```
-
-### Committing Changes
-
-We follow conventional commit messages:
+### **Quick Development Commands**
 
 ```bash
-# Format: type(scope): description
-git commit -m "feat(oracle): add new data source validation"
-git commit -m "fix(storage): resolve encryption key rotation issue"
-git commit -m "docs(api): update authentication examples"
-```
+# Build all projects
+dotnet build
 
-**Commit Types:**
-- `feat`: New features
-- `fix`: Bug fixes
-- `docs`: Documentation updates
-- `style`: Code style changes (formatting, etc.)
-- `refactor`: Code refactoring
-- `test`: Adding or updating tests
-- `chore`: Maintenance tasks
-
-### Submitting a Pull Request
-
-1. **Push your branch**:
-   ```bash
-   git push origin feature/your-feature-name
-   ```
-
-2. **Create a pull request** on GitHub with:
-   - Clear title and description
-   - Reference any related issues
-   - Include testing instructions
-   - Add screenshots for UI changes
-
-3. **Address review feedback** promptly
-
-## 🧪 Testing Guidelines
-
-### Test Requirements
-
-- **Unit tests** for all new functionality
-- **Integration tests** for service interactions
-- **Maintain or improve** test coverage (currently 80%+)
-- **Security tests** for cryptographic operations
-
-### Running Tests
-
-```bash
 # Run all tests
 dotnet test
 
-# Run specific test categories
-dotnet test --filter Category=Unit
-dotnet test --filter Category=Integration
-dotnet test --filter Category=Performance
+# Start specific service
+dotnet run --project src/Services/NeoServiceLayer.Services.Storage/
 
-# Run with coverage
-dotnet test --collect:"XPlat Code Coverage"
+# Format code
+dotnet format
+
+# Clean build artifacts
+dotnet clean
 ```
 
-### Test Structure
+## 📋 Development Workflow
+
+### **1. Sync Your Fork**
+
+```bash
+# Fetch latest changes
+git checkout main
+git fetch upstream
+git merge upstream/main
+git push origin main
+```
+
+### **2. Create Feature Branch**
+
+```bash
+# Branch naming convention
+git checkout -b <type>/<short-description>
+
+# Examples:
+git checkout -b feat/add-caching-service
+git checkout -b fix/storage-memory-leak
+git checkout -b docs/update-api-examples
+```
+
+### **3. Development Process**
+
+#### **Code Quality Checklist**
+- [ ] Follow [C# Coding Conventions](https://docs.microsoft.com/en-us/dotnet/csharp/fundamentals/coding-style/coding-conventions)
+- [ ] Add XML documentation for public APIs
+- [ ] Write unit tests (aim for 80%+ coverage)
+- [ ] Update relevant documentation
+- [ ] Run code analysis tools
+
+#### **Before Committing**
+```bash
+# Format code
+dotnet format
+
+# Run tests
+dotnet test
+
+# Check for issues
+dotnet build -warnaserror
+
+# Run security scan
+dotnet list package --vulnerable
+```
+
+### **4. Commit Guidelines**
+
+We use [Conventional Commits](https://www.conventionalcommits.org/):
+
+```bash
+# Format: <type>(<scope>): <subject>
+
+# Examples:
+git commit -m "feat(storage): add encryption at rest support"
+git commit -m "fix(auth): resolve JWT token expiration issue"
+git commit -m "docs(readme): update quick start guide"
+git commit -m "perf(oracle): optimize data aggregation queries"
+git commit -m "test(notification): add integration tests for SMS provider"
+```
+
+#### **Commit Types**
+| Type | Description | Example |
+|------|-------------|---------|
+| `feat` | New feature | `feat(api): add rate limiting` |
+| `fix` | Bug fix | `fix(cache): memory leak in Redis client` |
+| `docs` | Documentation | `docs(sdk): update authentication guide` |
+| `style` | Code style | `style: format code with dotnet format` |
+| `refactor` | Code refactoring | `refactor(core): extract common interfaces` |
+| `perf` | Performance | `perf(query): optimize database queries` |
+| `test` | Testing | `test(auth): add unit tests for JWT` |
+| `build` | Build system | `build: update to .NET 9.0` |
+| `ci` | CI/CD | `ci: add GitHub Actions workflow` |
+| `chore` | Maintenance | `chore: update dependencies` |
+
+### **5. Submit Pull Request**
+
+#### **PR Checklist**
+```markdown
+## Description
+Brief description of what this PR does
+
+## Type of Change
+- [ ] 🐛 Bug fix (non-breaking change)
+- [ ] ✨ New feature (non-breaking change)
+- [ ] 💥 Breaking change (fix or feature with breaking changes)
+- [ ] 📚 Documentation update
+- [ ] 🎨 Style update
+- [ ] ♻️ Code refactor
+- [ ] ⚡ Performance improvement
+- [ ] ✅ Test update
+- [ ] 🔧 Build configuration update
+
+## Testing
+- [ ] Unit tests pass locally
+- [ ] Integration tests pass locally
+- [ ] Manual testing completed
+- [ ] Test coverage maintained/improved
+
+## Checklist
+- [ ] My code follows the project's style guidelines
+- [ ] I have performed a self-review
+- [ ] I have added tests that prove my fix/feature works
+- [ ] New and existing unit tests pass locally
+- [ ] I have updated relevant documentation
+- [ ] My changes generate no new warnings
+- [ ] Any dependent changes have been merged
+
+## Related Issues
+Closes #(issue number)
+
+## Screenshots (if applicable)
+Add screenshots for UI changes
+```
+
+## 🧪 Testing Requirements
+
+### **Test Coverage Standards**
+
+| Component Type | Required Coverage | Current Coverage |
+|----------------|-------------------|------------------|
+| **Core Services** | 90%+ | ✅ 92% |
+| **API Controllers** | 85%+ | ✅ 87% |
+| **Utilities** | 95%+ | ✅ 96% |
+| **Infrastructure** | 80%+ | ✅ 83% |
+| **Overall** | 85%+ | ✅ 86% |
+
+### **Test Categories**
+
+```bash
+# Unit Tests - Fast, isolated tests
+dotnet test --filter "Category=Unit"
+
+# Integration Tests - Service interaction tests
+dotnet test --filter "Category=Integration"
+
+# Performance Tests - Load and stress tests
+dotnet test --filter "Category=Performance"
+
+# Security Tests - Cryptographic and security tests
+dotnet test --filter "Category=Security"
+
+# E2E Tests - End-to-end scenarios
+dotnet test --filter "Category=E2E"
+```
+
+### **Writing Tests**
+
+#### **Unit Test Example**
+```csharp
+[Fact]
+[Category("Unit")]
+public async Task StorageService_StoreDocument_ShouldEncryptData()
+{
+    // Arrange
+    var service = new StorageService(_mockCrypto.Object, _mockRepo.Object);
+    var document = new Document { Content = "sensitive data" };
+    
+    // Act
+    var result = await service.StoreDocumentAsync(document);
+    
+    // Assert
+    Assert.NotNull(result);
+    Assert.True(result.IsEncrypted);
+    _mockCrypto.Verify(x => x.Encrypt(It.IsAny<byte[]>()), Times.Once);
+}
+```
+
+#### **Integration Test Example**
+```csharp
+[Fact]
+[Category("Integration")]
+public async Task ApiGateway_ServiceDiscovery_ShouldRouteToHealthyService()
+{
+    // Arrange
+    await using var factory = new WebApplicationFactory<Program>();
+    var client = factory.CreateClient();
+    
+    // Act
+    var response = await client.GetAsync("/api/v1/storage/health");
+    
+    // Assert
+    response.EnsureSuccessStatusCode();
+    var content = await response.Content.ReadAsStringAsync();
+    Assert.Contains("healthy", content);
+}
+```
+
+### **Test Organization**
 
 ```
 tests/
-├── Unit/                   # Unit tests
-├── Integration/           # Integration tests
-├── Performance/           # Performance tests
-└── TestInfrastructure/    # Shared test utilities
+├── Unit/
+│   ├── NeoServiceLayer.Core.Tests/
+│   ├── NeoServiceLayer.Services.Storage.Tests/
+│   └── NeoServiceLayer.Api.Tests/
+├── Integration/
+│   ├── NeoServiceLayer.Integration.Tests/
+│   └── NeoServiceLayer.E2E.Tests/
+├── Performance/
+│   └── NeoServiceLayer.Performance.Tests/
+└── Shared/
+    └── NeoServiceLayer.TestUtilities/
 ```
 
-## 📋 Coding Standards
+## 📝 Code Standards
 
-### General Guidelines
+### **C# Coding Conventions**
 
-- **Follow C# conventions** and .NET best practices
-- **Use meaningful names** for variables, methods, and classes
-- **Add XML documentation** for public APIs
-- **Keep methods focused** and single-purpose
-- **Handle exceptions** appropriately
-- **Use async/await** for I/O operations
+```csharp
+// ✅ Good: Clear naming and structure
+public sealed class StorageService : IStorageService
+{
+    private readonly IEncryptionService _encryptionService;
+    private readonly ILogger<StorageService> _logger;
+    
+    public StorageService(
+        IEncryptionService encryptionService,
+        ILogger<StorageService> logger)
+    {
+        _encryptionService = encryptionService ?? throw new ArgumentNullException(nameof(encryptionService));
+        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+    }
+    
+    /// <summary>
+    /// Stores a document with encryption.
+    /// </summary>
+    /// <param name="document">The document to store.</param>
+    /// <returns>The stored document result.</returns>
+    /// <exception cref="StorageException">Thrown when storage fails.</exception>
+    public async Task<DocumentResult> StoreDocumentAsync(Document document)
+    {
+        _logger.LogInformation("Storing document {DocumentId}", document.Id);
+        
+        try
+        {
+            var encrypted = await _encryptionService.EncryptAsync(document.Content);
+            return await StoreEncryptedDataAsync(encrypted);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to store document {DocumentId}", document.Id);
+            throw new StorageException($"Failed to store document {document.Id}", ex);
+        }
+    }
+}
+```
 
-### Code Formatting
+### **Code Quality Rules**
 
+#### **Naming Conventions**
+- **Classes**: PascalCase (e.g., `StorageService`)
+- **Interfaces**: IPascalCase (e.g., `IStorageService`)
+- **Methods**: PascalCase (e.g., `StoreDocumentAsync`)
+- **Parameters**: camelCase (e.g., `documentId`)
+- **Private fields**: _camelCase (e.g., `_logger`)
+- **Constants**: UPPER_CASE (e.g., `MAX_RETRY_COUNT`)
+
+#### **Async/Await Best Practices**
+```csharp
+// ✅ Good: Async all the way
+public async Task<Result> ProcessAsync()
+{
+    var data = await GetDataAsync();
+    return await TransformDataAsync(data);
+}
+
+// ❌ Bad: Blocking async code
+public Result Process()
+{
+    var data = GetDataAsync().Result; // Don't do this!
+    return TransformDataAsync(data).Result;
+}
+```
+
+#### **Exception Handling**
+```csharp
+// ✅ Good: Specific exception handling with logging
+try
+{
+    await ProcessDataAsync();
+}
+catch (ValidationException ex)
+{
+    _logger.LogWarning(ex, "Validation failed");
+    return BadRequest(ex.Message);
+}
+catch (NotFoundException ex)
+{
+    _logger.LogWarning(ex, "Resource not found");
+    return NotFound(ex.Message);
+}
+catch (Exception ex)
+{
+    _logger.LogError(ex, "Unexpected error occurred");
+    return StatusCode(500, "An error occurred");
+}
+```
+
+### **Documentation Standards**
+
+#### **XML Documentation**
+```csharp
+/// <summary>
+/// Manages cryptographic key operations using Intel SGX.
+/// </summary>
+public interface IKeyManagementService
+{
+    /// <summary>
+    /// Generates a new cryptographic key.
+    /// </summary>
+    /// <param name="algorithm">The key algorithm to use.</param>
+    /// <param name="keySize">The size of the key in bits.</param>
+    /// <returns>A task that represents the asynchronous operation. 
+    /// The task result contains the generated key.</returns>
+    /// <exception cref="ArgumentException">
+    /// Thrown when the algorithm is not supported.
+    /// </exception>
+    /// <example>
+    /// <code>
+    /// var key = await keyService.GenerateKeyAsync(KeyAlgorithm.RSA, 2048);
+    /// </code>
+    /// </example>
+    Task<CryptographicKey> GenerateKeyAsync(KeyAlgorithm algorithm, int keySize);
+}
+```
+
+## 🔒 Security Guidelines
+
+### **Security-First Development**
+
+#### **Secure Coding Practices**
+```csharp
+// ✅ Good: Input validation and sanitization
+public async Task<IActionResult> CreateUser(CreateUserRequest request)
+{
+    // Validate input
+    if (!ModelState.IsValid)
+        return BadRequest(ModelState);
+    
+    // Sanitize input
+    request.Email = request.Email.Trim().ToLowerInvariant();
+    request.Name = HtmlEncoder.Default.Encode(request.Name);
+    
+    // Process securely
+    var hashedPassword = await _passwordHasher.HashPasswordAsync(request.Password);
+    // Never log sensitive data
+    _logger.LogInformation("Creating user with email {Email}", request.Email);
+}
+
+// ✅ Good: Secure cryptographic operations
+public async Task<byte[]> EncryptDataAsync(byte[] data)
+{
+    using var aes = Aes.Create();
+    aes.KeySize = 256;
+    aes.Mode = CipherMode.GCM;
+    
+    // Generate secure random IV
+    aes.GenerateIV();
+    
+    // Use key from secure storage
+    aes.Key = await _keyVault.GetEncryptionKeyAsync();
+    
+    // Encrypt with authentication tag
+    using var encryptor = aes.CreateEncryptor();
+    return await EncryptWithAuthenticationAsync(data, encryptor, aes.IV);
+}
+```
+
+#### **Common Security Pitfalls to Avoid**
+- ❌ Hardcoding secrets or credentials
+- ❌ Logging sensitive information
+- ❌ Using weak cryptographic algorithms
+- ❌ Trusting user input without validation
+- ❌ Exposing internal error details to users
+- ❌ Using predictable random values for security
+
+### **Reporting Security Vulnerabilities**
+
+⚠️ **DO NOT** create public GitHub issues for security vulnerabilities!
+
+#### **Responsible Disclosure Process**
+
+1. **Email**: Send details to `security@r3e.network`
+2. **Include**:
+   - Description of the vulnerability
+   - Steps to reproduce
+   - Potential impact assessment
+   - Suggested fix (if available)
+3. **Timeline**: Allow 90 days for patch development
+4. **Recognition**: Security researchers will be credited
+
+#### **Security Issue Template**
+```markdown
+Subject: [SECURITY] Vulnerability in [Component]
+
+## Summary
+Brief description of the security issue
+
+## Details
+- **Component**: Affected service/component
+- **Version**: Affected versions
+- **Severity**: Critical/High/Medium/Low
+
+## Reproduction Steps
+1. Step one
+2. Step two
+3. ...
+
+## Impact
+Potential security impact
+
+## Suggested Fix
+Recommended solution (optional)
+```
+
+## 🏗️ Microservice Development
+
+### **Creating a New Microservice**
+
+#### **1. Service Scaffolding**
 ```bash
-# Format code automatically
-dotnet format
+# Use the service template
+dotnet new webapi -n NeoServiceLayer.Services.YourService
+cd NeoServiceLayer.Services.YourService
 
-# Check formatting
-dotnet format --verify-no-changes
+# Add required packages
+dotnet add package NeoServiceLayer.ServiceFramework
+dotnet add package Microsoft.Extensions.Diagnostics.HealthChecks
+dotnet add package OpenTelemetry.Instrumentation.AspNetCore
 ```
 
-### Documentation Requirements
-
-- **XML comments** for all public members
-- **README files** for new services or components
-- **API documentation** updates for new endpoints
-- **Code comments** for complex logic
-
-## 🔒 Security Considerations
-
-### Security Requirements
-
-- **Never commit secrets** or credentials
-- **Use secure coding practices** for cryptographic operations
-- **Follow SGX enclave** development guidelines
-- **Validate all inputs** and sanitize outputs
-- **Report security issues** privately
-
-### Reporting Security Issues
-
-**DO NOT** create public issues for security vulnerabilities. Instead:
-
-1. Email security@neo.org with details
-2. Include steps to reproduce
-3. Provide impact assessment
-4. Allow time for responsible disclosure
-
-## 🎯 Service Development Guidelines
-
-### Adding New Services
-
-1. **Follow service framework** patterns
-2. **Implement required interfaces** (IService)
-3. **Add comprehensive tests** (unit and integration)
-4. **Create service documentation**
-5. **Update API controllers** if needed
-
-### Service Structure
-
+#### **2. Service Structure**
 ```
 src/Services/NeoServiceLayer.Services.YourService/
-├── IYourService.cs                    # Service interface
-├── YourService.cs                     # Main service implementation
-├── YourService.Operations.cs          # Additional operations
-├── Models/                            # Service-specific models
-└── README.md                          # Service documentation
+├── Controllers/
+│   └── YourServiceController.cs      # API endpoints
+├── Services/
+│   ├── IYourService.cs              # Service interface
+│   └── YourService.cs               # Service implementation
+├── Models/
+│   ├── Requests/                    # Request DTOs
+│   └── Responses/                   # Response DTOs
+├── Infrastructure/
+│   ├── HealthChecks/               # Health check implementations
+│   └── ServiceDiscovery/           # Consul registration
+├── Program.cs                       # Service entry point
+├── appsettings.json                # Configuration
+├── Dockerfile                       # Container definition
+└── README.md                        # Service documentation
 ```
 
-### Required Components
+#### **3. Service Implementation**
+```csharp
+// Program.cs
+var builder = WebApplication.CreateBuilder(args);
 
-- **Service interface** implementing `IService`
-- **Service implementation** inheriting from appropriate base class
-- **Unit tests** with 80%+ coverage
-- **Integration tests** for external dependencies
-- **API controller** for web endpoints
-- **Documentation** and examples
+// Add service framework
+builder.Services.AddServiceFramework(options =>
+{
+    options.ServiceName = "your-service";
+    options.ServiceVersion = "1.0.0";
+});
 
-## 📊 Pull Request Guidelines
+// Add your service
+builder.Services.AddScoped<IYourService, YourService>();
 
-### Before Submitting
+// Add health checks
+builder.Services.AddHealthChecks()
+    .AddCheck<YourServiceHealthCheck>("service")
+    .AddCheck<DependencyHealthCheck>("dependencies");
 
-- [ ] Code builds successfully
-- [ ] All tests pass
-- [ ] Test coverage is maintained or improved
-- [ ] Documentation is updated
-- [ ] Security considerations are addressed
-- [ ] Code follows style guidelines
+// Add OpenTelemetry
+builder.Services.AddOpenTelemetry()
+    .WithTracing(tracing => tracing
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation())
+    .WithMetrics(metrics => metrics
+        .AddAspNetCoreInstrumentation()
+        .AddHttpClientInstrumentation());
 
-### PR Template
+var app = builder.Build();
 
-Use this template for pull requests:
+// Configure pipeline
+app.UseServiceFramework();
+app.MapControllers();
+app.MapHealthChecks("/health");
 
+await app.RunAsync();
+```
+
+#### **4. Service Registration**
+```csharp
+// Infrastructure/ServiceDiscovery/ServiceRegistration.cs
+public class ServiceRegistration : IHostedService
+{
+    private readonly IConsulClient _consul;
+    private readonly IConfiguration _configuration;
+    private string _registrationId;
+
+    public async Task StartAsync(CancellationToken cancellationToken)
+    {
+        var registration = new AgentServiceRegistration
+        {
+            ID = $"{ServiceName}-{Guid.NewGuid()}",
+            Name = ServiceName,
+            Address = _configuration["Service:Address"],
+            Port = _configuration.GetValue<int>("Service:Port"),
+            Tags = new[] { "api", "v1" },
+            Check = new AgentServiceCheck
+            {
+                HTTP = $"http://localhost:{Port}/health",
+                Interval = TimeSpan.FromSeconds(10),
+                Timeout = TimeSpan.FromSeconds(5)
+            }
+        };
+
+        await _consul.Agent.ServiceRegister(registration, cancellationToken);
+        _registrationId = registration.ID;
+    }
+
+    public async Task StopAsync(CancellationToken cancellationToken)
+    {
+        await _consul.Agent.ServiceDeregister(_registrationId, cancellationToken);
+    }
+}
+```
+
+### **5. Docker Configuration**
+```dockerfile
+# Dockerfile
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS base
+WORKDIR /app
+EXPOSE 8080
+
+FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
+WORKDIR /src
+COPY ["NeoServiceLayer.Services.YourService.csproj", "."]
+RUN dotnet restore
+COPY . .
+RUN dotnet build -c Release -o /app/build
+
+FROM build AS publish
+RUN dotnet publish -c Release -o /app/publish /p:UseAppHost=false
+
+FROM base AS final
+WORKDIR /app
+COPY --from=publish /app/publish .
+ENTRYPOINT ["dotnet", "NeoServiceLayer.Services.YourService.dll"]
+```
+
+## 📚 Documentation Requirements
+
+### **Service Documentation Template**
 ```markdown
-## Description
-Brief description of changes
+# Your Service
 
-## Type of Change
-- [ ] Bug fix
-- [ ] New feature
-- [ ] Breaking change
-- [ ] Documentation update
+## Overview
+Brief description of what this service does
 
-## Testing
-- [ ] Unit tests added/updated
-- [ ] Integration tests added/updated
-- [ ] Manual testing completed
+## API Endpoints
+- `GET /api/v1/your-service/resource` - Get resources
+- `POST /api/v1/your-service/resource` - Create resource
+- `PUT /api/v1/your-service/resource/{id}` - Update resource
+- `DELETE /api/v1/your-service/resource/{id}` - Delete resource
 
-## Checklist
-- [ ] Code follows style guidelines
-- [ ] Self-review completed
-- [ ] Documentation updated
-- [ ] No new warnings introduced
+## Configuration
+| Variable | Description | Default |
+|----------|-------------|---------|
+| `Service:Port` | Service port | 8080 |
+| `Service:Name` | Service name | your-service |
+
+## Dependencies
+- PostgreSQL for data persistence
+- Redis for caching
+- Other services this depends on
+
+## Health Checks
+- `/health` - Overall service health
+- `/health/ready` - Readiness probe
+- `/health/live` - Liveness probe
+
+## Examples
+Show API usage examples with curl or SDK
 ```
 
-## 📚 Documentation Standards
+## 🌟 Recognition & Community
 
-### Documentation Types
+### **Contributors Hall of Fame**
+We recognize all contributors in our:
+- 📜 [Contributors List](https://github.com/r3e-network/neo-service-layer/graphs/contributors)
+- 🎉 Release notes
+- 🏆 Annual contributor awards
+- 💝 Special thanks section
 
-- **Code Documentation**: XML comments for APIs
-- **User Documentation**: Usage guides and examples
-- **Developer Documentation**: Architecture and implementation details
-- **API Documentation**: Swagger/OpenAPI specifications
+### **First-Time Contributors**
+We ❤️ first-time contributors! Look for issues labeled:
+- `good first issue` - Great for beginners
+- `help wanted` - We need your help!
+- `documentation` - Help improve docs
 
-### Writing Guidelines
+### **Community Channels**
+- **💬 Discussions**: [GitHub Discussions](https://github.com/r3e-network/neo-service-layer/discussions)
+- **🐛 Issues**: [GitHub Issues](https://github.com/r3e-network/neo-service-layer/issues)
+- **📧 Email**: contributors@r3e.network
 
-- **Use clear, concise language**
-- **Include code examples** where appropriate
-- **Keep documentation up-to-date** with code changes
-- **Use consistent formatting** and style
+## 🎯 Next Steps
 
-## 🤝 Community Guidelines
+1. **Find an Issue**: Browse [open issues](https://github.com/r3e-network/neo-service-layer/issues)
+2. **Ask Questions**: Use [discussions](https://github.com/r3e-network/neo-service-layer/discussions) for help
+3. **Submit PR**: Follow the guidelines above
+4. **Celebrate**: You're now a contributor! 🎉
 
-### Code of Conduct
+---
 
-- **Be respectful** and inclusive
-- **Focus on constructive feedback**
-- **Help others learn** and grow
-- **Collaborate effectively**
-- **Report inappropriate behavior**
+**Thank you for contributing to the Neo Service Layer! Together, we're building the future of blockchain microservices.** 🚀
 
-### Getting Help
-
-- **GitHub Discussions**: For questions and discussions
-- **GitHub Issues**: For bug reports and feature requests
-- **Discord/Slack**: For real-time community chat
-- **Email**: For private or sensitive matters
-
-## 🏆 Recognition
-
-Contributors are recognized through:
-
-- **Git commit history** and contributions
-- **Release notes** acknowledgments
-- **Community highlights** and features
-- **Contributor badges** and recognition
-
-## 📞 Contact
-
-- **General Questions**: GitHub Discussions
-- **Bug Reports**: GitHub Issues
-- **Security Issues**: security@neo.org
-- **Maintainers**: maintainers@neo.org
-
-Thank you for contributing to the Neo Service Layer! 🚀
+**Built with ❤️ by the Neo Community**

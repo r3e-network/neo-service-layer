@@ -1,428 +1,593 @@
-# Neo Service Layer API
+# Neo Service Layer API Documentation
 
-> **🎉 UPDATED FOR WORKING DEPLOYMENT** - All endpoints tested and fully operational!
+[![API Version](https://img.shields.io/badge/API-v1.0-blue)](https://github.com/r3e-network/neo-service-layer)
+[![OpenAPI](https://img.shields.io/badge/OpenAPI-3.0-green)](https://swagger.io/specification/)
+[![Microservices](https://img.shields.io/badge/architecture-microservices-orange)](https://microservices.io/)
+
+> **🚀 Production-Ready Microservices API** - Comprehensive documentation for the Neo Service Layer platform
 
 ## Overview
 
-The Neo Service Layer provides a comprehensive RESTful API for interacting with blockchain services. The API is currently deployed as a **standalone service** that is fully operational and ready for production use.
+The Neo Service Layer provides a comprehensive RESTful API ecosystem built on a **microservices architecture**. The platform offers secure, scalable services for blockchain applications with Intel SGX integration and comprehensive observability.
 
-## 🚀 **Current Working API Service**
+## 🏗️ API Architecture
 
-**Base URL**: `http://localhost:5002`
+### API Gateway (Primary Entry Point)
+**Base URL**: `http://localhost:7000`
 
-### ✅ **Fully Operational Endpoints**
+The API Gateway serves as the unified entry point for all microservices:
+- **Authentication & Authorization** - JWT-based security
+- **Rate Limiting** - DDoS protection and fair usage
+- **Request Routing** - Intelligent service discovery
+- **Load Balancing** - High availability and performance
+- **Circuit Breakers** - Fault tolerance and resilience
 
-| Endpoint | Method | Purpose | Status | Response |
-|----------|--------|---------|--------|----------|
-| `/` | GET | Service information | ✅ Working | Service info with version |
-| `/health` | GET | Health check | ✅ Working | "Healthy" |
-| `/api/status` | GET | Service status | ✅ Working | All services healthy |
-| `/api/database/test` | GET | Database connectivity | ✅ Working | PostgreSQL connection info |
-| `/api/redis/test` | GET | Redis connectivity | ✅ Working | Redis connection success |
-| `/api/neo/version` | GET | Neo service info | ✅ Working | Neo 3.8.1 with features |
-| `/api/neo/simulate` | POST | Neo operations | ✅ Working | Simulation results |
-| `/api/test` | POST | Test endpoint | ✅ Working | Test response |
-| `/swagger` | GET | API documentation | ✅ Working | Swagger UI |
+### Individual Services (Development)
+For development and testing, individual services can be accessed directly:
 
-### 🌐 **Access the Working API**
+| Service | Port | Purpose | Documentation |
+|---------|------|---------|---------------|
+| Storage Service | 8081 | Data persistence and retrieval | [Storage API](../services/storage-service.md) |
+| Key Management | 8082 | Cryptographic key operations | [Key Management API](../services/key-management-service.md) |
+| Notification | 8083 | Multi-channel notifications | [Notification API](../services/notification-service.md) |
+| AI Pattern Recognition | 8084 | Machine learning analytics | [AI Services API](../services/pattern-recognition-service.md) |
+| Configuration | 8085 | Dynamic configuration management | [Configuration API](../services/configuration-service.md) |
+| Oracle | 8086 | External data feeds | [Oracle API](../services/oracle-service.md) |
+| Cross-Chain | 8087 | Multi-blockchain operations | [Cross-Chain API](../services/cross-chain-service.md) |
 
-**Primary Access Points:**
-- **🏠 Service Info**: `http://localhost:5002/` - Service information and version
-- **💚 Health Check**: `http://localhost:5002/health` - Health status
-- **📊 Service Status**: `http://localhost:5002/api/status` - All service health
-- **📚 API Documentation**: `http://localhost:5002/swagger` - Interactive Swagger UI
+## 🔐 Authentication
 
-**Infrastructure Tests:**
-- **🗄️ Database Test**: `http://localhost:5002/api/database/test` - PostgreSQL connectivity
-- **🔴 Redis Test**: `http://localhost:5002/api/redis/test` - Redis connectivity
-
-**Neo Integration:**
-- **🛸 Neo Version**: `http://localhost:5002/api/neo/version` - Neo service information
-- **🧪 Neo Simulate**: `http://localhost:5002/api/neo/simulate` - Neo operations (POST)
-
-## Authentication
-
-**Current Status**: The working API service is currently **open for testing** and does not require authentication for basic endpoints. This allows for easy testing and development.
-
-### ✅ **No Authentication Required (Current)**
-
-All current endpoints are accessible without authentication:
-
-```bash
-# Direct access - no authentication needed
-curl http://localhost:5002/health
-curl http://localhost:5002/api/status
-curl http://localhost:5002/api/database/test
-curl http://localhost:5002/api/redis/test
-```
-
-### 🔒 **Future Authentication Support**
-
-The service is designed to support multiple authentication methods when enabled:
-
-- **JWT**: JSON Web Tokens for secure authentication
-- **API Key**: Simple API key authentication
-- **OAuth 2.0**: OAuth 2.0 for delegated authentication
-
-### **Example with Authentication (Future)**
+### JWT Authentication
+All production API calls require JWT authentication:
 
 ```http
-GET /api/neo/version HTTP/1.1
-Host: localhost:5002
-Authorization: Bearer your-jwt-token
+GET /api/v1/storage/documents HTTP/1.1
+Host: localhost:7000
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+Content-Type: application/json
 ```
 
-## Working API Endpoints
-
-### ✅ **Currently Available Endpoints**
-
-#### **System Health & Status**
+### Obtaining Access Tokens
 
 ```bash
-# Health check
-curl http://localhost:5002/health
-# Response: "Healthy"
-
-# Service status
-curl http://localhost:5002/api/status
-# Response: JSON with all service health status
-
-# Service information
-curl http://localhost:5002/
-# Response: Service info with version and timestamp
-```
-
-#### **Infrastructure Testing**
-
-```bash
-# Database connectivity test
-curl http://localhost:5002/api/database/test
-# Response: PostgreSQL connection info and version
-
-# Redis connectivity test
-curl http://localhost:5002/api/redis/test
-# Response: Redis connection success confirmation
-```
-
-#### **Neo Blockchain Integration**
-
-```bash
-# Neo version information
-curl http://localhost:5002/api/neo/version
-# Response: Neo 3.8.1 with supported features
-
-# Neo operation simulation
-curl -X POST http://localhost:5002/api/neo/simulate \
+# Authenticate and get JWT token
+curl -X POST http://localhost:7000/api/v1/auth/login \
   -H "Content-Type: application/json" \
-  -d '{"operation": "test", "parameters": {"key": "value"}}'
-# Response: Simulation result with ID and status
-```
+  -d '{
+    "username": "your-username",
+    "password": "your-password"
+  }'
 
-#### **Testing & Development**
-
-```bash
-# Test POST endpoint
-curl -X POST http://localhost:5002/api/test \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test User", "message": "Hello World"}'
-# Response: Test response with processed data
-
-# API documentation
-curl http://localhost:5002/swagger
-# Response: Swagger UI HTML (open in browser)
-```
-
-### 🔄 **Future Service Endpoints**
-
-The following services are available in the codebase and ready for microservices deployment:
-
-- [Randomness Service](../services/randomness-service.md)
-- [Oracle Service](../services/oracle-service.md)
-- [Key Management Service](../services/key-management-service.md)
-- [Compute Service](../services/compute-service.md)
-- [Storage Service](../services/storage-service.md)
-- [Compliance Service](../services/compliance-service.md)
-- [Event Subscription Service](../services/event-subscription-service.md)
-- [Automation Service](../services/automation-service.md)
-- [Cross-Chain Service](../services/cross-chain-service.md)
-- [Proof of Reserve Service](../services/proof-of-reserve-service.md)
-
-## Request & Response Examples
-
-### **Working Request Examples**
-
-#### **GET Requests**
-
-```bash
-# Health check
-curl http://localhost:5002/health
-# Response: "Healthy"
-
-# Service status
-curl http://localhost:5002/api/status
-# Response: 
+# Response
 {
-  "service": "Neo Service Layer",
-  "status": "Healthy",
-  "timestamp": "2024-01-01T12:00:00Z",
+  "access_token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
+  "token_type": "Bearer",
+  "expires_in": 3600,
+  "refresh_token": "def502004a8b7e..."
+}
+```
+
+### API Key Authentication (Development)
+For development and testing, API key authentication is available:
+
+```http
+GET /api/v1/health HTTP/1.1
+Host: localhost:7000
+X-API-Key: your-development-api-key
+```
+
+## 📊 Core API Endpoints
+
+### System Health & Monitoring
+
+#### Health Check
+```bash
+GET /health
+```
+Returns overall system health status.
+
+**Response:**
+```json
+{
+  "status": "healthy",
+  "timestamp": "2024-01-15T10:30:00Z",
+  "version": "1.0.0",
   "services": {
-    "database": "healthy",
-    "redis": "healthy",
-    "neo": "healthy"
-  }
-}
-
-# Database test
-curl http://localhost:5002/api/database/test
-# Response:
-{
-  "Status": "Connected",
-  "Version": "PostgreSQL 16.x on x86_64-pc-linux-gnu"
-}
-```
-
-#### **POST Requests**
-
-```bash
-# Test endpoint
-curl -X POST http://localhost:5002/api/test \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test User", "message": "Hello World"}'
-# Response:
-{
-  "message": "Test endpoint working",
-  "data": {
-    "name": "Test User",
-    "message": "Hello World"
-  },
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-
-# Neo simulation
-curl -X POST http://localhost:5002/api/neo/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"operation": "test", "parameters": {"key": "value"}}'
-# Response:
-{
-  "simulationId": "sim-123456",
-  "status": "success",
-  "result": {
-    "operation": "test",
-    "parameters": {"key": "value"},
-    "processed": true
+    "gateway": "healthy",
+    "consul": "healthy",
+    "storage": "healthy",
+    "keymanagement": "healthy",
+    "notification": "healthy"
   }
 }
 ```
 
-### **Response Format**
-
-The current API uses a **simplified response format** for easy testing and integration:
-
-**Simple Success Response:**
-```json
-{
-  "status": "success",
-  "data": {
-    // Response data
-  },
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-```
-
-**Error Response:**
-```json
-{
-  "status": "error",
-  "message": "Error description",
-  "timestamp": "2024-01-01T12:00:00Z"
-}
-```
-
-## Error Handling
-
-### **Current Error Responses**
-
-The working API service returns standard HTTP status codes:
-
-- **200**: OK - Request successful
-- **400**: Bad Request - Invalid request format
-- **404**: Not Found - Endpoint not found
-- **500**: Internal Server Error - Server error
-
-### **Error Example**
-
+#### Service Discovery
 ```bash
-# Request to non-existent endpoint
-curl http://localhost:5002/api/nonexistent
-# Response: 404 Not Found
-
-# Invalid JSON in POST request
-curl -X POST http://localhost:5002/api/test \
-  -H "Content-Type: application/json" \
-  -d 'invalid-json'
-# Response: 400 Bad Request
+GET /api/v1/services
 ```
+Returns available services and their status.
 
-### **Error Response Format**
+#### Metrics
+```bash
+GET /metrics
+```
+Prometheus-formatted metrics for monitoring.
 
-```json
+### Authentication Endpoints
+
+#### Login
+```bash
+POST /api/v1/auth/login
+Content-Type: application/json
+
 {
-  "status": "error",
-  "message": "Detailed error message",
-  "timestamp": "2024-01-01T12:00:00Z"
+  "username": "string",
+  "password": "string"
 }
 ```
 
-## Rate Limiting
+#### Refresh Token
+```bash
+POST /api/v1/auth/refresh
+Content-Type: application/json
 
-**Current Status**: Rate limiting is **not currently enforced** in the working API service, allowing for unlimited testing and development.
+{
+  "refresh_token": "string"
+}
+```
 
-**Future Implementation**: Rate limiting will be implemented with the following planned limits:
+#### Logout
+```bash
+POST /api/v1/auth/logout
+Authorization: Bearer {token}
+```
+
+## 🗄️ Storage Service API
+
+### Document Operations
+
+#### Store Document
+```bash
+POST /api/v1/storage/documents
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "contract-template.json",
+  "content": "base64-encoded-content",
+  "metadata": {
+    "type": "smart-contract",
+    "version": "1.0"
+  }
+}
+```
+
+#### Retrieve Document
+```bash
+GET /api/v1/storage/documents/{id}
+Authorization: Bearer {token}
+```
+
+#### List Documents
+```bash
+GET /api/v1/storage/documents?page=1&limit=20&type=smart-contract
+Authorization: Bearer {token}
+```
+
+#### Delete Document
+```bash
+DELETE /api/v1/storage/documents/{id}
+Authorization: Bearer {token}
+```
+
+### Encrypted Storage
+```bash
+POST /api/v1/storage/encrypted
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "data": "sensitive-data",
+  "encryption_key_id": "key-123",
+  "metadata": {
+    "classification": "confidential"
+  }
+}
+```
+
+## 🔑 Key Management API
+
+### Key Generation
+```bash
+POST /api/v1/keys/generate
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "algorithm": "RSA",
+  "key_size": 2048,
+  "usage": ["encrypt", "decrypt"],
+  "metadata": {
+    "purpose": "smart-contract-signing"
+  }
+}
+```
+
+### Key Retrieval
+```bash
+GET /api/v1/keys/{key_id}
+Authorization: Bearer {token}
+```
+
+### Digital Signatures
+```bash
+POST /api/v1/keys/{key_id}/sign
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "data": "data-to-sign",
+  "algorithm": "SHA256withRSA"
+}
+```
+
+### Key Rotation
+```bash
+POST /api/v1/keys/{key_id}/rotate
+Authorization: Bearer {token}
+```
+
+## 📧 Notification Service API
+
+### Send Notification
+```bash
+POST /api/v1/notifications/send
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "channel": "email",
+  "recipient": "user@example.com",
+  "subject": "Transaction Confirmation",
+  "message": "Your transaction has been confirmed",
+  "priority": "normal",
+  "metadata": {
+    "transaction_id": "tx-123"
+  }
+}
+```
+
+### Notification Templates
+```bash
+POST /api/v1/notifications/templates
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "name": "transaction-alert",
+  "channel": "email",
+  "subject": "Transaction Alert: {{transaction_type}}",
+  "body": "Transaction {{transaction_id}} of type {{transaction_type}} has been {{status}}."
+}
+```
+
+### Notification History
+```bash
+GET /api/v1/notifications/history?page=1&limit=50
+Authorization: Bearer {token}
+```
+
+## 🤖 AI Services API
+
+### Pattern Recognition
+```bash
+POST /api/v1/ai/pattern-recognition/analyze
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "data": {
+    "transactions": [...],
+    "addresses": [...],
+    "time_range": {
+      "start": "2024-01-01T00:00:00Z",
+      "end": "2024-01-15T23:59:59Z"
+    }
+  },
+  "analysis_type": "fraud_detection"
+}
+```
+
+### Prediction Services
+```bash
+POST /api/v1/ai/prediction/forecast
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "model": "market-prediction",
+  "input_data": {
+    "historical_prices": [...],
+    "market_indicators": {...}
+  },
+  "prediction_horizon": "7d"
+}
+```
+
+## ⛓️ Cross-Chain Bridge API
+
+### Supported Networks
+```bash
+GET /api/v1/crosschain/networks
+Authorization: Bearer {token}
+```
+
+### Bridge Transaction
+```bash
+POST /api/v1/crosschain/bridge
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "source_network": "neo-n3",
+  "destination_network": "neo-x",
+  "asset": "GAS",
+  "amount": "10.0",
+  "destination_address": "0x742d35cc6ab4b16c56b27a8a3cb5db1d3ec0e4a1"
+}
+```
+
+### Transaction Status
+```bash
+GET /api/v1/crosschain/transactions/{transaction_id}
+Authorization: Bearer {token}
+```
+
+## 🔮 Oracle Service API
+
+### Data Feeds
+```bash
+GET /api/v1/oracle/feeds
+Authorization: Bearer {token}
+```
+
+### Request Data
+```bash
+POST /api/v1/oracle/request
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "source": "coinmarketcap",
+  "query": {
+    "symbol": "NEO",
+    "convert": "USD"
+  },
+  "callback_url": "https://your-app.com/oracle-callback"
+}
+```
+
+### Subscribe to Feed
+```bash
+POST /api/v1/oracle/subscriptions
+Authorization: Bearer {token}
+Content-Type: application/json
+
+{
+  "feed_id": "crypto-prices",
+  "callback_url": "https://your-app.com/price-updates",
+  "filters": {
+    "symbols": ["NEO", "GAS"]
+  }
+}
+```
+
+## 📋 Response Format
+
+### Standard Success Response
+```json
+{
+  "success": true,
+  "data": {
+    // Response payload
+  },
+  "metadata": {
+    "timestamp": "2024-01-15T10:30:00Z",
+    "request_id": "req-123456",
+    "version": "1.0"
+  }
+}
+```
+
+### Error Response
+```json
+{
+  "success": false,
+  "error": {
+    "code": "VALIDATION_ERROR",
+    "message": "Invalid input parameters",
+    "details": {
+      "field": "amount",
+      "reason": "must be greater than 0"
+    }
+  },
+  "metadata": {
+    "timestamp": "2024-01-15T10:30:00Z",
+    "request_id": "req-123456"
+  }
+}
+```
+
+### Pagination Response
+```json
+{
+  "success": true,
+  "data": [...],
+  "pagination": {
+    "page": 1,
+    "limit": 20,
+    "total": 150,
+    "total_pages": 8,
+    "has_next": true,
+    "has_previous": false
+  }
+}
+```
+
+## ⚠️ Error Codes
+
+| Code | HTTP Status | Description |
+|------|-------------|-------------|
+| `AUTHENTICATION_REQUIRED` | 401 | Valid authentication token required |
+| `INSUFFICIENT_PERMISSIONS` | 403 | User lacks required permissions |
+| `RESOURCE_NOT_FOUND` | 404 | Requested resource does not exist |
+| `VALIDATION_ERROR` | 400 | Request validation failed |
+| `RATE_LIMIT_EXCEEDED` | 429 | Rate limit exceeded |
+| `SERVICE_UNAVAILABLE` | 503 | Service temporarily unavailable |
+| `INTERNAL_ERROR` | 500 | Internal server error |
+
+## 🚦 Rate Limiting
+
+### Default Limits
 - **Requests per minute**: 100
-- **Requests per hour**: 1,000
-- **Concurrent requests**: 10
+- **Requests per hour**: 1,000  
+- **Burst requests**: 20
 
-## API Documentation
-
-### **Interactive Documentation**
-
-The working API service provides **Swagger UI** for interactive API documentation:
-
-```bash
-# Access Swagger UI
-open http://localhost:5002/swagger
+### Rate Limit Headers
+```http
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 95
+X-RateLimit-Reset: 1642248600
 ```
 
-**Features:**
-- Interactive API testing
-- Request/response examples
-- Schema documentation
-- Try-it-out functionality
-
-### **API Versioning**
-
-The current API uses a **simple versioning approach**:
-
-```
-http://localhost:5002/api/{endpoint}
-```
-
-**Future Versioning**: Will implement versioned endpoints:
-```
-http://localhost:5002/api/v1/{endpoint}
-```
-
-### **Content Types**
-
-The API currently supports:
-- **JSON**: `application/json` (primary)
-- **Text**: `text/plain` (for simple responses)
-- **HTML**: `text/html` (for Swagger UI)
-
-### **Testing Tools**
-
-**Command Line:**
-```bash
-# Using curl
-curl http://localhost:5002/api/status
-
-# Using wget
-wget -qO- http://localhost:5002/health
-```
-
-**Programming Languages:**
-```javascript
-// JavaScript/Node.js
-const response = await fetch('http://localhost:5002/api/status');
-const data = await response.json();
-
-// Python
-import requests
-response = requests.get('http://localhost:5002/api/status')
-data = response.json()
-```
-
-## Integration Examples
-
-### **Quick Integration**
-
-**Check Service Health:**
-```bash
-curl http://localhost:5002/health
-```
-
-**Get Service Status:**
-```bash
-curl http://localhost:5002/api/status
-```
-
-**Test Database Connection:**
-```bash
-curl http://localhost:5002/api/database/test
-```
-
-### **Language Examples**
-
-**JavaScript/Node.js:**
-```javascript
-const fetch = require('node-fetch');
-
-async function checkHealth() {
-  const response = await fetch('http://localhost:5002/health');
-  const result = await response.text();
-  console.log('Health:', result);
-}
-
-async function getStatus() {
-  const response = await fetch('http://localhost:5002/api/status');
-  const data = await response.json();
-  console.log('Status:', data);
-}
-```
-
-**Python:**
-```python
-import requests
-
-def check_health():
-    response = requests.get('http://localhost:5002/health')
-    print('Health:', response.text)
-
-def get_status():
-    response = requests.get('http://localhost:5002/api/status')
-    print('Status:', response.json())
-```
-
-**C#/.NET:**
-```csharp
-using System.Net.Http;
-using System.Threading.Tasks;
-
-public class NeoServiceClient
+### Rate Limit Exceeded Response
+```json
 {
-    private readonly HttpClient _httpClient;
-    
-    public NeoServiceClient()
-    {
-        _httpClient = new HttpClient();
-    }
-    
-    public async Task<string> CheckHealthAsync()
-    {
-        var response = await _httpClient.GetAsync("http://localhost:5002/health");
-        return await response.Content.ReadAsStringAsync();
-    }
+  "success": false,
+  "error": {
+    "code": "RATE_LIMIT_EXCEEDED",
+    "message": "Rate limit exceeded. Please try again later.",
+    "retry_after": 60
+  }
 }
 ```
 
-## References
+## 📊 Observability
 
-- **[Deployment Guide](../deployment/DEPLOYMENT_GUIDE.md)** - How to deploy the service
-- **[Quick Start Guide](../deployment/QUICK_START.md)** - Get started in 5 minutes
-- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - System architecture
-- **[Neo Documentation](https://docs.neo.org/)** - Neo blockchain documentation
-- **[Swagger UI](http://localhost:5002/swagger)** - Interactive API documentation
+### Distributed Tracing
+All API requests include tracing headers:
+```http
+X-Trace-Id: 123e4567-e89b-12d3-a456-426614174000
+X-Span-Id: 456e7890-f12c-34e5-b678-539725281001
+```
+
+### Request Logging
+All requests are logged with:
+- Request ID for correlation
+- User ID (if authenticated)
+- Response time
+- Status code
+- User agent
+
+### Metrics
+Key metrics tracked:
+- Request latency (P50, P95, P99)
+- Request volume
+- Error rates
+- Service availability
+
+## 🔧 Development Tools
+
+### OpenAPI Specification
+```bash
+GET /api/v1/openapi.json
+```
+Returns the complete OpenAPI 3.0 specification.
+
+### Interactive Documentation
+```bash
+GET /swagger
+```
+Swagger UI for interactive API exploration.
+
+### Health Dashboard
+```bash
+GET /health/dashboard
+```
+HTML dashboard showing service health and metrics.
+
+## 📱 SDK Support
+
+### Official SDKs
+- **[.NET SDK](../../src/SDK/NeoServiceLayer.SDK/README.md)** - Full-featured .NET client
+- **[JavaScript SDK](../../website/README_SDK.md)** - Browser and Node.js support
+- **[Python SDK](https://pypi.org/project/neo-service-layer/)** - Python client library
+
+### SDK Example (.NET)
+```csharp
+var client = new NeoServiceLayerClient("http://localhost:7000");
+await client.AuthenticateAsync("username", "password");
+
+var result = await client.Storage.StoreDocumentAsync(new Document
+{
+    Name = "contract.json",
+    Content = documentBytes,
+    Metadata = new { Type = "smart-contract" }
+});
+```
+
+## 🧪 Testing
+
+### Development Environment
+```bash
+# Start development stack
+docker-compose up -d
+
+# Run API tests
+dotnet test tests/Integration/NeoServiceLayer.Integration.Tests/ \
+  --filter "FullyQualifiedName~MockedServiceTests"
+```
+
+### Postman Collection
+Download the [Postman Collection](./postman-collection.json) for comprehensive API testing.
+
+### Environment Variables
+```bash
+# Development
+NEO_SERVICE_API_URL=http://localhost:7000
+NEO_SERVICE_API_KEY=dev-api-key
+
+# Production
+NEO_SERVICE_API_URL=https://api.neoservice.io
+NEO_SERVICE_JWT_TOKEN=production-jwt-token
+```
+
+## 📚 Additional Resources
+
+### API Guides
+- **[Authentication Guide](./authentication.md)** - Detailed authentication setup
+- **[Rate Limiting Guide](./rate-limiting.md)** - Rate limiting configuration
+- **[Error Handling Guide](./error-handling.md)** - Error handling best practices
+
+### Service Documentation
+- **[Storage Service](../services/storage-service.md)** - Data storage and retrieval
+- **[Key Management](../services/key-management-service.md)** - Cryptographic operations
+- **[Notification Service](../services/notification-service.md)** - Multi-channel messaging
+- **[AI Services](../services/pattern-recognition-service.md)** - Machine learning APIs
+
+### Integration Examples
+- **[Smart Contract Integration](../../examples/smart-contract-integration.md)**
+- **[Cross-Chain Bridge Usage](../../examples/cross-chain-bridge.md)**
+- **[Real-Time Notifications](../../examples/notification-integration.md)**
+
+## 🤝 Support
+
+- **📖 Documentation**: Complete API documentation
+- **🐛 Issues**: [GitHub Issues](https://github.com/r3e-network/neo-service-layer/issues)
+- **💬 API Support**: [API Discussions](https://github.com/r3e-network/neo-service-layer/discussions)
+- **📧 Contact**: api-support@r3e.network
 
 ---
 
-**🎉 The Neo Service Layer API is fully operational and ready for integration!**
+**🚀 Ready to integrate? Start with our [Quick Start Guide](../deployment/QUICK_START.md)!**

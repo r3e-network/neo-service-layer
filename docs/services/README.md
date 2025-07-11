@@ -1,607 +1,699 @@
 # Neo Service Layer Services
 
-> **🎉 UPDATED FOR WORKING DEPLOYMENT** - Services ready for microservices deployment!
+[![Microservices](https://img.shields.io/badge/architecture-microservices-green)](https://microservices.io/)
+[![Intel SGX](https://img.shields.io/badge/Intel-SGX-blue)](https://software.intel.com/en-us/sgx)
+[![Services](https://img.shields.io/badge/services-20+-brightgreen)](https://github.com/r3e-network/neo-service-layer)
+[![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 
-The Neo Service Layer provides **26 production-ready services** organized into seven categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability.
+> **🚀 Production-Ready Microservices** - Comprehensive service catalog for the Neo blockchain ecosystem
 
-## 🚀 **Current Service Status**
+The Neo Service Layer provides a comprehensive suite of **production-ready microservices** organized into specialized categories. All services leverage Intel SGX with Occlum LibOS enclaves to ensure security, privacy, and verifiability for enterprise blockchain applications.
 
-### ✅ **Working API Service**
+## 🏗️ **Service Architecture Overview**
 
-The standalone API service is **fully operational** and provides:
-- **🏠 Base Service**: `http://localhost:5002/` - Service information
-- **💚 Health Check**: `http://localhost:5002/health` - System health
-- **📊 Service Status**: `http://localhost:5002/api/status` - All services status
-- **📚 API Documentation**: `http://localhost:5002/swagger` - Interactive Swagger UI
-- **🛸 Neo Integration**: `http://localhost:5002/api/neo/version` - Neo blockchain info
-- **🧪 Neo Operations**: `http://localhost:5002/api/neo/simulate` - Neo transaction simulation
+### **Microservices Deployment**
 
-### 🔄 **Ready for Microservices Deployment**
+All services are deployed as independent microservices with:
+- **🌐 API Gateway**: Unified entry point at `http://localhost:7000`
+- **🔍 Service Discovery**: Consul-based service registry
+- **📊 Observability**: Distributed tracing and metrics
+- **🔒 Security**: JWT authentication and encrypted communication
+- **⚡ Performance**: Load balancing and circuit breakers
 
-All 26 services are **implemented and ready** for individual deployment:
-- **✅ Service Code**: All services fully implemented
-- **✅ Service Framework**: Common service framework ready
-- **✅ Service Discovery**: Consul-based discovery ready
-- **✅ API Gateway**: YARP-based gateway ready
-- **✅ Docker Support**: Container configurations ready
-- **✅ Health Checks**: Health monitoring implemented
+### **Service Access Patterns**
 
-### 🌐 **Service Access**
-
-**Current Access (Standalone API)**:
+**Production Access (API Gateway)**:
 ```bash
-# Check service health
-curl http://localhost:5002/health
+# Via API Gateway (Recommended)
+curl http://localhost:7000/api/v1/storage/documents
+curl http://localhost:7000/api/v1/keys/generate
+curl http://localhost:7000/api/v1/notifications/send
 
-# Get service status
-curl http://localhost:5002/api/status
-
-# Access API documentation
-open http://localhost:5002/swagger
+# Health check
+curl http://localhost:7000/health
 ```
 
-**Future Access (Microservices)**:
+**Development Access (Direct Services)**:
 ```bash
-# Via API Gateway
-curl http://localhost:5000/api/randomness/generate
-curl http://localhost:5000/api/oracle/data
-curl http://localhost:5000/api/key-management/generate
-
-# Direct service access
-curl http://randomness-service:8080/api/generate
-curl http://oracle-service:8080/api/data
+# Direct service access for development
+curl http://localhost:8081/health  # Storage Service
+curl http://localhost:8082/health  # Key Management Service
+curl http://localhost:8083/health  # Notification Service
 ```
 
-## 🔧 Core Services (4)
+**Service Discovery**:
+```bash
+# Check service registry
+curl http://localhost:8500/v1/catalog/services
 
-Essential blockchain operations:
+# Service health status
+curl http://localhost:8500/v1/health/service/storage-service
+```
 
-### 1. [Key Management Service](key-management-service.md)
+## 🔧 Core Services
 
-Generate and manage cryptographic keys securely using Intel SGX with Occlum LibOS enclaves.
+Essential blockchain operations and infrastructure:
 
-**Key Features:**
-- Secure key generation and storage within Intel SGX with Occlum LibOS enclaves
-- Support for multiple key types (ECDSA, Ed25519, RSA)
-- Key rotation, revocation, and lifecycle management
-- Hardware security module (HSM) integration
-- Multi-blockchain support (Neo N3, NeoX)
+### 🔑 Key Management Service
+**Port**: 8082 | **API Endpoint**: `/api/v1/keys`
 
-### 2. [Randomness Service](randomness-service.md)
+Secure cryptographic key operations using Intel SGX hardware protection.
 
-Cryptographically secure random number generation with verifiable proofs.
+**Production Features:**
+- **Hardware Security**: SGX-protected key generation and storage
+- **Multi-Algorithm Support**: ECDSA-P256, Ed25519, RSA-2048/4096
+- **Key Lifecycle**: Generation, rotation, revocation, archival
+- **Compliance**: FIPS 140-2 Level 3 equivalent security
+- **Audit Trail**: Complete cryptographic audit logs
 
-**Key Features:**
-- Hardware-level entropy using Intel SGX with Occlum LibOS
-- Verifiable randomness with cryptographic proofs
-- Multiple output formats (hex, decimal, binary, base64)
-- Custom seed support and batch generation
-- Multi-blockchain integration
+**API Examples:**
+```bash
+# Generate new signing key
+POST /api/v1/keys/generate
+{
+  "algorithm": "ECDSA_P256",
+  "usage": ["sign", "verify"],
+  "metadata": {"purpose": "smart-contract-signing"}
+}
 
-### 3. [Oracle Service](oracle-service.md)
+# Sign data
+POST /api/v1/keys/{keyId}/sign
+{
+  "data": "transaction-data-to-sign",
+  "algorithm": "SHA256withECDSA"
+}
+```
 
-External data feeds with cryptographic proofs and integrity verification.
+### 🗄️ Storage Service
+**Port**: 8081 | **API Endpoint**: `/api/v1/storage`
 
-**Key Features:**
-- Secure data feeds from external APIs and sources
-- Decentralized price and market data aggregation
-- Verifiable data with cryptographic integrity proofs
-- Real-time feeds for cryptocurrencies and traditional assets
-- High availability with redundant data sources
+Encrypted data storage with enterprise-grade security and performance.
 
-### 4. [Voting Service](voting-service.md)
+**Production Features:**
+- **Encryption**: AES-256-GCM with SGX-protected keys
+- **Compression**: LZ4 compression for large datasets
+- **Versioning**: Complete version control for all data
+- **Access Control**: Fine-grained permissions and policies
+- **Backup**: Automated backup with cross-region replication
 
-Decentralized voting and governance proposals with cryptographic verification.
+**API Examples:**
+```bash
+# Store encrypted document
+POST /api/v1/storage/documents
+{
+  "name": "smart-contract-v2.json",
+  "content": "base64-encoded-content",
+  "encryption": true,
+  "metadata": {"version": "2.0", "network": "neo-n3"}
+}
 
-**Key Features:**
-- Multiple voting mechanisms (simple majority, weighted, quadratic)
-- Zero-knowledge voting for privacy
-- Vote delegation and proxy voting
-- Governance proposal lifecycle management
-- Cryptographic vote verification and audit trails
+# Retrieve document
+GET /api/v1/storage/documents/{documentId}
+```
 
-## 💾 Storage & Data Services (3)
+### 📧 Notification Service
+**Port**: 8083 | **API Endpoint**: `/api/v1/notifications`
 
-Data management and persistence:
+Multi-channel notification system with delivery guarantees.
 
-### 5. [Storage Service](storage-service.md)
+**Production Features:**
+- **Multi-Channel**: Email, SMS, Webhook, Push notifications
+- **Reliability**: Guaranteed delivery with retry mechanisms
+- **Templates**: Rich template system with variable substitution
+- **Analytics**: Delivery tracking and engagement metrics
+- **Rate Limiting**: Intelligent throttling and queue management
 
-Encrypted data storage and retrieval with advanced security features.
+**API Examples:**
+```bash
+# Send notification
+POST /api/v1/notifications/send
+{
+  "channel": "email",
+  "recipient": "user@example.com",
+  "subject": "Transaction Confirmed",
+  "message": "Your transaction has been confirmed",
+  "priority": "normal"
+}
 
-**Key Features:**
-- AES-256-GCM encryption for all stored data
-- Compression and chunking for large data
-- Multiple storage provider implementations
-- Access control and versioning support
-- Backup and recovery mechanisms
+# Check delivery status
+GET /api/v1/notifications/{notificationId}/status
+```
 
-### 6. [Backup Service](backup-service.md)
+### 🔮 Oracle Service  
+**Port**: 8086 | **API Endpoint**: `/api/v1/oracle`
 
-Automated backup and restore operations for critical system data.
+External data feeds with cryptographic integrity verification.
 
-**Key Features:**
-- Automated full, incremental, and differential backups
-- Encrypted backup storage with integrity verification
-- Scheduled backup policies and retention management
-- Cross-region backup replication
-- Disaster recovery and restore procedures
+**Production Features:**
+- **Data Sources**: Multiple premium data providers
+- **Integrity**: Cryptographic proofs for all data feeds
+- **Real-Time**: Sub-second price feeds and market data
+- **Redundancy**: Multi-source aggregation and validation
+- **Historical**: Complete historical data with analytics
 
-### 7. [Configuration Service](configuration-service.md)
+**API Examples:**
+```bash
+# Request price data
+POST /api/v1/oracle/request
+{
+  "source": "coinmarketcap",
+  "query": {"symbol": "NEO", "convert": "USD"},
+  "callback_url": "https://your-app.com/oracle-callback"
+}
 
-Dynamic system configuration management with validation.
+# Subscribe to price feed
+POST /api/v1/oracle/subscriptions
+{
+  "feed_id": "crypto-prices",
+  "symbols": ["NEO", "GAS"],
+  "update_interval": "60s"
+}
+```
 
-**Key Features:**
-- Centralized configuration management
-- Real-time configuration updates
-- Configuration validation and schema enforcement
-- Environment-specific configuration profiles
-- Audit trail for configuration changes
+## ⚙️ Infrastructure Services
 
-## 🔒 Security Services (6)
+System management and blockchain integration:
 
-Advanced security and privacy features:
-
-### 8. [Zero Knowledge Service](zero-knowledge-service.md)
-
-ZK proof generation and verification for privacy-preserving operations.
-
-**Key Features:**
-- zk-SNARK and zk-STARK proof systems
-- Private set intersection and confidential computing
-- Selective disclosure and range proofs
-- Circuit compilation and verification
-- Privacy-preserving transactions
-
-### 9. [Abstract Account Service](abstract-account-service.md)
-
-Smart contract account management with advanced features.
-
-**Key Features:**
-- Multi-signature account creation and management
-- Social recovery and account abstraction
-- Time-locked transactions and spending limits
-- Batch transaction execution
-- Custom authorization logic
-
-### 10. [Compliance Service](compliance-service.md)
-
-Regulatory compliance and AML/KYC verification.
-
-**Key Features:**
-- AML/KYC verification and risk scoring
-- Sanctions screening and regulatory compliance
-- Transaction monitoring and suspicious activity detection
-- Audit trail and compliance reporting
-- Multiple regulatory framework support
-
-### 11. [Proof of Reserve Service](proof-of-reserve-service.md)
-
-Cryptographic asset verification and reserve monitoring.
-
-**Key Features:**
-- Real-time asset reserve verification
-- Multi-asset support (crypto, fiat, commodities)
-- Cryptographic proofs of reserve adequacy
-- Automated monitoring and alerting
-- Audit trail and transparency reports
-
-### 12. [Secrets Management Service](secrets-management-service.md)
-
-Secure storage and management of sensitive data.
-
-**Key Features:**
-- Hardware-protected secret storage in SGX enclave
-- Automated secret rotation with version history
-- Fine-grained access control and audit logging
-- Shamir's Secret Sharing for multi-party access
-- HSM integration and dynamic secret generation
-
-### 13. [Social Recovery Service](social-recovery-service.md)
-
-Decentralized account recovery with reputation-based guardian network.
-
-**Key Features:**
-- Reputation-based guardian system with weighted voting
-- Multi-factor authentication support (email, SMS, TOTP, biometric)
-- Trust network for establishing guardian relationships
-- Economic incentives with staking and slashing mechanisms
-- Multiple recovery strategies (standard, emergency, multi-factor)
-
-## ⚙️ Operations Services (4)
-
-System management and monitoring:
-
-### 15. [Automation Service](automation-service.md)
-
-Workflow automation and smart contract scheduling.
-
-**Key Features:**
-- Time-based and condition-based automation triggers
-- Smart contract automation and job scheduling
-- High reliability with redundancy and failover
-- Gas optimization for automated transactions
-- Custom automation logic and workflows
-
-### 16. [Monitoring Service](monitoring-service.md)
-
-System metrics and performance analytics.
-
-**Key Features:**
-- Real-time system monitoring and metrics collection
-- Performance analytics and trend analysis
-- Custom dashboards and alerting
-- Service health monitoring and SLA tracking
-- Historical data analysis and reporting
-
-### 17. [Health Service](health-service.md)
-
-System health diagnostics and reporting.
-
-**Key Features:**
-- Comprehensive system health checks
-- Service dependency monitoring
-- Health status aggregation and reporting
-- Automated health issue detection
-- Health trend analysis and predictions
-
-### 18. [Notification Service](notification-service.md)
-
-Multi-channel notification and alert system.
-
-**Key Features:**
-- Multi-channel notifications (email, SMS, webhook, push)
-- Priority-based message routing
-- Template-based notification management
-- Delivery confirmation and retry mechanisms
-- Notification analytics and optimization
-
-## 🌐 Infrastructure Services (4)
-
-Multi-chain and compute services:
-
-### 19. [Cross-Chain Service](cross-chain-service.md)
+### ⛓️ Cross-Chain Service
+**Port**: 8087 | **API Endpoint**: `/api/v1/crosschain`
 
 Multi-blockchain interoperability and asset transfers.
 
-**Key Features:**
-- Cross-chain messaging and token transfers
-- Smart contract calls across different blockchains
-- Message verification with cryptographic proofs
-- Support for multiple blockchain networks
-- Programmable cross-chain transactions
+**Production Features:**
+- **Multi-Network**: Neo N3, NeoX, Ethereum, Bitcoin support
+- **Asset Bridging**: Secure cross-chain token transfers
+- **Message Passing**: Smart contract calls across chains
+- **Verification**: Cryptographic proof verification
+- **Atomic Swaps**: Trustless cross-chain exchanges
 
-### 20. [Compute Service](compute-service.md)
+**API Examples:**
+```bash
+# Bridge tokens between chains
+POST /api/v1/crosschain/bridge
+{
+  "source_network": "neo-n3",
+  "destination_network": "neo-x",
+  "asset": "GAS",
+  "amount": "50.0",
+  "destination_address": "0x742d35cc6ab4b16c..."
+}
 
-Secure TEE computations with confidential computing.
+# Check bridge status
+GET /api/v1/crosschain/transactions/{transactionId}
+```
 
-**Key Features:**
-- Secure computation within Intel SGX with Occlum LibOS
-- Confidential smart contract execution
-- User secret management and access control
-- Verifiable computation results
-- Gas accounting and resource management
+### 📋 Configuration Service
+**Port**: 8085 | **API Endpoint**: `/api/v1/configuration`
 
-### 21. [Event Subscription Service](event-subscription-service.md)
+Dynamic configuration management with validation and versioning.
 
-Blockchain event monitoring and subscription management.
+**Production Features:**
+- **Dynamic Updates**: Real-time configuration changes
+- **Validation**: Schema-based configuration validation
+- **Versioning**: Complete configuration history
+- **Environment Profiles**: Development, staging, production configs
+- **Rollback**: Instant configuration rollback capabilities
 
-**Key Features:**
-- Real-time blockchain event monitoring
-- Event filtering and transformation
-- Reliable event delivery with webhook integration
-- Subscription management and lifecycle
-- Event replay and historical data access
+**API Examples:**
+```bash
+# Get configuration value
+GET /api/v1/configuration/app/database-url
 
-### 22. [Smart Contracts Service](smart-contracts-service.md)
+# Update configuration
+PUT /api/v1/configuration/app/database-url
+{
+  "value": "postgres://newhost/db",
+  "environment": "production"
+}
+```
+
+### 🤖 Smart Contracts Service
+**Port**: 8088 | **API Endpoint**: `/api/v1/smart-contracts`
 
 Smart contract deployment and lifecycle management.
 
-**Key Features:**
-- Multi-chain support (Neo N3 and Neo X)
-- Template library with audited contracts
-- Automated testing and verification
-- Gas optimization and estimation
-- Version management and upgrades
+**Production Features:**
+- **Multi-Chain**: Neo N3 and NeoX deployment support
+- **Template Library**: Audited smart contract templates
+- **Gas Optimization**: Automatic gas estimation and optimization
+- **Testing**: Automated contract testing and verification
+- **Upgrades**: Secure contract upgrade mechanisms
 
-## 🤖 AI Services (2)
+**API Examples:**
+```bash
+# Deploy smart contract
+POST /api/v1/smart-contracts/deploy
+{
+  "network": "neo-n3",
+  "contract_code": "0x...",
+  "parameters": {...},
+  "metadata": {"version": "1.0"}
+}
 
-Machine learning and analytics:
+# Invoke contract method
+POST /api/v1/smart-contracts/invoke
+{
+  "contract_hash": "0x...",
+  "method": "transfer",
+  "parameters": ["sender", "recipient", 100]
+}
+```
 
-### 23. [Pattern Recognition Service](pattern-recognition-service.md)
+## 🤖 AI & Analytics Services
 
-AI-powered analysis and fraud detection.
+Machine learning and intelligent data analysis:
 
-**Key Features:**
-- Advanced fraud detection and transaction monitoring
-- Behavioral analysis and anomaly detection
-- Risk pattern recognition in financial data
-- Real-time ML model inference
-- Model verification and explainable AI
+### 🧠 AI Pattern Recognition Service
+**Port**: 8084 | **API Endpoint**: `/api/v1/ai/pattern-recognition`
 
-### 24. [Prediction Service](prediction-service.md)
+Advanced AI-powered analysis and fraud detection.
 
-Machine learning forecasting and analytics.
+**Production Features:**
+- **Fraud Detection**: Real-time transaction monitoring
+- **Behavioral Analysis**: User behavior pattern recognition
+- **Anomaly Detection**: Statistical anomaly identification
+- **Risk Scoring**: ML-based risk assessment models
+- **Explainable AI**: Transparent decision explanations
 
-**Key Features:**
-- Market prediction and price forecasting
-- Sentiment analysis from multiple data sources
-- Time series forecasting and trend detection
-- Risk prediction and probability assessment
-- Confidence intervals and uncertainty quantification
+**API Examples:**
+```bash
+# Analyze transaction patterns
+POST /api/v1/ai/pattern-recognition/analyze
+{
+  "data_source": "blockchain-transactions",
+  "time_range": {"start": "2024-01-01", "end": "2024-01-31"},
+  "analysis_type": "fraud_detection",
+  "parameters": {"min_amount": 1000}
+}
 
-## 🚀 Advanced Services (3)
+# Get analysis results
+GET /api/v1/ai/pattern-recognition/analysis/{analysisId}
+```
 
-Specialized blockchain features:
+### 📊 AI Prediction Service
+**Port**: 8089 | **API Endpoint**: `/api/v1/ai/prediction`
 
-### 25. [Fair Ordering Service](fair-ordering-service.md)
+Machine learning forecasting and predictive analytics.
 
-Transaction fairness and MEV protection.
+**Production Features:**
+- **Price Prediction**: Market price forecasting models
+- **Trend Analysis**: Statistical trend identification
+- **Sentiment Analysis**: Multi-source sentiment aggregation
+- **Risk Modeling**: Portfolio and systemic risk models
+- **Confidence Intervals**: Uncertainty quantification
 
-**Key Features:**
-- Fair transaction ordering across Neo N3 and NeoX
-- MEV protection and front-running prevention
-- Private transaction pools and batch processing
-- Cryptographic fairness guarantees
-- Transaction privacy and batching
+**API Examples:**
+```bash
+# Request price prediction
+POST /api/v1/ai/prediction/forecast
+{
+  "model": "market-prediction",
+  "input_data": {"historical_prices": [...], "market_indicators": {...}},
+  "prediction_horizon": "7d"
+}
 
-### 26. [Attestation Service](attestation-service.md)
+# Get prediction results
+GET /api/v1/ai/prediction/forecasts/{forecastId}
+```
 
-SGX remote attestation and verification.
+## 🛡️ Security & Compliance Services
 
-**Key Features:**
-- Remote attestation for enclave integrity
-- Quote generation with custom user data
-- Attestation report verification
-- Certificate chain validation
-- Real-time enclave status monitoring
+Enterprise-grade security and regulatory compliance:
 
-### 27. [Network Security Service](network-security-service.md)
+### 🔐 Zero Knowledge Service
+**Port**: 8090 | **API Endpoint**: `/api/v1/zk`
 
-Secure enclave network communication.
+Privacy-preserving computations and proof systems.
 
-**Key Features:**
-- TLS 1.3 encrypted channels
-- Enclave-to-enclave communication
-- Automated certificate management
-- Configurable firewall rules
-- DDoS protection and rate limiting
+**Production Features:**
+- **zk-SNARKs**: Efficient zero-knowledge proofs
+- **Private Transactions**: Confidential value transfers
+- **Selective Disclosure**: Controlled information sharing
+- **Circuit Compilation**: Custom proof circuit generation
+- **Batch Verification**: Efficient proof aggregation
 
-### 24. [Enclave Storage Service](enclave-storage-service.md)
+**API Examples:**
+```bash
+# Generate zero-knowledge proof
+POST /api/v1/zk/prove
+{
+  "circuit": "range-proof",
+  "private_inputs": {"value": 1000, "random": "0x..."},
+  "public_inputs": {"min": 0, "max": 10000}
+}
 
-Hardware-protected persistent storage within SGX.
+# Verify proof
+POST /api/v1/zk/verify
+{
+  "proof": "0x...",
+  "public_inputs": {...},
+  "circuit": "range-proof"
+}
+```
 
-**Key Features:**
-- SGX sealing for data protection
-- Persistent encryption at rest
-- Versioned sealed data storage
-- Enclave-based access control
-- Secure backup and recovery
+### 🏛️ Compliance Service
+**Port**: 8091 | **API Endpoint**: `/api/v1/compliance`
 
-## 📊 **Current Service Status & Integration**
+Regulatory compliance and risk management.
 
-### ✅ **Implementation Status**
-- **Total Services**: 26 production-ready services
-- **Standalone API**: ✅ Fully operational at `http://localhost:5002`
-- **Service Framework**: ✅ Common framework implemented
-- **API Coverage**: ✅ Complete RESTful API interfaces
-- **Documentation**: ✅ Comprehensive Swagger documentation
-- **Health Monitoring**: ✅ Service health checks operational
+**Production Features:**
+- **AML/KYC**: Automated identity verification
+- **Sanctions Screening**: Real-time watchlist checking
+- **Transaction Monitoring**: Suspicious activity detection
+- **Risk Scoring**: ML-based risk assessment
+- **Regulatory Reporting**: Automated compliance reports
 
-### 🔄 **Deployment Status**
-- **Infrastructure**: ✅ PostgreSQL + Redis operational
-- **Microservices**: 🔄 Ready for individual deployment
-- **Service Discovery**: 🔄 Consul configuration ready
-- **API Gateway**: 🔄 YARP configuration ready
-- **Authentication**: 🔄 JWT implementation ready
-- **Container Support**: 🔄 Docker configurations ready
+**API Examples:**
+```bash
+# Perform KYC verification
+POST /api/v1/compliance/kyc/verify
+{
+  "user_id": "user-123",
+  "documents": ["id_card", "proof_of_address"],
+  "personal_info": {"name": "John Doe", "dob": "1990-01-01"}
+}
 
-### 📋 **Service Categories**
-1. **Core Services (4)**: ✅ Essential blockchain operations
-2. **Storage & Data (3)**: ✅ Data management and persistence
-3. **Security Services (6)**: ✅ Advanced security and privacy
-4. **Operations (4)**: ✅ System management and monitoring
-5. **Infrastructure (4)**: ✅ Multi-chain and compute services
-6. **AI Services (2)**: ✅ Machine learning and analytics
-7. **Advanced Services (3)**: ✅ Specialized blockchain features
+# Screen for sanctions
+POST /api/v1/compliance/sanctions/screen
+{
+  "name": "John Doe",
+  "address": "123 Main St",
+  "country": "US"
+}
+```
 
-### 🌐 **Service Access Points**
+## 📊 Monitoring & Operations Services
 
-**Current Access (Working)**:
-- **API Base**: `http://localhost:5002`
-- **Health Check**: `http://localhost:5002/health` - ✅ "Healthy"
-- **Service Status**: `http://localhost:5002/api/status` - ✅ All services healthy
-- **Documentation**: `http://localhost:5002/swagger` - ✅ Interactive Swagger UI
-- **Neo Integration**: `http://localhost:5002/api/neo/version` - ✅ Neo service info
+System observability and operational management:
 
-**Future Access (Microservices)**:
-- **API Gateway**: `http://localhost:5000` - 🔄 Ready for deployment
-- **Service Discovery**: `http://localhost:8500` - 🔄 Consul UI ready
-- **Individual Services**: `http://{service-name}:8080` - 🔄 Ready for deployment
+### 📈 Monitoring Service
+**Port**: 8092 | **API Endpoint**: `/api/v1/monitoring`
 
-## 🛡️ Security & Compliance
+Comprehensive system monitoring and observability.
 
-All services implement enterprise-grade security:
-- **Intel SGX + Occlum LibOS**: Hardware-level security for critical operations
+**Production Features:**
+- **Real-Time Metrics**: Live system performance monitoring
+- **Custom Dashboards**: Configurable monitoring views
+- **Alerting**: Intelligent threshold-based alerts
+- **SLA Tracking**: Service level agreement monitoring
+- **Historical Analysis**: Long-term trend analysis
+
+**API Examples:**
+```bash
+# Get system metrics
+GET /api/v1/monitoring/metrics?service=all&timerange=1h
+
+# Create custom alert
+POST /api/v1/monitoring/alerts
+{
+  "name": "High CPU Usage",
+  "condition": "cpu_usage > 80",
+  "severity": "warning",
+  "notification_channels": ["email", "slack"]
+}
+```
+
+### 💚 Health Service
+**Port**: 8093 | **API Endpoint**: `/api/v1/health`
+
+Service health diagnostics and dependency monitoring.
+
+**Production Features:**
+- **Dependency Monitoring**: Service dependency health checks
+- **Health Aggregation**: System-wide health status
+- **Issue Detection**: Automated problem identification
+- **Recovery Suggestions**: AI-powered recovery recommendations
+- **Health Trends**: Predictive health analytics
+
+**API Examples:**
+```bash
+# Check overall system health
+GET /api/v1/health/system
+
+# Check service dependencies
+GET /api/v1/health/dependencies/{serviceName}
+
+# Get health trend analysis
+GET /api/v1/health/trends?period=7d
+```
+
+### ⚙️ Automation Service
+**Port**: 8094 | **API Endpoint**: `/api/v1/automation`
+
+Workflow automation and smart contract scheduling.
+
+**Production Features:**
+- **Workflow Engine**: Complex multi-step automation
+- **Smart Scheduling**: Intelligent job scheduling
+- **Gas Optimization**: Automated gas price management
+- **Retry Logic**: Robust failure handling
+- **Audit Trail**: Complete automation history
+
+**API Examples:**
+```bash
+# Create automation workflow
+POST /api/v1/automation/workflows
+{
+  "name": "daily-backup",
+  "trigger": {"type": "schedule", "cron": "0 2 * * *"},
+  "steps": [
+    {"action": "backup_database"},
+    {"action": "verify_backup"},
+    {"action": "notify_completion"}
+  ]
+}
+
+# Execute workflow
+POST /api/v1/automation/workflows/{workflowId}/execute
+```
+
+## 🏗️ Platform Services
+
+Core platform infrastructure and service management:
+
+### 🔍 Service Discovery
+**Consul-based** | **Port**: 8500 | **UI**: `http://localhost:8500`
+
+Dynamic service registry and health monitoring.
+
+**Production Features:**
+- **Service Registration**: Automatic service discovery
+- **Health Checks**: Continuous service health monitoring
+- **Load Balancing**: Intelligent traffic distribution
+- **Configuration**: Distributed configuration management
+- **Multi-Datacenter**: Cross-datacenter service mesh
+
+### 🌐 API Gateway
+**YARP-based** | **Port**: 7000 | **Endpoint**: `http://localhost:7000`
+
+Unified API entry point with advanced routing capabilities.
+
+**Production Features:**
+- **Request Routing**: Intelligent service routing
+- **Authentication**: JWT and API key authentication
+- **Rate Limiting**: DDoS protection and fair usage
+- **Circuit Breakers**: Fault tolerance and resilience
+- **Load Balancing**: High availability service access
+
+### 📊 Observability Stack
+**Integrated** | **Jaeger**: 16686 | **Grafana**: 3000
+
+Complete observability and monitoring solution.
+
+**Production Features:**
+- **Distributed Tracing**: Request flow visualization
+- **Metrics Collection**: Prometheus-based metrics
+- **Log Aggregation**: Centralized log management
+- **Dashboards**: Real-time system dashboards
+- **Alerting**: Intelligent alert management
+
+## 🚀 Service Deployment Status
+
+### ✅ **Production Ready Services**
+
+| Service Category | Services Count | Status | Port Range |
+|------------------|----------------|--------|------------|
+| **Core Services** | 4 | ✅ Ready | 8081-8084 |
+| **Infrastructure** | 3 | ✅ Ready | 8085-8087 |
+| **AI & Analytics** | 2 | ✅ Ready | 8088-8089 |
+| **Security** | 2 | ✅ Ready | 8090-8091 |
+| **Operations** | 3 | ✅ Ready | 8092-8094 |
+| **Platform** | 3 | ✅ Ready | 7000, 8500, 16686 |
+
+### 🔧 **Quick Service Access**
+
+**API Gateway (Recommended)**:
+```bash
+# System health
+curl http://localhost:7000/health
+
+# Service-specific endpoints
+curl http://localhost:7000/api/v1/storage/documents
+curl http://localhost:7000/api/v1/keys/generate
+curl http://localhost:7000/api/v1/notifications/send
+```
+
+**Direct Service Access (Development)**:
+```bash
+# Core services
+curl http://localhost:8081/health  # Storage
+curl http://localhost:8082/health  # Key Management
+curl http://localhost:8083/health  # Notification
+curl http://localhost:8086/health  # Oracle
+
+# AI services
+curl http://localhost:8084/health  # Pattern Recognition
+curl http://localhost:8089/health  # Prediction
+
+# Security services
+curl http://localhost:8090/health  # Zero Knowledge
+curl http://localhost:8091/health  # Compliance
+```
+
+**Service Discovery**:
+```bash
+# View all services
+curl http://localhost:8500/v1/catalog/services
+
+# Check service health
+curl http://localhost:8500/v1/health/service/storage-service
+
+# Access Consul UI
+open http://localhost:8500
+```
+
+**Observability**:
+```bash
+# Jaeger tracing UI
+open http://localhost:16686
+
+# Grafana dashboards
+open http://localhost:3000
+
+# Prometheus metrics
+open http://localhost:9090
+```
+
+## 🛡️ Security & Intel SGX Integration
+
+All services implement enterprise-grade security with Intel SGX hardware protection:
+
+### 🔒 **Intel SGX + Occlum LibOS**
+- **Hardware Security**: SGX enclaves protect sensitive operations
+- **Trusted Execution**: Confidential computing for critical workloads
+- **Remote Attestation**: Cryptographic proof of enclave integrity
+- **Sealed Storage**: Hardware-protected data persistence
+- **Memory Protection**: Real-time memory encryption and isolation
+
+### 🔐 **Security Features**
 - **End-to-End Encryption**: All data encrypted in transit and at rest
 - **Cryptographic Verification**: All operations cryptographically verifiable
-- **Audit Trails**: Comprehensive logging and audit capabilities
-- **Compliance**: Support for regulatory requirements (GDPR, SOX, etc.)
+- **Audit Trails**: Comprehensive logging and compliance support
+- **Zero-Trust Architecture**: Never trust, always verify
+- **Compliance Ready**: GDPR, SOX, FIPS 140-2 Level 3 equivalent
 
-## Service Framework
+## 🚀 **Getting Started with Services**
 
-The Neo Service Layer is built on a modular service framework that provides common functionality for all services:
+### **Option 1: Complete Microservices Stack (Recommended)**
 
-### Service Lifecycle Management
+```bash
+# 1. Clone and start complete stack
+git clone https://github.com/r3e-network/neo-service-layer.git
+cd neo-service-layer
 
-- Service registration and discovery
-- Service initialization and startup
-- Service health monitoring and metrics
-- Service shutdown and cleanup
+# 2. Start all microservices
+docker-compose -f docker-compose.microservices-complete.yml up -d
 
-### Dependency Management
+# 3. Verify services
+curl http://localhost:7000/health
+curl http://localhost:8500/v1/catalog/services
+```
 
-- Service dependency declaration and resolution
-- Dependency validation and health checking
-- Dependency injection and configuration
+### **Option 2: Individual Service Development**
 
-### Configuration Management
+```bash
+# Start infrastructure
+docker-compose up -d
 
-- Configuration loading and validation
-- Environment-specific configuration
-- Dynamic configuration updates
+# Run specific services
+dotnet run --project src/Services/NeoServiceLayer.Services.Storage/
+dotnet run --project src/Services/NeoServiceLayer.Services.KeyManagement/
+dotnet run --project src/Services/NeoServiceLayer.Services.Notification/
+```
 
-### Logging and Monitoring
+### **Option 3: API Gateway Only**
 
-- Structured logging with correlation IDs
-- Metrics collection and reporting
-- Health checks and status reporting
-- Alerting and notification
+```bash
+# Start API Gateway with service discovery
+docker-compose -f docker-compose.microservices.yml up -d
 
-### Security
+# Access all services through gateway
+curl http://localhost:7000/api/v1/storage/documents
+curl http://localhost:7000/api/v1/keys/generate
+```
 
-- Authentication and authorization
-- Secure communication with TLS
-- Enclave attestation and verification
-- Secure storage and key management
+## 📊 **Service Framework**
 
-## 🚀 **Getting Started**
+### **Common Service Patterns**
+All services implement standardized patterns:
+- **Health Checks**: `/health` endpoint with dependency monitoring
+- **Metrics**: Prometheus metrics at `/metrics` endpoint  
+- **Configuration**: Environment-based configuration management
+- **Logging**: Structured logging with correlation IDs
+- **Authentication**: JWT-based security with API key fallback
 
-### ✅ **Quick Service Testing (Current)**
+### **Service Lifecycle**
+1. **Registration**: Automatic service discovery registration
+2. **Health Monitoring**: Continuous health and dependency checks
+3. **Load Balancing**: Intelligent traffic distribution
+4. **Circuit Breaking**: Fault tolerance and resilience
+5. **Graceful Shutdown**: Clean service termination
 
-1. **Start Infrastructure**:
-   ```bash
-   docker compose -f docker-compose.final.yml up -d
-   ```
+### **Development Guidelines**
+- **Interface-First**: Well-defined service contracts
+- **Testing**: Comprehensive unit, integration, and performance tests
+- **Documentation**: Complete OpenAPI/Swagger documentation
+- **Containerization**: Docker-ready with optimized images
+- **Observability**: Built-in tracing, metrics, and logging
 
-2. **Start API Service**:
-   ```bash
-   cd standalone-api
-   dotnet run --urls "http://localhost:5002"
-   ```
+## 📚 **Documentation & Resources**
 
-3. **Test Services**:
-   ```bash
-   # Health check
-   curl http://localhost:5002/health
-   
-   # Service status
-   curl http://localhost:5002/api/status
-   
-   # API documentation
-   open http://localhost:5002/swagger
-   
-   # Neo service info
-   curl http://localhost:5002/api/neo/version
-   ```
+### **Core Documentation**
+- **[Deployment Guide](../deployment/DEPLOYMENT_GUIDE.md)** - Production deployment
+- **[API Reference](../api/README.md)** - Complete API documentation
+- **[SDK Guide](../../src/SDK/NeoServiceLayer.SDK/README.md)** - Client SDK usage
+- **[Quick Start](../deployment/QUICK_START.md)** - 5-minute setup guide
 
-### 🔄 **Microservices Deployment (Ready)**
-
-1. **Deploy Service Discovery**:
-   ```bash
-   docker run -d --name consul -p 8500:8500 consul:latest
-   ```
-
-2. **Deploy API Gateway**:
-   ```bash
-   docker run -d --name api-gateway -p 5000:8080 neo-api-gateway:latest
-   ```
-
-3. **Deploy Individual Services**:
-   ```bash
-   docker run -d --name randomness-service -p 8081:8080 neo-randomness-service:latest
-   docker run -d --name oracle-service -p 8082:8080 neo-oracle-service:latest
-   docker run -d --name key-management-service -p 8083:8080 neo-key-management-service:latest
-   ```
-
-### 📚 **API Integration**
-
-1. **Review Documentation**:
-   ```bash
-   open http://localhost:5002/swagger
-   ```
-
-2. **Test Endpoints**:
-   ```bash
-   # Basic health check
-   curl http://localhost:5002/health
-   
-   # Get service status
-   curl http://localhost:5002/api/status
-   
-   # Test database connectivity
-   curl http://localhost:5002/api/database/test
-   
-   # Test Redis connectivity
-   curl http://localhost:5002/api/redis/test
-   ```
-
-3. **Handle Responses**:
-   ```json
-   {
-     "status": "success",
-     "data": {
-       // Response data
-     },
-     "timestamp": "2024-01-01T12:00:00Z"
-   }
-   ```
-
-### 🛠️ **Development**
-
-**Service Framework**:
-- ✅ Common service interface implemented
-- ✅ Health check endpoints
-- ✅ Configuration management
-- ✅ Logging and monitoring
-- ✅ Error handling
-
-**Adding New Services**:
-1. **Create Service Project**: Follow existing service patterns
-2. **Implement Service Interface**: Use common service framework
-3. **Add Health Checks**: Implement health monitoring
-4. **Add Documentation**: Swagger/OpenAPI documentation
-5. **Add Tests**: Unit and integration tests
-6. **Add Docker Support**: Container configuration
-
-**Service Deployment**:
-1. **Individual Services**: Each service runs in its own container
-2. **Service Discovery**: Consul-based service registration
-3. **API Gateway**: YARP-based routing and load balancing
-4. **Health Monitoring**: Comprehensive health checks
-5. **Configuration**: Environment-based configuration
-
-## 📚 **Related Documentation**
-
-### ✅ **Updated Documentation**
-- **[Quick Start Guide](../deployment/QUICK_START.md)** - 5-minute working deployment
-- **[Deployment Guide](../deployment/DEPLOYMENT_GUIDE.md)** - Complete deployment instructions
-- **[API Reference](../api/README.md)** - Updated API documentation
-- **[Architecture Overview](../architecture/ARCHITECTURE_OVERVIEW.md)** - Updated system architecture
-
-### 🔄 **Available Documentation**
-- **[Service Framework](../architecture/service-framework.md)** - Common service patterns
-- **[Development Guide](../development/README.md)** - Development guidelines
-- **[Testing Guide](../testing/README.md)** - Testing strategies
+### **Development Resources**
+- **[Service Framework](../architecture/service-framework.md)** - Service development patterns
+- **[Testing Guide](../testing/README.md)** - Testing strategies and tools
 - **[Security Guide](../security/README.md)** - Security implementation
+- **[Contributing](../../CONTRIBUTING.md)** - Contribution guidelines
 
-### 🚀 **Ready for Use**
+### **Operations Guides**
+- **[Monitoring Setup](../monitoring/README.md)** - Observability configuration
+- **[Troubleshooting](../troubleshooting/README.md)** - Common issues and solutions
+- **[Performance Tuning](../performance/README.md)** - Optimization guidelines
 
-**Immediate (Current)**:
-- ✅ Standalone API service operational
-- ✅ Infrastructure services running
-- ✅ Database and cache connected
-- ✅ Health monitoring active
-- ✅ API documentation available
+## 🎯 **Next Steps**
 
-**Next Phase (Ready)**:
-- 🔄 Microservices deployment
-- 🔄 Service discovery integration
-- 🔄 API gateway implementation
-- 🔄 Individual service containers
-- 🔄 Full service mesh
+### **For Developers**
+1. **Explore APIs**: Start with the [API Reference](../api/README.md)
+2. **Try the SDK**: Use the [.NET SDK](../../src/SDK/NeoServiceLayer.SDK/README.md)
+3. **Build Applications**: Follow the [Quick Start Guide](../deployment/QUICK_START.md)
+
+### **For Operations**
+1. **Deploy Services**: Follow the [Deployment Guide](../deployment/DEPLOYMENT_GUIDE.md)
+2. **Monitor Health**: Set up [Monitoring](../monitoring/README.md)
+3. **Scale Services**: Configure load balancing and auto-scaling
+
+### **For Contributors**
+1. **Review Code**: Understand the architecture and patterns
+2. **Add Services**: Follow the service development framework
+3. **Improve Documentation**: Help enhance the documentation
 
 ---
 
-**🎉 The Neo Service Layer is now fully operational with 26 production-ready services!**
+**🚀 The Neo Service Layer provides a complete, production-ready microservices platform for blockchain applications. Start building the future of decentralized systems today!**
 
-**Built with ❤️ by the Neo Team**
+**Built with ❤️ for the Neo Ecosystem**

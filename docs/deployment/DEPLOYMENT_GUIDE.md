@@ -1,565 +1,731 @@
 # Neo Service Layer Deployment Guide
 
-This guide provides comprehensive instructions for deploying the Neo Service Layer in various environments.
+[![Deployment](https://img.shields.io/badge/deployment-production%20ready-green)](https://github.com/r3e-network/neo-service-layer)
+[![Docker](https://img.shields.io/badge/docker-supported-blue)](https://www.docker.com/)
+[![Kubernetes](https://img.shields.io/badge/k8s-ready-blue)](https://kubernetes.io/)
 
-> **🎉 UPDATED FOR WORKING DEPLOYMENT** - All issues resolved, ready for production use!
+> **🚀 Production-Ready Microservices Deployment** - Complete guide for deploying the Neo Service Layer platform
 
 ## Table of Contents
 
 - [Prerequisites](#prerequisites)
-- [Working Deployment Options](#working-deployment-options)
+- [Deployment Architectures](#deployment-architectures) 
 - [Quick Start Deployment](#quick-start-deployment)
 - [Production Deployment](#production-deployment)
-- [Security Considerations](#security-considerations)
-- [Monitoring and Maintenance](#monitoring-and-maintenance)
+- [Kubernetes Deployment](#kubernetes-deployment)
+- [Security Configuration](#security-configuration)
+- [Monitoring & Observability](#monitoring--observability)
 - [Troubleshooting](#troubleshooting)
 
 ## Prerequisites
 
 ### System Requirements
 
-- **Operating System**: Linux (Ubuntu 20.04+ recommended), Windows Server 2019+, or macOS
-- **CPU**: Minimum 2 cores, 4 cores recommended for production
-- **RAM**: Minimum 4GB, 8GB recommended for production
-- **Storage**: 20GB minimum, SSD recommended
-- **Network**: Stable internet connection with open ports as configured
+**Minimum Requirements:**
+- **CPU**: 4 cores
+- **RAM**: 8GB
+- **Storage**: 50GB SSD
+- **Network**: 1Gbps connection
+
+**Production Requirements:**
+- **CPU**: 8+ cores
+- **RAM**: 16GB+
+- **Storage**: 200GB+ SSD
+- **Network**: 10Gbps connection
+- **Load Balancer**: External load balancer for high availability
 
 ### Software Requirements
 
+**Required:**
 - **.NET 9.0 SDK** or later
-- **Docker** and **Docker Compose** (for containerized deployment)
-- **PostgreSQL** 16+ (automatically provided via Docker)
-- **Redis** 7+ (automatically provided via Docker)
-- **Intel SGX SDK** (optional, for hardware enclaves)
+- **Docker** 24.0+ and **Docker Compose** 2.0+
+- **Git** for source control
 
-### Blockchain Requirements
+**Optional (for advanced features):**
+- **Kubernetes** 1.25+ (for K8s deployment)
+- **Intel SGX SDK** (for hardware enclaves)
+- **Helm** 3.0+ (for Kubernetes deployments)
 
-- **Neo N3 Node**: Access to Neo N3 RPC endpoint (optional for basic deployment)
-- **Neo X Node**: Access to Neo X RPC endpoint (optional for basic deployment)
-- **Contract Deployments**: Social Recovery and other contracts must be deployed (optional for basic deployment)
+### Network Requirements
 
-## Working Deployment Options
+**Required Ports:**
+- **7000**: API Gateway (public)
+- **8500**: Consul UI (private)
+- **16686**: Jaeger UI (private)
+- **3000**: Grafana (private)
+- **9090**: Prometheus (private)
 
-### ✅ Option 1: Infrastructure + Standalone API (RECOMMENDED)
+**Service Ports (Internal):**
+- **8081-8099**: Individual microservices
+- **5432**: PostgreSQL
+- **6379**: Redis
+- **5672**: RabbitMQ
 
-This is the fully working deployment option with PostgreSQL, Redis, and the standalone API service.
+## Deployment Architectures
 
-```bash
-# 1. Clone the repository
-git clone https://github.com/neo-project/neo-service-layer.git
-cd neo-service-layer
+### 🏗️ Architecture Overview
 
-# 2. Start infrastructure services
-docker compose -f docker-compose.final.yml up -d
-
-# 3. Verify infrastructure is running
-docker ps
-# Should show neo-postgres and neo-redis as healthy
-
-# 4. Build and run the API service
-cd standalone-api
-dotnet build
-dotnet run --urls "http://localhost:5002"
-
-# 5. Test the deployment
-curl http://localhost:5002/health                # Should return "Healthy"
-curl http://localhost:5002/api/status            # Should show all services healthy
-curl http://localhost:5002/api/database/test     # Should connect to PostgreSQL
-curl http://localhost:5002/api/redis/test        # Should connect to Redis
+```
+┌─────────────────────────────────────────────────┐
+│                Load Balancer                    │
+├─────────────────────────────────────────────────┤
+│  🌐 API Gateway (Port 7000)                    │
+│     • Authentication    • Rate Limiting         │
+│     • Request Routing   • Circuit Breakers      │
+├─────────────────────────────────────────────────┤
+│  🔍 Service Discovery (Consul)                 │
+│  📊 Observability (Jaeger + Prometheus)        │
+├─────────────────────────────────────────────────┤
+│  ⚙️ Microservices Layer                        │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │ Storage  │ │ Key Mgmt │ │   AI     │       │
+│  │ Service  │ │ Service  │ │ Services │       │
+│  └──────────┘ └──────────┘ └──────────┘       │
+│  ┌──────────┐ ┌──────────┐ ┌──────────┐       │
+│  │  Oracle  │ │Cross-Chain│ │Notification│     │
+│  │ Service  │ │ Service   │ │ Service  │       │
+│  └──────────┘ └──────────┘ └──────────┘       │
+├─────────────────────────────────────────────────┤
+│  🗃️ Data Layer                                 │
+│     • PostgreSQL    • Redis    • RabbitMQ      │
+└─────────────────────────────────────────────────┘
 ```
 
-### ✅ Option 2: Standalone API Only (DEVELOPMENT)
+### Deployment Options
 
-For development or testing, you can run just the API service without Docker.
+#### 1. **Development Setup**
+- Single node deployment
+- All services on one machine
+- Simplified configuration
+- Perfect for development and testing
 
-```bash
-# 1. Clone and build
-git clone https://github.com/neo-project/neo-service-layer.git
-cd neo-service-layer/standalone-api
-dotnet build
+#### 2. **Production Single-Node**
+- Optimized single-node deployment
+- Docker-based with resource limits
+- Basic monitoring and logging
+- Suitable for small to medium workloads
 
-# 2. Run the API service
-dotnet run --urls "http://localhost:5002"
+#### 3. **Production Multi-Node**
+- Distributed across multiple nodes
+- High availability configuration
+- Advanced monitoring and alerting
+- Enterprise-grade deployment
 
-# 3. Access the service
-curl http://localhost:5002/                      # Service information
-curl http://localhost:5002/swagger               # API documentation
-```
-
-### ✅ Option 3: Complete Docker Setup (FUTURE)
-
-Full containerized deployment including the API service (when Docker build issues are resolved).
-
-```bash
-# 1. Start complete stack
-docker compose -f docker-compose.working.yml up -d
-
-# 2. Access services
-curl http://localhost:5000/health                # API health check
-curl http://localhost:5000/swagger               # API documentation
-```
+#### 4. **Kubernetes Cluster**
+- Container orchestration
+- Auto-scaling capabilities
+- Multi-cloud deployment ready
+- Maximum scalability and resilience
 
 ## Quick Start Deployment
 
-### 1. Prerequisites Check
+### Option 1: Complete Microservices Stack (Recommended)
 
 ```bash
-# Check .NET version
-dotnet --version                                 # Should be 9.0 or later
+# 1. Clone the repository
+git clone https://github.com/r3e-network/neo-service-layer.git
+cd neo-service-layer
 
-# Check Docker
-docker --version                                 # Should be 20.10 or later
-docker compose version                           # Should be 2.0 or later
+# 2. Start complete microservices stack
+docker-compose -f docker-compose.microservices-complete.yml up -d
 
-# Check ports are available
-netstat -tuln | grep -E ':(5002|5433|6379)'    # Should be empty
+# 3. Wait for services to start (2-3 minutes)
+docker ps
+
+# 4. Verify deployment
+curl http://localhost:7000/health
+curl http://localhost:8500/v1/catalog/services
 ```
 
-### 2. Deploy Infrastructure
+### Option 2: Basic Development Setup
 
 ```bash
-# Start PostgreSQL and Redis
-docker compose -f docker-compose.final.yml up -d
+# 1. Clone repository
+git clone https://github.com/r3e-network/neo-service-layer.git
+cd neo-service-layer
 
-# Wait for services to be ready
-docker logs neo-postgres                         # Should show "database system is ready"
-docker logs neo-redis                           # Should show "Ready to accept connections"
+# 2. Start infrastructure services
+docker-compose up -d
 
-# Verify health
-docker exec neo-postgres psql -U neouser -d neoservice -c "SELECT 1"
-docker exec neo-redis redis-cli ping            # Should return PONG
+# 3. Build and run API service
+dotnet run --project src/Api/NeoServiceLayer.Api/
+
+# 4. Access API at http://localhost:5000
 ```
 
-### 3. Deploy API Service
+### Option 3: Individual Service Development
 
 ```bash
-# Build the API service
-cd standalone-api
+# Build all services
 dotnet build
 
-# Run the service
-dotnet run --urls "http://localhost:5002"       # Service starts on port 5002
+# Start infrastructure
+docker-compose up -d postgres redis consul
 
-# Or run in background
-nohup dotnet run --urls "http://localhost:5002" &
+# Run individual services
+dotnet run --project src/Services/NeoServiceLayer.Services.Storage/ &
+dotnet run --project src/Services/NeoServiceLayer.Services.KeyManagement/ &
+dotnet run --project src/Services/NeoServiceLayer.Services.Notification/ &
+
+# Run API Gateway
+dotnet run --project src/Gateway/NeoServiceLayer.Gateway.Api/
 ```
-
-### 4. Verify Deployment
-
-```bash
-# Test all endpoints
-curl http://localhost:5002/                      # ✅ Service info
-curl http://localhost:5002/health                # ✅ "Healthy"
-curl http://localhost:5002/api/status            # ✅ All services healthy
-curl http://localhost:5002/api/database/test     # ✅ PostgreSQL connected
-curl http://localhost:5002/api/redis/test        # ✅ Redis connected
-curl http://localhost:5002/api/neo/version       # ✅ Neo service info
-curl http://localhost:5002/swagger               # ✅ API documentation
-
-# Test POST endpoint
-curl -X POST http://localhost:5002/api/test \
-  -H "Content-Type: application/json" \
-  -d '{"name": "Test", "message": "Hello Neo"}' # ✅ Test response
-
-# Test Neo simulation
-curl -X POST http://localhost:5002/api/neo/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"operation": "test", "parameters": {"key": "value"}}' # ✅ Simulation result
-```
-
-## Environment Configuration
-
-### 1. Create Environment File
-
-Copy the example environment file and configure it:
-
-```bash
-cp .env.example .env
-```
-
-### 2. Required Environment Variables
-
-Edit `.env` with your production values:
-
-```bash
-# REQUIRED: JWT Configuration
-JWT_SECRET_KEY=<generate-with-openssl-rand-base64-32>
-
-# REQUIRED: Intel Attestation Service
-IAS_API_KEY=<your-ias-api-key>
-
-# REQUIRED for Production: Configuration Encryption
-CONFIG_ENCRYPTION_KEY=<generate-with-openssl-rand-base64-32>
-
-# SGX Mode
-SGX_MODE=HW  # Use HW for production with real SGX hardware
-
-# Blockchain Configuration
-NEO_N3_RPC_URL=https://mainnet1.neo.coz.io:443
-NEO_X_RPC_URL=https://mainnet.rpc.banelabs.org
-
-# Social Recovery Contracts (update with your deployed addresses)
-SOCIAL_RECOVERY_CONTRACT_NEO_N3=0xYourContractAddress
-SOCIAL_RECOVERY_CONTRACT_NEO_X=0xYourContractAddress
-
-# Database (for production)
-CONNECTION_STRING=Host=localhost;Database=neoservicelayer;Username=neo;Password=<secure-password>
-
-# Optional: Telemetry
-OTEL_EXPORTER_JAEGER_ENDPOINT=http://jaeger:14268/api/traces
-```
-
-### 3. Generate Secure Keys
-
-Generate required cryptographic keys:
-
-```bash
-# Generate JWT Secret Key
-openssl rand -base64 32
-
-# Generate Configuration Encryption Key
-openssl rand -base64 32
-```
-
-### 4. Application Settings
-
-Update `appsettings.Production.json` for production-specific settings:
-
-```json
-{
-  "Logging": {
-    "LogLevel": {
-      "Default": "Information",
-      "Microsoft.AspNetCore": "Warning",
-      "NeoServiceLayer": "Information"
-    }
-  },
-  "Security": {
-    "RequireHttps": true
-  },
-  "RateLimit": {
-    "ApiRateLimit": {
-      "PermitLimit": 1000,
-      "WindowMinutes": 1
-    }
-  }
-}
-```
-
-## Deployment Options
-
-### Option 1: Direct Deployment
-
-1. **Build the application**:
-   ```bash
-   dotnet publish -c Release -o ./publish
-   ```
-
-2. **Run database migrations** (if using PostgreSQL):
-   ```bash
-   dotnet ef database update -p src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence
-   ```
-
-3. **Start the services**:
-   ```bash
-   cd publish
-   dotnet NeoServiceLayer.Api.dll
-   dotnet NeoServiceLayer.Web.dll
-   ```
-
-### Option 2: Docker Deployment
-
-1. **Build Docker images**:
-   ```bash
-   docker build -t neoservicelayer-api:latest -f src/Api/NeoServiceLayer.Api/Dockerfile .
-   docker build -t neoservicelayer-web:latest -f src/Web/NeoServiceLayer.Web/Dockerfile .
-   ```
-
-2. **Run with Docker Compose**:
-   ```bash
-   docker-compose -f docker-compose.production.yml up -d
-   ```
-
-### Option 3: Kubernetes Deployment
-
-1. **Apply Kubernetes manifests**:
-   ```bash
-   kubectl apply -f k8s/namespace.yaml
-   kubectl apply -f k8s/configmap.yaml
-   kubectl apply -f k8s/secrets.yaml
-   kubectl apply -f k8s/deployment.yaml
-   kubectl apply -f k8s/service.yaml
-   kubectl apply -f k8s/ingress.yaml
-   ```
-
-2. **Verify deployment**:
-   ```bash
-   kubectl get pods -n neo-service-layer
-   kubectl get services -n neo-service-layer
-   ```
 
 ## Production Deployment
 
-### 1. Pre-Deployment Checklist
+### Pre-deployment Checklist
 
-- [ ] All environment variables are set with production values
-- [ ] SSL certificates are configured
-- [ ] Database is provisioned and accessible
-- [ ] Blockchain nodes are accessible
-- [ ] Smart contracts are deployed and verified
-- [ ] Backup strategy is in place
-- [ ] Monitoring and alerting are configured
-- [ ] Security audit has been performed
+- [ ] Hardware/VM requirements met
+- [ ] Network ports configured
+- [ ] SSL certificates obtained
+- [ ] Environment variables configured
+- [ ] Backup strategy defined
+- [ ] Monitoring tools configured
+- [ ] Security review completed
 
-### 2. Deployment Steps
-
-1. **Prepare the server**:
-   ```bash
-   # Update system
-   sudo apt update && sudo apt upgrade -y
-   
-   # Install .NET runtime
-   wget https://packages.microsoft.com/config/ubuntu/20.04/packages-microsoft-prod.deb
-   sudo dpkg -i packages-microsoft-prod.deb
-   sudo apt update
-   sudo apt install -y aspnetcore-runtime-8.0
-   ```
-
-2. **Configure firewall**:
-   ```bash
-   sudo ufw allow 80/tcp
-   sudo ufw allow 443/tcp
-   sudo ufw enable
-   ```
-
-3. **Setup reverse proxy (Nginx)**:
-   ```nginx
-   server {
-       listen 80;
-       server_name api.yourservice.com;
-       return 301 https://$server_name$request_uri;
-   }
-
-   server {
-       listen 443 ssl;
-       server_name api.yourservice.com;
-
-       ssl_certificate /etc/ssl/certs/your-cert.pem;
-       ssl_certificate_key /etc/ssl/private/your-key.pem;
-
-       location / {
-           proxy_pass http://localhost:5000;
-           proxy_http_version 1.1;
-           proxy_set_header Upgrade $http_upgrade;
-           proxy_set_header Connection keep-alive;
-           proxy_set_header Host $host;
-           proxy_cache_bypass $http_upgrade;
-           proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
-           proxy_set_header X-Forwarded-Proto $scheme;
-       }
-   }
-   ```
-
-4. **Create systemd service**:
-   ```ini
-   [Unit]
-   Description=Neo Service Layer API
-   After=network.target
-
-   [Service]
-   Type=notify
-   WorkingDirectory=/var/www/neoservicelayer
-   ExecStart=/usr/bin/dotnet /var/www/neoservicelayer/NeoServiceLayer.Api.dll
-   Restart=always
-   RestartSec=10
-   KillSignal=SIGINT
-   SyslogIdentifier=neoservicelayer-api
-   User=www-data
-   Environment=ASPNETCORE_ENVIRONMENT=Production
-   Environment=DOTNET_PRINT_TELEMETRY_MESSAGE=false
-   EnvironmentFile=/var/www/neoservicelayer/.env
-
-   [Install]
-   WantedBy=multi-user.target
-   ```
-
-5. **Start and enable services**:
-   ```bash
-   sudo systemctl daemon-reload
-   sudo systemctl enable neoservicelayer-api
-   sudo systemctl start neoservicelayer-api
-   sudo systemctl status neoservicelayer-api
-   ```
-
-### 3. Health Verification
-
-Verify the deployment is healthy:
+### 1. Environment Setup
 
 ```bash
-# Check API health
-curl https://api.yourservice.com/health
+# Create production user
+sudo useradd -r -s /bin/false neoservice
+sudo mkdir -p /opt/neo-service-layer
+sudo chown neoservice:neoservice /opt/neo-service-layer
 
-# Check specific service health
-curl https://api.yourservice.com/health/ready
-
-# Check metrics (if enabled)
-curl https://api.yourservice.com/metrics
+# Setup directories
+sudo mkdir -p /opt/neo-service-layer/{data,logs,config,ssl}
+sudo chown -R neoservice:neoservice /opt/neo-service-layer
 ```
 
-## Security Considerations
+### 2. SSL Certificate Configuration
 
-### 1. Network Security
+```bash
+# Generate self-signed certificate (for testing)
+openssl req -x509 -newkey rsa:4096 -keyout /opt/neo-service-layer/ssl/private.key \
+  -out /opt/neo-service-layer/ssl/certificate.crt -days 365 -nodes
 
-- Use HTTPS with valid SSL certificates
-- Configure firewall rules to restrict access
-- Use VPN for administrative access
-- Implement rate limiting and DDoS protection
+# Or use Let's Encrypt (recommended)
+sudo certbot certonly --standalone -d your-domain.com
+```
 
-### 2. Application Security
+### 3. Production Configuration
 
-- Never commit secrets to version control
-- Rotate JWT keys regularly
-- Use strong passwords for all services
-- Enable audit logging
-- Implement proper CORS policies
+Create production environment file:
 
-### 3. SGX Security
+```bash
+# /opt/neo-service-layer/.env
+ASPNETCORE_ENVIRONMENT=Production
+ASPNETCORE_URLS=https://+:7000;http://+:7001
 
-- Use hardware mode (`SGX_MODE=HW`) in production
-- Verify attestation reports
-- Protect sealed storage keys
-- Monitor enclave health
+# Database Configuration
+ConnectionStrings__DefaultConnection=Host=localhost;Port=5432;Database=neoservice_prod;Username=neouser;Password=STRONG_PASSWORD
 
-### 4. Database Security
+# Redis Configuration
+ConnectionStrings__Redis=localhost:6379,password=REDIS_PASSWORD
 
-- Use encrypted connections
-- Implement proper access controls
-- Regular backups with encryption
-- Monitor for suspicious activity
+# Security
+JWT_SECRET=YOUR_SUPER_SECURE_JWT_SECRET_32_CHARS_MIN
+ENCRYPTION_KEY=YOUR_32_CHAR_ENCRYPTION_KEY_HERE
 
-## Monitoring and Maintenance
+# External Services
+NEO_N3_RPC_URL=https://rpc.neo.org:443
+NEO_X_RPC_URL=https://neoxt4seed1.ngd.network:443
 
-### 1. Logging
+# Consul Configuration
+CONSUL_HTTP_ADDR=http://localhost:8500
 
-Configure centralized logging:
+# Monitoring
+JAEGER_AGENT_HOST=localhost
+JAEGER_AGENT_PORT=6831
+```
+
+### 4. Database Setup
+
+```bash
+# Start PostgreSQL
+docker run -d --name neo-postgres-prod \
+  -e POSTGRES_DB=neoservice_prod \
+  -e POSTGRES_USER=neouser \
+  -e POSTGRES_PASSWORD=STRONG_PASSWORD \
+  -v /opt/neo-service-layer/data/postgres:/var/lib/postgresql/data \
+  -p 5432:5432 \
+  --restart unless-stopped \
+  postgres:16-alpine
+
+# Initialize database
+dotnet ef database update --project src/Api/NeoServiceLayer.Api/
+```
+
+### 5. Redis Setup
+
+```bash
+# Start Redis
+docker run -d --name neo-redis-prod \
+  -v /opt/neo-service-layer/data/redis:/data \
+  -p 6379:6379 \
+  --restart unless-stopped \
+  redis:7-alpine redis-server --requirepass REDIS_PASSWORD
+```
+
+### 6. Service Discovery Setup
+
+```bash
+# Start Consul
+docker run -d --name neo-consul-prod \
+  -v /opt/neo-service-layer/data/consul:/consul/data \
+  -p 8500:8500 \
+  -p 8600:8600/udp \
+  --restart unless-stopped \
+  consul:latest agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+```
+
+### 7. Deploy Microservices
+
+```bash
+# Build and deploy all services
+docker-compose -f docker-compose.microservices-complete.yml \
+  --env-file /opt/neo-service-layer/.env \
+  up -d
+
+# Verify deployment
+curl -k https://localhost:7000/health
+curl http://localhost:8500/v1/catalog/services
+```
+
+### 8. Configure Reverse Proxy (Nginx)
+
+```nginx
+# /etc/nginx/sites-available/neo-service-layer
+server {
+    listen 80;
+    listen 443 ssl http2;
+    server_name your-domain.com;
+
+    ssl_certificate /opt/neo-service-layer/ssl/certificate.crt;
+    ssl_certificate_key /opt/neo-service-layer/ssl/private.key;
+
+    # Security headers
+    add_header X-Frame-Options DENY;
+    add_header X-Content-Type-Options nosniff;
+    add_header X-XSS-Protection "1; mode=block";
+
+    # API Gateway
+    location / {
+        proxy_pass http://localhost:7000;
+        proxy_set_header Host $host;
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header X-Forwarded-Proto $scheme;
+    }
+
+    # Rate limiting
+    limit_req_zone $binary_remote_addr zone=api:10m rate=10r/s;
+    limit_req zone=api burst=20 nodelay;
+}
+```
+
+## Kubernetes Deployment
+
+### 1. Prerequisites
+
+```bash
+# Install kubectl and helm
+curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl"
+curl https://get.helm.sh/helm-v3.13.0-linux-amd64.tar.gz | tar -xzO linux-amd64/helm > /usr/local/bin/helm
+```
+
+### 2. Deploy with Helm
+
+```bash
+# Create namespace
+kubectl create namespace neo-service-layer
+
+# Deploy with Helm
+helm install neo-service-layer ./charts/neo-service-layer \
+  --namespace neo-service-layer \
+  --set image.tag=latest \
+  --set ingress.enabled=true \
+  --set ingress.hosts[0].host=api.your-domain.com
+```
+
+### 3. Kubernetes Manifests
+
+```yaml
+# k8s/namespace.yaml
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-service-layer
+---
+# k8s/configmap.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-config
+  namespace: neo-service-layer
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  CONSUL_HTTP_ADDR: "http://consul:8500"
+---
+# k8s/deployment.yaml
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-api-gateway
+  namespace: neo-service-layer
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: neo-api-gateway
+  template:
+    metadata:
+      labels:
+        app: neo-api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: neo-service-layer/api-gateway:latest
+        ports:
+        - containerPort: 7000
+        envFrom:
+        - configMapRef:
+            name: neo-config
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+```
+
+### 4. Deploy Services
+
+```bash
+# Apply all manifests
+kubectl apply -f k8s/
+
+# Check deployment status
+kubectl get pods -n neo-service-layer
+kubectl get services -n neo-service-layer
+```
+
+## Security Configuration
+
+### 1. JWT Configuration
 
 ```json
 {
-  "Serilog": {
-    "WriteTo": [
-      {
-        "Name": "Elasticsearch",
-        "Args": {
-          "nodeUris": "http://elasticsearch:9200",
-          "indexFormat": "neoservicelayer-{0:yyyy.MM.dd}"
-        }
-      }
-    ]
+  "Authentication": {
+    "JwtSettings": {
+      "SecretKey": "your-super-secure-secret-key-32-chars-minimum",
+      "Issuer": "neo-service-layer",
+      "Audience": "neo-service-layer-api",
+      "ExpirationMinutes": 60,
+      "RefreshExpirationDays": 7
+    }
   }
 }
 ```
 
-### 2. Metrics
+### 2. API Rate Limiting
 
-Enable Prometheus metrics:
-
-```csharp
-// In Program.cs
-builder.Services.AddOpenTelemetry()
-    .WithMetrics(builder =>
-    {
-        builder.AddPrometheusExporter();
-        builder.AddMeter("NeoServiceLayer");
-    });
+```json
+{
+  "RateLimiting": {
+    "General": {
+      "EnableRateLimiting": true,
+      "PermitLimit": 100,
+      "Window": "00:01:00",
+      "ReplenishmentPeriod": "00:00:10",
+      "QueueLimit": 0
+    }
+  }
+}
 ```
 
-### 3. Alerts
+### 3. CORS Configuration
 
-Configure alerting rules:
+```json
+{
+  "Cors": {
+    "AllowedOrigins": [
+      "https://your-frontend.com",
+      "https://your-admin.com"
+    ],
+    "AllowedMethods": ["GET", "POST", "PUT", "DELETE"],
+    "AllowedHeaders": ["Authorization", "Content-Type"],
+    "AllowCredentials": true
+  }
+}
+```
+
+### 4. SSL/TLS Configuration
+
+```json
+{
+  "Kestrel": {
+    "Endpoints": {
+      "Https": {
+        "Url": "https://+:7000",
+        "Certificate": {
+          "Path": "/opt/neo-service-layer/ssl/certificate.pfx",
+          "Password": "certificate-password"
+        }
+      }
+    }
+  }
+}
+```
+
+## Monitoring & Observability
+
+### 1. Prometheus Configuration
 
 ```yaml
-# prometheus-rules.yml
-groups:
-  - name: neoservicelayer
-    rules:
-      - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
-        for: 5m
-        labels:
-          severity: critical
-        annotations:
-          summary: High error rate detected
+# monitoring/prometheus.yml
+global:
+  scrape_interval: 15s
+
+scrape_configs:
+  - job_name: 'neo-services'
+    static_configs:
+      - targets:
+          - 'localhost:7000'  # API Gateway
+          - 'localhost:8081'  # Storage Service
+          - 'localhost:8082'  # Key Management
+          - 'localhost:8083'  # Notification Service
+
+  - job_name: 'consul'
+    static_configs:
+      - targets: ['localhost:8500']
 ```
 
-### 4. Backup Strategy
-
-Implement regular backups:
+### 2. Grafana Dashboard
 
 ```bash
-# Backup script
+# Start Grafana
+docker run -d --name neo-grafana \
+  -p 3000:3000 \
+  -v /opt/neo-service-layer/data/grafana:/var/lib/grafana \
+  --restart unless-stopped \
+  grafana/grafana:latest
+
+# Import pre-built dashboard
+curl -X POST \
+  http://admin:admin@localhost:3000/api/dashboards/db \
+  -H 'Content-Type: application/json' \
+  -d @grafana/provisioning/dashboards/microservices-dashboard.json
+```
+
+### 3. Jaeger Tracing
+
+```bash
+# Start Jaeger
+docker run -d --name neo-jaeger \
+  -p 16686:16686 \
+  -p 14268:14268 \
+  --restart unless-stopped \
+  jaegertracing/all-in-one:latest
+```
+
+### 4. Log Aggregation
+
+```bash
+# Configure centralized logging
+docker run -d --name neo-loki \
+  -p 3100:3100 \
+  -v /opt/neo-service-layer/data/loki:/loki \
+  --restart unless-stopped \
+  grafana/loki:latest
+```
+
+## Health Checks & Monitoring
+
+### 1. Service Health Endpoints
+
+```bash
+# Check overall system health
+curl http://localhost:7000/health
+
+# Check individual service health
+curl http://localhost:8081/health  # Storage
+curl http://localhost:8082/health  # Key Management
+curl http://localhost:8083/health  # Notification
+```
+
+### 2. Automated Health Monitoring
+
+```bash
 #!/bin/bash
-DATE=$(date +%Y%m%d_%H%M%S)
-BACKUP_DIR="/backups/neoservicelayer"
+# /opt/neo-service-layer/scripts/health-check.sh
 
-# Database backup
-pg_dump -h localhost -U neo -d neoservicelayer > "$BACKUP_DIR/db_$DATE.sql"
+SERVICES=(
+  "http://localhost:7000/health"
+  "http://localhost:8081/health"
+  "http://localhost:8082/health"
+  "http://localhost:8083/health"
+)
 
-# Configuration backup
-tar -czf "$BACKUP_DIR/config_$DATE.tar.gz" /var/www/neoservicelayer/appsettings.*.json
+for service in "${SERVICES[@]}"; do
+  if ! curl -sf "$service" > /dev/null; then
+    echo "ALERT: Service $service is down"
+    # Send notification/alert
+  fi
+done
+```
 
-# Encrypt backups
-gpg --encrypt --recipient backup@yourservice.com "$BACKUP_DIR/db_$DATE.sql"
+### 3. Performance Monitoring
 
-# Upload to S3
-aws s3 cp "$BACKUP_DIR/db_$DATE.sql.gpg" s3://your-backup-bucket/
+```bash
+# Monitor resource usage
+docker stats
+
+# Check service discovery
+curl http://localhost:8500/v1/health/service/storage-service
+
+# Monitor distributed traces
+open http://localhost:16686
+```
+
+## Backup & Recovery
+
+### 1. Database Backup
+
+```bash
+#!/bin/bash
+# Backup script
+BACKUP_DIR="/opt/neo-service-layer/backups"
+TIMESTAMP=$(date +%Y%m%d_%H%M%S)
+
+# PostgreSQL backup
+docker exec neo-postgres-prod pg_dump -U neouser neoservice_prod > \
+  "$BACKUP_DIR/postgres_$TIMESTAMP.sql"
+
+# Redis backup
+docker exec neo-redis-prod redis-cli BGSAVE
+cp /opt/neo-service-layer/data/redis/dump.rdb \
+  "$BACKUP_DIR/redis_$TIMESTAMP.rdb"
+```
+
+### 2. Configuration Backup
+
+```bash
+# Backup configuration files
+tar -czf "/opt/neo-service-layer/backups/config_$TIMESTAMP.tar.gz" \
+  /opt/neo-service-layer/config/ \
+  /opt/neo-service-layer/.env
+```
+
+### 3. Automated Backup
+
+```bash
+# Add to crontab
+0 2 * * * /opt/neo-service-layer/scripts/backup.sh
 ```
 
 ## Troubleshooting
 
 ### Common Issues
 
-1. **Service won't start**
-   - Check logs: `journalctl -u neoservicelayer-api -f`
-   - Verify environment variables are set
-   - Check database connectivity
-
-2. **Authentication failures**
-   - Verify JWT_SECRET_KEY is set correctly
-   - Check token expiration settings
-   - Ensure clock synchronization
-
-3. **Blockchain connectivity issues**
-   - Test RPC endpoints manually
-   - Check firewall rules
-   - Verify node synchronization
-
-4. **Performance issues**
-   - Monitor CPU and memory usage
-   - Check database query performance
-   - Review rate limiting settings
-
-### Debug Mode
-
-Enable detailed logging for troubleshooting:
-
+#### 1. Service Discovery Issues
 ```bash
-export ASPNETCORE_ENVIRONMENT=Development
-export Logging__LogLevel__Default=Debug
+# Check Consul status
+curl http://localhost:8500/v1/status/leader
+
+# Re-register services
+docker-compose restart consul
 ```
 
-### Support
+#### 2. Database Connection Issues
+```bash
+# Check PostgreSQL logs
+docker logs neo-postgres-prod
 
-For additional support:
-- Check the [troubleshooting guide](../troubleshooting/README.md)
-- Review [GitHub issues](https://github.com/your-org/neo-service-layer/issues)
-- Contact the development team
+# Test connection
+docker exec neo-postgres-prod psql -U neouser -d neoservice_prod -c "SELECT 1"
+```
 
-## Next Steps
+#### 3. Certificate Issues
+```bash
+# Verify certificate
+openssl x509 -in /opt/neo-service-layer/ssl/certificate.crt -text -noout
 
-After successful deployment:
+# Test SSL endpoint
+curl -k https://localhost:7000/health
+```
 
-1. Configure monitoring dashboards
-2. Set up automated backups
-3. Schedule security audits
-4. Plan for scaling strategy
-5. Document operational procedures
+#### 4. Memory Issues
+```bash
+# Check container memory usage
+docker stats
+
+# Adjust memory limits in docker-compose.yml
+services:
+  api-gateway:
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+```
+
+### Logging and Debugging
+
+```bash
+# View service logs
+docker logs neo-api-gateway
+docker logs neo-storage-service
+
+# Follow logs in real-time
+docker logs -f neo-api-gateway
+
+# Check system logs
+journalctl -u docker
+```
+
+### Performance Optimization
+
+```bash
+# Optimize Docker settings
+echo '{"log-driver":"json-file","log-opts":{"max-size":"10m","max-file":"3"}}' > /etc/docker/daemon.json
+systemctl restart docker
+
+# Optimize PostgreSQL
+# Edit postgresql.conf
+shared_buffers = 256MB
+effective_cache_size = 1GB
+work_mem = 4MB
+```
+
+## Maintenance
+
+### Regular Maintenance Tasks
+
+1. **Weekly:**
+   - Review service logs
+   - Check disk space usage
+   - Verify backup integrity
+   - Update security patches
+
+2. **Monthly:**
+   - Rotate logs
+   - Update dependencies
+   - Performance review
+   - Security audit
+
+3. **Quarterly:**
+   - Disaster recovery test
+   - Capacity planning review
+   - Architecture review
+   - Documentation updates
+
+## Support
+
+- **📖 Documentation**: [Complete deployment docs](../README.md)
+- **🐛 Issues**: [GitHub Issues](https://github.com/r3e-network/neo-service-layer/issues)
+- **💬 Support**: [GitHub Discussions](https://github.com/r3e-network/neo-service-layer/discussions)
+- **📧 Contact**: deployment-support@r3e.network
+
+---
+
+**🚀 Your Neo Service Layer is now production-ready! Monitor, maintain, and scale as needed.**

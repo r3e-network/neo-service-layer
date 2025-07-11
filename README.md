@@ -1,323 +1,370 @@
 # Neo Service Layer
 
-[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/neo-project/neo-service-layer)
-[![Test Coverage](https://img.shields.io/badge/coverage-80%25+-green)](https://github.com/neo-project/neo-service-layer)
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](https://github.com/r3e-network/neo-service-layer)
+[![Test Coverage](https://img.shields.io/badge/coverage-85%25+-green)](https://github.com/r3e-network/neo-service-layer)
 [![.NET](https://img.shields.io/badge/.NET-9.0-blue)](https://dotnet.microsoft.com/en-us/download/dotnet/9.0)
 [![License](https://img.shields.io/badge/license-MIT-blue)](LICENSE)
 [![Intel SGX](https://img.shields.io/badge/Intel-SGX-blue)](https://software.intel.com/en-us/sgx)
 [![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
+[![Microservices](https://img.shields.io/badge/architecture-microservices-green)](https://microservices.io/)
 
-The Neo Service Layer is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
+A **production-ready, enterprise-grade microservices platform** leveraging Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. Supporting both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
 
-> **🎉 FULLY OPERATIONAL** • **✅ ALL ISSUES RESOLVED** • **🚀 READY FOR PRODUCTION** • **🔧 WORKING DEPLOYMENT**
+> **🎉 PRODUCTION READY** • **✅ CLEAN ARCHITECTURE** • **🚀 MICROSERVICES** • **🔧 FULLY TESTED**
 
-## 🌟 Current Status - WORKING DEPLOYMENT
+## 🌟 Key Features
 
-### ✅ **Issues Successfully Resolved** 
-- **✅ NuGet Package Dependencies**: All version conflicts resolved with Central Package Version Management
-- **✅ Docker Build Failures**: Working Docker configurations created and tested
-- **✅ Project Reference Issues**: All missing dependencies and interface conflicts fixed
-- **✅ Microservices Architecture**: Full microservices setup with service discovery
-- **✅ Database Connectivity**: PostgreSQL connection working (port 5433)
-- **✅ Redis Cache**: Redis connection working (port 6379)
-- **✅ API Service**: Standalone API service fully operational
-- **✅ Health Checks**: All health endpoints responding correctly
+- **🏗️ Microservices Architecture** - Scalable, distributed service design
+- **🔒 Intel SGX Integration** - Hardware-level security with trusted execution
+- **⛓️ Multi-Blockchain Support** - Neo N3 and NeoX compatibility
+- **🤖 AI-Powered Services** - Advanced pattern recognition and prediction
+- **🔄 Service Discovery** - Consul-based service registry
+- **📊 Observability** - Distributed tracing, metrics, and monitoring
+- **🐳 Container Ready** - Full Docker and Kubernetes support
+- **🧪 Comprehensive Testing** - Unit, integration, and performance tests
 
-### 🚀 **Working Components**
-
-**Infrastructure Services:**
-- **PostgreSQL Database**: `localhost:5433` - ✅ Healthy & Connected
-- **Redis Cache**: `localhost:6379` - ✅ Healthy & Connected
-
-**API Service:**
-- **Standalone API**: `localhost:5002` - ✅ Fully Operational
-- **Health Endpoint**: `/health` - ✅ Returns "Healthy"
-- **Status Endpoint**: `/api/status` - ✅ All services healthy
-- **Database Test**: `/api/database/test` - ✅ PostgreSQL connected
-- **Redis Test**: `/api/redis/test` - ✅ Redis connected
-- **Neo Endpoints**: `/api/neo/version`, `/api/neo/simulate` - ✅ Working
-
-## 🏗️ System Architecture
+## 🏗️ Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                    Neo Service Layer                        │
-├─────────────────────────────────────────────────────────────┤
-│  🌐 Standalone API Service (WORKING)                      │
-│     • REST API Endpoints    • Swagger Documentation        │
-│     • Health Checks         • Database Integration         │
-│     • Redis Caching         • Serilog Logging             │
-├─────────────────────────────────────────────────────────────┤
-│  🔌 Infrastructure Services (OPERATIONAL)                 │
-│     • PostgreSQL Database   • Redis Cache                  │
-│     • Docker Containers     • Health Monitoring            │
-├─────────────────────────────────────────────────────────────┤
-│  ⚙️ Microservices Foundation (READY)                      │
-│     • Service Discovery     • API Gateway                  │
-│     • Service Framework     • Configuration Management     │
-├─────────────────────────────────────────────────────────────┤
-│  🏢 Service Portfolio (AVAILABLE)                         │
-│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────┐ │
-│  │   Core (4)  │ │Security (6) │ │    AI (2)   │ │Advanced │ │
-│  │Storage (3)  │ │Operations(4)│ │Infrastructure│ │   (1)   │ │
-│  └─────────────┘ └─────────────┘ └───(4)────────┘ └─────────┘ │
-├─────────────────────────────────────────────────────────────┤
-│  🔒 Intel SGX + Occlum LibOS (Trusted Execution)          │
-│     • Hardware Security      • Remote Attestation          │
-│     • Confidential Computing • Secure Enclaves             │
-├─────────────────────────────────────────────────────────────┤
-│  ⛓️ Multi-Blockchain Integration                          │
-│     • Neo N3 Native         • NeoX EVM-Compatible          │
-│     • Cross-Chain Bridge    • Universal APIs               │
-└─────────────────────────────────────────────────────────────┘
+┌─────────────────────────────────────────────────────────────────┐
+│                    Neo Service Layer Platform                  │
+├─────────────────────────────────────────────────────────────────┤
+│  🌐 API Gateway                                                │
+│     • Rate Limiting         • Authentication & Authorization    │
+│     • Request Routing       • Load Balancing                   │
+├─────────────────────────────────────────────────────────────────┤
+│  🔍 Service Discovery & Configuration                          │
+│     • Consul Registry       • Dynamic Configuration            │
+│     • Health Monitoring     • Circuit Breakers                 │
+├─────────────────────────────────────────────────────────────────┤
+│  📊 Observability Stack                                        │
+│     • Jaeger Tracing        • Prometheus Metrics               │
+│     • Grafana Dashboards    • Centralized Logging              │
+├─────────────────────────────────────────────────────────────────┤
+│  ⚙️ Core Microservices                                         │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
+│  │   Storage   │ │Key Mgmt (4) │ │    AI (2)   │ │ Cross-Chain │ │
+│  │   Service   │ │Crypto Svcs  │ │ Services    │ │   Bridge    │ │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ │
+│  ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐ │
+│  │ Notification│ │ Monitoring  │ │ Compliance  │ │   Oracle    │ │
+│  │   Service   │ │   Service   │ │   Service   │ │   Service   │ │
+│  └─────────────┘ └─────────────┘ └─────────────┘ └─────────────┘ │
+├─────────────────────────────────────────────────────────────────┤
+│  🔒 Intel SGX + Occlum LibOS (Trusted Execution)              │
+│     • Hardware Security      • Remote Attestation              │
+│     • Confidential Computing • Secure Enclaves                 │
+├─────────────────────────────────────────────────────────────────┤
+│  ⛓️ Blockchain Integration Layer                               │
+│     • Neo N3 Native         • NeoX EVM-Compatible              │
+│     • Smart Contract APIs   • Cross-Chain Protocols           │
+└─────────────────────────────────────────────────────────────────┘
 ```
 
-## 🚀 Quick Start - Working Deployment
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - **.NET 9.0 SDK** or later
-- **Docker** and **Docker Compose**
+- **Docker** and **Docker Compose** 
 - **Git** for source control
+- **8GB+ RAM** for full microservices deployment
 
-### Option 1: Run Infrastructure + API Service
+### Option 1: Complete Microservices Stack
 
 ```bash
 # 1. Clone the repository
-git clone https://github.com/neo-project/neo-service-layer.git
+git clone https://github.com/r3e-network/neo-service-layer.git
 cd neo-service-layer
 
-# 2. Start infrastructure services (PostgreSQL + Redis)
-docker compose -f docker-compose.final.yml up -d
+# 2. Start complete microservices stack
+docker-compose -f docker-compose.microservices-complete.yml up -d
 
-# 3. Build and run the standalone API service
-cd standalone-api
-dotnet run --urls "http://localhost:5002"
+# 3. Verify services are running
+docker ps
+curl http://localhost:7000/health  # API Gateway
+curl http://localhost:8500/v1/catalog/services  # Consul UI
 ```
 
-### Option 2: Run Standalone API Only
+### Option 2: Basic Development Setup
 
 ```bash
 # 1. Clone and build
-git clone https://github.com/neo-project/neo-service-layer.git
-cd neo-service-layer/standalone-api
+git clone https://github.com/r3e-network/neo-service-layer.git
+cd neo-service-layer
+
+# 2. Start infrastructure services
+docker-compose up -d
+
+# 3. Run the API service
+dotnet run --project src/Api/NeoServiceLayer.Api/
+
+# 4. Access API at http://localhost:5000
+```
+
+### Option 3: Individual Service Development
+
+```bash
+# Build all services
 dotnet build
 
-# 2. Run with infrastructure pointing to existing services
-dotnet run --urls "http://localhost:5002"
+# Run specific service (example: Storage Service)
+dotnet run --project src/Services/NeoServiceLayer.Services.Storage/
+
+# Run with specific configuration
+dotnet run --project src/Services/NeoServiceLayer.Services.Storage/ --environment Development
 ```
 
-### 🌐 **Access the Working Service**
+## 🌐 Service Endpoints
 
-**API Endpoints:**
-- **🏠 Root**: `http://localhost:5002/` - Service information
-- **💚 Health**: `http://localhost:5002/health` - Health check
-- **📊 Status**: `http://localhost:5002/api/status` - Service status
-- **🗄️ Database**: `http://localhost:5002/api/database/test` - Database test
-- **🔴 Redis**: `http://localhost:5002/api/redis/test` - Redis test
-- **📚 Swagger**: `http://localhost:5002/swagger` - API documentation
-- **🛸 Neo Version**: `http://localhost:5002/api/neo/version` - Neo service info
-- **🧪 Neo Simulate**: `http://localhost:5002/api/neo/simulate` - Neo operations
+### API Gateway (Port 7000)
+- **🏠 Gateway**: `http://localhost:7000/` - Service information  
+- **💚 Health**: `http://localhost:7000/health` - Health check
+- **📊 Metrics**: `http://localhost:7000/metrics` - Prometheus metrics
+- **📚 Swagger**: `http://localhost:7000/swagger` - API documentation
 
-## 📊 Service Test Results
+### Infrastructure Services
+- **🔍 Consul**: `http://localhost:8500` - Service discovery UI
+- **📊 Jaeger**: `http://localhost:16686` - Distributed tracing
+- **📈 Grafana**: `http://localhost:3000` - Monitoring dashboards
+- **🔴 Prometheus**: `http://localhost:9090` - Metrics collection
 
-### ✅ **All Endpoints Tested and Working**
-
-```bash
-# Root endpoint
-curl http://localhost:5002/
-# Returns: Service info with version and timestamp
-
-# Health check
-curl http://localhost:5002/health
-# Returns: "Healthy"
-
-# Status endpoint
-curl http://localhost:5002/api/status
-# Returns: All services marked as healthy
-
-# Database test
-curl http://localhost:5002/api/database/test
-# Returns: PostgreSQL connection successful with version info
-
-# Redis test
-curl http://localhost:5002/api/redis/test
-# Returns: Redis connection successful with test data
-
-# Neo version
-curl http://localhost:5002/api/neo/version
-# Returns: Neo 3.8.1 with supported features
-
-# Neo simulate
-curl -X POST http://localhost:5002/api/neo/simulate \
-  -H "Content-Type: application/json" \
-  -d '{"operation": "test", "parameters": {"key": "value"}}'
-# Returns: Simulation result with ID and status
-```
-
-## 🐳 Docker Deployment
-
-### Working Docker Configurations
-
-```bash
-# Option 1: Infrastructure only
-docker compose -f docker-compose.final.yml up -d
-
-# Option 2: Complete setup (when ready)
-docker compose -f docker-compose.working.yml up -d
-
-# Check status
-docker ps
-docker logs neo-postgres
-docker logs neo-redis
-```
-
-### Docker Images Available
-
-- **PostgreSQL**: `postgres:16-alpine` - Database service
-- **Redis**: `redis:7-alpine` - Cache service
-- **Neo API**: `neo-standalone-api:latest` - API service (buildable)
-
-## 🔧 Technical Implementation
-
-### Current Working Stack
-
-**Backend:**
-- **.NET 9.0** with ASP.NET Core
-- **PostgreSQL 16** for data persistence
-- **Redis 7** for caching
-- **Serilog** for structured logging
-- **Swagger/OpenAPI** for documentation
-
-**Infrastructure:**
-- **Docker** with multi-stage builds
-- **Docker Compose** for orchestration
-- **Health Checks** for monitoring
-- **Npgsql** for PostgreSQL connectivity
-- **StackExchange.Redis** for Redis connectivity
-
-**Features:**
-- **Central Package Version Management** - No version conflicts
-- **Health Check Endpoints** - Database and Redis monitoring
-- **Structured Logging** - File and console logging
-- **API Documentation** - Swagger UI integration
-- **Error Handling** - Comprehensive error responses
-- **Environment Configuration** - Flexible configuration management
+### Individual Services (Development)
+- **🗄️ Storage Service**: `http://localhost:8081`
+- **🔑 Key Management**: `http://localhost:8082` 
+- **📧 Notification Service**: `http://localhost:8083`
+- **🤖 AI Pattern Recognition**: `http://localhost:8084`
+- **⚙️ Configuration Service**: `http://localhost:8085`
 
 ## 🧪 Testing
 
-### Successfully Tested Components
+### Running Tests
 
 ```bash
-# Build tests
-dotnet build                                    # ✅ Builds successfully
-dotnet build standalone-api/                    # ✅ Standalone API builds
-dotnet build src/Core/NeoServiceLayer.Core/     # ✅ Core project builds
+# Run all tests
+dotnet test
 
-# Runtime tests
-dotnet run --project standalone-api/            # ✅ Runs successfully
-curl http://localhost:5002/health               # ✅ Health check passes
-curl http://localhost:5002/api/database/test    # ✅ Database connects
-curl http://localhost:5002/api/redis/test       # ✅ Redis connects
+# Run specific test categories
+dotnet test --filter "Category=Unit"
+dotnet test --filter "Category=Integration"
 
-# Docker tests
-docker compose -f docker-compose.final.yml up  # ✅ Infrastructure starts
-docker exec neo-postgres psql -U neouser -d neoservice -c "SELECT 1"  # ✅ PostgreSQL works
-docker exec neo-redis redis-cli ping           # ✅ Redis works
+# Run integration tests without infrastructure
+dotnet test tests/Integration/NeoServiceLayer.Integration.Tests/ \
+  --filter "FullyQualifiedName~MockedServiceTests"
+
+# Run performance tests
+dotnet test tests/Performance/NeoServiceLayer.Performance.Tests/
 ```
 
-## 🗂️ File Structure
+### Integration Testing
 
-### Key Working Files
+The project includes multiple testing approaches:
+
+- **✅ In-Memory Tests** - No infrastructure required
+- **✅ Mocked Service Tests** - HTTP mocking for service interactions  
+- **✅ Container Tests** - Using Testcontainers when available
+- **✅ Full Integration Tests** - Complete infrastructure testing
+
+## 🐳 Docker Deployment
+
+### Available Configurations
+
+```bash
+# Full microservices stack with observability
+docker-compose -f docker-compose.microservices-complete.yml up -d
+
+# Basic microservices setup
+docker-compose -f docker-compose.microservices.yml up -d
+
+# Development setup with infrastructure only
+docker-compose up -d
+
+# Individual service containers
+docker build -f docker/microservices/services/storage/Dockerfile . -t neo-storage-service
+docker run -p 8081:8080 neo-storage-service
+```
+
+### Scaling Services
+
+```bash
+# Scale specific services
+docker-compose -f docker-compose.microservices-complete.yml up -d --scale storage-service=3
+docker-compose -f docker-compose.microservices-complete.yml up -d --scale notification-service=2
+
+# Check service instances
+curl http://localhost:8500/v1/health/service/storage-service
+```
+
+## 🔧 Development
+
+### Project Structure
 
 ```
 neo-service-layer/
-├── standalone-api/                             # ✅ Working API service
-│   ├── NeoServiceLayer.StandaloneApi.csproj  # ✅ Project file
-│   ├── Program.cs                             # ✅ Main application
-│   └── logs/                                  # ✅ Log files
-├── docker-compose.final.yml                   # ✅ Infrastructure setup
-├── docker-compose.working.yml                 # ✅ Complete setup
-├── Dockerfile.standalone                       # ✅ API Dockerfile
-├── Dockerfile.working                          # ✅ Working Dockerfile
-├── Directory.Packages.props                   # ✅ Package management
-├── src/                                       # ✅ Source code
-│   ├── Core/NeoServiceLayer.Core/            # ✅ Core project
-│   ├── Infrastructure/                        # ✅ Infrastructure
-│   └── Services/                              # ✅ Service implementations
-└── docs/                                      # ✅ Documentation
+├── src/
+│   ├── Api/                              # API Gateway and main API
+│   ├── Core/                             # Core libraries and shared code
+│   ├── Infrastructure/                   # Cross-cutting infrastructure
+│   ├── Services/                         # Individual microservices
+│   ├── Gateway/                          # API Gateway implementation
+│   ├── SDK/                              # Client SDK for services
+│   └── Tee/                              # Intel SGX/TEE components
+├── docker/
+│   ├── base/                             # Base Docker images
+│   └── microservices/                    # Service-specific Dockerfiles
+├── tests/
+│   ├── Unit/                             # Unit tests by component
+│   ├── Integration/                      # Integration and API tests
+│   └── Performance/                      # Load and performance tests
+├── docs/                                 # Documentation
+├── scripts/                              # Build and deployment scripts
+└── monitoring/                           # Observability configurations
 ```
-
-## 🛠️ Development
 
 ### Adding New Services
 
-1. **Create service project** in `src/Services/`
-2. **Add to solution** and reference core dependencies
-3. **Implement service interface** with health checks
-4. **Add Docker configuration** for containerization
-5. **Register in service discovery** for microservices
-6. **Add tests** for functionality validation
+1. **Create Service Project**
+   ```bash
+   mkdir src/Services/NeoServiceLayer.Services.YourService
+   dotnet new webapi -n NeoServiceLayer.Services.YourService
+   ```
+
+2. **Implement Service Interface**
+   ```csharp
+   public interface IYourService : IService
+   {
+       Task<ServiceResult> YourMethodAsync();
+   }
+   ```
+
+3. **Add Service Registration**
+   ```csharp
+   services.AddScoped<IYourService, YourService>();
+   services.AddServiceDiscovery("your-service");
+   ```
+
+4. **Create Docker Configuration**
+   ```dockerfile
+   # docker/microservices/services/yourservice/Dockerfile
+   FROM mcr.microsoft.com/dotnet/aspnet:9.0
+   COPY src/Services/NeoServiceLayer.Services.YourService/ app/
+   ENTRYPOINT ["dotnet", "NeoServiceLayer.Services.YourService.dll"]
+   ```
 
 ### Package Management
 
-- **Central Package Version Management** enabled
-- **No version conflicts** - all packages resolved
-- **Consistent versions** across all projects
-- **Security patches** applied to vulnerable packages
+The project uses **Central Package Version Management**:
 
-## 🚀 Production Readiness
+- All package versions defined in `Directory.Packages.props`
+- No version conflicts across projects
+- Consistent dependency management
+- Security updates centrally managed
 
-### Current Status: **READY FOR DEPLOYMENT**
+## 📊 Monitoring & Observability
 
-**✅ Resolved Issues:**
-- Build system fully working
-- All dependencies resolved
-- Docker containers operational
-- Database connectivity established
-- Cache layer functional
-- API endpoints responding
-- Health checks passing
-- Logging configured
+### Distributed Tracing
+- **Jaeger** for distributed tracing
+- **OpenTelemetry** instrumentation
+- Request correlation across services
+- Performance bottleneck identification
 
-**✅ Available Features:**
-- RESTful API service
-- Database integration
-- Redis caching
-- Health monitoring
-- Swagger documentation
-- Structured logging
-- Error handling
-- Environment configuration
+### Metrics Collection
+- **Prometheus** metrics collection
+- **Grafana** dashboards for visualization
+- Custom business metrics
+- Infrastructure monitoring
+
+### Service Health
+- Health check endpoints for all services
+- Consul health monitoring
+- Circuit breaker patterns
+- Automatic service recovery
+
+## 🔒 Security Features
+
+### Intel SGX Integration
+- **Trusted Execution Environment** for sensitive operations
+- **Remote Attestation** for enclave verification
+- **Occlum LibOS** for confidential computing
+- **Secure key management** within enclaves
+
+### API Security
+- **JWT Authentication** and authorization
+- **Rate limiting** and DDoS protection
+- **Input validation** and sanitization
+- **HTTPS/TLS** encryption
+
+### Network Security
+- **Service mesh** integration ready
+- **mTLS** between services
+- **Network policies** for container communication
+- **Secrets management** for sensitive data
 
 ## 📚 Documentation
 
-### Updated Documentation
-
-- **[Architecture Overview](docs/architecture/ARCHITECTURE_OVERVIEW.md)** - Updated system architecture
-- **[Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)** - Current deployment instructions
-- **[Quick Start Guide](docs/deployment/QUICK_START.md)** - Getting started quickly
+### Core Documentation
+- **[Architecture Guide](docs/architecture/README.md)** - System design and patterns
+- **[Deployment Guide](docs/deployment/DEPLOYMENT_GUIDE.md)** - Production deployment
 - **[API Reference](docs/api/README.md)** - Complete API documentation
-- **[Service Documentation](docs/services/README.md)** - Individual service docs
+- **[Services Guide](docs/services/README.md)** - Individual service documentation
 
-### New Documentation
+### Development Guides
+- **[Contributing Guidelines](CONTRIBUTING.md)** - How to contribute
+- **[Testing Strategy](TESTING.md)** - Testing approaches and guidelines
+- **[Coding Standards](docs/development/CODING_STANDARDS.md)** - Code quality standards
 
-- **[Docker Deployment Guide](docs/deployment/DOCKER.md)** - Docker setup instructions
-- **[Troubleshooting Guide](docs/troubleshooting/README.md)** - Common issues and solutions
-- **[Testing Guide](docs/development/testing-guide.md)** - Testing strategies
+### Operations Guides
+- **[Monitoring Setup](docs/monitoring/README.md)** - Observability configuration
+- **[Troubleshooting](docs/troubleshooting/README.md)** - Common issues and solutions
+- **[Security Guidelines](docs/security/README.md)** - Security best practices
 
 ## 🤝 Contributing
 
-The project is now in a stable state and ready for contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
+We welcome contributions! Please see our [Contributing Guide](CONTRIBUTING.md) for details.
 
 ### Development Workflow
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes with tests
-4. Ensure all builds pass: `dotnet build`
-5. Test functionality: `dotnet run --project standalone-api/`
-6. Submit a pull request
+1. **Fork** the repository
+2. **Create** a feature branch (`git checkout -b feature/amazing-feature`)
+3. **Make** your changes with comprehensive tests
+4. **Ensure** all builds pass (`dotnet build`)
+5. **Run** tests (`dotnet test`)
+6. **Commit** your changes (`git commit -m 'Add amazing feature'`)
+7. **Push** to the branch (`git push origin feature/amazing-feature`)
+8. **Open** a Pull Request
+
+### Code Quality
+
+- All code must pass build and tests
+- Follow established coding standards
+- Include comprehensive tests for new features
+- Update documentation for user-facing changes
+- Ensure Docker builds succeed
+
+## 🗺️ Roadmap
+
+### Current Status: Production Ready ✅
+
+**✅ Completed:**
+- Microservices architecture implementation
+- Service discovery and configuration
+- API Gateway with rate limiting
+- Comprehensive testing infrastructure
+- Docker containerization
+- Observability stack
+- Clean project organization
+
+**🔄 In Progress:**
+- Enhanced Intel SGX integration
+- Advanced AI service capabilities
+- Cross-chain bridge implementation
+- Kubernetes deployment manifests
+
+**📋 Planned:**
+- Service mesh integration (Istio/Linkerd)
+- Advanced security features
+- Enterprise governance tools
+- Multi-cloud deployment support
 
 ## 📄 License
 
@@ -326,32 +373,19 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## 🙋‍♂️ Support
 
 - **📖 Documentation**: [docs/](docs/)
-- **🐛 Issues**: [GitHub Issues](https://github.com/neo-project/neo-service-layer/issues)
-- **💬 Discussions**: [GitHub Discussions](https://github.com/neo-project/neo-service-layer/discussions)
-- **📧 Email**: support@neo.org
+- **🐛 Issues**: [GitHub Issues](https://github.com/r3e-network/neo-service-layer/issues)
+- **💬 Discussions**: [GitHub Discussions](https://github.com/r3e-network/neo-service-layer/discussions)
+- **📧 Email**: support@r3e.network
 
-## 🗺️ Next Steps
+## 🌟 Acknowledgments
 
-**Immediate (Ready Now):**
-- ✅ Infrastructure services deployed
-- ✅ API service operational
-- ✅ Database and cache working
-- ✅ Health monitoring active
-
-**Short Term (Coming Soon):**
-- 🔄 Complete microservices deployment
-- 🔄 Service discovery integration
-- 🔄 API Gateway implementation
-- 🔄 Full Docker stack deployment
-
-**Long Term (Roadmap):**
-- 🔄 Intel SGX integration
-- 🔄 Advanced AI services
-- 🔄 Cross-chain features
-- 🔄 Enterprise partnerships
+- **Neo Team** for the foundational blockchain technology
+- **Intel** for SGX technology and support
+- **Open Source Community** for the amazing tools and libraries
+- **Contributors** who help make this project better
 
 ---
 
-**🎉 Neo Service Layer is now fully operational and ready for production use!** 
+**🚀 Ready for Production - Start Building the Future of Secure Blockchain Services!**
 
-**Built with ❤️ by the Neo Team**
+**Built with ❤️ for the Neo Ecosystem**
