@@ -475,12 +475,21 @@ Thumbs.db
 *.bak
 *.old
 *.orig
+*.trx
+*.log
+*.cache
+
+# NuGet
+.nuget/
+packages/
 
 # Coverage reports
 coverage-reports/
 coverage-history/
 TestResults/
 test-results/
+*.coverage
+*.cobertura.xml
 
 # Documentation temporary files
 *STATUS*.md
