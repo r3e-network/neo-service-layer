@@ -4,11 +4,11 @@ x-common-variables: &common-variables
   ASPNETCORE_ENVIRONMENT: ${ASPNETCORE_ENVIRONMENT:-Development}
   Consul__Address: http://consul:8500
   Consul__Datacenter: dc1
-  ConnectionStrings__DefaultConnection: Host=postgres;Database=neoservice;Username=neouser;Password=neopass123
+  ConnectionStrings__DefaultConnection: Host=postgres;Database=neoservice;Username=neouser;Password=${POSTGRES_PASSWORD:-changeme}
   Redis__Configuration: redis:6379
   RabbitMQ__HostName: rabbitmq
-  RabbitMQ__UserName: guest
-  RabbitMQ__Password: guest
+  RabbitMQ__UserName: ${RABBITMQ_USER:-neouser}
+  RabbitMQ__Password: ${RABBITMQ_PASSWORD:-changeme}
   Jwt__SecretKey: ${JWT_SECRET_KEY:-ChangeThisToASecureRandomKey123!}
   Jwt__Issuer: neo-service-layer
   Jwt__Audience: neo-service-layer-clients
@@ -54,7 +54,7 @@ services:
     environment:
       - POSTGRES_DB=neoservice
       - POSTGRES_USER=neouser
-      - POSTGRES_PASSWORD=neopass123
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-changeme}
     volumes:
       - postgres_data:/var/lib/postgresql/data
     networks:
@@ -79,8 +79,8 @@ services:
     image: rabbitmq:3-management-alpine
     container_name: neo-rabbitmq
     environment:
-      - RABBITMQ_DEFAULT_USER=guest
-      - RABBITMQ_DEFAULT_PASS=guest
+      - RABBITMQ_DEFAULT_USER=${RABBITMQ_USER:-neouser}
+      - RABBITMQ_DEFAULT_PASS=${RABBITMQ_PASSWORD:-changeme}
     volumes:
       - rabbitmq_data:/var/lib/rabbitmq
     networks:
@@ -294,7 +294,7 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin}
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-changeme}
       - GF_USERS_ALLOW_SIGN_UP=false
     restart: unless-stopped
 

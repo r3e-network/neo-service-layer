@@ -1,0 +1,16 @@
+{
+  "Jwt": {
+    "SecretKey": "${JWT_SECRET_KEY}",
+    "Issuer": "${JWT_ISSUER:-neo-service-layer}",
+    "Audience": "${JWT_AUDIENCE:-neo-service-layer-clients}",
+    "ExpirationMinutes": "${JWT_EXPIRATION_MINUTES:-60}",
+    "RefreshExpirationMinutes": "${JWT_REFRESH_EXPIRATION_MINUTES:-10080}",
+    "ClockSkewMinutes": "${JWT_CLOCK_SKEW_MINUTES:-5}",
+    "ValidateIssuer": true,
+    "ValidateAudience": true,
+    "ValidateLifetime": true,
+    "ValidateIssuerSigningKey": true,
+    "RequireExpirationTime": true,
+    "RequireSignedTokens": true
+  }
+}
