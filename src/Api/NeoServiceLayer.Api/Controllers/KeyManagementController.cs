@@ -3,6 +3,7 @@ using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Validation;
 using NeoServiceLayer.Services.KeyManagement;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -442,15 +443,17 @@ public class GenerateKeyRequest
     /// <summary>
     /// Gets or sets the key ID.
     /// </summary>
-    [Required]
-    [StringLength(100, MinimumLength = 1)]
+    [Required(ErrorMessage = "Key ID is required")]
+    [StringLength(100, MinimumLength = 1, ErrorMessage = "Key ID must be between 1 and 100 characters")]
+    [Alphanumeric(allowHyphens: true, allowUnderscores: true)]
+    [SafeString]
     public string KeyId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the key type (e.g., "Secp256k1", "Ed25519", "RSA").
     /// </summary>
-    [Required]
-    [StringLength(50)]
+    [Required(ErrorMessage = "Key type is required")]
+    [RegularExpression("^(Secp256k1|Ed25519|RSA)$", ErrorMessage = "Key type must be Secp256k1, Ed25519, or RSA")]
     public string KeyType { get; set; } = string.Empty;
 
     /// <summary>
@@ -468,7 +471,8 @@ public class GenerateKeyRequest
     /// <summary>
     /// Gets or sets the key description.
     /// </summary>
-    [StringLength(500)]
+    [StringLength(500, ErrorMessage = "Description cannot exceed 500 characters")]
+    [SafeString]
     public string Description { get; set; } = string.Empty;
 }
 
@@ -480,14 +484,17 @@ public class SignDataRequest
     /// <summary>
     /// Gets or sets the key ID.
     /// </summary>
-    [Required]
-    [StringLength(100)]
+    [Required(ErrorMessage = "Key ID is required")]
+    [StringLength(100, ErrorMessage = "Key ID cannot exceed 100 characters")]
+    [Alphanumeric(allowHyphens: true, allowUnderscores: true)]
     public string KeyId { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the data to sign in hexadecimal format.
     /// </summary>
-    [Required]
+    [Required(ErrorMessage = "Data to sign is required")]
+    [HexString(requirePrefix: false)]
+    [StringLength(10000, ErrorMessage = "Data cannot exceed 10,000 characters")]
     public string DataHex { get; set; } = string.Empty;
 
     /// <summary>

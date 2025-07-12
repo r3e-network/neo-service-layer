@@ -1,0 +1,18 @@
+<Project>
+  <PropertyGroup>
+    <IsTestProject>true</IsTestProject>
+    <IncludeSourceRevisionInInformationalVersion>false</IncludeSourceRevisionInInformationalVersion>
+    
+    <!-- Code Coverage Settings -->
+    <CollectCoverage>true</CollectCoverage>
+    <CoverletOutputFormat>cobertura,opencover</CoverletOutputFormat>
+    <CoverletOutput>$(OutputPath)/</CoverletOutput>
+    <ExcludeByFile>**/*.g.cs,**/*.Designer.cs,**/Migrations/**</ExcludeByFile>
+    <Exclude>[xunit.*]*,[*.Tests]*</Exclude>
+    <IncludeTestAssembly>false</IncludeTestAssembly>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.msbuild" />
+  </ItemGroup>
+</Project>

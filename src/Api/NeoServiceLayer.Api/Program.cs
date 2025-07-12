@@ -52,6 +52,14 @@ builder.Services.AddControllers(options =>
 {
     // Add global exception filter
     options.Filters.Add<GlobalExceptionFilter>();
+    
+    // Add global validation filter
+    options.Filters.Add<ConditionalValidationFilter>();
+})
+.ConfigureApiBehaviorOptions(options =>
+{
+    // Disable automatic model state validation to use our custom validation
+    options.SuppressModelStateInvalidFilter = true;
 });
 builder.Services.AddEndpointsApiExplorer();
 
