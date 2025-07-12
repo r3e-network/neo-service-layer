@@ -77,10 +77,15 @@ A **production-ready, enterprise-grade microservices platform** leveraging Intel
 git clone https://github.com/r3e-network/neo-service-layer.git
 cd neo-service-layer
 
-# 2. Start complete microservices stack
+# 2. Setup environment variables
+cp .env.example .env
+# Generate secure credentials (optional for production)
+./scripts/generate-secure-credentials.sh
+
+# 3. Start complete microservices stack
 docker-compose -f docker-compose.microservices-complete.yml up -d
 
-# 3. Verify services are running
+# 4. Verify services are running
 docker ps
 curl http://localhost:7000/health  # API Gateway
 curl http://localhost:8500/v1/catalog/services  # Consul UI
@@ -93,13 +98,17 @@ curl http://localhost:8500/v1/catalog/services  # Consul UI
 git clone https://github.com/r3e-network/neo-service-layer.git
 cd neo-service-layer
 
-# 2. Start infrastructure services
+# 2. Setup environment
+cp .env.example .env
+# Edit .env with your configuration
+
+# 3. Start infrastructure services
 docker-compose up -d
 
-# 3. Run the API service
+# 4. Run the API service
 dotnet run --project src/Api/NeoServiceLayer.Api/
 
-# 4. Access API at http://localhost:5000
+# 5. Access API at http://localhost:5000
 ```
 
 ### Option 3: Individual Service Development
@@ -280,6 +289,36 @@ The project uses **Central Package Version Management**:
 - Circuit breaker patterns
 - Automatic service recovery
 
+## 🔐 Security Configuration
+
+### Environment Setup
+
+1. **Copy the example environment file**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Generate secure credentials** (for production):
+   ```bash
+   ./scripts/generate-secure-credentials.sh
+   ```
+
+3. **Configure JWT settings** in your environment:
+   ```bash
+   JWT_SECRET_KEY=your-secure-key-here
+   JWT_ISSUER=neo-service-layer
+   JWT_AUDIENCE=neo-service-layer-clients
+   JWT_EXPIRATION_MINUTES=60
+   ```
+
+### Security Best Practices
+
+- **Never commit** `.env` files to version control
+- **Use strong**, randomly generated passwords and keys
+- **Enable** all JWT validation options in production
+- **Configure** appropriate token expiration times
+- **Review** [SECURITY.md](SECURITY.md) for vulnerability reporting
+
 ## 🔒 Security Features
 
 ### Intel SGX Integration
@@ -289,10 +328,12 @@ The project uses **Central Package Version Management**:
 - **Secure key management** within enclaves
 
 ### API Security
-- **JWT Authentication** and authorization
+- **JWT Authentication** with standardized configuration
 - **Rate limiting** and DDoS protection
 - **Input validation** and sanitization
 - **HTTPS/TLS** encryption
+- **Environment-based secrets** management
+- **Secure credential generation** scripts
 
 ### Network Security
 - **Service mesh** integration ready

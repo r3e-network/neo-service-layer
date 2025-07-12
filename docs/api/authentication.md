@@ -12,6 +12,28 @@ The Neo Service Layer API supports the following authentication methods:
 - **JWT**: JSON Web Tokens for more secure authentication.
 - **OAuth 2.0**: OAuth 2.0 for delegated authentication.
 
+## Environment Configuration
+
+Before using the API, ensure your environment is properly configured:
+
+1. **Copy the environment template**:
+   ```bash
+   cp .env.example .env
+   ```
+
+2. **Generate secure credentials** (for production):
+   ```bash
+   ./scripts/generate-secure-credentials.sh
+   ```
+
+3. **Configure JWT settings**:
+   ```bash
+   JWT_SECRET_KEY=your-secure-key-here
+   JWT_ISSUER=neo-service-layer
+   JWT_AUDIENCE=neo-service-layer-clients
+   JWT_EXPIRATION_MINUTES=60
+   ```
+
 ## API Key Authentication
 
 API key authentication is the simplest authentication method. It involves including an API key in the request header.
@@ -88,6 +110,17 @@ To revoke an API key:
 
 JWT (JSON Web Token) authentication provides a more secure authentication method than API keys. It involves including a JWT token in the request header.
 
+### JWT Configuration
+
+The Neo Service Layer uses standardized JWT configuration across all environments:
+
+- **Issuer**: `neo-service-layer` (configurable via `JWT_ISSUER`)
+- **Audience**: `neo-service-layer-clients` (configurable via `JWT_AUDIENCE`)
+- **Expiration**: 60 minutes by default (configurable via `JWT_EXPIRATION_MINUTES`)
+- **Refresh Token Expiration**: 7 days (10080 minutes)
+- **Clock Skew**: 5 minutes tolerance
+- **Validation**: All validation options enabled (issuer, audience, lifetime, signature)
+
 ### Obtaining a JWT Token
 
 To obtain a JWT token, you need to authenticate with the Neo Service Layer authentication service:
@@ -110,7 +143,9 @@ The response will include a JWT token:
   "success": true,
   "data": {
     "token": "your-jwt-token",
-    "expires_in": 3600
+    "refreshToken": "your-refresh-token",
+    "expiresIn": 3600,
+    "tokenType": "Bearer"
   },
   "error": null,
   "meta": {
@@ -168,15 +203,31 @@ print(data)
 
 JWT tokens have an expiration time, after which they are no longer valid. If your JWT token expires, you need to obtain a new one.
 
+**Security Best Practices:**
+- Store tokens securely (never in local storage for web apps)
+- Use HTTPS for all API communications
+- Implement token refresh before expiration
+- Revoke tokens on logout
+- Monitor for suspicious token usage
+
+**Token Validation:**
+All JWT tokens are validated for:
+- Valid signature
+- Correct issuer
+- Correct audience
+- Not expired
+- Required claims present
+
 To refresh a JWT token:
 
 ```http
 POST /api/v1/auth/refresh HTTP/1.1
 Host: api.neoservicelayer.org
 Content-Type: application/json
-Authorization: Bearer your-jwt-token
 
-{}
+{
+  "refreshToken": "your-refresh-token"
+}
 ```
 
 The response will include a new JWT token:
@@ -186,7 +237,9 @@ The response will include a new JWT token:
   "success": true,
   "data": {
     "token": "your-new-jwt-token",
-    "expires_in": 3600
+    "refreshToken": "your-new-refresh-token",
+    "expiresIn": 3600,
+    "tokenType": "Bearer"
   },
   "error": null,
   "meta": {

@@ -4,30 +4,41 @@ This guide provides comprehensive instructions for building and running the Neo 
 
 ## Quick Start
 
-### 1. Build the Application
+### 1. Setup Environment
+```bash
+# Copy environment template
+cp .env.example .env
+
+# Generate secure credentials (optional for development)
+./scripts/generate-secure-credentials.sh
+```
+
+### 2. Build the Application
 ```bash
 # Build and publish the .NET application
 dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj -c Release -o src/Api/NeoServiceLayer.Api/bin/Release/net9.0/publish/
 ```
 
-### 2. Build the Docker Image
+### 3. Build the Docker Image
 ```bash
 # Build the minimal Docker image (recommended for development/testing)
 sudo docker build -f docker/Dockerfile.minimal -t neo-service-layer:minimal .
 ```
 
-### 3. Run the Container
+### 4. Run the Container
 ```bash
 # Run in Development mode (HTTP only, with Swagger UI)
 sudo docker run -d -p 8080:5000 \
   -e ASPNETCORE_ENVIRONMENT=Development \
   -e ASPNETCORE_URLS="http://+:5000" \
   -e JWT_SECRET_KEY="your-secure-jwt-secret-key-at-least-32-characters-long" \
+  -e JWT_ISSUER="neo-service-layer" \
+  -e JWT_AUDIENCE="neo-service-layer-clients" \
   --name neo-service-layer \
   neo-service-layer:minimal
 ```
 
-### 4. Test the Application
+### 5. Test the Application
 ```bash
 # Health check
 curl http://localhost:8080/health
@@ -110,22 +121,47 @@ sudo docker run -d -p 8080:5000 -p 8443:5001 \
 
 ## Required Environment Variables
 
+### Security Configuration
+Before running containers, ensure proper security configuration:
+
+1. **Generate secure credentials**:
+   ```bash
+   ./scripts/generate-secure-credentials.sh
+   ```
+
+2. **Use environment file** (recommended):
+   ```bash
+   docker run --env-file .env ...
+   ```
+
 ### Essential Variables
 - `JWT_SECRET_KEY`: JWT signing key (minimum 32 characters)
 - `ASPNETCORE_ENVIRONMENT`: Environment (Development/Production)
 - `ASPNETCORE_URLS`: Override default URLs if needed
+
+### JWT Configuration
+- `JWT_ISSUER`: Token issuer (default: neo-service-layer)
+- `JWT_AUDIENCE`: Token audience (default: neo-service-layer-clients)
+- `JWT_EXPIRATION_MINUTES`: Token expiration in minutes (default: 60)
+- `JWT_REFRESH_EXPIRATION_MINUTES`: Refresh token expiration (default: 10080)
 
 ### Production Variables
 - `SSL_CERT_PATH`: Path to SSL certificate file
 - `SSL_CERT_PASSWORD`: SSL certificate password
 - `DATABASE_CONNECTION_STRING`: Database connection
 - `REDIS_CONNECTION_STRING`: Redis connection
+- `POSTGRES_PASSWORD`: PostgreSQL password
+- `RABBITMQ_USER`: RabbitMQ username
+- `RABBITMQ_PASSWORD`: RabbitMQ password
+- `GRAFANA_PASSWORD`: Grafana admin password
 
 ### Optional Variables
 - `CORS_ALLOWED_ORIGINS`: Allowed CORS origins
 - `NEO_N3_RPC_URL`: Neo N3 blockchain RPC URL
 - `NEO_X_RPC_URL`: Neo X blockchain RPC URL
 - `SGX_MODE`: SGX mode (HW/SW/SIM)
+- `IAS_API_KEY`: Intel Attestation Service API key
+- `CONFIG_ENCRYPTION_KEY`: Configuration encryption key
 
 ## Build Scripts
 
