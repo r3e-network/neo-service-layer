@@ -1,4 +1,5 @@
 using System.ComponentModel.DataAnnotations;
+using Microsoft.AspNetCore.Http;
 using NeoServiceLayer.Core.Validation;
 
 namespace NeoServiceLayer.Core.Models.Requests;

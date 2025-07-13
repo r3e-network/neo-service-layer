@@ -34,7 +34,7 @@ x-service-defaults: &service-defaults
 services:
   # Infrastructure Services
   consul:
-    image: consul:1.17
+    image: consul:1.15
     container_name: neo-consul
     command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
     ports:
@@ -60,7 +60,7 @@ services:
     networks:
       - neo-network
     ports:
-      - "5432:5432"
+      - "5433:5432"
     restart: unless-stopped
 
   redis:
@@ -256,7 +256,7 @@ services:
 
   # Service Discovery UI
   consul-ui:
-    image: consul:1.17
+    image: consul:1.15
     container_name: neo-consul-ui
     command: agent -ui -client=0.0.0.0 -join=consul
     networks:

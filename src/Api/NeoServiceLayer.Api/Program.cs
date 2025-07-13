@@ -126,10 +126,10 @@ builder.Services.AddSwaggerGen(c =>
 
     // Group operations by tags
     c.DocInclusionPredicate((docName, apiDesc) => true);
-    c.TagActionsBy(api => new[] { api.GroupName ?? api.ActionDescriptor.RouteValues["controller"] });
+    c.TagActionsBy(api => new[] { api.GroupName ?? (api.ActionDescriptor.RouteValues.TryGetValue("controller", out var controller) ? controller?.ToString() ?? "Unknown" : "Unknown") });
 
     // Order tags alphabetically
-    c.OrderActionsBy(api => $"{api.ActionDescriptor.RouteValues["controller"]}_{api.ActionDescriptor.RouteValues["action"]}");
+    c.OrderActionsBy(api => $"{(api.ActionDescriptor.RouteValues.TryGetValue("controller", out var ctrl) ? ctrl?.ToString() ?? "Unknown" : "Unknown")}_{(api.ActionDescriptor.RouteValues.TryGetValue("action", out var act) ? act?.ToString() ?? "Unknown" : "Unknown")}");
 
     // Add operation filters for better documentation
     // c.EnableAnnotations(); // Method not available in this Swagger version

@@ -27,8 +27,7 @@ public static class CustomHealthChecks
             .AddCheck<KeyManagementHealthCheck>("keymanagement", HealthStatus.Unhealthy, new[] { "security", "critical" })
             .AddCheck<AIServicesHealthCheck>("ai-services", HealthStatus.Degraded, new[] { "ai", "features" })
             .AddCheck<StorageHealthCheck>("storage", HealthStatus.Degraded, new[] { "storage", "data" })
-            .AddCheck<MemoryHealthCheck>("memory", HealthStatus.Degraded, new[] { "system", "performance" })
-            .AddCheck<DiskSpaceHealthCheck>("disk", HealthStatus.Degraded, new[] { "system", "storage" });
+;
 
         // External service health checks
         var neoN3RpcUrl = configuration["Blockchain:NeoN3:RpcUrl"];
@@ -360,110 +359,6 @@ public class StorageHealthCheck : IHealthCheck
         catch
         {
             return false;
-        }
-    }
-}
-
-/// <summary>
-/// Memory usage health check.
-/// </summary>
-public class MemoryHealthCheck : IHealthCheck
-{
-    private readonly ILogger<MemoryHealthCheck> _logger;
-
-    public MemoryHealthCheck(ILogger<MemoryHealthCheck> logger)
-    {
-        _logger = logger;
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var process = Process.GetCurrentProcess();
-            var workingSet = process.WorkingSet64;
-            var privateMemory = process.PrivateMemorySize64;
-
-            // Get system memory info
-            var gcMemory = GC.GetTotalMemory(false);
-            var gen0Collections = GC.CollectionCount(0);
-            var gen1Collections = GC.CollectionCount(1);
-            var gen2Collections = GC.CollectionCount(2);
-
-            var data = new Dictionary<string, object>
-            {
-                ["working_set_mb"] = workingSet / 1024 / 1024,
-                ["private_memory_mb"] = privateMemory / 1024 / 1024,
-                ["gc_memory_mb"] = gcMemory / 1024 / 1024,
-                ["gen0_collections"] = gen0Collections,
-                ["gen1_collections"] = gen1Collections,
-                ["gen2_collections"] = gen2Collections
-            };
-
-            // Check if memory usage is concerning
-            var workingSetMB = workingSet / 1024 / 1024;
-            if (workingSetMB > 2048) // 2GB threshold
-            {
-                return HealthCheckResult.Degraded($"High memory usage: {workingSetMB}MB", null, data);
-            }
-
-            return HealthCheckResult.Healthy($"Memory usage: {workingSetMB}MB", data);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Memory health check failed");
-            return HealthCheckResult.Degraded($"Memory health check failed: {ex.Message}", ex);
-        }
-    }
-}
-
-/// <summary>
-/// Disk space health check.
-/// </summary>
-public class DiskSpaceHealthCheck : IHealthCheck
-{
-    private readonly ILogger<DiskSpaceHealthCheck> _logger;
-
-    public DiskSpaceHealthCheck(ILogger<DiskSpaceHealthCheck> logger)
-    {
-        _logger = logger;
-    }
-
-    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
-    {
-        try
-        {
-            var drives = DriveInfo.GetDrives().Where(d => d.IsReady);
-            var data = new Dictionary<string, object>();
-            var warnings = new List<string>();
-
-            foreach (var drive in drives)
-            {
-                var freeSpaceGB = drive.AvailableFreeSpace / 1024 / 1024 / 1024;
-                var totalSpaceGB = drive.TotalSize / 1024 / 1024 / 1024;
-                var usedPercentage = (double)(totalSpaceGB - freeSpaceGB) / totalSpaceGB * 100;
-
-                data[$"drive_{drive.Name.Replace(":", "").Replace("\\", "")}_free_gb"] = freeSpaceGB;
-                data[$"drive_{drive.Name.Replace(":", "").Replace("\\", "")}_total_gb"] = totalSpaceGB;
-                data[$"drive_{drive.Name.Replace(":", "").Replace("\\", "")}_used_percent"] = Math.Round(usedPercentage, 2);
-
-                if (usedPercentage > 90)
-                {
-                    warnings.Add($"Drive {drive.Name}: {usedPercentage:F1}% used");
-                }
-            }
-
-            if (warnings.Any())
-            {
-                return HealthCheckResult.Degraded($"Disk space warnings: {string.Join(", ", warnings)}", null, data);
-            }
-
-            return HealthCheckResult.Healthy("Disk space is adequate", data);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Disk space health check failed");
-            return HealthCheckResult.Degraded($"Disk space health check failed: {ex.Message}", ex);
         }
     }
 }
