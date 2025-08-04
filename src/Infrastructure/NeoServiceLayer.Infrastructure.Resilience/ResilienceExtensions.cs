@@ -1,3 +1,8 @@
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -5,11 +10,6 @@ using Polly;
 using Polly.CircuitBreaker;
 using Polly.Extensions.Http;
 using Polly.Timeout;
-using System;
-using System.Net;
-using System.Net.Http;
-using System.Threading;
-using System.Threading.Tasks;
 
 namespace NeoServiceLayer.Infrastructure.Resilience;
 
@@ -24,8 +24,8 @@ public static class ResilienceExtensions
             .AddPolicyHandler(GetTimeoutPolicy());
 
         // Add resilience policies as singleton services
-        services.AddSingleton<IResiliencePolicies, ResiliencePolicies>();
-        
+        services.AddSingleton<IResiliencePolicies, ResiliencePoliciesImpl>();
+
         // Configure resilience options
         services.Configure<ResilienceOptions>(configuration.GetSection("Resilience"));
 
@@ -79,12 +79,12 @@ public interface IResiliencePolicies
     IAsyncPolicy<T> GetCombinedPolicy<T>(T fallbackValue = default);
 }
 
-public class ResiliencePolicies : IResiliencePolicies
+public class ResiliencePoliciesImpl : IResiliencePolicies
 {
-    private readonly ILogger<ResiliencePolicies> _logger;
+    private readonly ILogger<ResiliencePoliciesImpl> _logger;
     private readonly ResilienceOptions _options;
 
-    public ResiliencePolicies(ILogger<ResiliencePolicies> logger, IConfiguration configuration)
+    public ResiliencePoliciesImpl(ILogger<ResiliencePoliciesImpl> logger, IConfiguration configuration)
     {
         _logger = logger;
         _options = configuration.GetSection("Resilience").Get<ResilienceOptions>() ?? new ResilienceOptions();
@@ -176,7 +176,7 @@ public class ResiliencePolicies : IResiliencePolicies
     }
 }
 
-public class ResilienceOptions
+public class ResilienceOptionsExt
 {
     public int RetryCount { get; set; } = 3;
     public int RetryBaseDelaySeconds { get; set; } = 2;
@@ -297,7 +297,7 @@ public abstract class ResilientServiceBase
         CancellationToken cancellationToken = default)
     {
         var policy = ResiliencePolicies.GetCombinedPolicy(fallbackValue);
-        
+
         return await policy.ExecuteAsync(async (ct) =>
         {
             return await operation(ct);
@@ -309,7 +309,7 @@ public abstract class ResilientServiceBase
         CancellationToken cancellationToken = default)
     {
         var policy = ResiliencePolicies.GetCombinedPolicy<object>(null);
-        
+
         await policy.ExecuteAsync(async (ct) =>
         {
             await operation(ct);

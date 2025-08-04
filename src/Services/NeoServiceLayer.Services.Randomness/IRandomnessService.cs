@@ -1,4 +1,5 @@
 ﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.RPC.Server.Attributes;
 
 namespace NeoServiceLayer.Services.Randomness;
 
@@ -14,6 +15,7 @@ public interface IRandomnessService : IEnclaveService, IBlockchainService
     /// <param name="max">The maximum value (inclusive).</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>A random number between min and max (inclusive).</returns>
+    [JsonRpcMethod("randomness.generatenumber", Description = "Generates a random number within a specified range")]
     Task<int> GenerateRandomNumberAsync(int min, int max, BlockchainType blockchainType);
 
     /// <summary>
@@ -22,6 +24,7 @@ public interface IRandomnessService : IEnclaveService, IBlockchainService
     /// <param name="length">The number of bytes to generate.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>Random bytes.</returns>
+    [JsonRpcMethod("randomness.generatebytes", Description = "Generates random bytes of specified length")]
     Task<byte[]> GenerateRandomBytesAsync(int length, BlockchainType blockchainType);
 
     /// <summary>
@@ -31,6 +34,7 @@ public interface IRandomnessService : IEnclaveService, IBlockchainService
     /// <param name="charset">The character set to use. If null, uses alphanumeric characters.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>A random string.</returns>
+    [JsonRpcMethod("randomness.generatestring", Description = "Generates a random string with specified length and character set")]
     Task<string> GenerateRandomStringAsync(int length, string? charset, BlockchainType blockchainType);
 
     /// <summary>
@@ -41,6 +45,7 @@ public interface IRandomnessService : IEnclaveService, IBlockchainService
     /// <param name="seed">The seed for the random number generation.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>A verifiable random result containing the random number and proof.</returns>
+    [JsonRpcMethod("randomness.generateverifiablenumber", Description = "Generates a verifiable random number with proof")]
     Task<VerifiableRandomResult> GenerateVerifiableRandomNumberAsync(int min, int max, string seed, BlockchainType blockchainType);
 
     /// <summary>
@@ -48,6 +53,7 @@ public interface IRandomnessService : IEnclaveService, IBlockchainService
     /// </summary>
     /// <param name="result">The verifiable random result to verify.</param>
     /// <returns>True if the result is valid, false otherwise.</returns>
+    [JsonRpcMethod("randomness.verifynumber", Description = "Verifies a random number generation result")]
     Task<bool> VerifyRandomNumberAsync(VerifiableRandomResult result);
 }
 

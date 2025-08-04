@@ -1,4 +1,5 @@
 ﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.RPC.Server.Attributes;
 using NeoServiceLayer.Services.Storage.Models;
 
 namespace NeoServiceLayer.Services.Storage;
@@ -16,6 +17,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="options">The storage options.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The storage metadata.</returns>
+    [JsonRpcMethod("storage.storedata", Description = "Stores data with specified options")]
     Task<StorageMetadata> StoreDataAsync(string key, byte[] data, StorageOptions options, BlockchainType blockchainType);
 
     /// <summary>
@@ -24,6 +26,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="key">The key.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data.</returns>
+    [JsonRpcMethod("storage.getdata", Description = "Retrieves stored data by key")]
     Task<byte[]> GetDataAsync(string key, BlockchainType blockchainType);
 
     /// <summary>
@@ -32,6 +35,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="key">The key.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the data was deleted, false otherwise.</returns>
+    [JsonRpcMethod("storage.deletedata", Description = "Deletes stored data by key")]
     Task<bool> DeleteDataAsync(string key, BlockchainType blockchainType);
 
     /// <summary>
@@ -40,6 +44,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="key">The key.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The storage metadata.</returns>
+    [JsonRpcMethod("storage.getmetadata", Description = "Gets metadata for stored data")]
     Task<StorageMetadata> GetStorageMetadataAsync(string key, BlockchainType blockchainType);
 
     /// <summary>
@@ -50,6 +55,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="take">The number of keys to take.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The list of storage metadata.</returns>
+    [JsonRpcMethod("storage.listkeys", Description = "Lists storage keys with pagination")]
     Task<IEnumerable<StorageMetadata>> ListKeysAsync(string prefix, int skip, int take, BlockchainType blockchainType);
 
     /// <summary>
@@ -59,6 +65,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="metadata">The new metadata.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the metadata was updated, false otherwise.</returns>
+    [JsonRpcMethod("storage.updatemetadata", Description = "Updates metadata for stored data")]
     Task<bool> UpdateMetadataAsync(string key, StorageMetadata metadata, BlockchainType blockchainType);
 
     /// <summary>
@@ -66,6 +73,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The transaction ID.</returns>
+    [JsonRpcMethod("storage.begintransaction", Description = "Begins a storage transaction")]
     Task<string> BeginTransactionAsync(BlockchainType blockchainType);
 
     /// <summary>
@@ -74,6 +82,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="transactionId">The transaction ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the transaction was committed, false otherwise.</returns>
+    [JsonRpcMethod("storage.committransaction", Description = "Commits a storage transaction")]
     Task<bool> CommitTransactionAsync(string transactionId, BlockchainType blockchainType);
 
     /// <summary>
@@ -82,6 +91,7 @@ public interface IStorageService : IEnclaveService, IBlockchainService
     /// <param name="transactionId">The transaction ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the transaction was rolled back, false otherwise.</returns>
+    [JsonRpcMethod("storage.rollbacktransaction", Description = "Rolls back a storage transaction")]
     Task<bool> RollbackTransactionAsync(string transactionId, BlockchainType blockchainType);
 }
 

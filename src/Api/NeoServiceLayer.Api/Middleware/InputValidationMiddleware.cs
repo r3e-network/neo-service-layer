@@ -1,17 +1,14 @@
-using Microsoft.AspNetCore.Http;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Filters;
-using Microsoft.Extensions.Configuration;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
 using System.IO;
 using System.Linq;
 using System.Text;
 using System.Text.Json;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Http;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Api.Middleware;
 
@@ -28,89 +25,51 @@ public class InputValidationMiddleware
     {
         _next = next;
         _logger = logger;
-        _options = configuration.GetSection("InputValidation").Get<InputValidationOptions>() 
-            ?? new InputValidationOptions();
+        _options = configuration.GetSection("InputValidation").Get<InputValidationOptions>()
+                   ?? new InputValidationOptions();
     }
 
     public async Task InvokeAsync(HttpContext context)
     {
-        // Skip validation for certain paths
-        if (ShouldSkipValidation(context.Request.Path))
-        {
-            await _next(context);
-            return;
-        }
-
         try
         {
             // Validate request size
-            if (!ValidateRequestSize(context))
+            if (context.Request.ContentLength > _options.MaxRequestBodySize)
             {
-                await WriteErrorResponse(context, "Request size exceeds maximum allowed", 413);
+                await WriteErrorResponse(context, 413, "Request body too large");
                 return;
             }
 
-            // Validate content type
-            if (!ValidateContentType(context))
+            // Validate Content-Type
+            if (!IsValidContentType(context))
             {
-                await WriteErrorResponse(context, "Unsupported content type", 415);
+                await WriteErrorResponse(context, 415, "Unsupported media type");
                 return;
-            }
-
-            // Enable request body buffering for multiple reads
-            context.Request.EnableBuffering();
-
-            // Read and validate request body
-            if (context.Request.ContentLength > 0)
-            {
-                var bodyText = await ReadRequestBodyAsync(context.Request);
-                
-                if (!string.IsNullOrEmpty(bodyText))
-                {
-                    // Check for SQL injection patterns
-                    if (ContainsSqlInjectionPatterns(bodyText))
-                    {
-                        _logger.LogWarning("Potential SQL injection detected in request from {IP}", 
-                            context.Connection.RemoteIpAddress);
-                        await WriteErrorResponse(context, "Invalid request content", 400);
-                        return;
-                    }
-
-                    // Check for XSS patterns
-                    if (ContainsXssPatterns(bodyText))
-                    {
-                        _logger.LogWarning("Potential XSS attack detected in request from {IP}", 
-                            context.Connection.RemoteIpAddress);
-                        await WriteErrorResponse(context, "Invalid request content", 400);
-                        return;
-                    }
-
-                    // Check for path traversal patterns
-                    if (ContainsPathTraversalPatterns(bodyText))
-                    {
-                        _logger.LogWarning("Potential path traversal detected in request from {IP}", 
-                            context.Connection.RemoteIpAddress);
-                        await WriteErrorResponse(context, "Invalid request content", 400);
-                        return;
-                    }
-                }
-
-                // Reset the request body stream position
-                context.Request.Body.Position = 0;
             }
 
             // Validate headers
             if (!ValidateHeaders(context))
             {
-                await WriteErrorResponse(context, "Invalid request headers", 400);
+                await WriteErrorResponse(context, 400, "Invalid request headers");
                 return;
             }
 
             // Validate query parameters
             if (!ValidateQueryParameters(context))
             {
-                await WriteErrorResponse(context, "Invalid query parameters", 400);
+                await WriteErrorResponse(context, 400, "Invalid query parameters");
                 return;
+            }
+
+            // For POST/PUT/PATCH requests, validate body
+            if (context.Request.Method == HttpMethod.Post.Method ||
+                context.Request.Method == HttpMethod.Put.Method ||
+                context.Request.Method == HttpMethod.Patch.Method)
+            {
+                if (!await ValidateRequestBodyAsync(context))
+                {
+                    return; // Error response already written
+                }
             }
 
             await _next(context);
@@ -118,32 +77,19 @@ public class InputValidationMiddleware
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error in input validation middleware");
-            await WriteErrorResponse(context, "Internal server error", 500);
+            await WriteErrorResponse(context, 500, "Internal server error during validation");
         }
     }
 
-    private bool ShouldSkipValidation(PathString path)
+    private bool IsValidContentType(HttpContext context)
     {
-        var skipPaths = new[] { "/health", "/metrics", "/swagger", "/.well-known" };
-        return skipPaths.Any(sp => path.StartsWithSegments(sp));
-    }
-
-    private bool ValidateRequestSize(HttpContext context)
-    {
-        var contentLength = context.Request.ContentLength;
-        return !contentLength.HasValue || contentLength.Value <= _options.MaxRequestBodySize;
-    }
-
-    private bool ValidateContentType(HttpContext context)
-    {
-        if (context.Request.Method == "GET" || context.Request.Method == "DELETE")
+        if (context.Request.ContentLength == 0)
             return true;
 
-        var contentType = context.Request.ContentType?.ToLower();
-        if (string.IsNullOrEmpty(contentType))
-            return false;
+        var contentType = context.Request.ContentType?.ToLower() ?? "";
 
-        return _options.AllowedContentTypes.Any(act => contentType.Contains(act));
+        return _options.AllowedContentTypes.Any(allowed =>
+            contentType.StartsWith(allowed.ToLower()));
     }
 
     private bool ValidateHeaders(HttpContext context)
@@ -152,18 +98,24 @@ public class InputValidationMiddleware
         {
             // Check header name
             if (!IsValidHeaderName(header.Key))
+            {
+                _logger.LogWarning("Invalid header name detected: {HeaderName}", header.Key);
                 return false;
+            }
 
             // Check header value
             foreach (var value in header.Value)
             {
                 if (!IsValidHeaderValue(value))
-                    return false;
-
-                // Check for header injection
-                if (ContainsHeaderInjection(value))
                 {
-                    _logger.LogWarning("Header injection detected in header {Header}", header.Key);
+                    _logger.LogWarning("Invalid header value detected for header {HeaderName}", header.Key);
+                    return false;
+                }
+
+                // Check for common injection patterns
+                if (ContainsInjectionPattern(value))
+                {
+                    _logger.LogWarning("Potential injection in header {HeaderName}", header.Key);
                     return false;
                 }
             }
@@ -176,127 +128,326 @@ public class InputValidationMiddleware
     {
         foreach (var param in context.Request.Query)
         {
-            // Check parameter name
+            // Validate parameter name
             if (!IsValidParameterName(param.Key))
+            {
+                _logger.LogWarning("Invalid query parameter name: {ParamName}", param.Key);
                 return false;
+            }
 
-            // Check parameter values
+            // Validate parameter values
             foreach (var value in param.Value)
             {
-                if (!IsValidParameterValue(value))
+                if (string.IsNullOrEmpty(value))
+                    continue;
+
+                // Check length
+                if (value.Length > _options.MaxParameterValueLength)
+                {
+                    _logger.LogWarning("Query parameter {ParamName} value too long", param.Key);
                     return false;
+                }
+
+                // Check for injection patterns
+                if (ContainsInjectionPattern(value))
+                {
+                    _logger.LogWarning("Potential injection in query parameter {ParamName}", param.Key);
+                    return false;
+                }
+
+                // Validate specific parameter formats
+                if (!ValidateParameterFormat(param.Key, value))
+                {
+                    _logger.LogWarning("Invalid format for query parameter {ParamName}", param.Key);
+                    return false;
+                }
             }
         }
 
         return true;
     }
 
-    private async Task<string> ReadRequestBodyAsync(HttpRequest request)
+    private async Task<bool> ValidateRequestBodyAsync(HttpContext context)
     {
-        using var reader = new StreamReader(
-            request.Body,
-            encoding: Encoding.UTF8,
-            detectEncodingFromByteOrderMarks: false,
-            bufferSize: 1024,
-            leaveOpen: true);
+        context.Request.EnableBuffering();
 
-        var body = await reader.ReadToEndAsync();
-        request.Body.Position = 0;
-        return body;
-    }
-
-    private bool ContainsSqlInjectionPatterns(string input)
-    {
-        var sqlPatterns = new[]
+        try
         {
-            @"(\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE)?|INSERT( +INTO)?|MERGE|SELECT|UPDATE|UNION( +ALL)?)\b)",
-            @"(--|\*|;|'|""|=|<|>|\|\||&&)",
-            @"(@@\w+|WAITFOR\s+DELAY|BENCHMARK\s*\(|SLEEP\s*\()",
-            @"(xp_cmdshell|sp_executesql|OPENROWSET|OPENDATASOURCE)"
-        };
+            using var reader = new StreamReader(
+                context.Request.Body,
+                encoding: Encoding.UTF8,
+                detectEncodingFromByteOrderMarks: false,
+                leaveOpen: true);
 
-        var upperInput = input.ToUpper();
-        return sqlPatterns.Any(pattern => Regex.IsMatch(upperInput, pattern, RegexOptions.IgnoreCase));
-    }
+            var body = await reader.ReadToEndAsync();
+            context.Request.Body.Position = 0;
 
-    private bool ContainsXssPatterns(string input)
-    {
-        var xssPatterns = new[]
+            if (string.IsNullOrEmpty(body))
+                return true;
+
+            // Check body size
+            if (body.Length > _options.MaxRequestBodySize)
+            {
+                await WriteErrorResponse(context, 413, "Request body too large");
+                return false;
+            }
+
+            // Validate based on content type
+            var contentType = context.Request.ContentType?.ToLower() ?? "";
+
+            if (contentType.StartsWith("application/json"))
+            {
+                return await ValidateJsonBodyAsync(context, body);
+            }
+            else if (contentType.StartsWith("application/xml"))
+            {
+                return await ValidateXmlBodyAsync(context, body);
+            }
+            else if (contentType.StartsWith("application/x-www-form-urlencoded"))
+            {
+                return ValidateFormBody(context, body);
+            }
+
+            return true;
+        }
+        catch (Exception ex)
         {
-            @"<script[^>]*>[\s\S]*?</script>",
-            @"javascript\s*:",
-            @"on\w+\s*=",
-            @"<iframe[^>]*>",
-            @"<object[^>]*>",
-            @"<embed[^>]*>",
-            @"<link[^>]*>",
-            @"eval\s*\(",
-            @"expression\s*\(",
-            @"vbscript\s*:",
-            @"<img[^>]+src[\\s]*=[\\s]*[""']javascript:"
-        };
-
-        return xssPatterns.Any(pattern => Regex.IsMatch(input, pattern, RegexOptions.IgnoreCase));
+            _logger.LogError(ex, "Error validating request body");
+            await WriteErrorResponse(context, 400, "Invalid request body");
+            return false;
+        }
     }
 
-    private bool ContainsPathTraversalPatterns(string input)
+    private async Task<bool> ValidateJsonBodyAsync(HttpContext context, string body)
     {
-        var pathPatterns = new[]
+        try
         {
-            @"\.\./",
-            @"\.\.\\",
-            @"%2e%2e[/\\]",
-            @"%252e%252e[/\\]",
-            @"\.\.%",
-            @"/etc/passwd",
-            @"C:\\Windows",
-            @"..%c0%af",
-            @"..%c1%9c"
-        };
+            using var document = JsonDocument.Parse(body);
+            var root = document.RootElement;
 
-        return pathPatterns.Any(pattern => input.Contains(pattern, StringComparison.OrdinalIgnoreCase));
+            // Validate JSON structure depth
+            if (GetJsonDepth(root) > _options.MaxJsonDepth)
+            {
+                await WriteErrorResponse(context, 400, "JSON structure too deep");
+                return false;
+            }
+
+            // Validate JSON properties
+            if (!ValidateJsonElement(root))
+            {
+                await WriteErrorResponse(context, 400, "Invalid JSON content");
+                return false;
+            }
+
+            return true;
+        }
+        catch (JsonException ex)
+        {
+            _logger.LogWarning(ex, "Invalid JSON in request body");
+            await WriteErrorResponse(context, 400, "Invalid JSON format");
+            return false;
+        }
     }
 
-    private bool ContainsHeaderInjection(string value)
+    private bool ValidateJsonElement(JsonElement element, int currentDepth = 0)
     {
-        return value.Contains('\r') || value.Contains('\n');
+        if (currentDepth > _options.MaxJsonDepth)
+            return false;
+
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    // Validate property name
+                    if (!IsValidPropertyName(property.Name))
+                    {
+                        _logger.LogWarning("Invalid JSON property name: {PropertyName}", property.Name);
+                        return false;
+                    }
+
+                    // Recursively validate property value
+                    if (!ValidateJsonElement(property.Value, currentDepth + 1))
+                        return false;
+                }
+                break;
+
+            case JsonValueKind.Array:
+                if (element.GetArrayLength() > _options.MaxArrayLength)
+                {
+                    _logger.LogWarning("JSON array too large");
+                    return false;
+                }
+
+                foreach (var item in element.EnumerateArray())
+                {
+                    if (!ValidateJsonElement(item, currentDepth + 1))
+                        return false;
+                }
+                break;
+
+            case JsonValueKind.String:
+                var stringValue = element.GetString();
+                if (stringValue != null)
+                {
+                    if (stringValue.Length > _options.MaxStringLength)
+                    {
+                        _logger.LogWarning("JSON string value too long");
+                        return false;
+                    }
+
+                    if (ContainsInjectionPattern(stringValue))
+                    {
+                        _logger.LogWarning("Potential injection in JSON string value");
+                        return false;
+                    }
+                }
+                break;
+        }
+
+        return true;
+    }
+
+    private async Task<bool> ValidateXmlBodyAsync(HttpContext context, string body)
+    {
+        // Basic XML validation - check for common XXE patterns
+        if (body.Contains("<!DOCTYPE") || body.Contains("<!ENTITY"))
+        {
+            _logger.LogWarning("Potential XXE attack detected in XML body");
+            await WriteErrorResponse(context, 400, "XML external entities not allowed");
+            return false;
+        }
+
+        return true;
+    }
+
+    private bool ValidateFormBody(HttpContext context, string body)
+    {
+        var formData = System.Web.HttpUtility.ParseQueryString(body);
+
+        foreach (string key in formData.AllKeys)
+        {
+            if (key == null) continue;
+
+            if (!IsValidParameterName(key))
+                return false;
+
+            var value = formData[key];
+            if (value != null && ContainsInjectionPattern(value))
+                return false;
+        }
+
+        return true;
     }
 
     private bool IsValidHeaderName(string name)
     {
-        return !string.IsNullOrEmpty(name) && Regex.IsMatch(name, @"^[a-zA-Z0-9\-_]+$");
+        return Regex.IsMatch(name, @"^[a-zA-Z0-9\-_]+$");
     }
 
     private bool IsValidHeaderValue(string value)
     {
-        return !string.IsNullOrEmpty(value) && value.Length <= _options.MaxHeaderValueLength;
+        // Check for control characters
+        return !value.Any(c => char.IsControl(c) && c != '\t');
     }
 
     private bool IsValidParameterName(string name)
     {
-        return !string.IsNullOrEmpty(name) && 
-               name.Length <= _options.MaxParameterNameLength &&
-               Regex.IsMatch(name, @"^[a-zA-Z0-9\-_\[\]\.]+$");
+        return Regex.IsMatch(name, @"^[a-zA-Z0-9\-_\.\[\]]+$");
     }
 
-    private bool IsValidParameterValue(string value)
+    private bool IsValidPropertyName(string name)
     {
-        return value == null || value.Length <= _options.MaxParameterValueLength;
+        return Regex.IsMatch(name, @"^[a-zA-Z0-9\-_\.]+$");
     }
 
-    private async Task WriteErrorResponse(HttpContext context, string message, int statusCode)
+    private bool ContainsInjectionPattern(string value)
+    {
+        // SQL Injection patterns
+        if (Regex.IsMatch(value, @"(\b(union|select|insert|update|delete|drop|exec|execute|xp_|sp_)\b)|(-{2})|(/\*.*\*/)", RegexOptions.IgnoreCase))
+            return true;
+
+        // XSS patterns
+        if (Regex.IsMatch(value, @"<\s*(script|iframe|object|embed|form)", RegexOptions.IgnoreCase))
+            return true;
+
+        // Command injection patterns
+        if (Regex.IsMatch(value, @"[;&|`$]|\$\(|\b(wget|curl|bash|sh|cmd|powershell)\b", RegexOptions.IgnoreCase))
+            return true;
+
+        // Path traversal patterns
+        if (value.Contains("../") || value.Contains("..\\"))
+            return true;
+
+        return false;
+    }
+
+    private bool ValidateParameterFormat(string paramName, string value)
+    {
+        // Add specific validation for known parameters
+        switch (paramName.ToLower())
+        {
+            case "email":
+                return Regex.IsMatch(value, @"^[^@\s]+@[^@\s]+\.[^@\s]+$");
+
+            case "id":
+            case "userid":
+            case "keyid":
+                return Regex.IsMatch(value, @"^[a-zA-Z0-9\-_]+$");
+
+            case "limit":
+            case "offset":
+            case "page":
+                return int.TryParse(value, out var num) && num >= 0 && num <= 10000;
+
+            case "sort":
+            case "orderby":
+                return Regex.IsMatch(value, @"^[a-zA-Z0-9_]+(\s+(asc|desc))?$", RegexOptions.IgnoreCase);
+
+            default:
+                return true;
+        }
+    }
+
+    private int GetJsonDepth(JsonElement element, int currentDepth = 0)
+    {
+        if (currentDepth > _options.MaxJsonDepth)
+            return currentDepth;
+
+        int maxDepth = currentDepth;
+
+        switch (element.ValueKind)
+        {
+            case JsonValueKind.Object:
+                foreach (var property in element.EnumerateObject())
+                {
+                    var depth = GetJsonDepth(property.Value, currentDepth + 1);
+                    maxDepth = Math.Max(maxDepth, depth);
+                }
+                break;
+
+            case JsonValueKind.Array:
+                foreach (var item in element.EnumerateArray())
+                {
+                    var depth = GetJsonDepth(item, currentDepth + 1);
+                    maxDepth = Math.Max(maxDepth, depth);
+                }
+                break;
+        }
+
+        return maxDepth;
+    }
+
+    private async Task WriteErrorResponse(HttpContext context, int statusCode, string message)
     {
         context.Response.StatusCode = statusCode;
         context.Response.ContentType = "application/json";
 
         var response = new
         {
-            error = new
-            {
-                message,
-                timestamp = DateTime.UtcNow,
-                path = context.Request.Path.ToString()
-            }
+            error = message,
+            timestamp = DateTime.UtcNow,
+            path = context.Request.Path.Value
         };
 
         await context.Response.WriteAsync(JsonSerializer.Serialize(response));
@@ -305,125 +456,17 @@ public class InputValidationMiddleware
 
 public class InputValidationOptions
 {
-    public long MaxRequestBodySize { get; set; } = 33554432; // 32 MB
-    public int MaxHeaderValueLength { get; set; } = 8192;
-    public int MaxParameterNameLength { get; set; } = 256;
-    public int MaxParameterValueLength { get; set; } = 8192;
+    public long MaxRequestBodySize { get; set; } = 10 * 1024 * 1024; // 10MB
+    public int MaxParameterValueLength { get; set; } = 1000;
+    public int MaxStringLength { get; set; } = 10000;
+    public int MaxArrayLength { get; set; } = 1000;
+    public int MaxJsonDepth { get; set; } = 10;
     public string[] AllowedContentTypes { get; set; } = new[]
     {
         "application/json",
         "application/xml",
-        "text/xml",
         "application/x-www-form-urlencoded",
-        "multipart/form-data"
+        "multipart/form-data",
+        "text/plain"
     };
-}
-
-// Attribute for model validation
-public class ValidateModelAttribute : ActionFilterAttribute
-{
-    public override void OnActionExecuting(ActionExecutingContext context)
-    {
-        if (!context.ModelState.IsValid)
-        {
-            var errors = context.ModelState
-                .Where(x => x.Value.Errors.Count > 0)
-                .ToDictionary(
-                    kvp => kvp.Key,
-                    kvp => kvp.Value.Errors.Select(e => e.ErrorMessage).ToArray()
-                );
-
-            var response = new
-            {
-                error = new
-                {
-                    message = "Validation failed",
-                    details = errors,
-                    timestamp = DateTime.UtcNow
-                }
-            };
-
-            context.Result = new BadRequestObjectResult(response);
-        }
-    }
-}
-
-// Custom validation attributes
-public class NoSqlInjectionAttribute : ValidationAttribute
-{
-    protected override ValidationResult IsValid(object value, ValidationContext validationContext)
-    {
-        if (value == null)
-            return ValidationResult.Success;
-
-        var stringValue = value.ToString();
-        var sqlPatterns = new[]
-        {
-            @"(\b(ALTER|CREATE|DELETE|DROP|EXEC(UTE)?|INSERT( +INTO)?|MERGE|SELECT|UPDATE|UNION( +ALL)?)\b)",
-            @"(--|\*|;|'|""|=|<|>)"
-        };
-
-        if (sqlPatterns.Any(pattern => Regex.IsMatch(stringValue, pattern, RegexOptions.IgnoreCase)))
-        {
-            return new ValidationResult("Input contains potentially dangerous SQL patterns");
-        }
-
-        return ValidationResult.Success;
-    }
-}
-
-public class NoXssAttribute : ValidationAttribute
-{
-    protected override ValidationResult IsValid(object value, ValidationContext validationContext)
-    {
-        if (value == null)
-            return ValidationResult.Success;
-
-        var stringValue = value.ToString();
-        var xssPatterns = new[]
-        {
-            "<script", "javascript:", "onerror=", "onclick=", "<iframe", "<object"
-        };
-
-        if (xssPatterns.Any(pattern => stringValue.Contains(pattern, StringComparison.OrdinalIgnoreCase)))
-        {
-            return new ValidationResult("Input contains potentially dangerous script content");
-        }
-
-        return ValidationResult.Success;
-    }
-}
-
-public class SecureFileNameAttribute : ValidationAttribute
-{
-    protected override ValidationResult IsValid(object value, ValidationContext validationContext)
-    {
-        if (value == null)
-            return ValidationResult.Success;
-
-        var fileName = value.ToString();
-        
-        // Check for path traversal
-        if (fileName.Contains("..") || fileName.Contains("~"))
-        {
-            return new ValidationResult("File name contains invalid characters");
-        }
-
-        // Check for valid file name characters
-        if (!Regex.IsMatch(fileName, @"^[a-zA-Z0-9\-_\.]+$"))
-        {
-            return new ValidationResult("File name contains invalid characters");
-        }
-
-        // Check file extension
-        var allowedExtensions = new[] { ".txt", ".pdf", ".jpg", ".png", ".doc", ".docx" };
-        var extension = Path.GetExtension(fileName).ToLower();
-        
-        if (!allowedExtensions.Contains(extension))
-        {
-            return new ValidationResult($"File type '{extension}' is not allowed");
-        }
-
-        return ValidationResult.Success;
-    }
 }

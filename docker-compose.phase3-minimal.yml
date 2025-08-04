@@ -1,0 +1,172 @@
+services:
+  # Oracle Service
+  neo-oracle-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Oracle.Minimal/Dockerfile
+    container_name: neo-oracle-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8110:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Storage Service
+  neo-storage-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Storage.Minimal/Dockerfile
+    container_name: neo-storage-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8111:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # CrossChain Service
+  neo-crosschain-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.CrossChain.Minimal/Dockerfile
+    container_name: neo-crosschain-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8112:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # ProofOfReserve Service
+  neo-proofofreserve-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.ProofOfReserve.Minimal/Dockerfile
+    container_name: neo-proofofreserve-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8113:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Randomness Service
+  neo-randomness-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Randomness.Minimal/Dockerfile
+    container_name: neo-randomness-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8114:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Fair Ordering Service
+  neo-fairordering-minimal:
+    build:
+      context: .
+      dockerfile: src/Advanced/NeoServiceLayer.Advanced.FairOrdering.Minimal/Dockerfile
+    container_name: neo-fairordering-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8120:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # TEE Host Service
+  neo-teehost-minimal:
+    build:
+      context: .
+      dockerfile: src/Tee/NeoServiceLayer.Tee.TeeHost.Minimal/Dockerfile
+    container_name: neo-teehost-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8130:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  neo-network:
+    external: true

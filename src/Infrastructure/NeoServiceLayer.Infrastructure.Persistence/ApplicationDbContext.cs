@@ -1,9 +1,9 @@
+﻿using System;
+using System.IO;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using NeoServiceLayer.Core;
-using System;
-using System.IO;
 
 namespace NeoServiceLayer.Infrastructure.Persistence;
 
@@ -15,12 +15,12 @@ public class ApplicationDbContext : DbContext
     }
 
     // Core entities
-    public DbSet<ServiceConfiguration> ServiceConfigurations { get; set; }
+    public DbSet<ServiceConfigurationEntity> ServiceConfigurations { get; set; }
     public DbSet<AuditLog> AuditLogs { get; set; }
     public DbSet<ServiceHealthCheck> ServiceHealthChecks { get; set; }
     public DbSet<ApiKey> ApiKeys { get; set; }
     public DbSet<RateLimitRule> RateLimitRules { get; set; }
-    
+
     // Service-specific entities
     public DbSet<StoredDocument> StoredDocuments { get; set; }
     public DbSet<KeyVaultEntry> KeyVaultEntries { get; set; }
@@ -154,7 +154,7 @@ public class ApplicationDbContextFactory : IDesignTimeDbContextFactory<Applicati
     public ApplicationDbContext CreateDbContext(string[] args)
     {
         var optionsBuilder = new DbContextOptionsBuilder<ApplicationDbContext>();
-        
+
         // Build configuration
         IConfigurationRoot configuration = new ConfigurationBuilder()
             .SetBasePath(Directory.GetCurrentDirectory())

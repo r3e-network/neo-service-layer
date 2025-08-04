@@ -1,0 +1,237 @@
+groups:
+  - name: neo_service_layer_alerts
+    interval: 30s
+    rules:
+      # High-level service alerts
+      - alert: ServiceDown
+        expr: up{job=~"neo-.*"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 5 minutes."
+          runbook_url: "https://wiki.company.com/runbooks/service-down"
+
+      - alert: HighErrorRate
+        expr: |
+          sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+          /
+          sum(rate(http_requests_total[5m])) by (service)
+          > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High error rate in {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.service }}"
+
+      # Performance alerts
+      - alert: HighResponseTime
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+          ) > 2
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High response time in {{ $labels.service }}"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.service }}"
+
+      - alert: HighCPUUsage
+        expr: |
+          100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100 > 90
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      # Database alerts
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          npgsql_connection_pool_size - npgsql_connection_pool_idle_count < 5
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "Only {{ $value }} connections available in pool"
+
+      - alert: DatabaseSlowQueries
+        expr: |
+          rate(postgresql_slow_queries_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: database
+        annotations:
+          summary: "High number of slow queries"
+          description: "{{ $value }} slow queries per second"
+
+      # Redis alerts
+      - alert: RedisDown
+        expr: redis_up == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: platform
+        annotations:
+          summary: "Redis is down"
+          description: "Redis has been down for more than 5 minutes"
+
+      - alert: RedisHighMemoryUsage
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 10m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis is using {{ $value | humanizePercentage }} of max memory"
+
+      # Blockchain alerts
+      - alert: BlockchainNodeUnreachable
+        expr: |
+          blockchain_node_reachable{chain=~"neo-n3|neo-x"} == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: blockchain
+        annotations:
+          summary: "{{ $labels.chain }} blockchain node unreachable"
+          description: "Cannot connect to {{ $labels.chain }} node at {{ $labels.endpoint }}"
+
+      - alert: BlockchainSyncLag
+        expr: |
+          blockchain_sync_lag_blocks > 10
+        for: 10m
+        labels:
+          severity: warning
+          team: blockchain
+        annotations:
+          summary: "Blockchain sync lag on {{ $labels.chain }}"
+          description: "{{ $labels.chain }} is {{ $value }} blocks behind"
+
+      # Smart contract alerts
+      - alert: SmartContractFailure
+        expr: |
+          rate(smart_contract_invocation_failures_total[5m]) > 1
+        for: 5m
+        labels:
+          severity: critical
+          team: blockchain
+        annotations:
+          summary: "Smart contract failures on {{ $labels.contract }}"
+          description: "{{ $value }} failures per second for contract {{ $labels.contract }}"
+
+      # Security alerts
+      - alert: HighFailedAuthenticationRate
+        expr: |
+          rate(authentication_failures_total[5m]) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "High authentication failure rate"
+          description: "{{ $value }} authentication failures per second"
+
+      - alert: SuspiciousActivity
+        expr: |
+          rate(security_events_total{type="suspicious"}[5m]) > 5
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "Suspicious activity detected"
+          description: "{{ $value }} suspicious events per second"
+
+      # SGX enclave alerts
+      - alert: EnclaveNotInitialized
+        expr: sgx_enclave_initialized == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SGX enclave not initialized"
+          description: "SGX enclave has been uninitialized for more than 5 minutes"
+
+      - alert: EnclaveAttestationFailure
+        expr: |
+          rate(sgx_attestation_failures_total[5m]) > 0
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SGX attestation failures"
+          description: "{{ $value }} attestation failures per second"
+
+      # Key management alerts
+      - alert: KeyRotationOverdue
+        expr: |
+          (time() - key_last_rotation_timestamp) / 86400 > 90
+        for: 1h
+        labels:
+          severity: warning
+          team: security
+        annotations:
+          summary: "Key rotation overdue for {{ $labels.key_id }}"
+          description: "Key {{ $labels.key_id }} hasn't been rotated for {{ $value }} days"
+
+      # Rate limiting alerts
+      - alert: RateLimitExceeded
+        expr: |
+          rate(rate_limit_exceeded_total[5m]) > 100
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High rate of rate limit violations"
+          description: "{{ $value }} rate limit violations per second"
+
+      # Certificate expiry alerts
+      - alert: CertificateExpiringSoon
+        expr: |
+          (ssl_certificate_expiry_timestamp_seconds - time()) / 86400 < 30
+        for: 1h
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "Certificate expiring soon for {{ $labels.domain }}"
+          description: "Certificate for {{ $labels.domain }} expires in {{ $value }} days"
+
+      - alert: CertificateExpiryCritical
+        expr: |
+          (ssl_certificate_expiry_timestamp_seconds - time()) / 86400 < 7
+        for: 1h
+        labels:
+          severity: critical
+          team: infrastructure
+        annotations:
+          summary: "Certificate expiring critically soon for {{ $labels.domain }}"
+          description: "Certificate for {{ $labels.domain }} expires in {{ $value }} days!"

@@ -36,17 +36,17 @@ namespace NeoServiceLayer.Integration.Tests.Microservices
 
             // Generate a unique test JWT secret key
             var testJwtSecretKey = "TestJwtSecretKeyForIntegrationTests_" + Guid.NewGuid().ToString("N");
-            
+
             // Create a test server with mock services
             _factory = new WebApplicationFactory<Program>()
                 .WithWebHostBuilder(builder =>
                 {
                     builder.UseTestServer();
                     builder.UseEnvironment("Test");
-                    
+
                     // Override JWT configuration for tests
                     Environment.SetEnvironmentVariable("JWT_SECRET_KEY", testJwtSecretKey);
-                    
+
                     builder.ConfigureServices(services =>
                     {
                         // Override any services needed for testing

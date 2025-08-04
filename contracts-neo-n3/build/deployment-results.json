@@ -1,0 +1,42 @@
+{
+    "network": "testnet",
+    "rpc": "https://testnet1.neo.coz.io:443",
+    "deployer": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+    "timestamp": "2025-08-04T00:55:59.136619Z",
+    "summary": {
+        "total": 28,
+        "deployed": 0,
+        "failed": 28
+    },
+    "deployed_contracts": {},
+    "failed_contracts": [
+        "TokenizationContract",
+        "SimpleVotingContract",
+        "SimpleStorageContract",
+        "GameContract",
+        "StorageContract",
+        "SimpleTokenContract",
+        "CrossChainContract",
+        "OracleContract",
+        "VotingContract",
+        "MonitoringContract",
+        "InsuranceContract",
+        "SupplyChainContract",
+        "IdentityManagementContract",
+        "AnalyticsContract",
+        "KeyManagementContract",
+        "LendingContract",
+        "EnergyManagementContract",
+        "HealthcareContract",
+        "RandomnessContract",
+        "SocialRecoveryContract",
+        "ComputeContract",
+        "PaymentProcessingContract",
+        "ComplianceContract",
+        "MarketplaceContract",
+        "AbstractAccountContract",
+        "SimpleTestContract",
+        "AutomationContract",
+        "NotificationContract"
+    ]
+}

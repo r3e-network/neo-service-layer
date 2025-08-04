@@ -1,5 +1,6 @@
 ﻿using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
+using NeoServiceLayer.RPC.Server.Attributes;
 using NeoServiceLayer.ServiceFramework;
 
 namespace NeoServiceLayer.Services.SmartContracts;
@@ -14,6 +15,7 @@ public interface ISmartContractsService : IService
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The smart contract manager for the blockchain.</returns>
+    [JsonRpcMethod("smartcontracts.getmanager", Description = "Gets the smart contract manager for the specified blockchain type")]
     ISmartContractManager GetManager(BlockchainType blockchainType);
 
     /// <summary>
@@ -25,6 +27,7 @@ public interface ISmartContractsService : IService
     /// <param name="options">Deployment options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The deployment result.</returns>
+    [JsonRpcMethod("smartcontracts.deploycontract", Description = "Deploys a smart contract to the specified blockchain")]
     Task<ContractDeploymentResult> DeployContractAsync(
         BlockchainType blockchainType,
         byte[] contractCode,
@@ -42,6 +45,7 @@ public interface ISmartContractsService : IService
     /// <param name="options">Invocation options.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The invocation result.</returns>
+    [JsonRpcMethod("smartcontracts.invokecontract", Description = "Invokes a method on a deployed smart contract")]
     Task<ContractInvocationResult> InvokeContractAsync(
         BlockchainType blockchainType,
         string contractHash,
@@ -59,6 +63,7 @@ public interface ISmartContractsService : IService
     /// <param name="parameters">The method parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The call result.</returns>
+    [JsonRpcMethod("smartcontracts.callcontract", Description = "Calls a read-only method on a smart contract without creating a transaction")]
     Task<object?> CallContractAsync(
         BlockchainType blockchainType,
         string contractHash,
@@ -73,6 +78,7 @@ public interface ISmartContractsService : IService
     /// <param name="contractHash">The hash of the contract.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The contract metadata.</returns>
+    [JsonRpcMethod("smartcontracts.getcontractmetadata", Description = "Gets metadata information about a deployed contract")]
     Task<ContractMetadata?> GetContractMetadataAsync(
         BlockchainType blockchainType,
         string contractHash,
@@ -84,6 +90,7 @@ public interface ISmartContractsService : IService
     /// <param name="blockchainType">The blockchain type to list contracts from (null for all).</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of contract metadata grouped by blockchain.</returns>
+    [JsonRpcMethod("smartcontracts.listalldeployedcontracts", Description = "Lists all contracts deployed by the current account on all supported blockchains")]
     Task<Dictionary<BlockchainType, IEnumerable<ContractMetadata>>> ListAllDeployedContractsAsync(
         BlockchainType? blockchainType = null,
         CancellationToken cancellationToken = default);
@@ -98,6 +105,7 @@ public interface ISmartContractsService : IService
     /// <param name="toBlock">The ending block number (optional, defaults to latest).</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of contract events.</returns>
+    [JsonRpcMethod("smartcontracts.getcontractevents", Description = "Gets events emitted by a contract within a block range")]
     Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         BlockchainType blockchainType,
         string contractHash,
@@ -115,6 +123,7 @@ public interface ISmartContractsService : IService
     /// <param name="parameters">The method parameters.</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>The estimated gas cost.</returns>
+    [JsonRpcMethod("smartcontracts.estimategas", Description = "Estimates the gas cost for a contract invocation")]
     Task<long> EstimateGasAsync(
         BlockchainType blockchainType,
         string contractHash,
@@ -127,6 +136,7 @@ public interface ISmartContractsService : IService
     /// </summary>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>Smart contract usage statistics.</returns>
+    [JsonRpcMethod("smartcontracts.getstatistics", Description = "Gets comprehensive statistics about smart contract usage across all blockchains")]
     Task<SmartContractStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default);
 }
 

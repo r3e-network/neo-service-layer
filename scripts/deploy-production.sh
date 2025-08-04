@@ -49,7 +49,7 @@ check_prerequisites() {
     print_success "Docker is installed"
     
     # Check Docker Compose
-    if ! command -v docker-compose &> /dev/null; then
+    if ! command -v docker compose &> /dev/null; then
         print_error "Docker Compose is not installed"
         exit 1
     fi
@@ -63,7 +63,7 @@ check_prerequisites() {
     fi
     print_success "Environment file found"
     
-    # Check docker-compose file
+    # Check docker compose file
     if [ ! -f "$DOCKER_COMPOSE_FILE" ]; then
         print_error "Docker compose file $DOCKER_COMPOSE_FILE not found"
         exit 1
@@ -156,11 +156,11 @@ deploy_services() {
     
     # Pull latest images
     print_warning "Pulling latest Docker images..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" --env-file "$ENV_FILE" pull
+    docker compose -f "$DOCKER_COMPOSE_FILE" --env-file "$ENV_FILE" pull
     
     # Deploy with zero-downtime strategy
     print_warning "Starting services..."
-    docker-compose -f "$DOCKER_COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build --remove-orphans
+    docker compose -f "$DOCKER_COMPOSE_FILE" --env-file "$ENV_FILE" up -d --build --remove-orphans
     
     print_success "Services deployed"
 }
@@ -187,7 +187,7 @@ perform_health_checks() {
         
         local retries=0
         while [ $retries -lt $HEALTH_CHECK_RETRIES ]; do
-            if docker-compose -f "$DOCKER_COMPOSE_FILE" ps | grep -q "$name.*Up"; then
+            if docker compose -f "$DOCKER_COMPOSE_FILE" ps | grep -q "$name.*Up"; then
                 echo -e "${GREEN}✓${NC}"
                 break
             fi
@@ -254,14 +254,14 @@ post_deployment() {
     
     # Display logs command
     echo -e "\n${GREEN}View logs:${NC}"
-    echo "docker-compose -f $DOCKER_COMPOSE_FILE logs -f [service-name]"
+    echo "docker compose -f $DOCKER_COMPOSE_FILE logs -f [service-name]"
     
     # Display useful commands
     echo -e "\n${GREEN}Useful commands:${NC}"
-    echo "View all services: docker-compose -f $DOCKER_COMPOSE_FILE ps"
-    echo "Stop all services: docker-compose -f $DOCKER_COMPOSE_FILE down"
-    echo "View service logs: docker-compose -f $DOCKER_COMPOSE_FILE logs [service]"
-    echo "Scale a service: docker-compose -f $DOCKER_COMPOSE_FILE up -d --scale [service]=N"
+    echo "View all services: docker compose -f $DOCKER_COMPOSE_FILE ps"
+    echo "Stop all services: docker compose -f $DOCKER_COMPOSE_FILE down"
+    echo "View service logs: docker compose -f $DOCKER_COMPOSE_FILE logs [service]"
+    echo "Scale a service: docker compose -f $DOCKER_COMPOSE_FILE up -d --scale [service]=N"
 }
 
 # Rollback function
@@ -271,7 +271,7 @@ rollback() {
     print_error "Deployment failed, rolling back..."
     
     # Stop current deployment
-    docker-compose -f "$DOCKER_COMPOSE_FILE" down
+    docker compose -f "$DOCKER_COMPOSE_FILE" down
     
     # Restore from backup if available
     if [ -d "$BACKUP_DIR" ]; then
@@ -279,7 +279,7 @@ rollback() {
         # Restore database
         if [ -f "$BACKUP_DIR/database.sql" ]; then
             # Start only postgres
-            docker-compose -f "$DOCKER_COMPOSE_FILE" up -d postgres
+            docker compose -f "$DOCKER_COMPOSE_FILE" up -d postgres
             sleep 10
             docker exec -i neo-postgres psql -U "$DB_USER" -d "$DB_NAME" < "$BACKUP_DIR/database.sql"
             print_success "Database restored"
@@ -323,20 +323,20 @@ case "${2:-deploy}" in
         ;;
     stop)
         print_header "Stopping Services"
-        docker-compose -f "$DOCKER_COMPOSE_FILE" down
+        docker compose -f "$DOCKER_COMPOSE_FILE" down
         print_success "Services stopped"
         ;;
     restart)
         print_header "Restarting Services"
-        docker-compose -f "$DOCKER_COMPOSE_FILE" restart
+        docker compose -f "$DOCKER_COMPOSE_FILE" restart
         print_success "Services restarted"
         ;;
     status)
         print_header "Service Status"
-        docker-compose -f "$DOCKER_COMPOSE_FILE" ps
+        docker compose -f "$DOCKER_COMPOSE_FILE" ps
         ;;
     logs)
-        docker-compose -f "$DOCKER_COMPOSE_FILE" logs -f "${3:-}"
+        docker compose -f "$DOCKER_COMPOSE_FILE" logs -f "${3:-}"
         ;;
     backup)
         create_backup

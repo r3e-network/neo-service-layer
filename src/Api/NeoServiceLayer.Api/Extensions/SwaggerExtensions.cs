@@ -1,3 +1,10 @@
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Reflection;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Mvc.ApiExplorer;
 using Microsoft.Extensions.Configuration;
@@ -5,13 +12,6 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using Microsoft.OpenApi.Models;
 using Swashbuckle.AspNetCore.SwaggerGen;
-using Asp.Versioning.ApiExplorer;
-using Asp.Versioning;
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Linq;
-using System.Reflection;
 
 namespace NeoServiceLayer.Api.Extensions;
 
@@ -34,7 +34,7 @@ public static class SwaggerExtensions
         // });
 
         services.AddTransient<IConfigureOptions<SwaggerGenOptions>, ConfigureSwaggerOptions>();
-        
+
         services.AddSwaggerGen(options =>
         {
             // Add security definition
@@ -118,7 +118,7 @@ public static class SwaggerExtensions
             // Build a swagger endpoint for each discovered API version
             foreach (var description in provider.ApiVersionDescriptions)
             {
-                options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json", 
+                options.SwaggerEndpoint($"/swagger/{description.GroupName}/swagger.json",
                     $"Neo Service Layer API {description.GroupName.ToUpperInvariant()}");
             }
 
@@ -238,7 +238,7 @@ API versioning is handled through URL path versioning (e.g., `/api/v1/...`)
 }
 ```
 ";
-        
+
         if (description.IsDeprecated)
         {
             text = $"**This API version is deprecated and will be removed in future releases.**\n\n{text}";
@@ -305,7 +305,7 @@ public class AddResponseHeadersFilter : IOperationFilter
         foreach (var response in operation.Responses)
         {
             response.Value.Headers ??= new Dictionary<string, OpenApiHeader>();
-            
+
             response.Value.Headers.Add("X-Correlation-Id", new OpenApiHeader
             {
                 Description = "Correlation ID for request tracking",

@@ -1,0 +1,62 @@
+Neo Service Layer - Public Access Configuration
+==============================================
+Generated: Sun Aug  3 09:04:02 UTC 2025
+Public IP: 2001:41d0:800:4484::
+
+WARNING: All services are now exposed to the public internet!
+
+Service Access URLs:
+-------------------
+
+Infrastructure Services:
+- PostgreSQL: 2001:41d0:800:4484:::15432
+- Redis: 2001:41d0:800:4484:::16379
+- Consul UI: http://2001:41d0:800:4484:::18500
+- Prometheus: http://2001:41d0:800:4484:::19090
+- Grafana: http://2001:41d0:800:4484:::13000
+
+Core Services:
+- API Gateway: http://2001:41d0:800:4484:::8080
+- Smart Contracts: http://2001:41d0:800:4484:::8081
+
+Management Services:
+- Key Management: http://2001:41d0:800:4484:::8090
+- Notification: http://2001:41d0:800:4484:::8091
+- Monitoring: http://2001:41d0:800:4484:::8092
+- Health: http://2001:41d0:800:4484:::8093
+
+AI Services:
+- Pattern Recognition: http://2001:41d0:800:4484:::8100
+- Prediction: http://2001:41d0:800:4484:::8101
+
+Advanced Services:
+- Oracle: http://2001:41d0:800:4484:::8110
+- Storage: http://2001:41d0:800:4484:::8111
+- CrossChain: http://2001:41d0:800:4484:::8112
+- Proof of Reserve: http://2001:41d0:800:4484:::8113
+- Randomness: http://2001:41d0:800:4484:::8114
+- Fair Ordering: http://2001:41d0:800:4484:::8120
+- TEE Host: http://2001:41d0:800:4484:::8130
+
+Security Services:
+- Voting: http://2001:41d0:800:4484:::8140
+- Zero Knowledge: http://2001:41d0:800:4484:::8141
+- Secrets Management: http://2001:41d0:800:4484:::8142
+- Social Recovery: http://2001:41d0:800:4484:::8143
+- Enclave Storage: http://2001:41d0:800:4484:::8144
+- Network Security: http://2001:41d0:800:4484:::8145
+
+User Interface:
+- Main Dashboard: http://2001:41d0:800:4484:::8200
+
+Security Recommendations:
+------------------------
+1. Configure firewall rules to restrict access
+2. Use strong passwords for all services
+3. Enable SSL/TLS certificates
+4. Implement IP whitelisting
+5. Monitor access logs regularly
+6. Use VPN for administrative access
+
+To revert to localhost-only:
+./scripts/disable-public-access.sh

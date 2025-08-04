@@ -52,7 +52,7 @@ builder.Services.AddControllers(options =>
 {
     // Add global exception filter
     options.Filters.Add<GlobalExceptionFilter>();
-    
+
     // Add global validation filter
     options.Filters.Add<ConditionalValidationFilter>();
 })

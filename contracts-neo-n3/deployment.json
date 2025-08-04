@@ -1,0 +1,16 @@
+{
+    "version": "1.0",
+    "scrypt": {"n": 16384, "r": 8, "p": 8},
+    "accounts": [{
+        "address": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+        "key": "KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb",
+        "label": "deployment",
+        "isDefault": true,
+        "lock": false,
+        "contract": {
+            "script": "",
+            "parameters": [],
+            "deployed": false
+        }
+    }]
+}

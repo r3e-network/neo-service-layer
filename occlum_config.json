@@ -67,7 +67,10 @@
   "metadata": {
     "product_id": 1,
     "version_number": 1,
-    "debuggable": true,
-    "enable_kss": false
+    "debuggable": false,
+    "enable_kss": true,
+    "isvsvn": 1,
+    "isvprodid": 1,
+    "enable_remote_attestation": true
   }
 }

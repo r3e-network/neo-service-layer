@@ -1,0 +1,83 @@
+{
+  "occlum_version": "0.30.1",
+  "process": {
+    "default_stack_size": "256MB",
+    "default_heap_size": "512MB",
+    "default_mmap_size": "2GB"
+  },
+  "resource_limits": {
+    "user_space_max_size": "4GB",
+    "kernel_space_heap_size": "2GB",
+    "kernel_space_stack_size": "20MB",
+    "max_num_of_threads": 256
+  },
+  "env": {
+    "default": [
+      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1",
+      "DOTNET_RUNNING_IN_CONTAINER=true",
+      "ASPNETCORE_URLS=https://+:443;http://+:80",
+      "ASPNETCORE_ENVIRONMENT=Production",
+      "SGX_MODE=HW",
+      "SGX_DEBUG=false"
+    ],
+    "untrusted": [
+      "OCCLUM_LOG_LEVEL"
+    ]
+  },
+  "mount": [
+    {
+      "target": "/",
+      "type": "unionfs",
+      "options": {
+        "layers": [
+          {
+            "target": "/",
+            "source": "./build",
+            "options": {
+              "MAC": true
+            }
+          },
+          {
+            "target": "/",
+            "source": "./run",
+            "options": {
+              "MAC": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "target": "/proc",
+      "type": "procfs"
+    },
+    {
+      "target": "/dev",
+      "type": "devfs"
+    },
+    {
+      "target": "/tmp",
+      "type": "tmpfs",
+      "options": {
+        "size": "512MB"
+      }
+    }
+  ],
+  "entry_points": [
+    "/opt/dotnet/dotnet"
+  ],
+  "metadata": {
+    "product_id": 1,
+    "version_number": 1,
+    "debuggable": false,
+    "enable_kss": true,
+    "isvsvn": 1,
+    "isvprodid": 1,
+    "enable_remote_attestation": true
+  },
+  "attestation": {
+    "spid": "${IAS_SPID}",
+    "linkable": false,
+    "ra_type": "epid"
+  }
+}

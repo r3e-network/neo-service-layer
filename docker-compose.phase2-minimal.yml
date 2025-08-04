@@ -1,0 +1,148 @@
+services:
+  # Key Management Service
+  neo-keymanagement-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.KeyManagement.Minimal/Dockerfile
+    container_name: neo-keymanagement-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8090:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Notification Service
+  neo-notification-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Notification.Minimal/Dockerfile
+    container_name: neo-notification-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8091:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Monitoring Service
+  neo-monitoring-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Monitoring.Minimal/Dockerfile
+    container_name: neo-monitoring-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8092:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Health Service
+  neo-health-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.Health.Minimal/Dockerfile
+    container_name: neo-health-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8093:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Pattern Recognition AI Service
+  neo-patternrecognition-minimal:
+    build:
+      context: .
+      dockerfile: src/AI/NeoServiceLayer.AI.PatternRecognition.Minimal/Dockerfile
+    container_name: neo-patternrecognition-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8100:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Prediction AI Service
+  neo-prediction-minimal:
+    build:
+      context: .
+      dockerfile: src/AI/NeoServiceLayer.AI.Prediction.Minimal/Dockerfile
+    container_name: neo-prediction-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8101:80"
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  neo-network:
+    external: true

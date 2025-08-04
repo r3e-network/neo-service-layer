@@ -36,8 +36,8 @@ builder.Host.UseSerilog();
 builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 
-// Razor Pages removed to avoid route conflicts
-// builder.Services.AddRazorPages();
+// Add Razor Pages for enhanced web interface
+builder.Services.AddRazorPages();
 
 // Configure API Versioning
 builder.Services.AddApiVersioning(opt =>
@@ -278,7 +278,7 @@ app.UseAuthorization();
 app.MapControllers();
 
 // Map Razor Pages
-// app.MapRazorPages(); // Removed to avoid route conflicts
+app.MapRazorPages();
 
 // Map Health Checks
 var healthCheckOptions = new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions

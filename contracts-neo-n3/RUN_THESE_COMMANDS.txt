@@ -1,0 +1,89 @@
+===============================================================================
+🚀 COPY AND PASTE THESE COMMANDS INTO YOUR TERMINAL
+===============================================================================
+
+You are currently in: /home/ubuntu/neo-service-layer/contracts-neo-n3
+
+STEP 1: Create wallet (copy this entire block)
+===============================================================================
+rm -f deployment-testnet.json
+neo-go wallet init -w deployment-testnet.json --account
+# When prompted:
+# Enter password: testnet123
+# Confirm password: testnet123
+
+STEP 2: Import WIF key (copy this entire block)  
+===============================================================================
+neo-go wallet import --wif KzjaqMvqzF1uup6KrTKRxTgjcXE7PbKLRH84e6ckyXDt3fu7afUb -w deployment-testnet.json
+# When prompted:
+# Enter password: testnet123
+# Enter account label: deployment-account
+
+STEP 3: Deploy each contract (copy one at a time)
+===============================================================================
+
+neo-go contract deploy -i build/AbstractAccountContract.nef -m build/AbstractAccountContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/AnalyticsContract.nef -m build/AnalyticsContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/AutomationContract.nef -m build/AutomationContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/ComplianceContract.nef -m build/ComplianceContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/ComputeContract.nef -m build/ComputeContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/CrossChainContract.nef -m build/CrossChainContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/EnergyManagementContract.nef -m build/EnergyManagementContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/GameContract.nef -m build/GameContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/HealthcareContract.nef -m build/HealthcareContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/IdentityManagementContract.nef -m build/IdentityManagementContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/InsuranceContract.nef -m build/InsuranceContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/KeyManagementContract.nef -m build/KeyManagementContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/LendingContract.nef -m build/LendingContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/MarketplaceContract.nef -m build/MarketplaceContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/MonitoringContract.nef -m build/MonitoringContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/NotificationContract.nef -m build/NotificationContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/OracleContract.nef -m build/OracleContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/PaymentProcessingContract.nef -m build/PaymentProcessingContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/RandomnessContract.nef -m build/RandomnessContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SimpleStorageContract.nef -m build/SimpleStorageContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SimpleTestContract.nef -m build/SimpleTestContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SimpleTokenContract.nef -m build/SimpleTokenContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SimpleVotingContract.nef -m build/SimpleVotingContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SocialRecoveryContract.nef -m build/SocialRecoveryContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/StorageContract.nef -m build/StorageContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/SupplyChainContract.nef -m build/SupplyChainContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/TokenizationContract.nef -m build/TokenizationContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+neo-go contract deploy -i build/VotingContract.nef -m build/VotingContract.manifest.json -r https://testnet1.neo.coz.io:443 -w deployment-testnet.json -a NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX --force
+
+===============================================================================
+IMPORTANT:
+===============================================================================
+- Enter password "testnet123" when prompted for each contract
+- Save the contract hash that appears after each successful deployment
+- Wait a few seconds between deployments
+
+PASSWORD: testnet123
+===============================================================================

@@ -1,0 +1,75 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Core JSON-RPC -->
+    <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
+    <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.AspNetCore.SignalR" />
+    
+    <!-- JSON Processing -->
+    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Newtonsoft.Json" />
+    
+    <!-- HTTP Client -->
+    <PackageReference Include="Microsoft.Extensions.Http" />
+    
+    <!-- Logging -->
+    <PackageReference Include="Serilog.AspNetCore" />
+    <PackageReference Include="Serilog.Sinks.Console" />
+    <PackageReference Include="Serilog.Sinks.File" />
+    
+    <!-- Configuration -->
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Binder" />
+    
+    <!-- Health Checks -->
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
+    
+    <!-- Rate Limiting -->
+    <PackageReference Include="Microsoft.AspNetCore.RateLimiting" />
+    
+    <!-- Metrics -->
+    <PackageReference Include="Microsoft.Extensions.Diagnostics.Metrics" />
+    
+    <!-- OpenTelemetry -->
+    <PackageReference Include="OpenTelemetry.Extensions.Hosting" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.AspNetCore" />
+    <PackageReference Include="OpenTelemetry.Instrumentation.Http" />
+    <PackageReference Include="OpenTelemetry.Exporter.Prometheus.AspNetCore" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Core Dependencies -->
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
+    
+    <!-- Infrastructure -->
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Resilience\NeoServiceLayer.Infrastructure.Resilience.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.ServiceDiscovery\NeoServiceLayer.Infrastructure.ServiceDiscovery.csproj" />
+    
+    <!-- Blockchain Clients -->
+    <ProjectReference Include="..\..\Blockchain\NeoServiceLayer.Neo.N3\NeoServiceLayer.Neo.N3.csproj" />
+    <ProjectReference Include="..\..\Blockchain\NeoServiceLayer.Neo.X\NeoServiceLayer.Neo.X.csproj" />
+    
+    <!-- All Services -->
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Oracle\NeoServiceLayer.Services.Oracle.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Voting\NeoServiceLayer.Services.Voting.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
+    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SmartContracts\NeoServiceLayer.Services.SmartContracts.csproj" />
+  </ItemGroup>
+
+</Project>

@@ -1,0 +1,11 @@
+{
+    "compiled": "2025-08-04T10:39:04Z",
+    "successful": [
+        "AbstractAccountContract"        "AnalyticsContract"        "AutomationContract"        "ComplianceContract"        "ComputeContract"        "CrossChainContract"        "EnergyManagementContract"        "GameContract"        "HealthcareContract"        "IdentityManagementContract"        "InsuranceContract"        "KeyManagementContract"        "LendingContract"        "MarketplaceContract"        "MonitoringContract"        "NotificationContract"        "OracleContract"        "PaymentProcessingContract"        "RandomnessContract"        "SimpleStorageContract"        "SimpleTestContract"        "SimpleTokenContract"        "SimpleVotingContract"        "SocialRecoveryContract"        "StorageContract"        "SupplyChainContract"        "TokenizationContract"        "VotingContract"
+    ],
+    "failed": [
+        "RandomnessContract_broken"        "SimpleStorageContractStandalone"        "IServiceContract"        "ServiceRegistry"
+    ],
+    "total": 32,
+    "success_rate": 87.5%
+}

@@ -1,0 +1,14 @@
+{
+    "network": "testnet",
+    "rpc": "https://testnet1.neo.coz.io:443",
+    "deployer": "NTmHjwiadq4g3VHpJ5FQigQcD4fF5m8TyX",
+    "timestamp": "2025-08-04T10:12:21Z",
+    "summary": {
+        "total": 28,
+        "deployed": 0,
+        "failed": 28
+    },
+    "contracts": {
+
+    }
+}

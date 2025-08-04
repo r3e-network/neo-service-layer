@@ -1,0 +1,168 @@
+services:
+  # PostgreSQL Database
+  neo-postgres-phase1:
+    image: postgres:16-alpine
+    container_name: neo-postgres-phase1
+    environment:
+      POSTGRES_DB: neo_service_layer
+      POSTGRES_USER: neo_service_user
+      POSTGRES_PASSWORD: ${DB_PASSWORD:-SecurePass123!}
+    ports:
+      - "0.0.0.0:15432:5432"
+    volumes:
+      - postgres_data_phase1:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neo_service_user"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Redis Cache
+  neo-redis-phase1:
+    image: redis:7-alpine
+    container_name: neo-redis-phase1
+    command: redis-server --requirepass ${REDIS_PASSWORD:-RedisPass123!}
+    ports:
+      - "0.0.0.0:16379:6379"
+    volumes:
+      - redis_data_phase1:/data
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "-a", "${REDIS_PASSWORD:-RedisPass123!}", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Consul Service Discovery
+  neo-consul-phase1:
+    image: hashicorp/consul:1.17
+    container_name: neo-consul-phase1
+    command: agent -server -bootstrap-expect=1 -ui -client=0.0.0.0
+    ports:
+      - "0.0.0.0:18500:8500"
+      - "18600:8600/udp"
+    volumes:
+      - consul_data_phase1:/consul/data
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "consul", "members"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    restart: unless-stopped
+
+  # Prometheus Monitoring
+  neo-prometheus-phase1:
+    image: prom/prometheus:v2.48.1
+    container_name: neo-prometheus-phase1
+    volumes:
+      - ./monitoring/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data_phase1:/prometheus
+    ports:
+      - "0.0.0.0:19090:9090"
+    networks:
+      - neo-network
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+    restart: unless-stopped
+
+  # Grafana Dashboards
+  neo-grafana-phase1:
+    image: grafana/grafana:10.2.3
+    container_name: neo-grafana-phase1
+    volumes:
+      - grafana_data_phase1:/var/lib/grafana
+      - ./monitoring/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./monitoring/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    ports:
+      - "0.0.0.0:13000:3000"
+    environment:
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-admin123}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+      GF_INSTALL_PLUGINS: grafana-piechart-panel
+    networks:
+      - neo-network
+    depends_on:
+      - neo-prometheus-phase1
+    restart: unless-stopped
+
+  # Minimal API Gateway
+  neo-api-gateway-minimal:
+    build:
+      context: .
+      dockerfile: src/Api/NeoServiceLayer.Api/Dockerfile.minimal
+    container_name: neo-api-gateway-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8080:80"
+    networks:
+      - neo-network
+    depends_on:
+      - neo-postgres-phase1
+      - neo-redis-phase1
+      - neo-consul-phase1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+  # Minimal Smart Contracts Service
+  neo-smart-contracts-minimal:
+    build:
+      context: .
+      dockerfile: src/Services/NeoServiceLayer.Services.SmartContracts.Minimal/Dockerfile
+    container_name: neo-smart-contracts-minimal
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_URLS: http://+:80
+      ConnectionStrings__DefaultConnection: Host=neo-postgres-phase1;Database=neo_service_layer;Username=neo_service_user;Password=${DB_PASSWORD:-SecurePass123!}
+      Redis__Configuration: neo-redis-phase1:6379,password=${REDIS_PASSWORD:-RedisPass123!}
+      Consul__Address: http://neo-consul-phase1:8500
+    ports:
+      - "0.0.0.0:8081:80"
+    networks:
+      - neo-network
+    depends_on:
+      - neo-postgres-phase1
+      - neo-redis-phase1
+      - neo-consul-phase1
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    restart: unless-stopped
+
+networks:
+  neo-network:
+    driver: bridge
+
+volumes:
+  postgres_data_phase1:
+    driver: local
+  redis_data_phase1:
+    driver: local
+  consul_data_phase1:
+    driver: local
+  prometheus_data_phase1:
+    driver: local
+  grafana_data_phase1:
+    driver: local

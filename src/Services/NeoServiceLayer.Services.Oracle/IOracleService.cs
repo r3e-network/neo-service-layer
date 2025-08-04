@@ -1,4 +1,5 @@
 ﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.RPC.Server.Attributes;
 using NeoServiceLayer.Services.Oracle.Models;
 
 namespace NeoServiceLayer.Services.Oracle;
@@ -14,6 +15,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The oracle request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The oracle response.</returns>
+    [JsonRpcMethod("oracle.fetchdata", Description = "Fetches data from an external source")]
     Task<OracleResponse> FetchDataAsync(OracleRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -22,6 +24,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="requests">The oracle requests.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The oracle responses.</returns>
+    [JsonRpcMethod("oracle.fetchdatabatch", Description = "Fetches data from multiple external sources in a batch")]
     Task<IEnumerable<OracleResponse>> FetchDataBatchAsync(IEnumerable<OracleRequest> requests, BlockchainType blockchainType);
 
     /// <summary>
@@ -30,6 +33,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="response">The oracle response.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the data is valid, false otherwise.</returns>
+    [JsonRpcMethod("oracle.verifydata", Description = "Verifies the authenticity of fetched data")]
     Task<bool> VerifyDataAsync(OracleResponse response, BlockchainType blockchainType);
 
     /// <summary>
@@ -37,6 +41,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The list of supported data sources.</returns>
+    [JsonRpcMethod("oracle.getsupporteddatasources", Description = "Gets the list of supported data sources")]
     Task<IEnumerable<string>> GetSupportedDataSourcesAsync(BlockchainType blockchainType);
 
     // New methods for controller compatibility
@@ -47,6 +52,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The subscription request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The subscription result.</returns>
+    [JsonRpcMethod("oracle.subscribe", Description = "Subscribes to an Oracle data feed")]
     Task<OracleSubscriptionResult> SubscribeAsync(OracleSubscriptionRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -55,6 +61,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The unsubscribe request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The subscription result.</returns>
+    [JsonRpcMethod("oracle.unsubscribe", Description = "Unsubscribes from an Oracle data feed")]
     Task<OracleSubscriptionResult> UnsubscribeAsync(OracleUnsubscribeRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -63,6 +70,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The data request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data result.</returns>
+    [JsonRpcMethod("oracle.getdata", Description = "Gets data from an Oracle data source")]
     Task<OracleDataResult> GetDataAsync(OracleDataRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -71,6 +79,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The create data source request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data source result.</returns>
+    [JsonRpcMethod("oracle.createdatasource", Description = "Creates a new data source")]
     Task<DataSourceResult> CreateDataSourceAsync(CreateDataSourceRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -79,6 +88,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The update data source request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data source result.</returns>
+    [JsonRpcMethod("oracle.updatedatasource", Description = "Updates an existing data source")]
     Task<DataSourceResult> UpdateDataSourceAsync(UpdateDataSourceRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -87,6 +97,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The delete data source request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data source result.</returns>
+    [JsonRpcMethod("oracle.deletedatasource", Description = "Deletes a data source")]
     Task<DataSourceResult> DeleteDataSourceAsync(DeleteDataSourceRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -95,6 +106,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The list subscriptions request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The subscriptions result.</returns>
+    [JsonRpcMethod("oracle.getsubscriptions", Description = "Gets subscriptions with pagination")]
     Task<ListSubscriptionsResult> GetSubscriptionsAsync(ListSubscriptionsRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -103,6 +115,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The list data sources request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The data sources result.</returns>
+    [JsonRpcMethod("oracle.getdatasources", Description = "Gets data sources with pagination")]
     Task<ListDataSourcesResult> GetDataSourcesAsync(ListDataSourcesRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -111,6 +124,7 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The batch Oracle request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The batch Oracle result.</returns>
+    [JsonRpcMethod("oracle.batchrequest", Description = "Processes a batch of Oracle requests")]
     Task<BatchOracleResult> BatchRequestAsync(BatchOracleRequest request, BlockchainType blockchainType);
 
     /// <summary>
@@ -119,5 +133,6 @@ public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeed
     /// <param name="request">The Oracle status request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The Oracle status result.</returns>
+    [JsonRpcMethod("oracle.getsubscriptionstatus", Description = "Gets subscription status and metrics")]
     Task<OracleStatusResult> GetSubscriptionStatusAsync(OracleStatusRequest request, BlockchainType blockchainType);
 }

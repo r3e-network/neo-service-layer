@@ -97,8 +97,8 @@ RUN sed -i "s/{ServiceName}/$SERVICE/g" /app/${SERVICE}ServiceHost.cs && \\
 ENTRYPOINT ["dotnet", "NeoServiceLayer.Services.$SERVICE.dll"]
 EOF
 
-    # Generate docker-compose snippet
-    cat > "$SERVICE_DIR/docker-compose.snippet.yml" << EOF
+    # Generate docker compose snippet
+    cat > "$SERVICE_DIR/docker compose.snippet.yml" << EOF
   $SERVICE_LOWER-service:
     build:
       context: .

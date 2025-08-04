@@ -1,97 +1,187 @@
 groups:
-  - name: neo_service_alerts
+  - name: neo_service_layer_alerts
     interval: 30s
     rules:
       # Service availability alerts
       - alert: ServiceDown
-        expr: up{job="neo-services"} == 0
+        expr: up{job=~"neo-.*"} == 0
         for: 2m
         labels:
           severity: critical
+          team: platform
         annotations:
-          summary: "Service {{ $labels.service_name }} is down"
-          description: "{{ $labels.service_name }} at {{ $labels.instance }} has been down for more than 2 minutes."
+          summary: "Service {{ $labels.job }} is down"
+          description: "{{ $labels.job }} has been down for more than 2 minutes"
 
       - alert: HighErrorRate
-        expr: rate(http_requests_total{status=~"5.."}[5m]) > 0.05
+        expr: |
+          (
+            sum(rate(http_requests_total{status=~"5.."}[5m])) by (service)
+            /
+            sum(rate(http_requests_total[5m])) by (service)
+          ) > 0.05
         for: 5m
         labels:
           severity: warning
+          team: platform
         annotations:
-          summary: "High error rate on {{ $labels.service_name }}"
-          description: "{{ $labels.service_name }} is experiencing {{ $value | humanizePercentage }} error rate."
+          summary: "High error rate for {{ $labels.service }}"
+          description: "Error rate is {{ $value | humanizePercentage }} for {{ $labels.service }}"
 
+      # Performance alerts
       - alert: HighResponseTime
-        expr: histogram_quantile(0.95, http_request_duration_seconds_bucket) > 1
+        expr: |
+          histogram_quantile(0.95,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (service, le)
+          ) > 1
         for: 5m
         labels:
           severity: warning
+          team: platform
         annotations:
-          summary: "High response time on {{ $labels.service_name }}"
-          description: "95th percentile response time is {{ $value }}s for {{ $labels.service_name }}."
-
-      # Resource alerts
-      - alert: HighMemoryUsage
-        expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.8
-        for: 5m
-        labels:
-          severity: warning
-        annotations:
-          summary: "High memory usage for {{ $labels.container_name }}"
-          description: "Container {{ $labels.container_name }} is using {{ $value | humanizePercentage }} of its memory limit."
+          summary: "High response time for {{ $labels.service }}"
+          description: "95th percentile response time is {{ $value }}s for {{ $labels.service }}"
 
       - alert: HighCPUUsage
-        expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+        expr: |
+          (
+            100 - (avg by (instance) (irate(node_cpu_seconds_total{mode="idle"}[5m])) * 100)
+          ) > 80
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High CPU usage on {{ $labels.instance }}"
+          description: "CPU usage is {{ $value }}% on {{ $labels.instance }}"
+
+      - alert: HighMemoryUsage
+        expr: |
+          (
+            (1 - (node_memory_MemAvailable_bytes / node_memory_MemTotal_bytes)) * 100
+          ) > 85
+        for: 10m
+        labels:
+          severity: warning
+          team: infrastructure
+        annotations:
+          summary: "High memory usage on {{ $labels.instance }}"
+          description: "Memory usage is {{ $value }}% on {{ $labels.instance }}"
+
+      # Database alerts
+      - alert: DatabaseConnectionPoolExhausted
+        expr: |
+          (
+            neo_database_connections_active / neo_database_connections_max
+          ) > 0.9
+        for: 5m
+        labels:
+          severity: critical
+          team: database
+        annotations:
+          summary: "Database connection pool nearly exhausted"
+          description: "{{ $value | humanizePercentage }} of database connections are in use"
+
+      - alert: DatabaseSlowQueries
+        expr: |
+          rate(neo_database_query_duration_seconds_sum[5m]) > 1
         for: 5m
         labels:
           severity: warning
+          team: database
         annotations:
-          summary: "High CPU usage for {{ $labels.container_name }}"
-          description: "Container {{ $labels.container_name }} is using {{ $value | humanizePercentage }} CPU."
+          summary: "Database queries are slow"
+          description: "Average query duration is {{ $value }}s"
 
-      # Infrastructure alerts
-      - alert: PostgresDown
-        expr: up{job="postgres"} == 0
-        for: 1m
-        labels:
-          severity: critical
-        annotations:
-          summary: "PostgreSQL is down"
-          description: "PostgreSQL database has been down for more than 1 minute."
-
+      # Redis alerts
       - alert: RedisDown
-        expr: up{job="redis"} == 0
-        for: 1m
+        expr: redis_up == 0
+        for: 2m
         labels:
           severity: critical
+          team: platform
         annotations:
           summary: "Redis is down"
-          description: "Redis cache has been down for more than 1 minute."
+          description: "Redis has been down for more than 2 minutes"
 
-      - alert: ConsulDown
-        expr: up{job="consul"} == 0
+      - alert: RedisHighMemoryUsage
+        expr: |
+          redis_memory_used_bytes / redis_memory_max_bytes > 0.9
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "Redis memory usage is high"
+          description: "Redis is using {{ $value | humanizePercentage }} of max memory"
+
+      # Rate limiting alerts
+      - alert: HighRateLimitRejections
+        expr: |
+          sum(rate(neo_rate_limit_rejected_total[5m])) by (endpoint) > 10
+        for: 5m
+        labels:
+          severity: warning
+          team: platform
+        annotations:
+          summary: "High rate of rate limit rejections for {{ $labels.endpoint }}"
+          description: "{{ $value }} requests per second are being rate limited"
+
+      # Circuit breaker alerts
+      - alert: CircuitBreakerOpen
+        expr: neo_circuit_breaker_state{state="open"} == 1
         for: 1m
         labels:
-          severity: critical
+          severity: warning
+          team: platform
         annotations:
-          summary: "Consul is down"
-          description: "Consul service discovery has been down for more than 1 minute."
+          summary: "Circuit breaker is open for {{ $labels.service }}"
+          description: "Circuit breaker for {{ $labels.service }} has been open for more than 1 minute"
+
+      # SGX/TEE alerts
+      - alert: EnclaveNotHealthy
+        expr: neo_enclave_health == 0
+        for: 5m
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SGX Enclave is not healthy"
+          description: "SGX Enclave health check has been failing for 5 minutes"
+
+      - alert: EnclaveAttestationFailure
+        expr: |
+          increase(neo_enclave_attestation_failures_total[5m]) > 0
+        labels:
+          severity: critical
+          team: security
+        annotations:
+          summary: "SGX Enclave attestation failures detected"
+          description: "{{ $value }} attestation failures in the last 5 minutes"
 
       # Business metrics alerts
-      - alert: LowServiceRegistrations
-        expr: consul_agent_service_count < 5
-        for: 5m
+      - alert: LowTransactionThroughput
+        expr: |
+          sum(rate(neo_transactions_processed_total[5m])) < 10
+        for: 10m
         labels:
           severity: warning
+          team: business
         annotations:
-          summary: "Low number of registered services"
-          description: "Only {{ $value }} services are registered in Consul."
+          summary: "Transaction throughput is low"
+          description: "Only {{ $value }} transactions per second being processed"
 
-      - alert: HighQueueDepth
-        expr: rabbitmq_queue_messages > 1000
+      - alert: HighTransactionFailureRate
+        expr: |
+          (
+            sum(rate(neo_transactions_failed_total[5m]))
+            /
+            sum(rate(neo_transactions_total[5m]))
+          ) > 0.1
         for: 5m
         labels:
           severity: warning
+          team: business
         annotations:
-          summary: "High message queue depth"
-          description: "Queue {{ $labels.queue }} has {{ $value }} messages pending."
+          summary: "High transaction failure rate"
+          description: "{{ $value | humanizePercentage }} of transactions are failing"

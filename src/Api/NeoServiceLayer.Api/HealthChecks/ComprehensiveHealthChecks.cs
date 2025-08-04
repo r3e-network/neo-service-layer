@@ -1,9 +1,4 @@
-using Microsoft.Extensions.Diagnostics.HealthChecks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Npgsql;
-using StackExchange.Redis;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics;
@@ -11,6 +6,11 @@ using System.Linq;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Npgsql;
+using StackExchange.Redis;
 
 namespace NeoServiceLayer.Api.HealthChecks;
 
@@ -22,7 +22,7 @@ public class EnhancedDatabaseHealthCheck : IHealthCheck
     private readonly HealthCheckOptions _options;
 
     public EnhancedDatabaseHealthCheck(
-        IConfiguration configuration, 
+        IConfiguration configuration,
         ILogger<EnhancedDatabaseHealthCheck> logger,
         IOptions<HealthCheckOptions> options)
     {
@@ -34,7 +34,7 @@ public class EnhancedDatabaseHealthCheck : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             using var connection = new NpgsqlConnection(_connectionString);
@@ -47,9 +47,9 @@ public class EnhancedDatabaseHealthCheck : IHealthCheck
 
             // Check database statistics
             var stats = await GetDatabaseStatistics(connection, cancellationToken);
-            
+
             stopwatch.Stop();
-            
+
             var data = new Dictionary<string, object>
             {
                 ["responseTime"] = stopwatch.ElapsedMilliseconds,
@@ -75,13 +75,13 @@ public class EnhancedDatabaseHealthCheck : IHealthCheck
         catch (Exception ex)
         {
             _logger.LogError(ex, "Database health check failed");
-            
+
             var data = new Dictionary<string, object>
             {
                 ["responseTime"] = stopwatch.ElapsedMilliseconds,
                 ["error"] = ex.Message
             };
-            
+
             return HealthCheckResult.Unhealthy("Database connection failed", ex, data);
         }
     }
@@ -149,23 +149,23 @@ public class EnhancedRedisHealthCheck : IHealthCheck
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
     {
         var stopwatch = Stopwatch.StartNew();
-        
+
         try
         {
             var database = _redis.GetDatabase();
-            
+
             // Ping test
             var pingTime = await database.PingAsync();
-            
+
             // Get server info
             var server = _redis.GetServer(_redis.GetEndPoints().First());
             var info = await server.InfoAsync();
-            
+
             stopwatch.Stop();
-            
+
             var memorySection = info.FirstOrDefault(s => s.Key == "Memory");
             var statsSection = info.FirstOrDefault(s => s.Key == "Stats");
-            
+
             var data = new Dictionary<string, object>
             {
                 ["responseTime"] = stopwatch.ElapsedMilliseconds,
@@ -179,7 +179,7 @@ public class EnhancedRedisHealthCheck : IHealthCheck
             // Check memory usage
             var usedMemoryBytes = long.Parse(GetInfoValue(info, "Memory", "used_memory") ?? "0");
             var maxMemoryBytes = long.Parse(GetInfoValue(info, "Memory", "maxmemory") ?? "0");
-            
+
             if (maxMemoryBytes > 0 && usedMemoryBytes > maxMemoryBytes * 0.9)
             {
                 return HealthCheckResult.Degraded("High memory usage", null, data);
@@ -195,13 +195,13 @@ public class EnhancedRedisHealthCheck : IHealthCheck
         catch (Exception ex)
         {
             _logger.LogError(ex, "Redis health check failed");
-            
+
             var data = new Dictionary<string, object>
             {
                 ["responseTime"] = stopwatch.ElapsedMilliseconds,
                 ["error"] = ex.Message
             };
-            
+
             return HealthCheckResult.Unhealthy("Redis connection failed", ex, data);
         }
     }
@@ -218,7 +218,7 @@ public class EnhancedRedisHealthCheck : IHealthCheck
 
         var hits = long.Parse(statsSection.FirstOrDefault(kvp => kvp.Key == "keyspace_hits").Value ?? "0");
         var misses = long.Parse(statsSection.FirstOrDefault(kvp => kvp.Key == "keyspace_misses").Value ?? "0");
-        
+
         var total = hits + misses;
         return total == 0 ? 0 : (double)hits / total;
     }
@@ -282,7 +282,7 @@ public class ServiceDependenciesHealthCheck : IHealthCheck
             catch (Exception ex)
             {
                 _logger.LogWarning(ex, "Failed to check health of {Service}", dependency.Name);
-                
+
                 results[dependency.Name] = new
                 {
                     status = "Unreachable",
@@ -303,16 +303,16 @@ public class ServiceDependenciesHealthCheck : IHealthCheck
         if (unhealthyServices.Any())
         {
             return HealthCheckResult.Unhealthy(
-                $"Critical services unhealthy: {string.Join(", ", unhealthyServices)}", 
-                null, 
+                $"Critical services unhealthy: {string.Join(", ", unhealthyServices)}",
+                null,
                 results);
         }
 
         if (degradedServices.Any())
         {
             return HealthCheckResult.Degraded(
-                $"Services degraded: {string.Join(", ", degradedServices)}", 
-                null, 
+                $"Services degraded: {string.Join(", ", degradedServices)}",
+                null,
                 results);
         }
 
@@ -346,7 +346,7 @@ public class DiskSpaceHealthCheck : IHealthCheck
             foreach (var drive in drives)
             {
                 var freeSpacePercent = (double)drive.AvailableFreeSpace / drive.TotalSize * 100;
-                
+
                 data[drive.Name] = new
                 {
                     availableGB = drive.AvailableFreeSpace / (1024 * 1024 * 1024),
@@ -363,8 +363,8 @@ public class DiskSpaceHealthCheck : IHealthCheck
             if (warnings.Any())
             {
                 return Task.FromResult(HealthCheckResult.Degraded(
-                    $"Low disk space: {string.Join(", ", warnings)}", 
-                    null, 
+                    $"Low disk space: {string.Join(", ", warnings)}",
+                    null,
                     data));
             }
 
@@ -414,21 +414,21 @@ public class MemoryHealthCheck : IHealthCheck
         if (memoryUsagePercent > _options.MaxMemoryUsagePercent)
         {
             return Task.FromResult(HealthCheckResult.Unhealthy(
-                $"High memory usage: {memoryUsagePercent:F2}%", 
-                null, 
+                $"High memory usage: {memoryUsagePercent:F2}%",
+                null,
                 data));
         }
 
         if (memoryUsagePercent > _options.MaxMemoryUsagePercent * 0.8)
         {
             return Task.FromResult(HealthCheckResult.Degraded(
-                $"Elevated memory usage: {memoryUsagePercent:F2}%", 
-                null, 
+                $"Elevated memory usage: {memoryUsagePercent:F2}%",
+                null,
                 data));
         }
 
         return Task.FromResult(HealthCheckResult.Healthy(
-            $"Memory usage is normal: {memoryUsagePercent:F2}%", 
+            $"Memory usage is normal: {memoryUsagePercent:F2}%",
             data));
     }
 }
@@ -476,8 +476,8 @@ public class CertificateHealthCheck : IHealthCheck
                 if (daysUntilExpiry <= 0)
                 {
                     return Task.FromResult(HealthCheckResult.Unhealthy(
-                        $"Certificate expired: {cert.Subject}", 
-                        null, 
+                        $"Certificate expired: {cert.Subject}",
+                        null,
                         data));
                 }
 
@@ -490,8 +490,8 @@ public class CertificateHealthCheck : IHealthCheck
             if (warnings.Any())
             {
                 return Task.FromResult(HealthCheckResult.Degraded(
-                    string.Join("; ", warnings), 
-                    null, 
+                    string.Join("; ", warnings),
+                    null,
                     data));
             }
 

@@ -1,3 +1,6 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Asp.Versioning;
 using Asp.Versioning.ApiExplorer;
 using Asp.Versioning.Conventions;
@@ -8,9 +11,6 @@ using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace NeoServiceLayer.Api.Versioning;
 
@@ -170,7 +170,7 @@ public class ApiVersionValidationMiddleware
 
         // Check if version is specified
         var apiVersion = context.GetRequestedApiVersion();
-        
+
         if (apiVersion == null)
         {
             _logger.LogWarning("API request without version specification: {Path}", context.Request.Path);
@@ -188,7 +188,7 @@ public class ApiDeprecationMiddleware
     private readonly ApiDeprecationOptions _options;
 
     public ApiDeprecationMiddleware(
-        RequestDelegate next, 
+        RequestDelegate next,
         ILogger<ApiDeprecationMiddleware> logger,
         IOptions<ApiDeprecationOptions> options)
     {
@@ -255,7 +255,7 @@ public abstract class VersionedControllerBase : ControllerBase
     protected IActionResult VersionAwareResponse<T>(T data)
     {
         Response.Headers["X-Api-Version"] = CurrentVersion.ToString();
-        
+
         if (IsVersionDeprecated)
         {
             Response.Headers["Warning"] = "299 - \"This API version is deprecated\"";
@@ -319,8 +319,8 @@ public static class ApiVersionExtensions
 
     public static string GetApiVersionError(this HttpContext context)
     {
-        return context.Items.TryGetValue("ApiVersionError", out var error) 
-            ? error?.ToString() 
+        return context.Items.TryGetValue("ApiVersionError", out var error)
+            ? error?.ToString()
             : null;
     }
 }

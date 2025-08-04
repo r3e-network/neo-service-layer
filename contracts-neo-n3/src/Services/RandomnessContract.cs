@@ -4,7 +4,7 @@ using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
 using Neo.SmartContract.Framework.Native;
 using Neo.SmartContract.Framework.Services;
-using NeoServiceLayer.Contracts.Core;
+// using NeoServiceLayer.Contracts.Core;
 using System;
 using System.ComponentModel;
 using System.Numerics;
@@ -21,32 +21,33 @@ namespace NeoServiceLayer.Contracts.Services
     [ManifestExtra("Version", "1.0.0")]
     [SupportedStandards("NEP-17")]
     [ContractPermission("*", "onNEP17Payment")]
-    public class RandomnessContract : BaseServiceContract
+    public class RandomnessContract : SmartContract
     {
         #region Storage Keys
-        private static readonly byte[] RandomnessRequestPrefix = "randomRequest:".ToByteArray();
-        private static readonly byte[] RandomnessResultPrefix = "randomResult:".ToByteArray();
-        private static readonly byte[] RequestCounterKey = "requestCounter".ToByteArray();
-        private static readonly byte[] ServiceFeeKey = "serviceFee".ToByteArray();
-        private static readonly byte[] MinRangeKey = "minRange".ToByteArray();
-        private static readonly byte[] MaxRangeKey = "maxRange".ToByteArray();
-        private static readonly byte[] MaxBatchSizeKey = "maxBatchSize".ToByteArray();
-        private static readonly byte[] OracleCallbackKey = "oracleCallback".ToByteArray();
+        private static readonly ByteString RandomnessRequestPrefix = "randomRequest:";
+        private static readonly ByteString RandomnessResultPrefix = "randomResult:";
+        private static readonly ByteString RequestCounterKey = "requestCounter";
+        private static readonly ByteString ServiceFeeKey = "serviceFee";
+        private static readonly ByteString MinRangeKey = "minRange";
+        private static readonly ByteString MaxRangeKey = "maxRange";
+        private static readonly ByteString MaxBatchSizeKey = "maxBatchSize";
+        private static readonly ByteString OracleCallbackKey = "oracleCallback";
+        private static readonly ByteString OwnerKey = "owner";
         #endregion
 
         #region Events
         [DisplayName("RandomnessRequested")]
         public static event Action<UInt160, ByteString, BigInteger, BigInteger, int> RandomnessRequested;
-
+        
         [DisplayName("RandomnessFulfilled")]
         public static event Action<UInt160, ByteString, BigInteger[], bool> RandomnessFulfilled;
-
+        
         [DisplayName("BatchRandomnessRequested")]
         public static event Action<UInt160, ByteString, BigInteger, BigInteger, int> BatchRandomnessRequested;
-
+        
         [DisplayName("ServiceConfigurationUpdated")]
         public static event Action<BigInteger, BigInteger, BigInteger, int> ServiceConfigurationUpdated;
-
+        
         [DisplayName("RandomnessError")]
         public static event Action<UInt160, ByteString, string> RandomnessError;
         #endregion
@@ -68,44 +69,20 @@ namespace NeoServiceLayer.Contracts.Services
         {
             if (update) return;
 
-            var tx = (Transaction)Runtime.ScriptContainer;
+            var tx = Runtime.Transaction;
             var serviceId = Runtime.ExecutingScriptHash;
             
-            // Initialize base service
-            var contract = new RandomnessContract();
-            contract.InitializeBaseService(serviceId, "RandomnessService", "1.0.0", "{}");
+            // Set owner
+            Storage.Put(Storage.CurrentContext, OwnerKey, tx.Sender);
             
             // Set default configuration
             Storage.Put(Storage.CurrentContext, ServiceFeeKey, DEFAULT_SERVICE_FEE);
-            Storage.Put(Storage.CurrentContext, MinRangeKey, DEFAULT_MIN_RANGE);
             Storage.Put(Storage.CurrentContext, MaxRangeKey, DEFAULT_MAX_RANGE);
+            Storage.Put(Storage.CurrentContext, MinRangeKey, DEFAULT_MIN_RANGE);
             Storage.Put(Storage.CurrentContext, MaxBatchSizeKey, DEFAULT_MAX_BATCH_SIZE);
             Storage.Put(Storage.CurrentContext, RequestCounterKey, 0);
-
+            
             Runtime.Log("RandomnessContract deployed successfully");
-        }
-        #endregion
-
-        #region Service Implementation
-        protected override void InitializeService(string config)
-        {
-            // Parse configuration if needed
-            Runtime.Log("RandomnessContract service initialized");
-        }
-
-        protected override bool PerformHealthCheck()
-        {
-            // Check if we can generate random numbers
-            try
-            {
-                // Simple health check - verify storage is accessible
-                var fee = GetServiceFee();
-                return fee > 0;
-            }
-            catch
-            {
-                return false;
-            }
         }
         #endregion
 
@@ -118,33 +95,31 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>Request ID for tracking the request</returns>
         public static ByteString RequestRandomness(BigInteger minValue, BigInteger maxValue)
         {
-            return ExecuteServiceOperation(() =>
+            ValidateRandomnessRequest(minValue, maxValue, 1);
+            
+            var caller = Runtime.CallingScriptHash;
+            var requestId = GenerateRequestId();
+            
+            // Store request details
+            var request = new RandomnessRequest
             {
-                ValidateRandomnessRequest(minValue, maxValue, 1);
-                
-                var caller = Runtime.CallingScriptHash;
-                var requestId = GenerateRequestId();
-                
-                // Store request details
-                var request = new RandomnessRequest
-                {
-                    Requester = caller,
-                    MinValue = minValue,
-                    MaxValue = maxValue,
-                    Count = 1,
-                    Timestamp = Runtime.Time,
-                    Status = RequestStatus.Pending
-                };
-                
-                var requestKey = RandomnessRequestPrefix.Concat(requestId);
-                Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
-                
-                // Emit event for off-chain processing
-                RandomnessRequested(caller, requestId, minValue, maxValue, 1);
-                
-                Runtime.Log($"Randomness requested: {requestId} for range [{minValue}, {maxValue})");
-                return requestId;
-            });
+                Requester = caller,
+                MinValue = minValue,
+                MaxValue = maxValue,
+                Count = 1,
+                Timestamp = Runtime.Time,
+                Status = RequestStatus.Pending
+            };
+            
+            var requestKey = RandomnessRequestPrefix + requestId;
+            Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
+            
+            // Emit event for off-chain processing
+            RandomnessRequested(caller, requestId, minValue, maxValue, 1);
+            
+            Runtime.Log($"Randomness requested: {requestId} for range [{minValue}, {maxValue})");
+            
+            return requestId;
         }
 
         /// <summary>
@@ -156,37 +131,35 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>Request ID for tracking the request</returns>
         public static ByteString RequestBatchRandomness(BigInteger minValue, BigInteger maxValue, int count)
         {
-            return ExecuteServiceOperation(() =>
+            ValidateRandomnessRequest(minValue, maxValue, count);
+            
+            var maxBatchSize = GetMaxBatchSize();
+            if (count > maxBatchSize)
+                throw new ArgumentException($"Batch size exceeds maximum allowed: {maxBatchSize}");
+            
+            var caller = Runtime.CallingScriptHash;
+            var requestId = GenerateRequestId();
+            
+            // Store request details
+            var request = new RandomnessRequest
             {
-                ValidateRandomnessRequest(minValue, maxValue, count);
-                
-                var maxBatchSize = GetMaxBatchSize();
-                if (count > maxBatchSize)
-                    throw new ArgumentException($"Batch size exceeds maximum allowed: {maxBatchSize}");
-                
-                var caller = Runtime.CallingScriptHash;
-                var requestId = GenerateRequestId();
-                
-                // Store request details
-                var request = new RandomnessRequest
-                {
-                    Requester = caller,
-                    MinValue = minValue,
-                    MaxValue = maxValue,
-                    Count = count,
-                    Timestamp = Runtime.Time,
-                    Status = RequestStatus.Pending
-                };
-                
-                var requestKey = RandomnessRequestPrefix.Concat(requestId);
-                Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
-                
-                // Emit event for off-chain processing
-                BatchRandomnessRequested(caller, requestId, minValue, maxValue, count);
-                
-                Runtime.Log($"Batch randomness requested: {requestId} for {count} values in range [{minValue}, {maxValue})");
-                return requestId;
-            });
+                Requester = caller,
+                MinValue = minValue,
+                MaxValue = maxValue,
+                Count = count,
+                Timestamp = Runtime.Time,
+                Status = RequestStatus.Pending
+            };
+            
+            var requestKey = RandomnessRequestPrefix + requestId;
+            Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
+            
+            // Emit event for off-chain processing
+            BatchRandomnessRequested(caller, requestId, minValue, maxValue, count);
+            
+            Runtime.Log($"Batch randomness requested: {requestId} for {count} values in range [{minValue}, {maxValue})");
+            
+            return requestId;
         }
 
         /// <summary>
@@ -199,54 +172,52 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>True if fulfillment successful</returns>
         public static bool FulfillRandomness(ByteString requestId, BigInteger[] randomValues, string proof)
         {
-            return ExecuteServiceOperation(() =>
+            // Validate caller is authorized (in production, check oracle permissions)
+            if (!Runtime.CheckWitness(GetOwner()))
+                throw new InvalidOperationException("Unauthorized fulfillment attempt");
+            
+            var requestKey = RandomnessRequestPrefix + requestId;
+            var requestBytes = Storage.Get(Storage.CurrentContext, requestKey);
+            if (requestBytes == null)
+                throw new InvalidOperationException("Request not found");
+            
+            var request = (RandomnessRequest)StdLib.Deserialize(requestBytes);
+            if (request.Status != RequestStatus.Pending)
+                throw new InvalidOperationException("Request already fulfilled or cancelled");
+            
+            // Validate random values
+            if (randomValues.Length != request.Count)
+                throw new ArgumentException("Random values count mismatch");
+            
+            foreach (var value in randomValues)
             {
-                // Validate caller is authorized (in production, check oracle permissions)
-                if (!ValidateAccess(Runtime.CallingScriptHash))
-                    throw new InvalidOperationException("Unauthorized fulfillment attempt");
-                
-                var requestKey = RandomnessRequestPrefix.Concat(requestId);
-                var requestBytes = Storage.Get(Storage.CurrentContext, requestKey);
-                if (requestBytes == null)
-                    throw new InvalidOperationException("Request not found");
-                
-                var request = (RandomnessRequest)StdLib.Deserialize(requestBytes);
-                if (request.Status != RequestStatus.Pending)
-                    throw new InvalidOperationException("Request already fulfilled or cancelled");
-                
-                // Validate random values
-                if (randomValues.Length != request.Count)
-                    throw new ArgumentException("Random values count mismatch");
-                
-                foreach (var value in randomValues)
-                {
-                    if (value < request.MinValue || value >= request.MaxValue)
-                        throw new ArgumentException($"Random value {value} outside requested range [{request.MinValue}, {request.MaxValue})");
-                }
-                
-                // Store results
-                var result = new RandomnessResult
-                {
-                    RequestId = requestId,
-                    Values = randomValues,
-                    Proof = proof ?? "",
-                    FulfilledAt = Runtime.Time,
-                    FulfilledBy = Runtime.CallingScriptHash
-                };
-                
-                var resultKey = RandomnessResultPrefix.Concat(requestId);
-                Storage.Put(Storage.CurrentContext, resultKey, StdLib.Serialize(result));
-                
-                // Update request status
-                request.Status = RequestStatus.Fulfilled;
-                Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
-                
-                // Emit fulfillment event
-                RandomnessFulfilled(request.Requester, requestId, randomValues, true);
-                
-                Runtime.Log($"Randomness fulfilled: {requestId} with {randomValues.Length} values");
-                return true;
-            });
+                if (value < request.MinValue || value >= request.MaxValue)
+                    throw new ArgumentException($"Random value {value} outside requested range [{request.MinValue}, {request.MaxValue})");
+            }
+            
+            // Store results
+            var result = new RandomnessResult
+            {
+                RequestId = requestId,
+                Values = randomValues,
+                Proof = proof ?? "",
+                FulfilledAt = Runtime.Time,
+                FulfilledBy = Runtime.CallingScriptHash
+            };
+            
+            var resultKey = RandomnessResultPrefix + requestId;
+            Storage.Put(Storage.CurrentContext, resultKey, StdLib.Serialize(result));
+            
+            // Update request status
+            request.Status = RequestStatus.Fulfilled;
+            Storage.Put(Storage.CurrentContext, requestKey, StdLib.Serialize(request));
+            
+            // Emit fulfillment event
+            RandomnessFulfilled(request.Requester, requestId, randomValues, true);
+            
+            Runtime.Log($"Randomness fulfilled: {requestId} with {randomValues.Length} values");
+            
+            return true;
         }
 
         /// <summary>
@@ -256,11 +227,10 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>Randomness result or null if not found/fulfilled</returns>
         public static RandomnessResult GetRandomnessResult(ByteString requestId)
         {
-            var resultKey = RandomnessResultPrefix.Concat(requestId);
+            var resultKey = RandomnessResultPrefix + requestId;
             var resultBytes = Storage.Get(Storage.CurrentContext, resultKey);
             if (resultBytes == null)
                 return null;
-            
             return (RandomnessResult)StdLib.Deserialize(resultBytes);
         }
 
@@ -271,11 +241,10 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>Request information or null if not found</returns>
         public static RandomnessRequest GetRandomnessRequest(ByteString requestId)
         {
-            var requestKey = RandomnessRequestPrefix.Concat(requestId);
+            var requestKey = RandomnessRequestPrefix + requestId;
             var requestBytes = Storage.Get(Storage.CurrentContext, requestKey);
             if (requestBytes == null)
                 return null;
-            
             return (RandomnessRequest)StdLib.Deserialize(requestBytes);
         }
         #endregion
@@ -291,29 +260,28 @@ namespace NeoServiceLayer.Contracts.Services
         /// <returns>True if update successful</returns>
         public static bool UpdateConfiguration(BigInteger serviceFee, BigInteger minRange, BigInteger maxRange, int maxBatchSize)
         {
-            return ExecuteServiceOperation(() =>
-            {
-                // Check admin permissions (simplified - in production use proper access control)
-                var registry = GetServiceRegistry();
-                if (registry == null || !ValidateAccess(Runtime.CallingScriptHash))
-                    throw new InvalidOperationException("Insufficient permissions");
-                
-                if (serviceFee < 0)
-                    throw new ArgumentException("Service fee cannot be negative");
-                if (minRange >= maxRange)
-                    throw new ArgumentException("Invalid range: min must be less than max");
-                if (maxBatchSize <= 0 || maxBatchSize > 1000)
-                    throw new ArgumentException("Invalid batch size");
-                
-                Storage.Put(Storage.CurrentContext, ServiceFeeKey, serviceFee);
-                Storage.Put(Storage.CurrentContext, MinRangeKey, minRange);
-                Storage.Put(Storage.CurrentContext, MaxRangeKey, maxRange);
-                Storage.Put(Storage.CurrentContext, MaxBatchSizeKey, maxBatchSize);
-                
-                ServiceConfigurationUpdated(serviceFee, minRange, maxRange, maxBatchSize);
-                Runtime.Log("Randomness service configuration updated");
-                return true;
-            });
+            // Check admin permissions
+            if (!Runtime.CheckWitness(GetOwner()))
+                throw new InvalidOperationException("Insufficient permissions");
+            
+            if (serviceFee < 0)
+                throw new ArgumentException("Service fee cannot be negative");
+            
+            if (minRange >= maxRange)
+                throw new ArgumentException("Invalid range: min must be less than max");
+            
+            if (maxBatchSize <= 0 || maxBatchSize > 1000)
+                throw new ArgumentException("Invalid batch size");
+            
+            Storage.Put(Storage.CurrentContext, ServiceFeeKey, serviceFee);
+            Storage.Put(Storage.CurrentContext, MaxRangeKey, maxRange);
+            Storage.Put(Storage.CurrentContext, MinRangeKey, minRange);
+            Storage.Put(Storage.CurrentContext, MaxBatchSizeKey, maxBatchSize);
+            
+            ServiceConfigurationUpdated(serviceFee, minRange, maxRange, maxBatchSize);
+            Runtime.Log("Randomness service configuration updated");
+            
+            return true;
         }
 
         /// <summary>
@@ -323,7 +291,7 @@ namespace NeoServiceLayer.Contracts.Services
         public static BigInteger GetServiceFee()
         {
             var feeBytes = Storage.Get(Storage.CurrentContext, ServiceFeeKey);
-            return feeBytes?.ToBigInteger() ?? DEFAULT_SERVICE_FEE;
+            return feeBytes != null ? (BigInteger)feeBytes : DEFAULT_SERVICE_FEE;
         }
 
         /// <summary>
@@ -333,7 +301,7 @@ namespace NeoServiceLayer.Contracts.Services
         public static int GetMaxBatchSize()
         {
             var sizeBytes = Storage.Get(Storage.CurrentContext, MaxBatchSizeKey);
-            return (int)(sizeBytes?.ToBigInteger() ?? DEFAULT_MAX_BATCH_SIZE);
+            return sizeBytes != null ? (int)(BigInteger)sizeBytes : DEFAULT_MAX_BATCH_SIZE;
         }
 
         /// <summary>
@@ -344,10 +312,8 @@ namespace NeoServiceLayer.Contracts.Services
         {
             var minBytes = Storage.Get(Storage.CurrentContext, MinRangeKey);
             var maxBytes = Storage.Get(Storage.CurrentContext, MaxRangeKey);
-            
-            var minRange = minBytes?.ToBigInteger() ?? DEFAULT_MIN_RANGE;
-            var maxRange = maxBytes?.ToBigInteger() ?? DEFAULT_MAX_RANGE;
-            
+            var minRange = minBytes != null ? (BigInteger)minBytes : DEFAULT_MIN_RANGE;
+            var maxRange = maxBytes != null ? (BigInteger)maxBytes : DEFAULT_MAX_RANGE;
             return (minRange, maxRange);
         }
         #endregion
@@ -377,12 +343,9 @@ namespace NeoServiceLayer.Contracts.Services
             var counter = GetRequestCounter();
             Storage.Put(Storage.CurrentContext, RequestCounterKey, counter + 1);
             
-            // Combine timestamp, counter, and transaction hash for uniqueness
-            var tx = (Transaction)Runtime.ScriptContainer;
-            var data = Runtime.Time.ToByteArray()
-                .Concat(counter.ToByteArray())
-                .Concat(tx.Hash);
-            
+            // Combine timestamp, counter and tx hash
+            var tx = Runtime.Transaction;
+            var data = ((BigInteger)Runtime.Time).ToString() + counter.ToString() + tx.Hash.ToString();
             return CryptoLib.Sha256(data);
         }
 
@@ -392,26 +355,15 @@ namespace NeoServiceLayer.Contracts.Services
         private static BigInteger GetRequestCounter()
         {
             var counterBytes = Storage.Get(Storage.CurrentContext, RequestCounterKey);
-            return counterBytes?.ToBigInteger() ?? 0;
+            return counterBytes != null ? ((BigInteger)counterBytes) : 0;
         }
 
         /// <summary>
-        /// Executes a service operation with proper error handling and metrics.
+        /// Gets the contract owner.
         /// </summary>
-        private static T ExecuteServiceOperation<T>(Func<T> operation)
+        public static UInt160 GetOwner()
         {
-            ValidateServiceActive();
-            IncrementRequestCount();
-
-            try
-            {
-                return operation();
-            }
-            catch (Exception ex)
-            {
-                LogError(ex.Message);
-                throw;
-            }
+            return (UInt160)Storage.Get(Storage.CurrentContext, OwnerKey);
         }
         #endregion
 

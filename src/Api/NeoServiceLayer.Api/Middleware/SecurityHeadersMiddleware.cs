@@ -1,9 +1,9 @@
+﻿using System;
+using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using System;
-using System.Linq;
-using System.Threading.Tasks;
 
 namespace NeoServiceLayer.Api.Middleware;
 
@@ -20,7 +20,7 @@ public class SecurityHeadersMiddleware
     {
         _next = next;
         _logger = logger;
-        _options = configuration.GetSection("SecurityHeaders").Get<SecurityHeadersOptions>() 
+        _options = configuration.GetSection("SecurityHeaders").Get<SecurityHeadersOptions>()
             ?? new SecurityHeadersOptions();
     }
 
@@ -121,7 +121,7 @@ public class SecurityHeadersOptions
     public int HstsMaxAge { get; set; } = 31536000; // 1 year
 
     // CSP - Production-ready policy
-    public string ContentSecurityPolicy { get; set; } = 
+    public string ContentSecurityPolicy { get; set; } =
         "default-src 'self'; " +
         "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
         "style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; " +
@@ -143,7 +143,7 @@ public class SecurityHeadersOptions
     public string ReferrerPolicy { get; set; } = "strict-origin-when-cross-origin";
 
     // Permissions-Policy
-    public string PermissionsPolicy { get; set; } = 
+    public string PermissionsPolicy { get; set; } =
         "accelerometer=(), " +
         "camera=(), " +
         "geolocation=(), " +
@@ -200,7 +200,7 @@ public static class SecurityHeadersExtensions
             headers["Strict-Transport-Security"] = "max-age=63072000; includeSubDomains; preload";
 
             // Enhanced CSP for production
-            headers["Content-Security-Policy"] = 
+            headers["Content-Security-Policy"] =
                 "default-src 'none'; " +
                 "script-src 'self'; " +
                 "style-src 'self'; " +
@@ -217,7 +217,7 @@ public static class SecurityHeadersExtensions
                 "upgrade-insecure-requests;";
 
             // Report-Only CSP for monitoring
-            headers["Content-Security-Policy-Report-Only"] = 
+            headers["Content-Security-Policy-Report-Only"] =
                 headers["Content-Security-Policy"] + " report-uri /api/csp-report;";
 
             // Additional security headers
@@ -225,7 +225,7 @@ public static class SecurityHeadersExtensions
             headers["X-Frame-Options"] = "DENY";
             headers["X-XSS-Protection"] = "0"; // Disabled in modern browsers
             headers["Referrer-Policy"] = "strict-origin-when-cross-origin";
-            headers["Permissions-Policy"] = 
+            headers["Permissions-Policy"] =
                 "accelerometer=(), camera=(), geolocation=(), gyroscope=(), " +
                 "magnetometer=(), microphone=(), payment=(), usb=()";
             headers["Cross-Origin-Embedder-Policy"] = "require-corp";

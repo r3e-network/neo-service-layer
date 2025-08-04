@@ -1,4 +1,5 @@
 ﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.RPC.Server.Attributes;
 
 namespace NeoServiceLayer.Services.KeyManagement;
 
@@ -17,6 +18,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="description">The key description.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The key metadata.</returns>
+    [JsonRpcMethod("keymanagement.createkey", Description = "Creates a new cryptographic key")]
     Task<KeyMetadata> CreateKeyAsync(string keyId, string keyType, string keyUsage, bool exportable, string description, BlockchainType blockchainType);
 
     /// <summary>
@@ -25,6 +27,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="keyId">The key ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The key metadata.</returns>
+    [JsonRpcMethod("keymanagement.getkeymetadata", Description = "Gets metadata information about a key")]
     Task<KeyMetadata> GetKeyMetadataAsync(string keyId, BlockchainType blockchainType);
 
     /// <summary>
@@ -34,6 +37,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="take">The number of keys to take.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The list of key metadata.</returns>
+    [JsonRpcMethod("keymanagement.listkeys", Description = "Lists keys with pagination")]
     Task<IEnumerable<KeyMetadata>> ListKeysAsync(int skip, int take, BlockchainType blockchainType);
 
     /// <summary>
@@ -44,6 +48,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="signingAlgorithm">The signing algorithm.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The signature in hexadecimal format.</returns>
+    [JsonRpcMethod("keymanagement.signdata", Description = "Signs data using a cryptographic key")]
     Task<string> SignDataAsync(string keyId, string dataHex, string signingAlgorithm, BlockchainType blockchainType);
 
     /// <summary>
@@ -55,6 +60,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="signingAlgorithm">The signing algorithm.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the signature is valid, false otherwise.</returns>
+    [JsonRpcMethod("keymanagement.verifysignature", Description = "Verifies a digital signature")]
     Task<bool> VerifySignatureAsync(string keyIdOrPublicKeyHex, string dataHex, string signatureHex, string signingAlgorithm, BlockchainType blockchainType);
 
     /// <summary>
@@ -65,6 +71,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The encrypted data in hexadecimal format.</returns>
+    [JsonRpcMethod("keymanagement.encryptdata", Description = "Encrypts data using a cryptographic key")]
     Task<string> EncryptDataAsync(string keyIdOrPublicKeyHex, string dataHex, string encryptionAlgorithm, BlockchainType blockchainType);
 
     /// <summary>
@@ -75,6 +82,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="encryptionAlgorithm">The encryption algorithm.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The decrypted data in hexadecimal format.</returns>
+    [JsonRpcMethod("keymanagement.decryptdata", Description = "Decrypts data using a cryptographic key")]
     Task<string> DecryptDataAsync(string keyId, string encryptedDataHex, string encryptionAlgorithm, BlockchainType blockchainType);
 
     /// <summary>
@@ -83,6 +91,7 @@ public interface IKeyManagementService : IEnclaveService, IBlockchainService
     /// <param name="keyId">The key ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if the key was deleted, false otherwise.</returns>
+    [JsonRpcMethod("keymanagement.deletekey", Description = "Deletes a cryptographic key")]
     Task<bool> DeleteKeyAsync(string keyId, BlockchainType blockchainType);
 }
 
