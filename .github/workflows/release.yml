@@ -313,16 +313,12 @@ jobs:
     
     strategy:
       matrix:
-        variant: [api, worker]
+        variant: [api]
         include:
           - variant: api
             dockerfile: Dockerfile
             context: .
             image-suffix: ""
-          - variant: worker
-            dockerfile: Dockerfile.worker
-            context: .
-            image-suffix: "-worker"
     
     steps:
     - name: 📥 Checkout repository
@@ -341,7 +337,7 @@ jobs:
         password: ${{ secrets.GITHUB_TOKEN }}
 
     - name: 📝 Log in to Docker Hub
-      if: ${{ secrets.DOCKER_HUB_USERNAME && secrets.DOCKER_HUB_TOKEN }}
+      if: ${{ secrets.DOCKER_HUB_USERNAME != '' && secrets.DOCKER_HUB_TOKEN != '' }}
       uses: docker/login-action@v3
       with:
         username: ${{ secrets.DOCKER_HUB_USERNAME }}
@@ -353,7 +349,7 @@ jobs:
       with:
         images: |
           ghcr.io/${{ github.repository }}${{ matrix.image-suffix }}
-          ${{ secrets.DOCKER_HUB_USERNAME && format('{0}/neo-service-layer{1}', secrets.DOCKER_HUB_USERNAME, matrix.image-suffix) || '' }}
+          ${{ secrets.DOCKER_HUB_USERNAME != '' && format('{0}/neo-service-layer{1}', secrets.DOCKER_HUB_USERNAME, matrix.image-suffix) || '' }}
         tags: |
           type=ref,event=tag
           type=semver,pattern={{version}}
@@ -493,7 +489,7 @@ jobs:
     
     steps:
     - name: 📢 Notify Slack
-      if: ${{ secrets.SLACK_WEBHOOK }}
+      if: ${{ secrets.SLACK_WEBHOOK != '' }}
       uses: 8398a7/action-slack@v3
       with:
         status: success
