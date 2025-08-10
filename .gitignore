@@ -523,3 +523,5 @@ Cargo.lock
 *.env
 appsettings.Secrets.json
 secrets.json
+.claude-flow/
+.swarm/
