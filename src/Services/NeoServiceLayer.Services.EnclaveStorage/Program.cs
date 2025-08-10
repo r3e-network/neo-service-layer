@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.EnclaveStorage;
 
 namespace NeoServiceLayer.Services.EnclaveStorage.Host
@@ -63,13 +64,15 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP enclave-storage_operations_total Total number of operations
 # TYPE enclave-storage_operations_total counter
 enclave-storage_operations_total{status=""success""} 0

@@ -8,7 +8,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.Oracle;
+using NeoServiceLayer.Infrastructure.Resilience;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace NeoServiceLayer.Services.Oracle.Host
 {
@@ -24,6 +28,17 @@ namespace NeoServiceLayer.Services.Oracle.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResiliencePolicies(configuration);
+            
+            // Add resilient HTTP clients for external data sources
+            services.AddHttpClient("ExternalOracleClient")
+                .AddPolicyHandler(HttpPolicyExtensions
+                    .HandleTransientHttpError()
+                    .WaitAndRetryAsync(3, retryAttempt => 
+                        TimeSpan.FromSeconds(Math.Pow(2, retryAttempt))));
 
             // Add service-specific dependencies
             // services.Configure<OracleOptions>(configuration.GetSection("Oracle"));
@@ -63,13 +78,15 @@ namespace NeoServiceLayer.Services.Oracle.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP oracle_operations_total Total number of operations
 # TYPE oracle_operations_total counter
 oracle_operations_total{status=""success""} 0

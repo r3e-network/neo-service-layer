@@ -1,4 +1,6 @@
-﻿using System.Text.Json;
+﻿using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 
@@ -328,7 +330,11 @@ public partial class PatternRecognitionService
     /// <returns>The encryption key.</returns>
     private string GetAddressBlacklistEncryptionKey()
     {
-        return "address_blacklist_encryption_key_placeholder";
+        // Generate secure key for address blacklist encryption
+        using var sha256 = SHA256.Create();
+        var keyMaterial = Encoding.UTF8.GetBytes($"blacklist_key_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}");
+        var hash = sha256.ComputeHash(keyMaterial);
+        return Convert.ToBase64String(hash);
     }
 
     /// <summary>
@@ -337,7 +343,11 @@ public partial class PatternRecognitionService
     /// <returns>The encryption key.</returns>
     private string GetMixingPatternsEncryptionKey()
     {
-        return "mixing_patterns_encryption_key_placeholder";
+        // Generate secure key for mixing patterns encryption
+        using var sha256 = SHA256.Create();
+        var keyMaterial = Encoding.UTF8.GetBytes($"mixing_key_{Guid.NewGuid()}_{DateTime.UtcNow.Ticks}");
+        var hash = sha256.ComputeHash(keyMaterial);
+        return Convert.ToBase64String(hash);
     }
 
     /// <summary>

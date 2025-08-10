@@ -14,6 +14,7 @@ public abstract class ServiceBase : IService, IDisposable
     private readonly List<Type> _capabilities = new();
     private readonly Dictionary<string, string> _metadata = new();
     private readonly Dictionary<string, object> _metrics = new();
+    private DateTime _startTime;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ServiceBase"/> class.
@@ -54,6 +55,27 @@ public abstract class ServiceBase : IService, IDisposable
 
     /// <inheritdoc/>
     public IDictionary<string, string> Metadata => _metadata;
+
+    /// <summary>
+    /// Gets the time when the service was started.
+    /// </summary>
+    public DateTime StartTime => _startTime;
+
+    /// <summary>
+    /// Gets the list of capabilities this service provides.
+    /// </summary>
+    public IEnumerable<string> GetCapabilities()
+    {
+        return _capabilities.Select(c => c.Name);
+    }
+
+    /// <summary>
+    /// Gets the list of operations this service supports.
+    /// </summary>
+    public virtual IEnumerable<string> GetSupportedOperations()
+    {
+        return new[] { "initialize", "start", "stop", "health", "metrics" };
+    }
 
     /// <summary>
     /// Adds a service dependency.
@@ -187,6 +209,7 @@ public abstract class ServiceBase : IService, IDisposable
             if (result)
             {
                 _isRunning = true;
+                _startTime = DateTime.UtcNow;
                 Logger.LogInformation("Service {ServiceName} started successfully.", Name);
             }
             else

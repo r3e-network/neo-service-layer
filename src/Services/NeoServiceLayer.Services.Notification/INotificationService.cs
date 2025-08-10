@@ -78,7 +78,7 @@ public interface INotificationService : IService
     /// <param name="request">The template creation request.</param>
     /// <param name="blockchainType">The target blockchain type.</param>
     /// <returns>The created template.</returns>
-    Task<NotificationTemplate> CreateTemplateAsync(CreateTemplateRequest request, BlockchainType blockchainType);
+    Task<Models.NotificationTemplate> CreateTemplateAsync(CreateTemplateRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Updates a notification template.
@@ -87,7 +87,7 @@ public interface INotificationService : IService
     /// <param name="request">The template update request.</param>
     /// <param name="blockchainType">The target blockchain type.</param>
     /// <returns>The updated template.</returns>
-    Task<NotificationTemplate> UpdateTemplateAsync(string templateId, UpdateTemplateRequest request, BlockchainType blockchainType);
+    Task<Models.NotificationTemplate> UpdateTemplateAsync(string templateId, UpdateTemplateRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Deletes a notification template.
@@ -102,7 +102,7 @@ public interface INotificationService : IService
     /// </summary>
     /// <param name="blockchainType">The target blockchain type.</param>
     /// <returns>The list of templates.</returns>
-    Task<IEnumerable<NotificationTemplate>> GetTemplatesAsync(BlockchainType blockchainType);
+    Task<IEnumerable<Models.NotificationTemplate>> GetTemplatesAsync(BlockchainType blockchainType);
 
     /// <summary>
     /// Gets notification history.

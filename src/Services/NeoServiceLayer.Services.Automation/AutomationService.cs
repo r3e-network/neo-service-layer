@@ -554,11 +554,8 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 }
                 else
                 {
-                    // Fallback to simulation if blockchain client not available
-                    Logger.LogWarning("Blockchain client not available, simulating execution");
-                    await Task.Delay(100);
-                    execution.TransactionHash = Guid.NewGuid().ToString();
-                    return $"Simulated: Executed {job.TargetMethod} on {job.TargetContract}";
+                    // Blockchain client not available, throw error
+                    throw new InvalidOperationException($"Blockchain client not available for {job.BlockchainType}. Cannot execute automation job.");
                 }
             });
 

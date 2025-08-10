@@ -3,6 +3,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Resilience\NeoServiceLayer.Infrastructure.Resilience.csproj" />
     <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.ServiceDiscovery\NeoServiceLayer.Infrastructure.ServiceDiscovery.csproj" />
     <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>
@@ -15,6 +16,7 @@
     <PackageReference Include="Microsoft.Extensions.Diagnostics.HealthChecks" />
     <PackageReference Include="System.Diagnostics.DiagnosticSource" />
     <PackageReference Include="Swashbuckle.AspNetCore" />
+    <PackageReference Include="Microsoft.Extensions.Http.Resilience" />
   </ItemGroup>
   
   <ItemGroup>

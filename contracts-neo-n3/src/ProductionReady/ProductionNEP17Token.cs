@@ -1,4 +1,4 @@
-using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
@@ -7,6 +7,7 @@ using Neo.SmartContract.Framework.Services;
 using System;
 using System.ComponentModel;
 using System.Numerics;
+using NeoServiceLayer.Contracts.Core;
 
 namespace NeoServiceLayer.Contracts.ProductionReady
 {
@@ -21,7 +22,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
     [ManifestExtra("License", "MIT")]
     [SupportedStandards("NEP-17")]
     [ContractPermission("*", "onNEP17Payment")]
-    public class ProductionNEP17Token : SmartContract
+    public class ProductionNEP17Token : ReentrancyGuard
     {
         #region Token Configuration
         private const string TOKEN_SYMBOL = "PNEP";
@@ -170,7 +171,10 @@ namespace NeoServiceLayer.Contracts.ProductionReady
         #region Transfer Implementation
         private static bool InternalTransfer(UInt160 from, UInt160 to, BigInteger amount, object data, bool checkWitness)
         {
-            ValidateNotPaused();
+            // Wrap entire transfer operation in reentrancy guard
+            return ExecuteNonReentrant(() => 
+            {
+                ValidateNotPaused();
 
             if (from == null || from.IsZero)
                 throw new ArgumentException("Invalid from address");
@@ -237,6 +241,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
             }
 
             return true;
+            });
         }
 
         private static BigInteger CalculateTransferFee(BigInteger amount)
@@ -639,7 +644,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
         public static int GetTransferFee()
         {
             var feeBytes = Storage.Get(Storage.CurrentContext, TRANSFER_FEE_KEY);
-            return (int)(feeBytes != null ? (BigInteger)feeBytes : DEFAULT_TRANSFER_FEE_BP;
+            return (int)(feeBytes != null ? (BigInteger)feeBytes : DEFAULT_TRANSFER_FEE_BP);
         }
 
         public static bool SetFeeCollector(UInt160 collector)
@@ -685,9 +690,13 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 TOKEN_NAME,
                 TOKEN_SYMBOL,
                 TOKEN_DECIMALS,
-                totalSupply(, MAX_SUPPLY,
-                GetOwner(, IsPaused(, GetTransferFee(, GetFeeCollector()
-            }
+                totalSupply(),
+                MAX_SUPPLY,
+                GetOwner(),
+                IsPaused(),
+                GetTransferFee(),
+                GetFeeCollector()
+            };
         }
         #endregion
     }

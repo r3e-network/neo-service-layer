@@ -1,4 +1,4 @@
-using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Native;

@@ -1,4 +1,4 @@
-using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
@@ -7,6 +7,7 @@ using Neo.SmartContract.Framework.Services;
 using System;
 using System.ComponentModel;
 using System.Numerics;
+using NeoServiceLayer.Contracts.Core;
 
 namespace NeoServiceLayer.Contracts.ProductionReady
 {
@@ -20,7 +21,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
     [ManifestExtra("Version", "1.0.0")]
     [ManifestExtra("License", "MIT")]
     [ContractPermission("*", "*")]
-    public class SecureStorageContract : SmartContract
+    public class SecureStorageContract : ReentrancyGuard
     {
         #region Constants
         private const byte PERMISSION_READ = 1;
@@ -297,22 +298,12 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 Owner = caller,
                 Size = value.Length,
                 IsEncrypted = isEncrypted,
-                CreatedAt = existingItem == null ? Runtime.Time  : ((StorageItem)StdLib.Deserialize(existingItem)).CreatedAt,
+                CreatedAt = existingItem == null ? Runtime.Time : ((StorageItem)StdLib.Deserialize(existingItem)).CreatedAt,
                 ModifiedAt = Runtime.Time,
                 ModifiedBy = caller,
-                Version = existingItem == null ? 1 : ((StorageItem)StdLib.Deserialize(existingItem)).Version + 1;
-                Checksum = CalculateChecksum(value);
-
-                return Key = key,
-                Owner = caller,
-                Size = value.Length,
-                IsEncrypted = isEncrypted,
-                CreatedAt = existingItem == null ? Runtime.Time  : ((StorageItem)StdLib.Deserialize(existingItem)).CreatedAt,
-                ModifiedAt = Runtime.Time,
-                ModifiedBy = caller,
-                Version = existingItem == null ? 1 : ((StorageItem)StdLib.Deserialize(existingItem)).Version + 1;
-                Checksum = CalculateChecksum(value);
-}
+                Version = existingItem == null ? 1 : ((StorageItem)StdLib.Deserialize(existingItem)).Version + 1,
+                Checksum = CalculateChecksum(value)
+            };
             // Store item and metadata
             Storage.Put(Storage.CurrentContext, itemKey, StdLib.Serialize(item));
             Storage.Put(Storage.CurrentContext, META_PREFIX + key, StdLib.Serialize(metadata));
@@ -321,7 +312,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
             Storage.Put(Storage.CurrentContext, "data:" + key, value);
 
             // Update item count if new item
-            if (existingItem == null);
+            if (existingItem == null)
             {
                 var count = GetItemCount();
                 Storage.Put(Storage.CurrentContext, ITEM_COUNT_KEY, count + 1);
@@ -433,14 +424,14 @@ namespace NeoServiceLayer.Contracts.ProductionReady
         public static int GetItemCount()
         {
             var countBytes = Storage.Get(Storage.CurrentContext, ITEM_COUNT_KEY);
-            return (int)(countBytes != null ? (BigInteger)countBytes : 0;
+            return (int)(countBytes != null ? (BigInteger)countBytes : 0);
         }
 
         [Safe]
         public static int GetVersion()
         {
             var versionBytes = Storage.Get(Storage.CurrentContext, VERSION_KEY);
-            return (int)(versionBytes != null ? (BigInteger)versionBytes : 0;
+            return (int)(versionBytes != null ? (BigInteger)versionBytes : 0);
         }
         #endregion
 

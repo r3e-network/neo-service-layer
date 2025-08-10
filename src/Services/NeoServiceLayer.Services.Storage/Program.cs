@@ -8,7 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Infrastructure.Resilience;
 
 namespace NeoServiceLayer.Services.Storage.Host
 {
@@ -24,6 +26,11 @@ namespace NeoServiceLayer.Services.Storage.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResilientStorageClient();
+            services.AddResiliencePolicies(configuration);
 
             // Add service-specific dependencies
             // services.Configure<StorageOptions>(configuration.GetSection("Storage"));
@@ -63,13 +70,15 @@ namespace NeoServiceLayer.Services.Storage.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP storage_operations_total Total number of operations
 # TYPE storage_operations_total counter
 storage_operations_total{status=""success""} 0

@@ -1,0 +1,372 @@
+# Service Mesh Configuration for Neo Service Layer
+# Using Linkerd for service-to-service communication, security, and observability
+
+---
+# Service Profiles for Traffic Management
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: storage-service
+  namespace: neo-service-layer
+spec:
+  routes:
+  - name: "GET /storage/files"
+    condition:
+      method: GET
+      pathRegex: "/storage/files/[^/]+"
+    timeout: 30s
+    retryBudget:
+      retryRatio: 0.2
+      minRetriesPerSecond: 10
+      ttl: 10s
+  - name: "POST /storage/files"
+    condition:
+      method: POST
+      pathRegex: "/storage/files"
+    timeout: 60s
+  - name: "Health"
+    condition:
+      method: GET
+      pathRegex: "/health"
+    timeout: 10s
+    isRetryable: true
+  retryBudget:
+    retryRatio: 0.2
+    minRetriesPerSecond: 10
+    ttl: 10s
+
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: oracle-service
+  namespace: neo-service-layer
+spec:
+  routes:
+  - name: "Oracle Request"
+    condition:
+      method: POST
+      pathRegex: "/oracle/requests"
+    timeout: 120s
+    retryBudget:
+      retryRatio: 0.1
+      minRetriesPerSecond: 5
+      ttl: 10s
+  - name: "Price Feed"
+    condition:
+      method: GET
+      pathRegex: "/oracle/prices/.*"
+    timeout: 10s
+    isRetryable: true
+  - name: "Health"
+    condition:
+      method: GET
+      pathRegex: "/health"
+    timeout: 10s
+    isRetryable: true
+
+---
+apiVersion: linkerd.io/v1alpha2
+kind: ServiceProfile
+metadata:
+  name: key-management-service
+  namespace: neo-service-layer
+spec:
+  routes:
+  - name: "Key Operations"
+    condition:
+      method: POST
+      pathRegex: "/keys/.*"
+    timeout: 30s
+    # No retries for security-sensitive operations
+  - name: "Health"
+    condition:
+      method: GET
+      pathRegex: "/health"
+    timeout: 10s
+    isRetryable: true
+
+---
+# Traffic Split for Canary Deployments
+apiVersion: split.smi-spec.io/v1alpha1
+kind: TrafficSplit
+metadata:
+  name: storage-service-canary
+  namespace: neo-service-layer
+spec:
+  service: storage-service
+  backends:
+  - service: storage-service-stable
+    weight: 900  # 90% traffic
+  - service: storage-service-canary
+    weight: 100  # 10% traffic
+
+---
+# mTLS Policy
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: storage-service-authz
+  namespace: neo-service-layer
+spec:
+  server:
+    name: storage-service
+  client:
+    meshTLS:
+      identities:
+      - "cluster.local/ns/neo-service-layer/sa/api-gateway"
+      - "cluster.local/ns/neo-service-layer/sa/oracle-service"
+      - "cluster.local/ns/neo-service-layer/sa/monitoring-service"
+
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: oracle-service-authz
+  namespace: neo-service-layer
+spec:
+  server:
+    name: oracle-service
+  client:
+    meshTLS:
+      identities:
+      - "cluster.local/ns/neo-service-layer/sa/api-gateway"
+      - "cluster.local/ns/neo-service-layer/sa/smart-contracts-service"
+
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: ServerAuthorization
+metadata:
+  name: key-management-authz
+  namespace: neo-service-layer
+spec:
+  server:
+    name: key-management-service
+  client:
+    meshTLS:
+      identities:
+      - "cluster.local/ns/neo-service-layer/sa/api-gateway"
+      - "cluster.local/ns/neo-service-layer/sa/storage-service"
+      - "cluster.local/ns/neo-service-layer/sa/oracle-service"
+
+---
+# Circuit Breaker Configuration
+apiVersion: policy.linkerd.io/v1beta1
+kind: HTTPRoute
+metadata:
+  name: storage-circuit-breaker
+  namespace: neo-service-layer
+spec:
+  parentRefs:
+  - name: storage-service
+    kind: Service
+    group: core
+  rules:
+  - backendRefs:
+    - name: storage-service
+      port: 8080
+    timeouts:
+      request: 30s
+      backendRequest: 25s
+    retry:
+      attempts: 3
+      perRetryTimeout: 10s
+      conditions:
+      - 5xx
+      - reset
+      - refused
+      - retriable-4xx
+
+---
+# Rate Limiting
+apiVersion: policy.linkerd.io/v1beta1
+kind: RateLimitPolicy
+metadata:
+  name: api-rate-limit
+  namespace: neo-service-layer
+spec:
+  targetRef:
+    group: core
+    kind: Service
+    name: api-gateway
+  descriptors:
+  - key: remote_address
+    rateLimits:
+    - requestsPerUnit: 100
+      unit: second
+  - key: request_headers
+    headers:
+    - name: "x-api-key"
+    rateLimits:
+    - requestsPerUnit: 1000
+      unit: minute
+
+---
+# Service Mesh Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-service-layer-ingress
+  namespace: neo-service-layer
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/service-upstream: "true"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+      grpc_set_header l5d-dst-override $service_name.$namespace.svc.cluster.local:$service_port;
+spec:
+  tls:
+  - hosts:
+    - api.neo-service-layer.com
+    secretName: neo-tls-secret
+  rules:
+  - host: api.neo-service-layer.com
+    http:
+      paths:
+      - path: /storage
+        pathType: Prefix
+        backend:
+          service:
+            name: storage-service
+            port:
+              number: 8080
+      - path: /oracle
+        pathType: Prefix
+        backend:
+          service:
+            name: oracle-service
+            port:
+              number: 8082
+      - path: /keys
+        pathType: Prefix
+        backend:
+          service:
+            name: key-management-service
+            port:
+              number: 8083
+
+---
+# Linkerd Service Mesh Installation (if not already installed)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linkerd-install-script
+  namespace: neo-service-layer
+data:
+  install.sh: |
+    #!/bin/bash
+    # Check if Linkerd is installed
+    if ! linkerd check --pre; then
+      echo "Installing Linkerd CLI..."
+      curl -sL https://run.linkerd.io/install | sh
+      export PATH=$PATH:$HOME/.linkerd2/bin
+    fi
+    
+    # Install Linkerd control plane
+    linkerd install | kubectl apply -f -
+    linkerd check
+    
+    # Install Linkerd Viz extension
+    linkerd viz install | kubectl apply -f -
+    linkerd viz check
+    
+    # Inject Linkerd into Neo Service Layer namespace
+    kubectl get deploy -n neo-service-layer -o yaml | linkerd inject - | kubectl apply -f -
+    
+    echo "Linkerd installation complete!"
+    echo "Access dashboard: linkerd viz dashboard"
+
+---
+# Service Mesh Observability
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: linkerd-grafana-dashboards
+  namespace: linkerd-viz
+data:
+  neo-service-mesh.json: |
+    {
+      "dashboard": {
+        "title": "Neo Service Layer - Service Mesh Metrics",
+        "panels": [
+          {
+            "title": "Request Rate",
+            "targets": [
+              {
+                "expr": "sum(rate(request_total{namespace=\"neo-service-layer\"}[5m])) by (deployment)"
+              }
+            ]
+          },
+          {
+            "title": "Success Rate",
+            "targets": [
+              {
+                "expr": "sum(rate(response_total{namespace=\"neo-service-layer\",classification=\"success\"}[5m])) by (deployment) / sum(rate(response_total{namespace=\"neo-service-layer\"}[5m])) by (deployment)"
+              }
+            ]
+          },
+          {
+            "title": "P99 Latency",
+            "targets": [
+              {
+                "expr": "histogram_quantile(0.99, sum(rate(response_latency_ms_bucket{namespace=\"neo-service-layer\"}[5m])) by (deployment, le))"
+              }
+            ]
+          }
+        ]
+      }
+    }
+
+---
+# Service Mesh Policy for Zero-Trust Security
+apiVersion: policy.linkerd.io/v1beta1
+kind: Server
+metadata:
+  name: neo-service-layer-server
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: neo-service-layer
+  port: 8080
+  proxyProtocol: "HTTP/2"
+
+---
+apiVersion: policy.linkerd.io/v1beta1
+kind: AuthorizationPolicy
+metadata:
+  name: default-deny-all
+  namespace: neo-service-layer
+spec:
+  targetRef:
+    kind: Namespace
+    name: neo-service-layer
+  requiredAuthenticationRefs:
+  - name: mesh-tls
+    kind: MeshTLSAuthentication
+
+---
+# Health Check Configuration for Service Mesh
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: service-mesh-health
+  namespace: neo-service-layer
+data:
+  health-check.yaml: |
+    services:
+      - name: storage-service
+        healthEndpoint: /health
+        interval: 10s
+        timeout: 5s
+        failureThreshold: 3
+      - name: oracle-service
+        healthEndpoint: /health
+        interval: 10s
+        timeout: 5s
+        failureThreshold: 3
+      - name: key-management-service
+        healthEndpoint: /health
+        interval: 10s
+        timeout: 5s
+        failureThreshold: 3

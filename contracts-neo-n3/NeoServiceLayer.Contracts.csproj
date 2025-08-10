@@ -35,17 +35,16 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Neo.SmartContract.Framework" />
+    <!-- R3E DevPack packages -->
+    <PackageReference Include="R3E.SmartContract.Framework" />
+    <PackageReference Include="R3E.SmartContract.Analyzer" />
+    <PackageReference Include="R3E.SmartContract.Testing" />
+    <!-- Additional Neo packages for compatibility -->
     <PackageReference Include="Neo.Cryptography.BLS12_381" />
     <PackageReference Include="Neo.Json" />
     <PackageReference Include="Neo.VM" />
     <PackageReference Include="Neo" />
     <PackageReference Include="Neo.Extensions" />
-    <!-- Test packages disabled for now -->
-    <!-- <PackageReference Include="Neo.SmartContract.Testing" /> -->
-    <!-- <PackageReference Include="Microsoft.NET.Test.Sdk" /> -->
-    <!-- <PackageReference Include="MSTest.TestAdapter" /> -->
-    <!-- <PackageReference Include="MSTest.TestFramework" /> -->
   </ItemGroup>
 
   <ItemGroup>

@@ -8,6 +8,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.Monitoring;
 
 namespace NeoServiceLayer.Services.Monitoring.Host
@@ -63,13 +64,15 @@ namespace NeoServiceLayer.Services.Monitoring.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP monitoring_operations_total Total number of operations
 # TYPE monitoring_operations_total counter
 monitoring_operations_total{status=""success""} 0

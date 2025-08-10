@@ -13,6 +13,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.ServiceDiscovery;
+using Polly;
+using Polly.Extensions.Http;
 
 namespace NeoServiceLayer.ServiceFramework.ServiceHost
 {
@@ -107,7 +109,10 @@ namespace NeoServiceLayer.ServiceFramework.ServiceHost
             // Add core services
             services.AddControllers();
             services.AddHealthChecks();
-            services.AddHttpClient();
+            
+            // Add default HTTP client with basic retry policy using Polly v8 API
+            services.AddHttpClient("default")
+                .AddStandardResilienceHandler();
 
             // Add service discovery
             services.AddSingleton<Infrastructure.ServiceDiscovery.IServiceRegistry, ConsulServiceRegistry>();

@@ -8,7 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.KeyManagement;
+using NeoServiceLayer.Infrastructure.Resilience;
 
 namespace NeoServiceLayer.Services.KeyManagement.Host
 {
@@ -24,6 +26,18 @@ namespace NeoServiceLayer.Services.KeyManagement.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResiliencePolicies(configuration);
+            
+            // Add resilient HTTP clients for HSM/external key providers
+            services.AddHttpClient("HSMClient")
+                .AddPolicyHandler((serviceProvider, request) =>
+                {
+                    var policies = serviceProvider.GetRequiredService<IResiliencePolicies>();
+                    return policies.GetCombinedPolicy<HttpResponseMessage>(null);
+                });
 
             // Add service-specific dependencies
             // services.Configure<KeyManagementOptions>(configuration.GetSection("KeyManagement"));
@@ -63,13 +77,15 @@ namespace NeoServiceLayer.Services.KeyManagement.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP key-management_operations_total Total number of operations
 # TYPE key-management_operations_total counter
 key-management_operations_total{status=""success""} 0

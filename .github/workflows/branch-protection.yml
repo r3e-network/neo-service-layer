@@ -1,0 +1,142 @@
+name: Branch Protection and Repository Setup
+
+on:
+  workflow_dispatch:
+    inputs:
+      setup_branch_protection:
+        description: 'Setup branch protection rules'
+        required: true
+        default: true
+        type: boolean
+
+permissions:
+  contents: read
+  administration: write
+
+jobs:
+  setup-repository:
+    name: Setup Repository Configuration
+    runs-on: ubuntu-latest
+    if: github.event.inputs.setup_branch_protection == 'true'
+    
+    steps:
+    - name: Setup branch protection
+      uses: actions/github-script@v7
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          const { owner, repo } = context.repo;
+          
+          // Main/Master branch protection
+          const branches = ['main', 'master'];
+          
+          for (const branch of branches) {
+            try {
+              await github.rest.repos.updateBranchProtection({
+                owner,
+                repo,
+                branch,
+                required_status_checks: {
+                  strict: true,
+                  contexts: [
+                    'build-and-test',
+                    'security-scan / dependency-scan',
+                    'security-scan / code-scan',
+                    'security-scan / secret-scan'
+                  ]
+                },
+                enforce_admins: true,
+                required_pull_request_reviews: {
+                  required_approving_review_count: 2,
+                  dismiss_stale_reviews: true,
+                  require_code_owner_reviews: true,
+                  restrict_pushes_that_create_files: true
+                },
+                restrictions: null,
+                required_linear_history: true,
+                allow_force_pushes: false,
+                allow_deletions: false
+              });
+              
+              console.log(`Branch protection updated for ${branch}`);
+            } catch (error) {
+              console.log(`Branch ${branch} may not exist: ${error.message}`);
+            }
+          }
+          
+          // Repository settings
+          await github.rest.repos.update({
+            owner,
+            repo,
+            security_and_analysis: {
+              secret_scanning: {
+                status: 'enabled'
+              },
+              secret_scanning_push_protection: {
+                status: 'enabled'  
+              },
+              dependency_graph: {
+                status: 'enabled'
+              },
+              dependabot_security_updates: {
+                status: 'enabled'
+              }
+            },
+            delete_branch_on_merge: true,
+            allow_squash_merge: true,
+            allow_merge_commit: false,
+            allow_rebase_merge: false
+          });
+          
+          console.log('Repository security features enabled');
+
+  create-codeowners:
+    name: Create CODEOWNERS File
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        
+    - name: Create CODEOWNERS file
+      run: |
+        mkdir -p .github
+        cat > .github/CODEOWNERS << 'EOF'
+        # Global ownership
+        * @neo-project/core-team
+        
+        # Workflow and CI/CD changes require additional review
+        .github/workflows/ @neo-project/devops-team @neo-project/security-team
+        .github/dependabot.yml @neo-project/devops-team
+        
+        # Security-sensitive files
+        src/Infrastructure/NeoServiceLayer.Infrastructure.Security/ @neo-project/security-team
+        src/Services/NeoServiceLayer.Services.KeyManagement/ @neo-project/security-team
+        k8s/secrets/ @neo-project/security-team @neo-project/devops-team
+        scripts/security-* @neo-project/security-team
+        
+        # Smart contracts
+        contracts-neo-n3/ @neo-project/contract-team
+        contracts-r3e/ @neo-project/contract-team
+        
+        # Infrastructure and deployment
+        k8s/ @neo-project/devops-team
+        docker/ @neo-project/devops-team
+        scripts/deploy-* @neo-project/devops-team
+        
+        # Documentation
+        docs/ @neo-project/docs-team
+        *.md @neo-project/docs-team
+        EOF
+        
+    - name: Commit CODEOWNERS file
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .github/CODEOWNERS
+        if git diff --staged --quiet; then
+          echo "No changes to commit"
+        else
+          git commit -m "Add CODEOWNERS file for repository governance"
+          git push
+        fi

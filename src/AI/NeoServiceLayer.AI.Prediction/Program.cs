@@ -5,7 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Blockchain;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Infrastructure.Resilience;
 using NeoServiceLayer.Infrastructure.ServiceDiscovery;
@@ -47,7 +47,7 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Add framework services
-        services.AddServiceFramework(_configuration);
+        services.AddNeoServiceFramework(_configuration);
 
         // Add infrastructure services
         services.AddPersistence(_configuration);
@@ -61,7 +61,7 @@ public class Startup
         services.AddScoped<IPredictionService, PredictionService>();
 
         // Add service discovery
-        services.AddServiceDiscovery(_configuration, "prediction-service");
+        services.AddServiceDiscovery(_configuration);
 
         // Add health checks
         services.AddHealthChecks()
@@ -145,7 +145,7 @@ public class ServiceHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.
         try
         {
             var health = await _service.GetHealthAsync();
-            return health == ServiceHealth.Healthy
+            return health == Core.ServiceHealth.Healthy
                 ? Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is healthy")
                 : Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Service is unhealthy");
         }

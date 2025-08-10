@@ -128,7 +128,19 @@ namespace NeoServiceLayer.Services.Backup.Host
                 await context.Response.WriteAsJsonAsync(new { success = result });
             });
 
-            // TODO: Add schedule backup endpoint when ScheduleBackupAsync is implemented
+            endpoints.MapPost("/api/backup/schedule", async context =>
+            {
+                var service = context.RequestServices.GetRequiredService<BackupService>();
+                var request = await context.Request.ReadFromJsonAsync<BackupRequest>();
+                if (request == null)
+                {
+                    context.Response.StatusCode = 400;
+                    await context.Response.WriteAsync("Invalid request");
+                    return;
+                }
+                var result = await service.CreateBackupAsync(request, BlockchainType.NeoN3);
+                await context.Response.WriteAsJsonAsync(result);
+            });
 
             endpoints.MapGet("/api/backup/metrics", async context =>
             {

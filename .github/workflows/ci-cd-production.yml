@@ -1,0 +1,204 @@
+name: Production CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+  workflow_dispatch:
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOCKER_REGISTRY: 'ghcr.io'
+  KUBERNETES_NAMESPACE: 'neo-service-layer'
+  NODE_VERSION: '20'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: Restore dependencies
+      run: dotnet restore
+    
+    - name: Build
+      run: dotnet build --no-restore --configuration Release
+    
+    - name: Run tests
+      run: dotnet test --no-build --verbosity normal --configuration Release --collect:"XPlat Code Coverage"
+    
+    - name: Generate coverage report
+      uses: codecov/codecov-action@v4
+      with:
+        token: ${{ secrets.CODECOV_TOKEN }}
+        files: '**/coverage.cobertura.xml'
+        fail_ci_if_error: false
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: build-and-test
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run Trivy security scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: '.'
+        format: 'sarif'
+        output: 'trivy-results.sarif'
+    
+    - name: Upload Trivy results to GitHub Security
+      uses: github/codeql-action/upload-sarif@v3
+      with:
+        sarif_file: 'trivy-results.sarif'
+
+  build-docker-images:
+    runs-on: ubuntu-latest
+    needs: [build-and-test, security-scan]
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    strategy:
+      matrix:
+        service: 
+          - name: storage
+            path: src/Services/NeoServiceLayer.Services.Storage.Minimal
+          - name: notification  
+            path: src/Services/NeoServiceLayer.Services.Notification
+          - name: keymanagement
+            path: src/Services/NeoServiceLayer.Services.KeyManagement
+          - name: oracle
+            path: src/Services/NeoServiceLayer.Services.Oracle.Minimal
+          - name: crosschain
+            path: src/Services/NeoServiceLayer.Services.CrossChain.Minimal
+          - name: compute
+            path: src/Services/NeoServiceLayer.Services.Compute
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to GitHub Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.DOCKER_REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+    
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: ./${{ matrix.service.path }}/Dockerfile
+        push: true
+        tags: |
+          ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/neo-${{ matrix.service.name }}:latest
+          ${{ env.DOCKER_REGISTRY }}/${{ github.repository }}/neo-${{ matrix.service.name }}:${{ github.sha }}
+        labels: |
+          org.opencontainers.image.title=Neo Service Layer ${{ matrix.service.name }}
+          org.opencontainers.image.description=Neo blockchain microservice - ${{ matrix.service.name }}
+          org.opencontainers.image.version=${{ github.sha }}
+          org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+        cache-from: type=gha,scope=${{ matrix.service.name }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.service.name }}
+
+  deploy-staging:
+    runs-on: ubuntu-latest
+    needs: build-docker-images
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: staging
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+    
+    - name: Deploy to staging
+      run: |
+        kubectl apply -f k8s/namespace.yaml
+        kubectl apply -f k8s/secrets/staging-secrets.yaml
+        kubectl apply -f k8s/services/ -n ${{ env.KUBERNETES_NAMESPACE }}-staging
+        kubectl rollout status deployment --namespace=${{ env.KUBERNETES_NAMESPACE }}-staging
+
+  integration-tests:
+    runs-on: ubuntu-latest
+    needs: deploy-staging
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run integration tests against staging
+      run: |
+        dotnet test tests/Integration/NeoServiceLayer.Integration.Tests \
+          --configuration Release \
+          --environment:TestEndpoint=${{ secrets.STAGING_ENDPOINT }}
+
+  deploy-production:
+    runs-on: ubuntu-latest
+    needs: integration-tests
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: 'latest'
+    
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.PROD_KUBE_CONFIG }}" | base64 -d > kubeconfig
+        export KUBECONFIG=kubeconfig
+    
+    - name: Deploy to production
+      run: |
+        kubectl apply -f k8s/namespace.yaml
+        kubectl apply -f k8s/secrets/production-secrets.yaml
+        kubectl apply -f k8s/services/ -n ${{ env.KUBERNETES_NAMESPACE }}
+        kubectl rollout status deployment --namespace=${{ env.KUBERNETES_NAMESPACE }}
+    
+    - name: Verify deployment
+      run: |
+        kubectl get pods -n ${{ env.KUBERNETES_NAMESPACE }}
+        kubectl get services -n ${{ env.KUBERNETES_NAMESPACE }}
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+    needs: deploy-production
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Run smoke tests
+      run: |
+        ./scripts/smoke-tests.sh ${{ secrets.PRODUCTION_ENDPOINT }}
+    
+    - name: Notify deployment success
+      if: success()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: success
+        text: 'Production deployment successful! :rocket:'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+    
+    - name: Notify deployment failure
+      if: failure()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: failure
+        text: 'Production deployment failed! :x:'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK }}

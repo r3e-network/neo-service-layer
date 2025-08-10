@@ -1,0 +1,121 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neo-service-layer-network-policy
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: notification-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+    - podSelector:
+        matchLabels:
+          app: consul
+    ports:
+    - protocol: TCP
+      port: 80
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+    - podSelector:
+        matchLabels:
+          app: consul
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 8500
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: storage-service-network-policy
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: storage-service
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+    - podSelector:
+        matchLabels:
+          app: notification-service
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9090
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: consul-network-policy
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: consul
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+    ports:
+    - protocol: TCP
+      port: 8500
+    - protocol: TCP
+      port: 8600
+    - protocol: UDP
+      port: 8600
+  egress:
+  - to:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-service-layer
+    - podSelector:
+        matchLabels:
+          app: consul
+  - to: []
+    ports:
+    - protocol: TCP
+      port: 443
+    - protocol: TCP
+      port: 53
+    - protocol: UDP
+      port: 53

@@ -12,6 +12,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
 using NeoServiceLayer.Services.SmartContracts;
+using NeoServiceLayer.Infrastructure.Resilience;
 
 namespace NeoServiceLayer.Services.SmartContracts.Host
 {
@@ -27,6 +28,13 @@ namespace NeoServiceLayer.Services.SmartContracts.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResilientBlockchainClient();
+            
+            // Add resilience policies for blockchain operations
+            services.AddResiliencePolicies(configuration);
 
             // Add smart contract managers
             services.AddScoped<NeoServiceLayer.Services.SmartContracts.NeoN3.NeoN3SmartContractManager>();

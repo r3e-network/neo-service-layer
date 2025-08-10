@@ -10,6 +10,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
+using NeoServiceLayer.Infrastructure.Resilience;
 
 namespace NeoServiceLayer.Services.Notification.Host
 {
@@ -25,6 +26,15 @@ namespace NeoServiceLayer.Services.Notification.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResiliencePolicies(configuration);
+            
+            // Add resilient HTTP clients for external notification providers
+            services.AddHttpClient("EmailProvider");
+            services.AddHttpClient("SMSProvider");
+            services.AddHttpClient("PushNotificationProvider");
 
             // Add notification-specific configuration
             services.Configure<NotificationOptions>(configuration.GetSection("Notification"));

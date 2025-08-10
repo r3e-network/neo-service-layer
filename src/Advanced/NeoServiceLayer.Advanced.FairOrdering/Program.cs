@@ -46,18 +46,18 @@ public class Startup
     public void ConfigureServices(IServiceCollection services)
     {
         // Add framework services
-        services.AddServiceFramework(_configuration);
+        // TODO: services.AddServiceFramework(_configuration);
 
         // Add infrastructure services
-        services.AddPersistence(_configuration);
-        services.AddBlockchainServices(_configuration);
+        // TODO: services.AddPersistence(_configuration);
+        // TODO: services.AddBlockchainServices(_configuration);
         services.AddResiliencePolicies(_configuration);
 
         // Add fair ordering service
         services.AddScoped<IFairOrderingService, FairOrderingService>();
 
         // Add service discovery
-        services.AddServiceDiscovery(_configuration, "fair-ordering-service");
+        // TODO: services.AddServiceDiscovery(_configuration, "fair-ordering-service");
 
         // Add health checks
         services.AddHealthChecks()
@@ -141,7 +141,7 @@ public class ServiceHealthCheck : Microsoft.Extensions.Diagnostics.HealthChecks.
         try
         {
             var health = await _service.GetHealthAsync();
-            return health == ServiceHealth.Healthy
+            return health == Core.ServiceHealth.Healthy
                 ? Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy("Service is healthy")
                 : Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Unhealthy("Service is unhealthy");
         }

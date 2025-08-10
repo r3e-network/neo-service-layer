@@ -307,7 +307,7 @@ public class NotificationController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("templates/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<NotificationTemplate>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<PaginatedResponse<NeoServiceLayer.Services.Notification.Models.NotificationTemplate>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> ListTemplates(

@@ -19,6 +19,9 @@
     <PackageReference Include="Neo.IO" />
     <PackageReference Include="Neo.SmartContract.Framework" />
     <PackageReference Include="Neo.Extensions" />
+    <!-- Neo RPC client for blockchain communication -->
+    <!-- <PackageReference Include="Neo.Network.RPC.RpcClient" /> Complex API compatibility issues -->
+    <PackageReference Include="System.Net.Http" />
   </ItemGroup>
 
   <ItemGroup>

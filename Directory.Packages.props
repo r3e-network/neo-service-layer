@@ -99,6 +99,13 @@
     <PackageVersion Include="Neo" Version="3.8.1" />
     <PackageVersion Include="Neo.VM" Version="3.8.1" />
     <PackageVersion Include="Neo.SmartContract.Framework" Version="3.8.1" />
+    <!-- <PackageVersion Include="Neo.Network.RPC.RpcClient" Version="3.7.5" /> Complex API compatibility issues -->
+    <!-- R3E DevPack packages -->
+    <PackageVersion Include="R3E.SmartContract.Framework" Version="3.0.0" />
+    <PackageVersion Include="R3E.SmartContract.Analyzer" Version="3.0.0" />
+    <PackageVersion Include="R3E.SmartContract.Testing" Version="3.0.0" />
+    <PackageVersion Include="R3E.Compiler.CSharp" Version="3.0.0" />
+    <PackageVersion Include="R3E.SmartContract.Deploy" Version="3.0.0" />
     <PackageVersion Include="Neo.SmartContract.Testing" Version="3.8.1" />
     <PackageVersion Include="Neo.Cryptography.BLS12_381" Version="3.8.1" />
     <PackageVersion Include="Neo.Json" Version="3.8.1" />
@@ -177,6 +184,7 @@
     <PackageVersion Include="Polly" Version="8.5.0" />
     <PackageVersion Include="Polly.Extensions.Http" Version="3.0.0" />
     <PackageVersion Include="Microsoft.Extensions.Http.Polly" Version="9.0.0" />
+    <PackageVersion Include="Microsoft.Extensions.Http.Resilience" Version="9.0.0" />
     <PackageVersion Include="Humanizer.Core" Version="2.14.1" />
     <PackageVersion Include="AutoMapper" Version="13.0.1" />
     <PackageVersion Include="FluentValidation" Version="11.11.0" />

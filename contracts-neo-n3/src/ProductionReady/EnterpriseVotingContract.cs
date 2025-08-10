@@ -1,4 +1,4 @@
-using Neo;
+using Neo.SmartContract.Framework;
 using Neo.SmartContract;
 using Neo.SmartContract.Framework;
 using Neo.SmartContract.Framework.Attributes;
@@ -7,6 +7,7 @@ using Neo.SmartContract.Framework.Services;
 using System;
 using System.ComponentModel;
 using System.Numerics;
+using NeoServiceLayer.Contracts.Core;
 
 namespace NeoServiceLayer.Contracts.ProductionReady
 {
@@ -20,7 +21,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
     [ManifestExtra("Version", "1.0.0")]
     [ManifestExtra("License", "MIT")]
     [ContractPermission("*", "*")]
-    public class EnterpriseVotingContract : SmartContract
+    public class EnterpriseVotingContract : ReentrancyGuard
     {
         #region Constants
         private const int MIN_PROPOSAL_DURATION = 3600; // 1 hour
@@ -244,6 +245,10 @@ namespace NeoServiceLayer.Contracts.ProductionReady
 
             if (votingPower < 0)
                 throw new ArgumentException("Voting power cannot be negative");
+                
+            // Add upper bounds validation for voting power
+            if (votingPower > 1000000)
+                throw new ArgumentException("Voting power exceeds maximum allowed value");
 
             // Only admin can add other admins
             if (role == MemberRole.Admin)
@@ -261,16 +266,9 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 Role = role,
                 VotingPower = votingPower,
                 JoinedAt = Runtime.Time,
-                IsActive = true;
-                Metadata = "";
-
-                return Address = memberAddress,
-                Role = role,
-                VotingPower = votingPower,
-                JoinedAt = Runtime.Time,
-                IsActive = true;
-                Metadata = "";
-}
+                IsActive = true,
+                Metadata = ""
+            };
             var memberKey = MEMBER_PREFIX + memberAddress;
             Storage.Put(Storage.CurrentContext, memberKey, StdLib.Serialize(member));
 
@@ -294,7 +292,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 throw new InvalidOperationException("Member not found or already inactive");
 
             // Cannot remove the last admin
-            if (member.Role == MemberRole.Admin);
+            if (member.Role == MemberRole.Admin)
             {
                 var adminCount = CountActiveAdmins();
                 if (adminCount <= 1)
@@ -409,27 +407,13 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 EndTime = endTime,
                 Status = ProposalStatus.Active,
                 QuorumPercentage = quorumPercentage,
-                TotalVotingPower = GetTotalVotingPower(, VotesFor = 0,
+                TotalVotingPower = GetTotalVotingPower(),
+                VotesFor = 0,
                 VotesAgainst = 0,
                 VotesAbstain = 0,
-                RequiresExecution = requiresExecution;
-                ExecutionData = executionData ?? (ByteString)new byte[0];
-
-                return Id = proposalId,
-                Creator = creator,
-                Description = description,
-                Options = options,
-                OptionVotes = new BigInteger[options.Length],
-                StartTime = startTime,
-                EndTime = endTime,
-                Status = ProposalStatus.Active,
-                QuorumPercentage = quorumPercentage,
-                TotalVotingPower = GetTotalVotingPower(, VotesFor = 0,
-                VotesAgainst = 0,
-                VotesAbstain = 0,
-                RequiresExecution = requiresExecution;
-                ExecutionData = executionData ?? (ByteString)new byte[0];
-}
+                RequiresExecution = requiresExecution,
+                ExecutionData = executionData ?? (ByteString)new byte[0]
+            };
             var proposalKey = PROPOSAL_PREFIX + proposalId;
             Storage.Put(Storage.CurrentContext, proposalKey, StdLib.Serialize(proposal));
 
@@ -503,17 +487,9 @@ namespace NeoServiceLayer.Contracts.ProductionReady
                 VoteType = voteType,
                 OptionIndex = optionIndex,
                 VotingPower = votingPower,
-                CastAt = Runtime.Time;
-                Reason = reason ?? "";
-
-                return Voter = voter,
-                ProposalId = proposalId,
-                VoteType = voteType,
-                OptionIndex = optionIndex,
-                VotingPower = votingPower,
-                CastAt = Runtime.Time;
-                Reason = reason ?? "";
-}
+                CastAt = Runtime.Time,
+                Reason = reason ?? ""
+            };
             Storage.Put(Storage.CurrentContext, voteKey, StdLib.Serialize(vote));
 
             // Update proposal vote counts
@@ -573,14 +549,13 @@ namespace NeoServiceLayer.Contracts.ProductionReady
             if (totalVotes >= requiredQuorum && proposal.VotesFor > proposal.VotesAgainst)
             {
                 newStatus = ProposalStatus.Passed;
-
-                newStatus = ProposalStatus.Passed
-            }else
+            }
+            else
             {
                 newStatus = ProposalStatus.Failed;
+            }
 
-                newStatus = ProposalStatus.Failed
-            }proposal.Status = newStatus;
+            proposal.Status = newStatus;
             var proposalKey = PROPOSAL_PREFIX + proposal.Id;
             Storage.Put(Storage.CurrentContext, proposalKey, StdLib.Serialize(proposal));
 
@@ -634,8 +609,8 @@ namespace NeoServiceLayer.Contracts.ProductionReady
             if (delegator.Equals(delegate_))
                 throw new ArgumentException("Cannot delegate to self");
 
-            var delegateMembe = GetMember(delegate_);
-            if (delegateMembe == null || !delegateMembe.IsActive)
+            var delegateMember = GetMember(delegate_);
+            if (delegateMember == null || !delegateMember.IsActive)
                 throw new ArgumentException("Delegate must be an active member");
 
             // Check for circular delegation
@@ -737,7 +712,7 @@ namespace NeoServiceLayer.Contracts.ProductionReady
         public static int GetDefaultQuorum()
         {
             var quorumBytes = Storage.Get(Storage.CurrentContext, DEFAULT_QUORUM_KEY);
-            return (int)(quorumBytes != null ? (BigInteger)quorumBytes : 50;
+            return (int)(quorumBytes != null ? (BigInteger)quorumBytes : 50);
         }
 
         [Safe]

@@ -272,6 +272,11 @@ public class ContractDeploymentOptions
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets whether to wait for transaction confirmation.
+    /// </summary>
+    public bool WaitForConfirmation { get; set; } = true;
 }
 
 /// <summary>

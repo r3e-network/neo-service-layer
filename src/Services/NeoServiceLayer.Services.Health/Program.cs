@@ -8,7 +8,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework.ServiceHost;
+using NeoServiceLayer.ServiceFramework.Metrics;
 using NeoServiceLayer.Services.Health;
+using NeoServiceLayer.Infrastructure.Resilience;
 
 namespace NeoServiceLayer.Services.Health.Host
 {
@@ -24,6 +26,13 @@ namespace NeoServiceLayer.Services.Health.Host
         protected override void ConfigureServiceSpecific(WebHostBuilderContext context, IServiceCollection services)
         {
             var configuration = context.Configuration;
+
+            // Add resilience infrastructure
+            services.AddResilience(configuration);
+            services.AddResiliencePolicies(configuration);
+            
+            // Add resilient HTTP clients for health monitoring external services
+            services.AddHttpClient("HealthMonitoringClient");
 
             // Add service-specific dependencies
             // services.Configure<HealthOptions>(configuration.GetSection("Health"));
@@ -63,13 +72,15 @@ namespace NeoServiceLayer.Services.Health.Host
                 await context.Response.WriteAsync(GetMetrics());
             });
 
-            // TODO: Add service-specific endpoints here
+
+
         }
 
         private string GetMetrics()
         {
-            // TODO: Implement proper metrics collection
-            return @"
+            // Metrics collection
+            var serviceMetrics = new ServiceMetrics();
+            return serviceMetrics.GetPrometheusMetrics() + @"
 # HELP health_operations_total Total number of operations
 # TYPE health_operations_total counter
 health_operations_total{status=""success""} 0

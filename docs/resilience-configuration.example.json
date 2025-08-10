@@ -1,0 +1,69 @@
+{
+  "Resilience": {
+    "RetryCount": 3,
+    "RetryBaseDelaySeconds": 2,
+    "CircuitBreakerFailureThreshold": 5,
+    "CircuitBreakerDurationSeconds": 30,
+    "TimeoutSeconds": 30,
+    
+    // Blockchain-specific policies (for high-latency operations)
+    "BlockchainRetryCount": 5,
+    "BlockchainCircuitBreakerThreshold": 3,
+    "BlockchainCircuitBreakerDuration": 60,
+    "BlockchainTimeoutSeconds": 60,
+    
+    // Database-specific policies (for transient failures)
+    "DatabaseRetryCount": 3,
+    "DatabaseCircuitBreakerThreshold": 10,
+    "DatabaseCircuitBreakerDuration": 30,
+    
+    // External service policies (for third-party APIs)
+    "ExternalServiceRetryCount": 3,
+    "ExternalServiceCircuitBreakerThreshold": 5,
+    "ExternalServiceCircuitBreakerDuration": 30,
+    
+    // Bulkhead isolation settings
+    "BulkheadMaxParallelization": 10,
+    "BulkheadMaxQueuingActions": 20
+  },
+  
+  // Service-specific configurations
+  "SmartContracts": {
+    "Resilience": {
+      "BlockchainRetryCount": 7,
+      "BlockchainTimeoutSeconds": 90
+    }
+  },
+  
+  "Oracle": {
+    "Resilience": {
+      "ExternalServiceRetryCount": 5,
+      "ExternalServiceCircuitBreakerThreshold": 3,
+      "TimeoutSeconds": 45
+    }
+  },
+  
+  "KeyManagement": {
+    "Resilience": {
+      "RetryCount": 5,
+      "CircuitBreakerFailureThreshold": 3,
+      "TimeoutSeconds": 60
+    }
+  },
+  
+  "Storage": {
+    "Resilience": {
+      "DatabaseRetryCount": 5,
+      "DatabaseCircuitBreakerThreshold": 15,
+      "TimeoutSeconds": 45
+    }
+  },
+  
+  "Notification": {
+    "Resilience": {
+      "ExternalServiceRetryCount": 4,
+      "BulkheadMaxParallelization": 20,
+      "TimeoutSeconds": 25
+    }
+  }
+}

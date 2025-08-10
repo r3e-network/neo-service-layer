@@ -1,0 +1,209 @@
+# Pod Security Standards configuration for Neo Service Layer
+# Replaces deprecated PodSecurityPolicy with Pod Security Standards
+# Kubernetes 1.25+ compatible
+
+---
+# Namespace labels to enforce Pod Security Standards
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-service-layer
+  labels:
+    # Enforce restricted security standard
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/enforce-version: latest
+    # Audit at baseline level to catch violations
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    # Warn at baseline level for visibility
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+
+---
+# SecurityContext template for deployments
+# This should be included in all deployment specs
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-context-template
+  namespace: neo-service-layer
+data:
+  security-context.yaml: |
+    # Container security context (apply to each container)
+    securityContext:
+      allowPrivilegeEscalation: false
+      readOnlyRootFilesystem: true
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 3000
+      capabilities:
+        drop:
+          - ALL
+      seccompProfile:
+        type: RuntimeDefault
+    
+    # Pod security context (apply at pod level)
+    podSecurityContext:
+      runAsNonRoot: true
+      runAsUser: 1000
+      runAsGroup: 3000
+      fsGroup: 2000
+      seccompProfile:
+        type: RuntimeDefault
+      supplementalGroups: [1000]
+
+---
+# NetworkPolicy to complement security standards
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-ingress
+  namespace: neo-service-layer
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow traffic only from within the namespace by default
+  - from:
+    - podSelector: {}
+
+---
+# ResourceQuota to prevent resource exhaustion
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: security-resource-quota
+  namespace: neo-service-layer
+spec:
+  hard:
+    # Security-related quotas
+    persistentvolumeclaims: "30"
+    services.loadbalancers: "5"
+    services.nodeports: "0"  # Disable NodePort services for security
+
+---
+# Sample Deployment with Pod Security Standards compliance
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: security-compliant-deployment-template
+  namespace: neo-service-layer
+  labels:
+    app: template
+    security: compliant
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: template
+  template:
+    metadata:
+      labels:
+        app: template
+    spec:
+      # Service account with minimal permissions
+      serviceAccountName: neo-service-account
+      
+      # Pod-level security context
+      securityContext:
+        runAsNonRoot: true
+        runAsUser: 1000
+        runAsGroup: 3000
+        fsGroup: 2000
+        seccompProfile:
+          type: RuntimeDefault
+        supplementalGroups: [1000]
+      
+      containers:
+      - name: app
+        image: neo-service:latest
+        
+        # Container-level security context
+        securityContext:
+          allowPrivilegeEscalation: false
+          readOnlyRootFilesystem: true
+          runAsNonRoot: true
+          runAsUser: 1000
+          runAsGroup: 3000
+          capabilities:
+            drop:
+              - ALL
+        
+        # Resource limits required by restricted standard
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "512Mi"
+            cpu: "500m"
+        
+        # Volume mounts for writable directories
+        volumeMounts:
+        - name: temp
+          mountPath: /tmp
+        - name: cache
+          mountPath: /app/cache
+        
+      # Volumes for writable directories
+      volumes:
+      - name: temp
+        emptyDir: {}
+      - name: cache
+        emptyDir: {}
+
+---
+# Exemption for special cases (e.g., SGX-enabled pods)
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-service-layer-sgx
+  labels:
+    # SGX pods may need privileged access
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/enforce-version: latest
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/audit-version: latest
+    pod-security.kubernetes.io/warn: restricted
+    pod-security.kubernetes.io/warn-version: latest
+
+---
+# Documentation ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: pod-security-migration-guide
+  namespace: neo-service-layer
+data:
+  README.md: |
+    # Pod Security Standards Migration Guide
+    
+    ## Overview
+    This configuration replaces the deprecated PodSecurityPolicy with Pod Security Standards.
+    
+    ## Security Levels
+    - **Restricted**: Most secure, suitable for most workloads
+    - **Baseline**: Prevents known privilege escalations
+    - **Privileged**: Unrestricted (avoid if possible)
+    
+    ## Migration Steps
+    1. Apply namespace labels for Pod Security Standards
+    2. Update all deployments with proper security contexts
+    3. Test deployments in audit/warn mode first
+    4. Switch to enforce mode once validated
+    
+    ## Required Changes for Deployments
+    1. Add securityContext at pod and container levels
+    2. Set runAsNonRoot: true
+    3. Drop all capabilities
+    4. Use readOnlyRootFilesystem with emptyDir volumes
+    5. Define resource requests and limits
+    
+    ## Exceptions
+    - SGX-enabled pods use separate namespace with baseline policy
+    - Init containers may need special permissions
+    
+    ## Validation
+    kubectl label --dry-run=server namespace neo-service-layer \
+      pod-security.kubernetes.io/enforce=restricted

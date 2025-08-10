@@ -425,8 +425,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to generate market forecast {ForecastId}", forecastId);
-                Console.WriteLine($"EXCEPTION in ForecastMarketAsync: {ex.Message}");
+                Logger.LogError(ex, "Failed to generate market forecast {ForecastId}. Exception: {ExceptionMessage}", forecastId, ex.Message);
 
                 return new Models.MarketForecast
                 {

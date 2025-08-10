@@ -42,7 +42,9 @@ public static class ResilienceExtensions
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
-                    var logger = context.Values.ContainsKey("logger") ? context.Values["logger"] as ILogger : null;
+                    var logger = context.Values != null && context.Values is IDictionary<string, object> dict && dict.ContainsKey("logger") 
+                        ? dict["logger"] as ILogger 
+                        : null;
                     logger?.LogWarning($"Retry {retryCount} after {timespan} seconds");
                 });
     }
@@ -56,11 +58,13 @@ public static class ResilienceExtensions
                 TimeSpan.FromSeconds(30),
                 onBreak: (result, timespan) =>
                 {
-                    Console.WriteLine($"Circuit breaker opened for {timespan}");
+                    // Logging should be handled by the caller with injected ILogger
+                    // Circuit breaker opened for timespan
                 },
                 onReset: () =>
                 {
-                    Console.WriteLine("Circuit breaker reset");
+                    // Logging should be handled by the caller with injected ILogger
+                    // Circuit breaker reset
                 });
     }
 
@@ -167,9 +171,9 @@ public class ResiliencePoliciesImpl : IResiliencePolicies
     {
         var fallback = GetFallbackPolicy(fallbackValue);
         var timeout = GetTimeoutPolicy<T>(_options.TimeoutSeconds);
-        var retry = GetRetryPolicy<T>(_options.RetryCount, _options.RetryBaseDelaySeconds);
+        var retry = GetRetryPolicy<T>(_options.RetryCount, 2); // Using default base delay
         var circuitBreaker = GetCircuitBreakerPolicy<T>(
-            _options.CircuitBreakerThreshold,
+            _options.CircuitBreakerFailureThreshold,
             _options.CircuitBreakerDurationSeconds);
 
         return Policy.WrapAsync(fallback, timeout, retry, circuitBreaker);

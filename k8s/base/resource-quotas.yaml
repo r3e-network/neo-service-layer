@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ResourceQuota
+metadata:
+  name: neo-service-layer-quota
+  namespace: neo-service-layer
+spec:
+  hard:
+    requests.cpu: "8"
+    requests.memory: 16Gi
+    limits.cpu: "16"
+    limits.memory: 32Gi
+    persistentvolumeclaims: "30"
+    pods: "50"
+    secrets: "30"
+    configmaps: "30"
+    services: "30"
+---
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: neo-service-layer-limits
+  namespace: neo-service-layer
+spec:
+  limits:
+  - default:
+      cpu: "1"
+      memory: "1Gi"
+    defaultRequest:
+      cpu: "200m"
+      memory: "512Mi"
+    type: Container
+  - max:
+      cpu: "4"
+      memory: "4Gi"
+    min:
+      cpu: "50m"
+      memory: "128Mi"
+    type: Container
+  - max:
+      storage: "50Gi"
+    min:
+      storage: "1Gi"
+    type: PersistentVolumeClaim

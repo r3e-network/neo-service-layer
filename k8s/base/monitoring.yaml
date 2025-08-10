@@ -1,0 +1,80 @@
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neo-services-monitor
+  namespace: neo-service-layer
+  labels:
+    app: neo-service-layer
+spec:
+  selector:
+    matchLabels:
+      service-type: notification
+  endpoints:
+  - port: http
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: storage-service-monitor
+  namespace: neo-service-layer
+  labels:
+    app: storage-service
+spec:
+  selector:
+    matchLabels:
+      app: storage-service
+  endpoints:
+  - port: metrics
+    path: /metrics
+    interval: 30s
+    scrapeTimeout: 10s
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: neo-service-layer-alerts
+  namespace: neo-service-layer
+  labels:
+    app: neo-service-layer
+spec:
+  groups:
+  - name: neo-service-layer.rules
+    rules:
+    - alert: HighMemoryUsage
+      expr: container_memory_usage_bytes / container_spec_memory_limit_bytes > 0.8
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High memory usage detected"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has high memory usage"
+    
+    - alert: HighCPUUsage
+      expr: rate(container_cpu_usage_seconds_total[5m]) > 0.8
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High CPU usage detected"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} has high CPU usage"
+    
+    - alert: PodCrashLooping
+      expr: rate(kube_pod_container_status_restarts_total[15m]) > 0
+      for: 2m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Pod is crash looping"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is crash looping"
+        
+    - alert: ServiceDown
+      expr: up{job="neo-service-layer"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Service is down"
+        description: "Service {{ $labels.instance }} is down"

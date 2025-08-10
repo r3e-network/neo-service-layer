@@ -98,8 +98,8 @@ public static class ResiliencePolicies
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 onRetry: (outcome, timespan, retryCount, context) =>
                 {
-                    var logger = context.Values.ContainsKey("logger")
-                        ? context.Values["logger"] as ILogger
+                    var logger = context.Values != null && context.Values is IDictionary<string, object> dict && dict.ContainsKey("logger")
+                        ? dict["logger"] as ILogger
                         : null;
 
                     logger?.LogWarning(
@@ -117,11 +117,13 @@ public static class ResiliencePolicies
                 TimeSpan.FromSeconds(30),
                 onBreak: (result, timespan) =>
                 {
-                    Console.WriteLine($"Circuit breaker opened for {timespan.TotalSeconds}s");
+                    // Logging should be handled by the caller with injected ILogger
+                    // Circuit breaker opened for timespan.TotalSeconds
                 },
                 onReset: () =>
                 {
-                    Console.WriteLine("Circuit breaker reset");
+                    // Logging should be handled by the caller with injected ILogger
+                    // Circuit breaker reset
                 });
     }
 
@@ -320,8 +322,8 @@ public class ExternalServiceResiliencePolicy : IExternalServiceResiliencePolicy
                 retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
                 onRetry: (exception, timespan, retryCount, context) =>
                 {
-                    var serviceName = context.Values.ContainsKey("ServiceName")
-                        ? context.Values["ServiceName"]
+                    var serviceName = context.Values != null && context.Values is IDictionary<string, object> dict && dict.ContainsKey("ServiceName")
+                        ? dict["ServiceName"]
                         : "Unknown";
 
                     _logger.LogWarning(exception,
@@ -352,9 +354,12 @@ public class ExternalServiceResiliencePolicy : IExternalServiceResiliencePolicy
                 options.BulkheadMaxQueuingActions,
                 onBulkheadRejectedAsync: async context =>
                 {
+                    var serviceName = context.Values != null && context.Values is IDictionary<string, object> dict && dict.TryGetValue("ServiceName", out var value) 
+                        ? value as string ?? "Unknown" 
+                        : "Unknown";
                     _logger.LogWarning(
                         "Bulkhead rejected request for service {ServiceName}",
-                        context.Values.GetValueOrDefault("ServiceName", "Unknown"));
+                        serviceName);
                 });
 
         _policy = Policy.WrapAsync(retryPolicy, circuitBreakerPolicy, bulkheadPolicy);
@@ -377,7 +382,9 @@ public class ResilienceOptions
 {
     // General HTTP policies
     public int RetryCount { get; set; } = 3;
+    public int RetryBaseDelaySeconds { get; set; } = 2;
     public int CircuitBreakerFailureThreshold { get; set; } = 5;
+    public int CircuitBreakerThreshold { get; set; } = 5; // Alias for compatibility
     public int CircuitBreakerDurationSeconds { get; set; } = 30;
     public int TimeoutSeconds { get; set; } = 30;
 

@@ -77,7 +77,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<NotificationTemplate> CreateTemplateAsync(CreateTemplateRequest request, BlockchainType blockchainType)
+    public async Task<Models.NotificationTemplate> CreateTemplateAsync(CreateTemplateRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -115,7 +115,7 @@ public partial class NotificationService
                 template.TemplateName, templateId);
 
             // Convert internal template to public model
-            var publicTemplate = new NotificationTemplate
+            var publicTemplate = new Models.NotificationTemplate
             {
                 TemplateId = template.TemplateId,
                 TemplateName = template.TemplateName,
@@ -346,7 +346,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<NotificationTemplate> UpdateTemplateAsync(string templateId, UpdateTemplateRequest request, BlockchainType blockchainType)
+    public async Task<Models.NotificationTemplate> UpdateTemplateAsync(string templateId, UpdateTemplateRequest request, BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -388,7 +388,7 @@ public partial class NotificationService
             Logger.LogInformation("Updated notification template {TemplateId}", templateId);
 
             // Convert internal template to public model
-            var publicTemplate = new NotificationTemplate
+            var publicTemplate = new Models.NotificationTemplate
             {
                 TemplateId = template.TemplateId,
                 TemplateName = template.TemplateName,
@@ -454,7 +454,7 @@ public partial class NotificationService
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<NotificationTemplate>> GetTemplatesAsync(BlockchainType blockchainType)
+    public async Task<IEnumerable<Models.NotificationTemplate>> GetTemplatesAsync(BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -468,12 +468,12 @@ public partial class NotificationService
 
         try
         {
-            List<NotificationTemplate> templates;
+            List<Models.NotificationTemplate> templates;
             lock (_cacheLock)
             {
                 templates = _templates.Values
                     .Where(t => t.IsActive)
-                    .Select(t => new NotificationTemplate
+                    .Select(t => new Models.NotificationTemplate
                     {
                         TemplateId = t.TemplateId,
                         TemplateName = t.TemplateName,
@@ -493,7 +493,7 @@ public partial class NotificationService
 
             Logger.LogDebug("Retrieved {Count} active notification templates", templates.Count);
 
-            return await Task.FromResult<IEnumerable<NotificationTemplate>>(templates);
+            return await Task.FromResult<IEnumerable<Models.NotificationTemplate>>(templates);
         }
         catch (Exception ex)
         {

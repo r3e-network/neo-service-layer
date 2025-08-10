@@ -97,4 +97,16 @@ public static class ServiceCollectionExtensions
 
         return services;
     }
+    
+    /// <summary>
+    /// Adds blockchain services to the dependency injection container.
+    /// This is an alias for AddBlockchainInfrastructure for compatibility.
+    /// </summary>
+    /// <param name="services">The service collection.</param>
+    /// <param name="configuration">The configuration.</param>
+    /// <returns>The service collection for chaining.</returns>
+    public static IServiceCollection AddBlockchainServices(this IServiceCollection services, IConfiguration configuration)
+    {
+        return services.AddBlockchainInfrastructure(configuration);
+    }
 }
