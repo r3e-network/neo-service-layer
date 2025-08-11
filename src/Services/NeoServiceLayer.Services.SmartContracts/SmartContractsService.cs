@@ -239,6 +239,12 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
 
             try
             {
+                // First, validate deployment using privacy-preserving operations
+                var privacyResult = await DeployContractWithPrivacyAsync(contractCode, constructorParameters, options);
+                
+                Logger.LogDebug("Privacy-preserving contract deployment validation completed, gas estimate: {GasEstimate}", 
+                    privacyResult.GasUsed);
+
                 var manager = GetManager(blockchainType);
                 var result = await manager.DeployContractAsync(contractCode, constructorParameters, options, cancellationToken);
 
@@ -312,6 +318,12 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
 
             try
             {
+                // First, validate and analyze invocation using privacy-preserving operations
+                var privacyResult = await InvokeContractWithPrivacyAsync(contractHash, method, parameters, options);
+                
+                Logger.LogDebug("Privacy-preserving contract invocation validation completed, gas estimate: {GasEstimate}, proof: {Proof}", 
+                    privacyResult.GasUsed, privacyResult.ExecutionProof);
+
                 var manager = GetManager(blockchainType);
                 var result = await manager.InvokeContractAsync(contractHash, method, parameters, options, cancellationToken);
 

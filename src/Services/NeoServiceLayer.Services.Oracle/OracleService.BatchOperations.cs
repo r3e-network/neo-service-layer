@@ -50,6 +50,12 @@ public partial class OracleService
             var block = await client.GetBlockAsync(blockHeight);
             var blockHash = block.Hash;
 
+            // Process batch requests using privacy-preserving operations
+            var privacyBatchResult = await ProcessBatchRequestsWithPrivacyAsync(requestsList);
+            
+            Logger.LogDebug("Privacy-preserving batch oracle processing completed: BatchId={BatchId}, ResultCount={Count}", 
+                privacyBatchResult.BatchId, privacyBatchResult.Results.Count);
+
             // Process each request
             var responses = new List<OracleResponse>();
             foreach (var request in requestsList)

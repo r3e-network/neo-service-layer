@@ -1,11 +1,12 @@
 {
   "Neo": {
     "Network": "neo-express",
-    "RpcUrl": "http://localhost:50012",
+    "RpcUrl": "${SERVICE_HTTP_50012:-http://${SERVICE_HOST_50012:-localhost:50012}}",
     "WalletPath": "/home/ubuntu/neo-service-layer/neo-express-test/wallet.json",
     "DefaultAccount": "alice",
     "Contracts": {
-      "SimpleContract": "0x918dc5e53f237015fae0dad532655efff9834cbd"
+      "SimpleContract": "0x918dc5e53f237015fae0dad532655efff9834cbd
+"
     }
   }
 }

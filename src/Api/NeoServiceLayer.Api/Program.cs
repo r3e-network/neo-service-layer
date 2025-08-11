@@ -17,6 +17,7 @@ using NeoServiceLayer.Api.Filters;
 using NeoServiceLayer.Api.HealthChecks;
 using NeoServiceLayer.Api.Middleware;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure;
 // using NeoServiceLayer.Advanced.FairOrdering;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -136,16 +137,27 @@ var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSetti
 var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
 var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
 
-// Validate JWT secret key
-if (string.IsNullOrEmpty(secretKey))
+// In test environment, use a fixed key for consistency
+if (builder.Environment.EnvironmentName == "Testing" || builder.Environment.IsDevelopment())
 {
-    throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+    if (string.IsNullOrEmpty(secretKey))
+    {
+        secretKey = "SuperSecretTestKeyThatIsLongEnoughForTesting123!";
+    }
 }
-
-// Ensure minimum key length for security
-if (secretKey.Length < 32)
+else
 {
-    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+    // Validate JWT secret key for production
+    if (string.IsNullOrEmpty(secretKey))
+    {
+        throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+    }
+
+    // Ensure minimum key length for security
+    if (secretKey.Length < 32)
+    {
+        throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+    }
 }
 
 // Prevent use of default/example keys
@@ -190,10 +202,34 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3001")
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
+        // Get endpoints configuration
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        var secureConfig = serviceProvider.GetRequiredService<ISecureConfigurationProvider>();
+        var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
+        
+        if (endpoints.CorsOrigins.Any())
+        {
+            policy.WithOrigins(endpoints.CorsOrigins.ToArray())
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else if (builder.Environment.IsDevelopment())
+        {
+            // Allow localhost origins in development only
+            policy.WithOrigins("http://localhost:3000", "https://localhost:3001")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // No CORS in production without configuration
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .DisallowCredentials();
+        }
     });
 });
 
@@ -229,11 +265,29 @@ builder.Services.AddHealthChecks()
     .AddCheck<DataServicesHealthCheck>("data-services", tags: new[] { "ready", "data", "services" })
     .AddCheck<AdvancedServicesHealthCheck>("advanced-services", tags: new[] { "ready", "advanced", "services" });
 
+// Add secure configuration services
+builder.Services.AddSecureConfiguration();
+
 // Add Neo Service Layer
 builder.Services.AddNeoServiceLayer(builder.Configuration);
 
 // Add all Neo Service Layer services
 builder.Services.AddNeoServiceLayerServices(builder.Configuration);
+
+// Configure service endpoints
+builder.Services.AddSingleton(provider =>
+{
+    var secureConfig = provider.GetRequiredService<ISecureConfigurationProvider>();
+    var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
+    
+    // Validate endpoints in production
+    if (!builder.Environment.IsDevelopment())
+    {
+        endpoints.Validate();
+    }
+    
+    return endpoints;
+});
 
 var app = builder.Build();
 

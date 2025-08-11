@@ -94,6 +94,7 @@
     <PackageVersion Include="Neo.Json" Version="3.8.1" />
     <PackageVersion Include="Neo.IO" Version="3.8.1" />
     <PackageVersion Include="Neo.Extensions" Version="3.8.1" />
+    <PackageVersion Include="Neo.Network.RPC.RpcClient" Version="3.8.1" />
   </ItemGroup>
 
   <ItemGroup Label="Blockchain - Ethereum and Web3">

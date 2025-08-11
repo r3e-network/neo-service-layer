@@ -41,7 +41,7 @@ namespace NeoServiceLayer.Tests.Integration
             {
                 // Test 1: Connect to Neo Express RPC
                 Console.WriteLine("Test 1: Connecting to Neo Express RPC...");
-                var rpcClient = new RpcClient(new Uri("http://localhost:50012"));
+                var rpcClient = new RpcClient(new Uri(Configuration["ServiceEndpoints:Http:50012"] ?? "http://localhost:50012"));
                 var version = await rpcClient.GetVersionAsync();
                 Console.WriteLine($"Connected to Neo v{version.Protocol.Network} (RPC: {version.RpcVersion})");
                 Console.WriteLine();

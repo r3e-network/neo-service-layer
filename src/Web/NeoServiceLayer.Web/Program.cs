@@ -4,18 +4,21 @@ using System.Text;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using NeoServiceLayer.AI.Prediction;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Web.Extensions;
+using NeoServiceLayer.Web.Middleware;
 using Serilog;
 
 // Configure Serilog
@@ -27,7 +30,8 @@ Log.Logger = new LoggerConfiguration()
 var builder = WebApplication.CreateBuilder(args);
 
 // Configure URLs for Docker
-builder.WebHost.UseUrls("http://0.0.0.0:5000");
+var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:5000";
+builder.WebHost.UseUrls(urls);
 
 // Use Serilog
 builder.Host.UseSerilog();
@@ -96,29 +100,40 @@ var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSetti
 var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
 var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
 
-// Validate JWT secret key
-if (string.IsNullOrEmpty(secretKey))
+// In test environment, use a fixed key for consistency
+if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Test")
 {
-    throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+    if (string.IsNullOrEmpty(secretKey))
+    {
+        secretKey = "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024!";
+    }
 }
-
-// Ensure minimum key length for security
-if (secretKey.Length < 32)
+else
 {
-    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
-}
+    // Validate JWT secret key for production
+    if (string.IsNullOrEmpty(secretKey))
+    {
+        throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+    }
 
-// Prevent use of default/example keys
-var forbiddenKeys = new[]
-{
-    "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
-    "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024ProductionReadyCompliantWith256BitMinimumRequirementAndMoreCharacters!",
-    "default-secret-key"
-};
+    // Ensure minimum key length for security
+    if (secretKey.Length < 32)
+    {
+        throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+    }
 
-if (forbiddenKeys.Contains(secretKey))
-{
-    throw new InvalidOperationException("Default/example JWT secret keys are not allowed. Use a secure, unique key.");
+    // Prevent use of default/example keys
+    var forbiddenKeys = new[]
+    {
+        "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
+        "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024ProductionReadyCompliantWith256BitMinimumRequirementAndMoreCharacters!",
+        "default-secret-key"
+    };
+
+    if (forbiddenKeys.Contains(secretKey))
+    {
+        throw new InvalidOperationException("Default/example JWT secret keys are not allowed. Use a secure, unique key.");
+    }
 }
 
 
@@ -151,27 +166,29 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedOrigins", policy =>
     {
-        var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
-
-        if (builder.Environment.IsDevelopment())
+        // Get endpoints configuration
+        using var serviceProvider = builder.Services.BuildServiceProvider();
+        var secureConfig = serviceProvider.GetRequiredService<ISecureConfigurationProvider>();
+        var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
+        
+        if (endpoints.CorsOrigins.Any())
         {
-            // Allow localhost origins in development
-            policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
+            policy.WithOrigins(endpoints.CorsOrigins.ToArray())
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
         }
-        else if (corsOrigins.Length > 0)
+        else if (builder.Environment.IsDevelopment())
         {
-            // Use configured origins in production
-            policy.WithOrigins(corsOrigins)
+            // Allow localhost origins in development only
+            policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
                   .AllowAnyMethod()
                   .AllowAnyHeader()
                   .AllowCredentials();
         }
         else
         {
-            // No CORS in production by default
+            // No CORS in production without configuration
             policy.AllowAnyOrigin()
                   .AllowAnyMethod()
                   .AllowAnyHeader()
@@ -186,11 +203,29 @@ builder.Services.AddCors(options =>
 builder.Services.AddHealthChecks()
     .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
 
+// Add secure configuration services
+builder.Services.AddSecureConfiguration();
+
 // Add Neo Service Layer Core Services
 builder.Services.AddNeoServiceLayer(builder.Configuration);
 
 // Add Neo Service Framework (provides IServiceConfiguration)
 builder.Services.AddNeoServiceFramework();
+
+// Configure service endpoints
+builder.Services.AddSingleton(provider =>
+{
+    var secureConfig = provider.GetRequiredService<ISecureConfigurationProvider>();
+    var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
+    
+    // Validate endpoints in production
+    if (!builder.Environment.IsDevelopment())
+    {
+        endpoints.Validate();
+    }
+    
+    return endpoints;
+});
 
 // Add Persistent Storage Configuration
 builder.Configuration.AddJsonFile("appsettings.PersistentStorage.json", optional: true, reloadOnChange: true);
@@ -264,6 +299,9 @@ app.UseCors("AllowedOrigins");
 app.UseAuthentication();
 app.UseAuthorization();
 
+// Add permission middleware after authentication/authorization
+app.UsePermissionMiddleware();
+
 // Map controllers
 app.MapControllers();
 
@@ -272,11 +310,19 @@ app.MapRazorPages();
 
 // Map Health Checks
 app.MapHealthChecks("/health");
+app.MapHealthChecks("/health/ready", new HealthCheckOptions()
+{
+    Predicate = _ => true
+});
+app.MapHealthChecks("/health/live", new HealthCheckOptions()
+{
+    Predicate = _ => true
+});
 
 // Map info endpoint
 app.MapGet("/api/info", () => new
 {
-    Name = "Neo Service Layer Web Application",
+    Name = "Neo Service Layer API",
     Version = "1.0.0",
     Environment = app.Environment.EnvironmentName,
     Timestamp = DateTime.UtcNow,

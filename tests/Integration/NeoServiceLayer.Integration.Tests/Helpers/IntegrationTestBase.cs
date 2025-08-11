@@ -10,29 +10,28 @@ using NeoServiceLayer.Web;
 
 namespace NeoServiceLayer.Integration.Tests.Helpers;
 
-public abstract class IntegrationTestBase : IClassFixture<WebApplicationFactory<Program>>
+// Removed [Collection("Integration Tests")] to avoid any shared state between test classes
+public abstract class IntegrationTestBase : IDisposable
 {
-    protected readonly WebApplicationFactory<Program> Factory;
+    protected readonly CustomWebApplicationFactory Factory;
     protected readonly HttpClient Client;
 
-    protected IntegrationTestBase(WebApplicationFactory<Program> factory)
+    protected IntegrationTestBase()
     {
-        Factory = factory.WithWebHostBuilder(builder =>
-        {
-            builder.ConfigureServices(services =>
-            {
-                // Override services for testing if needed
-                // For example, replace real services with mocks
-            });
-        });
-
+        Factory = new CustomWebApplicationFactory();
         Client = Factory.CreateClient();
+    }
+
+    public virtual void Dispose()
+    {
+        Client?.Dispose();
+        Factory?.Dispose();
     }
 
     protected string GenerateJwtToken(string userId = "test-user", string role = "User", int expirationMinutes = 60)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
-        var key = Encoding.ASCII.GetBytes("SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024!");
+        var key = Encoding.ASCII.GetBytes("SuperSecretTestKeyThatIsLongEnoughForTesting123!");
 
         var claims = new List<Claim>
         {

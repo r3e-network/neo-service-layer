@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.ServiceFramework.Extensions;
 
 namespace NeoServiceLayer.Web.Extensions;
 
@@ -47,19 +48,21 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
         services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
         services.AddScoped<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService, NeoServiceLayer.Services.SecretsManagement.SecretsManagementService>();
-        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryServiceStub>();
-        // services.Configure<NeoServiceLayer.Services.SocialRecovery.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery"));
+        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryService>();
+        services.Configure<NeoServiceLayer.Services.SocialRecovery.Configuration.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery"));
 
-        // Operations Services (4)
+        // Operations Services (5)
         services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();
         services.AddScoped<NeoServiceLayer.Services.Monitoring.IMonitoringService, NeoServiceLayer.Services.Monitoring.MonitoringService>();
         services.AddScoped<NeoServiceLayer.Services.Health.IHealthService, NeoServiceLayer.Services.Health.HealthService>();
         services.AddScoped<NeoServiceLayer.Services.Notification.INotificationService, NeoServiceLayer.Services.Notification.NotificationService>();
+        services.AddSingleton<NeoServiceLayer.Services.Statistics.IStatisticsService, NeoServiceLayer.Services.Statistics.StatisticsService>();
 
-        // Infrastructure Services (4)
+        // Infrastructure Services (5)
         services.AddScoped<NeoServiceLayer.Services.CrossChain.ICrossChainService, NeoServiceLayer.Services.CrossChain.CrossChainService>();
         services.AddScoped<NeoServiceLayer.Services.Compute.IComputeService, NeoServiceLayer.Services.Compute.ComputeService>();
         services.AddScoped<NeoServiceLayer.Services.EventSubscription.IEventSubscriptionService, NeoServiceLayer.Services.EventSubscription.EventSubscriptionService>();
+        services.AddScoped<NeoServiceLayer.Services.Permissions.IPermissionService, NeoServiceLayer.Services.Permissions.PermissionService>();
 
         // Smart Contracts Service with dependencies
         services.AddScoped<NeoServiceLayer.Services.SmartContracts.NeoN3.NeoN3SmartContractManager>();
@@ -89,6 +92,9 @@ public static class ServiceRegistrationExtensions
             var config = provider.GetRequiredService<IConfiguration>();
             return new ServiceConfiguration(config);
         });
+
+        // Add permission-aware services extension
+        services.AddPermissionAwareServices();
 
         return services;
     }

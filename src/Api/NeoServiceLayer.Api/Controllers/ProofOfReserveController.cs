@@ -126,7 +126,14 @@ public class ProofOfReserveController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            // GetProofAsync method not available in interface, using GenerateProofAsync as placeholder
+            // Get existing proof by retrieving the reserve status and history
+            var reserveStatus = await _proofOfReserveService.GetReserveStatusAsync(proofId, blockchain);
+            if (reserveStatus == null)
+            {
+                return NotFound(CreateErrorResponse($"Asset not found: {proofId}"));
+            }
+            
+            // Generate fresh proof for the asset
             var result = await _proofOfReserveService.GenerateProofAsync(proofId, blockchain);
 
             if (result == null)

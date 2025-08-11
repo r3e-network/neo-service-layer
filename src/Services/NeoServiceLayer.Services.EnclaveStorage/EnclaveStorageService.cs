@@ -96,6 +96,21 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
             throw new ArgumentException("Data cannot be empty", nameof(request));
         }
 
+        // Check permission before storing
+        if (await HasPermissionToStore(request.Key, blockchainType))
+        {
+            Logger.LogDebug("Permission granted for storing data with key {Key}", request.Key);
+        }
+        else
+        {
+            Logger.LogWarning("Permission denied for storing data with key {Key}", request.Key);
+            return new SealDataResult
+            {
+                Success = false,
+                ErrorMessage = "Insufficient permissions to store data"
+            };
+        }
+
         if (request.Data.Length > 1048576) // 1MB limit
         {
             throw new InvalidOperationException("Data size exceeds maximum limit of 1MB");
@@ -164,6 +179,22 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     public async Task<UnsealDataResult> UnsealDataAsync(string key, BlockchainType blockchainType)
     {
         ValidateBlockchainType(blockchainType);
+
+        // Check permission before retrieving
+        if (await HasPermissionToRetrieve(key, blockchainType))
+        {
+            Logger.LogDebug("Permission granted for retrieving data with key {Key}", key);
+        }
+        else
+        {
+            Logger.LogWarning("Permission denied for retrieving data with key {Key}", key);
+            return new UnsealDataResult
+            {
+                Success = false,
+                ErrorMessage = "Insufficient permissions to retrieve data",
+                Data = Array.Empty<byte>()
+            };
+        }
 
         if (!_sealedItems.TryGetValue(key, out var sealedItem))
         {
@@ -255,6 +286,23 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     public async Task<DeleteSealedDataResult> DeleteSealedDataAsync(string key, BlockchainType blockchainType)
     {
         ValidateBlockchainType(blockchainType);
+
+        // Check permission before deleting
+        if (await HasPermissionToDelete(key, blockchainType))
+        {
+            Logger.LogDebug("Permission granted for deleting data with key {Key}", key);
+        }
+        else
+        {
+            Logger.LogWarning("Permission denied for deleting data with key {Key}", key);
+            return new DeleteSealedDataResult
+            {
+                Success = false,
+                Deleted = false,
+                Shredded = false,
+                ErrorMessage = "Insufficient permissions to delete data"
+            };
+        }
 
         if (!_sealedItems.TryRemove(key, out var sealedItem))
         {
@@ -463,6 +511,123 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
                 existing.TotalSize += sizeChange;
                 return existing;
             });
+    }
+
+    /// <summary>
+    /// Checks if the current principal has permission to store data with the given key.
+    /// </summary>
+    /// <param name="key">The storage key.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>True if permission is granted.</returns>
+    private async Task<bool> HasPermissionToStore(string key, BlockchainType blockchainType)
+    {
+        try
+        {
+            // Get permission service from DI if available
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+                as NeoServiceLayer.Services.Permissions.IPermissionService;
+                
+            if (permissionService == null)
+            {
+                Logger.LogDebug("Permission service not available, allowing storage operation");
+                return true; // Allow operation if no permission service is configured
+            }
+
+            // Extract service name from key (format: ServiceName:key)
+            var parts = key.Split(':', 2);
+            var serviceName = parts.Length > 1 ? parts[0] : "unknown";
+
+            // Check service permission for data storage
+            var result = await permissionService.CheckServicePermissionAsync(
+                serviceName, 
+                key, 
+                NeoServiceLayer.Services.Permissions.Models.AccessType.Write);
+
+            return result.IsAllowed;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking storage permission for key {Key}", key);
+            return false; // Deny on error
+        }
+    }
+
+    /// <summary>
+    /// Checks if the current principal has permission to retrieve data with the given key.
+    /// </summary>
+    /// <param name="key">The storage key.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>True if permission is granted.</returns>
+    private async Task<bool> HasPermissionToRetrieve(string key, BlockchainType blockchainType)
+    {
+        try
+        {
+            // Get permission service from DI if available
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+                as NeoServiceLayer.Services.Permissions.IPermissionService;
+                
+            if (permissionService == null)
+            {
+                Logger.LogDebug("Permission service not available, allowing retrieve operation");
+                return true; // Allow operation if no permission service is configured
+            }
+
+            // Extract service name from key (format: ServiceName:key)
+            var parts = key.Split(':', 2);
+            var serviceName = parts.Length > 1 ? parts[0] : "unknown";
+
+            // Check service permission for data retrieval
+            var result = await permissionService.CheckServicePermissionAsync(
+                serviceName, 
+                key, 
+                NeoServiceLayer.Services.Permissions.Models.AccessType.Read);
+
+            return result.IsAllowed;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking retrieve permission for key {Key}", key);
+            return false; // Deny on error
+        }
+    }
+
+    /// <summary>
+    /// Checks if the current principal has permission to delete data with the given key.
+    /// </summary>
+    /// <param name="key">The storage key.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>True if permission is granted.</returns>
+    private async Task<bool> HasPermissionToDelete(string key, BlockchainType blockchainType)
+    {
+        try
+        {
+            // Get permission service from DI if available
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+                as NeoServiceLayer.Services.Permissions.IPermissionService;
+                
+            if (permissionService == null)
+            {
+                Logger.LogDebug("Permission service not available, allowing delete operation");
+                return true; // Allow operation if no permission service is configured
+            }
+
+            // Extract service name from key (format: ServiceName:key)
+            var parts = key.Split(':', 2);
+            var serviceName = parts.Length > 1 ? parts[0] : "unknown";
+
+            // Check service permission for data deletion
+            var result = await permissionService.CheckServicePermissionAsync(
+                serviceName, 
+                key, 
+                NeoServiceLayer.Services.Permissions.Models.AccessType.Delete);
+
+            return result.IsAllowed;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error checking delete permission for key {Key}", key);
+            return false; // Deny on error
+        }
     }
 
     private void SecureDelete(byte[] data)

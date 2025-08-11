@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Voting;
@@ -13,6 +14,7 @@ namespace NeoServiceLayer.Services.Voting;
 public partial class VotingService : EnclaveBlockchainServiceBase, IVotingService, IDisposable
 {
     private readonly IStorageService _storageService;
+    private readonly SGXPersistence _sgxPersistence;
     private readonly Dictionary<string, VotingStrategy> _votingStrategies = new();
     private readonly Dictionary<string, VotingResult> _votingResults = new();
     private readonly Dictionary<string, CandidateInfo> _candidates = new();
@@ -39,11 +41,18 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="storageService">The storage service.</param>
+    /// <param name="enclaveStorage">The enclave storage service.</param>
     /// <param name="configuration">The service configuration.</param>
-    public VotingService(ILogger<VotingService> logger, IEnclaveManager enclaveManager, IStorageService storageService, IServiceConfiguration? configuration = null)
+    public VotingService(
+        ILogger<VotingService> logger, 
+        IEnclaveManager enclaveManager, 
+        IStorageService storageService, 
+        IEnclaveStorageService? enclaveStorage = null,
+        IServiceConfiguration? configuration = null)
         : base("VotingService", "Neo N3 council member voting assistance service", "1.0.0", logger, new[] { BlockchainType.NeoN3 }, enclaveManager)
     {
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
+        _sgxPersistence = new SGXPersistence("VotingService", enclaveStorage, logger);
         Configuration = configuration;
         _rpcEndpoint = configuration?.GetValue<string>("NeoN3RpcEndpoint") ?? "http://localhost:20332";
 
@@ -55,6 +64,7 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
         AddDependency(new ServiceDependency("HealthService", false, "1.0.0"));
         AddDependency(new ServiceDependency("OracleService", false, "1.0.0"));
         AddDependency(new ServiceDependency("StorageService", true, "1.0.0"));
+        AddDependency(new ServiceDependency("EnclaveStorageService", false, "1.0.0"));
 
         // Initialize with some sample candidates
         InitializeSampleCandidates();
@@ -189,70 +199,124 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     {
         try
         {
-            // Load voting strategies
-            try
+            // Try to load from SGX storage first
+            var sgxStrategies = await _sgxPersistence.GetVotingStrategiesAsync(BlockchainType.NeoN3);
+            if (sgxStrategies != null)
             {
-                var strategiesData = await _storageService.GetDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
-                var strategiesJson = System.Text.Encoding.UTF8.GetString(strategiesData);
-                var strategies = JsonSerializer.Deserialize<Dictionary<string, VotingStrategy>>(strategiesJson);
-                if (strategies != null)
+                lock (_strategiesLock)
                 {
-                    lock (_strategiesLock)
+                    foreach (var kvp in sgxStrategies)
                     {
-                        foreach (var kvp in strategies)
-                        {
-                            _votingStrategies[kvp.Key] = kvp.Value;
-                        }
+                        _votingStrategies[kvp.Key] = kvp.Value;
                     }
                 }
+                Logger.LogDebug("Loaded {Count} voting strategies from SGX storage", sgxStrategies.Count);
             }
-            catch (Exception)
+            else
             {
-                // Data doesn't exist yet, which is fine for first run
+                // Fallback to regular storage
+                try
+                {
+                    var strategiesData = await _storageService.GetDataAsync(StrategiesStorageKey, BlockchainType.NeoN3);
+                    var strategiesJson = System.Text.Encoding.UTF8.GetString(strategiesData);
+                    var strategies = JsonSerializer.Deserialize<Dictionary<string, VotingStrategy>>(strategiesJson);
+                    if (strategies != null)
+                    {
+                        lock (_strategiesLock)
+                        {
+                            foreach (var kvp in strategies)
+                            {
+                                _votingStrategies[kvp.Key] = kvp.Value;
+                            }
+                        }
+                        // Migrate to SGX storage
+                        await _sgxPersistence.StoreVotingStrategiesAsync(_votingStrategies, BlockchainType.NeoN3);
+                    }
+                }
+                catch (Exception)
+                {
+                    // Data doesn't exist yet, which is fine for first run
+                }
             }
 
-            // Load voting results
-            try
+            // Load voting results from SGX storage
+            var sgxResults = await _sgxPersistence.GetVotingResultsAsync(BlockchainType.NeoN3);
+            if (sgxResults != null)
             {
-                var resultsData = await _storageService.GetDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
-                var resultsJson = System.Text.Encoding.UTF8.GetString(resultsData);
-                var results = JsonSerializer.Deserialize<Dictionary<string, VotingResult>>(resultsJson);
-                if (results != null)
+                lock (_resultsLock)
                 {
-                    lock (_resultsLock)
+                    foreach (var kvp in sgxResults)
                     {
-                        foreach (var kvp in results)
-                        {
-                            _votingResults[kvp.Key] = kvp.Value;
-                        }
+                        _votingResults[kvp.Key] = kvp.Value;
                     }
                 }
+                Logger.LogDebug("Loaded {Count} voting results from SGX storage", sgxResults.Count);
             }
-            catch (Exception)
+            else
             {
-                // Data doesn't exist yet, which is fine for first run
+                // Fallback to regular storage
+                try
+                {
+                    var resultsData = await _storageService.GetDataAsync(ResultsStorageKey, BlockchainType.NeoN3);
+                    var resultsJson = System.Text.Encoding.UTF8.GetString(resultsData);
+                    var results = JsonSerializer.Deserialize<Dictionary<string, VotingResult>>(resultsJson);
+                    if (results != null)
+                    {
+                        lock (_resultsLock)
+                        {
+                            foreach (var kvp in results)
+                            {
+                                _votingResults[kvp.Key] = kvp.Value;
+                            }
+                        }
+                        // Migrate to SGX storage
+                        await _sgxPersistence.StoreVotingResultsAsync(_votingResults, BlockchainType.NeoN3);
+                    }
+                }
+                catch (Exception)
+                {
+                    // Data doesn't exist yet, which is fine for first run
+                }
             }
 
-            // Load candidates
-            try
+            // Load candidates from SGX storage
+            var sgxCandidates = await _sgxPersistence.GetCandidatesAsync(BlockchainType.NeoN3);
+            if (sgxCandidates != null)
             {
-                var candidatesData = await _storageService.GetDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
-                var candidatesJson = System.Text.Encoding.UTF8.GetString(candidatesData);
-                var candidates = JsonSerializer.Deserialize<Dictionary<string, CandidateInfo>>(candidatesJson);
-                if (candidates != null)
+                lock (_candidatesLock)
                 {
-                    lock (_candidatesLock)
+                    foreach (var kvp in sgxCandidates)
                     {
-                        foreach (var kvp in candidates)
-                        {
-                            _candidates[kvp.Key] = kvp.Value;
-                        }
+                        _candidates[kvp.Key] = kvp.Value;
                     }
                 }
+                Logger.LogDebug("Loaded {Count} candidates from SGX storage", sgxCandidates.Count);
             }
-            catch (Exception)
+            else
             {
-                // Data doesn't exist yet, which is fine for first run
+                // Fallback to regular storage
+                try
+                {
+                    var candidatesData = await _storageService.GetDataAsync(CandidatesStorageKey, BlockchainType.NeoN3);
+                    var candidatesJson = System.Text.Encoding.UTF8.GetString(candidatesData);
+                    var candidates = JsonSerializer.Deserialize<Dictionary<string, CandidateInfo>>(candidatesJson);
+                    if (candidates != null)
+                    {
+                        lock (_candidatesLock)
+                        {
+                            foreach (var kvp in candidates)
+                            {
+                                _candidates[kvp.Key] = kvp.Value;
+                            }
+                        }
+                        // Migrate to SGX storage
+                        await _sgxPersistence.StoreCandidatesAsync(_candidates, BlockchainType.NeoN3);
+                    }
+                }
+                catch (Exception)
+                {
+                    // Data doesn't exist yet, which is fine for first run
+                }
             }
 
             Logger.LogInformation("Loaded persisted voting data: {StrategiesCount} strategies, {ResultsCount} results, {CandidatesCount} candidates",
@@ -287,6 +351,10 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
                 strategiesToPersist = new Dictionary<string, VotingStrategy>(_votingStrategies);
             }
 
+            // Store in SGX storage
+            await _sgxPersistence.StoreVotingStrategiesAsync(strategiesToPersist, BlockchainType.NeoN3);
+
+            // Also store in regular storage for backwards compatibility
             var json = JsonSerializer.Serialize(strategiesToPersist);
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(StrategiesStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
@@ -310,6 +378,10 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
                 resultsToPersist = new Dictionary<string, VotingResult>(_votingResults);
             }
 
+            // Store in SGX storage
+            await _sgxPersistence.StoreVotingResultsAsync(resultsToPersist, BlockchainType.NeoN3);
+
+            // Also store in regular storage for backwards compatibility
             var json = JsonSerializer.Serialize(resultsToPersist);
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(ResultsStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
@@ -333,6 +405,10 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
                 candidatesToPersist = new Dictionary<string, CandidateInfo>(_candidates);
             }
 
+            // Store in SGX storage
+            await _sgxPersistence.StoreCandidatesAsync(candidatesToPersist, BlockchainType.NeoN3);
+
+            // Also store in regular storage for backwards compatibility
             var json = JsonSerializer.Serialize(candidatesToPersist);
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(CandidatesStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
@@ -340,6 +416,65 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to persist candidates");
+        }
+    }
+
+    /// <summary>
+    /// Inner class for SGX persistence operations.
+    /// </summary>
+    private class SGXPersistence : SGXPersistenceBase
+    {
+        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger) 
+            : base(serviceName, enclaveStorage, logger)
+        {
+        }
+
+        public async Task<bool> StoreVotingStrategiesAsync(Dictionary<string, VotingStrategy> strategies, BlockchainType blockchainType)
+        {
+            return await StoreSecurelyAsync("strategies", strategies, 
+                new Dictionary<string, object> 
+                { 
+                    ["type"] = "voting_strategies",
+                    ["count"] = strategies.Count 
+                }, 
+                blockchainType);
+        }
+
+        public async Task<Dictionary<string, VotingStrategy>?> GetVotingStrategiesAsync(BlockchainType blockchainType)
+        {
+            return await RetrieveSecurelyAsync<Dictionary<string, VotingStrategy>>("strategies", blockchainType);
+        }
+
+        public async Task<bool> StoreVotingResultsAsync(Dictionary<string, VotingResult> results, BlockchainType blockchainType)
+        {
+            return await StoreSecurelyAsync("results", results,
+                new Dictionary<string, object> 
+                { 
+                    ["type"] = "voting_results",
+                    ["count"] = results.Count 
+                }, 
+                blockchainType);
+        }
+
+        public async Task<Dictionary<string, VotingResult>?> GetVotingResultsAsync(BlockchainType blockchainType)
+        {
+            return await RetrieveSecurelyAsync<Dictionary<string, VotingResult>>("results", blockchainType);
+        }
+
+        public async Task<bool> StoreCandidatesAsync(Dictionary<string, CandidateInfo> candidates, BlockchainType blockchainType)
+        {
+            return await StoreSecurelyAsync("candidates", candidates,
+                new Dictionary<string, object> 
+                { 
+                    ["type"] = "candidates",
+                    ["count"] = candidates.Count 
+                }, 
+                blockchainType);
+        }
+
+        public async Task<Dictionary<string, CandidateInfo>?> GetCandidatesAsync(BlockchainType blockchainType)
+        {
+            return await RetrieveSecurelyAsync<Dictionary<string, CandidateInfo>>("candidates", blockchainType);
         }
     }
 }

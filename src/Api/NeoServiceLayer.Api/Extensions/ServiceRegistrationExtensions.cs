@@ -47,8 +47,8 @@ public static class ServiceRegistrationExtensions
         services.AddScoped<NeoServiceLayer.Services.Compliance.IComplianceService, NeoServiceLayer.Services.Compliance.ComplianceService>();
         services.AddScoped<NeoServiceLayer.Services.ProofOfReserve.IProofOfReserveService, NeoServiceLayer.Services.ProofOfReserve.ProofOfReserveService>();
         services.AddScoped<NeoServiceLayer.Services.SecretsManagement.ISecretsManagementService, NeoServiceLayer.Services.SecretsManagement.SecretsManagementService>();
-        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryServiceStub>();
-        // services.Configure<NeoServiceLayer.Services.SocialRecovery.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery")); // Options class doesn't exist
+        services.AddScoped<NeoServiceLayer.Services.SocialRecovery.ISocialRecoveryService, NeoServiceLayer.Services.SocialRecovery.SocialRecoveryService>();
+        services.Configure<NeoServiceLayer.Services.SocialRecovery.Configuration.SocialRecoveryOptions>(configuration.GetSection("SocialRecovery"));
 
         // Operations Services (4)
         services.AddScoped<NeoServiceLayer.Services.Automation.IAutomationService, NeoServiceLayer.Services.Automation.AutomationService>();

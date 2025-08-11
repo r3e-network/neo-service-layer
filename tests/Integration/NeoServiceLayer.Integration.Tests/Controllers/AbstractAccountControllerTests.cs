@@ -2,20 +2,16 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Integration.Tests.Helpers;
 using NeoServiceLayer.Web;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests.Controllers;
 
-public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class AbstractAccountControllerTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-
-    public AbstractAccountControllerTests(WebApplicationFactory<Program> factory)
+    public AbstractAccountControllerTests() : base()
     {
-        _factory = factory;
-        _client = _factory.CreateClient();
     }
 
     [Fact]
@@ -30,7 +26,7 @@ public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactor
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/v1/abstract-account", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/abstract-account", request);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -40,12 +36,12 @@ public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactor
     public async Task GetAccount_WithValidAuth_ReturnsAccount()
     {
         // Arrange
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-token");
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateJwtToken("test-user", "User"));
         var accountAddress = "0x123...";
 
         // Act
-        var response = await _client.GetAsync($"/api/v1/abstract-account/{accountAddress}");
+        var response = await Client.GetAsync($"/api/v1/abstract-account/{accountAddress}");
 
         // Assert
         Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -55,8 +51,8 @@ public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactor
     public async Task AddGuardian_RequiresAccountOwnerRole()
     {
         // Arrange
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", "test-token-user");
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateJwtToken("test-user", "AccountOwner"));
 
         var request = new
         {
@@ -64,7 +60,7 @@ public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactor
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/v1/abstract-account/0x123/guardians", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/abstract-account/0x123/guardians", request);
 
         // Assert
         // Should be Forbidden if user doesn't have AccountOwner role
@@ -82,7 +78,7 @@ public class AbstractAccountControllerTests : IClassFixture<WebApplicationFactor
         var request = new HttpRequestMessage(new HttpMethod(method), url);
 
         // Act
-        var response = await _client.SendAsync(request);
+        var response = await Client.SendAsync(request);
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);

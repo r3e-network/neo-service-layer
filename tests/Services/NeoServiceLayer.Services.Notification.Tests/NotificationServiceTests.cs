@@ -1,3 +1,4 @@
+using Microsoft.Extensions.Configuration;
 ﻿using System.Net;
 using System.Net.Http;
 using FluentAssertions;
@@ -37,11 +38,8 @@ public class NotificationServiceTests : TestBase, IDisposable
         SetupConfiguration();
         SetupHttpClient();
 
-        _service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
-
-        // Initialize the service synchronously for tests
-        _service.InitializeAsync().GetAwaiter().GetResult();
-        _service.StartAsync().GetAwaiter().GetResult();
+        // Create service with mock enclave manager for testing
+        _service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object, null);
     }
 
     #region Service Lifecycle Tests
@@ -244,7 +242,7 @@ public class NotificationServiceTests : TestBase, IDisposable
     public async Task SendNotificationAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object, null);
         var request = new SendNotificationRequest
         {
             Recipient = "test@example.com",
@@ -369,7 +367,7 @@ public class NotificationServiceTests : TestBase, IDisposable
     public async Task SendBatchNotificationsAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object, null);
         dynamic request = new
         {
             Recipients = new List<string> { "user1@example.com" },
@@ -590,7 +588,7 @@ public class NotificationServiceTests : TestBase, IDisposable
     public async Task SubscribeAsync_ServiceNotRunning_ShouldThrowInvalidOperationException()
     {
         // Arrange
-        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object);
+        var service = new NotificationService(_optionsMock.Object, _httpClientFactoryMock.Object, _loggerMock.Object, null);
         var request = new SubscribeRequest
         {
             Recipient = "user@example.com",

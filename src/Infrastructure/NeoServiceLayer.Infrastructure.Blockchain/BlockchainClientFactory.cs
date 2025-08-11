@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Neo.N3;
 using NeoServiceLayer.Neo.X;
 
@@ -15,6 +16,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BlockchainClientFactory> _logger;
     private readonly BlockchainConfiguration _configuration;
+    private readonly ServiceEndpoints? _endpoints;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="BlockchainClientFactory"/> class.
@@ -30,6 +32,17 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         _serviceProvider = serviceProvider;
         _logger = logger;
         _configuration = configuration.Value;
+        
+        // Try to get ServiceEndpoints if available
+        try
+        {
+            _endpoints = serviceProvider.GetService<ServiceEndpoints>();
+        }
+        catch
+        {
+            // ServiceEndpoints might not be registered in all scenarios
+            _endpoints = null;
+        }
     }
 
     /// <inheritdoc/>
@@ -68,7 +81,10 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
         var logger = _serviceProvider.GetRequiredService<ILogger<NeoN3Client>>();
         var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoN3ClientAdapter>>();
-        var rpcUrl = _configuration.NeoN3?.RpcUrl ?? "http://localhost:20332";
+        // Use ServiceEndpoints if available, otherwise fall back to configuration
+        var rpcUrl = !string.IsNullOrEmpty(_endpoints?.NeoN3RpcUrl)
+            ? _endpoints.NeoN3RpcUrl
+            : _configuration.NeoN3?.RpcUrl ?? "http://localhost:20332";
 
         // Create the Neo N3 client directly
         var neoN3Client = new NeoN3Client(logger, httpClient, rpcUrl);
@@ -89,7 +105,10 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
         var logger = _serviceProvider.GetRequiredService<ILogger<NeoXClient>>();
         var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoXClientAdapter>>();
-        var rpcUrl = _configuration.NeoX?.RpcUrl ?? "http://localhost:8545";
+        // Use ServiceEndpoints if available, otherwise fall back to configuration
+        var rpcUrl = !string.IsNullOrEmpty(_endpoints?.NeoXRpcUrl)
+            ? _endpoints.NeoXRpcUrl
+            : _configuration.NeoX?.RpcUrl ?? "http://localhost:8545";
 
         // Create the Neo X client directly
         var neoXClient = new NeoXClient(logger, httpClient, rpcUrl);

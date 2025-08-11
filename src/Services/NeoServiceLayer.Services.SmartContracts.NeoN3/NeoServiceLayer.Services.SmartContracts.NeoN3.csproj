@@ -19,6 +19,7 @@
     <PackageReference Include="Neo.IO" />
     <PackageReference Include="Neo.SmartContract.Framework" />
     <PackageReference Include="Neo.Extensions" />
+    <PackageReference Include="Neo.Network.RPC.RpcClient" />
   </ItemGroup>
 
   <ItemGroup>

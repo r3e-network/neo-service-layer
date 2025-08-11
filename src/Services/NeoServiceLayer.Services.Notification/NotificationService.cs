@@ -524,6 +524,19 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
                 throw new NotSupportedException($"Notification channel {request.Channel} is not enabled");
             }
 
+            // Validate recipient using privacy-preserving computation
+            var isValidRecipient = await ValidateRecipientWithPrivacyAsync(request.Recipient, request.Channel);
+            if (!isValidRecipient)
+            {
+                throw new ArgumentException($"Invalid recipient for channel {request.Channel}");
+            }
+
+            // Process notification with privacy-preserving operations
+            var privacyResult = await ProcessNotificationWithPrivacyAsync(request, notificationId);
+            
+            Logger.LogDebug("Privacy-preserving notification processing completed: NotificationId={NotificationId}, Proof={Proof}", 
+                privacyResult.NotificationId, privacyResult.DeliveryProof.Proof);
+
             // Process based on channel
             var result = request.Channel switch
             {

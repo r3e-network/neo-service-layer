@@ -151,12 +151,8 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
 
             Logger.LogInformation("Generating key {KeyId} of type {KeyType} securely within enclave", keyId, keyType);
 
-            // Generate key in the enclave with enhanced security
-            string result = await _enclaveManager.KmsGenerateKeyAsync(keyId, keyType, keyUsage, exportable, description);
-
-            // Parse the result
-            var keyMetadata = JsonSerializer.Deserialize<KeyMetadata>(result) ??
-                throw new InvalidOperationException("Failed to deserialize key metadata.");
+            // Generate key using privacy-preserving operations
+            var keyMetadata = await CreateKeyWithPrivacyAsync(keyId, keyType, keyUsage, exportable, description);
 
             // Validate key metadata integrity
             if (string.IsNullOrEmpty(keyMetadata.KeyId) || keyMetadata.KeyId != keyId)
@@ -344,14 +340,19 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
                 throw new UnauthorizedAccessException($"Key {keyId} is not authorized for signing operations");
             }
 
-            // Sign data in the enclave with enhanced security
-            string result = await _enclaveManager.KmsSignDataAsync(keyId, dataHex, signingAlgorithm);
+            // Sign data using privacy-preserving operations
+            var signatureResult = await SignDataWithPrivacyAsync(keyId, dataHex, signingAlgorithm);
+            
+            var result = signatureResult.Signature;
 
             // Validate signature result
             if (string.IsNullOrEmpty(result))
             {
                 throw new InvalidOperationException("Signing operation returned empty result");
             }
+            
+            // Record privacy-preserving audit proof
+            await RecordKeyUsageAsync(keyId, "SignData", $"Signed with proof: {signatureResult.AuditProof}");
 
             // Update the key's last used timestamp
             await UpdateKeyLastUsedAsync(keyId);

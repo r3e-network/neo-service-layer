@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.AbstractAccount.Models;
+using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.AbstractAccount;
@@ -15,20 +16,67 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
     private readonly Dictionary<string, AbstractAccountInfo> _accounts = new();
     private readonly Dictionary<string, List<TransactionHistoryItem>> _transactionHistory = new();
     private readonly object _accountsLock = new();
+    private readonly SGXPersistence _sgxPersistence;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AbstractAccountService"/> class.
     /// </summary>
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
+    /// <param name="enclaveStorage">The enclave storage service.</param>
     public AbstractAccountService(
         ILogger<AbstractAccountService> logger,
-        IEnclaveManager enclaveManager)
+        IEnclaveManager enclaveManager,
+        IEnclaveStorageService? enclaveStorage = null)
         : base("AbstractAccountService", "Account abstraction and smart wallet functionality", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
+        _sgxPersistence = new SGXPersistence("AbstractAccountService", enclaveStorage, logger);
         AddCapability<IAbstractAccountService>();
         AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
-        AddDependency(new ServiceDependency("StorageService", false, "1.0.0"));
+        AddDependency(new ServiceDependency("EnclaveStorageService", false, "1.0.0"));
+    }
+
+    /// <summary>
+    /// Inner class for SGX persistence operations.
+    /// </summary>
+    private class SGXPersistence : SGXPersistenceBase
+    {
+        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger) 
+            : base(serviceName, enclaveStorage, logger)
+        {
+        }
+
+        public async Task<bool> StoreAccountAsync(string accountId, AbstractAccountInfo account, BlockchainType blockchainType)
+        {
+            return await StoreSecurelyAsync($"account:{accountId}", account, 
+                new Dictionary<string, object> 
+                { 
+                    ["type"] = "account",
+                    ["blockchain"] = blockchainType.ToString() 
+                }, 
+                blockchainType);
+        }
+
+        public async Task<AbstractAccountInfo?> GetAccountAsync(string accountId, BlockchainType blockchainType)
+        {
+            return await RetrieveSecurelyAsync<AbstractAccountInfo>($"account:{accountId}", blockchainType);
+        }
+
+        public async Task<bool> StoreTransactionHistoryAsync(string accountId, List<TransactionHistoryItem> history, BlockchainType blockchainType)
+        {
+            return await StoreSecurelyAsync($"history:{accountId}", history,
+                new Dictionary<string, object> 
+                { 
+                    ["type"] = "transaction_history",
+                    ["count"] = history.Count 
+                }, 
+                blockchainType);
+        }
+
+        public async Task<List<TransactionHistoryItem>?> GetTransactionHistoryAsync(string accountId, BlockchainType blockchainType)
+        {
+            return await RetrieveSecurelyAsync<List<TransactionHistoryItem>>($"history:{accountId}", blockchainType);
+        }
     }
 
     /// <inheritdoc/>
@@ -81,7 +129,11 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     _transactionHistory[accountId] = new List<TransactionHistoryItem>();
                 }
 
-                Logger.LogInformation("Created abstract account {AccountId} at address {Address} on {Blockchain}",
+                // Store account in SGX storage
+                await _sgxPersistence.StoreAccountAsync(accountId, accountInfo, blockchainType);
+                await _sgxPersistence.StoreTransactionHistoryAsync(accountId, new List<TransactionHistoryItem>(), blockchainType);
+
+                Logger.LogInformation("Created abstract account {AccountId} at address {Address} on {Blockchain} with SGX storage",
                     accountId, accountResult.AccountAddress, blockchainType);
 
                 return new AbstractAccountResult
@@ -155,7 +207,16 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     account.LastActivityAt = DateTime.UtcNow;
                 }
 
-                Logger.LogInformation("Executed transaction {TransactionHash} for account {AccountId} on {Blockchain}",
+                // Persist updated transaction history to SGX storage
+                await _sgxPersistence.StoreTransactionHistoryAsync(
+                    request.AccountId, 
+                    _transactionHistory[request.AccountId], 
+                    blockchainType);
+
+                // Persist updated account info
+                await _sgxPersistence.StoreAccountAsync(request.AccountId, account, blockchainType);
+
+                Logger.LogInformation("Executed transaction {TransactionHash} for account {AccountId} on {Blockchain} with SGX persistence",
                     txResult.TransactionHash, request.AccountId, blockchainType);
 
                 return txResult;
@@ -585,7 +646,20 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
 
         return await ExecuteInEnclaveAsync(async () =>
         {
-            await Task.CompletedTask; // Placeholder for async operation
+            // Try to load from SGX storage first
+            var storedAccount = await _sgxPersistence.GetAccountAsync(accountId, blockchainType);
+            if (storedAccount != null)
+            {
+                // Update in-memory cache
+                lock (_accountsLock)
+                {
+                    _accounts[accountId] = storedAccount;
+                }
+                Logger.LogDebug("Loaded account {AccountId} from SGX storage", accountId);
+                return storedAccount;
+            }
+
+            // Fallback to in-memory storage
             return GetAccount(accountId);
         });
     }
@@ -602,7 +676,17 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
 
         return await ExecuteInEnclaveAsync(async () =>
         {
-            await Task.CompletedTask; // Placeholder for async operation
+            // Try to load from SGX storage first
+            var storedHistory = await _sgxPersistence.GetTransactionHistoryAsync(request.AccountId, blockchainType);
+            if (storedHistory != null)
+            {
+                // Update in-memory cache
+                lock (_accountsLock)
+                {
+                    _transactionHistory[request.AccountId] = storedHistory;
+                }
+                Logger.LogDebug("Loaded transaction history for account {AccountId} from SGX storage", request.AccountId);
+            }
 
             lock (_accountsLock)
             {
@@ -654,8 +738,9 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
 
         try
         {
-            // Start any background services or timers here
-            await Task.CompletedTask;
+            // Load existing accounts from SGX storage
+            await LoadAccountsFromSGXStorageAsync();
+            
             Logger.LogInformation("Abstract Account Service started successfully");
             return true;
         }
@@ -663,6 +748,72 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         {
             Logger.LogError(ex, "Failed to start Abstract Account Service");
             return false;
+        }
+    }
+
+    /// <summary>
+    /// Loads accounts from SGX storage on startup.
+    /// </summary>
+    private async Task LoadAccountsFromSGXStorageAsync()
+    {
+        try
+        {
+            Logger.LogDebug("Loading accounts from SGX storage");
+            
+            // List all stored accounts
+            var storedItems = await _sgxPersistence.ListStoredItemsAsync("account:", BlockchainType.NeoN3);
+            if (storedItems == null || storedItems.ItemCount == 0)
+            {
+                Logger.LogDebug("No accounts found in SGX storage");
+                return;
+            }
+
+            int loadedCount = 0;
+            foreach (var item in storedItems.Items)
+            {
+                try
+                {
+                    // Extract account ID from key (format: "AbstractAccountService:account:{id}")
+                    var keyParts = item.Key.Split(':');
+                    if (keyParts.Length >= 3)
+                    {
+                        var accountId = keyParts[2];
+                        
+                        // Load account data
+                        var account = await _sgxPersistence.GetAccountAsync(accountId, BlockchainType.NeoN3);
+                        if (account != null)
+                        {
+                            lock (_accountsLock)
+                            {
+                                _accounts[accountId] = account;
+                            }
+                            
+                            // Load transaction history
+                            var history = await _sgxPersistence.GetTransactionHistoryAsync(accountId, BlockchainType.NeoN3);
+                            if (history != null)
+                            {
+                                lock (_accountsLock)
+                                {
+                                    _transactionHistory[accountId] = history;
+                                }
+                            }
+                            
+                            loadedCount++;
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogWarning(ex, "Failed to load account from SGX storage: {Key}", item.Key);
+                }
+            }
+            
+            Logger.LogInformation("Loaded {Count} accounts from SGX storage", loadedCount);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error loading accounts from SGX storage");
+            // Continue startup even if loading fails
         }
     }
 

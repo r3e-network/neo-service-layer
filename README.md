@@ -7,17 +7,19 @@
 [![Intel SGX](https://img.shields.io/badge/Intel-SGX-blue)](https://software.intel.com/en-us/sgx)
 [![Docker](https://img.shields.io/badge/docker-ready-blue)](https://www.docker.com/)
 
-The Neo Service Layer is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. It supports both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
+The Neo Service Layer is a **production-ready, enterprise-grade platform** that leverages Intel SGX with Occlum LibOS to provide secure, privacy-preserving services for the Neo blockchain ecosystem. All services now feature SGX-based privacy-preserving computation and storage, supporting both Neo N3 and NeoX (EVM-compatible) blockchains with comprehensive AI-powered services.
 
-> **Enterprise Ready** • **Hardware Security** • **Multi-Chain** • **AI-Powered** • **Production Tested**
+> **Enterprise Ready** • **Hardware Security** • **Privacy-Preserving** • **Multi-Chain** • **AI-Powered** • **Production Tested**
 
 ## 🌟 Key Features
 
 - **🔒 Trusted Execution Environment**: Intel SGX with Occlum LibOS for maximum security
+- **🔐 Privacy-Preserving Computation**: All services run privacy-preserving JavaScript in SGX enclaves
+- **💾 Secure Storage**: SGX-based sealed storage for all service persistence operations
 - **🌐 Interactive Web Application**: Full-featured web interface with real-time service interaction
 - **🤖 AI-Powered Services**: Pattern recognition, fraud detection, and predictive analytics
 - **⛓️ Multi-Chain Support**: Neo N3 and Neo X blockchain integration
-- **🏗️ Microservices Architecture**: 26 production-ready services
+- **🏗️ Microservices Architecture**: 26 production-ready services with SGX integration
 - **📊 Enterprise-Grade Quality**: 80%+ test coverage, comprehensive documentation
 - **🚀 Production Ready**: Docker containerization, monitoring, and CI/CD
 
@@ -48,6 +50,7 @@ The Neo Service Layer is a **production-ready, enterprise-grade platform** that 
 │  🔒 Intel SGX + Occlum LibOS (Trusted Execution)          │
 │     • Hardware Security      • Remote Attestation          │
 │     • Confidential Computing • Secure Enclaves             │
+│     • JavaScript Runtime     • Sealed Storage              │
 ├─────────────────────────────────────────────────────────────┤
 │  ⛓️ Multi-Blockchain Integration                          │
 │     • Neo N3 Native         • NeoX EVM-Compatible          │

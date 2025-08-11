@@ -164,7 +164,13 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                 Logger.LogDebug("Executing private computation {ComputationId} of type {Type}",
                     computationId, request.ComputationType);
 
-                // Execute computation within the enclave for privacy
+                // Execute computation using privacy-preserving operations
+                var privacyResult = await ExecutePrivacyComputationAsync(request);
+                
+                Logger.LogDebug("Privacy-preserving computation completed: ProofId={ProofId}, Valid={Valid}", 
+                    privacyResult.ProofId, privacyResult.Valid);
+
+                // Execute actual computation 
                 var result = await ExecuteComputationInEnclaveAsync(request);
                 var proof = await GenerateComputationProofAsync(request, result);
 
@@ -175,7 +181,13 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                     Results = new object[] { result },
                     Proof = proof,
                     ComputedAt = DateTime.UtcNow,
-                    IsValid = true
+                    IsValid = privacyResult.Valid,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["PrivacyProofId"] = privacyResult.ProofId,
+                        ["Commitment"] = privacyResult.Commitment,
+                        ["PublicOutputHash"] = privacyResult.PublicOutputHash
+                    }
                 };
 
                 Logger.LogInformation("Executed private computation {ComputationId} on {Blockchain}",

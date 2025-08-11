@@ -2,103 +2,18 @@ global:
   scrape_interval: 15s
   evaluation_interval: 15s
 
-rule_files:
-  # - "first_rules.yml"
-  # - "second_rules.yml"
-
 scrape_configs:
-  # Neo Service Layer main application
   - job_name: 'neo-service-layer'
     static_configs:
       - targets: ['neo-service-layer:5000']
-    metrics_path: /metrics
-    scrape_interval: 10s
-    scrape_timeout: 5s
+    metrics_path: '/api/statistics/export'
+    params:
+      format: ['prometheus']
 
-  # Individual service health checks
-  - job_name: 'neo-services-health'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/health
-    scrape_interval: 30s
-    scrape_timeout: 10s
-
-  # Key Management Service
-  - job_name: 'keymanagement-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/keymanagement/metrics
-    scrape_interval: 15s
-
-  # SGX Enclave Service
-  - job_name: 'sgx-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/sgx/metrics
-    scrape_interval: 15s
-
-  # Storage Service
-  - job_name: 'storage-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/storage/metrics
-    scrape_interval: 15s
-
-  # Compliance Service
-  - job_name: 'compliance-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/compliance/metrics
-    scrape_interval: 20s
-
-  # Zero Knowledge Service
-  - job_name: 'zeroknowledge-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/zeroknowledge/metrics
-    scrape_interval: 20s
-
-  # AI Prediction Service
-  - job_name: 'prediction-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/prediction/metrics
-    scrape_interval: 30s
-
-  # Oracle Service
-  - job_name: 'oracle-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/oracle/metrics
-    scrape_interval: 20s
-
-  # Voting Service
-  - job_name: 'voting-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/voting/metrics
-    scrape_interval: 25s
-
-  # Cross Chain Service
-  - job_name: 'crosschain-service'
-    static_configs:
-      - targets: ['neo-service-layer:5000']
-    metrics_path: /api/crosschain/metrics
-    scrape_interval: 20s
-
-  # Prometheus itself
-  - job_name: 'prometheus'
-    static_configs:
-      - targets: ['localhost:9090']
-
-  # Node exporter (if running)
-  - job_name: 'node'
+  - job_name: 'node-exporter'
     static_configs:
       - targets: ['node-exporter:9100']
-    scrape_interval: 15s
 
-alerting:
-  alertmanagers:
-    - static_configs:
-        - targets:
-          # - alertmanager:9093 
+  - job_name: 'cadvisor'
+    static_configs:
+      - targets: ['cadvisor:8080']

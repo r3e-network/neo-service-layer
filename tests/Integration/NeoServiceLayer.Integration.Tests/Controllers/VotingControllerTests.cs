@@ -2,27 +2,23 @@
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Integration.Tests.Helpers;
 using NeoServiceLayer.Web;
 using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests.Controllers;
 
-public class VotingControllerTests : IClassFixture<WebApplicationFactory<Program>>
+public class VotingControllerTests : IntegrationTestBase
 {
-    private readonly WebApplicationFactory<Program> _factory;
-    private readonly HttpClient _client;
-
-    public VotingControllerTests(WebApplicationFactory<Program> factory)
+    public VotingControllerTests() : base()
     {
-        _factory = factory;
-        _client = _factory.CreateClient();
     }
 
     [Fact]
     public async Task GetCouncilNodes_WithoutAuth_ReturnsUnauthorized()
     {
         // Act
-        var response = await _client.GetAsync("/api/v1/voting/council-nodes");
+        var response = await Client.GetAsync("/api/v1/voting/council-nodes");
 
         // Assert
         Assert.Equal(HttpStatusCode.Unauthorized, response.StatusCode);
@@ -32,8 +28,8 @@ public class VotingControllerTests : IClassFixture<WebApplicationFactory<Program
     public async Task CreateVotingStrategy_WithoutAdminRole_ReturnsForbidden()
     {
         // Arrange
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestToken("user"));
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateJwtToken("test-user", "User"));
 
         var request = new
         {
@@ -42,7 +38,7 @@ public class VotingControllerTests : IClassFixture<WebApplicationFactory<Program
         };
 
         // Act
-        var response = await _client.PostAsJsonAsync("/api/v1/voting/strategies", request);
+        var response = await Client.PostAsJsonAsync("/api/v1/voting/strategies", request);
 
         // Assert
         Assert.Equal(HttpStatusCode.Forbidden, response.StatusCode);
@@ -52,11 +48,11 @@ public class VotingControllerTests : IClassFixture<WebApplicationFactory<Program
     public async Task GetNetworkHealth_WithValidAuth_ReturnsSuccess()
     {
         // Arrange
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestToken("user"));
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateJwtToken("test-user", "User"));
 
         // Act
-        var response = await _client.GetAsync("/api/v1/voting/network-health");
+        var response = await Client.GetAsync("/api/v1/voting/network-health");
 
         // Assert
         Assert.Equal(HttpStatusCode.OK, response.StatusCode);
@@ -72,21 +68,15 @@ public class VotingControllerTests : IClassFixture<WebApplicationFactory<Program
     public async Task VotingEndpoints_WithValidAuth_ReturnsSuccess(string endpoint, string role)
     {
         // Arrange
-        _client.DefaultRequestHeaders.Authorization =
-            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateTestToken(role));
+        Client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", GenerateJwtToken("test-user", role));
 
         // Act
-        var response = await _client.GetAsync($"/api/v1/voting/{endpoint}?ownerAddress=test");
+        var response = await Client.GetAsync($"/api/v1/voting/{endpoint}?ownerAddress=test");
 
         // Assert
         Assert.NotEqual(HttpStatusCode.Unauthorized, response.StatusCode);
         Assert.NotEqual(HttpStatusCode.InternalServerError, response.StatusCode);
     }
 
-    private string GenerateTestToken(string role)
-    {
-        // In a real test, this would generate a valid JWT token with the specified role
-        // For now, returning a dummy token
-        return "test-token-" + role;
-    }
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Numerics;
 using System.Threading.Tasks;
@@ -24,7 +24,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             string strategyId,
             bool isEmergency,
             BigInteger recoveryFee,
-            List<AuthFactor> authFactors = null,
+            List<AuthFactor>? authFactors = null,
             string blockchain = "neo-n3");
 
         /// <summary>

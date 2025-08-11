@@ -142,10 +142,11 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
             Logger.LogDebug("Fetching data from {DataSource}/{DataPath} securely within enclave", dataSource, dataPath);
 
-            // Validate data source URL for security
-            if (!IsValidDataSource(dataSource))
+            // Validate data source reputation using privacy-preserving computation
+            var isReputable = await ValidateDataSourceReputationAsync(dataSource);
+            if (!isReputable)
             {
-                throw new UnauthorizedAccessException($"Data source {dataSource} is not authorized");
+                throw new UnauthorizedAccessException($"Data source {dataSource} failed reputation check");
             }
 
             // Update data source access statistics
@@ -164,6 +165,12 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             var blockHeight = await client.GetBlockHeightAsync();
             var block = await client.GetBlockAsync(blockHeight);
             var blockHash = block.Hash;
+
+            // Fetch data using privacy-preserving operations
+            var privacyResult = await FetchDataWithPrivacyAsync(dataSource, dataPath);
+            
+            Logger.LogDebug("Privacy-preserving oracle fetch completed: RequestId={RequestId}, DataHash={DataHash}", 
+                privacyResult.RequestId, privacyResult.DataHash);
 
             string result;
             try
@@ -197,8 +204,8 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
                 }
             }
 
-            // Add integrity metadata to the result
-            var enhancedResult = AddIntegrityMetadata(result, blockHeight, blockHash, dataSource, dataPath);
+            // Add integrity metadata to the result with privacy proofs
+            var enhancedResult = AddIntegrityMetadata(result, blockHeight, blockHash, dataSource, dataPath, privacyResult);
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
@@ -259,6 +266,12 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
         try
         {
+            // Fetch data with privacy-preserving operations
+            var privacyResult = await FetchDataWithPrivacyAsync(request.Url, request.Path, request);
+            
+            Logger.LogDebug("Privacy-preserving oracle data fetch completed: RequestId={RequestId}, DataHash={DataHash}", 
+                privacyResult.RequestId, privacyResult.DataHash);
+            
             var data = await GetDataAsync(request.Url, request.Path, blockchainType);
 
             var response = new OracleResponse
@@ -269,7 +282,15 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
                 StatusCode = 200,
                 BlockchainType = blockchainType,
                 SourceUrl = request.Url,
-                SourcePath = request.Path
+                SourcePath = request.Path,
+                // Add privacy metadata
+                Metadata = new Dictionary<string, object>
+                {
+                    ["privacy_request_id"] = privacyResult.RequestId,
+                    ["data_hash"] = privacyResult.DataHash,
+                    ["source_proof_hash"] = privacyResult.SourceProof.SourceHash,
+                    ["source_proof_signature"] = privacyResult.SourceProof.Signature
+                }
             };
 
             return response;
@@ -488,8 +509,9 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     /// <param name="blockHash">The current block hash.</param>
     /// <param name="dataSource">The data source URL.</param>
     /// <param name="dataPath">The data path.</param>
+    /// <param name="privacyResult">The privacy result from SGX.</param>
     /// <returns>Enhanced data with integrity metadata.</returns>
-    private string AddIntegrityMetadata(string data, long blockHeight, string blockHash, string dataSource, string dataPath)
+    private string AddIntegrityMetadata(string data, long blockHeight, string blockHash, string dataSource, string dataPath, PrivacyOracleResult? privacyResult = null)
     {
         try
         {
@@ -508,7 +530,15 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
                     timestamp = timestamp.ToString("O"),
                     data_source = dataSource,
                     data_path = dataPath,
-                    enclave_verified = true
+                    enclave_verified = true,
+                    privacy_proof = privacyResult != null ? new
+                    {
+                        request_id = privacyResult.RequestId,
+                        data_hash = privacyResult.DataHash,
+                        source_hash = privacyResult.SourceProof.SourceHash,
+                        path_hash = privacyResult.SourceProof.PathHash,
+                        source_signature = privacyResult.SourceProof.Signature
+                    } : null
                 }
             };
 

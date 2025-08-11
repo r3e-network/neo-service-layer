@@ -1,0 +1,502 @@
+@{
+    ViewData["Title"] = "Statistics Dashboard";
+}
+
+<div class="container-fluid mt-4">
+    <h1 class="mb-4">Neo Service Layer Statistics Dashboard</h1>
+
+    <!-- System Overview -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h3 class="mb-0"><i class="fas fa-chart-line"></i> System Overview</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row" id="system-stats">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Active Services</h5>
+                                <div class="stat-value" id="active-services">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Healthy Services</h5>
+                                <div class="stat-value text-success" id="healthy-services">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Total Operations</h5>
+                                <div class="stat-value" id="total-operations">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Success Rate</h5>
+                                <div class="stat-value" id="success-rate">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Uptime</h5>
+                                <div class="stat-value" id="uptime">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Avg Response Time</h5>
+                                <div class="stat-value" id="avg-response-time">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>Memory Usage</h5>
+                                <div class="stat-value" id="memory-usage">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-3">
+                            <div class="stat-card">
+                                <h5>CPU Usage</h5>
+                                <div class="stat-value" id="cpu-usage">-</div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <h5>Active SGX Enclaves</h5>
+                                <div class="stat-value text-info" id="active-enclaves">-</div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="stat-card">
+                                <h5>Total SGX Operations</h5>
+                                <div class="stat-value text-info" id="sgx-operations">-</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Service Status Grid -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0"><i class="fas fa-server"></i> Service Status</h3>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover" id="services-table">
+                            <thead>
+                                <tr>
+                                    <th>Service Name</th>
+                                    <th>Status</th>
+                                    <th>Health</th>
+                                    <th>Operations</th>
+                                    <th>Success Rate</th>
+                                    <th>Avg Response</th>
+                                    <th>Ops/Second</th>
+                                    <th>Memory (MB)</th>
+                                </tr>
+                            </thead>
+                            <tbody id="services-tbody">
+                                <!-- Populated dynamically -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Performance Charts -->
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h3 class="mb-0"><i class="fas fa-tachometer-alt"></i> Response Time (ms)</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="response-time-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header bg-warning text-dark">
+                    <h3 class="mb-0"><i class="fas fa-microchip"></i> Resource Usage</h3>
+                </div>
+                <div class="card-body">
+                    <canvas id="resource-usage-chart" height="200"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Blockchain Statistics -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-dark text-white">
+                    <h3 class="mb-0"><i class="fas fa-link"></i> Blockchain Statistics</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <h4>Neo N3</h4>
+                            <div class="blockchain-stats" id="neon3-stats">
+                                <p>Total Transactions: <span class="stat-value" id="neon3-total">-</span></p>
+                                <p>Success Rate: <span class="stat-value" id="neon3-success">-</span></p>
+                                <p>Average Gas: <span class="stat-value" id="neon3-gas">-</span></p>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <h4>Neo X</h4>
+                            <div class="blockchain-stats" id="neox-stats">
+                                <p>Total Transactions: <span class="stat-value" id="neox-total">-</span></p>
+                                <p>Success Rate: <span class="stat-value" id="neox-success">-</span></p>
+                                <p>Average Gas: <span class="stat-value" id="neox-gas">-</span></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Export Options -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-secondary text-white">
+                    <h3 class="mb-0"><i class="fas fa-download"></i> Export Statistics</h3>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label>Start Date:</label>
+                            <input type="datetime-local" class="form-control" id="export-start" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>End Date:</label>
+                            <input type="datetime-local" class="form-control" id="export-end" />
+                        </div>
+                        <div class="col-md-4">
+                            <label>Format:</label>
+                            <select class="form-control" id="export-format">
+                                <option value="json">JSON</option>
+                                <option value="csv">CSV</option>
+                                <option value="prometheus">Prometheus</option>
+                            </select>
+                            <button class="btn btn-primary mt-2" onclick="exportStatistics()">
+                                <i class="fas fa-download"></i> Export
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Styles {
+    <style>
+        .stat-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            text-align: center;
+            margin-bottom: 15px;
+            border: 1px solid #e9ecef;
+        }
+
+        .stat-card h5 {
+            font-size: 0.9rem;
+            color: #6c757d;
+            margin-bottom: 10px;
+        }
+
+        .stat-value {
+            font-size: 1.8rem;
+            font-weight: bold;
+            color: #212529;
+        }
+
+        .status-badge {
+            display: inline-block;
+            padding: 0.25em 0.6em;
+            font-size: 0.875rem;
+            font-weight: 600;
+            line-height: 1;
+            text-align: center;
+            white-space: nowrap;
+            vertical-align: baseline;
+            border-radius: 0.25rem;
+        }
+
+        .status-running { background-color: #28a745; color: white; }
+        .status-stopped { background-color: #dc3545; color: white; }
+        .status-starting { background-color: #ffc107; color: dark; }
+        
+        .health-healthy { color: #28a745; }
+        .health-degraded { color: #ffc107; }
+        .health-unhealthy { color: #dc3545; }
+
+        .blockchain-stats p {
+            margin-bottom: 10px;
+        }
+
+        .blockchain-stats .stat-value {
+            font-weight: bold;
+            margin-left: 10px;
+        }
+    </style>
+}
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        let responseTimeChart, resourceUsageChart;
+        let eventSource;
+
+        // Initialize charts
+        function initCharts() {
+            const rtCtx = document.getElementById('response-time-chart').getContext('2d');
+            responseTimeChart = new Chart(rtCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Average Response Time (ms)',
+                        data: [],
+                        borderColor: 'rgb(75, 192, 192)',
+                        tension: 0.1
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            beginAtZero: true
+                        }
+                    }
+                }
+            });
+
+            const ruCtx = document.getElementById('resource-usage-chart').getContext('2d');
+            resourceUsageChart = new Chart(ruCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'CPU Usage (%)',
+                        data: [],
+                        borderColor: 'rgb(255, 99, 132)',
+                        tension: 0.1
+                    }, {
+                        label: 'Memory Usage (MB)',
+                        data: [],
+                        borderColor: 'rgb(54, 162, 235)',
+                        tension: 0.1,
+                        yAxisID: 'y1'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            max: 100
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            grid: {
+                                drawOnChartArea: false
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Format numbers
+        function formatNumber(num) {
+            if (num >= 1000000) {
+                return (num / 1000000).toFixed(1) + 'M';
+            } else if (num >= 1000) {
+                return (num / 1000).toFixed(1) + 'K';
+            }
+            return num.toString();
+        }
+
+        // Format uptime
+        function formatUptime(seconds) {
+            const days = Math.floor(seconds / 86400);
+            const hours = Math.floor((seconds % 86400) / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            
+            if (days > 0) {
+                return `${days}d ${hours}h`;
+            } else if (hours > 0) {
+                return `${hours}h ${minutes}m`;
+            } else {
+                return `${minutes}m`;
+            }
+        }
+
+        // Update system statistics
+        async function updateSystemStats() {
+            try {
+                const response = await fetch('/api/statistics/system');
+                const data = await response.json();
+
+                document.getElementById('active-services').textContent = data.activeServices;
+                document.getElementById('healthy-services').textContent = data.healthyServices;
+                document.getElementById('total-operations').textContent = formatNumber(data.totalOperations);
+                document.getElementById('success-rate').textContent = data.successRate.toFixed(1) + '%';
+                document.getElementById('uptime').textContent = formatUptime(data.uptimeSeconds);
+                document.getElementById('avg-response-time').textContent = data.averageResponseTime.toFixed(1) + ' ms';
+                document.getElementById('memory-usage').textContent = data.memoryUsageMB + ' MB';
+                document.getElementById('cpu-usage').textContent = data.cpuUsagePercent.toFixed(1) + '%';
+                document.getElementById('active-enclaves').textContent = data.activeEnclaves;
+                document.getElementById('sgx-operations').textContent = formatNumber(data.totalSGXOperations);
+
+                // Update charts
+                const now = new Date().toLocaleTimeString();
+                if (responseTimeChart.data.labels.length > 20) {
+                    responseTimeChart.data.labels.shift();
+                    responseTimeChart.data.datasets[0].data.shift();
+                }
+                responseTimeChart.data.labels.push(now);
+                responseTimeChart.data.datasets[0].data.push(data.averageResponseTime);
+                responseTimeChart.update();
+
+                if (resourceUsageChart.data.labels.length > 20) {
+                    resourceUsageChart.data.labels.shift();
+                    resourceUsageChart.data.datasets[0].data.shift();
+                    resourceUsageChart.data.datasets[1].data.shift();
+                }
+                resourceUsageChart.data.labels.push(now);
+                resourceUsageChart.data.datasets[0].data.push(data.cpuUsagePercent);
+                resourceUsageChart.data.datasets[1].data.push(data.memoryUsageMB);
+                resourceUsageChart.update();
+            } catch (error) {
+                console.error('Error fetching system stats:', error);
+            }
+        }
+
+        // Update service statistics
+        async function updateServiceStats() {
+            try {
+                const response = await fetch('/api/statistics/services');
+                const data = await response.json();
+
+                const tbody = document.getElementById('services-tbody');
+                tbody.innerHTML = '';
+
+                for (const [serviceName, stats] of Object.entries(data)) {
+                    const row = document.createElement('tr');
+                    
+                    const statusClass = `status-${stats.status.toLowerCase()}`;
+                    const healthClass = `health-${stats.health.toLowerCase()}`;
+                    
+                    row.innerHTML = `
+                        <td>${serviceName}</td>
+                        <td><span class="status-badge ${statusClass}">${stats.status}</span></td>
+                        <td><span class="${healthClass}"><i class="fas fa-circle"></i> ${stats.health}</span></td>
+                        <td>${formatNumber(stats.totalOperations)}</td>
+                        <td>${stats.successRate.toFixed(1)}%</td>
+                        <td>${stats.averageResponseTime.toFixed(1)} ms</td>
+                        <td>${stats.operationsPerSecond.toFixed(2)}</td>
+                        <td>${stats.memoryUsageMB}</td>
+                    `;
+                    
+                    tbody.appendChild(row);
+                }
+            } catch (error) {
+                console.error('Error fetching service stats:', error);
+            }
+        }
+
+        // Update blockchain statistics
+        async function updateBlockchainStats() {
+            try {
+                // Neo N3
+                const n3Response = await fetch('/api/statistics/blockchain/NeoN3');
+                const n3Data = await n3Response.json();
+                
+                document.getElementById('neon3-total').textContent = formatNumber(n3Data.totalTransactions);
+                const n3SuccessRate = n3Data.totalTransactions > 0 
+                    ? ((n3Data.successfulTransactions / n3Data.totalTransactions) * 100).toFixed(1) 
+                    : '100';
+                document.getElementById('neon3-success').textContent = n3SuccessRate + '%';
+                document.getElementById('neon3-gas').textContent = n3Data.averageGasUsed.toFixed(2);
+
+                // Neo X
+                const xResponse = await fetch('/api/statistics/blockchain/NeoX');
+                const xData = await xResponse.json();
+                
+                document.getElementById('neox-total').textContent = formatNumber(xData.totalTransactions);
+                const xSuccessRate = xData.totalTransactions > 0 
+                    ? ((xData.successfulTransactions / xData.totalTransactions) * 100).toFixed(1) 
+                    : '100';
+                document.getElementById('neox-success').textContent = xSuccessRate + '%';
+                document.getElementById('neox-gas').textContent = xData.averageGasUsed.toFixed(2);
+            } catch (error) {
+                console.error('Error fetching blockchain stats:', error);
+            }
+        }
+
+        // Export statistics
+        async function exportStatistics() {
+            const startDate = document.getElementById('export-start').value;
+            const endDate = document.getElementById('export-end').value;
+            const format = document.getElementById('export-format').value;
+
+            let url = `/api/statistics/export?format=${format}`;
+            if (startDate) url += `&startTime=${startDate}`;
+            if (endDate) url += `&endTime=${endDate}`;
+
+            window.location.href = url;
+        }
+
+        // Initialize real-time updates
+        function initRealTimeUpdates() {
+            // Use polling for now (SSE can be implemented later)
+            setInterval(updateSystemStats, 5000);
+            setInterval(updateServiceStats, 10000);
+            setInterval(updateBlockchainStats, 15000);
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initCharts();
+            updateSystemStats();
+            updateServiceStats();
+            updateBlockchainStats();
+            initRealTimeUpdates();
+
+            // Set default export dates
+            const now = new Date();
+            const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
+            
+            document.getElementById('export-start').value = yesterday.toISOString().slice(0, 16);
+            document.getElementById('export-end').value = now.toISOString().slice(0, 16);
+        });
+    </script>
+}

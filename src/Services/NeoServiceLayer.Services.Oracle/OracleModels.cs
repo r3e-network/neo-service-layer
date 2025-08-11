@@ -66,6 +66,16 @@ public class OracleRequest
     /// Gets or sets the request timestamp.
     /// </summary>
     public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the feed ID (optional).
+    /// </summary>
+    public string? FeedId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the request parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
 }
 
 /// <summary>
@@ -137,6 +147,11 @@ public class OracleResponse
     /// Gets or sets the signature.
     /// </summary>
     public string Signature { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the metadata dictionary.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>

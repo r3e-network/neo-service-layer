@@ -40,15 +40,26 @@ public partial class VotingService
                 Logger.LogInformation("Executing voting strategy {StrategyId} for voter {VoterAddress}",
                     strategyId, voterAddress);
 
+                // Validate voter eligibility using privacy-preserving computation
+                var isEligible = await ValidateVoterEligibilityAsync(voterAddress, strategy);
+                if (!isEligible)
+                {
+                    throw new InvalidOperationException("Voter is not eligible for this voting strategy");
+                }
+
                 // Get eligible candidates based on strategy
                 var eligibleCandidates = await GetEligibleCandidatesAsync(strategy, blockchainType);
 
                 // Apply voting rules and select final candidates
                 var selectedCandidates = ApplyVotingRules(eligibleCandidates, strategy.Rules);
 
-                // Simulate voting execution (in real implementation, this would interact with Neo N3 blockchain)
+                // Execute privacy-preserving voting in SGX enclave
+                PrivacyVotingResult? privacyResult = null;
                 if (!options.DryRun)
                 {
+                    privacyResult = await ExecutePrivacyPreservingVotingAsync(voterAddress, strategy, selectedCandidates);
+                    
+                    // Simulate blockchain interaction with the encrypted vote
                     await Task.Delay(1000); // Simulate blockchain interaction
                 }
 
@@ -60,13 +71,17 @@ public partial class VotingService
                     ExecutedAt = startTime,
                     Success = true,
                     SelectedCandidates = selectedCandidates.Select(c => c.Address).ToArray(),
-                    TransactionHash = Guid.NewGuid().ToString(), // Simulate transaction hash
+                    TransactionHash = privacyResult?.EncryptedVote ?? Guid.NewGuid().ToString(), // Use encrypted vote as tx hash
                     ExecutionDetails = new Dictionary<string, object>
                     {
                         ["TotalCandidatesEvaluated"] = eligibleCandidates.Count(),
                         ["CandidatesVotedFor"] = selectedCandidates.Count(),
                         ["ExecutionTimeMs"] = (DateTime.UtcNow - startTime).TotalMilliseconds,
-                        ["StrategyType"] = strategy.StrategyType.ToString()
+                        ["StrategyType"] = strategy.StrategyType.ToString(),
+                        ["PrivacyPreserving"] = privacyResult != null,
+                        ["VotingPower"] = privacyResult?.VotingPower ?? 1,
+                        ["ZKProofValid"] = privacyResult?.Proof?.Valid ?? false,
+                        ["BallotId"] = privacyResult?.BallotId ?? ""
                     }
                 };
 

@@ -7,7 +7,9 @@ Console.WriteLine("==============================================");
 Console.WriteLine();
 
 // Example: Secure PBKDF2 key derivation (as implemented in polished project)
-var masterPassword = "secure-master-key-from-sgx-enclave";
+// In production, this should come from a secure source
+var masterPassword = Environment.GetEnvironmentVariable("DEMO_MASTER_PASSWORD") 
+    ?? "demo-only-not-for-production";
 var salt = RandomNumberGenerator.GetBytes(32);
 
 Console.WriteLine("1. PBKDF2 Key Derivation (600,000 iterations - OWASP 2023 recommendation):");

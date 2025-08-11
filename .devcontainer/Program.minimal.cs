@@ -60,7 +60,7 @@ builder.Services.AddCors(options =>
 {
     options.AddPolicy("AllowedOrigins", policy =>
     {
-        policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
+        policy.WithOrigins(Configuration["ServiceEndpoints:Http:3000"] ?? "http://localhost:3000", Configuration["ServiceEndpoints:Https:3001"] ?? "https://localhost:3001", Configuration["ServiceEndpoints:Http:5000"] ?? "http://localhost:5000", Configuration["ServiceEndpoints:Https:5001"] ?? "https://localhost:5001")
               .AllowAnyMethod()
               .AllowAnyHeader()
               .AllowCredentials();
