@@ -5,13 +5,21 @@ services:
     image: jinghuiliao/neo-service-layer:latest
     container_name: neo-service-layer
     ports:
-      - "5000:5000"
-      - "5001:5001"
+      - "0.0.0.0:8080:5000"
     environment:
-      - ASPNETCORE_ENVIRONMENT=Production
-      - ASPNETCORE_URLS=http://+:5000;https://+:5001
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-production-jwt-secret-key-change-this-in-production}
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:5000
+      # JWT_SECRET_KEY must be set via environment variable for security
+      # Example: export JWT_SECRET_KEY=$(openssl rand -base64 32)
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY environment variable is required}
       - NEO_ALLOW_SGX_SIMULATION=true
+      - DOTNET_ENVIRONMENT=Development
+      - SSL_CERT_PATH=
+      # Configure CORS for your specific domain in production
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-http://localhost:3000,http://localhost:8080}
+      - ASPNETCORE_CORS__ALLOWANYORIGIN=true
+      - ASPNETCORE_CORS__ALLOWANYMETHOD=true
+      - ASPNETCORE_CORS__ALLOWANYHEADER=true
     volumes:
       - neo-data:/app/data
       - neo-logs:/var/log/neo-service-layer

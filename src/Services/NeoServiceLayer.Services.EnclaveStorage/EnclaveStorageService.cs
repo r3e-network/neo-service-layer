@@ -15,18 +15,24 @@ using NeoServiceLayer.Tee.Host.Services;
 namespace NeoServiceLayer.Services.EnclaveStorage;
 
 /// <summary>
-/// Service providing secure persistent storage within SGX enclave.
+/// Service providing secure persistent storage within SGX enclave with comprehensive encryption and security.
+/// This implementation addresses critical security issues identified in the code review.
 /// </summary>
 public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStorageService
 {
-    private new readonly IEnclaveManager _enclaveManager;
+    private readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
     private readonly IPersistentStorageProvider? _persistentStorage;
+    private readonly ISecurityService? _securityService;
+    private readonly IObservabilityService? _observabilityService;
+    
+    // Thread-safe storage with proper cleanup
     private readonly ConcurrentDictionary<string, SealedDataItem> _sealedItems = new();
     private readonly ConcurrentDictionary<string, ServiceStorageInfo> _serviceStorage = new();
-    private readonly object _storageLock = new();
+    private readonly SemaphoreSlim _storageSemaphore = new(1, 1); // Replace global lock with semaphore
     private long _totalStorageUsed;
     private readonly long _maxStorageSize;
+    private readonly Timer _cleanupTimer;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="EnclaveStorageService"/> class.
@@ -36,12 +42,19 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         IServiceConfiguration configuration,
         ILogger<EnclaveStorageService> logger,
         IPersistentStorageProvider? persistentStorage = null)
-        : base("EnclaveStorage", "Secure Enclave Storage Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
+        : base("EnclaveStorage", "Secure Enclave Storage Service with comprehensive security", "2.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {
-        _enclaveManager = enclaveManager;
-        _configuration = configuration;
+        _enclaveManager = enclaveManager ?? throw new ArgumentNullException(nameof(enclaveManager));
+        _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _persistentStorage = persistentStorage;
         _maxStorageSize = configuration.GetValue("MaxStorageSize", 1073741824L); // 1GB default
+        
+        // Get security and observability services from DI if available
+        _securityService = ServiceProvider?.GetService<ISecurityService>();
+        _observabilityService = ServiceProvider?.GetService<IObservabilityService>();
+        
+        // Initialize cleanup timer to prevent memory leaks
+        _cleanupTimer = new Timer(CleanupExpiredItems, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
         // Add capabilities
         AddCapability<IEnclaveStorageService>();
@@ -55,28 +68,64 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeEnclaveAsync()
     {
+        using var activity = _observabilityService?.StartActivity("InitializeEnclaveStorage");
+        
         try
         {
+            Logger.LogInformation("Initializing secure enclave storage with enhanced security...");
 
-            // Load sealed items from persistent storage
-            var items = await LoadFromPersistentStorageAsync<List<SealedDataItem>>("sealed_items");
-            if (items != null)
+            // Initialize security validation
+            if (_securityService != null)
             {
-                foreach (var item in items)
+                var healthStatus = await _securityService.GetHealthAsync();
+                if (healthStatus != ServiceHealth.Healthy)
                 {
-                    _sealedItems[item.Key] = item;
-                    UpdateServiceStorage(item.Service, item.Size);
-                    _totalStorageUsed += item.Size;
+                    Logger.LogWarning("Security service is not healthy, storage operations may be limited");
                 }
             }
 
-            Logger.LogInformation("Enclave Storage Service initialized with {ItemCount} sealed items, {StorageUsed} bytes used",
+            // Load sealed items from persistent storage with validation
+            var items = await LoadFromPersistentStorageAsync<List<SealedDataItem>>("sealed_items");
+            if (items != null)
+            {
+                var validItems = 0;
+                var corruptedItems = 0;
+                
+                foreach (var item in items)
+                {
+                    // Validate item integrity
+                    if (await ValidateItemIntegrityAsync(item))
+                    {
+                        _sealedItems[item.Key] = item;
+                        UpdateServiceStorage(item.Service, item.Size);
+                        Interlocked.Add(ref _totalStorageUsed, item.Size);
+                        validItems++;
+                    }
+                    else
+                    {
+                        Logger.LogWarning("Corrupted sealed item detected and skipped: {Key}", item.Key);
+                        corruptedItems++;
+                    }
+                }
+                
+                Logger.LogInformation("Loaded {ValidItems} valid items, skipped {CorruptedItems} corrupted items", 
+                    validItems, corruptedItems);
+            }
+
+            // Set initial health status
+            _observabilityService?.SetHealthStatus("EnclaveStorage", true, "Enclave storage initialized successfully");
+            
+            Logger.LogInformation("Enhanced Enclave Storage Service initialized with {ItemCount} sealed items, {StorageUsed} bytes used",
                 _sealedItems.Count, _totalStorageUsed);
+            
+            _observabilityService?.CompleteActivity(activity, true);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize EnclaveStorage enclave");
+            Logger.LogError(ex, "Failed to initialize enhanced EnclaveStorage enclave");
+            _observabilityService?.SetHealthStatus("EnclaveStorage", false, $"Initialization failed: {ex.Message}");
+            _observabilityService?.CompleteActivity(activity, false, ex.Message);
             return false;
         }
     }

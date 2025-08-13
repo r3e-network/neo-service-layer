@@ -4,7 +4,6 @@
     <ProjectReference Include="..\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Permissions\NeoServiceLayer.Services.Permissions.csproj" />
   </ItemGroup>
 
   <ItemGroup>

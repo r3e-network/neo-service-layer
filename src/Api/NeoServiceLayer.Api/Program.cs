@@ -133,30 +133,39 @@ builder.Services.AddSwaggerGen(c =>
 
 // Configure JWT Authentication with secure key management
 var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSettings["SecretKey"];
 var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
 var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
+
+// SECURITY: JWT secret MUST come from environment variable only - no config fallback
+var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 
 // In test environment, use a fixed key for consistency
 if (builder.Environment.EnvironmentName == "Testing" || builder.Environment.IsDevelopment())
 {
     if (string.IsNullOrEmpty(secretKey))
     {
+        // Only for development/testing - never in production
         secretKey = "SuperSecretTestKeyThatIsLongEnoughForTesting123!";
+        builder.Logging.AddConsole();
+        Console.WriteLine("WARNING: Using default JWT key for development/testing only");
     }
 }
 else
 {
-    // Validate JWT secret key for production
+    // Validate JWT secret key for production - STRICT enforcement
     if (string.IsNullOrEmpty(secretKey))
     {
-        throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+        throw new InvalidOperationException(
+            "SECURITY ERROR: JWT_SECRET_KEY environment variable is required. " +
+            "Set it using: export JWT_SECRET_KEY=$(openssl rand -base64 32)");
     }
 
     // Ensure minimum key length for security
     if (secretKey.Length < 32)
     {
-        throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+        throw new InvalidOperationException(
+            "SECURITY ERROR: JWT_SECRET_KEY must be at least 32 characters long. " +
+            "Generate a secure key using: openssl rand -base64 32");
     }
 }
 

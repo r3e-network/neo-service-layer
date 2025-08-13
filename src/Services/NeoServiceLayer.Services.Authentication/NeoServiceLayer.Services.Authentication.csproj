@@ -1,0 +1,28 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <RootNamespace>NeoServiceLayer.Services.Authentication</RootNamespace>
+    <AssemblyName>NeoServiceLayer.Services.Authentication</AssemblyName>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.0" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
+    <PackageReference Include="OtpNet" Version="1.4.0" />
+    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Security\NeoServiceLayer.Infrastructure.Security.csproj" />
+  </ItemGroup>
+
+</Project>

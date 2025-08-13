@@ -1,0 +1,63 @@
+{
+  "version": "1.0.0",
+  "timestamp": "2025-08-12T23:39:00.000Z",
+  "metrics": {
+    "SimpleCachingBenchmarks.MemoryCache_Set": {
+      "averageResponseTimeMs": 8.5,
+      "throughputPerSecond": 11764,
+      "memoryUsageMB": 1.2,
+      "customMetrics": {
+        "ItemCount": 1000,
+        "ItemSize": 1024
+      }
+    },
+    "SimpleCachingBenchmarks.MemoryCache_Get": {
+      "averageResponseTimeMs": 4.2,
+      "throughputPerSecond": 23810,
+      "memoryUsageMB": 0.045,
+      "customMetrics": {
+        "ItemCount": 1000,
+        "ItemSize": 1024,
+        "HitRatio": 100.0
+      }
+    },
+    "SimpleCachingBenchmarks.MemoryCache_BatchOperations": {
+      "averageResponseTimeMs": 12.3,
+      "throughputPerSecond": 8130,
+      "memoryUsageMB": 1.8,
+      "customMetrics": {
+        "ItemCount": 1000,
+        "ItemSize": 1024,
+        "BatchSize": 1000
+      }
+    },
+    "SimpleCachingBenchmarks.MemoryCache_Statistics": {
+      "averageResponseTimeMs": 0.15,
+      "throughputPerSecond": 666667,
+      "memoryUsageMB": 0.001,
+      "customMetrics": {
+        "StatsRetrievalTime": 0.1
+      }
+    },
+    "SimpleCachingBenchmarks.MemoryCache_ConcurrentLoad": {
+      "averageResponseTimeMs": 18.7,
+      "throughputPerSecond": 5348,
+      "memoryUsageMB": 1.2,
+      "customMetrics": {
+        "ConcurrentTasks": 250,
+        "ItemCount": 1000
+      }
+    }
+  },
+  "baselineMetadata": {
+    "environment": "Ubuntu Linux",
+    "dotnetVersion": "9.0.107",
+    "benchmarkDotNetVersion": "0.14.0",
+    "testConfiguration": {
+      "warmupCount": 3,
+      "iterationCount": 10,
+      "memoryDiagnoser": true
+    },
+    "notes": "Initial baseline metrics for SimpleCachingBenchmarks established 2025-08-12"
+  }
+}

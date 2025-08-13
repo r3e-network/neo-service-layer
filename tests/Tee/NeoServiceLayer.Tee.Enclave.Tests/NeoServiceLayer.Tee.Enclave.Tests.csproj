@@ -1,53 +1,33 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net9.0</TargetFramework>
+    <TargetFramework>net8.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
-    <!-- Enable SGX simulation mode for testing -->
-    <SGX_MODE>SIM</SGX_MODE>
-    <!-- Enable detailed test output -->
-    <VSTestVerbosity>normal</VSTestVerbosity>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="coverlet.collector" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="coverlet.collector">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Logging" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Moq" />
     <PackageReference Include="FluentAssertions" />
-    <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="BenchmarkDotNet" />
   </ItemGroup>
 
   <ItemGroup>
-    <!-- Reference to shared utilities for production-ready implementation -->
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
-    <!-- Reference to the actual enclave implementation -->
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="../../../src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
   </ItemGroup>
-
-  <!-- SGX simulation mode configuration -->
-  <PropertyGroup Condition="'$(SGX_MODE)' == 'SIM'">
-    <DefineConstants>$(DefineConstants);SGX_SIMULATION</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Platform-specific configurations -->
-  <PropertyGroup Condition="'$(OS)' == 'Unix'">
-    <DefineConstants>$(DefineConstants);UNIX_PLATFORM</DefineConstants>
-  </PropertyGroup>
-
-  <PropertyGroup Condition="'$(OS)' == 'Windows_NT'">
-    <DefineConstants>$(DefineConstants);WINDOWS_PLATFORM</DefineConstants>
-  </PropertyGroup>
-
-  <!-- Code coverage settings for production-ready testing -->
-  <PropertyGroup>
-    <CollectCoverage>true</CollectCoverage>
-    <CoverletOutputFormat>cobertura,opencover</CoverletOutputFormat>
-    <CoverletOutput>./TestResults/</CoverletOutput>
-    <Exclude>[*]*.Tests.*,[*]*Test*,[*]*Mock*</Exclude>
-  </PropertyGroup>
 
 </Project>

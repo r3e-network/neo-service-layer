@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
@@ -6,6 +7,15 @@ using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Health;
+
+/// <summary>
+/// Exception thrown when health monitoring operations fail.
+/// </summary>
+public class HealthException : Exception
+{
+    public HealthException(string message) : base(message) { }
+    public HealthException(string message, Exception innerException) : base(message, innerException) { }
+}
 
 /// <summary>
 /// Core implementation of the Health Service that provides Neo N3 consensus node health monitoring capabilities.
@@ -104,9 +114,19 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
                 _monitoredNodes.Count, _activeAlerts.Count);
             return true;
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation during Health Service initialization");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied during Health Service initialization");
+            return false;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Health Service");
+            Logger.LogError(ex, "Unexpected error during Health Service initialization");
             return false;
         }
     }
@@ -125,9 +145,19 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             Logger.LogInformation("Health Service enclave operations initialized successfully");
             return true;
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation during Health Service enclave initialization");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied during Health Service enclave initialization");
+            return false;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Health Service enclave operations");
+            Logger.LogError(ex, "Unexpected error during Health Service enclave initialization");
             return false;
         }
     }
@@ -244,9 +274,17 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             Logger.LogInformation("Loaded persisted health data: {NodeCount} nodes, {AlertCount} alerts, {ThresholdCount} thresholds",
                 _monitoredNodes.Count, _activeAlerts.Count, _nodeThresholds.Count);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while loading persisted health data");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while loading persisted health data");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load persisted health data");
+            Logger.LogError(ex, "Unexpected error while loading persisted health data");
         }
     }
 
@@ -278,9 +316,17 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
 
             await _storageService.StoreDataAsync(NodesStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting monitored nodes");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting monitored nodes");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist monitored nodes");
+            Logger.LogError(ex, "Unexpected error while persisting monitored nodes");
         }
     }
 
@@ -302,9 +348,17 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
 
             await _storageService.StoreDataAsync(AlertsStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting active alerts");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting active alerts");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist active alerts");
+            Logger.LogError(ex, "Unexpected error while persisting active alerts");
         }
     }
 
@@ -326,9 +380,17 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
 
             await _storageService.StoreDataAsync(ThresholdsStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting node thresholds");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting node thresholds");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist node thresholds");
+            Logger.LogError(ex, "Unexpected error while persisting node thresholds");
         }
     }
 

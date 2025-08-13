@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neo Service Layer - Enclave Computing Platform</title>
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #0a0a0a;
+            color: #ffffff;
+            margin: 0;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        h1 {
+            color: #00ff88;
+            text-align: center;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+        }
+        .subtitle {
+            text-align: center;
+            color: #888;
+            margin-bottom: 40px;
+        }
+        .services {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 40px;
+        }
+        .service-card {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            transition: transform 0.2s, border-color 0.2s;
+        }
+        .service-card:hover {
+            transform: translateY(-5px);
+            border-color: #00ff88;
+        }
+        .service-card h3 {
+            color: #00ff88;
+            margin-top: 0;
+        }
+        .service-card p {
+            color: #ccc;
+            margin: 10px 0;
+        }
+        .service-card a {
+            display: inline-block;
+            background-color: #00ff88;
+            color: #000;
+            padding: 8px 16px;
+            text-decoration: none;
+            border-radius: 4px;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+        .service-card a:hover {
+            background-color: #00cc70;
+        }
+        .status {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .status.online {
+            background-color: #00ff88;
+            color: #000;
+        }
+        .status.offline {
+            background-color: #ff3333;
+            color: #fff;
+        }
+        .info {
+            background-color: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+        }
+        .info h2 {
+            color: #00ff88;
+            margin-top: 0;
+        }
+        code {
+            background-color: #2a2a2a;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Neo Service Layer</h1>
+        <p class="subtitle">Generalized Enclave Computing Platform</p>
+        
+        <div class="info">
+            <h2>Platform Overview</h2>
+            <p>A comprehensive enclave computing framework with 6 core services for confidential computation, privacy-preserving applications, and secure blockchain infrastructure.</p>
+            <p><strong>Features:</strong> SGX Hardware Security • Service Orchestration • Privacy Computing • JavaScript Engine • Secure Storage</p>
+            <p><strong>Performance:</strong> 84.8% SWE-Bench Score • 2.8-4.4x Speed Improvement • Sub-50ms JS Execution</p>
+        </div>
+        
+        <div class="services">
+            <div class="service-card">
+                <h3>API Service <span class="status online">ONLINE</span></h3>
+                <p>Main Neo Service Layer API with enclave computing capabilities</p>
+                <p><strong>Endpoints:</strong></p>
+                <ul>
+                    <li>Health Check: <code>/health</code></li>
+                    <li>API Base: <code>/api</code></li>
+                </ul>
+                <a href="/health" target="_blank">Check Health</a>
+            </div>
+            
+            <div class="service-card">
+                <h3>Prometheus Monitoring</h3>
+                <p>Real-time metrics collection and monitoring</p>
+                <p><strong>Features:</strong> Service metrics, performance tracking, alerting</p>
+                <a href="http://198.244.215.132:9090" target="_blank">Open Prometheus</a>
+            </div>
+            
+            <div class="service-card">
+                <h3>Grafana Dashboard</h3>
+                <p>Visual monitoring and analytics dashboard</p>
+                <p><strong>Default Login:</strong> admin / admin</p>
+                <a href="http://198.244.215.132:3001" target="_blank">Open Grafana</a>
+            </div>
+            
+            <div class="service-card">
+                <h3>Node Exporter</h3>
+                <p>System and hardware metrics exporter</p>
+                <p><strong>Port:</strong> 9100</p>
+                <a href="http://198.244.215.132:9100/metrics" target="_blank">View Metrics</a>
+            </div>
+        </div>
+        
+        <div class="info" style="margin-top: 40px;">
+            <h2>Quick Start</h2>
+            <p>Access the API programmatically:</p>
+            <code>curl http://198.244.215.132/health</code>
+            <p style="margin-top: 10px;">For detailed documentation, visit the <a href="https://github.com/r3e-network/neo-service-layer" style="color: #00ff88;">GitHub Repository</a></p>
+        </div>
+    </div>
+    
+    <script>
+        // Check service status
+        async function checkStatus() {
+            try {
+                const response = await fetch('/health');
+                const status = response.ok ? 'online' : 'offline';
+                document.querySelector('.status').className = `status ${status}`;
+                document.querySelector('.status').textContent = status.toUpperCase();
+            } catch (error) {
+                document.querySelector('.status').className = 'status offline';
+                document.querySelector('.status').textContent = 'OFFLINE';
+            }
+        }
+        
+        // Check status on load and every 30 seconds
+        checkStatus();
+        setInterval(checkStatus, 30000);
+    </script>
+</body>
+</html>

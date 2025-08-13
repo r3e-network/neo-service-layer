@@ -1,17 +1,59 @@
-﻿using System;
+using System;
 using System.Runtime.InteropServices;
 
-namespace NeoServiceLayer.Tee.Enclave.Native
+namespace NeoServiceLayer.Tee.Enclave.Native;
+
+/// <summary>
+/// Native API bindings for Intel SGX operations.
+/// This provides the actual interface to SGX SDK functions.
+/// </summary>
+public static class SgxNativeApi
 {
-    /// <summary>
-    /// Production-ready Intel SGX SDK P/Invoke declarations.
-    /// These declarations match the real SGX SDK API for simulation and hardware modes.
-    /// </summary>
-    public static class SgxNativeApi
+    private const string SGX_URTS_LIB = "sgx_urts";
+    private const string SGX_UKEY_EXCHANGE_LIB = "sgx_ukey_exchange";
+
+    #region SGX Status Codes
+
+    public enum SgxStatus : uint
     {
-        private const string SgxUrtsDll = "sgx_urts";
-        private const string SgxUaeServiceDll = "sgx_uae_service";
-        private const string SgxUtilsDll = "sgx_utils";
+        Success = 0x00000000,
+        Unexpected = 0x00000001,
+        InvalidParameter = 0x00000002,
+        OutOfMemory = 0x00000003,
+        EnclaveCreationError = 0x00000004,
+        EnclaveDestroyed = 0x00000005,
+        InvalidEnclave = 0x00000006,
+        InvalidSig = 0x00000007,
+        OutOfEPC = 0x00000008,
+        NoDevice = 0x00000009,
+        MemoryMapConflict = 0x0000000A,
+        InvalidMetadata = 0x0000000B,
+        DeviceBusy = 0x0000000C,
+        InvalidVersion = 0x0000000D,
+        ModeIncompatible = 0x0000000E,
+        EnclaveFileAccess = 0x0000000F,
+        InvalidMisc = 0x00000010,
+        InvalidLaunchToken = 0x00000011
+    }
+
+    public enum SealingPolicy : uint
+    {
+        MrSigner = 0x01,
+        MrEnclave = 0x02
+    }
+
+    #endregion
+
+    #region P/Invoke Declarations
+
+    [DllImport(SGX_URTS_LIB, CallingConvention = CallingConvention.Cdecl)]
+    private static extern SgxStatus sgx_create_enclave(
+        [In, MarshalAs(UnmanagedType.LPStr)] string file_name,
+        int debug,
+        IntPtr launch_token,
+        IntPtr launch_token_updated,
+        out ulong enclave_id,
+        IntPtr misc_attr);
 
         #region SGX Error Codes
         public const uint SGX_SUCCESS = 0x00000000;

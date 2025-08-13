@@ -704,11 +704,20 @@ jobs:
 
   # 🚀 Performance Testing Job
   performance-test:
-    name: 🚀 Performance Tests
+    name: 🚀 Performance Tests & Regression Detection
     runs-on: self-hosted
-    timeout-minutes: 15
+    timeout-minutes: 25
     needs: [build-and-test]
     if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+    
+    permissions:
+      contents: read
+      pull-requests: write
+      issues: write
+    
+    outputs:
+      regression-status: ${{ steps.regression-check.outputs.status }}
+      performance-summary: ${{ steps.performance-summary.outputs.summary }}
     
     steps:
     - name: 📥 Checkout repository
@@ -735,7 +744,39 @@ jobs:
         dotnet restore NeoServiceLayer.sln
         dotnet build NeoServiceLayer.sln --configuration Release --no-restore
 
-    - name: 🏃‍♂️ Run performance tests
+    - name: 🏃‍♂️ Run BenchmarkDotNet performance tests
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        NEO_ALLOW_SGX_SIMULATION: true
+        SGX_MODE: SIM
+        SGX_SDK: /opt/intel/sgxsdk
+        SGX_DEBUG: 1
+        CI: true
+        TEST_ENVIRONMENT: CI
+        BENCHMARK_OUTPUT_DIR: ${{ github.workspace }}/BenchmarkDotNet.Artifacts
+      run: |
+        echo "::group::Running BenchmarkDotNet Performance Tests"
+        
+        # Create output directory for benchmarks
+        mkdir -p BenchmarkDotNet.Artifacts/results
+        
+        # Run caching benchmarks
+        echo "🔄 Running caching performance benchmarks..."
+        dotnet run --project tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          -- --filter "*SimpleCachingBenchmarks*" \
+          --exporters json markdown \
+          --runtimes net9.0 \
+          --job short \
+          --warmupCount 3 \
+          --iterationCount 10 \
+          --artifacts BenchmarkDotNet.Artifacts
+        
+        echo "✅ BenchmarkDotNet tests completed"
+        echo "::endgroup::"
+
+    - name: 🏃‍♂️ Run unit performance tests
       env:
         JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
         NEO_ALLOW_SGX_SIMULATION: true
@@ -745,7 +786,7 @@ jobs:
         CI: true
         TEST_ENVIRONMENT: CI
       run: |
-        echo "::group::Performance Tests"
+        echo "::group::Running Unit Performance Tests"
         dotnet test tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj \
           --configuration Release \
           --no-build \
@@ -753,7 +794,125 @@ jobs:
           --logger trx \
           --results-directory TestResults/Performance/ \
           --filter "Category=Performance" \
+          --blame-hang-timeout 5m
+        echo "::endgroup::"
+
+    - name: 📊 Run automated regression tests
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY }}
+        NEO_ALLOW_SGX_SIMULATION: true
+        SGX_MODE: SIM
+        CI: true
+        TEST_ENVIRONMENT: CI
+      run: |
+        echo "::group::Running Automated Regression Detection"
+        dotnet test tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          --verbosity minimal \
+          --logger trx \
+          --results-directory TestResults/Regression/ \
+          --filter "FullyQualifiedName~AutomatedRegressionTests" \
           --blame-hang-timeout 3m
+        echo "::endgroup::"
+
+    - name: 🔍 Analyze performance regression
+      id: regression-check
+      run: |
+        echo "::group::Performance Regression Analysis"
+        
+        # Check if baseline metrics exist
+        if [ -f "tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json" ]; then
+          echo "✅ Baseline metrics found"
+          echo "baseline-exists=true" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ No baseline metrics found - this will be the new baseline"
+          echo "baseline-exists=false" >> $GITHUB_OUTPUT
+        fi
+        
+        # Parse BenchmarkDotNet results if available
+        if [ -d "BenchmarkDotNet.Artifacts/results" ]; then
+          echo "📊 BenchmarkDotNet results found:"
+          find BenchmarkDotNet.Artifacts/results -name "*.json" -exec echo "  - {}" \;
+          
+          # Extract key metrics from JSON results
+          if ls BenchmarkDotNet.Artifacts/results/*-report.json 1> /dev/null 2>&1; then
+            for json_file in BenchmarkDotNet.Artifacts/results/*-report.json; do
+              echo "Processing: $json_file"
+              # Extract benchmark names and mean times
+              cat "$json_file" | jq -r '.Benchmarks[] | "\(.DisplayInfo): \(.Statistics.Mean) ns"' || echo "Could not parse JSON"
+            done
+          fi
+        fi
+        
+        # Check test results for regressions
+        if ls TestResults/Regression/*.trx 1> /dev/null 2>&1; then
+          echo "🔍 Checking regression test results..."
+          
+          # Count failed tests (simple check)
+          FAILED_TESTS=$(grep -c "outcome=\"Failed\"" TestResults/Regression/*.trx 2>/dev/null || echo "0")
+          TOTAL_TESTS=$(grep -c "outcome=" TestResults/Regression/*.trx 2>/dev/null || echo "0")
+          
+          echo "Test Results: $FAILED_TESTS failed out of $TOTAL_TESTS total"
+          
+          if [ "$FAILED_TESTS" -gt "0" ]; then
+            echo "status=regression-detected" >> $GITHUB_OUTPUT
+            echo "❌ Performance regression detected: $FAILED_TESTS failed tests"
+          else
+            echo "status=passed" >> $GITHUB_OUTPUT
+            echo "✅ No performance regression detected"
+          fi
+        else
+          echo "status=no-tests" >> $GITHUB_OUTPUT
+          echo "⚠️ No regression test results found"
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 📈 Generate performance summary
+      id: performance-summary
+      run: |
+        echo "::group::Performance Summary Generation"
+        
+        SUMMARY="## 🚀 Performance Test Results\n\n"
+        SUMMARY+="**Build:** ${{ github.run_number }}\n"
+        SUMMARY+="**Commit:** ${{ github.sha }}\n"
+        SUMMARY+="**Branch:** ${{ github.ref_name }}\n\n"
+        
+        # Add regression status
+        if [ "${{ steps.regression-check.outputs.status }}" = "regression-detected" ]; then
+          SUMMARY+="### ❌ Performance Regression Detected\n"
+          SUMMARY+="Critical performance degradation found. Please review the changes.\n\n"
+        elif [ "${{ steps.regression-check.outputs.status }}" = "passed" ]; then
+          SUMMARY+="### ✅ Performance Tests Passed\n"
+          SUMMARY+="No significant performance regression detected.\n\n"
+        else
+          SUMMARY+="### ⚠️ Performance Tests Incomplete\n"
+          SUMMARY+="Unable to complete full regression analysis.\n\n"
+        fi
+        
+        # Add BenchmarkDotNet results if available
+        if [ -d "BenchmarkDotNet.Artifacts/results" ]; then
+          SUMMARY+="### 📊 BenchmarkDotNet Results\n\n"
+          if ls BenchmarkDotNet.Artifacts/results/*.md 1> /dev/null 2>&1; then
+            SUMMARY+="Detailed benchmark results available in artifacts.\n\n"
+          fi
+        fi
+        
+        # Add test results summary
+        if ls TestResults/Performance/*.trx 1> /dev/null 2>&1; then
+          PERF_PASSED=$(grep -c "outcome=\"Passed\"" TestResults/Performance/*.trx 2>/dev/null || echo "0")
+          PERF_FAILED=$(grep -c "outcome=\"Failed\"" TestResults/Performance/*.trx 2>/dev/null || echo "0")
+          SUMMARY+="### 📋 Unit Performance Tests\n"
+          SUMMARY+="- **Passed:** $PERF_PASSED\n"
+          SUMMARY+="- **Failed:** $PERF_FAILED\n\n"
+        fi
+        
+        # Output for use in notifications
+        echo "summary<<EOF" >> $GITHUB_OUTPUT
+        echo -e "$SUMMARY" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+        
         echo "::endgroup::"
 
     - name: 📊 Upload performance results
@@ -761,8 +920,42 @@ jobs:
       if: always()
       with:
         name: performance-results-${{ github.run_number }}
-        path: TestResults/Performance/
-        retention-days: 7
+        path: |
+          TestResults/Performance/
+          TestResults/Regression/
+          BenchmarkDotNet.Artifacts/
+        retention-days: 30
+        compression-level: 6
+
+    - name: 💬 Comment PR with performance results
+      if: ${{ github.event_name == 'pull_request' }}
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const summary = `${{ steps.performance-summary.outputs.summary }}`;
+          const comment = `${summary}
+          
+          📊 **Performance Artifacts Available:**
+          - BenchmarkDotNet results in run artifacts
+          - Regression test results included
+          - Historical baseline comparison performed
+          
+          _Generated by CI/CD Performance Testing Pipeline_`;
+          
+          github.rest.issues.createComment({
+            issue_number: context.issue.number,
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            body: comment
+          });
+
+    - name: ❌ Fail build on regression
+      if: ${{ steps.regression-check.outputs.status == 'regression-detected' }}
+      run: |
+        echo "💥 Performance regression detected - failing build"
+        echo "Please review the performance changes and ensure they are acceptable."
+        echo "If the regression is expected, update the baseline metrics."
+        exit 1
 
   # 🚀 Deploy to Staging
   deploy-staging:
@@ -827,7 +1020,7 @@ jobs:
     name: 📢 Notify Results
     runs-on: self-hosted
     timeout-minutes: 2
-    needs: [build-and-test, security-scan, docker-build]
+    needs: [build-and-test, security-scan, docker-build, performance-test]
     if: always()
     
     steps:
@@ -839,9 +1032,23 @@ jobs:
         echo "| Build & Test | ${{ needs.build-and-test.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Security Scan | ${{ needs.security-scan.result == 'success' && '✅ Passed' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
         echo "| Docker Build | ${{ needs.docker-build.result == 'success' && '✅ Passed' || needs.docker-build.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        echo "| Performance Tests | ${{ needs.performance-test.result == 'success' && '✅ Passed' || needs.performance-test.result == 'skipped' && '⏭️ Skipped' || '❌ Failed' }} |" >> $GITHUB_STEP_SUMMARY
+        
+        # Add performance regression status if available
+        if [ "${{ needs.performance-test.outputs.regression-status }}" = "regression-detected" ]; then
+          echo "| **Performance Status** | **❌ Regression Detected** |" >> $GITHUB_STEP_SUMMARY
+        elif [ "${{ needs.performance-test.outputs.regression-status }}" = "passed" ]; then
+          echo "| **Performance Status** | **✅ No Regression** |" >> $GITHUB_STEP_SUMMARY
+        fi
         
         echo "### 📋 Summary" >> $GITHUB_STEP_SUMMARY
         echo "- **Branch:** ${{ github.ref_name }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Triggered by:** ${{ github.actor }}" >> $GITHUB_STEP_SUMMARY
         echo "- **Event:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        
+        # Add performance summary if available
+        if [ -n "${{ needs.performance-test.outputs.performance-summary }}" ]; then
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "${{ needs.performance-test.outputs.performance-summary }}" >> $GITHUB_STEP_SUMMARY
+        fi

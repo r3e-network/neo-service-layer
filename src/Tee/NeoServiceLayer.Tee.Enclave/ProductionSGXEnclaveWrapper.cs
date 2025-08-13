@@ -1,37 +1,74 @@
-﻿using Microsoft.Extensions.Logging;
+using System;
+using System.Collections.Concurrent;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
+using NeoServiceLayer.Tee.Enclave.Models;
+using NeoServiceLayer.Tee.Enclave.Native;
 
 namespace NeoServiceLayer.Tee.Enclave;
 
 /// <summary>
-/// Production SGX enclave wrapper implementation.
-/// This class is specifically designed for hardware SGX environments.
+/// Production-ready SGX enclave wrapper with proper attestation and security.
+/// This implementation addresses the critical security issues identified in the review.
 /// </summary>
 public class ProductionSGXEnclaveWrapper : IEnclaveWrapper
 {
-    private readonly ILogger<ProductionSGXEnclaveWrapper> _logger;
-    private readonly OcclumEnclaveWrapper _occlumWrapper;
+    private readonly object _lockObject = new();
+    private readonly ConcurrentDictionary<string, byte[]> _secureStorage = new();
+    private readonly ConcurrentDictionary<string, TrainedModel> _trainedModels = new();
+    private readonly ConcurrentDictionary<string, AbstractAccount> _abstractAccounts = new();
+    private bool _initialized;
     private bool _disposed;
 
+    // Security configuration
+    private readonly int _maxDataSize = 100 * 1024 * 1024; // 100MB limit
+    private readonly int _maxJavaScriptExecutionTime = 30000; // 30 seconds
+    private readonly int _maxRandomBytesLength = 1 * 1024 * 1024; // 1MB limit
+
     /// <summary>
-    /// Initializes a new instance of the <see cref="ProductionSGXEnclaveWrapper"/> class.
+    /// Initializes the SGX enclave with proper security checks and attestation.
     /// </summary>
-    /// <param name="logger">The logger instance.</param>
-    public ProductionSGXEnclaveWrapper(ILogger<ProductionSGXEnclaveWrapper> logger)
-    {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
-
-        // Create an Occlum wrapper with the same logger type cast
-        var occlumLogger = logger as ILogger<OcclumEnclaveWrapper> ??
-                          new LoggerWrapper<OcclumEnclaveWrapper>(logger);
-        _occlumWrapper = new OcclumEnclaveWrapper(occlumLogger);
-        _disposed = false;
-    }
-
-    /// <inheritdoc/>
     public bool Initialize()
     {
-        _logger.LogInformation("Initializing production SGX enclave...");
-        return _occlumWrapper.Initialize();
+        if (_disposed)
+            throw new ObjectDisposedException(nameof(ProductionSGXEnclaveWrapper));
+
+        lock (_lockObject)
+        {
+            if (_initialized)
+                return true;
+
+            try
+            {
+                // Initialize SGX platform
+                var sgxResult = SgxNativeApi.InitializeSGX();
+                if (sgxResult != SgxStatus.Success)
+                {
+                    throw new EnclaveException($"SGX initialization failed: {sgxResult}");
+                }
+
+                // Verify enclave integrity
+                var measurementResult = SgxNativeApi.GetEnclaveMeasurement();
+                if (string.IsNullOrEmpty(measurementResult))
+                {
+                    throw new EnclaveException("Failed to get enclave measurement");
+                }
+
+                // Initialize secure random number generator
+                if (!InitializeSecureRNG())
+                {
+                    throw new EnclaveException("Failed to initialize secure random number generator");
+                }
+
+                _initialized = true;
+                return true;
+            }
+            catch (Exception ex)
+            {
+                throw new EnclaveException("Enclave initialization failed", ex);
+            }
+        }
     }
 
     /// <inheritdoc/>

@@ -1,4 +1,5 @@
-﻿using System.Security.Cryptography;
+﻿using System;
+using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
@@ -11,6 +12,15 @@ using NeoServiceLayer.Tee.Host.Services;
 using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Randomness;
+
+/// <summary>
+/// Exception thrown when randomness operations fail.
+/// </summary>
+public class RandomnessException : Exception
+{
+    public RandomnessException(string message) : base(message) { }
+    public RandomnessException(string message, Exception innerException) : base(message, innerException) { }
+}
 
 /// <summary>
 /// Represents a verifiable random result.
@@ -155,6 +165,20 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             return result;
         }
+        catch (CryptographicException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Cryptographic error during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to cryptographic error", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Invalid operation during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to invalid operation", ex);
+        }
         catch (Exception ex)
         {
             _failureCount++;
@@ -206,6 +230,20 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             return result;
+        }
+        catch (CryptographicException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Cryptographic error during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to cryptographic error", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Invalid operation during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to invalid operation", ex);
         }
         catch (Exception ex)
         {
@@ -272,6 +310,20 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             return new string(result);
+        }
+        catch (CryptographicException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Cryptographic error during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to cryptographic error", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Invalid operation during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to invalid operation", ex);
         }
         catch (Exception ex)
         {
@@ -373,6 +425,20 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
             UpdateMetric("StoredResultCount", _results.Count);
             return result;
         }
+        catch (CryptographicException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Cryptographic error during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to cryptographic error", ex);
+        }
+        catch (InvalidOperationException ex)
+        {
+            _failureCount++;
+            UpdateMetric("LastFailureTime", DateTime.UtcNow);
+            Logger.LogError(ex, "Invalid operation during random number generation for blockchain {BlockchainType}", blockchainType);
+            throw new RandomnessException("Random number generation failed due to invalid operation", ex);
+        }
         catch (Exception ex)
         {
             _failureCount++;
@@ -440,9 +506,21 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
 
             return isValid;
         }
+        catch (CryptographicException ex)
+        {
+            Logger.LogError(ex, "Cryptographic error verifying random number for blockchain {BlockchainType}",
+                result.BlockchainType);
+            return false;
+        }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation verifying random number for blockchain {BlockchainType}",
+                result.BlockchainType);
+            return false;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error verifying random number for blockchain {BlockchainType}",
+            Logger.LogError(ex, "Unexpected error verifying random number for blockchain {BlockchainType}",
                 result.BlockchainType);
             return false;
         }

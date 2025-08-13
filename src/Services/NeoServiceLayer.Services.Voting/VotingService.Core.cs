@@ -1,4 +1,5 @@
-﻿using System.Text.Json;
+﻿using System;
+using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
@@ -7,6 +8,15 @@ using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Voting;
+
+/// <summary>
+/// Exception thrown when voting operations fail.
+/// </summary>
+public class VotingException : Exception
+{
+    public VotingException(string message) : base(message) { }
+    public VotingException(string message, Exception innerException) : base(message, innerException) { }
+}
 
 /// <summary>
 /// Core implementation of the Voting Service that provides Neo N3 council member voting assistance capabilities.
@@ -124,9 +134,19 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
                 _votingStrategies.Count, _candidates.Count);
             return true;
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation during Voting Service initialization");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied during Voting Service initialization");
+            return false;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Voting Service");
+            Logger.LogError(ex, "Unexpected error during Voting Service initialization");
             return false;
         }
     }
@@ -144,9 +164,19 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             Logger.LogInformation("Voting Service enclave operations initialized successfully");
             return true;
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation during Voting Service enclave initialization");
+            return false;
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied during Voting Service enclave initialization");
+            return false;
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Voting Service enclave operations");
+            Logger.LogError(ex, "Unexpected error during Voting Service enclave initialization");
             return false;
         }
     }
@@ -185,10 +215,20 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
 
             Logger.LogDebug("Enclave voting algorithms initialized: {Result}", initResult);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation during enclave voting algorithms initialization");
+            throw new VotingException("Voting algorithms initialization failed due to invalid operation", ex);
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied during enclave voting algorithms initialization");
+            throw new VotingException("Voting algorithms initialization failed due to access restrictions", ex);
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize enclave voting algorithms");
-            throw;
+            Logger.LogError(ex, "Unexpected error during enclave voting algorithms initialization");
+            throw new VotingException("Voting algorithms initialization failed", ex);
         }
     }
 
@@ -322,9 +362,17 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             Logger.LogInformation("Loaded persisted voting data: {StrategiesCount} strategies, {ResultsCount} results, {CandidatesCount} candidates",
                 _votingStrategies.Count, _votingResults.Count, _candidates.Count);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while loading persisted voting data");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while loading persisted voting data");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load persisted voting data");
+            Logger.LogError(ex, "Unexpected error while loading persisted voting data");
         }
     }
 
@@ -359,9 +407,17 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(StrategiesStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting voting strategies");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting voting strategies");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist voting strategies");
+            Logger.LogError(ex, "Unexpected error while persisting voting strategies");
         }
     }
 
@@ -386,9 +442,17 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(ResultsStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting voting results");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting voting results");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist voting results");
+            Logger.LogError(ex, "Unexpected error while persisting voting results");
         }
     }
 
@@ -413,9 +477,17 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
             var data = System.Text.Encoding.UTF8.GetBytes(json);
             await _storageService.StoreDataAsync(CandidatesStorageKey, data, new StorageOptions(), BlockchainType.NeoN3);
         }
+        catch (InvalidOperationException ex)
+        {
+            Logger.LogError(ex, "Invalid operation while persisting candidates");
+        }
+        catch (UnauthorizedAccessException ex)
+        {
+            Logger.LogError(ex, "Access denied while persisting candidates");
+        }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist candidates");
+            Logger.LogError(ex, "Unexpected error while persisting candidates");
         }
     }
 

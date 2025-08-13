@@ -595,17 +595,17 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     }
 
     /// <inheritdoc/>
-    public Task<StorageValidationResult> ValidateIntegrityAsync()
+    public async Task<StorageValidationResult> ValidateIntegrityAsync()
     {
         var result = new StorageValidationResult { IsValid = true };
 
         try
         {
-            var keys = ListKeysAsync().Result;
+            var keys = await ListKeysAsync().ConfigureAwait(false);
             foreach (var key in keys)
             {
-                var metadata = GetMetadataAsync(key).Result;
-                var data = RetrieveAsync(key).Result;
+                var metadata = await GetMetadataAsync(key).ConfigureAwait(false);
+                var data = await RetrieveAsync(key).ConfigureAwait(false);
 
                 if (metadata == null || data == null)
                 {
@@ -635,7 +635,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
             result.IsValid = false;
         }
 
-        return Task.FromResult(result);
+        return result;
     }
 
     /// <inheritdoc/>

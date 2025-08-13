@@ -1,6 +1,10 @@
-﻿using System.Security.Claims;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 
 namespace NeoServiceLayer.Api.Controllers;
@@ -42,6 +46,89 @@ public abstract class BaseApiController : ControllerBase
     protected IEnumerable<string> GetCurrentUserRoles()
     {
         return User.FindAll(ClaimTypes.Role).Select(c => c.Value);
+    }
+
+    /// <summary>
+    /// Gets the current user ID (alias for GetCurrentUserId).
+    /// </summary>
+    protected string? GetUserId()
+    {
+        return GetCurrentUserId() ?? HttpContext.Items["UserId"]?.ToString();
+    }
+
+    /// <summary>
+    /// Gets the current session ID from claims or context.
+    /// </summary>
+    protected string? GetSessionId()
+    {
+        return User?.FindFirst("session_id")?.Value ?? HttpContext.Items["SessionId"]?.ToString();
+    }
+
+    /// <summary>
+    /// Gets the access token from the request.
+    /// </summary>
+    protected string? GetAccessToken()
+    {
+        var authHeader = Request.Headers["Authorization"].FirstOrDefault();
+        if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer ", StringComparison.OrdinalIgnoreCase))
+        {
+            return authHeader.Substring(7);
+        }
+        return HttpContext.Items["Token"]?.ToString();
+    }
+
+    /// <summary>
+    /// Gets the client IP address.
+    /// </summary>
+    protected string GetClientIpAddress()
+    {
+        var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
+        
+        // Check for forwarded headers (when behind proxy/load balancer)
+        if (Request.Headers.ContainsKey("X-Forwarded-For"))
+        {
+            ipAddress = Request.Headers["X-Forwarded-For"].FirstOrDefault()?.Split(',').FirstOrDefault()?.Trim();
+        }
+        else if (Request.Headers.ContainsKey("X-Real-IP"))
+        {
+            ipAddress = Request.Headers["X-Real-IP"].FirstOrDefault();
+        }
+        
+        return ipAddress ?? "Unknown";
+    }
+
+    /// <summary>
+    /// Gets the user agent string.
+    /// </summary>
+    protected string GetUserAgent()
+    {
+        return Request.Headers["User-Agent"].FirstOrDefault() ?? "Unknown";
+    }
+
+    /// <summary>
+    /// Checks if the current user has a specific role.
+    /// </summary>
+    protected bool HasRole(string role)
+    {
+        return User?.IsInRole(role) ?? false;
+    }
+
+    /// <summary>
+    /// Checks if the current user has any of the specified roles.
+    /// </summary>
+    protected bool HasAnyRole(params string[] roles)
+    {
+        return roles?.Any(role => User?.IsInRole(role) ?? false) ?? false;
+    }
+
+    /// <summary>
+    /// Gets the correlation ID for request tracking.
+    /// </summary>
+    protected string GetCorrelationId()
+    {
+        return HttpContext.Items["CorrelationId"]?.ToString() 
+            ?? Request.Headers["X-Correlation-Id"].FirstOrDefault()
+            ?? Guid.NewGuid().ToString();
     }
 
     /// <summary>

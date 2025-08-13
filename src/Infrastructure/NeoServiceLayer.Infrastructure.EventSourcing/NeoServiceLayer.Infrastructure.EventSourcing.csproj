@@ -1,0 +1,26 @@
+&lt;Project Sdk="Microsoft.NET.Sdk"&gt;
+
+  &lt;PropertyGroup&gt;
+    &lt;TargetFramework&gt;net9.0&lt;/TargetFramework&gt;
+    &lt;ImplicitUsings&gt;enable&lt;/ImplicitUsings&gt;
+    &lt;Nullable&gt;enable&lt;/Nullable&gt;
+    &lt;GenerateDocumentationFile&gt;true&lt;/GenerateDocumentationFile&gt;
+    &lt;TreatWarningsAsErrors&gt;true&lt;/TreatWarningsAsErrors&gt;
+  &lt;/PropertyGroup&gt;
+
+  &lt;ItemGroup&gt;
+    &lt;PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Microsoft.Extensions.Options" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="RabbitMQ.Client" Version="7.0.0" /&gt;
+    &lt;PackageReference Include="System.Text.Json" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Microsoft.Extensions.Hosting.Abstractions" Version="9.0.0" /&gt;
+    &lt;PackageReference Include="Polly" Version="8.2.1" /&gt;
+  &lt;/ItemGroup&gt;
+
+  &lt;ItemGroup&gt;
+    &lt;ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" /&gt;
+  &lt;/ItemGroup&gt;
+
+&lt;/Project&gt;

@@ -1,0 +1,296 @@
+/* Base Styles */
+
+/* Container */
+.container {
+  width: 100%;
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 var(--space-6);
+}
+
+@media (min-width: 640px) {
+  .container {
+    padding: 0 var(--space-8);
+  }
+}
+
+@media (min-width: 1024px) {
+  .container {
+    padding: 0 var(--space-10);
+  }
+}
+
+/* Typography */
+h1, h2, h3, h4, h5, h6 {
+  font-weight: 700;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+h1 { font-size: var(--text-5xl); }
+h2 { font-size: var(--text-4xl); }
+h3 { font-size: var(--text-3xl); }
+h4 { font-size: var(--text-2xl); }
+h5 { font-size: var(--text-xl); }
+h6 { font-size: var(--text-lg); }
+
+@media (min-width: 768px) {
+  h1 { font-size: var(--text-6xl); }
+  h2 { font-size: var(--text-5xl); }
+  h3 { font-size: var(--text-4xl); }
+}
+
+@media (min-width: 1024px) {
+  h1 { font-size: var(--text-7xl); }
+}
+
+p {
+  font-size: var(--text-base);
+  color: var(--text-secondary);
+  line-height: 1.7;
+}
+
+.lead {
+  font-size: var(--text-lg);
+  line-height: 1.8;
+}
+
+/* Links */
+a {
+  transition: color var(--duration-fast) var(--ease-in-out);
+}
+
+a:hover {
+  color: var(--primary);
+}
+
+/* Code */
+code {
+  font-family: var(--font-mono);
+  font-size: 0.875em;
+  background: var(--bg-tertiary);
+  padding: 0.125em 0.375em;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+}
+
+pre {
+  font-family: var(--font-mono);
+  font-size: var(--text-sm);
+  line-height: 1.7;
+  background: var(--bg-tertiary);
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  overflow-x: auto;
+  border: 1px solid var(--border);
+}
+
+pre code {
+  background: none;
+  padding: 0;
+  border: none;
+}
+
+/* Buttons */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  padding: var(--space-3) var(--space-6);
+  font-size: var(--text-base);
+  font-weight: 500;
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-in-out);
+  text-decoration: none;
+  cursor: pointer;
+  white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(255, 255, 255, 0.1);
+  transform: translateX(-100%);
+  transition: transform var(--duration-normal) var(--ease-out);
+}
+
+.btn:hover::before {
+  transform: translateX(0);
+}
+
+.btn-primary {
+  background: var(--gradient-primary);
+  color: var(--gray-900);
+  box-shadow: var(--shadow-md), var(--shadow-glow);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg), var(--shadow-glow);
+}
+
+.btn-secondary {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-secondary:hover {
+  background: var(--bg-secondary);
+  border-color: var(--primary);
+}
+
+.btn-outline {
+  background: transparent;
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+}
+
+.btn-outline:hover {
+  background: var(--bg-tertiary);
+  border-color: var(--primary);
+  color: var(--primary);
+}
+
+.btn-sm {
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+}
+
+.btn-lg {
+  padding: var(--space-4) var(--space-8);
+  font-size: var(--text-lg);
+}
+
+/* Forms */
+.form-group {
+  margin-bottom: var(--space-6);
+}
+
+label {
+  display: block;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  margin-bottom: var(--space-2);
+  color: var(--text-primary);
+}
+
+input, textarea, select {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  font-size: var(--text-base);
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+input:focus, textarea:focus, select:focus {
+  background: var(--bg-primary);
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(0, 255, 136, 0.1);
+}
+
+textarea {
+  resize: vertical;
+  min-height: 120px;
+}
+
+/* Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-xl);
+  padding: var(--space-6);
+  transition: all var(--duration-normal) var(--ease-in-out);
+}
+
+.card:hover {
+  transform: translateY(-4px);
+  box-shadow: var(--shadow-lg);
+  border-color: var(--primary);
+}
+
+/* Badges */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-full);
+}
+
+.badge-primary {
+  background: rgba(0, 255, 136, 0.1);
+  color: var(--primary);
+  border-color: rgba(0, 255, 136, 0.2);
+}
+
+.badge-secondary {
+  background: rgba(0, 153, 255, 0.1);
+  color: var(--secondary);
+  border-color: rgba(0, 153, 255, 0.2);
+}
+
+/* Gradients */
+.text-gradient {
+  background: var(--gradient-primary);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Loading States */
+.skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--bg-tertiary) 0%,
+    var(--border) 50%,
+    var(--bg-tertiary) 100%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-loading 1.5s ease-in-out infinite;
+}
+
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* Tooltips */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%) translateY(-8px);
+  padding: var(--space-2) var(--space-3);
+  background: var(--gray-900);
+  color: white;
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: all var(--duration-fast) var(--ease-in-out);
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+  transform: translateX(-50%) translateY(-12px);
+}

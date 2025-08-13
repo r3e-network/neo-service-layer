@@ -9,6 +9,12 @@ namespace NeoServiceLayer.Demo
     /// </summary>
     public class SecurityDemo
     {
+        private static string GenerateSecureRandomKey()
+        {
+            // Generate a cryptographically secure random key for demo purposes
+            var randomBytes = RandomNumberGenerator.GetBytes(32);
+            return Convert.ToBase64String(randomBytes);
+        }
         /// <summary>
         /// Demonstrates the secure PBKDF2 key derivation that replaced hardcoded keys.
         /// This shows the type of security enhancement implemented throughout the project.
@@ -19,8 +25,8 @@ namespace NeoServiceLayer.Demo
             Console.WriteLine("==============================================");
             Console.WriteLine();
 
-            // Example master key (in production this would come from SGX-sealed storage)
-            var masterPassword = "secure-master-key-from-sgx-enclave";
+            // Example: In production, master key comes from secure environment variables or SGX-sealed storage
+            var masterPassword = Environment.GetEnvironmentVariable("DEMO_MASTER_KEY") ?? GenerateSecureRandomKey();
             var salt = RandomNumberGenerator.GetBytes(32);
 
             Console.WriteLine("1. PBKDF2 Key Derivation (600,000 iterations - OWASP 2023 recommendation):");

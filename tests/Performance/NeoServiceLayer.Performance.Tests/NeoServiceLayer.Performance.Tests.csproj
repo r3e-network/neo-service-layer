@@ -4,39 +4,56 @@
     <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
+    <LangVersion>13.0</LangVersion>
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <OutputType>Exe</OutputType>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <TreatWarningsAsErrors>true</TreatWarningsAsErrors>
+    <WarningsAsErrors />
+    <WarningsNotAsErrors>CS1591</WarningsNotAsErrors>
+  </PropertyGroup>
+
+  <PropertyGroup>
+    <AssemblyTitle>Neo Service Layer - Performance Tests</AssemblyTitle>
+    <Product>Neo Service Layer</Product>
+    <Description>Performance benchmarks and regression tests for the Neo Service Layer platform</Description>
+    <Copyright>Copyright © 2024</Copyright>
+    <AssemblyVersion>1.0.0.0</AssemblyVersion>
+    <FileVersion>1.0.0.0</FileVersion>
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="BenchmarkDotNet.Annotations" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" />
     <PackageReference Include="xunit" />
-    <PackageReference Include="xunit.runner.visualstudio" />
-    <PackageReference Include="NBomber" />
-    <PackageReference Include="BenchmarkDotNet" />
+    <PackageReference Include="xunit.runner.visualstudio">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
-    <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="Microsoft.Extensions.Logging" />
-    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.EnvironmentVariables" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
-    <PackageReference Include="Newtonsoft.Json" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="FluentAssertions" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host.Tests\NeoServiceLayer.Tee.Host.Tests.csproj" />
-    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
-    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../../src/Infrastructure/NeoServiceLayer.Infrastructure.Caching/NeoServiceLayer.Infrastructure.Caching.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="load-test-config.json">
+    <None Update="appsettings.benchmark.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
-    <None Include="benchmark-config.json">
+    <None Update="baseline-metrics.json">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
   </ItemGroup>

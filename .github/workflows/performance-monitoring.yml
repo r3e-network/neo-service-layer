@@ -1,0 +1,384 @@
+name: 📊 Performance Monitoring & Baseline Updates
+
+on:
+  schedule:
+    # Run every day at 2 AM UTC to establish performance baselines
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update performance baseline metrics'
+        required: false
+        default: false
+        type: boolean
+      benchmark_filter:
+        description: 'Filter for specific benchmarks (optional)'
+        required: false
+        default: ''
+        type: string
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  DOTNET_SKIP_FIRST_TIME_EXPERIENCE: true
+  DOTNET_CLI_TELEMETRY_OPTOUT: true
+  NEO_ALLOW_SGX_SIMULATION: true
+
+jobs:
+  performance-monitoring:
+    name: 📊 Performance Monitoring
+    runs-on: self-hosted
+    timeout-minutes: 30
+    
+    permissions:
+      contents: write
+      pull-requests: write
+      issues: write
+    
+    steps:
+    - name: 📥 Checkout repository
+      uses: actions/checkout@v4
+      with:
+        token: ${{ secrets.GITHUB_TOKEN }}
+        fetch-depth: 0
+
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+        dotnet-install-dir: ${{ github.workspace }}/.dotnet
+      env:
+        DOTNET_INSTALL_DIR: ${{ github.workspace }}/.dotnet
+
+    - name: 🚀 Cache dependencies
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-monitoring-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-monitoring-
+          ${{ runner.os }}-nuget-
+
+    - name: 📦 Restore and build
+      run: |
+        echo "::group::Restore and Build for Performance Monitoring"
+        dotnet restore NeoServiceLayer.sln --verbosity minimal
+        dotnet build NeoServiceLayer.sln --configuration Release --no-restore --verbosity minimal
+        echo "::endgroup::"
+
+    - name: 🏃‍♂️ Run comprehensive performance benchmarks
+      env:
+        JWT_SECRET_KEY: ${{ secrets.JWT_SECRET_KEY || 'performance-monitoring-secret-key-32chars' }}
+        NEO_ALLOW_SGX_SIMULATION: true
+        SGX_MODE: SIM
+        SGX_SDK: /opt/intel/sgxsdk
+        SGX_DEBUG: 1
+        CI: true
+        TEST_ENVIRONMENT: CI
+        BENCHMARK_OUTPUT_DIR: ${{ github.workspace }}/BenchmarkDotNet.Artifacts
+      run: |
+        echo "::group::Running Comprehensive Performance Benchmarks"
+        
+        # Create output directory
+        mkdir -p BenchmarkDotNet.Artifacts/results
+        
+        # Determine benchmark filter
+        FILTER="${{ github.event.inputs.benchmark_filter }}"
+        if [ -z "$FILTER" ]; then
+          FILTER="*"
+        fi
+        
+        echo "🔄 Running performance benchmarks with filter: $FILTER"
+        
+        # Run BenchmarkDotNet with comprehensive settings
+        dotnet run --project tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj \
+          --configuration Release \
+          --no-build \
+          -- --filter "$FILTER" \
+          --exporters json markdown html \
+          --runtimes net9.0 \
+          --job medium \
+          --warmupCount 5 \
+          --iterationCount 15 \
+          --artifacts BenchmarkDotNet.Artifacts \
+          --statisticalTest 3ms \
+          --memoryRandomization true \
+          --outliers RemoveUpper
+        
+        echo "✅ Comprehensive benchmarks completed"
+        echo "::endgroup::"
+
+    - name: 📊 Process benchmark results
+      id: process-results
+      run: |
+        echo "::group::Processing Benchmark Results"
+        
+        # Create results summary
+        RESULTS_DIR="BenchmarkDotNet.Artifacts/results"
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")
+        
+        if [ -d "$RESULTS_DIR" ]; then
+          echo "📊 Found benchmark results in $RESULTS_DIR"
+          
+          # List available files
+          echo "Available result files:"
+          find "$RESULTS_DIR" -type f -name "*.json" -o -name "*.md" -o -name "*.html" | head -10
+          
+          # Extract metrics from JSON if available
+          if ls "$RESULTS_DIR"/*-report.json 1> /dev/null 2>&1; then
+            echo "📈 Processing performance metrics..."
+            
+            # Create a simplified metrics file for tracking
+            echo "{" > performance-metrics.json
+            echo "  \"timestamp\": \"$TIMESTAMP\"," >> performance-metrics.json
+            echo "  \"version\": \"$(git rev-parse --short HEAD)\"," >> performance-metrics.json
+            echo "  \"benchmarks\": [" >> performance-metrics.json
+            
+            # Process each JSON report
+            FIRST=true
+            for json_file in "$RESULTS_DIR"/*-report.json; do
+              if [ "$FIRST" = false ]; then
+                echo "," >> performance-metrics.json
+              fi
+              
+              # Extract key metrics using jq
+              jq -c '.Benchmarks[] | {
+                name: .DisplayInfo,
+                mean: .Statistics.Mean,
+                median: .Statistics.Median,
+                stdDev: .Statistics.StandardDeviation,
+                min: .Statistics.Min,
+                max: .Statistics.Max,
+                allocatedBytes: (.Memory.BytesAllocatedPerOperation // 0)
+              }' "$json_file" | while IFS= read -r line; do
+                if [ "$FIRST" = false ]; then
+                  echo "," >> performance-metrics.json
+                fi
+                echo "    $line" >> performance-metrics.json
+                FIRST=false
+              done
+            done
+            
+            echo "" >> performance-metrics.json
+            echo "  ]" >> performance-metrics.json
+            echo "}" >> performance-metrics.json
+            
+            echo "✅ Performance metrics processed"
+            echo "metrics-available=true" >> $GITHUB_OUTPUT
+          else
+            echo "⚠️ No JSON reports found"
+            echo "metrics-available=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          echo "❌ No benchmark results directory found"
+          echo "metrics-available=false" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 📈 Update baseline metrics
+      if: ${{ github.event.inputs.update_baseline == 'true' || github.event_name == 'schedule' }}
+      run: |
+        echo "::group::Updating Baseline Metrics"
+        
+        BASELINE_FILE="tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json"
+        
+        if [ -f "performance-metrics.json" ] && [ "${{ steps.process-results.outputs.metrics-available }}" = "true" ]; then
+          echo "📊 Updating baseline metrics from current run..."
+          
+          # Backup existing baseline if it exists
+          if [ -f "$BASELINE_FILE" ]; then
+            cp "$BASELINE_FILE" "${BASELINE_FILE}.backup.$(date +%Y%m%d_%H%M%S)"
+            echo "📦 Backed up existing baseline"
+          fi
+          
+          # Update baseline with new metrics
+          cp "performance-metrics.json" "$BASELINE_FILE"
+          
+          echo "✅ Baseline metrics updated successfully"
+          echo "baseline-updated=true" >> $GITHUB_OUTPUT
+        else
+          echo "⚠️ No performance metrics available to update baseline"
+          echo "baseline-updated=false" >> $GITHUB_OUTPUT
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 🔍 Performance trend analysis
+      run: |
+        echo "::group::Performance Trend Analysis"
+        
+        # Compare with previous baselines if available
+        BASELINE_FILE="tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json"
+        
+        if [ -f "$BASELINE_FILE" ] && [ -f "performance-metrics.json" ]; then
+          echo "📊 Analyzing performance trends..."
+          
+          # Simple trend analysis using jq
+          echo "### Performance Comparison Report" > trend-analysis.md
+          echo "" >> trend-analysis.md
+          echo "**Date:** $(date -u)" >> trend-analysis.md
+          echo "**Commit:** $(git rev-parse --short HEAD)" >> trend-analysis.md
+          echo "" >> trend-analysis.md
+          
+          # Extract benchmark names from current results
+          if command -v jq >/dev/null 2>&1; then
+            echo "#### Benchmark Results" >> trend-analysis.md
+            echo "" >> trend-analysis.md
+            echo "| Benchmark | Mean Time | Memory Usage |" >> trend-analysis.md
+            echo "|-----------|-----------|--------------|" >> trend-analysis.md
+            
+            jq -r '.benchmarks[] | "| \(.name) | \(.mean // 0 | tonumber | . / 1000000 | floor)ms | \(.allocatedBytes // 0)B |"' performance-metrics.json >> trend-analysis.md
+          fi
+          
+          echo "✅ Trend analysis completed"
+        else
+          echo "⚠️ Insufficient data for trend analysis"
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 📤 Upload monitoring results
+      uses: actions/upload-artifact@v4
+      if: always()
+      with:
+        name: performance-monitoring-${{ github.run_number }}
+        path: |
+          BenchmarkDotNet.Artifacts/
+          performance-metrics.json
+          trend-analysis.md
+          tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json*
+        retention-days: 90
+        compression-level: 6
+
+    - name: 📝 Commit baseline updates
+      if: ${{ steps.process-results.outputs.baseline-updated == 'true' && (github.event.inputs.update_baseline == 'true' || github.event_name == 'schedule') }}
+      run: |
+        echo "::group::Committing Baseline Updates"
+        
+        # Configure git
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        
+        # Check if there are changes to commit
+        if git diff --quiet tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json; then
+          echo "⚠️ No changes to baseline metrics detected"
+        else
+          echo "📝 Committing updated baseline metrics..."
+          
+          git add tests/Performance/NeoServiceLayer.Performance.Tests/baseline-metrics.json
+          git commit -m "📊 Update performance baseline metrics
+
+- Updated from scheduled performance monitoring
+- Commit: $(git rev-parse --short HEAD~1)
+- Date: $(date -u)
+- Generated by performance-monitoring.yml workflow
+
+🤖 Generated with [Claude Code](https://claude.ai/code)
+
+Co-Authored-By: Claude <noreply@anthropic.com>"
+          
+          # Push changes
+          git push origin ${{ github.ref_name }}
+          
+          echo "✅ Baseline metrics committed and pushed"
+        fi
+        
+        echo "::endgroup::"
+
+    - name: 🔄 Create performance tracking issue
+      if: ${{ steps.process-results.outputs.metrics-available == 'true' && github.event_name == 'schedule' }}
+      uses: actions/github-script@v7
+      with:
+        script: |
+          const fs = require('fs');
+          
+          // Read trend analysis if available
+          let trendContent = 'Performance monitoring completed.';
+          try {
+            trendContent = fs.readFileSync('trend-analysis.md', 'utf8');
+          } catch (error) {
+            console.log('No trend analysis file found');
+          }
+          
+          // Create or update performance tracking issue
+          const title = `📊 Daily Performance Monitoring Report - ${new Date().toISOString().split('T')[0]}`;
+          const body = `# Daily Performance Monitoring Report
+          
+          ${trendContent}
+          
+          ## Artifacts
+          - Detailed benchmark results available in workflow artifacts
+          - Baseline metrics updated automatically
+          - Trend analysis included above
+          
+          ## Next Steps
+          - Review any performance regressions
+          - Consider optimizations for degraded benchmarks
+          - Update performance budgets if needed
+          
+          ---
+          _Generated by automated performance monitoring workflow_
+          _Run: ${{ github.run_number }}_
+          _Commit: ${{ github.sha }}_`;
+          
+          // Search for existing open performance monitoring issues
+          const { data: issues } = await github.rest.issues.listForRepo({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            labels: ['performance', 'monitoring'],
+            state: 'open'
+          });
+          
+          if (issues.length > 0) {
+            // Update existing issue
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: issues[0].number,
+              body: `## Update - ${new Date().toISOString().split('T')[0]}
+              
+              ${trendContent}
+              
+              _Workflow run: ${{ github.run_number }}_`
+            });
+            console.log(`Updated existing performance monitoring issue #${issues[0].number}`);
+          } else {
+            // Create new issue
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: title,
+              body: body,
+              labels: ['performance', 'monitoring', 'automation']
+            });
+            console.log('Created new performance monitoring issue');
+          }
+
+    - name: 📊 Performance Summary
+      run: |
+        echo "## 📊 Performance Monitoring Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "**Date:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+        echo "**Commit:** $(git rev-parse --short HEAD)" >> $GITHUB_STEP_SUMMARY
+        echo "**Trigger:** ${{ github.event_name }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        
+        if [ "${{ steps.process-results.outputs.metrics-available }}" = "true" ]; then
+          echo "✅ **Performance benchmarks completed successfully**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          
+          if [ -f "trend-analysis.md" ]; then
+            echo "### 📈 Performance Trends" >> $GITHUB_STEP_SUMMARY
+            echo "" >> $GITHUB_STEP_SUMMARY
+            cat trend-analysis.md >> $GITHUB_STEP_SUMMARY
+          fi
+        else
+          echo "❌ **Performance benchmarks failed or incomplete**" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### 📁 Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- BenchmarkDotNet detailed results" >> $GITHUB_STEP_SUMMARY
+        echo "- Performance metrics JSON" >> $GITHUB_STEP_SUMMARY
+        echo "- Trend analysis report" >> $GITHUB_STEP_SUMMARY
+        echo "- Updated baseline metrics" >> $GITHUB_STEP_SUMMARY

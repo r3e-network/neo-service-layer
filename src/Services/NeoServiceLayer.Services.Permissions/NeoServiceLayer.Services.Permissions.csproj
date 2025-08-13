@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net8.0</TargetFramework>
+    <TargetFramework>net9.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <GenerateDocumentationFile>true</GenerateDocumentationFile>
@@ -11,7 +11,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="../../ServiceFramework/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
     <ProjectReference Include="../NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj" />
     <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>
