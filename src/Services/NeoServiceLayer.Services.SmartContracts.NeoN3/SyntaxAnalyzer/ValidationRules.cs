@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
@@ -288,7 +288,7 @@ public class MetricsCalculator
     public CodeMetrics Calculate(IAstNode ast, string sourceCode)
     {
         var metrics = new CodeMetrics();
-        
+
         // Calculate line counts
         var lines = sourceCode.Split('\n');
         metrics.TotalLines = lines.Length;

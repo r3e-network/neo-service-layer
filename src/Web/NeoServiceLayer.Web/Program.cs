@@ -170,7 +170,7 @@ builder.Services.AddCors(options =>
         using var serviceProvider = builder.Services.BuildServiceProvider();
         var secureConfig = serviceProvider.GetRequiredService<ISecureConfigurationProvider>();
         var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
-        
+
         if (endpoints.CorsOrigins.Any())
         {
             policy.WithOrigins(endpoints.CorsOrigins.ToArray())
@@ -217,13 +217,13 @@ builder.Services.AddSingleton(provider =>
 {
     var secureConfig = provider.GetRequiredService<ISecureConfigurationProvider>();
     var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
-    
+
     // Validate endpoints in production
     if (!builder.Environment.IsDevelopment())
     {
         endpoints.Validate();
     }
-    
+
     return endpoints;
 });
 

@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Services.Authentication;
 using NeoServiceLayer.Api.Models;
-using System.ComponentModel.DataAnnotations;
+using NeoServiceLayer.Services.Authentication;
 
 namespace NeoServiceLayer.Api.Controllers
 {
@@ -51,7 +51,7 @@ namespace NeoServiceLayer.Api.Controllers
             {
                 // This would typically query from database with filtering
                 var users = new List<UserDto>();
-                
+
                 // For demonstration, return empty paginated response
                 var response = new PaginatedResponse<UserDto>
                 {
@@ -125,9 +125,9 @@ namespace NeoServiceLayer.Api.Controllers
                     Metadata = user.Metadata
                 };
 
-                await _securityLogger.LogSecurityEventAsync("UserViewed", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserViewed", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["IpAddress"] = GetClientIpAddress()
                     });
@@ -193,9 +193,9 @@ namespace NeoServiceLayer.Api.Controllers
                     }
                 }
 
-                await _securityLogger.LogSecurityEventAsync("UserCreated", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserCreated", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["NewUserId"] = createdUser.Id,
                         ["Username"] = createdUser.Username,
                         ["IpAddress"] = GetClientIpAddress()
@@ -212,7 +212,7 @@ namespace NeoServiceLayer.Api.Controllers
                     CreatedAt = createdUser.CreatedAt
                 };
 
-                return CreatedAtAction(nameof(GetUser), new { userId = createdUser.Id }, 
+                return CreatedAtAction(nameof(GetUser), new { userId = createdUser.Id },
                     CreateResponse(userDto, "User created successfully"));
             }
             catch (Exception ex)
@@ -273,9 +273,9 @@ namespace NeoServiceLayer.Api.Controllers
                     return StatusCode(500, CreateErrorResponse("Failed to update user"));
                 }
 
-                await _securityLogger.LogSecurityEventAsync("UserUpdated", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserUpdated", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["IpAddress"] = GetClientIpAddress()
                     });
@@ -327,9 +327,9 @@ namespace NeoServiceLayer.Api.Controllers
                     return StatusCode(500, CreateErrorResponse("Failed to delete user"));
                 }
 
-                await _securityLogger.LogSecurityEventAsync("UserDeleted", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserDeleted", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["DeletedUserId"] = userId,
                         ["DeletedUsername"] = user.Username,
                         ["IpAddress"] = GetClientIpAddress()
@@ -412,9 +412,9 @@ namespace NeoServiceLayer.Api.Controllers
 
                 await _userRepository.UpdateAsync(user);
 
-                await _securityLogger.LogSecurityEventAsync("UserUnlocked", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserUnlocked", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["IpAddress"] = GetClientIpAddress()
                     });
@@ -469,9 +469,9 @@ namespace NeoServiceLayer.Api.Controllers
                 user.RequiresPasswordChange = true;
                 await _userRepository.UpdateAsync(user);
 
-                await _securityLogger.LogSecurityEventAsync("AdminPasswordReset", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("AdminPasswordReset", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["RequiresChange"] = true,
                         ["IpAddress"] = GetClientIpAddress()
@@ -481,7 +481,7 @@ namespace NeoServiceLayer.Api.Controllers
                 {
                     TemporaryPassword = request.GeneratePassword ? newPassword : null,
                     RequiresPasswordChange = true,
-                    Message = request.GeneratePassword 
+                    Message = request.GeneratePassword
                         ? "Password has been reset. Provide the temporary password to the user securely."
                         : "Password has been reset successfully."
                 };
@@ -543,9 +543,9 @@ namespace NeoServiceLayer.Api.Controllers
 
                 await _userRepository.AddUserToRoleAsync(userId, request.Role);
 
-                await _securityLogger.LogSecurityEventAsync("UserRoleAdded", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserRoleAdded", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["Role"] = request.Role,
                         ["IpAddress"] = GetClientIpAddress()
@@ -588,9 +588,9 @@ namespace NeoServiceLayer.Api.Controllers
 
                 await _userRepository.RemoveUserFromRoleAsync(userId, role);
 
-                await _securityLogger.LogSecurityEventAsync("UserRoleRemoved", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserRoleRemoved", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["Role"] = role,
                         ["IpAddress"] = GetClientIpAddress()
@@ -650,9 +650,9 @@ namespace NeoServiceLayer.Api.Controllers
                 // This would typically revoke all sessions and tokens
                 // Implementation would involve TokenService
 
-                await _securityLogger.LogSecurityEventAsync("UserSessionsRevoked", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+                await _securityLogger.LogSecurityEventAsync("UserSessionsRevoked", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["TargetUserId"] = userId,
                         ["IpAddress"] = GetClientIpAddress()
                     });

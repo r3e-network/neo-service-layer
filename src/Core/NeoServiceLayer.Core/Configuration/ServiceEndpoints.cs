@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Core.Configuration
@@ -58,7 +58,7 @@ namespace NeoServiceLayer.Core.Configuration
             var isDevelopment = environment.Equals("Development", StringComparison.OrdinalIgnoreCase);
 
             // Neo N3 endpoints
-            endpoints.NeoN3RpcUrl = GetEndpoint(config, "NEO_N3_RPC_URL", "Blockchain:NeoN3:RpcUrl", 
+            endpoints.NeoN3RpcUrl = GetEndpoint(config, "NEO_N3_RPC_URL", "Blockchain:NeoN3:RpcUrl",
                 isDevelopment ? "http://localhost:20332" : null);
             endpoints.NeoN3WebSocketUrl = GetEndpoint(config, "NEO_N3_WEBSOCKET_URL", "Blockchain:NeoN3:WebSocketUrl",
                 isDevelopment ? "ws://localhost:20334" : null);
@@ -91,7 +91,7 @@ namespace NeoServiceLayer.Core.Configuration
                     corsOrigins.Add(origin);
                 }
             }
-            
+
             // Add default development origins if none specified
             if (corsOrigins.Count == 0 && isDevelopment)
             {
@@ -102,7 +102,7 @@ namespace NeoServiceLayer.Core.Configuration
                     "https://localhost:5001"
                 });
             }
-            
+
             endpoints.CorsOrigins = corsOrigins;
 
             return endpoints;
@@ -151,7 +151,7 @@ namespace NeoServiceLayer.Core.Configuration
                 ValidateNoLocalhost(nameof(NeoXWebSocketUrl), NeoXWebSocketUrl);
                 ValidateNoLocalhost(nameof(RedisConnectionString), RedisConnectionString);
                 ValidateNoLocalhost(nameof(JaegerEndpoint), JaegerEndpoint);
-                
+
                 // Validate CORS origins
                 foreach (var origin in CorsOrigins)
                 {

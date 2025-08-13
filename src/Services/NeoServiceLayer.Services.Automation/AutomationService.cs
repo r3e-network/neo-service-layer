@@ -1291,25 +1291,25 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 );
                 return events.Any();
             }
-            
+
             // Fallback to blockchain client direct query
             var blockchainClient = GetBlockchainClient(BlockchainType.NeoN3);
             if (blockchainClient != null)
             {
                 var latestBlock = await blockchainClient.GetBlockCountAsync();
                 var fromBlock = Math.Max(0, latestBlock - 10); // Check last 10 blocks
-                
+
                 for (uint i = (uint)fromBlock; i < latestBlock; i++)
                 {
                     var blockEvents = await blockchainClient.GetBlockEventsAsync(i);
-                    if (blockEvents.Any(e => e.ContractHash == condition.ContractHash && 
+                    if (blockEvents.Any(e => e.ContractHash == condition.ContractHash &&
                                            e.EventName == condition.EventName))
                     {
                         return true;
                     }
                 }
             }
-            
+
             return false;
         }
         catch (Exception ex)
@@ -1331,7 +1331,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
             {
                 return false;
             }
-            
+
             // Use enclave for secure script execution
             if (EnclaveManager != null)
             {
@@ -1359,18 +1359,18 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                         return Boolean(result);
                     }})();
                 ";
-                
+
                 var result = await EnclaveManager.ExecuteJavaScriptAsync(safeScript);
                 return bool.TryParse(result, out var boolResult) && boolResult;
             }
-            
+
             // Fallback: evaluate simple expressions only
             if (script.Length > 500 || script.Contains("function") || script.Contains("eval"))
             {
                 Logger.LogWarning("Script too complex or contains dangerous functions, rejecting for security");
                 return false;
             }
-            
+
             // Simple expression evaluation (numbers and basic operators only)
             var cleanScript = System.Text.RegularExpressions.Regex.Replace(script, @"[^0-9+\-*/.()< >= !&|]", "");
             if (cleanScript != script)
@@ -1378,7 +1378,7 @@ public partial class AutomationService : EnclaveBlockchainServiceBase, IAutomati
                 Logger.LogWarning("Script contains non-allowed characters, rejecting for security");
                 return false;
             }
-            
+
             // Use data table to evaluate simple mathematical expressions
             var table = new System.Data.DataTable();
             var result = table.Compute(script, null);

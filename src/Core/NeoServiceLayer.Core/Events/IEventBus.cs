@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -17,15 +17,15 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the async operation</returns>
         Task PublishAsync(IDomainEvent domainEvent, CancellationToken cancellationToken = default);
-        
+
         /// <summary>
         /// Publishes multiple domain events as a batch
         /// </summary>
         /// <param name="domainEvents">The events to publish</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the async operation</returns>
-        Task PublishBatchAsync(IEnumerable&lt;IDomainEvent&gt; domainEvents, CancellationToken cancellationToken = default);
-        
+        Task PublishBatchAsync(IEnumerable&lt; IDomainEvent&gt; domainEvents, CancellationToken cancellationToken = default);
+
         /// <summary>
         /// Subscribes to events of a specific type
         /// </summary>
@@ -40,7 +40,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="eventTypePattern">Event type pattern (supports wildcards)</param>
         /// <param name="handler">Generic event handler</param>
         /// <returns>Subscription that can be disposed to unsubscribe</returns>
-        IEventSubscription Subscribe(string eventTypePattern, IEventHandler&lt;IDomainEvent&gt; handler);
+        IEventSubscription Subscribe(string eventTypePattern, IEventHandler&lt; IDomainEvent&gt; handler);
     }
 
     /// <summary>
@@ -52,17 +52,17 @@ namespace NeoServiceLayer.Core.Events
         /// Unique identifier for the subscription
         /// </summary>
         Guid SubscriptionId { get; }
-        
+
         /// <summary>
         /// Whether the subscription is active
         /// </summary>
         bool IsActive { get; }
-        
+
         /// <summary>
         /// Event type pattern this subscription handles
         /// </summary>
         string EventTypePattern { get; }
-        
+
         /// <summary>
         /// When the subscription was created
         /// </summary>

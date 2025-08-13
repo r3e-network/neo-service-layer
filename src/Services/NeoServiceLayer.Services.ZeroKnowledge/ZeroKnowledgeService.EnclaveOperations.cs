@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
@@ -50,7 +50,7 @@ public partial class ZeroKnowledgeService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving proof generation in SGX
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.ZeroKnowledgeOperations,
@@ -68,7 +68,7 @@ public partial class ZeroKnowledgeService
 
         // Extract the generated proof
         var proofResult = resultJson.GetProperty("result");
-        
+
         var proof = new
         {
             statement = proofResult.GetProperty("statement"),
@@ -79,7 +79,7 @@ public partial class ZeroKnowledgeService
             timestamp = proofResult.GetProperty("timestamp").GetInt64()
         };
 
-        Logger.LogDebug("Generated ZK proof in SGX enclave: ProofId={ProofId}, Commitment={Commitment}", 
+        Logger.LogDebug("Generated ZK proof in SGX enclave: ProofId={ProofId}, Commitment={Commitment}",
             proof.proofId, proof.commitment?.Substring(0, 8) + "...");
 
         // Validate circuit-specific constraints
@@ -142,7 +142,7 @@ public partial class ZeroKnowledgeService
             };
 
             string paramsJson = JsonSerializer.Serialize(jsParams);
-            
+
             // Execute privacy-preserving proof verification in SGX
             string result = await _enclaveManager.ExecuteJavaScriptAsync(
                 PrivacyComputingJavaScriptTemplates.ZeroKnowledgeOperations,
@@ -159,7 +159,7 @@ public partial class ZeroKnowledgeService
             var verificationResult = resultJson.GetProperty("result");
             var isValid = verificationResult.GetProperty("valid").GetBoolean();
 
-            Logger.LogDebug("ZK proof verification in SGX enclave: ProofId={ProofId}, Valid={Valid}", 
+            Logger.LogDebug("ZK proof verification in SGX enclave: ProofId={ProofId}, Valid={Valid}",
                 verificationResult.GetProperty("proofId").GetString(), isValid);
 
             return isValid;
@@ -184,10 +184,10 @@ public partial class ZeroKnowledgeService
         {
             var publicVal = Convert.ToInt32(publicInput);
             var privateVal = Convert.ToInt32(privateInput);
-            
+
             Logger.LogDebug("Validating square circuit witness: private={Private}, public={Public}, private^2={Square}",
                 privateVal, publicVal, privateVal * privateVal);
-            
+
             // Check if private_input^2 == public_input
             if (privateVal * privateVal != publicVal)
             {
@@ -210,7 +210,7 @@ public partial class ZeroKnowledgeService
 
         // Generate proof for the computation
         var circuit = GetCircuit(computation.CircuitId);
-        
+
         var statement = new
         {
             type = "computation",
@@ -231,7 +231,7 @@ public partial class ZeroKnowledgeService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.ZeroKnowledgeOperations,
             paramsJson);
@@ -247,7 +247,7 @@ public partial class ZeroKnowledgeService
         }
 
         var computationResult = resultJson.GetProperty("result");
-        
+
         return new PrivacyComputationResult
         {
             ProofId = computationResult.GetProperty("proofId").GetString() ?? "",

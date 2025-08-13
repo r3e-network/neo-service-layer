@@ -1,0 +1,592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SDK Reference | Neo Service Layer Documentation</title>
+    <meta name="description" content="Complete SDK reference for Neo Service Layer platform including .NET, JavaScript, Python, and Java SDKs.">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../assets/css/variables.css">
+    <link rel="stylesheet" href="../assets/css/reset.css">
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="stylesheet" href="../assets/css/utilities.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <a href="/" class="navbar-brand">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 40 40" class="brand-icon">
+                            <path d="M20,2 L35,10 L35,30 L20,38 L5,30 L5,10 Z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.8"/>
+                        </svg>
+                        <span class="brand-text">Neo Service Layer</span>
+                    </div>
+                </a>
+
+                <div class="navbar-menu" id="navbarMenu">
+                    <a href="/" class="navbar-link">Home</a>
+                    <a href="/services.html" class="navbar-link">Services</a>
+                    <a href="/testing.html" class="navbar-link">Testing</a>
+                    <a href="/docs" class="navbar-link active">Documentation</a>
+                    <a href="/contact.html" class="navbar-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Header -->
+    <section class="doc-header">
+        <div class="container">
+            <h1>SDK Reference</h1>
+            <p>Client libraries for Neo Service Layer platform</p>
+        </div>
+    </section>
+
+    <!-- Documentation Content -->
+    <div class="doc-container">
+        <div class="container">
+            <div class="doc-layout">
+                <!-- Sidebar -->
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h3>SDK Reference</h3>
+                        <ul>
+                            <li><a href="#overview">Overview</a></li>
+                            <li><a href="#dotnet-sdk">.NET SDK</a></li>
+                            <li><a href="#javascript-sdk">JavaScript SDK</a></li>
+                            <li><a href="#python-sdk">Python SDK</a></li>
+                            <li><a href="#java-sdk">Java SDK</a></li>
+                            <li><a href="#authentication">Authentication</a></li>
+                            <li><a href="#error-handling">Error Handling</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="doc-content">
+                    <!-- Overview -->
+                    <section id="overview" class="doc-section">
+                        <h2>Overview</h2>
+                        <p>Neo Service Layer provides official SDKs for multiple programming languages, enabling seamless integration with your applications.</p>
+                        
+                        <div class="sdk-grid">
+                            <div class="sdk-card">
+                                <div class="sdk-icon">
+                                    <i class="fab fa-microsoft"></i>
+                                </div>
+                                <h3>.NET SDK</h3>
+                                <p>Full-featured SDK for .NET applications</p>
+                                <code>dotnet add package NeoServiceLayer.SDK</code>
+                            </div>
+                            <div class="sdk-card">
+                                <div class="sdk-icon">
+                                    <i class="fab fa-js"></i>
+                                </div>
+                                <h3>JavaScript SDK</h3>
+                                <p>TypeScript-ready SDK for Node.js and browsers</p>
+                                <code>npm install @neo-service-layer/sdk</code>
+                            </div>
+                            <div class="sdk-card">
+                                <div class="sdk-icon">
+                                    <i class="fab fa-python"></i>
+                                </div>
+                                <h3>Python SDK</h3>
+                                <p>Pythonic interface to Neo Service Layer</p>
+                                <code>pip install neo-service-layer</code>
+                            </div>
+                            <div class="sdk-card">
+                                <div class="sdk-icon">
+                                    <i class="fab fa-java"></i>
+                                </div>
+                                <h3>Java SDK</h3>
+                                <p>Java SDK with Spring Boot integration</p>
+                                <code>implementation 'com.neo:service-layer:2.0.0'</code>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- .NET SDK -->
+                    <section id="dotnet-sdk" class="doc-section">
+                        <h2>.NET SDK</h2>
+                        
+                        <h3>Installation</h3>
+                        <pre><code class="language-bash"># Using .NET CLI
+dotnet add package NeoServiceLayer.SDK
+
+# Using Package Manager
+Install-Package NeoServiceLayer.SDK
+
+# Using PackageReference
+&lt;PackageReference Include="NeoServiceLayer.SDK" Version="2.0.0" /&gt;</code></pre>
+
+                        <h3>Quick Start</h3>
+                        <pre><code class="language-csharp">using NeoServiceLayer.SDK;
+using NeoServiceLayer.SDK.Services;
+
+// Initialize the client
+var config = new NeoServiceLayerConfig
+{
+    ApiKey = "your-api-key",
+    Environment = Environment.Production,
+    Region = Region.USEast
+};
+
+var client = new NeoServiceLayerClient(config);
+
+// Use Enclave Storage Service
+var enclaveStorage = client.GetService&lt;IEnclaveStorageService&gt;();
+var result = await enclaveStorage.SecureStoreAsync(
+    key: "sensitive-data",
+    data: encryptedData,
+    attestation: attestationReport
+);
+
+// Use Smart Contracts Service
+var smartContracts = client.GetService&lt;ISmartContractsService&gt;();
+var contract = await smartContracts.DeployContractAsync(
+    contractCode: compiledContract,
+    parameters: deploymentParams
+);
+
+// Use Authentication Service
+var auth = client.GetService&lt;IAuthenticationService&gt;();
+var token = await auth.AuthenticateAsync(
+    username: "user@example.com",
+    password: "secure-password",
+    mfaCode: "123456"
+);</code></pre>
+
+                        <h3>Advanced Features</h3>
+                        <pre><code class="language-csharp">// Transaction Management
+using (var transaction = await client.BeginTransactionAsync())
+{
+    try
+    {
+        // Perform multiple operations
+        await enclaveStorage.StoreAsync(key1, data1);
+        await smartContracts.ExecuteAsync(contractId, method, args);
+        await blockchain.SubmitTransactionAsync(tx);
+        
+        // Commit all operations atomically
+        await transaction.CommitAsync();
+    }
+    catch
+    {
+        // Automatic rollback on exception
+        await transaction.RollbackAsync();
+        throw;
+    }
+}
+
+// Event Subscriptions
+client.Events.OnServiceHealthChanged += (sender, args) =>
+{
+    Console.WriteLine($"Service {args.ServiceName} health: {args.Status}");
+};
+
+// Batch Operations
+var batchResults = await client.BatchAsync(batch =>
+{
+    batch.Add(enclaveStorage.GetAsync("key1"));
+    batch.Add(enclaveStorage.GetAsync("key2"));
+    batch.Add(smartContracts.GetContractAsync(contractId));
+});</code></pre>
+                    </section>
+
+                    <!-- JavaScript SDK -->
+                    <section id="javascript-sdk" class="doc-section">
+                        <h2>JavaScript SDK</h2>
+                        
+                        <h3>Installation</h3>
+                        <pre><code class="language-bash"># Using npm
+npm install @neo-service-layer/sdk
+
+# Using yarn
+yarn add @neo-service-layer/sdk
+
+# Using pnpm
+pnpm add @neo-service-layer/sdk</code></pre>
+
+                        <h3>Quick Start</h3>
+                        <pre><code class="language-javascript">import { NeoServiceLayer } from '@neo-service-layer/sdk';
+
+// Initialize the client
+const client = new NeoServiceLayer({
+    apiKey: 'your-api-key',
+    environment: 'production',
+    region: 'us-east-1'
+});
+
+// Use Enclave Storage Service
+const enclaveStorage = client.services.enclaveStorage;
+const result = await enclaveStorage.secureStore({
+    key: 'sensitive-data',
+    data: encryptedData,
+    attestation: attestationReport
+});
+
+// Use Smart Contracts Service
+const smartContracts = client.services.smartContracts;
+const contract = await smartContracts.deploy({
+    code: compiledContract,
+    parameters: deploymentParams
+});
+
+// Use Authentication Service
+const auth = client.services.authentication;
+const { token } = await auth.authenticate({
+    username: 'user@example.com',
+    password: 'secure-password',
+    mfaCode: '123456'
+});</code></pre>
+
+                        <h3>TypeScript Support</h3>
+                        <pre><code class="language-typescript">import { 
+    NeoServiceLayer, 
+    EnclaveStorageService,
+    SmartContractDeployment,
+    AuthenticationResult 
+} from '@neo-service-layer/sdk';
+
+const client = new NeoServiceLayer({
+    apiKey: process.env.NEO_API_KEY!,
+    environment: 'production'
+});
+
+// Type-safe service usage
+const enclaveStorage: EnclaveStorageService = client.services.enclaveStorage;
+
+// Type-safe responses
+const deployment: SmartContractDeployment = await client.services.smartContracts.deploy({
+    code: contractCode,
+    parameters: {
+        name: 'MyContract',
+        version: '1.0.0'
+    }
+});
+
+// Async/await error handling
+try {
+    const result: AuthenticationResult = await client.services.authentication.authenticate({
+        username: 'user@example.com',
+        password: 'password'
+    });
+} catch (error) {
+    if (error.code === 'AUTH_FAILED') {
+        console.error('Authentication failed:', error.message);
+    }
+}</code></pre>
+                    </section>
+
+                    <!-- Python SDK -->
+                    <section id="python-sdk" class="doc-section">
+                        <h2>Python SDK</h2>
+                        
+                        <h3>Installation</h3>
+                        <pre><code class="language-bash"># Using pip
+pip install neo-service-layer
+
+# Using poetry
+poetry add neo-service-layer
+
+# Using pipenv
+pipenv install neo-service-layer</code></pre>
+
+                        <h3>Quick Start</h3>
+                        <pre><code class="language-python">from neo_service_layer import NeoServiceLayer
+from neo_service_layer.services import EnclaveStorage, SmartContracts
+
+# Initialize the client
+client = NeoServiceLayer(
+    api_key='your-api-key',
+    environment='production',
+    region='us-east-1'
+)
+
+# Use Enclave Storage Service
+enclave_storage = client.services.enclave_storage
+result = await enclave_storage.secure_store(
+    key='sensitive-data',
+    data=encrypted_data,
+    attestation=attestation_report
+)
+
+# Use Smart Contracts Service
+smart_contracts = client.services.smart_contracts
+contract = await smart_contracts.deploy(
+    code=compiled_contract,
+    parameters=deployment_params
+)
+
+# Use Authentication Service
+auth = client.services.authentication
+token = await auth.authenticate(
+    username='user@example.com',
+    password='secure-password',
+    mfa_code='123456'
+)</code></pre>
+
+                        <h3>Async Context Manager</h3>
+                        <pre><code class="language-python">import asyncio
+from neo_service_layer import NeoServiceLayer
+
+async def main():
+    async with NeoServiceLayer(api_key='your-api-key') as client:
+        # Automatic connection management
+        result = await client.services.blockchain.get_block('latest')
+        
+        # Batch operations
+        async with client.batch() as batch:
+            batch.add(client.services.enclave_storage.get('key1'))
+            batch.add(client.services.enclave_storage.get('key2'))
+            results = await batch.execute()
+
+# Run the async function
+asyncio.run(main())</code></pre>
+                    </section>
+
+                    <!-- Java SDK -->
+                    <section id="java-sdk" class="doc-section">
+                        <h2>Java SDK</h2>
+                        
+                        <h3>Installation</h3>
+                        <pre><code class="language-xml">&lt;!-- Maven --&gt;
+&lt;dependency&gt;
+    &lt;groupId&gt;com.neo&lt;/groupId&gt;
+    &lt;artifactId&gt;service-layer-sdk&lt;/artifactId&gt;
+    &lt;version&gt;2.0.0&lt;/version&gt;
+&lt;/dependency&gt;
+
+&lt;!-- Gradle --&gt;
+implementation 'com.neo:service-layer-sdk:2.0.0'</code></pre>
+
+                        <h3>Quick Start</h3>
+                        <pre><code class="language-java">import com.neo.servicelayer.*;
+import com.neo.servicelayer.services.*;
+
+// Initialize the client
+NeoServiceLayerConfig config = NeoServiceLayerConfig.builder()
+    .apiKey("your-api-key")
+    .environment(Environment.PRODUCTION)
+    .region(Region.US_EAST)
+    .build();
+
+NeoServiceLayerClient client = new NeoServiceLayerClient(config);
+
+// Use Enclave Storage Service
+EnclaveStorageService enclaveStorage = client.getService(EnclaveStorageService.class);
+StoreResult result = enclaveStorage.secureStore(
+    "sensitive-data",
+    encryptedData,
+    attestationReport
+).get();
+
+// Use Smart Contracts Service
+SmartContractsService smartContracts = client.getService(SmartContractsService.class);
+Contract contract = smartContracts.deploy(
+    compiledContract,
+    deploymentParams
+).get();
+
+// Use Authentication Service
+AuthenticationService auth = client.getService(AuthenticationService.class);
+AuthToken token = auth.authenticate(
+    "user@example.com",
+    "secure-password",
+    "123456"
+).get();</code></pre>
+
+                        <h3>Spring Boot Integration</h3>
+                        <pre><code class="language-java">@Configuration
+@EnableNeoServiceLayer
+public class NeoServiceLayerConfig {
+    
+    @Bean
+    public NeoServiceLayerClient neoServiceLayerClient(
+            @Value("${neo.api-key}") String apiKey) {
+        return NeoServiceLayerClient.builder()
+            .apiKey(apiKey)
+            .environment(Environment.PRODUCTION)
+            .build();
+    }
+}
+
+@Service
+public class BlockchainService {
+    
+    @Autowired
+    private NeoServiceLayerClient client;
+    
+    public CompletableFuture&lt;TransactionResult&gt; submitTransaction(Transaction tx) {
+        return client.getService(BlockchainService.class)
+            .submitTransaction(tx);
+    }
+}</code></pre>
+                    </section>
+
+                    <!-- Authentication -->
+                    <section id="authentication" class="doc-section">
+                        <h2>Authentication</h2>
+                        <p>All SDKs support multiple authentication methods for secure access to Neo Service Layer services.</p>
+
+                        <h3>API Key Authentication</h3>
+                        <pre><code class="language-javascript">const client = new NeoServiceLayer({
+    apiKey: 'your-api-key'
+});</code></pre>
+
+                        <h3>OAuth 2.0</h3>
+                        <pre><code class="language-javascript">const client = new NeoServiceLayer({
+    oauth: {
+        clientId: 'your-client-id',
+        clientSecret: 'your-client-secret',
+        scope: 'read write'
+    }
+});</code></pre>
+
+                        <h3>JWT Bearer Token</h3>
+                        <pre><code class="language-javascript">const client = new NeoServiceLayer({
+    bearerToken: 'your-jwt-token'
+});</code></pre>
+
+                        <h3>Mutual TLS</h3>
+                        <pre><code class="language-javascript">const client = new NeoServiceLayer({
+    mtls: {
+        cert: fs.readFileSync('client-cert.pem'),
+        key: fs.readFileSync('client-key.pem'),
+        ca: fs.readFileSync('ca-cert.pem')
+    }
+});</code></pre>
+                    </section>
+
+                    <!-- Error Handling -->
+                    <section id="error-handling" class="doc-section">
+                        <h2>Error Handling</h2>
+                        <p>All SDKs provide consistent error handling with detailed error codes and messages.</p>
+
+                        <h3>Error Types</h3>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Error Code</th>
+                                    <th>Description</th>
+                                    <th>HTTP Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>AUTH_FAILED</td>
+                                    <td>Authentication failed</td>
+                                    <td>401</td>
+                                </tr>
+                                <tr>
+                                    <td>PERMISSION_DENIED</td>
+                                    <td>Insufficient permissions</td>
+                                    <td>403</td>
+                                </tr>
+                                <tr>
+                                    <td>RESOURCE_NOT_FOUND</td>
+                                    <td>Resource not found</td>
+                                    <td>404</td>
+                                </tr>
+                                <tr>
+                                    <td>RATE_LIMIT_EXCEEDED</td>
+                                    <td>Rate limit exceeded</td>
+                                    <td>429</td>
+                                </tr>
+                                <tr>
+                                    <td>SERVICE_UNAVAILABLE</td>
+                                    <td>Service temporarily unavailable</td>
+                                    <td>503</td>
+                                </tr>
+                            </tbody>
+                        </table>
+
+                        <h3>Error Handling Example</h3>
+                        <pre><code class="language-javascript">try {
+    const result = await client.services.blockchain.submitTransaction(tx);
+} catch (error) {
+    switch (error.code) {
+        case 'AUTH_FAILED':
+            // Refresh authentication
+            await client.refreshAuth();
+            break;
+        case 'RATE_LIMIT_EXCEEDED':
+            // Wait and retry
+            await sleep(error.retryAfter);
+            break;
+        case 'SERVICE_UNAVAILABLE':
+            // Use fallback service
+            await useFallback();
+            break;
+        default:
+            console.error('Unexpected error:', error);
+    }
+}</code></pre>
+                    </section>
+
+                    <!-- Next Steps -->
+                    <div class="next-steps">
+                        <h2>Next Steps</h2>
+                        <div class="next-steps-grid">
+                            <a href="/docs/quick-start.html" class="next-step-card">
+                                <i class="fas fa-rocket"></i>
+                                <h3>Quick Start</h3>
+                                <p>Get started with Neo Service Layer</p>
+                            </a>
+                            <a href="/docs/api-reference.html" class="next-step-card">
+                                <i class="fas fa-code"></i>
+                                <h3>API Reference</h3>
+                                <p>Complete API documentation</p>
+                            </a>
+                            <a href="/docs/testing-guide.html" class="next-step-card">
+                                <i class="fas fa-vial"></i>
+                                <h3>Testing Guide</h3>
+                                <p>Learn about testing strategies</p>
+                            </a>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-javascript.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-python.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-java.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-bash.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-xml-doc.min.js"></script>
+    <script src="../assets/js/main.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+    </script>
+</body>
+</html>

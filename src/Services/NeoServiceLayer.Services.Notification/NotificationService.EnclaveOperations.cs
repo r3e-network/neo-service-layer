@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
@@ -95,7 +95,7 @@ public partial class NotificationService
             };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving notification processing in SGX
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.NotificationOperations,
@@ -113,7 +113,7 @@ public partial class NotificationService
 
         // Extract privacy-preserving notification result
         var notificationResult = resultJson.GetProperty("result");
-        
+
         if (operation == "batch")
         {
             var batchResult = notificationResult;
@@ -190,7 +190,7 @@ public partial class NotificationService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.NotificationOperations,
             paramsJson);
@@ -222,7 +222,7 @@ public partial class NotificationService
 
         // Hash any potentially sensitive content
         var anonymizedMetadata = new Dictionary<string, object>();
-        
+
         if (metadata != null)
         {
             foreach (var kvp in metadata)
@@ -303,7 +303,7 @@ public partial class NotificationService
     private List<BatchNotificationResult> ExtractBatchResults(JsonElement resultsElement)
     {
         var results = new List<BatchNotificationResult>();
-        
+
         if (resultsElement.ValueKind == JsonValueKind.Array)
         {
             foreach (var resultElement in resultsElement.EnumerateArray())
@@ -316,7 +316,7 @@ public partial class NotificationService
                 });
             }
         }
-        
+
         return results;
     }
 

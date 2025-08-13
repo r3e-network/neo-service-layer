@@ -1,4 +1,4 @@
-using System.Net;
+﻿using System.Net;
 using System.Net.Http.Json;
 using System.Text;
 using System.Text.Json;
@@ -37,22 +37,22 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         // Arrange
         var abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         var enclaveManager = _serviceProvider.GetService<IEnclaveManager>();
-        
+
         // Act
         var accountAddress = await abstractAccountService.CreateAccountAsync(
-            "TestAccount", 
-            new[] { "0x123", "0x456" }, 
-            2, 
+            "TestAccount",
+            new[] { "0x123", "0x456" },
+            2,
             BlockchainType.NeoN3);
 
         // Assert
         accountAddress.Should().NotBeNullOrEmpty();
-        
+
         // Verify account operations use privacy-preserving methods
         var accountInfo = await abstractAccountService.GetAccountInfoAsync(accountAddress, BlockchainType.NeoN3);
         accountInfo.Should().NotBeNull();
         accountInfo.Address.Should().Be(accountAddress);
-        
+
         // Check that the service is using enclave operations
         if (enclaveManager != null)
         {
@@ -67,7 +67,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         var votingService = _serviceProvider.GetRequiredService<IVotingService>();
         var voterAddress = "0xVoter123";
         var votingPower = 100.0m;
-        
+
         // Create a voting session
         var sessionResult = await votingService.CreateVotingSessionAsync(
             "Test Vote",
@@ -90,13 +90,13 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         // Assert
         voteResult.Success.Should().BeTrue();
         voteResult.VoteHash.Should().NotBeNullOrEmpty("Vote should be hashed for privacy");
-        
+
         // Verify vote was recorded anonymously
         var votingResults = await votingService.GetVotingResultsAsync(sessionId, BlockchainType.NeoN3);
         votingResults.Should().NotBeNull();
         votingResults.Options[0].VoteCount.Should().Be(1);
         votingResults.Options[0].VotingPower.Should().Be(votingPower);
-        
+
         // Individual voter information should not be retrievable
         votingResults.VoterDetails.Should().BeNullOrEmpty("Individual voter details should be private");
     }
@@ -107,7 +107,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         // Arrange
         var keyManagementService = _serviceProvider.GetRequiredService<IKeyManagementService>();
         var keyId = $"test-key-{Guid.NewGuid()}";
-        
+
         // Act - Create key in SGX
         var createResult = await keyManagementService.CreateKeyAsync(
             keyId,
@@ -122,24 +122,24 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         createResult.KeyId.Should().Be(keyId);
         createResult.KeyType.Should().Be("RSA");
         createResult.Exportable.Should().BeFalse();
-        
+
         // Verify key operations are performed in SGX
         var signData = "Test data to sign";
         var signResult = await keyManagementService.SignDataAsync(
             keyId,
             signData,
             BlockchainType.NeoN3);
-        
+
         signResult.Success.Should().BeTrue();
         signResult.Signature.Should().NotBeNullOrEmpty();
-        
+
         // Verify signature
         var verifyResult = await keyManagementService.VerifySignatureAsync(
             keyId,
             signData,
             signResult.Signature,
             BlockchainType.NeoN3);
-        
+
         verifyResult.Should().BeTrue();
     }
 
@@ -148,7 +148,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var zkService = _serviceProvider.GetRequiredService<IZeroKnowledgeService>();
-        
+
         // First compile a circuit
         var circuitDefinition = new ZeroKnowledgeService.ZkCircuitDefinition
         {
@@ -158,7 +158,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             InputSchema = new Dictionary<string, object> { ["age"] = "number", ["threshold"] = "number" },
             OutputSchema = new Dictionary<string, object> { ["isValid"] = "boolean" }
         };
-        
+
         var compileResult = await zkService.CompileCircuitAsync(circuitDefinition, BlockchainType.NeoN3);
         compileResult.Success.Should().BeTrue();
         var circuitId = compileResult.CircuitId;
@@ -170,14 +170,14 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             PublicInputs = new Dictionary<string, object> { ["threshold"] = 18 },
             PrivateInputs = new Dictionary<string, object> { ["age"] = 25 }
         };
-        
+
         var proofResult = await zkService.GenerateProofAsync(proofRequest, BlockchainType.NeoN3);
 
         // Assert
         proofResult.Should().NotBeNull();
         proofResult.ProofId.Should().NotBeNullOrEmpty();
         proofResult.Proof.Should().NotBeNullOrEmpty();
-        
+
         // Verify proof
         var verificationRequest = new ProofVerification
         {
@@ -185,7 +185,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             Proof = proofResult.Proof,
             PublicSignals = proofResult.PublicSignals
         };
-        
+
         var isValid = await zkService.VerifyProofAsync(verificationRequest, BlockchainType.NeoN3);
         isValid.Should().BeTrue();
     }
@@ -197,7 +197,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         var oracleService = _serviceProvider.GetRequiredService<IOracleService>();
         var dataSource = "https://api.example.com/data";
         var dataPath = "price.usd";
-        
+
         // Act
         var oracleRequest = new OracleService.OracleRequest
         {
@@ -206,20 +206,20 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             Path = dataPath,
             BlockchainType = BlockchainType.NeoN3
         };
-        
+
         var response = await oracleService.FetchDataAsync(oracleRequest, BlockchainType.NeoN3);
 
         // Assert
         response.Should().NotBeNull();
         response.RequestId.Should().Be(oracleRequest.RequestId);
-        
+
         // Check privacy metadata
         response.Metadata.Should().NotBeNull();
         response.Metadata.Should().ContainKey("privacy_request_id");
         response.Metadata.Should().ContainKey("data_hash");
         response.Metadata.Should().ContainKey("source_proof_hash");
         response.Metadata.Should().ContainKey("source_proof_signature");
-        
+
         // Data should be integrity-protected
         response.Data.Should().Contain("integrity");
         response.Data.Should().Contain("enclave_verified");
@@ -231,7 +231,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
-        
+
         // Act
         var request = new NotificationService.SendNotificationRequest
         {
@@ -242,21 +242,21 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             Priority = NotificationService.NotificationPriority.Normal,
             Category = "Test"
         };
-        
+
         var result = await notificationService.SendNotificationAsync(request, BlockchainType.NeoN3);
 
         // Assert
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
         result.NotificationId.Should().NotBeNullOrEmpty();
-        
+
         // Check privacy metadata
         result.Metadata.Should().NotBeNull();
         result.Metadata.Should().ContainKey("privacy_proof_id");
         result.Metadata.Should().ContainKey("recipient_hash");
         result.Metadata.Should().ContainKey("channel_hash");
         result.Metadata.Should().ContainKey("delivery_proof");
-        
+
         // Recipient should be hashed
         result.Metadata["recipient_hash"].Should().NotBe("user@example.com");
     }
@@ -266,10 +266,10 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var smartContractService = _serviceProvider.GetRequiredService<ISmartContractService>();
-        
+
         // Simple contract bytecode (mock)
         var contractCode = Convert.FromBase64String("TU9DSyBDT05UUkFDVCBCWVRFQ09ERQ==");
-        
+
         // Act
         var deploymentOptions = new SmartContractService.ContractDeploymentOptions
         {
@@ -277,7 +277,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             Version = "1.0.0",
             Description = "Test contract for SGX validation"
         };
-        
+
         var deployResult = await smartContractService.DeployContractAsync(
             contractCode,
             null,
@@ -288,7 +288,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         deployResult.Should().NotBeNull();
         deployResult.Success.Should().BeTrue();
         deployResult.ContractAddress.Should().NotBeNullOrEmpty();
-        
+
         // Check that deployment was validated in SGX
         deployResult.Metadata.Should().NotBeNull();
         deployResult.Metadata.Should().ContainKey("privacy_deployment_id");
@@ -304,7 +304,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         var socialRecoveryService = _serviceProvider.GetRequiredService<ISocialRecoveryService>();
         var accountAddress = "0xAccount123";
         var guardians = new[] { "0xGuardian1", "0xGuardian2", "0xGuardian3" };
-        
+
         // Act - Setup recovery
         var setupResult = await socialRecoveryService.SetupRecoveryAsync(
             accountAddress,
@@ -323,12 +323,12 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
 
         initiateResult.Success.Should().BeTrue();
         initiateResult.RecoveryId.Should().NotBeNullOrEmpty();
-        
+
         // Check guardian privacy
         initiateResult.RequiredApprovals.Should().Be(2);
         initiateResult.GuardianHashes.Should().NotBeNullOrEmpty();
         initiateResult.GuardianHashes.Should().HaveCount(3);
-        
+
         // Guardian addresses should be hashed
         initiateResult.GuardianHashes.Should().NotContain(guardians);
         foreach (var hash in initiateResult.GuardianHashes)
@@ -343,7 +343,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
     {
         // Arrange
         var enclaveManager = _serviceProvider.GetService<IEnclaveManager>();
-        
+
         if (enclaveManager == null)
         {
             // Skip test if enclave manager is not available
@@ -352,7 +352,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
 
         // Act & Assert
         enclaveManager.IsInitialized.Should().BeTrue("Enclave should be initialized");
-        
+
         // Verify all services can use the same enclave instance
         var abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         var votingService = _serviceProvider.GetRequiredService<IVotingService>();
@@ -362,7 +362,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
         var smartContractService = _serviceProvider.GetRequiredService<ISmartContractService>();
         var socialRecoveryService = _serviceProvider.GetRequiredService<ISocialRecoveryService>();
-        
+
         // All services should be initialized and ready
         abstractAccountService.Should().NotBeNull();
         votingService.Should().NotBeNull();
@@ -380,7 +380,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
         // Arrange
         var zkService = _serviceProvider.GetRequiredService<IZeroKnowledgeService>();
         var keyManagementService = _serviceProvider.GetRequiredService<IKeyManagementService>();
-        
+
         // Create test data
         var circuitDefinition = new ZeroKnowledgeService.ZkCircuitDefinition
         {
@@ -390,13 +390,13 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
             InputSchema = new Dictionary<string, object> { ["value"] = "number" },
             OutputSchema = new Dictionary<string, object> { ["result"] = "number" }
         };
-        
+
         var compileResult = await zkService.CompileCircuitAsync(circuitDefinition, BlockchainType.NeoN3);
         var circuitId = compileResult.CircuitId;
 
         // Act - Execute multiple operations concurrently
         var tasks = new List<Task>();
-        
+
         // Generate multiple proofs concurrently
         for (int i = 0; i < 5; i++)
         {
@@ -409,13 +409,13 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
                     PublicInputs = new Dictionary<string, object> { ["value"] = value },
                     PrivateInputs = new Dictionary<string, object> { ["secret"] = value * 2 }
                 };
-                
+
                 var result = await zkService.GenerateProofAsync(proofRequest, BlockchainType.NeoN3);
                 result.Should().NotBeNull();
                 result.Proof.Should().NotBeNullOrEmpty();
             }));
         }
-        
+
         // Create multiple keys concurrently
         for (int i = 0; i < 5; i++)
         {
@@ -429,7 +429,7 @@ public class SGXServicesIntegrationTests : IntegrationTestBase
                     false,
                     "Concurrent test key",
                     BlockchainType.NeoN3);
-                
+
                 result.Should().NotBeNull();
                 result.KeyId.Should().Be(keyId);
             }));

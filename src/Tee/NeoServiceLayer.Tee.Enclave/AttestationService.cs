@@ -91,19 +91,19 @@ public class AttestationService : IAttestationService
             // Use known Intel SGX certificate thumbprints
             // Intel SGX Root CA (CN=Intel SGX Root CA, O=Intel Corporation, L=Santa Clara, ST=CA, C=US)
             trustedThumbprints.Add("C14BB2A8714C0C2A7F0F5CCFB095A371498A8322");
-            
+
             // Intel SGX Attestation Report Signing CA 
             // (CN=Intel SGX Attestation Report Signing CA, O=Intel Corporation, L=Santa Clara, ST=CA, C=US)
             trustedThumbprints.Add("9DDEBF89A993D6BB6DA6FBA72EB1634B59D09B13");
-            
+
             // Intel SGX PCK Certificate CA
             // (CN=Intel SGX PCK Certificate CA, O=Intel Corporation, L=Santa Clara, ST=CA, C=US)
             trustedThumbprints.Add("EC2C83D8C7B7CF0A7F0F32912E2BA98882D8BCC2");
-            
+
             // Intel SGX PCK Platform CA
             // (CN=Intel SGX PCK Platform CA, O=Intel Corporation, L=Santa Clara, ST=CA, C=US)
             trustedThumbprints.Add("CA7F198A768E843F9998BFF3C1AD6A723D4BDD7C");
-            
+
             // Intel SGX TCB Signing Certificate
             trustedThumbprints.Add("A9B0E609442BE4C8647EDB4FEE08A3166A09EFC9");
         }
@@ -1127,7 +1127,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
     private bool TryGetSgxReport(out SgxReport report)
     {
         report = new SgxReport();
-        
+
         try
         {
             // Check if running in Occlum environment
@@ -1158,7 +1158,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                     // In production, use SGX SDK to create report
                     // This would involve calling sgx_create_report()
                     _logger.LogInformation("SGX device found at {Path}", devicePath);
-                    
+
                     // For now, return false as full SDK integration requires native interop
                     return false;
                 }
@@ -1177,31 +1177,31 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
     {
         // Parse SGX report structure according to Intel SGX specification
         var report = new SgxReport();
-        
+
         if (reportBytes.Length >= 432)
         {
             // Extract key fields from report structure
             report.CpuSvn = new byte[16];
             Array.Copy(reportBytes, 0, report.CpuSvn, 0, 16);
-            
+
             report.MiscSelect = BitConverter.ToUInt32(reportBytes, 16);
-            
+
             report.Attributes = new byte[16];
             Array.Copy(reportBytes, 48, report.Attributes, 0, 16);
-            
+
             report.MrEnclave = new byte[32];
             Array.Copy(reportBytes, 64, report.MrEnclave, 0, 32);
-            
+
             report.MrSigner = new byte[32];
             Array.Copy(reportBytes, 128, report.MrSigner, 0, 32);
-            
+
             report.IsvProdId = BitConverter.ToUInt16(reportBytes, 256);
             report.IsvSvn = BitConverter.ToUInt16(reportBytes, 258);
-            
+
             report.ReportData = new byte[64];
             Array.Copy(reportBytes, 368, report.ReportData, 0, 64);
         }
-        
+
         return report;
     }
 

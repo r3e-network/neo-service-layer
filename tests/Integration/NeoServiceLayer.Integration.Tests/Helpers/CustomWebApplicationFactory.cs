@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Hosting;
+﻿using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -17,13 +17,13 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
         builder.UseEnvironment("Test");
-        
+
         // Use random available port to avoid conflicts between test runs
         builder.UseUrls("http://localhost:0");
 
         // Configure JWT secret through configuration instead of environment variable
         builder.UseSetting("Jwt:SecretKey", "SuperSecretTestKeyThatIsLongEnoughForTesting123!");
-        
+
         builder.ConfigureServices(services =>
         {
             // Remove problematic services that cause initialization issues

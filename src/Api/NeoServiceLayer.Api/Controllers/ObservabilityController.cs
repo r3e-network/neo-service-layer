@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -43,9 +43,9 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var decodedEndpoint = Uri.UnescapeDataString(endpoint);
             var period = TimeSpan.FromMinutes(periodMinutes);
-            
+
             var stats = await _metricsCollector.GetStatisticsAsync(decodedEndpoint, period);
-            
+
             return Ok(stats);
         }
 
@@ -60,9 +60,9 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var decodedEndpoint = Uri.UnescapeDataString(endpoint);
             var period = TimeSpan.FromMinutes(periodMinutes);
-            
+
             var errorRate = await _metricsCollector.GetErrorRateAsync(decodedEndpoint, period);
-            
+
             return Ok(new ErrorRateResponse
             {
                 Endpoint = decodedEndpoint,
@@ -101,7 +101,7 @@ namespace NeoServiceLayer.Api.Controllers
                     AverageResponseTimeMs = 75
                 }
             };
-            
+
             return Ok(overview);
         }
 
@@ -134,7 +134,7 @@ namespace NeoServiceLayer.Api.Controllers
                     }
                 }
             };
-            
+
             return Ok(traces);
         }
 
@@ -165,7 +165,7 @@ namespace NeoServiceLayer.Api.Controllers
                     }
                 }
             };
-            
+
             return Ok(logs);
         }
 
@@ -177,18 +177,18 @@ namespace NeoServiceLayer.Api.Controllers
         public async Task<IActionResult> TriggerTestAlert([FromBody] TestAlertRequest request)
         {
             var structuredLogger = _loggerFactory.CreateLogger("ObservabilityTest", GetCorrelationId());
-            
+
             structuredLogger.LogOperation("TestAlert", new Dictionary<string, object>
             {
                 ["AlertType"] = request.AlertType,
                 ["Message"] = request.Message,
                 ["Severity"] = request.Severity
             }, LogLevel.Warning);
-            
+
             await _metricsCollector.TriggerPerformanceAlertAsync(
                 "TestEndpoint",
                 new List<string> { request.Message });
-            
+
             return NoContent();
         }
 

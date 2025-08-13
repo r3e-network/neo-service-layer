@@ -1,4 +1,4 @@
-namespace NeoServiceLayer.Performance.Tests.Infrastructure
+﻿namespace NeoServiceLayer.Performance.Tests.Infrastructure
 {
     /// <summary>
     /// Simple sample cache data for performance testing.
@@ -18,7 +18,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         public static SimpleSampleCacheData Generate(int dataSize)
         {
             var data = new string('x', Math.Max(1, dataSize - 100)); // Reserve space for other properties
-            
+
             return new SimpleSampleCacheData
             {
                 Id = Guid.NewGuid().ToString(),

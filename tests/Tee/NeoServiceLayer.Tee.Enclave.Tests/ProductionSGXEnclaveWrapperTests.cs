@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -33,7 +33,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
 
         // Assert - In test environment, SGX may not be available, so we check for graceful handling
         Assert.True(result || !result); // Either succeeds or fails gracefully
-        
+
         if (result)
         {
             _output.WriteLine("SGX enclave initialized successfully");
@@ -78,7 +78,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         // Act & Assert
         var exception = await Assert.ThrowsAsync<ArgumentException>(
             () => _enclaveWrapper.ExecuteScriptAsync(largeScript, data));
-        
+
         Assert.Contains("exceeds maximum size", exception.Message);
         _output.WriteLine($"Correctly rejected oversized input: {exception.Message}");
     }
@@ -95,7 +95,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         {
             var exception = await Assert.ThrowsAsync<SecurityException>(
                 () => _enclaveWrapper.ExecuteScriptAsync(maliciousScript, data));
-            
+
             Assert.Contains("Security violation", exception.Message);
             _output.WriteLine($"Correctly blocked malicious script: {exception.Message}");
         }
@@ -118,7 +118,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         {
             var exception = await Assert.ThrowsAsync<TimeoutException>(
                 () => _enclaveWrapper.ExecuteScriptAsync(timeoutScript, data));
-            
+
             Assert.Contains("execution timeout", exception.Message);
             _output.WriteLine($"Correctly timed out long-running script: {exception.Message}");
         }
@@ -162,7 +162,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         Assert.NotNull(result);
         Assert.NotEqual(data, result); // Sealed data should be different
         Assert.True(result.Length > data.Length); // Sealed data includes metadata
-        
+
         _output.WriteLine($"Sealed {data.Length} bytes into {result.Length} bytes");
     }
 
@@ -180,10 +180,10 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         // Assert
         Assert.NotNull(unsealedData);
         Assert.Equal(originalData, unsealedData);
-        
+
         var recoveredText = Encoding.UTF8.GetString(unsealedData);
         Assert.Equal(originalText, recoveredText);
-        
+
         _output.WriteLine($"Successfully unsealed data: '{recoveredText}'");
     }
 
@@ -193,14 +193,14 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         // Arrange
         var originalData = Encoding.UTF8.GetBytes("Test data");
         var sealedData = await _enclaveWrapper.SealDataAsync(originalData);
-        
+
         // Corrupt the sealed data
         sealedData[0] = (byte)(sealedData[0] ^ 0xFF);
 
         // Act & Assert
         var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => _enclaveWrapper.UnsealDataAsync(sealedData));
-        
+
         Assert.Contains("Failed to unseal data", exception.Message);
         _output.WriteLine($"Correctly detected corrupted sealed data: {exception.Message}");
     }
@@ -214,11 +214,11 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         // Assert
         Assert.NotNull(attestation);
         Assert.NotEmpty(attestation);
-        
+
         // In production, this would be a valid SGX attestation
         // In test environment, it returns a mock attestation
         _output.WriteLine($"Attestation length: {attestation.Length} bytes");
-        
+
         if (_enclaveWrapper.IsInitialized)
         {
             Assert.True(attestation.Length > 100); // Real attestations are substantial
@@ -237,7 +237,7 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
         Assert.NotEmpty(info.Version);
         Assert.True(info.MaxDataSize > 0);
         Assert.True(info.MaxExecutionTime > 0);
-        
+
         _output.WriteLine($"Enclave Info - Type: {info.EnclaveType}, Version: {info.Version}");
         _output.WriteLine($"Max Data Size: {info.MaxDataSize}, Max Execution Time: {info.MaxExecutionTime}ms");
     }
@@ -257,58 +257,56 @@ public class ProductionSGXEnclaveWrapperTests : IDisposable
 
         // Act - Seal/Unseal operations
         var startTime = DateTime.UtcNow;
-        
+
         for (int i = 0; i < operationCount; i++)
         {
             var sealed = await _enclaveWrapper.SealDataAsync(testData);
-            var unsealed = await _enclaveWrapper.UnsealDataAsync(sealed);
+    var unsealed = await _enclaveWrapper.UnsealDataAsync(sealed);
             Assert.Equal(testData, unsealed);
         }
         
         var endTime = DateTime.UtcNow;
-        var totalTime = endTime - startTime;
-        var avgTime = totalTime.TotalMilliseconds / operationCount;
+    var totalTime = endTime - startTime;
+    var avgTime = totalTime.TotalMilliseconds / operationCount;
 
         // Assert - Each seal/unseal cycle should complete reasonably quickly
-        Assert.True(avgTime < 1000, $"Average operation time {avgTime}ms exceeds 1000ms threshold");
+        Assert.True(avgTime< 1000, $"Average operation time {avgTime}ms exceeds 1000ms threshold");
         
         _output.WriteLine($"Completed {operationCount} seal/unseal cycles in {totalTime.TotalMilliseconds}ms");
         _output.WriteLine($"Average time per operation: {avgTime}ms");
     }
+public void MemoryManagement_AfterOperations_ShouldNotLeak()
+{
+    // Arrange
+    var initialMemory = GC.GetTotalMemory(false);
 
-    [Fact]
-    public void MemoryManagement_AfterOperations_ShouldNotLeak()
+    // Act - Perform multiple operations
+    for (int i = 0; i < 100; i++)
     {
-        // Arrange
-        var initialMemory = GC.GetTotalMemory(false);
-
-        // Act - Perform multiple operations
-        for (int i = 0; i < 100; i++)
-        {
-            var data = Encoding.UTF8.GetBytes($"Test data {i}");
-            var sealed = _enclaveWrapper.SealDataAsync(data).GetAwaiter().GetResult();
-            var unsealed = _enclaveWrapper.UnsealDataAsync(sealed).GetAwaiter().GetResult();
+        var data = Encoding.UTF8.GetBytes($"Test data {i}");
+        var sealed = _enclaveWrapper.SealDataAsync(data).GetAwaiter().GetResult();
+var unsealed = _enclaveWrapper.UnsealDataAsync(sealed).GetAwaiter().GetResult();
         }
 
         // Force garbage collection
         GC.Collect();
-        GC.WaitForPendingFinalizers();
-        GC.Collect();
+GC.WaitForPendingFinalizers();
+GC.Collect();
 
-        var finalMemory = GC.GetTotalMemory(false);
-        var memoryIncrease = finalMemory - initialMemory;
+var finalMemory = GC.GetTotalMemory(false);
+var memoryIncrease = finalMemory - initialMemory;
 
-        // Assert - Memory increase should be reasonable (less than 10MB)
-        Assert.True(memoryIncrease < 10 * 1024 * 1024, 
-            $"Memory increased by {memoryIncrease} bytes, which may indicate a memory leak");
-        
-        _output.WriteLine($"Memory change: {memoryIncrease} bytes");
+// Assert - Memory increase should be reasonable (less than 10MB)
+Assert.True(memoryIncrease < 10 * 1024 * 1024,
+    $"Memory increased by {memoryIncrease} bytes, which may indicate a memory leak");
+
+_output.WriteLine($"Memory change: {memoryIncrease} bytes");
     }
 
     public void Dispose()
-    {
-        _enclaveWrapper?.Dispose();
-    }
+{
+    _enclaveWrapper?.Dispose();
+}
 }
 
 /// <summary>

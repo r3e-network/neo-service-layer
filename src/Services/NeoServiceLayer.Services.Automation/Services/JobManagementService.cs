@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -46,7 +46,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 Trigger = new AutomationTrigger
                 {
                     Type = request.TriggerType,
-                    Schedule = request.TriggerType == AutomationTriggerType.Schedule 
+                    Schedule = request.TriggerType == AutomationTriggerType.Schedule
                         ? request.TriggerConfiguration : null,
                     EventType = request.TriggerType == AutomationTriggerType.Event
                         ? request.TriggerConfiguration : null,
@@ -86,7 +86,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Created automation job {JobId} for blockchain {Blockchain}", 
+            _logger.LogInformation("Created automation job {JobId} for blockchain {Blockchain}",
                 automationId, blockchainType);
 
             return automationId;
@@ -130,7 +130,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                     throw new InvalidOperationException($"Job {jobId} belongs to {job.BlockchainType}, not {blockchainType}");
                 }
 
-                if (job.Status == AutomationJobStatus.Cancelled || 
+                if (job.Status == AutomationJobStatus.Cancelled ||
                     job.Status == AutomationJobStatus.Completed)
                 {
                     return false;
@@ -309,7 +309,7 @@ namespace NeoServiceLayer.Services.Automation.Services
 
             var key = $"automation:job:{job.Id}";
             var data = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(job);
-            
+
             await _persistentStorage.StoreAsync(key, data).ConfigureAwait(false);
             _logger.LogDebug("Persisted job {JobId} to storage", job.Id);
         }
@@ -321,13 +321,13 @@ namespace NeoServiceLayer.Services.Automation.Services
 
             var key = $"automation:job:{jobId}";
             var data = await _persistentStorage.RetrieveAsync(key).ConfigureAwait(false);
-            
+
             if (data == null)
                 return null;
 
             var job = System.Text.Json.JsonSerializer.Deserialize<AutomationJob>(data);
             _logger.LogDebug("Loaded job {JobId} from storage", jobId);
-            
+
             return job;
         }
 
@@ -346,7 +346,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 }
             }
 
-            _logger.LogInformation("Cleaned up {Count} old executions older than {Cutoff}", 
+            _logger.LogInformation("Cleaned up {Count} old executions older than {Cutoff}",
                 cleanedCount, cutoffDate);
 
             await Task.CompletedTask.ConfigureAwait(false);
@@ -356,7 +356,7 @@ namespace NeoServiceLayer.Services.Automation.Services
         {
             var conditions = new List<AutomationCondition>();
 
-            if (config.TryGetValue("conditions", out var conditionsObj) && 
+            if (config.TryGetValue("conditions", out var conditionsObj) &&
                 conditionsObj is List<Dictionary<string, object>> conditionsList)
             {
                 foreach (var conditionDict in conditionsList)

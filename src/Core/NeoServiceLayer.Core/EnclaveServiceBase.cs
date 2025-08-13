@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
@@ -15,14 +15,14 @@ public abstract class EnclaveServiceBase : ServiceBase, IEnclaveService
     /// <summary>
     /// Initializes a new instance of the <see cref="EnclaveServiceBase"/> class.
     /// </summary>
-    protected EnclaveServiceBase(string name, string description, string version, ILogger logger) 
+    protected EnclaveServiceBase(string name, string description, string version, ILogger logger)
         : base(name, description, version, logger)
     {
         HasEnclaveCapabilities = true;
-        
+
         // Add enclave capability
         AddCapability<IEnclaveService>();
-        
+
         // Set metadata
         SetMetadata("HasEnclaveCapabilities", true);
         SetMetadata("EnclaveType", "SGX"); // Default, can be overridden
@@ -46,9 +46,9 @@ public abstract class EnclaveServiceBase : ServiceBase, IEnclaveService
         try
         {
             Logger.LogInformation("Initializing enclave for service {ServiceName}", Name);
-            
+
             var result = await OnInitializeEnclaveAsync();
-            
+
             if (result)
             {
                 _enclaveInitialized = true;
@@ -59,7 +59,7 @@ public abstract class EnclaveServiceBase : ServiceBase, IEnclaveService
             {
                 Logger.LogError("Failed to initialize enclave for service {ServiceName}", Name);
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -167,7 +167,7 @@ public abstract class EnclaveServiceBase : ServiceBase, IEnclaveService
                 Logger.LogError(ex, "Error disposing enclave resources for service {ServiceName}", Name);
             }
         }
-        
+
         base.Dispose(disposing);
     }
 

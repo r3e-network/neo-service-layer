@@ -1,10 +1,10 @@
-using BenchmarkDotNet.Attributes;
+﻿using BenchmarkDotNet.Attributes;
 using BenchmarkDotNet.Configs;
-using BenchmarkDotNet.Loggers;
 using BenchmarkDotNet.Exporters;
+using BenchmarkDotNet.Loggers;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
 
 namespace NeoServiceLayer.Performance.Tests.Infrastructure
 {
@@ -34,7 +34,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
 
             // Configure services
             var services = new ServiceCollection();
-            
+
             // Add logging with console output
             services.AddLogging(builder =>
             {

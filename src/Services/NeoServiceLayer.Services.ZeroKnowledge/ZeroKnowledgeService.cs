@@ -166,8 +166,8 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
 
                 // Execute computation using privacy-preserving operations
                 var privacyResult = await ExecutePrivacyComputationAsync(request);
-                
-                Logger.LogDebug("Privacy-preserving computation completed: ProofId={ProofId}, Valid={Valid}", 
+
+                Logger.LogDebug("Privacy-preserving computation completed: ProofId={ProofId}, Valid={Valid}",
                     privacyResult.ProofId, privacyResult.Valid);
 
                 // Execute actual computation 

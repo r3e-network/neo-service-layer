@@ -1,6 +1,6 @@
-using BenchmarkDotNet.Attributes;
-using Microsoft.Extensions.DependencyInjection;
+﻿using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Caching.Memory;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Caching;
 using NeoServiceLayer.Performance.Tests.Infrastructure;
@@ -60,7 +60,7 @@ namespace NeoServiceLayer.Performance.Tests
             // Generate test data
             _testData = new SimpleSampleCacheData[ItemCount];
             _cacheKeys = new string[ItemCount];
-            
+
             for (int i = 0; i < ItemCount; i++)
             {
                 _testData[i] = SimpleSampleCacheData.Generate(ItemSize);
@@ -152,7 +152,7 @@ namespace NeoServiceLayer.Performance.Tests
 
             // Benchmark statistics retrieval
             var stats = await _memoryCache.GetStatisticsAsync().ConfigureAwait(false);
-            
+
             if (!stats.IsHealthy)
                 throw new InvalidOperationException("Cache is not healthy");
         }

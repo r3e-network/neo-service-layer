@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,8 +6,8 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Monitoring;
-using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.Infrastructure.Resilience;
+using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Core.Configuration;
@@ -25,31 +25,31 @@ public static class ServiceRegistration
     {
         if (services == null)
             throw new ArgumentNullException(nameof(services));
-        
+
         if (configuration == null)
             throw new ArgumentNullException(nameof(configuration));
 
         // Register core infrastructure services
         services.AddCoreInfrastructure(configuration);
-        
+
         // Register security services
         services.AddSecurityServices(configuration);
-        
+
         // Register monitoring and observability
         services.AddMonitoringServices(configuration);
-        
+
         // Register resilience services
         services.AddResilienceServices(configuration);
-        
+
         // Register TEE/SGX services
         services.AddTeeServices(configuration);
-        
+
         // Register business services
         services.AddBusinessServices(configuration);
-        
+
         // Register health checks
         services.AddNeoHealthChecks(configuration);
-        
+
         return services;
     }
 
@@ -61,20 +61,20 @@ public static class ServiceRegistration
         // Service configuration
         services.Configure<ServiceOptions>(configuration.GetSection("Services"));
         services.AddSingleton<IServiceConfiguration, ServiceConfiguration>();
-        
+
         // Service registry
         services.AddSingleton<IServiceRegistry, ServiceRegistry>();
-        
+
         // HTTP client factory
         services.AddHttpClient();
         services.AddSingleton<IHttpClientService, HttpClientService>();
-        
+
         // Blockchain client factory
         services.AddSingleton<IBlockchainClientFactory, BlockchainClientFactory>();
-        
+
         // Secrets management
         services.AddSingleton<ISecretsManager, SecretsManager>();
-        
+
         return services;
     }
 
@@ -85,19 +85,19 @@ public static class ServiceRegistration
     {
         // Security configuration
         services.Configure<SecurityOptions>(configuration.GetSection("Security"));
-        
+
         // Main security service
         services.AddSingleton<ISecurityService, SecurityService>();
-        
+
         // Authentication services
         services.AddScoped<IAuthenticationService, AuthenticationService>();
         services.AddScoped<ITokenService, TokenService>();
         services.AddScoped<IRateLimitService, RateLimitService>();
         services.AddScoped<IUserRepository, UserRepository>();
-        
+
         // Permission services
         services.AddScoped<IPermissionService, PermissionService>();
-        
+
         return services;
     }
 
@@ -108,13 +108,13 @@ public static class ServiceRegistration
     {
         // Observability configuration
         services.Configure<ObservabilityOptions>(configuration.GetSection("Observability"));
-        
+
         // Main observability service
         services.AddSingleton<IObservabilityService, ObservabilityService>();
-        
+
         // Monitoring services
         services.AddSingleton<IMonitoringService, MonitoringService>();
-        
+
         // Add OpenTelemetry if configured
         var openTelemetryEnabled = configuration.GetValue<bool>("Observability:OpenTelemetry:Enabled", false);
         if (openTelemetryEnabled)
@@ -122,7 +122,7 @@ public static class ServiceRegistration
             services.AddOpenTelemetryTracing(configuration);
             services.AddOpenTelemetryMetrics(configuration);
         }
-        
+
         return services;
     }
 
@@ -133,10 +133,10 @@ public static class ServiceRegistration
     {
         // Resilience configuration
         services.Configure<ResilienceOptions>(configuration.GetSection("Resilience"));
-        
+
         // Main resilience service
         services.AddSingleton<IResilienceService, ResilienceService>();
-        
+
         return services;
     }
 
@@ -147,13 +147,13 @@ public static class ServiceRegistration
     {
         // TEE configuration
         services.Configure<TeeOptions>(configuration.GetSection("Tee"));
-        
+
         // Enclave services
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
-        
+
         // Register enclave wrapper based on configuration
         var enclaveType = configuration.GetValue<string>("Tee:EnclaveType", "Occlum");
-        
+
         switch (enclaveType.ToLowerInvariant())
         {
             case "sgx":
@@ -166,10 +166,10 @@ public static class ServiceRegistration
                 services.AddSingleton<IEnclaveWrapper, OcclumEnclaveWrapper>();
                 break;
         }
-        
+
         // Hosted service for enclave management
         services.AddHostedService<EnclaveHostService>();
-        
+
         return services;
     }
 
@@ -180,72 +180,72 @@ public static class ServiceRegistration
     {
         // Storage services
         services.AddScoped<IEnclaveStorageService, EnclaveStorageService>();
-        
+
         // Compute services
         services.AddScoped<IComputeService, ComputeService>();
-        
+
         // Blockchain services
         services.AddScoped<ISmartContractsService, SmartContractsService>();
         services.AddScoped<ICrossChainService, CrossChainService>();
-        
+
         // Key management
         services.AddScoped<IKeyManagementService, KeyManagementService>();
-        
+
         // Oracle services
         services.AddScoped<IOracleService, OracleService>();
-        
+
         // Zero-knowledge services
         services.AddScoped<IZeroKnowledgeService, ZeroKnowledgeService>();
-        
+
         // Voting services
         services.AddScoped<IVotingService, VotingService>();
-        
+
         // Abstract account services
         services.AddScoped<IAbstractAccountService, AbstractAccountService>();
-        
+
         // Notification services
         services.AddScoped<INotificationService, NotificationService>();
-        
+
         // Configuration services
         services.AddSingleton<IConfigurationService, ConfigurationService>();
-        
+
         // Health services
         services.AddSingleton<IHealthService, HealthService>();
-        
+
         // Backup services
         services.AddScoped<IBackupService, BackupService>();
-        
+
         // Compliance services
         services.AddScoped<IComplianceService, ComplianceService>();
-        
+
         // Event subscription services
         services.AddScoped<IEventSubscriptionService, EventSubscriptionService>();
-        
+
         // Network security services
         services.AddScoped<INetworkSecurityService, NetworkSecurityService>();
-        
+
         // Proof of reserve services
         services.AddScoped<IProofOfReserveService, ProofOfReserveService>();
-        
+
         // Randomness services
         services.AddScoped<IRandomnessService, RandomnessService>();
-        
+
         // Secrets management services
         services.AddScoped<ISecretsManagementService, SecretsManagementService>();
-        
+
         // Statistics services
         services.AddScoped<IStatisticsService, StatisticsService>();
-        
+
         // Social recovery services
         services.AddScoped<ISocialRecoveryService, SocialRecoveryService>();
-        
+
         // AI/ML services
         services.AddScoped<IPredictionService, PredictionService>();
         services.AddScoped<IPatternRecognitionService, PatternRecognitionService>();
-        
+
         // Advanced services
         services.AddScoped<IFairOrderingService, FairOrderingService>();
-        
+
         return services;
     }
 
@@ -262,7 +262,7 @@ public static class ServiceRegistration
             .AddCheck<StorageServiceHealthCheck>("storage")
             .AddCheck<DatabaseHealthCheck>("database")
             .AddCheck<ExternalApiHealthCheck>("external-apis");
-        
+
         return services;
     }
 
@@ -296,25 +296,25 @@ public static class ServiceRegistration
             // Validate core services
             var logger = serviceProvider.GetService<ILogger<ServiceRegistration>>();
             logger?.LogInformation("Validating service registration...");
-            
+
             // Validate security service
             var securityService = serviceProvider.GetRequiredService<ISecurityService>();
             _ = securityService.GetHealthAsync().GetAwaiter().GetResult();
-            
+
             // Validate observability service
             var observabilityService = serviceProvider.GetRequiredService<IObservabilityService>();
             _ = observabilityService.GetHealthAsync().GetAwaiter().GetResult();
-            
+
             // Validate resilience service
             var resilienceService = serviceProvider.GetRequiredService<IResilienceService>();
             _ = resilienceService.GetHealthAsync().GetAwaiter().GetResult();
-            
+
             // Validate enclave manager
             var enclaveManager = serviceProvider.GetRequiredService<IEnclaveManager>();
-            
+
             // Validate service registry
             var serviceRegistry = serviceProvider.GetRequiredService<IServiceRegistry>();
-            
+
             logger?.LogInformation("Service registration validation completed successfully");
         }
         catch (Exception ex)
@@ -360,7 +360,7 @@ public class ObservabilityOptions
     public bool EnableHealthChecks { get; set; } = true;
     public string ServiceName { get; set; } = "NeoServiceLayer";
     public string ServiceVersion { get; set; } = "1.0.0";
-    
+
     public OpenTelemetryOptions OpenTelemetry { get; set; } = new();
 }
 

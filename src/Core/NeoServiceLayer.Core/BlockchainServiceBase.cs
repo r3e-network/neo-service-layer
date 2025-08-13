@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,15 +16,15 @@ public abstract class BlockchainServiceBase : ServiceBase, IBlockchainService
     /// Initializes a new instance of the <see cref="BlockchainServiceBase"/> class.
     /// </summary>
     protected BlockchainServiceBase(
-        string name, 
-        string description, 
-        string version, 
+        string name,
+        string description,
+        string version,
         ILogger logger,
-        IEnumerable<BlockchainType> supportedBlockchains) 
+        IEnumerable<BlockchainType> supportedBlockchains)
         : base(name, description, version, logger)
     {
         SupportedBlockchains = (supportedBlockchains ?? throw new ArgumentNullException(nameof(supportedBlockchains))).ToList();
-        
+
         if (!SupportedBlockchains.Any())
         {
             throw new ArgumentException("At least one supported blockchain must be specified", nameof(supportedBlockchains));
@@ -32,7 +32,7 @@ public abstract class BlockchainServiceBase : ServiceBase, IBlockchainService
 
         // Add blockchain capability
         AddCapability<IBlockchainService>();
-        
+
         // Set metadata
         SetMetadata("SupportedBlockchains", SupportedBlockchains.Select(b => b.ToString()).ToList());
     }

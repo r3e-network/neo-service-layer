@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Threading.Tasks;
@@ -64,17 +64,17 @@ public abstract class ServiceBase : IService, IDisposable
     public virtual async Task<bool> InitializeAsync()
     {
         if (_disposed) throw new ObjectDisposedException(nameof(ServiceBase));
-        
+
         try
         {
             Logger.LogInformation("Initializing service {ServiceName} (ID: {ServiceId})", Name, ServiceId);
             Status = ServiceStatus.Initializing;
-            
+
             var result = await OnInitializeAsync();
-            
+
             Status = result ? ServiceStatus.Initialized : ServiceStatus.Failed;
             LastActivity = DateTime.UtcNow;
-            
+
             if (result)
             {
                 Logger.LogInformation("Service {ServiceName} initialized successfully", Name);
@@ -83,7 +83,7 @@ public abstract class ServiceBase : IService, IDisposable
             {
                 Logger.LogError("Service {ServiceName} failed to initialize", Name);
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -98,7 +98,7 @@ public abstract class ServiceBase : IService, IDisposable
     public virtual async Task<bool> StartAsync()
     {
         if (_disposed) throw new ObjectDisposedException(nameof(ServiceBase));
-        
+
         if (Status != ServiceStatus.Initialized)
         {
             Logger.LogWarning("Cannot start service {ServiceName} - not initialized", Name);
@@ -109,12 +109,12 @@ public abstract class ServiceBase : IService, IDisposable
         {
             Logger.LogInformation("Starting service {ServiceName}", Name);
             Status = ServiceStatus.Starting;
-            
+
             var result = await OnStartAsync();
-            
+
             Status = result ? ServiceStatus.Running : ServiceStatus.Failed;
             LastActivity = DateTime.UtcNow;
-            
+
             if (result)
             {
                 Logger.LogInformation("Service {ServiceName} started successfully", Name);
@@ -123,7 +123,7 @@ public abstract class ServiceBase : IService, IDisposable
             {
                 Logger.LogError("Service {ServiceName} failed to start", Name);
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -138,7 +138,7 @@ public abstract class ServiceBase : IService, IDisposable
     public virtual async Task<bool> StopAsync()
     {
         if (_disposed) return true;
-        
+
         if (Status != ServiceStatus.Running)
         {
             return true;
@@ -148,12 +148,12 @@ public abstract class ServiceBase : IService, IDisposable
         {
             Logger.LogInformation("Stopping service {ServiceName}", Name);
             Status = ServiceStatus.Stopping;
-            
+
             var result = await OnStopAsync();
-            
+
             Status = result ? ServiceStatus.Stopped : ServiceStatus.Failed;
             LastActivity = DateTime.UtcNow;
-            
+
             if (result)
             {
                 Logger.LogInformation("Service {ServiceName} stopped successfully", Name);
@@ -162,7 +162,7 @@ public abstract class ServiceBase : IService, IDisposable
             {
                 Logger.LogError("Service {ServiceName} failed to stop cleanly", Name);
             }
-            
+
             return result;
         }
         catch (Exception ex)
@@ -177,7 +177,7 @@ public abstract class ServiceBase : IService, IDisposable
     public virtual async Task<ServiceHealth> GetHealthAsync()
     {
         if (_disposed) return ServiceHealth.Unhealthy;
-        
+
         try
         {
             LastActivity = DateTime.UtcNow;
@@ -199,8 +199,8 @@ public abstract class ServiceBase : IService, IDisposable
     /// <inheritdoc/>
     public virtual T? GetCapability<T>() where T : class
     {
-        return _capabilities.TryGetValue(typeof(T), out var capability) 
-            ? capability as T 
+        return _capabilities.TryGetValue(typeof(T), out var capability)
+            ? capability as T
             : null;
     }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
@@ -18,7 +18,7 @@ public interface INeoN3SyntaxAnalyzer
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Analysis result containing AST, errors, warnings, and suggestions.</returns>
     Task<SyntaxAnalysisResult> AnalyzeAsync(
-        string sourceCode, 
+        string sourceCode,
         AnalysisOptions? options = null,
         CancellationToken cancellationToken = default);
 

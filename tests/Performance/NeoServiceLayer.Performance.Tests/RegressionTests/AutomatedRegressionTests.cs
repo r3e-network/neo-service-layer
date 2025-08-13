@@ -1,7 +1,7 @@
+﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Xunit;
-using FluentAssertions;
 
 namespace NeoServiceLayer.Performance.Tests.RegressionTests
 {
@@ -18,7 +18,7 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
         {
             var services = new ServiceCollection();
             services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
-            
+
             _serviceProvider = services.BuildServiceProvider();
             _logger = _serviceProvider.GetRequiredService<ILogger<AutomatedRegressionTests>>();
             var detectorLogger = _serviceProvider.GetRequiredService<ILogger<PerformanceRegressionDetector>>();
@@ -163,8 +163,8 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
             var analysis = await _detector.AnalyzeRegressionAsync(memoryIntensiveResults);
 
             // Assert
-            analysis.Regressions.Should().Contain(r => 
-                r.MetricName == "MemoryUsage" && 
+            analysis.Regressions.Should().Contain(r =>
+                r.MetricName == "MemoryUsage" &&
                 r.Severity == RegressionSeverity.Critical);
         }
 
@@ -181,8 +181,8 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
             var analysis = await _detector.AnalyzeRegressionAsync(lowThroughputResults);
 
             // Assert
-            analysis.Regressions.Should().Contain(r => 
-                r.MetricName == "Throughput" && 
+            analysis.Regressions.Should().Contain(r =>
+                r.MetricName == "Throughput" &&
                 r.PercentageChange > 20.0);
         }
 

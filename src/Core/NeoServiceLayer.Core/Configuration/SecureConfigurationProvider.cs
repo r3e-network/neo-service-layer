@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
@@ -51,13 +51,13 @@ namespace NeoServiceLayer.Core.Configuration
                 if (IsPlaceholder(configValue))
                 {
                     _logger.LogWarning("Configuration '{Key}' contains placeholder value. Using default or throwing", key);
-                    
+
                     if (defaultValue != null)
                         return defaultValue;
-                    
+
                     throw new InvalidOperationException($"Configuration '{key}' not properly set. Found placeholder: {configValue}");
                 }
-                
+
                 return configValue;
             }
 
@@ -104,7 +104,7 @@ namespace NeoServiceLayer.Core.Configuration
             // For now, we'll use environment variables with a specific prefix
             var envKey = $"SECRET__{secretName.ToUpper()}";
             var secretValue = Environment.GetEnvironmentVariable(envKey);
-            
+
             if (!string.IsNullOrEmpty(secretValue))
             {
                 _logger.LogDebug("Secret '{SecretName}' loaded from secure source", secretName);
@@ -115,7 +115,7 @@ namespace NeoServiceLayer.Core.Configuration
             // Check if there's a fallback in configuration (not recommended for production)
             var configKey = $"Secrets:{secretName}";
             var configValue = await GetSecureValueAsync(configKey);
-            
+
             if (!string.IsNullOrEmpty(configValue))
             {
                 _logger.LogWarning("Secret '{SecretName}' loaded from configuration. This should be moved to a secure source", secretName);
@@ -162,7 +162,7 @@ namespace NeoServiceLayer.Core.Configuration
 
             // Check for localhost in production
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-            if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase) && 
+            if (environment.Equals("Production", StringComparison.OrdinalIgnoreCase) &&
                 lowerValue.Contains("localhost"))
             {
                 return true;

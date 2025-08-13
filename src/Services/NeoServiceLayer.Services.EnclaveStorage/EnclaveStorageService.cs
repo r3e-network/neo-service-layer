@@ -25,7 +25,7 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     private readonly IPersistentStorageProvider? _persistentStorage;
     private readonly ISecurityService? _securityService;
     private readonly IObservabilityService? _observabilityService;
-    
+
     // Thread-safe storage with proper cleanup
     private readonly ConcurrentDictionary<string, SealedDataItem> _sealedItems = new();
     private readonly ConcurrentDictionary<string, ServiceStorageInfo> _serviceStorage = new();
@@ -48,11 +48,11 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _persistentStorage = persistentStorage;
         _maxStorageSize = configuration.GetValue("MaxStorageSize", 1073741824L); // 1GB default
-        
+
         // Get security and observability services from DI if available
         _securityService = ServiceProvider?.GetService<ISecurityService>();
         _observabilityService = ServiceProvider?.GetService<IObservabilityService>();
-        
+
         // Initialize cleanup timer to prevent memory leaks
         _cleanupTimer = new Timer(CleanupExpiredItems, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
@@ -69,7 +69,7 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
     protected override async Task<bool> OnInitializeEnclaveAsync()
     {
         using var activity = _observabilityService?.StartActivity("InitializeEnclaveStorage");
-        
+
         try
         {
             Logger.LogInformation("Initializing secure enclave storage with enhanced security...");
@@ -90,7 +90,7 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
             {
                 var validItems = 0;
                 var corruptedItems = 0;
-                
+
                 foreach (var item in items)
                 {
                     // Validate item integrity
@@ -107,17 +107,17 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
                         corruptedItems++;
                     }
                 }
-                
-                Logger.LogInformation("Loaded {ValidItems} valid items, skipped {CorruptedItems} corrupted items", 
+
+                Logger.LogInformation("Loaded {ValidItems} valid items, skipped {CorruptedItems} corrupted items",
                     validItems, corruptedItems);
             }
 
             // Set initial health status
             _observabilityService?.SetHealthStatus("EnclaveStorage", true, "Enclave storage initialized successfully");
-            
+
             Logger.LogInformation("Enhanced Enclave Storage Service initialized with {ItemCount} sealed items, {StorageUsed} bytes used",
                 _sealedItems.Count, _totalStorageUsed);
-            
+
             _observabilityService?.CompleteActivity(activity, true);
             return true;
         }
@@ -573,9 +573,9 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         try
         {
             // Get permission service from DI if available
-            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService))
                 as NeoServiceLayer.Services.Permissions.IPermissionService;
-                
+
             if (permissionService == null)
             {
                 Logger.LogDebug("Permission service not available, allowing storage operation");
@@ -588,8 +588,8 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
 
             // Check service permission for data storage
             var result = await permissionService.CheckServicePermissionAsync(
-                serviceName, 
-                key, 
+                serviceName,
+                key,
                 NeoServiceLayer.Services.Permissions.Models.AccessType.Write);
 
             return result.IsAllowed;
@@ -612,9 +612,9 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         try
         {
             // Get permission service from DI if available
-            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService))
                 as NeoServiceLayer.Services.Permissions.IPermissionService;
-                
+
             if (permissionService == null)
             {
                 Logger.LogDebug("Permission service not available, allowing retrieve operation");
@@ -627,8 +627,8 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
 
             // Check service permission for data retrieval
             var result = await permissionService.CheckServicePermissionAsync(
-                serviceName, 
-                key, 
+                serviceName,
+                key,
                 NeoServiceLayer.Services.Permissions.Models.AccessType.Read);
 
             return result.IsAllowed;
@@ -651,9 +651,9 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
         try
         {
             // Get permission service from DI if available
-            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService)) 
+            var permissionService = ServiceProvider?.GetService(typeof(NeoServiceLayer.Services.Permissions.IPermissionService))
                 as NeoServiceLayer.Services.Permissions.IPermissionService;
-                
+
             if (permissionService == null)
             {
                 Logger.LogDebug("Permission service not available, allowing delete operation");
@@ -666,8 +666,8 @@ public class EnclaveStorageService : EnclaveBlockchainServiceBase, IEnclaveStora
 
             // Check service permission for data deletion
             var result = await permissionService.CheckServicePermissionAsync(
-                serviceName, 
-                key, 
+                serviceName,
+                key,
                 NeoServiceLayer.Services.Permissions.Models.AccessType.Delete);
 
             return result.IsAllowed;

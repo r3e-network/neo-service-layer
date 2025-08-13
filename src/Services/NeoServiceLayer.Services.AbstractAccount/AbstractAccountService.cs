@@ -41,19 +41,19 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
     /// </summary>
     private class SGXPersistence : SGXPersistenceBase
     {
-        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger) 
+        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger)
             : base(serviceName, enclaveStorage, logger)
         {
         }
 
         public async Task<bool> StoreAccountAsync(string accountId, AbstractAccountInfo account, BlockchainType blockchainType)
         {
-            return await StoreSecurelyAsync($"account:{accountId}", account, 
-                new Dictionary<string, object> 
-                { 
+            return await StoreSecurelyAsync($"account:{accountId}", account,
+                new Dictionary<string, object>
+                {
                     ["type"] = "account",
-                    ["blockchain"] = blockchainType.ToString() 
-                }, 
+                    ["blockchain"] = blockchainType.ToString()
+                },
                 blockchainType);
         }
 
@@ -65,11 +65,11 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         public async Task<bool> StoreTransactionHistoryAsync(string accountId, List<TransactionHistoryItem> history, BlockchainType blockchainType)
         {
             return await StoreSecurelyAsync($"history:{accountId}", history,
-                new Dictionary<string, object> 
-                { 
+                new Dictionary<string, object>
+                {
                     ["type"] = "transaction_history",
-                    ["count"] = history.Count 
-                }, 
+                    ["count"] = history.Count
+                },
                 blockchainType);
         }
 
@@ -209,8 +209,8 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
 
                 // Persist updated transaction history to SGX storage
                 await _sgxPersistence.StoreTransactionHistoryAsync(
-                    request.AccountId, 
-                    _transactionHistory[request.AccountId], 
+                    request.AccountId,
+                    _transactionHistory[request.AccountId],
                     blockchainType);
 
                 // Persist updated account info
@@ -740,7 +740,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         {
             // Load existing accounts from SGX storage
             await LoadAccountsFromSGXStorageAsync();
-            
+
             Logger.LogInformation("Abstract Account Service started successfully");
             return true;
         }
@@ -759,7 +759,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         try
         {
             Logger.LogDebug("Loading accounts from SGX storage");
-            
+
             // List all stored accounts
             var storedItems = await _sgxPersistence.ListStoredItemsAsync("account:", BlockchainType.NeoN3);
             if (storedItems == null || storedItems.ItemCount == 0)
@@ -778,7 +778,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     if (keyParts.Length >= 3)
                     {
                         var accountId = keyParts[2];
-                        
+
                         // Load account data
                         var account = await _sgxPersistence.GetAccountAsync(accountId, BlockchainType.NeoN3);
                         if (account != null)
@@ -787,7 +787,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                             {
                                 _accounts[accountId] = account;
                             }
-                            
+
                             // Load transaction history
                             var history = await _sgxPersistence.GetTransactionHistoryAsync(accountId, BlockchainType.NeoN3);
                             if (history != null)
@@ -797,7 +797,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                                     _transactionHistory[accountId] = history;
                                 }
                             }
-                            
+
                             loadedCount++;
                         }
                     }
@@ -807,7 +807,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     Logger.LogWarning(ex, "Failed to load account from SGX storage: {Key}", item.Key);
                 }
             }
-            
+
             Logger.LogInformation("Loaded {Count} accounts from SGX storage", loadedCount);
         }
         catch (Exception ex)

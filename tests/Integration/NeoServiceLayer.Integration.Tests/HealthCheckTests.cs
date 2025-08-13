@@ -55,7 +55,7 @@ public class HealthCheckTests : IntegrationTestBase
         // Act
         var response = await Client.GetAsync("/health");
         var content = await response.Content.ReadAsStringAsync();
-        
+
         // Note: Current health check configuration returns plain text "Healthy"
         // This test is skipped until health checks are configured to return JSON
         Assert.Equal("Healthy", content);

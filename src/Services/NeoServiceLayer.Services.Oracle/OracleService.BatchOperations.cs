@@ -52,8 +52,8 @@ public partial class OracleService
 
             // Process batch requests using privacy-preserving operations
             var privacyBatchResult = await ProcessBatchRequestsWithPrivacyAsync(requestsList);
-            
-            Logger.LogDebug("Privacy-preserving batch oracle processing completed: BatchId={BatchId}, ResultCount={Count}", 
+
+            Logger.LogDebug("Privacy-preserving batch oracle processing completed: BatchId={BatchId}, ResultCount={Count}",
                 privacyBatchResult.BatchId, privacyBatchResult.Results.Count);
 
             // Process each request

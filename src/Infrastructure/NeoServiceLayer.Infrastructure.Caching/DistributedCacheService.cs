@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.Json;
@@ -63,7 +63,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 {
                     var json = System.Text.Encoding.UTF8.GetString(cachedBytes);
                     var value = JsonSerializer.Deserialize<T>(json, _jsonOptions);
-                    
+
                     if (value != null)
                     {
                         Interlocked.Increment(ref _hitCount);
@@ -101,7 +101,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 var options = new DistributedCacheEntryOptions();
                 var expirationTime = expiration ?? _options.DefaultExpiration;
-                
+
                 if (expirationTime != TimeSpan.Zero)
                 {
                     options.SetAbsoluteExpiration(expirationTime);
@@ -109,7 +109,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 await _distributedCache.SetAsync(fullKey, bytes, options).ConfigureAwait(false);
 
-                _logger.LogTrace("Set distributed cache value for key: {Key} with expiration: {Expiration}", 
+                _logger.LogTrace("Set distributed cache value for key: {Key} with expiration: {Expiration}",
                     fullKey, expirationTime);
                 return true;
             }
@@ -169,11 +169,11 @@ namespace NeoServiceLayer.Infrastructure.Caching
             // Note: IDistributedCache doesn't have a clear method
             // This would need to be implemented based on the specific cache provider
             _logger.LogWarning("ClearAsync is not supported for distributed cache - operation skipped");
-            
+
             // Reset local statistics
             Interlocked.Exchange(ref _hitCount, 0);
             Interlocked.Exchange(ref _missCount, 0);
-            
+
             return await Task.FromResult(false).ConfigureAwait(false);
         }
 
@@ -181,7 +181,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
         public async Task<Dictionary<string, T?>> GetManyAsync<T>(IEnumerable<string> keys) where T : class
         {
             var result = new Dictionary<string, T?>();
-            
+
             if (keys == null)
                 return result;
 
@@ -197,7 +197,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
                     });
 
                 var results = await Task.WhenAll(tasks).ConfigureAwait(false);
-                
+
                 foreach (var kvp in results)
                 {
                     result[kvp.Key] = kvp.Value;
@@ -228,7 +228,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 var success = results.All(r => r);
                 _logger.LogTrace("Set {Count} distributed cache entries, success: {Success}", items.Count, success);
-                
+
                 return success;
             }
             catch (Exception ex)
@@ -251,7 +251,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 var removedCount = results.Count(r => r);
                 _logger.LogTrace("Removed {Count} distributed cache entries", removedCount);
-                
+
                 return removedCount;
             }
             catch (Exception ex)
@@ -313,7 +313,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
             {
                 var testKey = $"{_options.KeyPrefix}:healthcheck:{Guid.NewGuid()}";
                 var testValue = System.Text.Encoding.UTF8.GetBytes("healthcheck");
-                
+
                 // Try to set and get a test value
                 await _distributedCache.SetAsync(testKey, testValue).ConfigureAwait(false);
                 var result = await _distributedCache.GetAsync(testKey).ConfigureAwait(false);

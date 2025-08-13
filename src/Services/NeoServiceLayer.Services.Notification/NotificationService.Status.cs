@@ -199,10 +199,10 @@ public partial class NotificationService
             }
 
             var successCount = results.Count(r => r.Success);
-            
+
             Logger.LogInformation("Bulk notification completed: {SuccessCount}/{TotalCount} successful",
                 successCount, recipients.Count);
-            
+
             return new NotificationResult
             {
                 NotificationId = batchId,

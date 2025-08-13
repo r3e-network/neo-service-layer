@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.ComponentModel.DataAnnotations;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -45,19 +45,19 @@ namespace NeoServiceLayer.Api.Controllers
             }
 
             var result = await _authService.AuthenticateAsync(request.Username, request.Password);
-            
+
             if (!result.Success)
             {
                 if (result.ErrorCode == AuthenticationErrorCode.AccountLocked)
                 {
                     return StatusCode(423, new { message = result.ErrorMessage });
                 }
-                
+
                 if (result.ErrorCode == AuthenticationErrorCode.RateLimitExceeded)
                 {
                     return StatusCode(429, new { message = result.ErrorMessage });
                 }
-                
+
                 if (result.RequiresMfa)
                 {
                     return Ok(new MfaRequiredResponse
@@ -67,7 +67,7 @@ namespace NeoServiceLayer.Api.Controllers
                         Message = "MFA verification required"
                     });
                 }
-                
+
                 return Unauthorized(new { message = result.ErrorMessage });
             }
 
@@ -98,10 +98,10 @@ namespace NeoServiceLayer.Api.Controllers
             }
 
             var result = await _authService.AuthenticateWithMfaAsync(
-                request.Username, 
-                request.Password, 
+                request.Username,
+                request.Password,
                 request.MfaCode);
-            
+
             if (!result.Success)
             {
                 return Unauthorized(new { message = result.ErrorMessage });
@@ -172,7 +172,7 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var tokenPair = await _authService.RefreshTokenAsync(request.RefreshToken);
-                
+
                 return Ok(new TokenRefreshResponse
                 {
                     AccessToken = tokenPair.AccessToken,
@@ -198,17 +198,17 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var token = GetAccessToken();
             var sessionId = GetSessionId();
-            
+
             if (!string.IsNullOrEmpty(token))
             {
                 await _authService.RevokeTokenAsync(token);
             }
-            
+
             if (!string.IsNullOrEmpty(sessionId))
             {
                 await _authService.RevokeSessionAsync(sessionId);
             }
-            
+
             return Ok(new { message = "Logout successful" });
         }
 
@@ -223,7 +223,7 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var userId = GetUserId();
             var result = await _authService.SetupMfaAsync(userId, request.Type);
-            
+
             return Ok(new MfaSetupResponse
             {
                 Success = result.Success,
@@ -246,12 +246,12 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var userId = GetUserId();
             var success = await _authService.DisableMfaAsync(userId, request.VerificationCode);
-            
+
             if (!success)
             {
                 return BadRequest(new { message = "Invalid verification code" });
             }
-            
+
             return Ok(new { message = "MFA disabled successfully" });
         }
 
@@ -267,15 +267,15 @@ namespace NeoServiceLayer.Api.Controllers
         {
             var userId = GetUserId();
             var success = await _authService.ChangePasswordAsync(
-                userId, 
-                request.CurrentPassword, 
+                userId,
+                request.CurrentPassword,
                 request.NewPassword);
-            
+
             if (!success)
             {
                 return BadRequest(new { message = "Failed to change password. Check current password and new password strength." });
             }
-            
+
             return Ok(new { message = "Password changed successfully" });
         }
 
@@ -304,14 +304,14 @@ namespace NeoServiceLayer.Api.Controllers
         public async Task<IActionResult> CompletePasswordReset([FromBody] PasswordResetConfirmRequest request)
         {
             var success = await _authService.CompletePasswordResetAsync(
-                request.Token, 
+                request.Token,
                 request.NewPassword);
-            
+
             if (!success)
             {
                 return BadRequest(new { message = "Invalid or expired reset token" });
             }
-            
+
             return Ok(new { message = "Password reset successful" });
         }
 
@@ -389,11 +389,11 @@ namespace NeoServiceLayer.Api.Controllers
         [Required]
         [StringLength(50, MinimumLength = 3)]
         public string Username { get; set; }
-        
+
         [Required]
         [StringLength(100, MinimumLength = 8)]
         public string Password { get; set; }
-        
+
         public string DeviceId { get; set; }
     }
 
@@ -426,30 +426,30 @@ namespace NeoServiceLayer.Api.Controllers
         [Required]
         [StringLength(50, MinimumLength = 3)]
         public string Username { get; set; }
-        
+
         [Required]
         [EmailAddress]
         public string Email { get; set; }
-        
+
         [Required]
         [StringLength(100, MinimumLength = 12)]
         public string Password { get; set; }
-        
+
         [Required]
         [Compare("Password")]
         public string ConfirmPassword { get; set; }
-        
+
         [Required]
         [StringLength(50)]
         public string FirstName { get; set; }
-        
+
         [Required]
         [StringLength(50)]
         public string LastName { get; set; }
-        
+
         [Phone]
         public string PhoneNumber { get; set; }
-        
+
         [Required]
         public bool AcceptTerms { get; set; }
     }
@@ -500,11 +500,11 @@ namespace NeoServiceLayer.Api.Controllers
     {
         [Required]
         public string CurrentPassword { get; set; }
-        
+
         [Required]
         [StringLength(100, MinimumLength = 12)]
         public string NewPassword { get; set; }
-        
+
         [Required]
         [Compare("NewPassword")]
         public string ConfirmNewPassword { get; set; }
@@ -521,11 +521,11 @@ namespace NeoServiceLayer.Api.Controllers
     {
         [Required]
         public string Token { get; set; }
-        
+
         [Required]
         [StringLength(100, MinimumLength = 12)]
         public string NewPassword { get; set; }
-        
+
         [Required]
         [Compare("NewPassword")]
         public string ConfirmNewPassword { get; set; }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;

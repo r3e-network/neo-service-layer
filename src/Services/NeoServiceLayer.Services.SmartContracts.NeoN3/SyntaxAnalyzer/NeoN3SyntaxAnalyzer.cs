@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -7,10 +7,10 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Lexer;
-using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Parser;
-using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Semantic;
-using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Security;
 using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Optimization;
+using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Parser;
+using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Security;
+using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Semantic;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
 
@@ -69,7 +69,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Syntax analysis (parsing)
             _logger.LogDebug("Parsing tokens into AST");
             var parseResult = await _parser.ParseAsync(tokens, cancellationToken);
-            
+
             if (!parseResult.Success)
             {
                 result.Success = false;
@@ -85,7 +85,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             {
                 _logger.LogDebug("Performing semantic analysis");
                 var semanticResult = await _semanticAnalyzer.AnalyzeAsync(
-                    parseResult.Ast, 
+                    parseResult.Ast,
                     cancellationToken);
 
                 result.SymbolTable = semanticResult.SymbolTable;
@@ -101,7 +101,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             {
                 _logger.LogDebug("Applying custom validation rules");
                 var validationContext = CreateValidationContext(result);
-                
+
                 foreach (var rule in options.CustomRules.Concat(_validationRules))
                 {
                     ApplyValidationRule(rule, result.Ast, validationContext, result);
@@ -115,7 +115,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             {
                 _logger.LogDebug("Performing security analysis");
                 var securityResult = await AnalyzeSecurityAsync(sourceCode, cancellationToken);
-                
+
                 // Add security issues as errors/warnings
                 foreach (var vulnerability in securityResult.Vulnerabilities)
                 {
@@ -148,7 +148,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             {
                 _logger.LogDebug("Performing optimization analysis");
                 var optimizationResult = await SuggestOptimizationsAsync(sourceCode, cancellationToken);
-                
+
                 // Add optimization suggestions as info messages
                 foreach (var suggestion in optimizationResult.Suggestions)
                 {
@@ -457,7 +457,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         try
         {
             var validationResult = rule.Validate(ast, context);
-            
+
             foreach (var message in validationResult.Messages)
             {
                 switch (message.Severity)
@@ -513,7 +513,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             while (offset < bytecode.Length)
             {
                 var opcode = bytecode[offset];
-                
+
                 // Validate opcode
                 if (!IsValidOpCode(opcode))
                 {
@@ -551,7 +551,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         {
             // Parse and validate manifest JSON
             var manifestObj = System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(manifest);
-            
+
             if (manifestObj == null)
             {
                 errors.Add(new ValidationError
@@ -605,7 +605,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
     {
         // Simplified gas estimation
         long gasEstimate = 0;
-        
+
         for (int i = 0; i < bytecode.Length; i++)
         {
             gasEstimate += GetOpCodeGasCost(bytecode[i]);

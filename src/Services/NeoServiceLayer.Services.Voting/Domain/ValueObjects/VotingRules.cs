@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
 {
@@ -29,13 +29,13 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
         {
             if (minimumVoteWeight <= 0)
                 throw new ArgumentException("Minimum vote weight must be positive", nameof(minimumVoteWeight));
-            
+
             if (requiredQuorum < 0 || requiredQuorum > 100)
                 throw new ArgumentException("Required quorum must be between 0 and 100", nameof(requiredQuorum));
-            
+
             if (superMajorityThreshold < 50 || superMajorityThreshold > 100)
                 throw new ArgumentException("Super majority threshold must be between 50 and 100", nameof(superMajorityThreshold));
-            
+
             if (maxOptionsPerVoter < 1)
                 throw new ArgumentException("Max options per voter must be at least 1", nameof(maxOptionsPerVoter));
 

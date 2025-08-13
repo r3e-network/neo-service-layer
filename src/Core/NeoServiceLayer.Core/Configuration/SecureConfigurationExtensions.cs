@@ -1,7 +1,7 @@
+﻿using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
-using System;
 
 namespace NeoServiceLayer.Core.Configuration
 {
@@ -28,7 +28,7 @@ namespace NeoServiceLayer.Core.Configuration
             {
                 var config = scope.ServiceProvider.GetRequiredService<ISecureConfigurationProvider>();
                 var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
-                
+
                 // Only validate in production
                 if (!environment.IsProduction())
                     return host;
@@ -70,12 +70,12 @@ namespace NeoServiceLayer.Core.Configuration
         public static IConfigurationBuilder AddSecureConfiguration(this IConfigurationBuilder builder)
         {
             var environment = Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") ?? "Development";
-            
+
             // Add environment variables with proper prefixes
             builder.AddEnvironmentVariables("NEOSERVICE_");
             builder.AddEnvironmentVariables("SECRET_");
             builder.AddEnvironmentVariables("CONNECTIONSTRINGS_");
-            
+
             // Add .env file support for local development
             if (environment == "Development")
             {
@@ -85,7 +85,7 @@ namespace NeoServiceLayer.Core.Configuration
                     builder.AddJsonFile(envFile, optional: true, reloadOnChange: true);
                 }
             }
-            
+
             return builder;
         }
 

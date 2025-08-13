@@ -45,7 +45,7 @@ public partial class NotificationService
             }
 
             // Check if channel is enabled
-            if (!_registeredChannels.ContainsKey(request.Channel.ToString()) || 
+            if (!_registeredChannels.ContainsKey(request.Channel.ToString()) ||
                 !_registeredChannels[request.Channel.ToString()].IsEnabled)
             {
                 return new NotificationResult
@@ -104,8 +104,8 @@ public partial class NotificationService
 
             // Process notification with privacy-preserving operations
             var privacyResult = await ProcessNotificationWithPrivacyAsync(request, notificationId);
-            
-            Logger.LogDebug("Privacy-preserving notification processing completed: NotificationId={NotificationId}, DeliveryProof={Proof}", 
+
+            Logger.LogDebug("Privacy-preserving notification processing completed: NotificationId={NotificationId}, DeliveryProof={Proof}",
                 privacyResult.NotificationId, privacyResult.DeliveryProof.Proof);
 
             // Simulate sending notification
@@ -140,7 +140,7 @@ public partial class NotificationService
 
             Logger.LogInformation("Notification {NotificationId} {Status} via {Channel}",
                 notificationId, notificationResult.Status, request.Channel);
-            
+
             if (notificationResult.Success)
             {
                 Logger.LogInformation("Notification sent successfully");

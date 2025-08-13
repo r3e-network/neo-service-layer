@@ -1,6 +1,6 @@
-using System;
-using System.Threading.Tasks;
+﻿using System;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
@@ -44,19 +44,19 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         }
 
         public abstract PatternType SupportedType { get; }
-        
+
         public virtual double ConfidenceThreshold => 0.75;
 
         public abstract Task<PatternAnalysisResult> AnalyzeAsync(PatternAnalysisRequest request);
 
         public virtual async Task<TrainingResult> TrainAsync(TrainingData data)
         {
-            _logger.LogInformation("Training {Analyzer} with {Count} samples", 
+            _logger.LogInformation("Training {Analyzer} with {Count} samples",
                 GetType().Name, data.Samples.Count);
 
             // Default training implementation
             await Task.Delay(100).ConfigureAwait(false); // Simulate training
-            
+
             return new TrainingResult
             {
                 Success = true,

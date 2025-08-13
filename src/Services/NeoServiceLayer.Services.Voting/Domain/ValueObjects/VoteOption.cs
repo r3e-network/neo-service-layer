@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
 {
@@ -13,10 +13,10 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
         {
             if (id == Guid.Empty)
                 throw new ArgumentException("Option ID cannot be empty", nameof(id));
-            
+
             if (string.IsNullOrWhiteSpace(name))
                 throw new ArgumentException("Option name is required", nameof(name));
-            
+
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Option description is required", nameof(description));
 

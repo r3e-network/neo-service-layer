@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Blockchain;
@@ -39,7 +39,7 @@ public partial class SocialRecoveryService
             // If network guardians are allowed, check guardian reputation and status
             if (config.AllowNetworkGuardians && _guardians.TryGetValue(guardianAddress, out var guardian))
             {
-                return guardian.IsActive && 
+                return guardian.IsActive &&
                        guardian.ReputationScore >= config.MinGuardianReputation &&
                        guardian.StakedAmount >= _options.Value.MinGuardianStake;
             }
@@ -157,22 +157,22 @@ public partial class SocialRecoveryService
 
             // Get all eligible guardians
             var eligibleGuardians = new List<string>();
-            
+
             // Add trusted guardians
             eligibleGuardians.AddRange(trustedGuardians);
-            
+
             // Add network guardians if allowed
             var config = await GetAccountRecoveryConfigAsync(request.AccountAddress, "neo-n3");
             if (config.AllowNetworkGuardians)
             {
                 var networkGuardians = _guardians.Values
-                    .Where(g => g.IsActive && 
+                    .Where(g => g.IsActive &&
                                g.ReputationScore >= config.MinGuardianReputation &&
                                !eligibleGuardians.Contains(g.Address))
                     .OrderByDescending(g => g.ReputationScore)
                     .Take(10) // Limit to top 10 network guardians
                     .Select(g => g.Address);
-                
+
                 eligibleGuardians.AddRange(networkGuardians);
             }
 
@@ -188,7 +188,7 @@ public partial class SocialRecoveryService
                 {
                     // Simulate notification sending
                     await Task.Delay(50);
-                    
+
                     Logger.LogDebug("Notified guardian {Guardian} of recovery request {RecoveryId}",
                         guardianAddress, request.RecoveryId);
                 }

@@ -1,7 +1,7 @@
-using Microsoft.Extensions.Configuration;
 ﻿using System.Net;
 using System.Net.Http;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Moq;
@@ -10,9 +10,9 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
-using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
 
 namespace NeoServiceLayer.Services.Notification.Tests;
 
@@ -696,7 +696,7 @@ public class NotificationServiceTests : TestBase, IDisposable
 
         // Assert
         results.Should().HaveCount(subscriptionCount);
-        results.Should().AllSatisfy(result => 
+        results.Should().AllSatisfy(result =>
         {
             result.Should().NotBeNull();
             result.Success.Should().BeTrue();

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Core.CQRS
 {
@@ -12,22 +12,22 @@ namespace NeoServiceLayer.Core.CQRS
         /// Unique identifier for this command instance
         /// </summary>
         Guid CommandId { get; }
-        
+
         /// <summary>
         /// UTC timestamp when the command was created
         /// </summary>
         DateTime CreatedAt { get; }
-        
+
         /// <summary>
         /// User or system that initiated this command
         /// </summary>
         string InitiatedBy { get; }
-        
+
         /// <summary>
         /// Correlation ID for tracking related operations
         /// </summary>
         Guid CorrelationId { get; }
-        
+
         /// <summary>
         /// Expected version for optimistic concurrency control
         /// </summary>

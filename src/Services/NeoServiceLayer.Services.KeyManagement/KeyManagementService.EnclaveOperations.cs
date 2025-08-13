@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
@@ -50,7 +50,7 @@ public partial class KeyManagementService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving key derivation in SGX
         string privacyResult = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.KeyManagementOperations,
@@ -150,7 +150,7 @@ public partial class KeyManagementService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.KeyManagementOperations,
             paramsJson);
@@ -161,12 +161,12 @@ public partial class KeyManagementService
         try
         {
             var resultJson = JsonSerializer.Deserialize<JsonElement>(result);
-            
+
             if (!resultJson.TryGetProperty("success", out var success) || !success.GetBoolean())
                 return new KeyAccessValidation { IsValid = false, Reason = "Invalid authorization" };
 
             var validationResult = resultJson.GetProperty("result");
-            
+
             return new KeyAccessValidation
             {
                 IsValid = validationResult.GetProperty("valid").GetBoolean(),
@@ -211,7 +211,7 @@ public partial class KeyManagementService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.KeyManagementOperations,
             paramsJson);
@@ -220,12 +220,12 @@ public partial class KeyManagementService
             throw new InvalidOperationException("Key rotation failed");
 
         var resultJson = JsonSerializer.Deserialize<JsonElement>(result);
-        
+
         if (!resultJson.TryGetProperty("success", out var success) || !success.GetBoolean())
             throw new InvalidOperationException("Privacy-preserving key rotation failed");
 
         var rotationResult = resultJson.GetProperty("result");
-        
+
         return new KeyRotationResult
         {
             OldKeyId = rotationResult.GetProperty("oldKeyId").GetString() ?? "",
@@ -243,7 +243,7 @@ public partial class KeyManagementService
     {
         var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
         var proof = $"{keyId}-{operation}-{dataHash}-{timestamp}";
-        
+
         // In production, this would generate a proper cryptographic proof
         return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(proof).Take(32).ToArray());
     }

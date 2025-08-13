@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Net.Http;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
@@ -14,7 +14,7 @@ namespace NeoServiceLayer.Core.Http
     public static class HttpClientFactory
     {
         private static readonly SemaphoreSlim ConnectionSemaphore = new(100); // Limit concurrent connections
-        
+
         /// <summary>
         /// Configures HTTP client services with resilience policies.
         /// </summary>
@@ -35,10 +35,10 @@ namespace NeoServiceLayer.Core.Http
             })
             .AddPolicyHandler(GetRetryPolicy())
             .AddPolicyHandler(GetCircuitBreakerPolicy());
-            
+
             return services;
         }
-        
+
         private static IAsyncPolicy<HttpResponseMessage> GetRetryPolicy()
         {
             return HttpPolicyExtensions
@@ -54,14 +54,14 @@ namespace NeoServiceLayer.Core.Http
                         {
                             logger = dict["logger"] as ILogger;
                         }
-                        
+
                         logger?.LogWarning(
-                            "HTTP retry {RetryCount} after {TimeSpan}ms", 
-                            retryCount, 
+                            "HTTP retry {RetryCount} after {TimeSpan}ms",
+                            retryCount,
                             timespan.TotalMilliseconds);
                     });
         }
-        
+
         private static IAsyncPolicy<HttpResponseMessage> GetCircuitBreakerPolicy()
         {
             return HttpPolicyExtensions
@@ -78,7 +78,7 @@ namespace NeoServiceLayer.Core.Http
                         // Log circuit breaker closing
                     });
         }
-        
+
         /// <summary>
         /// Acquires a connection slot with rate limiting.
         /// </summary>
@@ -87,16 +87,16 @@ namespace NeoServiceLayer.Core.Http
             await ConnectionSemaphore.WaitAsync(cancellationToken);
             return new ConnectionReleaser(ConnectionSemaphore);
         }
-        
+
         private class ConnectionReleaser : IDisposable
         {
             private readonly SemaphoreSlim _semaphore;
-            
+
             public ConnectionReleaser(SemaphoreSlim semaphore)
             {
                 _semaphore = semaphore;
             }
-            
+
             public void Dispose()
             {
                 _semaphore.Release();

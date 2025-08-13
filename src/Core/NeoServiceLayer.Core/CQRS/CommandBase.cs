@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Core.CQRS
 {
@@ -24,7 +24,7 @@ namespace NeoServiceLayer.Core.CQRS
         public string InitiatedBy { get; }
         public Guid CorrelationId { get; }
         public long? ExpectedVersion { get; }
-        
+
         public override string ToString()
         {
             return $"{GetType().Name} - CommandId: {CommandId}, InitiatedBy: {InitiatedBy}, CreatedAt: {CreatedAt:O}";
@@ -39,7 +39,7 @@ namespace NeoServiceLayer.Core.CQRS
     {
         protected CommandBase(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
             : base(initiatedBy, correlationId, expectedVersion)
-        {
-        }
+    {
     }
+}
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -74,7 +74,7 @@ public class PermissionMiddleware
                 var accessType = MapHttpMethodToAccessType(action);
                 var result = await permissionService.CheckServicePermissionAsync(identity.Id, resource, accessType);
                 hasPermission = result.IsAllowed;
-                
+
                 if (!hasPermission)
                 {
                     _logger.LogWarning("Service {ServiceId} denied access to {Resource} with action {Action}: {Reason}",
@@ -84,7 +84,7 @@ public class PermissionMiddleware
             else
             {
                 hasPermission = await permissionService.CheckPermissionAsync(identity.Id, resource, action);
-                
+
                 if (!hasPermission)
                 {
                     _logger.LogWarning("User {UserId} denied access to {Resource} with action {Action}",
@@ -100,7 +100,7 @@ public class PermissionMiddleware
 
             // Add identity to context for downstream services
             context.Items["Principal"] = identity;
-            
+
             // Continue with the request
             await _next(context);
         }
@@ -119,7 +119,7 @@ public class PermissionMiddleware
     private static bool ShouldSkipPermissionCheck(HttpContext context)
     {
         var path = context.Request.Path.Value?.ToLowerInvariant() ?? string.Empty;
-        
+
         // Skip for health checks, swagger, and authentication endpoints
         return path.StartsWith("/health") ||
                path.StartsWith("/swagger") ||
@@ -157,7 +157,7 @@ public class PermissionMiddleware
         if (!string.IsNullOrEmpty(authHeader) && authHeader.StartsWith("Bearer "))
         {
             var token = authHeader.Substring("Bearer ".Length).Trim();
-            
+
             // Try to extract user ID from claims (assuming JWT is validated by auth middleware)
             var user = context.User;
             if (user?.Identity?.IsAuthenticated == true)
@@ -205,7 +205,7 @@ public class PermissionMiddleware
     private static string BuildResourceIdentifier(HttpContext context)
     {
         var path = context.Request.Path.Value ?? string.Empty;
-        
+
         // Remove API prefix and version if present
         if (path.StartsWith("/api/v"))
         {

@@ -1,7 +1,7 @@
-using System.Reflection;
-using BenchmarkDotNet.Running;
+﻿using System.Reflection;
 using BenchmarkDotNet.Configs;
 using BenchmarkDotNet.Loggers;
+using BenchmarkDotNet.Running;
 // using NeoServiceLayer.Performance.Tests.Benchmarks;
 using NeoServiceLayer.Performance.Tests.Infrastructure;
 
@@ -134,11 +134,11 @@ namespace NeoServiceLayer.Performance.Tests
             try
             {
                 var summary = BenchmarkRunner.Run<T>();
-                
+
                 Console.WriteLine($"Benchmark completed: {typeof(T).Name}");
                 Console.WriteLine($"Total benchmarks: {summary.Reports.Length}");
                 Console.WriteLine($"Successful runs: {summary.Reports.Count(r => r.Success)}");
-                
+
                 if (summary.HasCriticalValidationErrors)
                 {
                     Console.WriteLine("Critical validation errors detected!");
@@ -164,7 +164,7 @@ namespace NeoServiceLayer.Performance.Tests
                 };
 
                 var summary = BenchmarkRunner.Run(benchmarkTypes);
-                
+
                 Console.WriteLine("All benchmarks completed.");
                 Console.WriteLine($"Total benchmark runs: {summary.Sum(s => s.Reports.Length)}");
                 Console.WriteLine($"Successful runs: {summary.Sum(s => s.Reports.Count(r => r.Success))}");
@@ -194,7 +194,7 @@ namespace NeoServiceLayer.Performance.Tests
             {
                 // For demonstration purposes, we'll simulate running regression tests
                 // In a real implementation, this would integrate with xUnit or another test framework
-                
+
                 var testResults = new List<(string TestName, bool Passed, string? Error)>();
 
                 // Simulate running the regression tests
@@ -210,16 +210,16 @@ namespace NeoServiceLayer.Performance.Tests
                 foreach (var testType in regressionTestTypes)
                 {
                     Console.WriteLine($"Running {testType}...");
-                    
+
                     // Simulate test execution
                     await Task.Delay(1000).ConfigureAwait(false);
-                    
+
                     // Simulate test results (95% pass rate)
                     var passed = Random.Shared.NextDouble() > 0.05;
                     var error = passed ? null : $"Performance regression detected in {testType}";
-                    
+
                     testResults.Add((testType, passed, error));
-                    
+
                     Console.WriteLine($"  {(passed ? "✓ PASSED" : "✗ FAILED")}: {testType}");
                     if (!passed && error != null)
                     {
@@ -340,7 +340,7 @@ namespace NeoServiceLayer.Performance.Tests
                 """;
 
                 await File.WriteAllTextAsync(reportPath, report).ConfigureAwait(false);
-                
+
                 Console.WriteLine($"Performance report generated: {reportPath}");
             }
             catch (Exception ex)

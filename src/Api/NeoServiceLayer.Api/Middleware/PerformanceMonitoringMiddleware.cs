@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Threading.Tasks;
@@ -38,7 +38,7 @@ namespace NeoServiceLayer.Api.Middleware
         {
             var endpoint = context.Request.Path.Value;
             var method = context.Request.Method;
-            
+
             // Skip monitoring for health and metrics endpoints
             if (ShouldSkipMonitoring(endpoint))
             {
@@ -57,7 +57,7 @@ namespace NeoServiceLayer.Api.Middleware
 
             // Capture initial memory
             var initialMemory = GC.GetTotalMemory(false);
-            
+
             try
             {
                 // Add performance headers to response
@@ -70,7 +70,7 @@ namespace NeoServiceLayer.Api.Middleware
                 });
 
                 await _next(context);
-                
+
                 requestMetrics.StatusCode = context.Response.StatusCode;
                 requestMetrics.Success = context.Response.StatusCode < 400;
             }
@@ -84,15 +84,15 @@ namespace NeoServiceLayer.Api.Middleware
             finally
             {
                 stopwatch.Stop();
-                
+
                 // Capture final metrics
                 requestMetrics.Duration = stopwatch.ElapsedMilliseconds;
                 requestMetrics.MemoryDelta = (GC.GetTotalMemory(false) - initialMemory) / 1024.0; // KB
                 requestMetrics.EndTime = DateTime.UtcNow;
-                
+
                 // Record metrics
                 await RecordMetrics(requestMetrics);
-                
+
                 // Check performance thresholds
                 await CheckThresholds(requestMetrics);
             }
@@ -106,10 +106,10 @@ namespace NeoServiceLayer.Api.Middleware
                 metrics.Method,
                 metrics.StatusCode,
                 metrics.Duration);
-            
+
             // Record to custom metrics collector
             await _metricsCollector.RecordRequestMetricsAsync(metrics);
-            
+
             // Log if slow request
             if (metrics.Duration > _thresholds.SlowRequestThresholdMs)
             {
@@ -124,33 +124,33 @@ namespace NeoServiceLayer.Api.Middleware
         private async Task CheckThresholds(RequestMetrics metrics)
         {
             var violations = new List<string>();
-            
+
             // Check duration threshold
             if (metrics.Duration > _thresholds.CriticalRequestThresholdMs)
             {
                 violations.Add($"Duration: {metrics.Duration}ms (critical: {_thresholds.CriticalRequestThresholdMs}ms)");
             }
-            
+
             // Check memory threshold
             if (metrics.MemoryDelta > _thresholds.MemoryDeltaThresholdKB)
             {
                 violations.Add($"Memory delta: {metrics.MemoryDelta:F2}KB (threshold: {_thresholds.MemoryDeltaThresholdKB}KB)");
             }
-            
+
             // Check error rate
             var errorRate = await _metricsCollector.GetErrorRateAsync(metrics.Endpoint, TimeSpan.FromMinutes(5));
             if (errorRate > _thresholds.ErrorRateThreshold)
             {
                 violations.Add($"Error rate: {errorRate:P} (threshold: {_thresholds.ErrorRateThreshold:P})");
             }
-            
+
             if (violations.Any())
             {
                 _logger.LogError(
                     "Performance threshold violations for {Endpoint}: {Violations}",
                     metrics.Endpoint,
                     string.Join(", ", violations));
-                
+
                 // Trigger alert
                 await _metricsCollector.TriggerPerformanceAlertAsync(metrics.Endpoint, violations);
             }
@@ -159,7 +159,7 @@ namespace NeoServiceLayer.Api.Middleware
         private bool ShouldSkipMonitoring(string path)
         {
             if (string.IsNullOrEmpty(path)) return false;
-            
+
             var skipPaths = new[] { "/health", "/metrics", "/swagger", "/favicon" };
             return skipPaths.Any(skip => path.StartsWith(skip, StringComparison.OrdinalIgnoreCase));
         }
@@ -211,18 +211,18 @@ namespace NeoServiceLayer.Api.Middleware
         public Task RecordRequestMetricsAsync(RequestMetrics metrics)
         {
             var queue = _metricsHistory.GetOrAdd(metrics.Endpoint, _ => new Queue<RequestMetrics>());
-            
+
             lock (queue)
             {
                 queue.Enqueue(metrics);
-                
+
                 // Maintain max history size
                 while (queue.Count > _maxHistorySize)
                 {
                     queue.Dequeue();
                 }
             }
-            
+
             return Task.CompletedTask;
         }
 
@@ -232,18 +232,18 @@ namespace NeoServiceLayer.Api.Middleware
             {
                 return Task.FromResult(0.0);
             }
-            
+
             var cutoff = DateTime.UtcNow - period;
-            
+
             lock (queue)
             {
                 var recentMetrics = queue.Where(m => m.StartTime >= cutoff).ToList();
-                
+
                 if (recentMetrics.Count == 0)
                 {
                     return Task.FromResult(0.0);
                 }
-                
+
                 var errorCount = recentMetrics.Count(m => !m.Success);
                 return Task.FromResult((double)errorCount / recentMetrics.Count);
             }
@@ -255,20 +255,20 @@ namespace NeoServiceLayer.Api.Middleware
             {
                 return Task.FromResult(new PerformanceStatistics());
             }
-            
+
             var cutoff = DateTime.UtcNow - period;
-            
+
             lock (queue)
             {
                 var recentMetrics = queue.Where(m => m.StartTime >= cutoff).ToList();
-                
+
                 if (recentMetrics.Count == 0)
                 {
                     return Task.FromResult(new PerformanceStatistics());
                 }
-                
+
                 var durations = recentMetrics.Select(m => m.Duration).OrderBy(d => d).ToList();
-                
+
                 return Task.FromResult(new PerformanceStatistics
                 {
                     Count = recentMetrics.Count,
@@ -290,19 +290,19 @@ namespace NeoServiceLayer.Api.Middleware
                 "Performance alert triggered for {Endpoint}: {Violations}",
                 endpoint,
                 string.Join(", ", violations));
-            
+
             // Here you would integrate with your alerting system (PagerDuty, Slack, etc.)
-            
+
             return Task.CompletedTask;
         }
 
         private double GetPercentile(List<double> sortedValues, double percentile)
         {
             if (sortedValues.Count == 0) return 0;
-            
+
             var index = (int)Math.Ceiling(percentile * sortedValues.Count) - 1;
             index = Math.Max(0, Math.Min(index, sortedValues.Count - 1));
-            
+
             return sortedValues[index];
         }
     }

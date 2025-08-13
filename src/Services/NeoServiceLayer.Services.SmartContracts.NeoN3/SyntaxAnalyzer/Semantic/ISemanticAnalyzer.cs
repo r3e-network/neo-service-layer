@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Semantic;
@@ -46,7 +46,7 @@ public class SymbolTable : ISymbolTable
     private SymbolScope _currentScope = new SymbolScope { Name = "global" };
 
     public IEnumerable<Symbol> GetAllSymbols() => _symbols.Values;
-    
+
     public Symbol? LookupSymbol(string name, SymbolScope scope)
     {
         _symbols.TryGetValue(name, out var symbol);
@@ -60,10 +60,10 @@ public class SymbolTable : ISymbolTable
 
     public void EnterScope(string scopeName)
     {
-        var newScope = new SymbolScope 
-        { 
-            Name = scopeName, 
-            Parent = _currentScope 
+        var newScope = new SymbolScope
+        {
+            Name = scopeName,
+            Parent = _currentScope
         };
         _currentScope.Children.Add(newScope);
         _currentScope = newScope;

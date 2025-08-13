@@ -58,7 +58,7 @@ public partial class VotingService
                 if (!options.DryRun)
                 {
                     privacyResult = await ExecutePrivacyPreservingVotingAsync(voterAddress, strategy, selectedCandidates);
-                    
+
                     // Simulate blockchain interaction with the encrypted vote
                     await Task.Delay(1000); // Simulate blockchain interaction
                 }

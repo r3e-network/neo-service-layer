@@ -1,4 +1,4 @@
-using System.Numerics;
+﻿using System.Numerics;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.SocialRecovery.Configuration;
@@ -26,7 +26,7 @@ public partial class SocialRecoveryService
         return await ExecuteInEnclaveAsync(async () =>
         {
             ValidateAddress(trustee, nameof(trustee));
-            
+
             if (trustLevel < 0 || trustLevel > 100)
             {
                 throw new ArgumentException("Trust level must be between 0 and 100", nameof(trustLevel));
@@ -34,7 +34,7 @@ public partial class SocialRecoveryService
 
             // Get authenticated truster from context
             var truster = await GetAuthenticatedGuardianAddressAsync();
-            
+
             Logger.LogInformation("Establishing trust from {Truster} to {Trustee} with level {Level}",
                 truster, trustee, trustLevel);
 
@@ -92,7 +92,7 @@ public partial class SocialRecoveryService
     public async Task<GuardianInfo> GetGuardianInfoAsync(string address, string blockchain = "neo-n3")
     {
         ValidateAddress(address, nameof(address));
-        
+
         if (!_guardians.TryGetValue(address, out var guardian))
         {
             throw new InvalidOperationException($"Guardian {address} not found");
@@ -197,7 +197,7 @@ public partial class SocialRecoveryService
             stats.TotalGuardians = _totalGuardians;
             stats.TotalRecoveries = _totalRecoveries;
             stats.SuccessfulRecoveries = _successfulRecoveries;
-            
+
             if (_guardians.Values.Any())
             {
                 stats.TotalStaked = _guardians.Values.Aggregate(BigInteger.Zero, (sum, g) => sum + g.StakedAmount);
@@ -301,7 +301,7 @@ public partial class SocialRecoveryService
         return await ExecuteInEnclaveAsync(async () =>
         {
             ValidateAddress(guardian, nameof(guardian));
-            
+
             if (string.IsNullOrWhiteSpace(reason))
             {
                 throw new ArgumentException("Slashing reason cannot be empty", nameof(reason));
@@ -378,7 +378,7 @@ public partial class SocialRecoveryService
                 {
                     AccountAddress = accountAddress,
                     PreferredStrategy = preferredStrategy,
-                    RecoveryThreshold = Math.Max(_options.Value.MinRecoveryThreshold, 
+                    RecoveryThreshold = Math.Max(_options.Value.MinRecoveryThreshold,
                                        Math.Min(_options.Value.MaxRecoveryThreshold, (int)recoveryThreshold)),
                     AllowNetworkGuardians = allowNetworkGuardians,
                     MinGuardianReputation = Math.Max(_options.Value.MinGuardianReputation, (int)minGuardianReputation),
@@ -439,7 +439,7 @@ public partial class SocialRecoveryService
             try
             {
                 var config = await GetAccountRecoveryConfigAsync(accountAddress, blockchain);
-                
+
                 if (!config.TrustedGuardians.Contains(guardian))
                 {
                     if (config.TrustedGuardians.Count >= _options.Value.MaxGuardiansPerAccount)
@@ -449,7 +449,7 @@ public partial class SocialRecoveryService
 
                     config.TrustedGuardians.Add(guardian);
                     config.ModifiedAt = DateTime.UtcNow;
-                    
+
                     await PersistAccountConfigAsync(config);
 
                     await RecordAuditEventAsync("TrustedGuardianAdded", new Dictionary<string, object>
@@ -485,10 +485,10 @@ public partial class SocialRecoveryService
         // - JWT token claims
         // - Smart contract msg.sender
         // - TEE attestation
-        
+
         // For now, return a mock account for demonstration
         await Task.Delay(1);
-        
+
         // Create a deterministic mock account for testing
         return "NMockAccountAddress123456789";
     }

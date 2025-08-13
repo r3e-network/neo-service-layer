@@ -1,6 +1,6 @@
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Caching.Memory;
+﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Infrastructure.Caching
@@ -82,11 +82,11 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 case "redis":
                     AddRedisCache(services, configuration);
                     break;
-                
+
                 case "sqlserver":
                     AddSqlServerCache(services, configuration);
                     break;
-                
+
                 case "memory":
                 default:
                     // Fallback to memory cache
@@ -103,7 +103,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
         private static void AddRedisCache(IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("Redis");
-            
+
             if (!string.IsNullOrEmpty(connectionString))
             {
                 services.AddStackExchangeRedisCache(options =>
@@ -127,7 +127,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
         private static void AddSqlServerCache(IServiceCollection services, IConfiguration configuration)
         {
             var connectionString = configuration.GetConnectionString("SqlServer");
-            
+
             if (!string.IsNullOrEmpty(connectionString))
             {
                 services.AddDistributedSqlServerCache(options =>
@@ -157,11 +157,11 @@ namespace NeoServiceLayer.Infrastructure.Caching
             IConfiguration configuration)
         {
             var cachingSection = configuration.GetSection("Caching");
-            
+
             if (cachingSection.Exists())
             {
                 var distributedCacheSection = cachingSection.GetSection("Distributed");
-                
+
                 if (distributedCacheSection.Exists())
                 {
                     services.AddDistributedCache(distributedCacheSection);

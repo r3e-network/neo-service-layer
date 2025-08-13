@@ -32,7 +32,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         _serviceProvider = serviceProvider;
         _logger = logger;
         _configuration = configuration.Value;
-        
+
         // Try to get ServiceEndpoints if available
         try
         {

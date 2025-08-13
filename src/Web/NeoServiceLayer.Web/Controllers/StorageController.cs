@@ -64,9 +64,9 @@ public class StorageController : ControllerBase
             };
 
             var result = await _storageService.StoreDataAsync(
-                request.Key, 
-                request.Data, 
-                options, 
+                request.Key,
+                request.Data,
+                options,
                 request.BlockchainType ?? BlockchainType.NeoN3);
 
             return Ok(result);
@@ -95,7 +95,7 @@ public class StorageController : ControllerBase
             }
 
             var data = await _storageService.GetDataAsync(key, blockchainType ?? BlockchainType.NeoN3);
-            
+
             if (data == null)
             {
                 return NotFound(new { error = "Data not found" });
@@ -127,7 +127,7 @@ public class StorageController : ControllerBase
             }
 
             var success = await _storageService.DeleteDataAsync(key, blockchainType ?? BlockchainType.NeoN3);
-            
+
             if (!success)
             {
                 return NotFound(new { error = "Data not found or could not be deleted" });
@@ -159,7 +159,7 @@ public class StorageController : ControllerBase
             }
 
             var metadata = await _storageService.GetStorageMetadataAsync(key, blockchainType ?? BlockchainType.NeoN3);
-            
+
             if (metadata == null)
             {
                 return NotFound(new { error = "Metadata not found" });
@@ -184,8 +184,8 @@ public class StorageController : ControllerBase
     /// <returns>List of storage metadata.</returns>
     [HttpGet("list")]
     public async Task<IActionResult> ListKeysAsync(
-        [FromQuery] string? prefix = null, 
-        [FromQuery] int skip = 0, 
+        [FromQuery] string? prefix = null,
+        [FromQuery] int skip = 0,
         [FromQuery] int take = 100,
         [FromQuery] BlockchainType? blockchainType = null)
     {
@@ -197,9 +197,9 @@ public class StorageController : ControllerBase
             }
 
             var keys = await _storageService.ListKeysAsync(
-                prefix ?? string.Empty, 
-                skip, 
-                take, 
+                prefix ?? string.Empty,
+                skip,
+                take,
                 blockchainType ?? BlockchainType.NeoN3);
 
             return Ok(new { keys, count = keys.Count(), skip, take });
@@ -220,7 +220,7 @@ public class StorageController : ControllerBase
     /// <returns>Success or failure result.</returns>
     [HttpPut("metadata/{key}")]
     public async Task<IActionResult> UpdateMetadataAsync(
-        string key, 
+        string key,
         [FromBody] StorageMetadata metadata,
         [FromQuery] BlockchainType? blockchainType = null)
     {
@@ -232,7 +232,7 @@ public class StorageController : ControllerBase
             }
 
             var success = await _storageService.UpdateMetadataAsync(key, metadata, blockchainType ?? BlockchainType.NeoN3);
-            
+
             if (!success)
             {
                 return NotFound(new { error = "Data not found or metadata could not be updated" });

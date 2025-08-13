@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -118,7 +118,7 @@ public class StatisticsController : ControllerBase
     /// <returns>Performance metrics.</returns>
     [HttpGet("performance")]
     public async Task<IActionResult> GetPerformanceMetrics(
-        [FromQuery] DateTime? startTime = null, 
+        [FromQuery] DateTime? startTime = null,
         [FromQuery] DateTime? endTime = null)
     {
         try
@@ -157,9 +157,9 @@ public class StatisticsController : ControllerBase
             }
 
             await _statisticsService.RecordOperationAsync(
-                request.ServiceName, 
-                request.Operation, 
-                request.Success, 
+                request.ServiceName,
+                request.Operation,
+                request.Success,
                 request.Duration);
 
             return Ok(new { message = "Operation recorded successfully" });
@@ -192,8 +192,8 @@ public class StatisticsController : ControllerBase
             }
 
             await _statisticsService.RecordTransactionAsync(
-                blockchainType, 
-                request.TransactionType, 
+                blockchainType,
+                request.TransactionType,
                 request.Success);
 
             return Ok(new { message = "Transaction recorded successfully" });
@@ -245,7 +245,7 @@ public class StatisticsController : ControllerBase
             };
 
             var fileName = $"neo-service-layer-stats-{start:yyyyMMdd}-{end:yyyyMMdd}.{format}";
-            
+
             return File(data, contentType, fileName);
         }
         catch (Exception ex)

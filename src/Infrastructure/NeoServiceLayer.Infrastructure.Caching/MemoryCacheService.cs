@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -53,7 +53,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
             try
             {
                 var fullKey = GetFullKey<T>(key);
-                
+
                 if (_cache.TryGetValue(fullKey, out var value) && value is T typedValue)
                 {
                     Interlocked.Increment(ref _hitCount);
@@ -154,7 +154,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
             {
                 var fullKey = GetFullKey<object>(key);
                 var exists = _cache.TryGetValue(fullKey, out _);
-                
+
                 _logger.LogTrace("Cache existence check for key: {Key} = {Exists}", fullKey, exists);
                 return exists;
             }
@@ -177,14 +177,14 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 if (_cache is MemoryCache memoryCache)
                 {
                     // Use reflection to clear the cache (MemoryCache doesn't have a clear method)
-                    var field = typeof(MemoryCache).GetField("_coherentState", 
+                    var field = typeof(MemoryCache).GetField("_coherentState",
                         System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                    
+
                     if (field?.GetValue(memoryCache) is object coherentState)
                     {
                         var entriesCollection = coherentState.GetType()
                             .GetProperty("EntriesCollection", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
-                        
+
                         if (entriesCollection?.GetValue(coherentState) is System.Collections.IDictionary entries)
                         {
                             entries.Clear();
@@ -215,7 +215,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
         public async Task<Dictionary<string, T?>> GetManyAsync<T>(IEnumerable<string> keys) where T : class
         {
             var result = new Dictionary<string, T?>();
-            
+
             if (keys == null)
                 return result;
 
@@ -253,7 +253,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 var success = results.All(r => r);
                 _logger.LogTrace("Set {Count} cache entries, success: {Success}", items.Count, success);
-                
+
                 return success;
             }
             catch (Exception ex)
@@ -276,7 +276,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
 
                 var removedCount = results.Count(r => r);
                 _logger.LogTrace("Removed {Count} cache entries", removedCount);
-                
+
                 return removedCount;
             }
             catch (Exception ex)
@@ -364,7 +364,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
         private void OnEviction(object key, object? value, EvictionReason reason, object? state)
         {
             Interlocked.Increment(ref _evictionCount);
-            
+
             if (key is string stringKey)
             {
                 _keyTimestamps.TryRemove(stringKey, out _);

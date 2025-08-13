@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -55,8 +55,8 @@ public class PermissionController : ControllerBase
             }
 
             var hasPermission = await _permissionService.CheckPermissionAsync(
-                request.UserId, 
-                request.Resource, 
+                request.UserId,
+                request.Resource,
                 request.Action);
 
             return Ok(hasPermission);
@@ -86,8 +86,8 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.CheckServicePermissionAsync(
-                request.ServiceId, 
-                request.DataKey, 
+                request.ServiceId,
+                request.DataKey,
                 request.AccessType);
 
             return Ok(result);
@@ -117,7 +117,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.GrantPermissionAsync(request);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -152,7 +152,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.RevokePermissionAsync(request);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -187,7 +187,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.CreateRoleAsync(role);
-            
+
             if (result.Success)
             {
                 return CreatedAtAction(nameof(GetUserRoles), new { userId = "admin" }, result);
@@ -229,7 +229,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.UpdateRoleAsync(role);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -263,7 +263,7 @@ public class PermissionController : ControllerBase
         try
         {
             var result = await _permissionService.DeleteRoleAsync(roleId);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -302,7 +302,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.AssignRoleAsync(request.UserId, request.RoleId);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -337,7 +337,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.RemoveRoleAsync(request.UserId, request.RoleId);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -415,7 +415,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.CreateDataAccessPolicyAsync(policy);
-            
+
             if (result.Success)
             {
                 return CreatedAtAction(nameof(EvaluateDataAccess), null, result);
@@ -457,7 +457,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.UpdateDataAccessPolicyAsync(policy);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -491,7 +491,7 @@ public class PermissionController : ControllerBase
         try
         {
             var result = await _permissionService.DeleteDataAccessPolicyAsync(policyId);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -557,7 +557,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.RegisterServiceAsync(registration);
-            
+
             if (result.Success)
             {
                 return CreatedAtAction(nameof(UpdateServicePermissions), new { serviceId = result.ServiceId }, result);
@@ -594,7 +594,7 @@ public class PermissionController : ControllerBase
             }
 
             var result = await _permissionService.UpdateServicePermissionsAsync(serviceId, request.Permissions);
-            
+
             if (result.Success)
             {
                 return Ok(result);
@@ -681,8 +681,8 @@ public class PermissionController : ControllerBase
             }
 
             var token = await _permissionService.GeneratePermissionTokenAsync(
-                request.UserId, 
-                request.Scope, 
+                request.UserId,
+                request.Scope,
                 request.Expiry);
 
             return Ok(new GenerateTokenResponse
@@ -710,7 +710,7 @@ public class PermissionController : ControllerBase
         {
             // Check if the permission service is healthy
             var health = await _permissionService.GetHealthAsync();
-            
+
             return Ok(new ServiceHealthResponse
             {
                 Status = health.ToString(),

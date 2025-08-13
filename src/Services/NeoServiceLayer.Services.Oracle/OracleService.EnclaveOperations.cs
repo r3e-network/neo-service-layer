@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
@@ -68,7 +68,7 @@ public partial class OracleService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving data fetching in SGX
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.OracleOperations,
@@ -86,7 +86,7 @@ public partial class OracleService
 
         // Extract privacy-preserving oracle result
         var oracleResult = resultJson.GetProperty("result");
-        
+
         return new PrivacyOracleResult
         {
             RequestId = oracleResult.GetProperty("requestId").GetString() ?? "",
@@ -138,7 +138,7 @@ public partial class OracleService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.OracleOperations,
             paramsJson);
@@ -178,7 +178,7 @@ public partial class OracleService
                     Success = true
                 });
             }
-            
+
             return new PrivacyBatchOracleResult
             {
                 BatchId = Guid.NewGuid().ToString(),
@@ -215,7 +215,7 @@ public partial class OracleService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.OracleOperations,
             paramsJson);
@@ -231,7 +231,7 @@ public partial class OracleService
         }
 
         var batchResult = resultJson.GetProperty("result");
-        
+
         return new PrivacyBatchOracleResult
         {
             BatchId = batchResult.GetProperty("batchId").GetString() ?? "",
@@ -284,14 +284,14 @@ public partial class OracleService
     private Dictionary<string, object> ExtractVerificationData(JsonElement resultElement)
     {
         var verificationData = new Dictionary<string, object>();
-        
+
         if (resultElement.TryGetProperty("verification", out var verification))
         {
             verificationData["timestamp"] = verification.GetProperty("timestamp").GetInt64();
             verificationData["nonce"] = verification.GetProperty("nonce").GetString() ?? "";
             verificationData["blockHeight"] = verification.GetProperty("blockHeight").GetInt64();
         }
-        
+
         return verificationData;
     }
 
@@ -301,7 +301,7 @@ public partial class OracleService
     private List<BatchOracleResult> ExtractBatchResults(JsonElement resultsElement)
     {
         var results = new List<BatchOracleResult>();
-        
+
         if (resultsElement.ValueKind == JsonValueKind.Array)
         {
             foreach (var resultElement in resultsElement.EnumerateArray())
@@ -314,7 +314,7 @@ public partial class OracleService
                 });
             }
         }
-        
+
         return results;
     }
 
@@ -325,7 +325,7 @@ public partial class OracleService
     {
         var hashes = results.Select(r => r.DataHash).ToArray();
         var aggregateHash = HashData(string.Join("-", hashes));
-        
+
         return new AggregateProof
         {
             BatchId = Guid.NewGuid().ToString(),

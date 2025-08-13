@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -78,9 +78,9 @@ namespace NeoServiceLayer.Web.Services
 
         public async Task<ServiceStatus> GetServiceStatusAsync(string serviceName)
         {
-            var service = _serviceDefinitions.FirstOrDefault(s => 
+            var service = _serviceDefinitions.FirstOrDefault(s =>
                 s.Name.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
-            
+
             if (service == null)
             {
                 throw new ArgumentException($"Service {serviceName} not found");
@@ -93,10 +93,10 @@ namespace NeoServiceLayer.Web.Services
             }
 
             var status = await CheckServiceHealthAsync(service);
-            
+
             // Cache individual service status
             _cache.Set($"service_status_{serviceName}", status, TimeSpan.FromSeconds(15));
-            
+
             return status;
         }
 
@@ -112,11 +112,11 @@ namespace NeoServiceLayer.Web.Services
             try
             {
                 _logger.LogInformation("Attempting to restart service {ServiceName}", serviceName);
-                
+
                 // In a real implementation, this would interact with container orchestration
                 // or service management APIs
                 // TODO: Implement actual service restart logic via orchestration API
-                
+
                 var result = new ServiceRestartResult
                 {
                     Success = true,
@@ -162,7 +162,7 @@ namespace NeoServiceLayer.Web.Services
         {
             // In a real implementation, this would query a database or monitoring system
             var alerts = new List<Alert>();
-            
+
             // Check for any unhealthy services and create alerts
             var statuses = await GetAllServiceStatusesAsync();
             foreach (var status in statuses.Where(s => !s.IsHealthy).Take(count))
@@ -250,7 +250,7 @@ namespace NeoServiceLayer.Web.Services
         public async Task<Dictionary<string, object>> GetServiceDetailsAsync(string serviceName)
         {
             var status = await GetServiceStatusAsync(serviceName);
-            var service = _serviceDefinitions.FirstOrDefault(s => 
+            var service = _serviceDefinitions.FirstOrDefault(s =>
                 s.Name.Equals(serviceName, StringComparison.OrdinalIgnoreCase));
 
             return new Dictionary<string, object>
@@ -286,7 +286,7 @@ namespace NeoServiceLayer.Web.Services
                 status.Status = status.IsHealthy ? "Healthy" : "Unhealthy";
                 status.ResponseTime = responseTime;
                 status.ErrorRate = status.IsHealthy ? 0 : 100;
-                
+
                 if (response.IsSuccessStatusCode)
                 {
                     try
@@ -398,7 +398,7 @@ namespace NeoServiceLayer.Web.Services
         private List<ServiceDefinition> InitializeServiceDefinitions()
         {
             var baseUrl = _configuration["ServiceMonitor:BaseUrl"] ?? "https://localhost:5001";
-            
+
             return new List<ServiceDefinition>
             {
                 // Foundation Layer

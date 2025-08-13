@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
@@ -47,7 +47,7 @@ public partial class SmartContractsService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving contract validation in SGX
         string privacyResult = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.SmartContractOperations,
@@ -65,7 +65,7 @@ public partial class SmartContractsService
 
         // Extract privacy-preserving validation result
         var validationResult = privacyJson.GetProperty("result");
-        
+
         return new PrivacyDeploymentResult
         {
             MethodHash = validationResult.GetProperty("methodHash").GetString() ?? "",
@@ -121,7 +121,7 @@ public partial class SmartContractsService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving contract invocation in SGX
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.SmartContractOperations,
@@ -139,7 +139,7 @@ public partial class SmartContractsService
 
         // Extract privacy-preserving invocation result
         var invocationResult = resultJson.GetProperty("result");
-        
+
         return new PrivacyInvocationResult
         {
             MethodHash = invocationResult.GetProperty("methodHash").GetString() ?? "",
@@ -189,7 +189,7 @@ public partial class SmartContractsService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.SmartContractOperations,
             paramsJson);
@@ -200,12 +200,12 @@ public partial class SmartContractsService
         try
         {
             var resultJson = JsonSerializer.Deserialize<JsonElement>(result);
-            
+
             if (!resultJson.TryGetProperty("success", out var success) || !success.GetBoolean())
                 return new ContractExecutionValidation { CanExecute = false, Reason = "Invalid contract call" };
 
             var validationResult = resultJson.TryGetProperty("validation", out var val) ? val : resultJson.GetProperty("result");
-            
+
             return new ContractExecutionValidation
             {
                 CanExecute = validationResult.GetProperty("canExecute").GetBoolean(),
@@ -282,7 +282,7 @@ public partial class SmartContractsService
     private List<ContractEvent> ExtractEvents(JsonElement eventsElement)
     {
         var events = new List<ContractEvent>();
-        
+
         if (eventsElement.ValueKind == JsonValueKind.Array)
         {
             foreach (var eventElement in eventsElement.EnumerateArray())
@@ -297,7 +297,7 @@ public partial class SmartContractsService
                 });
             }
         }
-        
+
         return events;
     }
 

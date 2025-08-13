@@ -1,10 +1,10 @@
-using Xunit;
-using Microsoft.Extensions.Logging;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Integration.Tests.Framework;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests
 {
@@ -35,7 +35,7 @@ namespace NeoServiceLayer.Integration.Tests
                 RequiredServices = new List<string>
                 {
                     "AuthenticationService",
-                    "KeyManagementService", 
+                    "KeyManagementService",
                     "AbstractAccountService",
                     "SmartContractsService",
                     "NotificationService",
@@ -122,14 +122,14 @@ namespace NeoServiceLayer.Integration.Tests
                 },
                 ValidationRules = new List<ValidationRule>
                 {
-                    new ValidationRule 
-                    { 
+                    new ValidationRule
+                    {
                         Name = "ValidateAccountCreation",
                         Type = "AccountExists",
                         Parameters = new Dictionary<string, object> { ["accountAddress"] = "{accountAddress}" }
                     },
-                    new ValidationRule 
-                    { 
+                    new ValidationRule
+                    {
                         Name = "ValidateContractDeployment",
                         Type = "ContractExists",
                         Parameters = new Dictionary<string, object> { ["contractHash"] = "{contractHash}" }
@@ -147,7 +147,7 @@ namespace NeoServiceLayer.Integration.Tests
             result.Steps.Should().OnlyContain(s => s.Success);
             result.Duration.Should().BeLessThan(TimeSpan.FromMinutes(2));
 
-            _logger.LogInformation("Complete user journey workflow completed successfully in {Duration}ms", 
+            _logger.LogInformation("Complete user journey workflow completed successfully in {Duration}ms",
                 result.Duration.TotalMilliseconds);
         }
 
@@ -188,7 +188,7 @@ namespace NeoServiceLayer.Integration.Tests
                     new WorkflowStep
                     {
                         Name = "ValidateTransferAuthorization",
-                        ServiceName = "KeyManagementService", 
+                        ServiceName = "KeyManagementService",
                         MethodName = "ValidateSignatureAsync",
                         Parameters = new Dictionary<string, object>
                         {
@@ -219,10 +219,10 @@ namespace NeoServiceLayer.Integration.Tests
                         Parameters = new Dictionary<string, object>
                         {
                             ["key"] = "crosschain_proof_{transferId}",
-                            ["data"] = new { 
+                            ["data"] = new {
                                 transferId = "{transferId}",
                                 lockTxHash = "{lockTransactionHash}",
-                                timestamp = DateTime.UtcNow 
+                                timestamp = DateTime.UtcNow
                             }
                         },
                         ResultKey = "proofStored"
@@ -266,14 +266,14 @@ namespace NeoServiceLayer.Integration.Tests
             result.Should().NotBeNull();
             result.Success.Should().BeTrue($"Cross-chain workflow failed: {result.FailureReason}");
             result.Steps.Should().HaveCount(6);
-            
+
             // Validate data consistency across chains
             var consistencyResult = await _framework.ValidateDataConsistencyAsync(
                 new List<string> { "CrossChainService", "EnclaveStorageService", "MonitoringService" },
                 $"crosschain_transfer_{result.Steps[0].Result}",
                 new { status = "completed", amount = 100.0 }
             );
-            
+
             consistencyResult.IsConsistent.Should().BeTrue("Cross-chain data should be consistent");
         }
 
@@ -295,7 +295,7 @@ namespace NeoServiceLayer.Integration.Tests
             resilienceResult.ServiceBehavior.MaintainedBasicFunctionality.Should().BeTrue();
             resilienceResult.RecoveryTime.Should().BeLessThan(TimeSpan.FromMinutes(5));
             resilienceResult.DependencyImpact.ImpactedServices.Should().NotBeEmpty();
-            
+
             _logger.LogInformation("Service resilience test completed. Recovery time: {RecoveryTime}",
                 resilienceResult.RecoveryTime);
         }
@@ -355,10 +355,10 @@ namespace NeoServiceLayer.Integration.Tests
             // Assert
             results.Should().HaveCount(concurrentWorkflows);
             results.Should().OnlyContain(r => r.Success, "All concurrent workflows should succeed");
-            
+
             var averageDuration = results.Average(r => r.Duration.TotalMilliseconds);
             averageDuration.Should().BeLessThan(5000, "Average workflow duration should be under 5 seconds under load");
-            
+
             _logger.LogInformation("Load test completed. {Count} workflows with average duration: {Duration}ms",
                 concurrentWorkflows, averageDuration);
         }
@@ -451,7 +451,7 @@ namespace NeoServiceLayer.Integration.Tests
             result.OperationResults.Should().OnlyContain(op => op.Success);
             result.FinalConsistency?.IsConsistent.Should().BeTrue("Final state should be consistent across all services");
             result.RolledBack.Should().BeFalse("Transaction should not have been rolled back");
-            
+
             _logger.LogInformation("Distributed transaction test completed successfully in {Duration}ms",
                 result.Duration.TotalMilliseconds);
         }
@@ -463,8 +463,8 @@ namespace NeoServiceLayer.Integration.Tests
         [InlineData("SmartContractsService", "NotificationService", CommunicationPattern.EventDriven)]
         [InlineData("MonitoringService", "EnclaveStorageService", CommunicationPattern.StreamingData)]
         public async Task ServiceCommunication_DifferentPatterns_ShouldWork(
-            string sourceService, 
-            string targetService, 
+            string sourceService,
+            string targetService,
             CommunicationPattern pattern)
         {
             // Arrange
@@ -477,9 +477,9 @@ namespace NeoServiceLayer.Integration.Tests
 
             // Act
             var result = await _framework.TestServiceCommunicationAsync(
-                sourceService, 
-                targetService, 
-                testPayload, 
+                sourceService,
+                targetService,
+                testPayload,
                 pattern);
 
             // Assert
@@ -489,7 +489,7 @@ namespace NeoServiceLayer.Integration.Tests
             result.SourceService.Should().Be(sourceService);
             result.TargetService.Should().Be(targetService);
             result.Pattern.Should().Be(pattern);
-            
+
             _logger.LogInformation("Service communication test {Source} -> {Target} ({Pattern}) completed in {Duration}ms",
                 sourceService, targetService, pattern, result.Duration.TotalMilliseconds);
         }
@@ -556,7 +556,7 @@ namespace NeoServiceLayer.Integration.Tests
                         Parameters = new Dictionary<string, object>
                         {
                             ["key"] = "auth_session_{authToken}",
-                            ["data"] = new { 
+                            ["data"] = new {
                                 token = "{authToken}",
                                 loginTime = DateTime.UtcNow,
                                 securityLevel = "High"
@@ -573,9 +573,9 @@ namespace NeoServiceLayer.Integration.Tests
                         {
                             ["eventType"] = "SecureLogin",
                             ["userId"] = "security_test_user",
-                            ["details"] = new { 
+                            ["details"] = new {
                                 authToken = "{authToken}",
-                                timestamp = DateTime.UtcNow 
+                                timestamp = DateTime.UtcNow
                             }
                         },
                         ResultKey = "securityEventLogged"
@@ -606,11 +606,11 @@ namespace NeoServiceLayer.Integration.Tests
             result.Success.Should().BeTrue($"Security workflow failed: {result.FailureReason}");
             result.Steps.Should().HaveCount(5);
             result.Steps.Should().OnlyContain(s => s.Success);
-            
+
             // Additional security validations
             var authTokenStep = result.Steps.Find(s => s.Step.Name == "VerifyAndAuthenticate");
             authTokenStep?.Result.Should().NotBeNull("Authentication should produce a valid token");
-            
+
             _logger.LogInformation("Security workflow completed successfully with all security measures enforced");
         }
     }

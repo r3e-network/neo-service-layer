@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
@@ -15,7 +15,7 @@ namespace NeoServiceLayer.Services.Automation.Handlers
 
         public BlockchainConditionHandler(
             ILogger<BlockchainConditionHandler> logger,
-            IBlockchainClientFactory? blockchainClientFactory = null) 
+            IBlockchainClientFactory? blockchainClientFactory = null)
             : base(logger)
         {
             _blockchainClientFactory = blockchainClientFactory;
@@ -31,10 +31,10 @@ namespace NeoServiceLayer.Services.Automation.Handlers
             {
                 var actualValue = await GetBlockchainDataAsync(condition.Field).ConfigureAwait(false);
                 var result = CompareValues(actualValue, condition.Value, condition.Operator);
-                
+
                 _logger.LogDebug("Blockchain condition evaluated: {Field} {Operator} {Value} = {Result}",
                     condition.Field, condition.Operator, condition.Value, result);
-                
+
                 return result;
             }
             catch (Exception ex)

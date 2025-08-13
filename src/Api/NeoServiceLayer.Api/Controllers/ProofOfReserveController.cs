@@ -132,7 +132,7 @@ public class ProofOfReserveController : BaseApiController
             {
                 return NotFound(CreateErrorResponse($"Asset not found: {proofId}"));
             }
-            
+
             // Generate fresh proof for the asset
             var result = await _proofOfReserveService.GenerateProofAsync(proofId, blockchain);
 

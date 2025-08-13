@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -14,7 +14,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         private readonly Dictionary<string, List<double[]>> _knownSequences;
         private readonly int _windowSize;
 
-        public SequencePatternAnalyzer(ILogger<SequencePatternAnalyzer> logger, int windowSize = 10) 
+        public SequencePatternAnalyzer(ILogger<SequencePatternAnalyzer> logger, int windowSize = 10)
             : base(logger)
         {
             _knownSequences = new Dictionary<string, List<double[]>>();
@@ -30,17 +30,17 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             _logger.LogDebug("Analyzing sequence pattern with {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
-            
+
             // Convert data to sequence windows
             var windows = CreateSequenceWindows(request.Data, _windowSize);
-            
+
             // Compare with known sequences
             foreach (var knownSeq in _knownSequences)
             {
                 foreach (var window in windows)
                 {
                     var maxSimilarity = 0.0;
-                    
+
                     foreach (var pattern in knownSeq.Value)
                     {
                         var similarity = CalculateSimilarity(window, pattern);
@@ -151,7 +151,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                 for (int j = i + 1; j < windows.Length; j++)
                 {
                     var similarity = CalculateSimilarity(windows[i], windows[j]);
-                    
+
                     if (similarity >= threshold)
                     {
                         patterns.Add(new DetectedPattern
@@ -180,13 +180,13 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             {
                 if (x == null || y == null) return false;
                 if (x.Length != y.Length) return false;
-                
+
                 for (int i = 0; i < x.Length; i++)
                 {
                     if (Math.Abs(x[i] - y[i]) > 0.0001)
                         return false;
                 }
-                
+
                 return true;
             }
 

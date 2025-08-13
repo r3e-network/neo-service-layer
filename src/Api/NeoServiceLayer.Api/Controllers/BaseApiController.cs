@@ -83,7 +83,7 @@ public abstract class BaseApiController : ControllerBase
     protected string GetClientIpAddress()
     {
         var ipAddress = HttpContext.Connection.RemoteIpAddress?.ToString();
-        
+
         // Check for forwarded headers (when behind proxy/load balancer)
         if (Request.Headers.ContainsKey("X-Forwarded-For"))
         {
@@ -93,7 +93,7 @@ public abstract class BaseApiController : ControllerBase
         {
             ipAddress = Request.Headers["X-Real-IP"].FirstOrDefault();
         }
-        
+
         return ipAddress ?? "Unknown";
     }
 
@@ -126,7 +126,7 @@ public abstract class BaseApiController : ControllerBase
     /// </summary>
     protected string GetCorrelationId()
     {
-        return HttpContext.Items["CorrelationId"]?.ToString() 
+        return HttpContext.Items["CorrelationId"]?.ToString()
             ?? Request.Headers["X-Correlation-Id"].FirstOrDefault()
             ?? Guid.NewGuid().ToString();
     }

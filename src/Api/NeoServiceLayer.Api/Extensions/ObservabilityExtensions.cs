@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
@@ -26,23 +26,23 @@ namespace NeoServiceLayer.Api.Extensions
         {
             // Add structured logging
             services.AddSingleton<IStructuredLoggerFactory, StructuredLoggerFactory>();
-            
+
             // Add performance metrics collector
             services.AddSingleton<PerformanceMetricsCollector>();
-            
+
             // Configure Serilog for structured logging
             ConfigureSerilog(configuration, environment);
-            
+
             // Add OpenTelemetry
             services.AddNeoServiceLayerTelemetry(configuration, "NeoServiceLayer");
-            
+
             // Add performance thresholds from configuration
             services.AddSingleton(provider =>
             {
                 var thresholds = configuration.GetSection("PerformanceThresholds").Get<PerformanceThresholds>();
                 return thresholds ?? new PerformanceThresholds();
             });
-            
+
             return services;
         }
 
@@ -53,13 +53,13 @@ namespace NeoServiceLayer.Api.Extensions
         {
             // Add correlation ID middleware first
             app.UseCorrelationId();
-            
+
             // Add performance monitoring
             app.UsePerformanceMonitoring();
-            
+
             // Add request/response logging
             app.UseRequestResponseLogging();
-            
+
             return app;
         }
 
@@ -134,20 +134,20 @@ namespace NeoServiceLayer.Api.Extensions
                 }
 
                 // Get structured logger from context
-                if (context.Items.TryGetValue("StructuredLogger", out var loggerObj) && 
+                if (context.Items.TryGetValue("StructuredLogger", out var loggerObj) &&
                     loggerObj is IStructuredLogger structuredLogger)
                 {
                     // Log request body for POST/PUT/PATCH (if not too large)
-                    if (context.Request.ContentLength > 0 && 
+                    if (context.Request.ContentLength > 0 &&
                         context.Request.ContentLength < 10_000 && // 10KB limit
-                        (context.Request.Method == "POST" || 
-                         context.Request.Method == "PUT" || 
+                        (context.Request.Method == "POST" ||
+                         context.Request.Method == "PUT" ||
                          context.Request.Method == "PATCH"))
                     {
                         context.Request.EnableBuffering();
                         var body = await new StreamReader(context.Request.Body).ReadToEndAsync();
                         context.Request.Body.Position = 0;
-                        
+
                         structuredLogger.LogOperation("RequestBody", new Dictionary<string, object>
                         {
                             ["ContentType"] = context.Request.ContentType,

@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing & Quality Assurance | Neo Service Layer</title>
+    <meta name="description" content="Comprehensive testing infrastructure including chaos engineering, service health monitoring, transaction testing, and automated coverage analysis for Neo Service Layer.">
+    <meta name="keywords" content="blockchain testing, chaos engineering, service testing, test coverage, performance testing, security testing">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="assets/css/utilities.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <a href="/" class="navbar-brand">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 40 40" class="brand-icon">
+                            <path d="M20,2 L35,10 L35,30 L20,38 L5,30 L5,10 Z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.8"/>
+                        </svg>
+                        <span class="brand-text">Neo Service Layer</span>
+                    </div>
+                </a>
+
+                <div class="navbar-menu" id="navbarMenu">
+                    <a href="/" class="navbar-link">Home</a>
+                    <a href="/services.html" class="navbar-link">Services</a>
+                    <a href="/testing.html" class="navbar-link active">Testing</a>
+                    <a href="/docs" class="navbar-link">Documentation</a>
+                    <a href="/contact.html" class="navbar-link">Contact</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <a href="https://github.com/neo-project/neo-service-layer" class="btn btn-outline btn-sm">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="/docs/testing-guide.html" class="btn btn-primary btn-sm">Testing Guide</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="testing-hero">
+        <div class="container">
+            <div class="hero-content">
+                <div class="hero-badge" data-aos="fade-down">
+                    <span class="badge-icon">🧪</span>
+                    <span class="badge-text">Comprehensive Testing Suite</span>
+                </div>
+                
+                <h1 class="hero-title" data-aos="fade-up" data-aos-delay="100">
+                    Enterprise-Grade <span class="text-gradient">Testing Infrastructure</span>
+                </h1>
+                
+                <p class="hero-description" data-aos="fade-up" data-aos-delay="200">
+                    Ensure reliability, security, and performance with our comprehensive testing framework.
+                    From chaos engineering to automated coverage analysis, we've got you covered.
+                </p>
+
+                <div class="testing-stats" data-aos="fade-up" data-aos-delay="300">
+                    <div class="stat">
+                        <div class="stat-value">99.99%</div>
+                        <div class="stat-label">Test Coverage</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">10</div>
+                        <div class="stat-label">Test Scenarios</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">7</div>
+                        <div class="stat-label">Chaos Strategies</div>
+                    </div>
+                    <div class="stat">
+                        <div class="stat-value">24/7</div>
+                        <div class="stat-label">Monitoring</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Test Scenarios Showcase -->
+    <section class="test-scenarios">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Comprehensive <span class="text-gradient">Test Scenarios</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Real-world testing scenarios that validate every aspect of your application
+                </p>
+            </div>
+
+            <div class="scenarios-grid">
+                <!-- Scenario 1 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="scenario-header">
+                        <span class="scenario-number">01</span>
+                        <h3>Blockchain Transaction Flow</h3>
+                    </div>
+                    <p>Complete end-to-end blockchain transaction with failure recovery</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-user-check"></i>
+                            <span>User Authentication</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-key"></i>
+                            <span>Key Generation</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-file-contract"></i>
+                            <span>Smart Contract Deploy</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-exchange-alt"></i>
+                            <span>Transaction Execution</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-lock"></i>
+                            <span>Enclave Storage</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-clock"></i> <10s execution</span>
+                        <span><i class="fas fa-check-circle"></i> 100% success rate</span>
+                    </div>
+                </div>
+
+                <!-- Scenario 2 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="scenario-header">
+                        <span class="scenario-number">02</span>
+                        <h3>Distributed Consensus</h3>
+                    </div>
+                    <p>Testing consensus under network partition conditions</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-network-wired"></i>
+                            <span>Network Partition</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-vote-yea"></i>
+                            <span>Consensus Testing</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-sync"></i>
+                            <span>Recovery Validation</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-check-double"></i>
+                            <span>Data Consistency</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-shield-alt"></i> Byzantine fault tolerant</span>
+                        <span><i class="fas fa-undo"></i> Auto-recovery</span>
+                    </div>
+                </div>
+
+                <!-- Scenario 3 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="scenario-header">
+                        <span class="scenario-number">03</span>
+                        <h3>Security Attack Simulation</h3>
+                    </div>
+                    <p>Comprehensive security testing with attack vectors</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-bug"></i>
+                            <span>SQL Injection</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-memory"></i>
+                            <span>Buffer Overflow</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-user-secret"></i>
+                            <span>Side Channel</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-redo"></i>
+                            <span>Replay Attack</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-shield-alt"></i> 100% blocked</span>
+                        <span><i class="fas fa-file-alt"></i> Audit logged</span>
+                    </div>
+                </div>
+
+                <!-- Scenario 4 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="scenario-header">
+                        <span class="scenario-number">04</span>
+                        <h3>SAGA Pattern Testing</h3>
+                    </div>
+                    <p>Multi-service SAGA with compensation mechanisms</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-lock"></i>
+                            <span>Lock Assets</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-check"></i>
+                            <span>Verify Transfer</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-coins"></i>
+                            <span>Mint Assets</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-undo"></i>
+                            <span>Compensation</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-sync"></i> Idempotent</span>
+                        <span><i class="fas fa-check-circle"></i> Eventually consistent</span>
+                    </div>
+                </div>
+
+                <!-- Scenario 5 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="500">
+                    <div class="scenario-header">
+                        <span class="scenario-number">05</span>
+                        <h3>High Load Performance</h3>
+                    </div>
+                    <p>Performance testing under extreme load conditions</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-microchip"></i>
+                            <span>80% CPU Stress</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-memory"></i>
+                            <span>1GB Memory</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Performance Metrics</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-balance-scale"></i>
+                            <span>Graceful Degradation</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-tachometer-alt"></i> P99 <5s</span>
+                        <span><i class="fas fa-check"></i> SLA maintained</span>
+                    </div>
+                </div>
+
+                <!-- Scenario 6 -->
+                <div class="scenario-card" data-aos="fade-up" data-aos-delay="600">
+                    <div class="scenario-header">
+                        <span class="scenario-number">06</span>
+                        <h3>Disaster Recovery</h3>
+                    </div>
+                    <p>Complete system recovery from catastrophic failure</p>
+                    <div class="scenario-steps">
+                        <div class="step">
+                            <i class="fas fa-bomb"></i>
+                            <span>Total Failure</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-heartbeat"></i>
+                            <span>Detection</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-magic"></i>
+                            <span>Auto Recovery</span>
+                        </div>
+                        <div class="step">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Health Validation</span>
+                        </div>
+                    </div>
+                    <div class="scenario-metrics">
+                        <span><i class="fas fa-clock"></i> <5min recovery</span>
+                        <span><i class="fas fa-database"></i> No data loss</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Chaos Engineering Section -->
+    <section class="chaos-engineering">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    <span class="text-gradient">Chaos Engineering</span> Framework
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Build resilience through controlled failure injection
+                </p>
+            </div>
+
+            <div class="chaos-features">
+                <div class="chaos-visual" data-aos="fade-right" data-aos-delay="200">
+                    <div class="chaos-diagram">
+                        <div class="chaos-center">
+                            <i class="fas fa-bolt"></i>
+                            <span>Chaos Engine</span>
+                        </div>
+                        <div class="chaos-strategies">
+                            <div class="strategy" style="--angle: 0deg">
+                                <i class="fas fa-network-wired"></i>
+                                <span>Network</span>
+                            </div>
+                            <div class="strategy" style="--angle: 51.4deg">
+                                <i class="fas fa-server"></i>
+                                <span>Service</span>
+                            </div>
+                            <div class="strategy" style="--angle: 102.8deg">
+                                <i class="fas fa-microchip"></i>
+                                <span>CPU</span>
+                            </div>
+                            <div class="strategy" style="--angle: 154.2deg">
+                                <i class="fas fa-memory"></i>
+                                <span>Memory</span>
+                            </div>
+                            <div class="strategy" style="--angle: 205.6deg">
+                                <i class="fas fa-hdd"></i>
+                                <span>Disk</span>
+                            </div>
+                            <div class="strategy" style="--angle: 257deg">
+                                <i class="fas fa-clock"></i>
+                                <span>Time</span>
+                            </div>
+                            <div class="strategy" style="--angle: 308.4deg">
+                                <i class="fas fa-project-diagram"></i>
+                                <span>Cascade</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chaos-details" data-aos="fade-left" data-aos-delay="300">
+                    <h3>6-Phase Chaos Testing Process</h3>
+                    <div class="phase-list">
+                        <div class="phase">
+                            <span class="phase-number">1</span>
+                            <div class="phase-content">
+                                <h4>Baseline Measurement</h4>
+                                <p>Establish normal performance metrics</p>
+                            </div>
+                        </div>
+                        <div class="phase">
+                            <span class="phase-number">2</span>
+                            <div class="phase-content">
+                                <h4>Failure Injection</h4>
+                                <p>Apply controlled chaos strategies</p>
+                            </div>
+                        </div>
+                        <div class="phase">
+                            <span class="phase-number">3</span>
+                            <div class="phase-content">
+                                <h4>Behavior Monitoring</h4>
+                                <p>Track system response and degradation</p>
+                            </div>
+                        </div>
+                        <div class="phase">
+                            <span class="phase-number">4</span>
+                            <div class="phase-content">
+                                <h4>Resilience Testing</h4>
+                                <p>Validate fault tolerance mechanisms</p>
+                            </div>
+                        </div>
+                        <div class="phase">
+                            <span class="phase-number">5</span>
+                            <div class="phase-content">
+                                <h4>Recovery Measurement</h4>
+                                <p>Assess recovery time and completeness</p>
+                            </div>
+                        </div>
+                        <div class="phase">
+                            <span class="phase-number">6</span>
+                            <div class="phase-content">
+                                <h4>Validation</h4>
+                                <p>Verify system state and data integrity</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Coverage Analysis -->
+    <section class="coverage-analysis">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Automated <span class="text-gradient">Coverage Analysis</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Real-time test coverage tracking with intelligent recommendations
+                </p>
+            </div>
+
+            <div class="coverage-dashboard" data-aos="fade-up" data-aos-delay="200">
+                <div class="coverage-chart">
+                    <div class="chart-header">
+                        <h3>Overall Coverage Metrics</h3>
+                        <div class="chart-legend">
+                            <span class="legend-item"><i class="fas fa-circle" style="color: #00ff88"></i> Line Coverage</span>
+                            <span class="legend-item"><i class="fas fa-circle" style="color: #0099ff"></i> Branch Coverage</span>
+                            <span class="legend-item"><i class="fas fa-circle" style="color: #ff6b6b"></i> Method Coverage</span>
+                        </div>
+                    </div>
+                    <div class="chart-bars">
+                        <div class="bar-group">
+                            <span class="bar-label">Core Services</span>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 92%; background: #00ff88"></div>
+                                <span class="bar-value">92%</span>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <span class="bar-label">API Layer</span>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 88%; background: #0099ff"></div>
+                                <span class="bar-value">88%</span>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <span class="bar-label">Infrastructure</span>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 85%; background: #00ff88"></div>
+                                <span class="bar-value">85%</span>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <span class="bar-label">Smart Contracts</span>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 94%; background: #00ff88"></div>
+                                <span class="bar-value">94%</span>
+                            </div>
+                        </div>
+                        <div class="bar-group">
+                            <span class="bar-label">Testing Framework</span>
+                            <div class="bar-container">
+                                <div class="bar" style="width: 81%; background: #0099ff"></div>
+                                <span class="bar-value">81%</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="coverage-insights">
+                    <h3>Coverage Insights</h3>
+                    <div class="insight-cards">
+                        <div class="insight-card">
+                            <i class="fas fa-check-circle"></i>
+                            <div class="insight-content">
+                                <span class="insight-value">89.5%</span>
+                                <span class="insight-label">Overall Coverage</span>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <i class="fas fa-file-code"></i>
+                            <div class="insight-content">
+                                <span class="insight-value">267</span>
+                                <span class="insight-label">Test Files</span>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <div class="insight-content">
+                                <span class="insight-value">12</span>
+                                <span class="insight-label">Coverage Gaps</span>
+                            </div>
+                        </div>
+                        <div class="insight-card">
+                            <i class="fas fa-chart-line"></i>
+                            <div class="insight-content">
+                                <span class="insight-value">+3.2%</span>
+                                <span class="insight-label">Monthly Trend</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="recommendations">
+                        <h4>Recommendations</h4>
+                        <ul>
+                            <li><i class="fas fa-lightbulb"></i> Add tests for error handling in KeyManagementService</li>
+                            <li><i class="fas fa-lightbulb"></i> Improve branch coverage in CrossChainService</li>
+                            <li><i class="fas fa-lightbulb"></i> Test edge cases in consensus algorithm</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testing Tools -->
+    <section class="testing-tools">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Testing <span class="text-gradient">Tools & Frameworks</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Industry-standard tools integrated into our testing pipeline
+                </p>
+            </div>
+
+            <div class="tools-grid" data-aos="fade-up" data-aos-delay="200">
+                <div class="tool-card">
+                    <img src="assets/images/xunit-logo.svg" alt="xUnit" class="tool-logo">
+                    <h4>xUnit</h4>
+                    <p>Unit testing framework</p>
+                </div>
+                <div class="tool-card">
+                    <img src="assets/images/moq-logo.svg" alt="Moq" class="tool-logo">
+                    <h4>Moq</h4>
+                    <p>Mocking framework</p>
+                </div>
+                <div class="tool-card">
+                    <img src="assets/images/fluent-logo.svg" alt="FluentAssertions" class="tool-logo">
+                    <h4>FluentAssertions</h4>
+                    <p>Assertion library</p>
+                </div>
+                <div class="tool-card">
+                    <img src="assets/images/benchmark-logo.svg" alt="BenchmarkDotNet" class="tool-logo">
+                    <h4>BenchmarkDotNet</h4>
+                    <p>Performance testing</p>
+                </div>
+                <div class="tool-card">
+                    <img src="assets/images/polly-logo.svg" alt="Polly" class="tool-logo">
+                    <h4>Polly</h4>
+                    <p>Resilience testing</p>
+                </div>
+                <div class="tool-card">
+                    <img src="assets/images/coverlet-logo.svg" alt="Coverlet" class="tool-logo">
+                    <h4>Coverlet</h4>
+                    <p>Code coverage</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content" data-aos="zoom-in">
+                <h2 class="cta-title">
+                    Build with <span class="text-gradient">Confidence</span>
+                </h2>
+                <p class="cta-description">
+                    Leverage our comprehensive testing infrastructure to ensure your applications are reliable, secure, and performant
+                </p>
+                <div class="cta-actions">
+                    <a href="/docs/testing-guide.html" class="btn btn-primary btn-lg">
+                        <i class="fas fa-book"></i> View Testing Guide
+                    </a>
+                    <a href="/contact.html" class="btn btn-outline btn-lg">
+                        <i class="fas fa-comments"></i> Talk to an Expert
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+    </script>
+</body>
+</html>

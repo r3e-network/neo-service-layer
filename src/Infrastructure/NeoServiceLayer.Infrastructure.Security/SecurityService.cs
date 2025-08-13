@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
@@ -18,19 +18,19 @@ public class SecurityService : ServiceBase, ISecurityService
     private readonly ConcurrentDictionary<string, SecurityPolicy> _securityPolicies = new();
     private readonly ConcurrentDictionary<string, byte[]> _secureKeys = new();
     private readonly object _lockObject = new();
-    
+
     // Security configuration
     private readonly int _maxInputSize = 10 * 1024 * 1024; // 10MB limit
     private readonly int _keyRotationIntervalHours = 24;
     private readonly TimeSpan _rateLimitWindow = TimeSpan.FromMinutes(1);
     private readonly ConcurrentDictionary<string, RateLimitState> _rateLimitStates = new();
 
-    public SecurityService(ILogger<SecurityService> logger) 
+    public SecurityService(ILogger<SecurityService> logger)
         : base("SecurityService", "Comprehensive security service", "1.0.0", logger)
     {
         // Add security capability
         AddCapability<ISecurityService>();
-        
+
         // Set metadata
         SetMetadata("SecurityLevel", "High");
         SetMetadata("EncryptionAlgorithm", "AES-256-GCM");
@@ -239,7 +239,7 @@ public class SecurityService : ServiceBase, ISecurityService
 
             // Use AES-GCM for authenticated encryption
             using var aes = new AesGcm(key);
-            
+
             var nonce = new byte[12]; // 96-bit nonce for GCM
             using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(nonce);
@@ -304,21 +304,21 @@ public class SecurityService : ServiceBase, ISecurityService
             }
 
             using var aes = new AesGcm(key);
-            
+
             // Extract components
             var nonce = new byte[12];
             var tag = new byte[16];
             var ciphertext = new byte[encryptedData.Length - 28];
-            
+
             Buffer.BlockCopy(encryptedData, 0, nonce, 0, 12);
             Buffer.BlockCopy(encryptedData, 12, ciphertext, 0, ciphertext.Length);
             Buffer.BlockCopy(encryptedData, encryptedData.Length - 16, tag, 0, 16);
-            
+
             var plaintext = new byte[ciphertext.Length];
             aes.Decrypt(nonce, ciphertext, tag, plaintext);
 
             Logger.LogDebug("Data decrypted successfully with key ID: {KeyId}", keyId);
-            
+
             return new DecryptionResult
             {
                 Success = true,
@@ -382,7 +382,7 @@ public class SecurityService : ServiceBase, ISecurityService
         try
         {
             var now = DateTime.UtcNow;
-            var state = _rateLimitStates.AddOrUpdate(identifier, 
+            var state = _rateLimitStates.AddOrUpdate(identifier,
                 new RateLimitState { RequestCount = 1, WindowStart = now },
                 (key, existing) =>
                 {
@@ -451,7 +451,7 @@ public class SecurityService : ServiceBase, ISecurityService
         };
 
         _securityPolicies.TryAdd(resourceType, defaultPolicy);
-        
+
         await Task.CompletedTask;
         return defaultPolicy;
     }
@@ -462,10 +462,10 @@ public class SecurityService : ServiceBase, ISecurityService
         try
         {
             Logger.LogInformation("Initializing security service...");
-            
+
             // Initialize default security policies
             await InitializeDefaultPoliciesAsync();
-            
+
             // Validate cryptographic providers
             if (!ValidateCryptographicProviders())
             {
@@ -495,10 +495,10 @@ public class SecurityService : ServiceBase, ISecurityService
     protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Security service stopped");
-        
+
         // Secure wipe of keys
         SecureWipeKeys();
-        
+
         await Task.CompletedTask;
         return true;
     }
@@ -581,16 +581,16 @@ public class SecurityService : ServiceBase, ISecurityService
         {
             // Test AES-GCM
             using var aes = new AesGcm(new byte[32]);
-            
+
             // Test SHA-256
             using var sha = SHA256.Create();
             sha.ComputeHash(Encoding.UTF8.GetBytes("test"));
-            
+
             // Test RNG
             using var rng = RandomNumberGenerator.Create();
             var testBytes = new byte[16];
             rng.GetBytes(testBytes);
-            
+
             return true;
         }
         catch (Exception ex)
@@ -611,11 +611,11 @@ public class SecurityService : ServiceBase, ISecurityService
         using var rng = RandomNumberGenerator.Create();
         var key = new byte[keySize / 8]; // Convert bits to bytes
         rng.GetBytes(key);
-        
+
         _secureKeys.TryAdd(keyId, key);
-        
+
         Logger.LogDebug("Generated new encryption key: {KeyId}", keyId);
-        
+
         await Task.CompletedTask;
         return key;
     }

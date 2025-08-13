@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -24,7 +24,7 @@ public abstract class EnclaveBlockchainServiceBase : EnclaveServiceBase, IBlockc
         : base(name, description, version, logger)
     {
         SupportedBlockchains = (supportedBlockchains ?? throw new ArgumentNullException(nameof(supportedBlockchains))).ToList();
-        
+
         if (!SupportedBlockchains.Any())
         {
             throw new ArgumentException("At least one supported blockchain must be specified", nameof(supportedBlockchains));
@@ -32,7 +32,7 @@ public abstract class EnclaveBlockchainServiceBase : EnclaveServiceBase, IBlockc
 
         // Add blockchain capability
         AddCapability<IBlockchainService>();
-        
+
         // Update metadata
         SetMetadata("SupportedBlockchains", SupportedBlockchains.Select(b => b.ToString()).ToList());
         SetMetadata("ServiceType", "EnclaveBlockchain");
@@ -69,7 +69,7 @@ public abstract class EnclaveBlockchainServiceBase : EnclaveServiceBase, IBlockc
     protected void ValidateBlockchainAndEnclave(BlockchainType blockchainType)
     {
         ValidateBlockchainSupport(blockchainType);
-        
+
         if (!IsEnclaveInitialized)
         {
             throw new InvalidOperationException($"Enclave must be initialized before blockchain operations for service {Name}");

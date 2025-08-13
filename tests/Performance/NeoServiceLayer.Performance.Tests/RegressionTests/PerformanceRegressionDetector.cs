@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Performance.Tests.RegressionTests
@@ -85,7 +85,7 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
                 });
 
                 await File.WriteAllTextAsync(_baselineFilePath, json).ConfigureAwait(false);
-                
+
                 _logger.LogInformation("Baseline metrics updated with version {Version}", newResults.Version);
             }
             catch (Exception ex)
@@ -238,7 +238,7 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
         {
             // Analyze cache-specific metrics
             var cacheResults = current.Benchmarks.Where(b => b.Name.Contains("Cache")).ToList();
-            
+
             foreach (var benchmark in cacheResults)
             {
                 if (!baseline.Metrics.TryGetValue(benchmark.Name, out var baselineMetric))
@@ -249,7 +249,7 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
                     baselineMetric.CustomMetrics.TryGetValue("HitRatio", out var baselineHitRatio))
                 {
                     var hitRatioChange = CalculatePercentageChange(baselineHitRatio, hitRatio);
-                    
+
                     if (hitRatioChange < -_thresholds.CacheHitRatioThreshold)
                     {
                         regressions.Add(new PerformanceRegression
@@ -294,7 +294,7 @@ namespace NeoServiceLayer.Performance.Tests.RegressionTests
             }
 
             var json = await File.ReadAllTextAsync(_baselineFilePath).ConfigureAwait(false);
-            return JsonSerializer.Deserialize<BaselineMetrics>(json) 
+            return JsonSerializer.Deserialize<BaselineMetrics>(json)
                 ?? throw new InvalidOperationException("Failed to deserialize baseline metrics");
         }
 

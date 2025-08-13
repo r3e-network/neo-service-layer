@@ -168,8 +168,8 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
             // Fetch data using privacy-preserving operations
             var privacyResult = await FetchDataWithPrivacyAsync(dataSource, dataPath);
-            
-            Logger.LogDebug("Privacy-preserving oracle fetch completed: RequestId={RequestId}, DataHash={DataHash}", 
+
+            Logger.LogDebug("Privacy-preserving oracle fetch completed: RequestId={RequestId}, DataHash={DataHash}",
                 privacyResult.RequestId, privacyResult.DataHash);
 
             string result;
@@ -268,10 +268,10 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         {
             // Fetch data with privacy-preserving operations
             var privacyResult = await FetchDataWithPrivacyAsync(request.Url, request.Path, request);
-            
-            Logger.LogDebug("Privacy-preserving oracle data fetch completed: RequestId={RequestId}, DataHash={DataHash}", 
+
+            Logger.LogDebug("Privacy-preserving oracle data fetch completed: RequestId={RequestId}, DataHash={DataHash}",
                 privacyResult.RequestId, privacyResult.DataHash);
-            
+
             var data = await GetDataAsync(request.Url, request.Path, blockchainType);
 
             var response = new OracleResponse

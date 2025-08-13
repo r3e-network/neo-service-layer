@@ -3,8 +3,8 @@ using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.EnclaveStorage;
+using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
 
 namespace NeoServiceLayer.Services.Voting;
@@ -54,9 +54,9 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     /// <param name="enclaveStorage">The enclave storage service.</param>
     /// <param name="configuration">The service configuration.</param>
     public VotingService(
-        ILogger<VotingService> logger, 
-        IEnclaveManager enclaveManager, 
-        IStorageService storageService, 
+        ILogger<VotingService> logger,
+        IEnclaveManager enclaveManager,
+        IStorageService storageService,
         IEnclaveStorageService? enclaveStorage = null,
         IServiceConfiguration? configuration = null)
         : base("VotingService", "Neo N3 council member voting assistance service", "1.0.0", logger, new[] { BlockchainType.NeoN3 }, enclaveManager)
@@ -496,19 +496,19 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
     /// </summary>
     private class SGXPersistence : SGXPersistenceBase
     {
-        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger) 
+        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger)
             : base(serviceName, enclaveStorage, logger)
         {
         }
 
         public async Task<bool> StoreVotingStrategiesAsync(Dictionary<string, VotingStrategy> strategies, BlockchainType blockchainType)
         {
-            return await StoreSecurelyAsync("strategies", strategies, 
-                new Dictionary<string, object> 
-                { 
+            return await StoreSecurelyAsync("strategies", strategies,
+                new Dictionary<string, object>
+                {
                     ["type"] = "voting_strategies",
-                    ["count"] = strategies.Count 
-                }, 
+                    ["count"] = strategies.Count
+                },
                 blockchainType);
         }
 
@@ -520,11 +520,11 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
         public async Task<bool> StoreVotingResultsAsync(Dictionary<string, VotingResult> results, BlockchainType blockchainType)
         {
             return await StoreSecurelyAsync("results", results,
-                new Dictionary<string, object> 
-                { 
+                new Dictionary<string, object>
+                {
                     ["type"] = "voting_results",
-                    ["count"] = results.Count 
-                }, 
+                    ["count"] = results.Count
+                },
                 blockchainType);
         }
 
@@ -536,11 +536,11 @@ public partial class VotingService : EnclaveBlockchainServiceBase, IVotingServic
         public async Task<bool> StoreCandidatesAsync(Dictionary<string, CandidateInfo> candidates, BlockchainType blockchainType)
         {
             return await StoreSecurelyAsync("candidates", candidates,
-                new Dictionary<string, object> 
-                { 
+                new Dictionary<string, object>
+                {
                     ["type"] = "candidates",
-                    ["count"] = candidates.Count 
-                }, 
+                    ["count"] = candidates.Count
+                },
                 blockchainType);
         }
 

@@ -1017,7 +1017,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         var account = _wallet!.GetAccounts().First();
         // Note: In production, implement proper transaction signing within enclave
         // This requires proper ContractParametersContext setup and wallet integration
-        
+
         // Create placeholder witness for now
         transaction.Witnesses = new global::Neo.Network.P2P.Payloads.Witness[] { new global::Neo.Network.P2P.Payloads.Witness() };
 
@@ -1229,7 +1229,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
         // Create context for signing
         var context = new ContractParametersContext(ProtocolSettings.Default, transaction);
-        
+
         // Sign with wallet
         var signed = _wallet.Sign(context);
         if (!signed)
@@ -1304,7 +1304,7 @@ internal class RpcException : Exception
     public object? Data { get; }
 
     public RpcException(string message) : base(message) { }
-    
+
     public RpcException(string message, int code, object? data = null) : base(message)
     {
         Code = code;

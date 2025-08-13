@@ -342,7 +342,7 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
 
             // Sign data using privacy-preserving operations
             var signatureResult = await SignDataWithPrivacyAsync(keyId, dataHex, signingAlgorithm);
-            
+
             var result = signatureResult.Signature;
 
             // Validate signature result
@@ -350,7 +350,7 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
             {
                 throw new InvalidOperationException("Signing operation returned empty result");
             }
-            
+
             // Record privacy-preserving audit proof
             await RecordKeyUsageAsync(keyId, "SignData", $"Signed with proof: {signatureResult.AuditProof}");
 

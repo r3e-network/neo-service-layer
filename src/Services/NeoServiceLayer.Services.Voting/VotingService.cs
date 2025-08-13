@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Linq;
@@ -44,7 +44,7 @@ public class VotingService : SGXComputingServiceBase, IVotingService
     public async Task<string> CreateVotingStrategyAsync(VotingStrategyRequest request, BlockchainType blockchainType)
     {
         ValidateBlockchainType(blockchainType);
-        
+
         if (!await EnsurePermissionAsync())
         {
             throw new UnauthorizedAccessException("Insufficient permissions to create voting strategy");
@@ -53,9 +53,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
         try
         {
             Logger.LogInformation("Creating voting strategy for owner {OwnerAddress}", request.OwnerAddress);
-            
+
             var strategyId = Guid.NewGuid().ToString();
-            
+
             // Use SGX for secure strategy creation and storage
             var jsCode = @"
                 function createVotingStrategy(params) {
@@ -76,7 +76,7 @@ public class VotingService : SGXComputingServiceBase, IVotingService
                 
                 createVotingStrategy(params);
             ";
-            
+
             // Execute strategy creation in SGX enclave
             var executionContext = new SGXExecutionContext
             {
@@ -89,14 +89,14 @@ public class VotingService : SGXComputingServiceBase, IVotingService
                     ["description"] = request.Description
                 }
             };
-            
+
             var executionResult = await ExecuteSecureComputingAsync(executionContext, blockchainType);
-            
+
             if (!executionResult.Success)
             {
                 throw new InvalidOperationException($"Failed to create strategy in SGX: {executionResult.ErrorMessage}");
             }
-            
+
             // Store strategy data securely in SGX
             var strategyData = JsonSerializer.SerializeToUtf8Bytes(new
             {
@@ -106,7 +106,7 @@ public class VotingService : SGXComputingServiceBase, IVotingService
                 description = request.Description,
                 createdAt = DateTime.UtcNow
             });
-            
+
             var storageContext = new SGXStorageContext
             {
                 Key = $"strategy:{strategyId}",
@@ -118,14 +118,14 @@ public class VotingService : SGXComputingServiceBase, IVotingService
                     ["type"] = "voting_strategy"
                 }
             };
-            
+
             var storageResult = await StoreSecureDataAsync(storageContext, blockchainType);
-            
+
             if (!storageResult.Success)
             {
                 throw new InvalidOperationException($"Failed to store strategy in SGX: {storageResult.ErrorMessage}");
             }
-            
+
             Logger.LogInformation("Created voting strategy {StrategyId} with SGX storage", strategyId);
             return strategyId;
         }
@@ -141,7 +141,7 @@ public class VotingService : SGXComputingServiceBase, IVotingService
     public async Task<VotingResult> ExecuteVotingAsync(string strategyId, string voterAddress, ExecutionOptions options, BlockchainType blockchainType)
     {
         ValidateBlockchainType(blockchainType);
-        
+
         // Check permission with context substitution
         var context = new Dictionary<string, object>
         {
@@ -157,11 +157,11 @@ public class VotingService : SGXComputingServiceBase, IVotingService
         return await ExecuteWithPermissionAsync(
             async () =>
             {
-                Logger.LogInformation("Executing voting strategy {StrategyId} for voter {VoterAddress} with SGX privacy", 
+                Logger.LogInformation("Executing voting strategy {StrategyId} for voter {VoterAddress} with SGX privacy",
                     strategyId, voterAddress);
 
                 var executionId = Guid.NewGuid().ToString();
-                
+
                 // Execute privacy-preserving voting computation in SGX
                 var computationContext = new SGXComputationContext
                 {
@@ -194,13 +194,13 @@ public class VotingService : SGXComputingServiceBase, IVotingService
                     PrivacyLevel = SGXPrivacyLevel.High,
                     MaxComputationTimeMs = 30000
                 };
-                
+
                 var computationResult = await ExecutePrivacyComputationAsync(computationContext, blockchainType);
-                
+
                 if (!computationResult.Success)
                 {
-                    return new VotingResult 
-                    { 
+                    return new VotingResult
+                    {
                         Status = VotingStatus.Failed,
                         ExecutionId = executionId,
                         StrategyId = strategyId,
@@ -236,10 +236,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting voting result for execution {ExecutionId}", executionId);
-                
+
                 // Implementation would retrieve the result
                 await Task.Delay(50); // Simulate async operation
-                
+
                 return new VotingResult
                 {
                     ExecutionId = executionId,
@@ -262,10 +262,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting voting strategies for owner {OwnerAddress}", ownerAddress);
-                
+
                 // Implementation would retrieve strategies
                 await Task.Delay(100);
-                
+
                 return new List<VotingStrategy>();
             },
             $"voting:strategies:owner:{ownerAddress}",
@@ -283,10 +283,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogInformation("Updating voting strategy {StrategyId}", strategyId);
-                
+
                 // Implementation would update the strategy
                 await Task.Delay(100);
-                
+
                 return true;
             },
             $"voting:strategies:{strategyId}",
@@ -303,10 +303,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogInformation("Deleting voting strategy {StrategyId}", strategyId);
-                
+
                 // Implementation would delete the strategy
                 await Task.Delay(100);
-                
+
                 return true;
             },
             $"voting:strategies:{strategyId}",
@@ -375,14 +375,14 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             var batchResult = await ExecuteBatchOperationsAsync(batchContext, blockchainType);
 
             var results = new List<VotingResult>();
-            
+
             if (batchResult.Success)
             {
                 for (int i = 0; i < requests.Count; i++)
                 {
                     var opResult = batchResult.OperationResults[i];
                     var request = requests[i];
-                    
+
                     results.Add(new VotingResult
                     {
                         ExecutionId = opResult.Result?.ToString() ?? Guid.NewGuid().ToString(),
@@ -428,10 +428,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting council nodes for {BlockchainType}", blockchainType);
-                
+
                 // Implementation would retrieve council nodes
                 await Task.Delay(200);
-                
+
                 return new List<CouncilNodeInfo>();
             },
             "voting:nodes:*",
@@ -449,10 +449,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Analyzing node behavior for {NodeAddress} over {Period}", nodeAddress, period);
-                
+
                 // Implementation would analyze node behavior
                 await Task.Delay(300);
-                
+
                 return new NodeBehaviorAnalysis
                 {
                     NodeAddress = nodeAddress,
@@ -472,10 +472,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
         ValidateBlockchainType(blockchainType);
 
         Logger.LogDebug("Getting network health for {BlockchainType}", blockchainType);
-        
+
         // Implementation would get network health
         await Task.Delay(150);
-        
+
         return new NetworkHealthMetrics
         {
             BlockchainType = blockchainType,
@@ -494,10 +494,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogInformation("Updating metrics for node {NodeAddress}", nodeAddress);
-                
+
                 // Implementation would update node metrics
                 await Task.Delay(100);
-                
+
                 return true;
             },
             $"voting:nodes:{nodeAddress}",
@@ -518,10 +518,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting ML-based voting recommendation");
-                
+
                 // Implementation would use ML to generate recommendations
                 await Task.Delay(500); // ML operations take longer
-                
+
                 return new VotingRecommendation
                 {
                     RecommendationType = RecommendationType.MachineLearning,
@@ -544,10 +544,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting risk-adjusted voting recommendation");
-                
+
                 // Implementation would calculate risk-adjusted recommendations
                 await Task.Delay(300);
-                
+
                 return new VotingRecommendation
                 {
                     RecommendationType = RecommendationType.RiskAdjusted,
@@ -570,9 +570,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting diversification-focused voting recommendation");
-                
+
                 await Task.Delay(250);
-                
+
                 return new VotingRecommendation
                 {
                     RecommendationType = RecommendationType.Diversification,
@@ -595,9 +595,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting performance-based voting recommendation");
-                
+
                 await Task.Delay(200);
-                
+
                 return new VotingRecommendation
                 {
                     RecommendationType = RecommendationType.Performance,
@@ -624,12 +624,12 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogInformation("Scheduling voting execution for strategy {StrategyId}", strategyId);
-                
+
                 var id = Guid.NewGuid().ToString();
-                
+
                 // Implementation would schedule the execution
                 await Task.Delay(100);
-                
+
                 return id;
             },
             $"voting:strategies:{strategyId}:scheduling",
@@ -649,10 +649,10 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogInformation("Canceling scheduled execution {ScheduleId}", scheduleId);
-                
+
                 // Implementation would cancel the scheduled execution
                 await Task.Delay(50);
-                
+
                 return true;
             },
             $"voting:scheduling:{scheduleId}",
@@ -669,9 +669,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting scheduled executions for strategy {StrategyId}", strategyId);
-                
+
                 await Task.Delay(100);
-                
+
                 return new List<ScheduledExecution>();
             },
             $"voting:strategies:{strategyId}:scheduling",
@@ -693,9 +693,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting performance analytics for strategy {StrategyId}", strategyId);
-                
+
                 await Task.Delay(200);
-                
+
                 return new StrategyPerformanceAnalytics
                 {
                     StrategyId = strategyId,
@@ -718,9 +718,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Assessing risk for strategy {StrategyId}", strategyId);
-                
+
                 await Task.Delay(300);
-                
+
                 return new RiskAssessment
                 {
                     StrategyId = strategyId,
@@ -743,9 +743,9 @@ public class VotingService : SGXComputingServiceBase, IVotingService
             async () =>
             {
                 Logger.LogDebug("Getting active voting alerts for {BlockchainType}", blockchainType);
-                
+
                 await Task.Delay(100);
-                
+
                 return new List<VotingAlert>();
             },
             "voting:alerts:*",
@@ -770,7 +770,7 @@ public class VotingService : SGXComputingServiceBase, IVotingService
         {
             // Additional voting service initialization
             await Task.CompletedTask;
-            
+
             Logger.LogInformation("Voting Service initialized successfully");
             return true;
         }

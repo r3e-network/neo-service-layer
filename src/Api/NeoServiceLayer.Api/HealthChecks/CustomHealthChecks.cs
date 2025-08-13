@@ -66,9 +66,9 @@ public class DatabaseHealthCheck : IHealthCheck
         try
         {
             // SECURITY: Connection string should come from environment variable in production
-            var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING") 
+            var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
                 ?? _configuration.GetConnectionString("DefaultConnection");
-            
+
             if (string.IsNullOrEmpty(connectionString))
             {
                 return HealthCheckResult.Unhealthy("Database connection string not configured. Set DATABASE_CONNECTION_STRING environment variable.");
@@ -119,9 +119,9 @@ public class RedisHealthCheck : IHealthCheck
         try
         {
             // SECURITY: Redis connection string should come from environment variable in production
-            var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") 
+            var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
                 ?? _configuration.GetConnectionString("Redis");
-            
+
             if (string.IsNullOrEmpty(connectionString))
             {
                 return HealthCheckResult.Degraded("Redis connection string not configured");

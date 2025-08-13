@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
@@ -49,14 +49,14 @@ public enum AstNodeType
     Using,
     Namespace,
     Contract,
-    
+
     // Declarations
     Field,
     Property,
     Method,
     Event,
     Constructor,
-    
+
     // Statements
     Block,
     ExpressionStatement,
@@ -70,7 +70,7 @@ public enum AstNodeType
     BreakStatement,
     ContinueStatement,
     VariableDeclaration,
-    
+
     // Expressions
     BinaryExpression,
     UnaryExpression,
@@ -83,17 +83,17 @@ public enum AstNodeType
     Identifier,
     This,
     New,
-    
+
     // Types
     PrimitiveType,
     ArrayType,
     GenericType,
     UserDefinedType,
-    
+
     // Attributes
     Attribute,
     AttributeArgument,
-    
+
     // Other
     Parameter,
     Argument,
@@ -266,15 +266,15 @@ public class FieldNode : AstNode
     public bool IsConst { get; set; }
 
     public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitField(this);
-    public override IAstNode Clone() => new FieldNode 
-    { 
-        Name = Name, 
-        Type = (TypeNode)Type.Clone(), 
+    public override IAstNode Clone() => new FieldNode
+    {
+        Name = Name,
+        Type = (TypeNode)Type.Clone(),
         AccessModifier = AccessModifier,
         IsStatic = IsStatic,
         IsReadOnly = IsReadOnly,
         IsConst = IsConst,
-        Location = Location 
+        Location = Location
     };
 }
 
@@ -297,9 +297,9 @@ public class MethodNode : AstNode
     public List<AttributeNode> Attributes { get; } = new();
 
     public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitMethod(this);
-    public override IAstNode Clone() => new MethodNode 
-    { 
-        Name = Name, 
+    public override IAstNode Clone() => new MethodNode
+    {
+        Name = Name,
         ReturnType = (TypeNode)ReturnType.Clone(),
         AccessModifier = AccessModifier,
         IsStatic = IsStatic,
@@ -307,7 +307,7 @@ public class MethodNode : AstNode
         IsVirtual = IsVirtual,
         IsOverride = IsOverride,
         IsSafe = IsSafe,
-        Location = Location 
+        Location = Location
     };
 }
 

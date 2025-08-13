@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NeoServiceLayer.Core.Events;
@@ -121,13 +121,13 @@ namespace NeoServiceLayer.Core.Aggregates
             {
                 ApplyEvent(domainEvent);
                 Version = domainEvent.AggregateVersion;
-                
+
                 if (!CreatedAt.Equals(default(DateTime)))
                 {
                     CreatedAt = domainEvent.OccurredAt;
                     CreatedBy = domainEvent.InitiatedBy;
                 }
-                
+
                 LastModifiedAt = domainEvent.OccurredAt;
                 LastModifiedBy = domainEvent.InitiatedBy;
             }

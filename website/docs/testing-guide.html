@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Testing Guide | Neo Service Layer Documentation</title>
+    <meta name="description" content="Comprehensive testing guide for Neo Service Layer including chaos engineering, service health monitoring, transaction testing, and coverage analysis.">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="../assets/css/variables.css">
+    <link rel="stylesheet" href="../assets/css/reset.css">
+    <link rel="stylesheet" href="../assets/css/base.css">
+    <link rel="stylesheet" href="../assets/css/components.css">
+    <link rel="stylesheet" href="../assets/css/animations.css">
+    <link rel="stylesheet" href="../assets/css/utilities.css">
+    <link rel="stylesheet" href="../assets/css/main.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/themes/prism-tomorrow.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <a href="/" class="navbar-brand">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 40 40" class="brand-icon">
+                            <path d="M20,2 L35,10 L35,30 L20,38 L5,30 L5,10 Z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.8"/>
+                        </svg>
+                        <span class="brand-text">Neo Service Layer</span>
+                    </div>
+                </a>
+
+                <div class="navbar-menu" id="navbarMenu">
+                    <a href="/" class="navbar-link">Home</a>
+                    <a href="/services.html" class="navbar-link">Services</a>
+                    <a href="/testing.html" class="navbar-link">Testing</a>
+                    <a href="/docs" class="navbar-link active">Documentation</a>
+                    <a href="/contact.html" class="navbar-link">Contact</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Documentation Header -->
+    <section class="doc-header">
+        <div class="container">
+            <h1>Testing Guide</h1>
+            <p>Comprehensive testing strategies for Neo Service Layer applications</p>
+        </div>
+    </section>
+
+    <!-- Documentation Content -->
+    <div class="doc-container">
+        <div class="container">
+            <div class="doc-layout">
+                <!-- Sidebar -->
+                <aside class="doc-sidebar">
+                    <nav class="doc-nav">
+                        <h3>Testing Guide</h3>
+                        <ul>
+                            <li><a href="#overview">Overview</a></li>
+                            <li><a href="#chaos-engineering">Chaos Engineering</a></li>
+                            <li><a href="#service-health">Service Health Testing</a></li>
+                            <li><a href="#transaction-testing">Transaction Testing</a></li>
+                            <li><a href="#coverage-analysis">Coverage Analysis</a></li>
+                            <li><a href="#test-scenarios">Test Scenarios</a></li>
+                            <li><a href="#best-practices">Best Practices</a></li>
+                        </ul>
+                    </nav>
+                </aside>
+
+                <!-- Main Content -->
+                <main class="doc-content">
+                    <!-- Overview -->
+                    <section id="overview" class="doc-section">
+                        <h2>Overview</h2>
+                        <p>Neo Service Layer provides a comprehensive testing framework designed to ensure reliability, security, and performance across your distributed blockchain applications.</p>
+                        
+                        <div class="feature-grid">
+                            <div class="feature-card">
+                                <i class="fas fa-bolt"></i>
+                                <h3>Chaos Engineering</h3>
+                                <p>7 failure injection strategies for resilience testing</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-heartbeat"></i>
+                                <h3>Health Monitoring</h3>
+                                <p>8-point health check system with dependency validation</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-exchange-alt"></i>
+                                <h3>Transaction Testing</h3>
+                                <p>Distributed transaction validation with 2PC and SAGA patterns</p>
+                            </div>
+                            <div class="feature-card">
+                                <i class="fas fa-chart-pie"></i>
+                                <h3>Coverage Analysis</h3>
+                                <p>Automated coverage tracking with gap detection</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Chaos Engineering -->
+                    <section id="chaos-engineering" class="doc-section">
+                        <h2>Chaos Engineering Framework</h2>
+                        <p>Build resilience through controlled failure injection and recovery testing.</p>
+
+                        <h3>Available Chaos Strategies</h3>
+                        <pre><code class="language-csharp">// 1. Network Partitioning
+await chaosFramework.SimulateNetworkPartitionAsync(
+    partition1: new[] { "Node1", "Node2" },
+    partition2: new[] { "Node3", "Node4", "Node5" },
+    duration: TimeSpan.FromSeconds(30)
+);
+
+// 2. Service Instance Failures
+await chaosFramework.KillServiceInstancesAsync(
+    serviceName: "BlockchainService",
+    instancesToKill: 2,
+    allowAutoRestart: true
+);
+
+// 3. Network Latency Injection
+await chaosFramework.InjectNetworkLatencyAsync(
+    serviceName: "DatabaseService",
+    latency: TimeSpan.FromMilliseconds(500),
+    affectedPercentage: 0.3
+);
+
+// 4. CPU Stress Testing
+await chaosFramework.InjectCpuStressAsync(
+    serviceName: "SmartContractsService",
+    cpuPercentage: 80,
+    duration: TimeSpan.FromMinutes(2)
+);
+
+// 5. Memory Pressure
+await chaosFramework.InjectMemoryPressureAsync(
+    serviceName: "EnclaveStorageService",
+    memoryMB: 1024,
+    duration: TimeSpan.FromMinutes(2)
+);
+
+// 6. Disk I/O Stress
+await chaosFramework.InjectDiskIoStressAsync(
+    serviceName: "CacheService",
+    ioPercentage: 90,
+    duration: TimeSpan.FromMinutes(1)
+);
+
+// 7. Cascading Failures
+await chaosFramework.SimulateCascadingFailureAsync(
+    rootService: "DatabaseService",
+    dependentServices: new[] { "CacheService", "ApiGateway" },
+    cascadeDelay: TimeSpan.FromSeconds(5)
+);</code></pre>
+
+                        <h3>6-Phase Chaos Testing Process</h3>
+                        <ol>
+                            <li><strong>Baseline Measurement</strong> - Establish normal performance metrics</li>
+                            <li><strong>Failure Injection</strong> - Apply controlled chaos strategies</li>
+                            <li><strong>Behavior Monitoring</strong> - Track system response and degradation</li>
+                            <li><strong>Resilience Testing</strong> - Validate fault tolerance mechanisms</li>
+                            <li><strong>Recovery Measurement</strong> - Assess recovery time and completeness</li>
+                            <li><strong>Validation</strong> - Verify system state and data integrity</li>
+                        </ol>
+                    </section>
+
+                    <!-- Service Health Testing -->
+                    <section id="service-health" class="doc-section">
+                        <h2>Service Health Testing</h2>
+                        <p>Comprehensive health monitoring and dependency validation for all services.</p>
+
+                        <h3>8-Point Health Check System</h3>
+                        <pre><code class="language-csharp">public async Task&lt;ServiceHealthCheckResult&gt; CheckServiceHealthAsync(string serviceName)
+{
+    var result = new ServiceHealthCheckResult();
+    
+    // 1. Basic Connectivity Check
+    result.ConnectivityCheck = await TestConnectivityAsync(serviceName);
+    
+    // 2. Liveness Check
+    result.LivenessCheck = await TestLivenessAsync(serviceName);
+    
+    // 3. Readiness Check
+    result.ReadinessCheck = await TestReadinessAsync(serviceName);
+    
+    // 4. Resource Availability Check
+    result.ResourceCheck = await TestResourcesAsync(serviceName);
+    
+    // 5. Performance Check
+    result.PerformanceCheck = await TestPerformanceAsync(serviceName);
+    
+    // 6. Database Connectivity Check
+    result.DatabaseCheck = await TestDatabaseAsync(serviceName);
+    
+    // 7. External Dependencies Check
+    result.DependenciesCheck = await TestDependenciesAsync(serviceName);
+    
+    // 8. Configuration Validation
+    result.ConfigurationCheck = await ValidateConfigurationAsync(serviceName);
+    
+    return result;
+}</code></pre>
+
+                        <h3>Dependency Testing</h3>
+                        <pre><code class="language-csharp">// Test service dependencies
+var dependencyResult = await healthFramework.TestServiceDependenciesAsync(
+    serviceName: "BlockchainService",
+    checkCircularDependencies: true,
+    validateVersions: true
+);
+
+// Monitor service health over time
+var monitoringResult = await healthFramework.MonitorServiceHealthAsync(
+    serviceName: "AuthenticationService",
+    duration: TimeSpan.FromMinutes(5),
+    checkInterval: TimeSpan.FromSeconds(10)
+);</code></pre>
+                    </section>
+
+                    <!-- Transaction Testing -->
+                    <section id="transaction-testing" class="doc-section">
+                        <h2>Cross-Service Transaction Testing</h2>
+                        <p>Validate distributed transactions across multiple services with different patterns.</p>
+
+                        <h3>Two-Phase Commit Testing</h3>
+                        <pre><code class="language-csharp">var twoPhaseScenario = new TwoPhaseCommitScenario
+{
+    Name = "Multi-Service Transaction",
+    Participants = new List&lt;string&gt; 
+    { 
+        "BlockchainService", 
+        "EnclaveStorageService", 
+        "DatabaseService" 
+    },
+    TestCoordinatorFailure = true,
+    TestParticipantFailure = true
+};
+
+var result = await transactionFramework.TestTwoPhaseCommitAsync(twoPhaseScenario);</code></pre>
+
+                        <h3>SAGA Pattern Testing</h3>
+                        <pre><code class="language-csharp">var sagaScenario = new SagaScenario
+{
+    Name = "Cross-Chain Asset Transfer",
+    Steps = new List&lt;SagaStep&gt;
+    {
+        new SagaStep
+        {
+            Name = "Lock Source Assets",
+            Service = "BlockchainService",
+            Operation = "LockAssets",
+            Compensation = new CompensationDefinition
+            {
+                Operation = "UnlockAssets"
+            }
+        },
+        new SagaStep
+        {
+            Name = "Verify Cross-Chain",
+            Service = "CrossChainService",
+            Operation = "VerifyTransfer",
+            Compensation = new CompensationDefinition
+            {
+                Operation = "CancelVerification"
+            }
+        },
+        new SagaStep
+        {
+            Name = "Mint Target Assets",
+            Service = "SmartContractsService",
+            Operation = "MintAssets",
+            Compensation = new CompensationDefinition
+            {
+                Operation = "BurnAssets"
+            }
+        }
+    },
+    TestIdempotency = true,
+    TestEventualConsistency = true
+};
+
+var result = await transactionFramework.TestSagaPatternAsync(sagaScenario);</code></pre>
+
+                        <h3>Isolation Level Testing</h3>
+                        <pre><code class="language-csharp">var isolationScenario = new IsolationLevelScenario
+{
+    Name = "Serializable Isolation Test",
+    IsolationLevel = IsolationLevel.Serializable,
+    TestDirtyReads = true,
+    TestPhantomReads = true,
+    TestDeadlocks = true
+};
+
+var result = await transactionFramework.TestTransactionIsolationAsync(isolationScenario);</code></pre>
+                    </section>
+
+                    <!-- Coverage Analysis -->
+                    <section id="coverage-analysis" class="doc-section">
+                        <h2>Test Coverage Analysis</h2>
+                        <p>Automated coverage tracking with intelligent recommendations for test improvements.</p>
+
+                        <h3>Coverage Analysis Usage</h3>
+                        <pre><code class="language-csharp">// Analyze test coverage
+var coverageAnalysis = await coverageAnalyzer.AnalyzeCoverageAsync(
+    "/path/to/coverage/report.xml"
+);
+
+// Generate gap report
+var gapReport = coverageAnalyzer.GenerateCoverageGapReport(coverageAnalysis);
+
+// Identify untested files
+var untestedFiles = await coverageAnalyzer.IdentifyUntestedFilesAsync();
+
+// Check coverage metrics
+Console.WriteLine($"Line Coverage: {coverageAnalysis.OverallCoverage.LineCoverage}%");
+Console.WriteLine($"Branch Coverage: {coverageAnalysis.OverallCoverage.BranchCoverage}%");
+Console.WriteLine($"Method Coverage: {coverageAnalysis.OverallCoverage.MethodCoverage}%");
+
+// Get recommendations
+foreach (var recommendation in coverageAnalysis.Recommendations)
+{
+    Console.WriteLine($"Priority {recommendation.Priority}: {recommendation.Message}");
+}</code></pre>
+
+                        <h3>Coverage Thresholds</h3>
+                        <table class="doc-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th>Critical</th>
+                                    <th>Target</th>
+                                    <th>Ideal</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td>Line Coverage</td>
+                                    <td>60%</td>
+                                    <td>80%</td>
+                                    <td>90%</td>
+                                </tr>
+                                <tr>
+                                    <td>Branch Coverage</td>
+                                    <td>50%</td>
+                                    <td>70%</td>
+                                    <td>85%</td>
+                                </tr>
+                                <tr>
+                                    <td>Method Coverage</td>
+                                    <td>70%</td>
+                                    <td>85%</td>
+                                    <td>95%</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </section>
+
+                    <!-- Test Scenarios -->
+                    <section id="test-scenarios" class="doc-section">
+                        <h2>Comprehensive Test Scenarios</h2>
+                        <p>Pre-built test scenarios covering critical platform operations.</p>
+
+                        <h3>Available Test Scenarios</h3>
+                        <div class="scenario-list">
+                            <div class="scenario-item">
+                                <h4>Scenario 01: Blockchain Transaction Flow</h4>
+                                <p>Complete end-to-end blockchain transaction with failure recovery</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario01_CompleteBlockchainTransactionFlow_WithFailureRecovery();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 02: Distributed Consensus</h4>
+                                <p>Testing consensus under network partition conditions</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario02_DistributedConsensusUnderPartition();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 03: Security Attack Simulation</h4>
+                                <p>Comprehensive security testing with multiple attack vectors</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario03_EnclaveSecurityWithAttackSimulation();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 04: SAGA Pattern Testing</h4>
+                                <p>Multi-service SAGA with compensation mechanisms</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario04_MultiServiceSagaWithCompensation();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 05: High Load Performance</h4>
+                                <p>Performance testing under extreme load conditions</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario05_HighLoadPerformanceWithDegradation();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 06: Service Health Monitoring</h4>
+                                <p>Continuous health monitoring with auto-recovery</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario06_ServiceHealthMonitoringWithAutoRecovery();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 07: Transaction Isolation</h4>
+                                <p>Isolation level testing with deadlock prevention</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario07_TransactionIsolationAndDeadlockPrevention();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 08: Cascading Failure</h4>
+                                <p>Cascading failure containment with circuit breakers</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario08_CascadingFailureContainment();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 09: Coverage Validation</h4>
+                                <p>Test coverage analysis and gap identification</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario09_TestCoverageValidation();</code></pre>
+                            </div>
+
+                            <div class="scenario-item">
+                                <h4>Scenario 10: Disaster Recovery</h4>
+                                <p>Complete system recovery from catastrophic failure</p>
+                                <pre><code class="language-csharp">await TestScenarios.Scenario10_EndToEndDisasterRecovery();</code></pre>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Best Practices -->
+                    <section id="best-practices" class="doc-section">
+                        <h2>Testing Best Practices</h2>
+                        
+                        <h3>Test Organization</h3>
+                        <ul>
+                            <li>Organize tests by feature and service boundaries</li>
+                            <li>Use descriptive test names that explain the scenario</li>
+                            <li>Group related tests using test fixtures</li>
+                            <li>Maintain separate test data factories for each domain</li>
+                        </ul>
+
+                        <h3>Performance Testing</h3>
+                        <ul>
+                            <li>Always establish baseline metrics before testing</li>
+                            <li>Test under realistic load conditions</li>
+                            <li>Monitor resource utilization during tests</li>
+                            <li>Implement gradual load increase patterns</li>
+                        </ul>
+
+                        <h3>Chaos Testing</h3>
+                        <ul>
+                            <li>Start with small, controlled failures</li>
+                            <li>Monitor system behavior during chaos injection</li>
+                            <li>Ensure proper cleanup after chaos tests</li>
+                            <li>Document failure scenarios and recovery patterns</li>
+                        </ul>
+
+                        <h3>Coverage Goals</h3>
+                        <ul>
+                            <li>Aim for 80% line coverage as minimum</li>
+                            <li>Focus on critical paths and error handling</li>
+                            <li>Test edge cases and boundary conditions</li>
+                            <li>Regularly review and update test coverage</li>
+                        </ul>
+
+                        <h3>Continuous Testing</h3>
+                        <ul>
+                            <li>Integrate tests into CI/CD pipeline</li>
+                            <li>Run smoke tests on every commit</li>
+                            <li>Execute full test suite on pull requests</li>
+                            <li>Schedule chaos testing in staging environments</li>
+                        </ul>
+                    </section>
+
+                    <!-- Next Steps -->
+                    <div class="next-steps">
+                        <h2>Next Steps</h2>
+                        <div class="next-steps-grid">
+                            <a href="/docs/quick-start.html" class="next-step-card">
+                                <i class="fas fa-rocket"></i>
+                                <h3>Quick Start</h3>
+                                <p>Get started with Neo Service Layer</p>
+                            </a>
+                            <a href="/docs/api-reference.html" class="next-step-card">
+                                <i class="fas fa-code"></i>
+                                <h3>API Reference</h3>
+                                <p>Explore the complete API documentation</p>
+                            </a>
+                            <a href="/contact.html" class="next-step-card">
+                                <i class="fas fa-headset"></i>
+                                <h3>Get Support</h3>
+                                <p>Contact our technical support team</p>
+                            </a>
+                        </div>
+                    </div>
+                </main>
+            </div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/prism.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.29.0/components/prism-csharp.min.js"></script>
+    <script src="../assets/js/main.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+    </script>
+</body>
+</html>

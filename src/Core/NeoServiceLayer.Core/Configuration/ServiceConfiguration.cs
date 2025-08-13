@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
@@ -26,7 +26,7 @@ public class ServiceConfiguration : IServiceConfiguration
     private readonly object _lockObject = new();
 
     public ServiceConfiguration(
-        IConfiguration configuration, 
+        IConfiguration configuration,
         ILogger<ServiceConfiguration> logger,
         ISecretsManager? secretsManager = null)
     {
@@ -65,7 +65,7 @@ public class ServiceConfiguration : IServiceConfiguration
 
                 // Get from configuration
                 var value = _configuration.GetValue<T>(key, defaultValue);
-                
+
                 // Cache non-sensitive values
                 if (!IsSensitiveKey(key))
                 {
@@ -188,7 +188,7 @@ public class ServiceConfiguration : IServiceConfiguration
             {
                 // Clear cache to force reload from sources
                 _cachedValues.Clear();
-                
+
                 // Reload configuration if supported
                 if (_configuration is IConfigurationRoot root)
                 {
@@ -222,8 +222,8 @@ public class ServiceConfiguration : IServiceConfiguration
 
         try
         {
-            IConfiguration section = string.IsNullOrWhiteSpace(sectionKey) 
-                ? _configuration 
+            IConfiguration section = string.IsNullOrWhiteSpace(sectionKey)
+                ? _configuration
                 : _configuration.GetSection(sectionKey);
 
             foreach (var child in section.GetChildren())
@@ -275,31 +275,31 @@ public class ServiceConfiguration : IServiceConfiguration
         try
         {
             var targetType = typeof(T);
-            
+
             if (targetType == typeof(string))
                 return (T)(object)value;
-            
+
             if (targetType == typeof(bool) || targetType == typeof(bool?))
                 return (T)(object)bool.Parse(value);
-            
+
             if (targetType == typeof(int) || targetType == typeof(int?))
                 return (T)(object)int.Parse(value);
-            
+
             if (targetType == typeof(long) || targetType == typeof(long?))
                 return (T)(object)long.Parse(value);
-            
+
             if (targetType == typeof(double) || targetType == typeof(double?))
                 return (T)(object)double.Parse(value);
-            
+
             if (targetType == typeof(decimal) || targetType == typeof(decimal?))
                 return (T)(object)decimal.Parse(value);
-            
+
             if (targetType == typeof(DateTime) || targetType == typeof(DateTime?))
                 return (T)(object)DateTime.Parse(value);
-            
+
             if (targetType == typeof(TimeSpan) || targetType == typeof(TimeSpan?))
                 return (T)(object)TimeSpan.Parse(value);
-            
+
             if (targetType == typeof(Guid) || targetType == typeof(Guid?))
                 return (T)(object)Guid.Parse(value);
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -16,9 +16,9 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         private Dictionary<string, BaselineStatistics> _baselines;
 
         public AnomalyPatternAnalyzer(
-            ILogger<AnomalyPatternAnalyzer> logger, 
+            ILogger<AnomalyPatternAnalyzer> logger,
             double anomalyThreshold = 3.0,
-            int baselineWindowSize = 100) 
+            int baselineWindowSize = 100)
             : base(logger)
         {
             _anomalyThreshold = anomalyThreshold;
@@ -35,18 +35,18 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             _logger.LogDebug("Analyzing for anomalies in {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
-            
+
             // Calculate baseline statistics
             var baseline = CalculateBaseline(request.Data);
-            
+
             // Detect statistical anomalies
             var statisticalAnomalies = DetectStatisticalAnomalies(request.Data, baseline);
             patterns.AddRange(statisticalAnomalies);
-            
+
             // Detect outliers using IQR method
             var outliers = DetectOutliers(request.Data);
             patterns.AddRange(outliers);
-            
+
             // Detect sudden changes
             var suddenChanges = DetectSuddenChanges(request.Data);
             patterns.AddRange(suddenChanges);
@@ -105,12 +105,12 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             var mean = data.Average();
             var variance = data.Select(x => Math.Pow(x - mean, 2)).Average();
             var stdDev = Math.Sqrt(variance);
-            
+
             // Calculate percentiles for IQR
             var sorted = data.OrderBy(x => x).ToArray();
             var q1Index = (int)(sorted.Length * 0.25);
             var q3Index = (int)(sorted.Length * 0.75);
-            
+
             return new BaselineStatistics
             {
                 Mean = mean,
@@ -126,15 +126,15 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         private List<DetectedPattern> DetectStatisticalAnomalies(double[] data, BaselineStatistics baseline)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             for (int i = 0; i < data.Length; i++)
             {
                 var zScore = Math.Abs((data[i] - baseline.Mean) / baseline.StandardDeviation);
-                
+
                 if (zScore > _anomalyThreshold)
                 {
                     var confidence = Math.Min(0.99, 0.7 + (zScore - _anomalyThreshold) * 0.1);
-                    
+
                     patterns.Add(new DetectedPattern
                     {
                         Type = PatternType.Anomaly,
@@ -152,7 +152,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     });
                 }
             }
-            
+
             return patterns;
         }
 
@@ -160,10 +160,10 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             var patterns = new List<DetectedPattern>();
             var baseline = CalculateBaseline(data);
-            
+
             var lowerBound = baseline.Q1 - 1.5 * baseline.IQR;
             var upperBound = baseline.Q3 + 1.5 * baseline.IQR;
-            
+
             for (int i = 0; i < data.Length; i++)
             {
                 if (data[i] < lowerBound || data[i] > upperBound)
@@ -172,9 +172,9 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                         Math.Abs(data[i] - lowerBound),
                         Math.Abs(data[i] - upperBound)
                     );
-                    
+
                     var confidence = Math.Min(0.95, 0.75 + deviation / (baseline.IQR * 2) * 0.2);
-                    
+
                     patterns.Add(new DetectedPattern
                     {
                         Type = PatternType.Anomaly,
@@ -192,34 +192,34 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     });
                 }
             }
-            
+
             return patterns;
         }
 
         private List<DetectedPattern> DetectSuddenChanges(double[] data)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             if (data.Length < 3)
                 return patterns;
-            
+
             // Calculate differences between consecutive points
             var differences = new double[data.Length - 1];
             for (int i = 0; i < differences.Length; i++)
             {
                 differences[i] = Math.Abs(data[i + 1] - data[i]);
             }
-            
+
             var diffBaseline = CalculateBaseline(differences);
             var changeThreshold = diffBaseline.Mean + 2 * diffBaseline.StandardDeviation;
-            
+
             for (int i = 0; i < differences.Length; i++)
             {
                 if (differences[i] > changeThreshold)
                 {
                     var magnitude = differences[i] / changeThreshold;
                     var confidence = Math.Min(0.9, 0.6 + magnitude * 0.15);
-                    
+
                     patterns.Add(new DetectedPattern
                     {
                         Type = PatternType.Anomaly,
@@ -237,7 +237,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     });
                 }
             }
-            
+
             return patterns;
         }
 

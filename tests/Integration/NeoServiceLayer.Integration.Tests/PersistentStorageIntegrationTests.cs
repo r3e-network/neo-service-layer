@@ -281,13 +281,13 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Arrange
         var configService = _serviceProvider.GetRequiredService<IConfigurationService>();
         await configService.InitializeAsync();
-        
+
         // Initialize enclave if the service supports it
         if (configService is IEnclaveService enclaveService)
         {
             await enclaveService.InitializeEnclaveAsync();
         }
-        
+
         await configService.StartAsync();
 
         var originalSettings = new Dictionary<string, string>

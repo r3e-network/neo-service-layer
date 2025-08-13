@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Lexer;
 
@@ -244,16 +244,16 @@ public static class TokenTypeExtensions
             TokenType.Identifier => TokenClassification.Identifier,
             TokenType.Comment => TokenClassification.Comment,
             TokenType.Unknown => TokenClassification.Error,
-            
+
             // Keywords
             TokenType t when IsKeyword(t) => TokenClassification.Keyword,
-            
+
             // Operators
             TokenType t when IsOperator(t) => TokenClassification.Operator,
-            
+
             // Delimiters
             TokenType t when IsDelimiter(t) => TokenClassification.Delimiter,
-            
+
             _ => TokenClassification.Identifier
         };
     }

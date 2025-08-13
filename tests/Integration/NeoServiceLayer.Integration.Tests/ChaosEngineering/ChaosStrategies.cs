@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
+using System.Diagnostics;
+using System.IO;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using System.Diagnostics;
-using System.Net;
-using System.IO;
 
 namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 {
@@ -26,7 +26,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 
         public abstract Task ApplyAsync(string target, Dictionary<string, object> configuration);
         public abstract Task RemoveAsync(string target);
-        
+
         protected string GenerateFailureId() => Guid.NewGuid().ToString();
     }
 
@@ -136,7 +136,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         {
             // Simulate killing service instances
             await Task.Delay(100);
-            
+
             if (!allowRestart)
             {
                 _activeFailures[target] = new { killed = true, instances };
@@ -211,7 +211,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                 {
                     if (cancellationToken.IsCancellationRequested)
                         break;
-                    
+
                     // Perform calculation to consume CPU
                     var result = Math.Sqrt(i) * Math.Sin(i);
                 }
@@ -250,7 +250,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             for (int i = 0; i < chunks; i++)
             {
                 allocations.Add(new byte[chunkSize]);
-                
+
                 // Fill with data to ensure allocation
                 for (int j = 0; j < chunkSize; j += 1024)
                 {
@@ -272,12 +272,12 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             {
                 allocations.Clear();
                 _memoryAllocations.Remove(target);
-                
+
                 // Force garbage collection
                 GC.Collect();
                 GC.WaitForPendingFinalizers();
                 GC.Collect();
-                
+
                 _logger.LogInformation("Removed memory pressure from {Target}", target);
             }
 
@@ -396,7 +396,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         {
             // In a real implementation, this would simulate I/O errors or slowdowns
             await Task.Delay(100);
-            
+
             switch (simulation.Type)
             {
                 case "slow":
@@ -445,8 +445,8 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             var skewMinutes = (int)configuration.GetValueOrDefault("minutes", 5);
             var direction = (string)configuration.GetValueOrDefault("direction", "forward");
 
-            var skew = direction == "forward" 
-                ? TimeSpan.FromMinutes(skewMinutes) 
+            var skew = direction == "forward"
+                ? TimeSpan.FromMinutes(skewMinutes)
                 : TimeSpan.FromMinutes(-skewMinutes);
 
             _logger.LogWarning("Applying clock skew of {Skew} to {Target}", skew, target);

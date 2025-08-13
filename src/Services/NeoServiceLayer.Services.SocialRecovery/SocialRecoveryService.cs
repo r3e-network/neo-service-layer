@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text.Json;
@@ -23,14 +23,14 @@ namespace NeoServiceLayer.Services.SocialRecovery
         private readonly IBlockchainClientFactory _blockchainFactory;
         private readonly IOptions<SocialRecoveryOptions> _options;
         private readonly IPersistentStorageProvider? _persistentStorage;
-        
+
         // Thread-safe in-memory caches for performance
         private readonly ConcurrentDictionary<string, GuardianInfo> _guardians = new();
         private readonly ConcurrentDictionary<string, RecoveryRequest> _recoveryRequests = new();
         private readonly ConcurrentDictionary<string, List<TrustRelation>> _trustRelations = new();
         private readonly ConcurrentDictionary<string, List<AuthFactor>> _authFactors = new();
         private readonly ConcurrentDictionary<string, AccountRecoveryConfig> _accountConfigs = new();
-        
+
         // Service metrics
         private int _totalRecoveries;
         private int _successfulRecoveries;
@@ -59,7 +59,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             _options = options ?? throw new ArgumentNullException(nameof(options));
             _persistentStorage = persistentStorage;
             _enclaveManager = enclaveManager;
-            
+
             _totalRecoveries = 0;
             _successfulRecoveries = 0;
             _failedRecoveries = 0;
@@ -122,7 +122,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
                         Logger.LogError("Failed to create blockchain client for {Blockchain}", blockchain);
                         return false;
                     }
-                    
+
                     Logger.LogInformation("Blockchain client initialized for {Blockchain}", blockchain);
                 }
 
@@ -200,7 +200,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
                     throw new InvalidOperationException($"Guardian {address} is already enrolled");
                 }
 
-                Logger.LogInformation("Enrolling guardian {Address} with stake {Stake} on {Blockchain}", 
+                Logger.LogInformation("Enrolling guardian {Address} with stake {Stake} on {Blockchain}",
                     address, stakeAmount, blockchain);
 
                 try
@@ -254,9 +254,9 @@ namespace NeoServiceLayer.Services.SocialRecovery
                         ["EnrolledAt"] = DateTime.UtcNow
                     });
 
-                    Logger.LogInformation("Guardian {Address} enrolled successfully with reputation {Reputation}", 
+                    Logger.LogInformation("Guardian {Address} enrolled successfully with reputation {Reputation}",
                         address, guardian.ReputationScore);
-                    
+
                     return guardian;
                 }
                 catch (Exception ex)
@@ -309,7 +309,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                     // Get account recovery configuration
                     var config = await GetAccountRecoveryConfigAsync(accountAddress, blockchain);
-                    
+
                     // Validate emergency recovery eligibility
                     if (isEmergency && !config.EmergencyRecoveryEnabled)
                     {
@@ -318,14 +318,14 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                     // Generate secure recovery ID
                     var recoveryId = await GenerateSecureRecoveryIdAsync(accountAddress, newOwner);
-                    
+
                     // Determine required confirmations based on strategy and configuration
                     var requiredConfirmations = await CalculateRequiredConfirmationsAsync(config, strategyId, isEmergency);
-                    
+
                     // Calculate expiration time
-                    var timeout = isEmergency ? _options.Value.EmergencyRecoveryTimeout : 
+                    var timeout = isEmergency ? _options.Value.EmergencyRecoveryTimeout :
                                  (config.CustomTimeout ?? _options.Value.RecoveryTimeout);
-                    
+
                     var request = new RecoveryRequest
                     {
                         RecoveryId = recoveryId,
@@ -355,7 +355,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                     // Store recovery request
                     _recoveryRequests[recoveryId] = request;
-                    
+
                     // Persist to storage
                     await PersistRecoveryRequestAsync(request);
 
@@ -382,9 +382,9 @@ namespace NeoServiceLayer.Services.SocialRecovery
                     // Notify relevant guardians (async, don't wait)
                     _ = NotifyGuardiansOfRecoveryAsync(request, config.TrustedGuardians);
 
-                    Logger.LogInformation("Recovery request {RecoveryId} initiated successfully, expires at {ExpiresAt}", 
+                    Logger.LogInformation("Recovery request {RecoveryId} initiated successfully, expires at {ExpiresAt}",
                         recoveryId, request.ExpiresAt);
-                    
+
                     return request;
                 }
                 catch (Exception ex)
@@ -492,17 +492,17 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                         // Execute recovery on blockchain
                         var executionResult = await ExecuteRecoveryOnChainAsync(request, blockchain);
-                        
+
                         if (executionResult.Success)
                         {
                             request.Status = RecoveryStatus.Executed;
-                            
+
                             // Update guardian reputation (positive)
                             foreach (var confirmedGuardian in request.ConfirmedGuardians)
                             {
                                 await UpdateGuardianReputationAsync(confirmedGuardian, _options.Value.ReputationReward, blockchain);
                             }
-                            
+
                             // Update metrics
                             lock (_metricsLock)
                             {
@@ -514,14 +514,14 @@ namespace NeoServiceLayer.Services.SocialRecovery
                         else
                         {
                             request.Status = RecoveryStatus.Failed;
-                            
+
                             // Update metrics
                             lock (_metricsLock)
                             {
                                 _failedRecoveries++;
                             }
 
-                            Logger.LogError("Recovery request {RecoveryId} failed to execute on blockchain: {Error}", 
+                            Logger.LogError("Recovery request {RecoveryId} failed to execute on blockchain: {Error}",
                                 recoveryId, executionResult.ErrorMessage);
                         }
                     }
@@ -591,15 +591,15 @@ namespace NeoServiceLayer.Services.SocialRecovery
             string blockchain = "neo-n3")
         {
             ValidateAddress(accountAddress, nameof(accountAddress));
-            
+
             if (authFactors == null || !authFactors.Any())
             {
                 return false;
             }
 
-            Logger.LogInformation("Verifying MFA for account {Account} with {Count} factors", 
+            Logger.LogInformation("Verifying MFA for account {Account} with {Count} factors",
                 accountAddress, authFactors.Count);
-            
+
             try
             {
                 if (!_authFactors.TryGetValue(accountAddress, out var storedFactors))
@@ -611,8 +611,8 @@ namespace NeoServiceLayer.Services.SocialRecovery
                 // Verify each provided factor
                 foreach (var factor in authFactors)
                 {
-                    var storedFactor = storedFactors.FirstOrDefault(f => 
-                        f.FactorType == factor.FactorType && 
+                    var storedFactor = storedFactors.FirstOrDefault(f =>
+                        f.FactorType == factor.FactorType &&
                         f.FactorHash == factor.FactorHash &&
                         f.IsActive);
 
@@ -640,12 +640,12 @@ namespace NeoServiceLayer.Services.SocialRecovery
             ValidateAddress(accountAddress, nameof(accountAddress));
 
             var activeRecoveries = _recoveryRequests.Values
-                .Where(r => r.AccountAddress.Equals(accountAddress, StringComparison.OrdinalIgnoreCase) && 
+                .Where(r => r.AccountAddress.Equals(accountAddress, StringComparison.OrdinalIgnoreCase) &&
                            (r.Status == RecoveryStatus.Pending || r.Status == RecoveryStatus.InProgress) &&
                            r.ExpiresAt > DateTime.UtcNow)
                 .OrderByDescending(r => r.InitiatedAt)
                 .ToList();
-                
+
             return activeRecoveries;
         }
 
@@ -708,7 +708,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             }
 
             var oldReputation = guardianInfo.ReputationScore;
-            guardianInfo.ReputationScore = BigInteger.Max(0, 
+            guardianInfo.ReputationScore = BigInteger.Max(0,
                 BigInteger.Min(10000, guardianInfo.ReputationScore + change));
 
             // Update success/failure counts
@@ -741,7 +741,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
                 ["Blockchain"] = blockchain
             });
 
-            Logger.LogInformation("Updated reputation for {Guardian} by {Change} from {Old} to {New}", 
+            Logger.LogInformation("Updated reputation for {Guardian} by {Change} from {Old} to {New}",
                 guardian, change, oldReputation, guardianInfo.ReputationScore);
 
             return true;
@@ -852,9 +852,9 @@ namespace NeoServiceLayer.Services.SocialRecovery
             var timestamp = DateTime.UtcNow.Ticks;
             var randomBytes = new byte[16];
             RandomNumberGenerator.Fill(randomBytes);
-            
+
             var input = $"{accountAddress}-{newOwner}-{timestamp}-{Convert.ToHexString(randomBytes)}";
-            
+
             using var sha256 = SHA256.Create();
             var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(input));
             return $"recovery_{Convert.ToHexString(hashBytes)[..16].ToLowerInvariant()}";
@@ -866,15 +866,15 @@ namespace NeoServiceLayer.Services.SocialRecovery
         private async Task<int> CalculateRequiredConfirmationsAsync(AccountRecoveryConfig config, string strategyId, bool isEmergency)
         {
             var baseConfirmations = config.RecoveryThreshold;
-            
+
             if (isEmergency)
             {
                 // Emergency recoveries can have reduced threshold
                 baseConfirmations = Math.Max(1, baseConfirmations - 1);
             }
-            
+
             // Ensure it's within bounds
-            return Math.Max(_options.Value.MinRecoveryThreshold, 
+            return Math.Max(_options.Value.MinRecoveryThreshold,
                    Math.Min(_options.Value.MaxRecoveryThreshold, baseConfirmations));
         }
 
@@ -913,18 +913,18 @@ namespace NeoServiceLayer.Services.SocialRecovery
             // - JWT token claims
             // - Smart contract msg.sender
             // - TEE attestation
-            
+
             // For now, return a mock guardian for demonstration
             // This is one of the critical security items that needs proper implementation
             await Task.Delay(1);
-            
+
             // Create a deterministic mock guardian for testing
             var mockGuardians = _guardians.Keys.ToList();
             if (mockGuardians.Any())
             {
                 return mockGuardians.First();
             }
-            
+
             throw new UnauthorizedAccessException("No authenticated guardian found in current context");
         }
 
@@ -940,11 +940,11 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                 lock (_metricsLock)
                 {
-                    var activeRequests = _recoveryRequests.Values.Count(r => 
+                    var activeRequests = _recoveryRequests.Values.Count(r =>
                         r.Status == RecoveryStatus.Pending || r.Status == RecoveryStatus.InProgress);
-                    var expiredRequests = _recoveryRequests.Values.Count(r => 
+                    var expiredRequests = _recoveryRequests.Values.Count(r =>
                         r.ExpiresAt < DateTime.UtcNow && r.Status == RecoveryStatus.Pending);
-                    
+
                     details["TotalGuardians"] = _totalGuardians;
                     details["ActiveRecoveryRequests"] = activeRequests;
                     details["ExpiredRequests"] = expiredRequests;
@@ -997,7 +997,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
                     UpdateMetric("FailedRecoveries", _failedRecoveries);
                     UpdateMetric("LastRecoveryTime", _lastRecoveryTime);
                     UpdateMetric("SuccessRate", _totalRecoveries > 0 ? (double)_successfulRecoveries / _totalRecoveries : 0.0);
-                    UpdateMetric("ActiveRequests", _recoveryRequests.Values.Count(r => 
+                    UpdateMetric("ActiveRequests", _recoveryRequests.Values.Count(r =>
                         r.Status == RecoveryStatus.Pending || r.Status == RecoveryStatus.InProgress));
                 }
 

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
@@ -135,7 +135,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(ExtendVotingPeriodCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Extending voting period for proposal {ProposalId} to {NewEndTime}", 
+            _logger.LogInformation("Extending voting period for proposal {ProposalId} to {NewEndTime}",
                 command.ProposalId, command.NewEndTime);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
@@ -152,7 +152,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(CastVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Casting vote for proposal {ProposalId} by voter {VoterId}", 
+            _logger.LogInformation("Casting vote for proposal {ProposalId} by voter {VoterId}",
                 command.ProposalId, command.VoterId);
 
             // Validate voter eligibility
@@ -182,11 +182,11 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(ChangeVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Changing vote for proposal {ProposalId} by voter {VoterId}", 
+            _logger.LogInformation("Changing vote for proposal {ProposalId} by voter {VoterId}",
                 command.ProposalId, command.VoterId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
-            
+
             // Get current vote to change
             if (!proposal.Votes.ContainsKey(command.VoterId))
             {
@@ -204,7 +204,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(WithdrawVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Withdrawing vote for proposal {ProposalId} by voter {VoterId}", 
+            _logger.LogInformation("Withdrawing vote for proposal {ProposalId} by voter {VoterId}",
                 command.ProposalId, command.VoterId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
@@ -219,7 +219,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(DelegateVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Delegating vote for proposal {ProposalId} from {DelegatorId} to {DelegateId}", 
+            _logger.LogInformation("Delegating vote for proposal {ProposalId} from {DelegatorId} to {DelegateId}",
                 command.ProposalId, command.DelegatorId, command.DelegateId);
 
             // Validate delegation is allowed
@@ -231,9 +231,9 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
             // Record delegation in service
             await _votingService.RecordDelegationAsync(
-                command.ProposalId, 
-                command.DelegatorId, 
-                command.DelegateId, 
+                command.ProposalId,
+                command.DelegatorId,
+                command.DelegateId,
                 command.Weight);
 
             _logger.LogInformation("Vote delegation recorded successfully");
@@ -241,12 +241,12 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(RevokeDelegationCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Revoking delegation for proposal {ProposalId} from {DelegatorId}", 
+            _logger.LogInformation("Revoking delegation for proposal {ProposalId} from {DelegatorId}",
                 command.ProposalId, command.DelegatorId);
 
             await _votingService.RevokeDelegationAsync(
-                command.ProposalId, 
-                command.DelegatorId, 
+                command.ProposalId,
+                command.DelegatorId,
                 command.DelegateId);
 
             _logger.LogInformation("Vote delegation revoked successfully");
@@ -254,7 +254,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task<int> HandleAsync(CastMultipleVotesCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Casting {Count} votes for proposal {ProposalId}", 
+            _logger.LogInformation("Casting {Count} votes for proposal {ProposalId}",
                 command.Votes.Count, command.ProposalId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
@@ -268,7 +268,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
                     {
                         var weight = await _votingService.GetVoterWeightAsync(vote.VoterId, command.ProposalId);
                         if (weight <= 0) weight = vote.Weight;
-                        
+
                         proposal.CastVote(vote.VoterId, vote.OptionId, weight);
                         successCount++;
                     }
@@ -288,23 +288,23 @@ namespace NeoServiceLayer.Services.Voting.Commands
                     cancellationToken);
             }
 
-            _logger.LogInformation("Successfully cast {SuccessCount} out of {TotalCount} votes", 
+            _logger.LogInformation("Successfully cast {SuccessCount} out of {TotalCount} votes",
                 successCount, command.Votes.Count);
             return successCount;
         }
 
         public async Task HandleAsync(InvalidateVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Invalidating vote for proposal {ProposalId} by voter {VoterId}", 
+            _logger.LogInformation("Invalidating vote for proposal {ProposalId} by voter {VoterId}",
                 command.ProposalId, command.VoterId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
-            
+
             // Remove the vote if it exists
             if (proposal.Votes.ContainsKey(command.VoterId))
             {
                 proposal.WithdrawVote(command.VoterId);
-                
+
                 await _eventStore.SaveEventsAsync(
                     proposal.Id,
                     proposal.GetUncommittedEvents(),
@@ -314,8 +314,8 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
             // Record invalidation reason
             await _votingService.RecordVoteInvalidationAsync(
-                command.ProposalId, 
-                command.VoterId, 
+                command.ProposalId,
+                command.VoterId,
                 command.Reason);
         }
 
@@ -324,13 +324,13 @@ namespace NeoServiceLayer.Services.Voting.Commands
             _logger.LogInformation("Recalculating results for proposal {ProposalId}", command.ProposalId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
-            
+
             // Force recalculation by ending voting again if already ended
             if (proposal.Status == ProposalStatus.Completed)
             {
                 // This will recalculate and update the result
                 proposal.EndVoting();
-                
+
                 await _eventStore.SaveEventsAsync(
                     proposal.Id,
                     proposal.GetUncommittedEvents(),
@@ -343,7 +343,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(AuditProposalCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Auditing proposal {ProposalId} by {AuditorId}", 
+            _logger.LogInformation("Auditing proposal {ProposalId} by {AuditorId}",
                 command.ProposalId, command.AuditorId);
 
             await _votingService.RecordAuditAsync(
@@ -355,7 +355,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task HandleAsync(SendVotingReminderCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Sending voting reminder for proposal {ProposalId} to {Count} recipients", 
+            _logger.LogInformation("Sending voting reminder for proposal {ProposalId} to {Count} recipients",
                 command.ProposalId, command.RecipientIds.Count);
 
             await _notificationService.SendVotingReminderAsync(command.ProposalId, command.RecipientIds);
@@ -363,7 +363,7 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task<Guid> HandleAsync(AddProposalCommentCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Adding comment to proposal {ProposalId} by {AuthorId}", 
+            _logger.LogInformation("Adding comment to proposal {ProposalId} by {AuthorId}",
                 command.ProposalId, command.AuthorId);
 
             var commentId = await _votingService.AddCommentAsync(
@@ -381,17 +381,17 @@ namespace NeoServiceLayer.Services.Voting.Commands
 
         public async Task<VoteVerificationResult> HandleAsync(VerifyVoteCommand command, CancellationToken cancellationToken = default)
         {
-            _logger.LogInformation("Verifying vote for proposal {ProposalId} by voter {VoterId}", 
+            _logger.LogInformation("Verifying vote for proposal {ProposalId} by voter {VoterId}",
                 command.ProposalId, command.VoterId);
 
             var proposal = await LoadProposalAsync(command.ProposalId);
-            
+
             if (proposal.Votes.TryGetValue(command.VoterId, out var vote))
             {
                 var verificationHash = _votingService.GenerateVoteVerificationHash(
-                    command.ProposalId, 
-                    command.VoterId, 
-                    vote.OptionId, 
+                    command.ProposalId,
+                    command.VoterId,
+                    vote.OptionId,
                     vote.CastAt);
 
                 return new VoteVerificationResult(

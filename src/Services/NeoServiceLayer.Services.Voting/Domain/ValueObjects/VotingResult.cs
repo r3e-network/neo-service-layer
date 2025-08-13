@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 
@@ -36,8 +36,8 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
             if (TotalVoteWeight == 0)
                 return 0;
 
-            return VotesByOption.TryGetValue(optionId, out var votes) 
-                ? (votes / TotalVoteWeight) * 100 
+            return VotesByOption.TryGetValue(optionId, out var votes)
+                ? (votes / TotalVoteWeight) * 100
                 : 0;
         }
 
@@ -61,10 +61,10 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
 
         public override string ToString()
         {
-            var winner = WinningOptionId.HasValue 
-                ? $"Winner: {WinningOptionId} with {WinningVoteCount:F2} votes ({GetVotePercentage(WinningOptionId.Value):F1}%)" 
+            var winner = WinningOptionId.HasValue
+                ? $"Winner: {WinningOptionId} with {WinningVoteCount:F2} votes ({GetVotePercentage(WinningOptionId.Value):F1}%)"
                 : "No winner";
-            
+
             return $"Voting Result: {TotalVoters} voters, {TotalVoteWeight:F2} total weight, {winner}, Quorum: {(QuorumMet ? "Met" : "Not Met")}";
         }
     }

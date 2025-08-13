@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -40,7 +40,7 @@ namespace NeoServiceLayer.Web.Services
             _cache = cache;
             _currentProcess = Process.GetCurrentProcess();
             _metricsHistory = new Dictionary<string, Queue<MetricDataPoint>>();
-            
+
             // Initialize metric queues
             InitializeMetricQueues();
         }
@@ -219,7 +219,7 @@ namespace NeoServiceLayer.Web.Services
                 foreach (var metricName in metricNames)
                 {
                     _metricsHistory[metricName] = new Queue<MetricDataPoint>();
-                    
+
                     // Add some initial data points for demonstration
                     for (int i = 10; i >= 0; i--)
                     {
@@ -241,21 +241,21 @@ namespace NeoServiceLayer.Web.Services
                 // Get CPU usage (this is a simplified version)
                 var startTime = DateTime.UtcNow;
                 var startCpuUsage = _currentProcess.TotalProcessorTime;
-                
+
                 await Task.Delay(100);
-                
+
                 var endTime = DateTime.UtcNow;
                 var endCpuUsage = _currentProcess.TotalProcessorTime;
-                
+
                 var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
                 var totalMsPassed = (endTime - startTime).TotalMilliseconds;
                 var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-                
+
                 var cpuUsage = cpuUsageTotal * 100;
-                
+
                 // Record the metric
                 await RecordMetricAsync("system.cpu", cpuUsage);
-                
+
                 return Math.Min(100, Math.Max(0, cpuUsage));
             }
             catch
@@ -272,10 +272,10 @@ namespace NeoServiceLayer.Web.Services
                 var totalMemory = GC.GetTotalMemory(false);
                 var workingSet = _currentProcess.WorkingSet64;
                 var usage = (double)totalMemory / workingSet * 100;
-                
+
                 // Record the metric
                 Task.Run(() => RecordMetricAsync("system.memory", usage));
-                
+
                 return Math.Min(100, Math.Max(0, usage));
             }
             catch
@@ -315,7 +315,7 @@ namespace NeoServiceLayer.Web.Services
             {
                 return rps;
             }
-            
+
             // Simulate RPS
             rps = Random.Shared.NextDouble() * 100 + 50;
             await RecordMetricAsync("system.throughput", rps);
@@ -328,7 +328,7 @@ namespace NeoServiceLayer.Web.Services
             {
                 return avgTime;
             }
-            
+
             // Simulate average response time
             avgTime = Random.Shared.NextDouble() * 200 + 50;
             await RecordMetricAsync("system.responseTime", avgTime);
@@ -364,14 +364,14 @@ namespace NeoServiceLayer.Web.Services
         {
             var metrics = new Dictionary<string, double>();
             var services = new[] { "KeyManagement", "Oracle", "Storage", "Compute", "CrossChain" };
-            
+
             foreach (var service in services)
             {
                 var serviceMetrics = await GetServiceMetricsAsync(service);
                 metrics[$"{service}.rps"] = serviceMetrics["requestsPerSecond"];
                 metrics[$"{service}.responseTime"] = serviceMetrics["averageResponseTime"];
             }
-            
+
             return metrics;
         }
 
@@ -383,7 +383,7 @@ namespace NeoServiceLayer.Web.Services
                 {
                     return new List<MetricDataPoint>();
                 }
-                
+
                 return _metricsHistory[metricName]
                     .OrderByDescending(m => m.Timestamp)
                     .Take(count)

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Services.Voting.Domain.Aggregates;
@@ -8,21 +8,21 @@ namespace NeoServiceLayer.Services.Voting.Queries
 {
     // Proposal queries
     public record GetProposalByIdQuery(Guid ProposalId) : IQuery<ProposalDto?>;
-    
+
     public record GetActiveProposalsQuery(
         int PageNumber = 1,
         int PageSize = 20) : IQuery<PagedResult<ProposalSummaryDto>>;
-    
+
     public record GetProposalsByStatusQuery(
         ProposalStatus Status,
         int PageNumber = 1,
         int PageSize = 20) : IQuery<PagedResult<ProposalSummaryDto>>;
-    
+
     public record GetProposalsByCreatorQuery(
         Guid CreatorId,
         int PageNumber = 1,
         int PageSize = 20) : IQuery<PagedResult<ProposalSummaryDto>>;
-    
+
     public record SearchProposalsQuery(
         string? SearchTerm = null,
         ProposalType? Type = null,
@@ -36,39 +36,39 @@ namespace NeoServiceLayer.Services.Voting.Queries
     public record GetVoteByVoterQuery(
         Guid ProposalId,
         Guid VoterId) : IQuery<VoteDto?>;
-    
+
     public record GetProposalVotesQuery(
         Guid ProposalId,
         int PageNumber = 1,
         int PageSize = 100) : IQuery<PagedResult<VoteDto>>;
-    
+
     public record GetVoterHistoryQuery(
         Guid VoterId,
         int PageNumber = 1,
         int PageSize = 20) : IQuery<PagedResult<VoteHistoryDto>>;
-    
+
     public record GetLiveResultsQuery(Guid ProposalId) : IQuery<LiveResultsDto>;
-    
+
     public record GetFinalResultsQuery(Guid ProposalId) : IQuery<FinalResultsDto?>;
 
     // Statistics queries
     public record GetProposalStatisticsQuery(Guid ProposalId) : IQuery<ProposalStatisticsDto>;
-    
+
     public record GetVotingStatisticsQuery(
         DateTime? StartDate = null,
         DateTime? EndDate = null) : IQuery<VotingStatisticsDto>;
-    
+
     public record GetParticipationRateQuery(
         Guid ProposalId,
         DateTime? AsOfDate = null) : IQuery<ParticipationRateDto>;
-    
+
     public record GetVoterTurnoutQuery(
         DateTime StartDate,
         DateTime EndDate) : IQuery<VoterTurnoutDto>;
 
     // Delegation queries
     public record GetDelegationsQuery(Guid ProposalId) : IQuery<List<DelegationDto>>;
-    
+
     public record GetDelegatedVotesQuery(
         Guid ProposalId,
         Guid DelegateId) : IQuery<List<DelegatedVoteDto>>;
@@ -78,7 +78,7 @@ namespace NeoServiceLayer.Services.Voting.Queries
         Guid ProposalId,
         int PageNumber = 1,
         int PageSize = 50) : IQuery<PagedResult<AuditLogDto>>;
-    
+
     public record GetVoteVerificationQuery(
         Guid ProposalId,
         Guid VoterId,

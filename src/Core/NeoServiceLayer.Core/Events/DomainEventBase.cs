@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Core.Events
@@ -28,13 +28,13 @@ namespace NeoServiceLayer.Core.Events
         {
             if (string.IsNullOrWhiteSpace(aggregateId))
                 throw new ArgumentException("Aggregate ID cannot be null or empty", nameof(aggregateId));
-            
+
             if (string.IsNullOrWhiteSpace(aggregateType))
                 throw new ArgumentException("Aggregate type cannot be null or empty", nameof(aggregateType));
-            
+
             if (string.IsNullOrWhiteSpace(initiatedBy))
                 throw new ArgumentException("Initiated by cannot be null or empty", nameof(initiatedBy));
-            
+
             EventId = Guid.NewGuid();
             OccurredAt = DateTime.UtcNow;
             AggregateId = aggregateId;
@@ -44,27 +44,27 @@ namespace NeoServiceLayer.Core.Events
             InitiatedBy = initiatedBy;
             CausationId = causationId;
             CorrelationId = correlationId ?? Guid.NewGuid();
-            Metadata = new Dictionary&lt;string, object&gt;();
+            Metadata = new Dictionary& lt; string, object&gt; ();
         }
 
         public Guid EventId { get; }
-        
+
         public DateTime OccurredAt { get; }
-        
+
         public string AggregateId { get; }
-        
+
         public string AggregateType { get; }
-        
+
         public long AggregateVersion { get; }
-        
+
         public string EventType { get; }
-        
+
         public Guid? CausationId { get; }
-        
+
         public Guid? CorrelationId { get; }
-        
+
         public string InitiatedBy { get; }
-        
+
         public IDictionary&lt;string, object&gt; Metadata { get; }
 
         /// <summary>
@@ -76,10 +76,10 @@ namespace NeoServiceLayer.Core.Events
         {
             if (string.IsNullOrWhiteSpace(key))
                 throw new ArgumentException("Metadata key cannot be null or empty", nameof(key));
-            
+
             Metadata[key] = value;
         }
-        
+
         /// <summary>
         /// Returns a string representation of the event for logging and debugging
         /// </summary>

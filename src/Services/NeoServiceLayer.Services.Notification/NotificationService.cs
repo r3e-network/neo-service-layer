@@ -533,8 +533,8 @@ public partial class NotificationService : EnclaveBlockchainServiceBase, INotifi
 
             // Process notification with privacy-preserving operations
             var privacyResult = await ProcessNotificationWithPrivacyAsync(request, notificationId);
-            
-            Logger.LogDebug("Privacy-preserving notification processing completed: NotificationId={NotificationId}, Proof={Proof}", 
+
+            Logger.LogDebug("Privacy-preserving notification processing completed: NotificationId={NotificationId}, Proof={Proof}",
                 privacyResult.NotificationId, privacyResult.DeliveryProof.Proof);
 
             // Process based on channel

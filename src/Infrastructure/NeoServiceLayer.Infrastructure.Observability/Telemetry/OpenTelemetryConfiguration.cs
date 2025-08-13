@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
@@ -24,7 +24,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
             IConfiguration configuration,
             string serviceName = "NeoServiceLayer")
         {
-            var telemetryConfig = configuration.GetSection("Telemetry").Get<TelemetryConfiguration>() 
+            var telemetryConfig = configuration.GetSection("Telemetry").Get<TelemetryConfiguration>()
                 ?? new TelemetryConfiguration();
 
             // Configure resource attributes
@@ -121,7 +121,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
                         options.IncludeFormattedMessage = true;
                         options.IncludeScopes = true;
                         options.ParseStateValues = true;
-                        
+
                         // Configure exporters
                         ConfigureLogExporters(options, telemetryConfig);
                     });
@@ -149,8 +149,8 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
                 builder.AddOtlpExporter(options =>
                 {
                     options.Endpoint = new Uri(config.OtlpEndpoint);
-                    options.Protocol = config.OtlpProtocol == "grpc" 
-                        ? OtlpExportProtocol.Grpc 
+                    options.Protocol = config.OtlpProtocol == "grpc"
+                        ? OtlpExportProtocol.Grpc
                         : OtlpExportProtocol.HttpProtobuf;
                     options.Headers = config.OtlpHeaders;
                     options.TimeoutMilliseconds = config.ExportTimeoutMs;
@@ -238,7 +238,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
             {
                 return uri.Host;
             }
-            
+
             var parts = endpoint.Split(':');
             return parts.Length > 0 ? parts[0] : "localhost";
         }
@@ -249,13 +249,13 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
             {
                 return uri.Port > 0 ? uri.Port : defaultPort;
             }
-            
+
             var parts = endpoint.Split(':');
             if (parts.Length > 1 && int.TryParse(parts[1], out var port))
             {
                 return port;
             }
-            
+
             return defaultPort;
         }
     }
@@ -293,19 +293,19 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
         public NeoServiceLayerInstrumentation()
         {
             var version = typeof(NeoServiceLayerInstrumentation).Assembly.GetName().Version?.ToString() ?? "1.0.0";
-            
+
             _activitySource = new ActivitySource("NeoServiceLayer.Core", version);
             _meter = new Meter("NeoServiceLayer.Metrics", version);
-            
+
             _requestCounter = _meter.CreateCounter<long>(
                 "neoservicelayer.requests.total",
                 description: "Total number of requests processed");
-            
+
             _requestDuration = _meter.CreateHistogram<double>(
                 "neoservicelayer.request.duration",
                 unit: "ms",
                 description: "Request processing duration");
-            
+
             _memoryUsage = _meter.CreateObservableGauge(
                 "neoservicelayer.memory.usage",
                 () => GC.GetTotalMemory(false) / (1024.0 * 1024.0),
@@ -326,7 +326,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
                 { "method", method },
                 { "status_code", statusCode }
             };
-            
+
             _requestCounter.Add(1, tags);
             _requestDuration.Record(durationMs, tags);
         }
@@ -351,20 +351,20 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
         public Task StartAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Telemetry service started");
-            
+
             using var activity = _instrumentation.StartActivity("TelemetryService.Start");
             activity?.SetTag("service.start", DateTime.UtcNow);
-            
+
             return Task.CompletedTask;
         }
 
         public Task StopAsync(CancellationToken cancellationToken)
         {
             _logger.LogInformation("Telemetry service stopped");
-            
+
             using var activity = _instrumentation.StartActivity("TelemetryService.Stop");
             activity?.SetTag("service.stop", DateTime.UtcNow);
-            
+
             return Task.CompletedTask;
         }
     }

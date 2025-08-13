@@ -4,9 +4,8 @@ using System.Text;
 using Microsoft.AspNetCore.Mvc.Testing;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.IdentityModel.Tokens;
-using Xunit;
-
 using NeoServiceLayer.Web;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests.Helpers;
 

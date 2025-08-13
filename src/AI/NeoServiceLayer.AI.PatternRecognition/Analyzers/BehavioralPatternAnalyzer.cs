@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -18,7 +18,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         public BehavioralPatternAnalyzer(
             ILogger<BehavioralPatternAnalyzer> logger,
             int sequenceLength = 5,
-            double similarityThreshold = 0.8) 
+            double similarityThreshold = 0.8)
             : base(logger)
         {
             _profiles = new Dictionary<string, BehaviorProfile>();
@@ -37,19 +37,19 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             _logger.LogDebug("Analyzing behavioral patterns in {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
-            
+
             // Detect usage patterns
             var usagePatterns = DetectUsagePatterns(request.Data);
             patterns.AddRange(usagePatterns);
-            
+
             // Detect activity clusters
             var activityClusters = DetectActivityClusters(request.Data);
             patterns.AddRange(activityClusters);
-            
+
             // Detect behavioral sequences
             var sequences = DetectBehavioralSequences(request.Data);
             patterns.AddRange(sequences);
-            
+
             // Compare with known profiles
             if (_profiles.Any())
             {
@@ -94,7 +94,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 
                     var profile = _profiles[sample.Label];
                     profile.DataPoints.Add(sample.Data);
-                    
+
                     // Extract behavioral features
                     UpdateProfileStatistics(profile, sample.Data);
                     ExtractBehavioralSequences(profile, sample.Data);
@@ -122,16 +122,16 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         private List<DetectedPattern> DetectUsagePatterns(double[] data)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             // Analyze activity levels
             var activityThreshold = data.Average();
             var highActivityPeriods = new List<(int Start, int End)>();
             var lowActivityPeriods = new List<(int Start, int End)>();
-            
+
             var inHighPeriod = false;
             var inLowPeriod = false;
             var periodStart = 0;
-            
+
             for (int i = 0; i < data.Length; i++)
             {
                 if (data[i] > activityThreshold * 1.5)
@@ -170,13 +170,13 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     }
                 }
             }
-            
+
             // Add final periods
             if (inHighPeriod)
                 highActivityPeriods.Add((periodStart, data.Length - 1));
             if (inLowPeriod)
                 lowActivityPeriods.Add((periodStart, data.Length - 1));
-            
+
             // Create patterns for significant periods
             foreach (var period in highActivityPeriods.Where(p => p.End - p.Start >= 3))
             {
@@ -196,7 +196,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     }
                 });
             }
-            
+
             foreach (var period in lowActivityPeriods.Where(p => p.End - p.Start >= 3))
             {
                 var avgActivity = data.Skip(period.Start).Take(period.End - period.Start + 1).Average();
@@ -215,23 +215,23 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     }
                 });
             }
-            
+
             return patterns;
         }
 
         private List<DetectedPattern> DetectActivityClusters(double[] data)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             // Use k-means-like clustering to find activity groups
             var clusters = ClusterData(data, 3); // Find 3 clusters: low, medium, high
-            
+
             foreach (var cluster in clusters)
             {
                 if (cluster.Points.Count >= 3)
                 {
                     var clusterName = GetClusterName(cluster.Center, data.Average());
-                    
+
                     patterns.Add(new DetectedPattern
                     {
                         Type = PatternType.Behavioral,
@@ -249,20 +249,20 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     });
                 }
             }
-            
+
             return patterns;
         }
 
         private List<DetectedPattern> DetectBehavioralSequences(double[] data)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             // Convert continuous data to discrete states
             var states = DiscretizeData(data);
-            
+
             // Find repeating sequences
             var sequences = FindRepeatingSequences(states, _sequenceLength);
-            
+
             foreach (var seq in sequences)
             {
                 patterns.Add(new DetectedPattern
@@ -281,18 +281,18 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     }
                 });
             }
-            
+
             return patterns;
         }
 
         private List<DetectedPattern> MatchWithProfiles(double[] data)
         {
             var patterns = new List<DetectedPattern>();
-            
+
             foreach (var profile in _profiles.Values)
             {
                 var similarity = CalculateProfileSimilarity(data, profile);
-                
+
                 if (similarity >= _similarityThreshold)
                 {
                     patterns.Add(new DetectedPattern
@@ -307,35 +307,35 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                             ["profile_name"] = profile.Name,
                             ["similarity"] = similarity,
                             ["mean_difference"] = Math.Abs(data.Average() - profile.Statistics.Mean),
-                            ["variance_ratio"] = profile.Statistics.Variance > 0 
-                                ? CalculateVariance(data) / profile.Statistics.Variance 
+                            ["variance_ratio"] = profile.Statistics.Variance > 0
+                                ? CalculateVariance(data) / profile.Statistics.Variance
                                 : 0
                         }
                     });
                 }
             }
-            
+
             return patterns;
         }
 
         private void UpdateProfileStatistics(BehaviorProfile profile, double[] data)
         {
-            profile.Statistics.Mean = (profile.Statistics.Mean * profile.Statistics.SampleCount + data.Average()) 
+            profile.Statistics.Mean = (profile.Statistics.Mean * profile.Statistics.SampleCount + data.Average())
                 / (profile.Statistics.SampleCount + 1);
-            
-            profile.Statistics.Variance = (profile.Statistics.Variance * profile.Statistics.SampleCount + CalculateVariance(data)) 
+
+            profile.Statistics.Variance = (profile.Statistics.Variance * profile.Statistics.SampleCount + CalculateVariance(data))
                 / (profile.Statistics.SampleCount + 1);
-            
+
             profile.Statistics.Min = Math.Min(profile.Statistics.Min, data.Min());
             profile.Statistics.Max = Math.Max(profile.Statistics.Max, data.Max());
-            
+
             profile.Statistics.SampleCount++;
         }
 
         private void ExtractBehavioralSequences(BehaviorProfile profile, double[] data)
         {
             var states = DiscretizeData(data);
-            
+
             for (int i = 0; i <= states.Length - _sequenceLength; i++)
             {
                 var sequence = states.Skip(i).Take(_sequenceLength).ToArray();
@@ -349,7 +349,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             profile.Sequences = profile.Sequences
                 .Distinct(new SequenceComparer())
                 .ToList();
-            
+
             // Keep only the most representative data points
             if (profile.DataPoints.Count > 100)
             {
@@ -362,32 +362,32 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 
         private double CalculateProfileSimilarity(double[] data, BehaviorProfile profile)
         {
-            var statisticalSimilarity = 1.0 - Math.Abs(data.Average() - profile.Statistics.Mean) 
+            var statisticalSimilarity = 1.0 - Math.Abs(data.Average() - profile.Statistics.Mean)
                 / (profile.Statistics.Max - profile.Statistics.Min + 1);
-            
-            var varianceSimilarity = 1.0 - Math.Abs(CalculateVariance(data) - profile.Statistics.Variance) 
+
+            var varianceSimilarity = 1.0 - Math.Abs(CalculateVariance(data) - profile.Statistics.Variance)
                 / (profile.Statistics.Variance + 1);
-            
+
             // Check sequence similarity
             var dataStates = DiscretizeData(data);
             var sequenceSimilarity = 0.0;
             var matchCount = 0;
-            
+
             for (int i = 0; i <= dataStates.Length - _sequenceLength; i++)
             {
                 var sequence = dataStates.Skip(i).Take(_sequenceLength).ToArray();
-                
+
                 if (profile.Sequences.Any(s => s.SequenceEqual(sequence)))
                 {
                     matchCount++;
                 }
             }
-            
+
             if (dataStates.Length >= _sequenceLength)
             {
                 sequenceSimilarity = (double)matchCount / (dataStates.Length - _sequenceLength + 1);
             }
-            
+
             // Weighted average of similarities
             return statisticalSimilarity * 0.3 + varianceSimilarity * 0.3 + sequenceSimilarity * 0.4;
         }
@@ -396,7 +396,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             var mean = data.Average();
             var stdDev = Math.Sqrt(CalculateVariance(data));
-            
+
             return data.Select(d =>
             {
                 if (d < mean - stdDev) return 0; // Low
@@ -408,12 +408,12 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         private List<SequenceInfo> FindRepeatingSequences(int[] states, int length)
         {
             var sequences = new Dictionary<string, SequenceInfo>();
-            
+
             for (int i = 0; i <= states.Length - length; i++)
             {
                 var sequence = states.Skip(i).Take(length).ToArray();
                 var key = string.Join(",", sequence);
-                
+
                 if (!sequences.ContainsKey(key))
                 {
                     sequences[key] = new SequenceInfo
@@ -430,23 +430,23 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     sequences[key].Occurrences++;
                 }
             }
-            
+
             // Calculate frequency
             foreach (var seq in sequences.Values)
             {
                 seq.Frequency = (double)seq.Occurrences / (states.Length - length + 1);
             }
-            
+
             return sequences.Values.Where(s => s.Occurrences >= 2).ToList();
         }
 
         private List<ActivityCluster> ClusterData(double[] data, int k)
         {
             var clusters = new List<ActivityCluster>();
-            
+
             // Simple k-means clustering
             var centers = InitializeCenters(data, k);
-            
+
             for (int iteration = 0; iteration < 10; iteration++)
             {
                 // Assign points to clusters
@@ -455,12 +455,12 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                 {
                     assignments[i] = new List<int>();
                 }
-                
+
                 for (int i = 0; i < data.Length; i++)
                 {
                     var closestCluster = 0;
                     var minDistance = double.MaxValue;
-                    
+
                     for (int j = 0; j < k; j++)
                     {
                         var distance = Math.Abs(data[i] - centers[j]);
@@ -470,10 +470,10 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                             closestCluster = j;
                         }
                     }
-                    
+
                     assignments[closestCluster].Add(i);
                 }
-                
+
                 // Update centers
                 for (int i = 0; i < k; i++)
                 {
@@ -483,12 +483,12 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     }
                 }
             }
-            
+
             // Create final clusters
             for (int i = 0; i < k; i++)
             {
                 var points = new List<int>();
-                
+
                 for (int j = 0; j < data.Length; j++)
                 {
                     var distances = centers.Select(c => Math.Abs(data[j] - c)).ToArray();
@@ -497,7 +497,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                         points.Add(j);
                     }
                 }
-                
+
                 if (points.Any())
                 {
                     var clusterData = points.Select(p => data[p]).ToArray();
@@ -509,7 +509,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
                     });
                 }
             }
-            
+
             return clusters;
         }
 
@@ -518,7 +518,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
             var min = data.Min();
             var max = data.Max();
             var step = (max - min) / (k + 1);
-            
+
             return Enumerable.Range(1, k).Select(i => min + step * i).ToArray();
         }
 

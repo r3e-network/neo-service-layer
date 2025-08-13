@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Services.Core.SGX;
 using NeoServiceLayer.Tee.Host.Services;
@@ -62,7 +62,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             };
 
             string paramsJson = JsonSerializer.Serialize(jsParams);
-            
+
             // Execute privacy-preserving guardian approval in SGX
             string result = await _enclaveManager.ExecuteJavaScriptAsync(
                 PrivacyComputingJavaScriptTemplates.SocialRecoveryOperations,
@@ -80,7 +80,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
             // Extract privacy-preserving approval result
             var recoveryProof = resultJson.GetProperty("recoveryProof");
-            
+
             return new PrivacyApprovalResult
             {
                 RecoveryId = recoveryProof.GetProperty("recoveryId").GetString() ?? "",
@@ -137,7 +137,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             };
 
             string paramsJson = JsonSerializer.Serialize(jsParams);
-            
+
             string result = await _enclaveManager.ExecuteJavaScriptAsync(
                 PrivacyComputingJavaScriptTemplates.SocialRecoveryOperations,
                 paramsJson);
@@ -202,7 +202,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
             };
 
             string paramsJson = JsonSerializer.Serialize(jsParams);
-            
+
             string result = await _enclaveManager.ExecuteJavaScriptAsync(
                 PrivacyComputingJavaScriptTemplates.SocialRecoveryOperations,
                 paramsJson);
@@ -244,14 +244,14 @@ namespace NeoServiceLayer.Services.SocialRecovery
             // - Stake amount
             // - Historical performance
             await Task.CompletedTask;
-            
+
             if (_guardians.TryGetValue(guardianAddress, out var guardian))
             {
                 // Weight based on reputation (0-10000) normalized to 1-10
                 var weight = 1 + (int)(guardian.ReputationScore * 9 / 10000);
                 return Math.Max(1, Math.Min(10, weight));
             }
-            
+
             return 1; // Default weight
         }
 

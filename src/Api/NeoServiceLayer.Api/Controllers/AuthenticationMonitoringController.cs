@@ -1,13 +1,13 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
-using NeoServiceLayer.Services.Authentication;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Observability.Metrics;
+using NeoServiceLayer.Services.Authentication;
 
 namespace NeoServiceLayer.Api.Controllers
 {
@@ -50,7 +50,7 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var report = await _healthCheckService.CheckHealthAsync();
-                
+
                 var response = new HealthCheckResponse
                 {
                     Status = report.Status.ToString(),
@@ -108,10 +108,10 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
-                await _securityLogger.LogSecurityEventAsync("MetricsAccessed", GetUserId(), 
-                    new Dictionary<string, object> 
-                    { 
+
+                await _securityLogger.LogSecurityEventAsync("MetricsAccessed", GetUserId(),
+                    new Dictionary<string, object>
+                    {
                         ["IpAddress"] = GetClientIpAddress(),
                         ["StartTime"] = startTime,
                         ["EndTime"] = endTime
@@ -136,15 +136,15 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
+
                 var stats = new LoginStatistics
                 {
                     Period = $"Last {hours} hours",
                     TotalAttempts = metrics.LoginMetrics.TotalAttempts,
                     SuccessfulLogins = metrics.LoginMetrics.SuccessfulLogins,
                     FailedLogins = metrics.LoginMetrics.FailedLogins,
-                    SuccessRate = metrics.LoginMetrics.TotalAttempts > 0 
-                        ? (double)metrics.LoginMetrics.SuccessfulLogins / metrics.LoginMetrics.TotalAttempts 
+                    SuccessRate = metrics.LoginMetrics.TotalAttempts > 0
+                        ? (double)metrics.LoginMetrics.SuccessfulLogins / metrics.LoginMetrics.TotalAttempts
                         : 0,
                     AverageLoginDuration = metrics.LoginMetrics.AverageLoginDuration,
                     LoginsByMethod = metrics.LoginMetrics.LoginsByMethod,
@@ -171,7 +171,7 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
+
                 var summary = new SecurityEventSummary
                 {
                     Period = $"Last {hours} hours",
@@ -204,7 +204,7 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
+
                 var stats = new TokenStatistics
                 {
                     AccessTokensGenerated = metrics.TokenMetrics.AccessTokensGenerated,
@@ -238,7 +238,7 @@ namespace NeoServiceLayer.Api.Controllers
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
+
                 var stats = new MfaStatistics
                 {
                     TotalAttempts = metrics.MfaMetrics.TotalAttempts,
@@ -273,7 +273,7 @@ namespace NeoServiceLayer.Api.Controllers
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
                 var health = await _healthCheckService.CheckHealthAsync();
-                
+
                 var dashboard = new DashboardData
                 {
                     Timestamp = DateTime.UtcNow,

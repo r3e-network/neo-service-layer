@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
 {
@@ -13,10 +13,10 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
         {
             if (voterId == Guid.Empty)
                 throw new ArgumentException("Voter ID cannot be empty", nameof(voterId));
-            
+
             if (optionId == Guid.Empty)
                 throw new ArgumentException("Option ID cannot be empty", nameof(optionId));
-            
+
             if (weight <= 0)
                 throw new ArgumentException("Vote weight must be positive", nameof(weight));
 
@@ -31,8 +31,8 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
             if (obj is not Vote other)
                 return false;
 
-            return VoterId == other.VoterId && 
-                   OptionId == other.OptionId && 
+            return VoterId == other.VoterId &&
+                   OptionId == other.OptionId &&
                    Weight == other.Weight;
         }
 

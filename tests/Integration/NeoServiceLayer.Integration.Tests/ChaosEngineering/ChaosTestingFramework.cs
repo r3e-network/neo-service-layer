@@ -1,12 +1,12 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.DependencyInjection;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Polly;
 using Polly.CircuitBreaker;
 
@@ -31,7 +31,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             _chaosStrategies = new Dictionary<string, ChaosStrategy>();
             _testResults = new List<ChaosTestResult>();
             _random = new Random();
-            
+
             InitializeDefaultStrategies();
         }
 
@@ -70,7 +70,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                 // Phase 3: Monitor behavior during failure
                 _logger.LogDebug("Phase 3: Monitoring system behavior");
                 var monitoringTask = MonitorSystemBehaviorAsync(
-                    scenario.TargetServices, 
+                    scenario.TargetServices,
                     scenario.MonitoringDuration,
                     result);
 
@@ -98,8 +98,8 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 
                 // Determine overall success
                 result.Success = EvaluateChaosTestSuccess(result, scenario.SuccessCriteria);
-                
-                _logger.LogInformation("Chaos test completed: {ScenarioName}, Success: {Success}", 
+
+                _logger.LogInformation("Chaos test completed: {ScenarioName}, Success: {Success}",
                     scenario.Name, result.Success);
             }
             catch (Exception ex)
@@ -122,7 +122,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         /// Injects network latency into service communications.
         /// </summary>
         public async Task<NetworkChaosResult> InjectNetworkLatencyAsync(
-            string serviceName, 
+            string serviceName,
             TimeSpan latency,
             double affectedPercentage = 1.0)
         {
@@ -171,7 +171,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             int instancesToKill,
             bool allowRestart = true)
         {
-            _logger.LogWarning("Killing {Count} instances of service {Service}", 
+            _logger.LogWarning("Killing {Count} instances of service {Service}",
                 instancesToKill, serviceName);
 
             var result = new ServiceChaosResult
@@ -236,9 +236,9 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 
                 // Monitor CPU usage during stress
                 var monitoringTask = MonitorResourceUsageAsync(serviceName, ResourceType.CPU, duration);
-                
+
                 await Task.WhenAll(task, monitoringTask);
-                
+
                 result.ActualUsage = await monitoringTask;
                 result.Success = true;
             }
@@ -316,7 +316,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             {
                 var service = GetServiceInstance(serviceName);
                 var circuitBreaker = GetCircuitBreaker(service);
-                
+
                 // Inject failures to trigger circuit breaker
                 for (int i = 0; i < failureCount; i++)
                 {
@@ -337,7 +337,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                 {
                     // Wait for half-open state
                     await Task.Delay(circuitBreaker.HandledEventsAllowedBeforeBreaking);
-                    
+
                     // Test recovery
                     try
                     {
@@ -390,7 +390,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             {
                 // Kill initial service
                 await KillServiceInstancesAsync(initialFailureService, 1, false);
-                
+
                 result.FailurePropagation.Add(new ServiceFailurePropagation
                 {
                     ServiceName = initialFailureService,
@@ -402,7 +402,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                 var monitoringTasks = dependentServices.Select(async service =>
                 {
                     await Task.Delay(propagationDelay);
-                    
+
                     var health = await CheckServiceHealthAsync(service);
                     if (!health.IsHealthy)
                     {
@@ -414,12 +414,12 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                             PropagationDelay = DateTime.UtcNow - result.StartTime
                         });
                     }
-                    
+
                     return health;
                 }).ToList();
 
                 var healthResults = await Task.WhenAll(monitoringTasks);
-                
+
                 result.TotalServicesAffected = result.FailurePropagation.Count;
                 result.CascadeContained = healthResults.Count(h => h.IsHealthy) > 0;
                 result.Success = result.CascadeContained;
@@ -469,7 +469,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 
                 // Monitor behavior during partition
                 var monitoringTasks = new List<Task>();
-                
+
                 // Test intra-partition communication
                 foreach (var service in partition1Services)
                 {
@@ -487,7 +487,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
 
                 // Test recovery
                 result.RecoveryMetrics = await TestPartitionRecoveryAsync(partition1Services, partition2Services);
-                
+
                 result.Success = result.RecoveryMetrics.FullyRecovered;
             }
             catch (Exception ex)
@@ -538,7 +538,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         {
             // Measure service performance metrics
             await Task.Delay(100); // Simulate measurement
-            
+
             return new ServiceMetrics
             {
                 ResponseTime = TimeSpan.FromMilliseconds(_random.Next(10, 100)),
@@ -585,13 +585,13 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             ChaosTestResult result)
         {
             var endTime = DateTime.UtcNow.Add(duration);
-            
+
             while (DateTime.UtcNow < endTime)
             {
                 foreach (var service in services)
                 {
                     var behavior = await ObserveServiceBehaviorAsync(service);
-                    
+
                     if (!result.ServiceBehaviors.ContainsKey(service))
                     {
                         result.ServiceBehaviors[service] = behavior;
@@ -602,7 +602,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
                         result.ServiceBehaviors[service].AggregateWith(behavior);
                     }
                 }
-                
+
                 await Task.Delay(1000); // Monitor every second
             }
         }
@@ -610,7 +610,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         private async Task<ServiceBehavior> ObserveServiceBehaviorAsync(string serviceName)
         {
             await Task.Delay(10); // Simulate observation
-            
+
             return new ServiceBehavior
             {
                 ServiceName = serviceName,
@@ -639,14 +639,14 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             ExpectedBehavior expected)
         {
             await Task.Delay(100); // Simulate resilience testing
-            
+
             // Calculate resilience score based on various factors
             var score = 0.0;
             score += _random.NextDouble() * 0.3; // Availability
             score += _random.NextDouble() * 0.3; // Performance degradation
             score += _random.NextDouble() * 0.2; // Error handling
             score += _random.NextDouble() * 0.2; // Recovery time
-            
+
             return score;
         }
 
@@ -678,19 +678,19 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             ServiceMetrics baseline)
         {
             var startTime = DateTime.UtcNow;
-            
+
             while (DateTime.UtcNow - startTime < TimeSpan.FromMinutes(10))
             {
                 var current = await MeasureServiceMetricsAsync(serviceName);
-                
+
                 if (IsServiceRecovered(current, baseline))
                 {
                     return DateTime.UtcNow - startTime;
                 }
-                
+
                 await Task.Delay(1000);
             }
-            
+
             return TimeSpan.FromMinutes(10); // Max recovery time
         }
 
@@ -722,7 +722,7 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
         private async Task<ValidationRuleResult> ValidateRuleAsync(ValidationRule rule)
         {
             await Task.Delay(10); // Simulate validation
-            
+
             return new ValidationRuleResult
             {
                 RuleName = rule.Name,
@@ -736,13 +736,13 @@ namespace NeoServiceLayer.Integration.Tests.ChaosEngineering
             // Evaluate based on success criteria
             if (result.ServiceBehaviors.Any(kvp => kvp.Value.ResilienceScore < criteria.MinResilienceScore))
                 return false;
-            
+
             if (result.RecoveryMetrics.TotalRecoveryTime > criteria.MaxRecoveryTime)
                 return false;
-            
+
             if (!result.SystemValidation.AllPassed)
                 return false;
-            
+
             return true;
         }
 

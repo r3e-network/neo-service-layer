@@ -167,12 +167,12 @@
 
                 <div class="navbar-menu" id="navbarMenu">
                     <a href="#features" class="navbar-link">Features</a>
-                    <a href="#services" class="navbar-link">Services</a>
+                    <a href="/services.html" class="navbar-link">Services</a>
+                    <a href="/testing.html" class="navbar-link">Testing</a>
                     <a href="#architecture" class="navbar-link">Architecture</a>
-                    <a href="#docs" class="navbar-link">Documentation</a>
+                    <a href="/docs" class="navbar-link">Documentation</a>
                     <a href="#blog" class="navbar-link">Blog</a>
-                    <a href="#community" class="navbar-link">Community</a>
-                    <a href="#contact" class="navbar-link">Contact</a>
+                    <a href="/contact.html" class="navbar-link">Contact</a>
                 </div>
 
                 <div class="navbar-actions">
@@ -494,17 +494,17 @@ console.log('✅ Deployment successful!');</code></pre>
                                   fill="none" stroke="currentColor" stroke-width="2"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Enclave Manager</h3>
+                    <h3 class="service-title">Enclave Storage</h3>
                     <p class="service-description">
-                        Core enclave lifecycle management with hardware attestation, 
-                        secure key management, and policy enforcement.
+                        Hardware-encrypted storage within Intel SGX enclaves with 
+                        attestation, sealed storage, and automatic key rotation.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Intel SGX & ARM TrustZone</li>
-                        <li><i class="fas fa-check"></i> Remote attestation</li>
-                        <li><i class="fas fa-check"></i> Secure provisioning</li>
+                        <li><i class="fas fa-check"></i> Intel SGX protected</li>
+                        <li><i class="fas fa-check"></i> AES-256 encryption</li>
+                        <li><i class="fas fa-check"></i> ACID transactions</li>
                     </ul>
-                    <a href="/docs/enclave-manager" class="service-link">
+                    <a href="/services.html#enclave-storage" class="service-link">
                         Explore Service <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -520,17 +520,17 @@ console.log('✅ Deployment successful!');</code></pre>
                                   stroke="currentColor" stroke-width="2"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Secure Storage</h3>
+                    <h3 class="service-title">Key Management</h3>
                     <p class="service-description">
-                        Encrypted persistent storage with fine-grained access control 
-                        and automatic key rotation.
+                        Enterprise-grade cryptographic key lifecycle management with 
+                        HSM integration and quantum-resistant algorithms.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> AES-256 encryption</li>
-                        <li><i class="fas fa-check"></i> Distributed storage</li>
-                        <li><i class="fas fa-check"></i> ACID compliance</li>
+                        <li><i class="fas fa-check"></i> Hierarchical derivation</li>
+                        <li><i class="fas fa-check"></i> Multi-signature</li>
+                        <li><i class="fas fa-check"></i> Key recovery</li>
                     </ul>
-                    <a href="/docs/secure-storage" class="service-link">
+                    <a href="/services.html#key-management" class="service-link">
                         Explore Service <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -545,17 +545,17 @@ console.log('✅ Deployment successful!');</code></pre>
                             <circle cx="50" cy="50" r="5" fill="currentColor"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Privacy Computing</h3>
+                    <h3 class="service-title">Smart Contracts</h3>
                     <p class="service-description">
-                        Execute sensitive computations while keeping data encrypted 
-                        throughout the entire process.
+                        Confidential smart contract execution with Neo N3 integration, 
+                        zero-knowledge proofs, and cross-chain bridges.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Homomorphic operations</li>
-                        <li><i class="fas fa-check"></i> Multi-party computation</li>
-                        <li><i class="fas fa-check"></i> Zero-knowledge proofs</li>
+                        <li><i class="fas fa-check"></i> Private execution</li>
+                        <li><i class="fas fa-check"></i> Oracle integration</li>
+                        <li><i class="fas fa-check"></i> Gas optimization</li>
                     </ul>
-                    <a href="/docs/privacy-computing" class="service-link">
+                    <a href="/services.html#smart-contracts" class="service-link">
                         Explore Service <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -571,17 +571,17 @@ console.log('✅ Deployment successful!');</code></pre>
                             <circle cx="62" cy="45" r="3" fill="currentColor"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Blockchain Bridge</h3>
+                    <h3 class="service-title">Authentication</h3>
                     <p class="service-description">
-                        Seamless integration with Neo blockchain for confidential 
-                        smart contracts and cross-chain operations.
+                        Multi-factor authentication with biometric support, DID integration, 
+                        and OAuth 2.0/OpenID Connect compatibility.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Neo N3 integration</li>
-                        <li><i class="fas fa-check"></i> Cross-chain support</li>
-                        <li><i class="fas fa-check"></i> Oracle services</li>
+                        <li><i class="fas fa-check"></i> WebAuthn/FIDO2</li>
+                        <li><i class="fas fa-check"></i> DID support</li>
+                        <li><i class="fas fa-check"></i> Rate limiting</li>
                     </ul>
-                    <a href="/docs/blockchain-bridge" class="service-link">
+                    <a href="/services.html#authentication" class="service-link">
                         Explore Service <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -598,17 +598,17 @@ console.log('✅ Deployment successful!');</code></pre>
                                   stroke="currentColor" stroke-width="1" opacity="0.5"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Service Mesh</h3>
+                    <h3 class="service-title">Cross-Chain</h3>
                     <p class="service-description">
-                        Orchestrate complex workflows across multiple enclaves with 
-                        automatic scaling and load balancing.
+                        Seamless interoperability between Neo and other blockchains with 
+                        atomic swaps, bridges, and relay networks.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Auto-scaling</li>
-                        <li><i class="fas fa-check"></i> Health monitoring</li>
-                        <li><i class="fas fa-check"></i> Traffic management</li>
+                        <li><i class="fas fa-check"></i> Atomic swaps</li>
+                        <li><i class="fas fa-check"></i> Bridge protocols</li>
+                        <li><i class="fas fa-check"></i> Multi-chain wallets</li>
                     </ul>
-                    <a href="/docs/service-mesh" class="service-link">
+                    <a href="/services.html#cross-chain" class="service-link">
                         Explore Service <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
@@ -625,18 +625,18 @@ console.log('✅ Deployment successful!');</code></pre>
                             <path d="M65,70 L68,73 L75,66" stroke="currentColor" stroke-width="2" fill="none"/>
                         </svg>
                     </div>
-                    <h3 class="service-title">Compliance Suite</h3>
+                    <h3 class="service-title">Testing Suite</h3>
                     <p class="service-description">
-                        Built-in compliance tools for GDPR, CCPA, and industry-specific 
-                        regulations with audit trails.
+                        Comprehensive testing with chaos engineering, service health monitoring, 
+                        and automated coverage analysis.
                     </p>
                     <ul class="service-features">
-                        <li><i class="fas fa-check"></i> Audit logging</li>
-                        <li><i class="fas fa-check"></i> Data governance</li>
-                        <li><i class="fas fa-check"></i> Policy engine</li>
+                        <li><i class="fas fa-check"></i> Chaos testing</li>
+                        <li><i class="fas fa-check"></i> Coverage analysis</li>
+                        <li><i class="fas fa-check"></i> Performance tests</li>
                     </ul>
-                    <a href="/docs/compliance-suite" class="service-link">
-                        Explore Service <i class="fas fa-arrow-right"></i>
+                    <a href="/testing.html" class="service-link">
+                        Explore Testing <i class="fas fa-arrow-right"></i>
                     </a>
                 </div>
             </div>

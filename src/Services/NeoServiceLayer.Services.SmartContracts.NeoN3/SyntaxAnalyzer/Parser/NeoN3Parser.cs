@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
@@ -292,7 +292,7 @@ public class NeoN3Parser : INeoN3Parser
             if (member != null)
             {
                 node.Children.Add(member);
-                
+
                 // Add to appropriate collection
                 switch (member)
                 {
@@ -334,7 +334,7 @@ public class NeoN3Parser : INeoN3Parser
 
         // Parse access modifiers
         var accessModifier = ParseAccessModifier();
-        
+
         // Check for static
         var isStatic = Accept(TokenType.Static);
 
@@ -481,7 +481,7 @@ public class NeoN3Parser : INeoN3Parser
     {
         // Check for contract declaration start
         var pos = _position;
-        
+
         // Skip attributes
         while (pos < _tokens.Count && _tokens[pos].Type == TokenType.LeftBracket)
         {
@@ -547,11 +547,11 @@ public class NeoN3Parser : INeoN3Parser
     private TypeNode? ParseType() => null;
     private EventNode? ParseEvent(List<AttributeNode> attributes, AccessModifier accessModifier) => null;
     private ConstructorNode? ParseConstructor(List<AttributeNode> attributes, AccessModifier accessModifier) => null;
-    private MethodNode? ParseMethod(string name, TypeNode returnType, List<AttributeNode> attributes, 
+    private MethodNode? ParseMethod(string name, TypeNode returnType, List<AttributeNode> attributes,
         AccessModifier accessModifier, bool isStatic, bool isAbstract, bool isVirtual, bool isOverride, bool isSafe) => null;
-    private PropertyNode? ParseProperty(string name, TypeNode type, List<AttributeNode> attributes, 
+    private PropertyNode? ParseProperty(string name, TypeNode type, List<AttributeNode> attributes,
         AccessModifier accessModifier, bool isStatic) => null;
-    private FieldNode? ParseField(string name, TypeNode type, List<AttributeNode> attributes, 
+    private FieldNode? ParseField(string name, TypeNode type, List<AttributeNode> attributes,
         AccessModifier accessModifier, bool isStatic, bool isReadOnly, bool isConst) => null;
 
     #endregion

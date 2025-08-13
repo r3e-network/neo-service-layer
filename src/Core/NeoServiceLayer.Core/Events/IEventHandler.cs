@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
 
@@ -17,13 +17,13 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the async operation</returns>
         Task HandleAsync(TEvent domainEvent, CancellationToken cancellationToken = default);
-    }
+}
 
-    /// <summary>
-    /// Interface for event handler with failure handling
-    /// </summary>
-    /// <typeparam name="TEvent">Type of event to handle</typeparam>
-    public interface IEventHandlerWithRetry&lt;in TEvent&gt; : IEventHandler&lt;TEvent&gt; where TEvent : IDomainEvent
+/// <summary>
+/// Interface for event handler with failure handling
+/// </summary>
+/// <typeparam name="TEvent">Type of event to handle</typeparam>
+public interface IEventHandlerWithRetry&lt;in TEvent & gt; : IEventHandler & lt; TEvent & gt; where TEvent : IDomainEvent
     {
         /// <summary>
         /// Handles event processing failure
@@ -33,10 +33,10 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="attemptNumber">Current attempt number (starting from 1)</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>True to retry, false to give up</returns>
-        Task&lt;bool&gt; HandleFailureAsync(
-            TEvent domainEvent, 
-            Exception exception, 
-            int attemptNumber, 
+        Task&lt; bool&gt; HandleFailureAsync(
+            TEvent domainEvent,
+            Exception exception,
+            int attemptNumber,
             CancellationToken cancellationToken = default);
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Authorization;
@@ -34,15 +34,15 @@ namespace NeoServiceLayer.Web.Hubs
         {
             var userId = Context.UserIdentifier ?? Context.ConnectionId;
             _userConnections[Context.ConnectionId] = userId;
-            
+
             _logger.LogInformation("User {UserId} connected to dashboard hub", userId);
-            
+
             // Send initial data to the connected client
             await SendInitialData();
-            
+
             // Add to dashboard group
             await Groups.AddToGroupAsync(Context.ConnectionId, "dashboard");
-            
+
             await base.OnConnectedAsync();
         }
 
@@ -54,10 +54,10 @@ namespace NeoServiceLayer.Web.Hubs
                 _userConnections.Remove(Context.ConnectionId);
                 _logger.LogInformation("User {UserId} disconnected from dashboard hub", userId);
             }
-            
+
             // Remove from dashboard group
             await Groups.RemoveFromGroupAsync(Context.ConnectionId, "dashboard");
-            
+
             await base.OnDisconnectedAsync(exception);
         }
 
@@ -68,7 +68,7 @@ namespace NeoServiceLayer.Web.Hubs
         {
             await Groups.AddToGroupAsync(Context.ConnectionId, $"service_{serviceName}");
             _logger.LogDebug("Client {ConnectionId} subscribed to {ServiceName}", Context.ConnectionId, serviceName);
-            
+
             // Send current status of the service
             var status = await _serviceMonitor.GetServiceStatusAsync(serviceName);
             await Clients.Caller.SendAsync("ServiceStatusUpdate", serviceName, status);
@@ -108,7 +108,7 @@ namespace NeoServiceLayer.Web.Hubs
             try
             {
                 var status = await _serviceMonitor.RefreshServiceStatusAsync(serviceName);
-                
+
                 // Notify all clients subscribed to this service
                 await Clients.Group($"service_{serviceName}").SendAsync("ServiceStatusUpdate", serviceName, status);
             }
@@ -179,7 +179,7 @@ namespace NeoServiceLayer.Web.Hubs
             {
                 var userId = Context.UserIdentifier ?? "Unknown";
                 await _serviceMonitor.AcknowledgeAlertAsync(alertId, userId);
-                
+
                 // Notify all dashboard clients about the acknowledgment
                 await Clients.Group("dashboard").SendAsync("AlertAcknowledged", alertId, userId);
             }

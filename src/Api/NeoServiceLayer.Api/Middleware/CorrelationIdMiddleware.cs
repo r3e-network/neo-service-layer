@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -33,7 +33,7 @@ namespace NeoServiceLayer.Api.Middleware
         {
             var correlationId = GetOrGenerateCorrelationId(context);
             var traceId = Activity.Current?.TraceId.ToString() ?? Guid.NewGuid().ToString("N");
-            
+
             // Add correlation ID to response headers
             context.Response.OnStarting(() =>
             {
@@ -41,23 +41,23 @@ namespace NeoServiceLayer.Api.Middleware
                 {
                     context.Response.Headers.Add(CorrelationIdHeaderName, correlationId);
                 }
-                
+
                 if (!context.Response.Headers.ContainsKey(TraceIdHeaderName))
                 {
                     context.Response.Headers.Add(TraceIdHeaderName, traceId);
                 }
-                
+
                 return Task.CompletedTask;
             });
 
             // Store correlation ID in HttpContext for access throughout request
             context.Items["CorrelationId"] = correlationId;
             context.Items["TraceId"] = traceId;
-            
+
             // Create structured logger for this request
             var structuredLogger = _loggerFactory.CreateLogger("API.Request", correlationId);
             context.Items["StructuredLogger"] = structuredLogger;
-            
+
             // Log request start
             structuredLogger.LogOperation("RequestStart", new Dictionary<string, object>
             {
@@ -70,7 +70,7 @@ namespace NeoServiceLayer.Api.Middleware
             });
 
             var stopwatch = Stopwatch.StartNew();
-            
+
             try
             {
                 await _next(context);
@@ -87,7 +87,7 @@ namespace NeoServiceLayer.Api.Middleware
             finally
             {
                 stopwatch.Stop();
-                
+
                 // Log request completion
                 structuredLogger.LogOperation("RequestComplete", new Dictionary<string, object>
                 {
@@ -95,7 +95,7 @@ namespace NeoServiceLayer.Api.Middleware
                     ["ElapsedMs"] = stopwatch.ElapsedMilliseconds,
                     ["ResponseContentType"] = context.Response.ContentType
                 }, GetLogLevel(context.Response.StatusCode));
-                
+
                 // Log performance metric
                 structuredLogger.LogMetric("request.duration", stopwatch.ElapsedMilliseconds, new Dictionary<string, object>
                 {
@@ -117,7 +117,7 @@ namespace NeoServiceLayer.Api.Middleware
                     return id;
                 }
             }
-            
+
             // Try to get from trace context (W3C Trace Context)
             if (context.Request.Headers.TryGetValue("traceparent", out StringValues traceParent))
             {
@@ -127,7 +127,7 @@ namespace NeoServiceLayer.Api.Middleware
                     return parts[1]; // Use trace ID as correlation ID
                 }
             }
-            
+
             // Generate new correlation ID
             return GenerateCorrelationId();
         }
@@ -139,7 +139,7 @@ namespace NeoServiceLayer.Api.Middleware
             {
                 return false;
             }
-            
+
             // Basic validation to prevent injection attacks
             foreach (char c in correlationId)
             {
@@ -148,7 +148,7 @@ namespace NeoServiceLayer.Api.Middleware
                     return false;
                 }
             }
-            
+
             return true;
         }
 

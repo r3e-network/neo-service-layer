@@ -58,11 +58,11 @@ namespace NeoServiceLayer.Web.Pages
                 {
                     // Load fresh data
                     Dashboard = await LoadDashboardDataAsync();
-                    
+
                     // Cache for 30 seconds
                     var cacheOptions = new MemoryCacheEntryOptions()
                         .SetSlidingExpiration(TimeSpan.FromSeconds(30));
-                    
+
                     _cache.Set("dashboard_data", Dashboard, cacheOptions);
                 }
                 else
@@ -166,10 +166,10 @@ namespace NeoServiceLayer.Web.Pages
             try
             {
                 var status = await _serviceMonitor.RefreshServiceStatusAsync(serviceName);
-                
+
                 // Notify all connected clients via SignalR
                 await _hubContext.Clients.All.SendAsync("ServiceStatusUpdated", serviceName, status);
-                
+
                 return new JsonResult(status);
             }
             catch (Exception ex)
@@ -193,10 +193,10 @@ namespace NeoServiceLayer.Web.Pages
                 }
 
                 var result = await _serviceMonitor.RestartServiceAsync(serviceName);
-                
+
                 // Notify all connected clients
                 await _hubContext.Clients.All.SendAsync("ServiceRestarted", serviceName);
-                
+
                 return new JsonResult(result);
             }
             catch (Exception ex)
@@ -220,8 +220,8 @@ namespace NeoServiceLayer.Web.Pages
                 var statuses = await _serviceMonitor.GetAllServiceStatusesAsync();
                 dashboard.HealthyServices = statuses.Count(s => s.IsHealthy);
                 dashboard.UnhealthyServices = statuses.Count(s => !s.IsHealthy);
-                dashboard.AverageResponseTime = statuses.Any() 
-                    ? statuses.Average(s => s.ResponseTime) 
+                dashboard.AverageResponseTime = statuses.Any()
+                    ? statuses.Average(s => s.ResponseTime)
                     : 0;
 
                 // Get system metrics
@@ -259,7 +259,7 @@ namespace NeoServiceLayer.Web.Pages
             // Simple CSV generation
             var csv = new System.Text.StringBuilder();
             csv.AppendLine("Service,Status,ResponseTime,ErrorRate,LastCheck");
-            
+
             // Add service data
             if (data is dynamic exportData && exportData.ServiceStatuses != null)
             {
@@ -268,7 +268,7 @@ namespace NeoServiceLayer.Web.Pages
                     csv.AppendLine($"{service.Name},{service.Status},{service.ResponseTime},{service.ErrorRate},{service.LastCheck}");
                 }
             }
-            
+
             return csv.ToString();
         }
     }

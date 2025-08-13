@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
@@ -219,7 +219,7 @@ public class CouplingMetrics
     /// <summary>
     /// Instability (I = Ce / (Ca + Ce)).
     /// </summary>
-    public double Instability => (AfferentCoupling + EfferentCoupling) == 0 ? 0 : 
+    public double Instability => (AfferentCoupling + EfferentCoupling) == 0 ? 0 :
         (double)EfferentCoupling / (AfferentCoupling + EfferentCoupling);
 
     /// <summary>

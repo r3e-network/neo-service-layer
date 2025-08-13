@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -31,11 +31,11 @@ namespace NeoServiceLayer.Api.Middleware
             _next = next;
             _logger = logger;
             _configuration = configuration;
-            
+
             var jwtSecret = configuration["Authentication:JwtSecret"];
             var issuer = configuration["Authentication:Issuer"] ?? "NeoServiceLayer";
             var audience = configuration["Authentication:Audience"] ?? "NeoServiceLayer";
-            
+
             _tokenValidationParameters = new TokenValidationParameters
             {
                 ValidateIssuerSigningKey = true,
@@ -52,14 +52,14 @@ namespace NeoServiceLayer.Api.Middleware
         public async Task InvokeAsync(HttpContext context)
         {
             var token = ExtractToken(context);
-            
+
             if (!string.IsNullOrEmpty(token))
             {
                 try
                 {
                     // Get authentication service
                     var authService = context.RequestServices.GetService<IAuthenticationService>();
-                    
+
                     // Check if token is blacklisted
                     if (authService != null && await authService.IsTokenBlacklistedAsync(token))
                     {
@@ -68,22 +68,22 @@ namespace NeoServiceLayer.Api.Middleware
                         await context.Response.WriteAsync("Token has been revoked");
                         return;
                     }
-                    
+
                     // Validate token
                     var tokenHandler = new JwtSecurityTokenHandler();
                     var principal = tokenHandler.ValidateToken(token, _tokenValidationParameters, out var validatedToken);
-                    
+
                     // Extract claims
                     var jwtToken = validatedToken as JwtSecurityToken;
                     var userId = principal.FindFirst(ClaimTypes.NameIdentifier)?.Value;
                     var sessionId = jwtToken?.Claims?.FirstOrDefault(x => x.Type == "session_id")?.Value;
-                    
+
                     // Validate session if present
                     if (!string.IsNullOrEmpty(sessionId) && authService != null)
                     {
                         var sessions = await authService.GetActiveSessionsAsync(userId);
                         var currentSession = sessions?.FirstOrDefault(s => s.SessionId == sessionId);
-                        
+
                         if (currentSession == null || !currentSession.IsActive)
                         {
                             _logger.LogWarning("Invalid or expired session: {SessionId}", sessionId);
@@ -91,19 +91,19 @@ namespace NeoServiceLayer.Api.Middleware
                             await context.Response.WriteAsync("Session expired or invalid");
                             return;
                         }
-                        
+
                         // Update session activity
                         currentSession.LastActivityAt = DateTime.UtcNow;
                     }
-                    
+
                     // Set user context
                     context.User = principal;
-                    
+
                     // Add custom claims to context
                     context.Items["UserId"] = userId;
                     context.Items["SessionId"] = sessionId;
                     context.Items["Token"] = token;
-                    
+
                     // Log successful authentication
                     _logger.LogDebug("User {UserId} authenticated successfully", userId);
                 }
@@ -129,7 +129,7 @@ namespace NeoServiceLayer.Api.Middleware
                     return;
                 }
             }
-            
+
             await _next(context);
         }
 
@@ -141,19 +141,19 @@ namespace NeoServiceLayer.Api.Middleware
             {
                 return authHeader.Substring(7);
             }
-            
+
             // Check cookie (for web applications)
             if (context.Request.Cookies.TryGetValue("access_token", out var cookieToken))
             {
                 return cookieToken;
             }
-            
+
             // Check query string (for WebSocket connections)
             if (context.Request.Query.TryGetValue("access_token", out var queryToken))
             {
                 return queryToken;
             }
-            
+
             return null;
         }
     }
@@ -184,30 +184,30 @@ namespace NeoServiceLayer.Api.Middleware
             {
                 var identifier = GetClientIdentifier(context);
                 var endpoint = context.Request.Path.Value;
-                
+
                 // Check rate limit
                 var rateLimitResult = await _rateLimitService.CheckRateLimitAsync(identifier, endpoint);
-                
+
                 if (!rateLimitResult.IsAllowed)
                 {
                     _logger.LogWarning("Rate limit exceeded for {Identifier} on {Endpoint}", identifier, endpoint);
-                    
+
                     context.Response.StatusCode = 429;
                     context.Response.Headers.Add("X-RateLimit-Limit", rateLimitResult.Limit.ToString());
                     context.Response.Headers.Add("X-RateLimit-Remaining", rateLimitResult.Remaining.ToString());
                     context.Response.Headers.Add("X-RateLimit-Reset", rateLimitResult.ResetAt.ToUnixTimeSeconds().ToString());
                     context.Response.Headers.Add("Retry-After", rateLimitResult.RetryAfter.ToString());
-                    
+
                     await context.Response.WriteAsync("Rate limit exceeded. Please try again later.");
                     return;
                 }
-                
+
                 // Add rate limit headers
                 context.Response.Headers.Add("X-RateLimit-Limit", rateLimitResult.Limit.ToString());
                 context.Response.Headers.Add("X-RateLimit-Remaining", rateLimitResult.Remaining.ToString());
                 context.Response.Headers.Add("X-RateLimit-Reset", rateLimitResult.ResetAt.ToUnixTimeSeconds().ToString());
             }
-            
+
             await _next(context);
         }
 
@@ -222,14 +222,14 @@ namespace NeoServiceLayer.Api.Middleware
                     return $"user:{userId}";
                 }
             }
-            
+
             // Fall back to IP address
             var ipAddress = context.Connection.RemoteIpAddress?.ToString();
             if (!string.IsNullOrEmpty(ipAddress))
             {
                 return $"ip:{ipAddress}";
             }
-            
+
             // Last resort: use a generic identifier
             return "anonymous";
         }
@@ -254,7 +254,7 @@ namespace NeoServiceLayer.Api.Middleware
             context.Response.Headers.Add("X-Frame-Options", "DENY");
             context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
             context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
-            context.Response.Headers.Add("Content-Security-Policy", 
+            context.Response.Headers.Add("Content-Security-Policy",
                 "default-src 'self'; " +
                 "script-src 'self' 'unsafe-inline' 'unsafe-eval'; " +
                 "style-src 'self' 'unsafe-inline'; " +
@@ -262,11 +262,11 @@ namespace NeoServiceLayer.Api.Middleware
                 "font-src 'self' data:; " +
                 "connect-src 'self'; " +
                 "frame-ancestors 'none';");
-            
+
             // Remove server header
             context.Response.Headers.Remove("Server");
             context.Response.Headers.Remove("X-Powered-By");
-            
+
             await _next(context);
         }
     }

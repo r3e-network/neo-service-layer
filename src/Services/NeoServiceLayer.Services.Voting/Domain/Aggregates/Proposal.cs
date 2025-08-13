@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NeoServiceLayer.Core.Aggregates;
@@ -24,13 +24,13 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         public DateTime VotingEndsAt { get; private set; }
         public DateTime? ClosedAt { get; private set; }
         public string? CancellationReason { get; private set; }
-        
+
         public IReadOnlyList<VoteOption> Options => _options.AsReadOnly();
         public IReadOnlyDictionary<Guid, Vote> Votes => _votes;
         public VotingResult? Result => _result;
         public int TotalVotes => _votes.Count;
-        public bool IsVotingOpen => Status == ProposalStatus.Active && 
-                                    DateTime.UtcNow >= VotingStartsAt && 
+        public bool IsVotingOpen => Status == ProposalStatus.Active &&
+                                    DateTime.UtcNow >= VotingStartsAt &&
                                     DateTime.UtcNow <= VotingEndsAt;
 
         // For Event Sourcing reconstruction
@@ -51,22 +51,22 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (string.IsNullOrWhiteSpace(title))
                 throw new ArgumentException("Title is required", nameof(title));
-            
+
             if (string.IsNullOrWhiteSpace(description))
                 throw new ArgumentException("Description is required", nameof(description));
-            
+
             if (options == null || options.Count < 2)
                 throw new ArgumentException("At least 2 options are required", nameof(options));
-            
+
             if (votingStartsAt >= votingEndsAt)
                 throw new ArgumentException("Voting end time must be after start time");
-            
+
             if (votingEndsAt <= DateTime.UtcNow)
                 throw new ArgumentException("Voting end time must be in the future");
 
             var proposalId = Guid.NewGuid();
             var proposal = new Proposal();
-            
+
             var @event = new ProposalCreatedEvent(
                 proposalId,
                 title,
@@ -78,15 +78,15 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                 votingStartsAt,
                 votingEndsAt,
                 DateTime.UtcNow);
-            
+
             proposal.RaiseEvent(@event);
-            
+
             // Auto-start if voting period has begun
             if (votingStartsAt <= DateTime.UtcNow)
             {
                 proposal.RaiseEvent(new VotingStartedEvent(proposalId, DateTime.UtcNow));
             }
-            
+
             return proposal;
         }
 
@@ -94,7 +94,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (Status != ProposalStatus.Draft)
                 throw new InvalidOperationException($"Cannot start voting - proposal status is {Status}");
-            
+
             if (DateTime.UtcNow < VotingStartsAt)
                 throw new InvalidOperationException("Cannot start voting before scheduled start time");
 
@@ -105,17 +105,17 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (!IsVotingOpen)
                 throw new InvalidOperationException("Voting is not currently open");
-            
+
             var option = _options.FirstOrDefault(o => o.Id == optionId);
             if (option == null)
                 throw new ArgumentException("Invalid option ID", nameof(optionId));
-            
+
             // Check if user has already voted
             if (_votes.ContainsKey(voterId))
             {
                 if (!Rules.AllowVoteChange)
                     throw new InvalidOperationException("Vote changes are not allowed for this proposal");
-                
+
                 var existingVote = _votes[voterId];
                 RaiseEvent(new VoteChangedEvent(
                     Id,
@@ -130,7 +130,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                 // Check if voter meets minimum weight requirement
                 if (weight < Rules.MinimumVoteWeight)
                     throw new InvalidOperationException($"Vote weight must be at least {Rules.MinimumVoteWeight}");
-                
+
                 RaiseEvent(new VoteCastEvent(
                     Id,
                     voterId,
@@ -144,10 +144,10 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (!IsVotingOpen)
                 throw new InvalidOperationException("Voting is not currently open");
-            
+
             if (!Rules.AllowVoteWithdrawal)
                 throw new InvalidOperationException("Vote withdrawal is not allowed for this proposal");
-            
+
             if (!_votes.ContainsKey(voterId))
                 throw new InvalidOperationException("No vote found to withdraw");
 
@@ -158,12 +158,12 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (Status != ProposalStatus.Active)
                 throw new InvalidOperationException($"Cannot end voting - proposal status is {Status}");
-            
+
             // Calculate results
             var result = CalculateResult();
-            
+
             RaiseEvent(new VotingEndedEvent(Id, result, DateTime.UtcNow));
-            
+
             // Determine winner if applicable
             if (result.WinningOptionId.HasValue)
             {
@@ -188,7 +188,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (Status == ProposalStatus.Completed || Status == ProposalStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot cancel proposal - status is {Status}");
-            
+
             RaiseEvent(new ProposalCancelledEvent(Id, reason, DateTime.UtcNow));
         }
 
@@ -196,10 +196,10 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         {
             if (Status != ProposalStatus.Active)
                 throw new InvalidOperationException("Can only extend active proposals");
-            
+
             if (newEndTime <= VotingEndsAt)
                 throw new ArgumentException("New end time must be after current end time");
-            
+
             if (newEndTime <= DateTime.UtcNow)
                 throw new ArgumentException("New end time must be in the future");
 
@@ -217,24 +217,24 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             {
                 voteCounts[option.Id] = 0;
             }
-            
+
             // Count votes with weights
             foreach (var vote in _votes.Values)
             {
                 voteCounts[vote.OptionId] += vote.Weight;
             }
-            
+
             // Calculate total votes
             var totalVoteWeight = voteCounts.Values.Sum();
-            
+
             // Check if quorum is met
-            var quorumMet = Rules.RequiredQuorum == 0 || 
+            var quorumMet = Rules.RequiredQuorum == 0 ||
                            (totalVoteWeight >= Rules.RequiredQuorum);
-            
+
             // Find winning option based on voting type
             Guid? winningOptionId = null;
             decimal winningVoteCount = 0;
-            
+
             if (quorumMet && totalVoteWeight > 0)
             {
                 switch (Type)
@@ -248,7 +248,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                             winningVoteCount = topOption.Value;
                         }
                         break;
-                    
+
                     case ProposalType.SuperMajority:
                         var superOption = voteCounts.OrderByDescending(kvp => kvp.Value).First();
                         var superVotePercentage = (superOption.Value / totalVoteWeight) * 100;
@@ -258,13 +258,13 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                             winningVoteCount = superOption.Value;
                         }
                         break;
-                    
+
                     case ProposalType.Plurality:
                         var pluralityWinner = voteCounts.OrderByDescending(kvp => kvp.Value).First();
                         winningOptionId = pluralityWinner.Key;
                         winningVoteCount = pluralityWinner.Value;
                         break;
-                    
+
                     case ProposalType.Unanimous:
                         var unanimousOption = voteCounts.FirstOrDefault(kvp => kvp.Value == totalVoteWeight);
                         if (unanimousOption.Key != Guid.Empty)
@@ -275,7 +275,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                         break;
                 }
             }
-            
+
             return new VotingResult(
                 TotalVotes,
                 totalVoteWeight,
@@ -303,39 +303,39 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                     CreatedAt = e.CreatedAt;
                     Status = ProposalStatus.Draft;
                     break;
-                
+
                 case VotingStartedEvent e:
                     Status = ProposalStatus.Active;
                     break;
-                
+
                 case VoteCastEvent e:
                     _votes[e.VoterId] = new Vote(e.VoterId, e.OptionId, e.Weight, e.CastAt);
                     break;
-                
+
                 case VoteChangedEvent e:
                     _votes[e.VoterId] = new Vote(e.VoterId, e.NewOptionId, e.Weight, e.ChangedAt);
                     break;
-                
+
                 case VoteWithdrawnEvent e:
                     _votes.Remove(e.VoterId);
                     break;
-                
+
                 case VotingEndedEvent e:
                     Status = ProposalStatus.Completed;
                     ClosedAt = e.EndedAt;
                     _result = e.Result;
                     break;
-                
+
                 case ProposalCancelledEvent e:
                     Status = ProposalStatus.Cancelled;
                     CancellationReason = e.Reason;
                     ClosedAt = e.CancelledAt;
                     break;
-                
+
                 case VotingPeriodExtendedEvent e:
                     VotingEndsAt = e.NewEndTime;
                     break;
-                
+
                 case ProposalApprovedEvent e:
                 case ProposalRejectedEvent e:
                     // These are informational events, no state change needed

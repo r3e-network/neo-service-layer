@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -36,7 +36,7 @@ public class NeoN3Lexer
         while (_position < _source.Length)
         {
             var leadingTrivia = ScanTrivia();
-            
+
             if (_position >= _source.Length)
                 break;
 
@@ -159,7 +159,7 @@ public class NeoN3Lexer
         }
 
         // Check for type suffix
-        if (Current() == 'L' || Current() == 'l' || 
+        if (Current() == 'L' || Current() == 'l' ||
             Current() == 'U' || Current() == 'u' ||
             Current() == 'F' || Current() == 'f' ||
             Current() == 'D' || Current() == 'd' ||
@@ -195,8 +195,8 @@ public class NeoN3Lexer
         }
 
         var value = sb.ToString();
-        var type = _keywords.TryGetValue(value, out var keywordType) 
-            ? keywordType 
+        var type = _keywords.TryGetValue(value, out var keywordType)
+            ? keywordType
             : TokenType.Identifier;
 
         startLocation.EndLine = _line;
@@ -297,7 +297,7 @@ public class NeoN3Lexer
     {
         Advance(); // Skip x, u, or U
         var hex = new StringBuilder();
-        
+
         for (int i = 0; i < digits && IsHexDigit(Current()); i++)
         {
             hex.Append(Current());
@@ -404,7 +404,7 @@ public class NeoN3Lexer
     private string ScanSingleLineComment()
     {
         var sb = new StringBuilder();
-        
+
         while (Current() != '\n' && !IsAtEnd())
         {
             sb.Append(Current());

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -57,7 +57,7 @@ public class ServiceHealthController : ControllerBase
     public async Task<IActionResult> GetServicesHealth()
     {
         var serviceHealthList = new List<object>();
-        
+
         // Check each registered service type
         var serviceTypes = new[]
         {
@@ -82,7 +82,7 @@ public class ServiceHealthController : ControllerBase
                 {
                     var health = await service.GetHealthAsync();
                     var status = service.GetStatusAsync != null ? await service.GetStatusAsync() : ServiceStatus.Unknown;
-                    
+
                     serviceHealthList.Add(new
                     {
                         name = serviceType.Name.Replace("I", "").Replace("Service", ""),

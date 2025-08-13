@@ -1,14 +1,14 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Configuration;
-using Xunit;
-using System;
-using System.Collections.Generic;
-using System.Threading.Tasks;
-using System.Diagnostics;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Caching;
 using NeoServiceLayer.TestInfrastructure;
+using Xunit;
 
 namespace NeoServiceLayer.Integration.Tests.Framework
 {
@@ -28,40 +28,40 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         public ServiceInteroperabilityTestFramework()
         {
             var services = new ServiceCollection();
-            
+
             // Configure logging
-            services.AddLogging(builder => 
+            services.AddLogging(builder =>
             {
                 builder.AddConsole();
                 builder.SetMinimumLevel(LogLevel.Debug);
             });
-            
+
             // Add configuration
             var configBuilder = new ConfigurationBuilder()
                 .AddJsonFile("appsettings.Test.json", optional: true)
                 .AddEnvironmentVariables();
-            
+
             _configuration = configBuilder.Build();
             services.AddSingleton(_configuration);
-            
+
             // Add test infrastructure
             services.AddSingleton<TestConfiguration>();
             services.AddSingleton<MockBlockchainClientFactory>();
-            
+
             // Add caching for integration tests
             services.AddMemoryCache();
             services.AddSingleton<ICacheService, MemoryCacheService>();
-            
+
             // Register all services for testing
             RegisterAllServices(services);
-            
+
             _serviceProvider = services.BuildServiceProvider();
             _logger = _serviceProvider.GetRequiredService<ILogger<ServiceInteroperabilityTestFramework>>();
             _testConfig = _serviceProvider.GetRequiredService<TestConfiguration>();
-            
+
             _serviceHealth = new List<ServiceHealthCheck>();
             _testContext = new Dictionary<string, object>();
-            
+
             _logger.LogInformation("Service Interoperability Test Framework initialized");
         }
 
@@ -84,12 +84,12 @@ namespace NeoServiceLayer.Integration.Tests.Framework
             {
                 // Pre-execution health checks
                 await PerformPreWorkflowHealthChecksAsync(workflow.RequiredServices);
-                
+
                 foreach (var step in workflow.Steps)
                 {
                     var stepResult = await ExecuteWorkflowStepAsync(step);
                     result.Steps.Add(stepResult);
-                    
+
                     if (!stepResult.Success && !step.ContinueOnFailure)
                     {
                         result.Success = false;
@@ -100,7 +100,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
                 // Post-execution validation
                 await PerformPostWorkflowValidationAsync(workflow.ValidationRules);
-                
+
                 result.Success = result.Steps.TrueForAll(s => s.Success || s.Step.ContinueOnFailure);
             }
             catch (Exception ex)
@@ -115,7 +115,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                 stopwatch.Stop();
                 result.EndTime = DateTime.UtcNow;
                 result.Duration = stopwatch.Elapsed;
-                
+
                 _logger.LogInformation("Workflow {WorkflowName} completed in {Duration}ms with result: {Success}",
                     workflow.Name, result.Duration.TotalMilliseconds, result.Success);
             }
@@ -127,8 +127,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         /// Tests service-to-service communication patterns.
         /// </summary>
         public async Task<ServiceCommunicationTestResult> TestServiceCommunicationAsync(
-            string sourceService, 
-            string targetService, 
+            string sourceService,
+            string targetService,
             object testPayload,
             CommunicationPattern pattern = CommunicationPattern.RequestResponse)
         {
@@ -152,15 +152,15 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                     case CommunicationPattern.RequestResponse:
                         result = await TestRequestResponsePatternAsync(sourceServiceInstance, targetServiceInstance, testPayload);
                         break;
-                        
+
                     case CommunicationPattern.EventDriven:
                         result = await TestEventDrivenPatternAsync(sourceServiceInstance, targetServiceInstance, testPayload);
                         break;
-                        
+
                     case CommunicationPattern.StreamingData:
                         result = await TestStreamingPatternAsync(sourceServiceInstance, targetServiceInstance, testPayload);
                         break;
-                        
+
                     default:
                         throw new NotSupportedException($"Communication pattern {pattern} not supported");
                 }
@@ -184,8 +184,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         /// Validates data consistency across multiple services.
         /// </summary>
         public async Task<DataConsistencyTestResult> ValidateDataConsistencyAsync(
-            List<string> services, 
-            string dataKey, 
+            List<string> services,
+            string dataKey,
             object expectedValue)
         {
             var result = new DataConsistencyTestResult
@@ -199,11 +199,11 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
             try
             {
-                _logger.LogDebug("Validating data consistency for key: {DataKey} across {ServiceCount} services", 
+                _logger.LogDebug("Validating data consistency for key: {DataKey} across {ServiceCount} services",
                     dataKey, services.Count);
 
                 var tasks = new List<Task>();
-                
+
                 foreach (var serviceName in services)
                 {
                     tasks.Add(Task.Run(async () =>
@@ -239,8 +239,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         /// Simulates service failures to test resilience.
         /// </summary>
         public async Task<ResilienceTestResult> TestServiceResilienceAsync(
-            string serviceName, 
-            FailureScenario scenario, 
+            string serviceName,
+            FailureScenario scenario,
             TimeSpan testDuration)
         {
             var result = new ResilienceTestResult
@@ -253,30 +253,30 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
             try
             {
-                _logger.LogInformation("Starting resilience test for service: {ServiceName}, scenario: {Scenario}", 
+                _logger.LogInformation("Starting resilience test for service: {ServiceName}, scenario: {Scenario}",
                     serviceName, scenario);
 
                 var service = GetServiceInstance(serviceName);
-                
+
                 // Apply failure scenario
                 await ApplyFailureScenarioAsync(service, scenario);
-                
+
                 // Monitor service behavior during failure
                 var monitoringTask = MonitorServiceDuringFailureAsync(service, testDuration);
-                
+
                 // Test dependent services
                 var dependencyTestTask = TestDependentServicesAsync(serviceName, testDuration);
-                
+
                 await Task.WhenAll(monitoringTask, dependencyTestTask);
-                
+
                 result.ServiceBehavior = await monitoringTask;
                 result.DependencyImpact = await dependencyTestTask;
-                
+
                 // Recovery test
                 await RestoreServiceAsync(service, scenario);
                 result.RecoveryTime = await MeasureRecoveryTimeAsync(service);
-                
-                result.Success = result.ServiceBehavior.MaintainedBasicFunctionality && 
+
+                result.Success = result.ServiceBehavior.MaintainedBasicFunctionality &&
                                 result.RecoveryTime < TimeSpan.FromMinutes(5);
             }
             catch (Exception ex)
@@ -308,13 +308,13 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
             try
             {
-                _logger.LogInformation("Testing transaction consistency across {ServiceCount} services", 
+                _logger.LogInformation("Testing transaction consistency across {ServiceCount} services",
                     scenario.Services.Count);
 
                 // Begin distributed transaction
                 var transactionId = Guid.NewGuid().ToString();
                 var serviceStates = new Dictionary<string, object>();
-                
+
                 // Capture initial states
                 foreach (var serviceName in scenario.Services)
                 {
@@ -324,12 +324,12 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
                 // Execute transaction operations
                 var operationResults = new List<TransactionOperationResult>();
-                
+
                 foreach (var operation in scenario.Operations)
                 {
                     var operationResult = await ExecuteTransactionOperationAsync(operation, transactionId);
                     operationResults.Add(operationResult);
-                    
+
                     if (!operationResult.Success && scenario.RequireAllOperationsSuccess)
                     {
                         // Rollback scenario
@@ -343,7 +343,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                 if (!result.RolledBack)
                 {
                     result.FinalConsistency = await ValidateTransactionConsistencyAsync(
-                        scenario.Services, 
+                        scenario.Services,
                         scenario.ConsistencyRules);
                 }
 
@@ -372,7 +372,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
             // Register all service implementations
             // This would be expanded to include all actual services
             _logger.LogDebug("Registering all services for integration testing");
-            
+
             // Add service registrations here based on actual service implementations
             // services.AddTransient<IServiceName, ServiceImplementation>();
         }
@@ -380,12 +380,12 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         private async Task PerformPreWorkflowHealthChecksAsync(List<string> requiredServices)
         {
             _logger.LogDebug("Performing pre-workflow health checks for {ServiceCount} services", requiredServices.Count);
-            
+
             foreach (var serviceName in requiredServices)
             {
                 var healthCheck = await CheckServiceHealthAsync(serviceName);
                 _serviceHealth.Add(healthCheck);
-                
+
                 if (!healthCheck.IsHealthy)
                 {
                     throw new InvalidOperationException($"Service {serviceName} is not healthy: {healthCheck.ErrorMessage}");
@@ -407,10 +407,10 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
                 var service = GetServiceInstance(step.ServiceName);
                 var result = await InvokeServiceMethodAsync(service, step.MethodName, step.Parameters);
-                
+
                 stepResult.Result = result;
                 stepResult.Success = true;
-                
+
                 // Store result in context for later steps
                 if (!string.IsNullOrEmpty(step.ResultKey))
                 {
@@ -437,7 +437,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
             if (validationRules?.Count > 0)
             {
                 _logger.LogDebug("Performing post-workflow validation with {RuleCount} rules", validationRules.Count);
-                
+
                 foreach (var rule in validationRules)
                 {
                     await ValidateRuleAsync(rule);
@@ -453,8 +453,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task<ServiceCommunicationTestResult> TestRequestResponsePatternAsync(
-            object sourceService, 
-            object targetService, 
+            object sourceService,
+            object targetService,
             object testPayload)
         {
             // Implementation for request-response pattern testing
@@ -463,8 +463,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task<ServiceCommunicationTestResult> TestEventDrivenPatternAsync(
-            object sourceService, 
-            object targetService, 
+            object sourceService,
+            object targetService,
             object testPayload)
         {
             // Implementation for event-driven pattern testing
@@ -473,8 +473,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task<ServiceCommunicationTestResult> TestStreamingPatternAsync(
-            object sourceService, 
-            object targetService, 
+            object sourceService,
+            object targetService,
             object testPayload)
         {
             // Implementation for streaming pattern testing
@@ -532,11 +532,11 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         {
             // Implementation for service health checking
             await Task.Delay(10);
-            return new ServiceHealthCheck 
-            { 
-                ServiceName = serviceName, 
-                IsHealthy = true, 
-                CheckTime = DateTime.UtcNow 
+            return new ServiceHealthCheck
+            {
+                ServiceName = serviceName,
+                IsHealthy = true,
+                CheckTime = DateTime.UtcNow
             };
         }
 
@@ -561,7 +561,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task<TransactionOperationResult> ExecuteTransactionOperationAsync(
-            TransactionOperation operation, 
+            TransactionOperation operation,
             string transactionId)
         {
             // Implementation for executing transaction operations
@@ -576,7 +576,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task<DataConsistencyTestResult> ValidateTransactionConsistencyAsync(
-            List<string> services, 
+            List<string> services,
             List<ConsistencyRule> consistencyRules)
         {
             // Implementation for transaction consistency validation

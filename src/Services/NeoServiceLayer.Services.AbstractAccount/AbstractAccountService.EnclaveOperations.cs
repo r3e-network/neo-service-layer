@@ -48,7 +48,7 @@ public partial class AbstractAccountService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving account creation in SGX
 #pragma warning disable CS8602 // Dereference of a possibly null reference
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
@@ -69,9 +69,9 @@ public partial class AbstractAccountService
         // The JS template returns anonymized data, so we need to create the actual account
         // and then return the real values while keeping the privacy-preserving computation
         string actualResult = await _enclaveManager.CreateAbstractAccountAsync(accountId, JsonSerializer.Serialize(accountData), CancellationToken.None);
-        
+
         var actualResultJson = JsonSerializer.Deserialize<JsonElement>(actualResult);
-        
+
         string accountAddress = actualResultJson.GetProperty("account_address").GetString() ?? "";
         string masterPublicKey = actualResultJson.GetProperty("master_public_key").GetString() ?? "";
         string transactionHash = actualResultJson.GetProperty("transaction_hash").GetString() ?? "";
@@ -132,7 +132,7 @@ public partial class AbstractAccountService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving transaction validation in SGX
 #pragma warning disable CS8602 // Dereference of a possibly null reference
         string validationResult = await _enclaveManager.ExecuteJavaScriptAsync(

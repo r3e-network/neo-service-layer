@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -41,13 +41,13 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         ILogger<StatisticsService> logger,
         IEnclaveManager enclaveManager,
         IEnclaveStorageService? enclaveStorage = null)
-        : base("StatisticsService", "Comprehensive statistics and monitoring service", "1.0.0", 
+        : base("StatisticsService", "Comprehensive statistics and monitoring service", "1.0.0",
                logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         _sgxPersistence = new SGXPersistence("StatisticsService", enclaveStorage, logger);
         _startTime = DateTime.UtcNow;
         _currentProcess = Process.GetCurrentProcess();
-        
+
         AddCapability<IStatisticsService>();
         AddDependency(new ServiceDependency("HealthService", false, "1.0.0"));
         AddDependency(new ServiceDependency("EnclaveStorageService", false, "1.0.0"));
@@ -72,7 +72,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     {
         var activeServices = _serviceStats.Values.Count(s => s.Status == ServiceStatus.Running);
         var healthyServices = _serviceStats.Values.Count(s => s.Health == ServiceHealth.Healthy);
-        
+
         var stats = new SystemStatistics
         {
             ActiveServices = activeServices,
@@ -122,7 +122,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     public async Task<Dictionary<string, ServiceStatistics>> GetAllServiceStatisticsAsync()
     {
         var allStats = new Dictionary<string, ServiceStatistics>();
-        
+
         foreach (var kvp in _serviceStats)
         {
             var stats = kvp.Value;
@@ -161,7 +161,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     {
         var totalRequests = _serviceStats.Values.Sum(s => s.TotalOperations);
         var duration = (endTime - startTime).TotalSeconds;
-        
+
         var metrics = new PerformanceMetrics
         {
             StartTime = startTime,
@@ -195,7 +195,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         // Update service statistics
         var stats = await GetServiceStatisticsAsync(serviceName);
         Interlocked.Increment(ref stats.TotalOperations);
-        
+
         if (success)
         {
             Interlocked.Increment(ref stats.SuccessfulOperations);
@@ -216,7 +216,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
 
             opMetrics.Count++;
             if (success) opMetrics.SuccessCount++;
-            
+
             // Update duration metrics
             if (opMetrics.Count == 1)
             {
@@ -234,28 +234,28 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
 
         // Record response time for percentile calculations
         var key = $"{serviceName}:{operation}";
-        _responseTimesBuffer.AddOrUpdate(key, 
-            new List<long> { duration }, 
+        _responseTimesBuffer.AddOrUpdate(key,
+            new List<long> { duration },
             (k, list) => { list.Add(duration); return list; });
 
         // Update success rate
-        stats.SuccessRate = stats.TotalOperations > 0 
-            ? (stats.SuccessfulOperations * 100.0 / stats.TotalOperations) 
+        stats.SuccessRate = stats.TotalOperations > 0
+            ? (stats.SuccessfulOperations * 100.0 / stats.TotalOperations)
             : 100.0;
 
         // Check if this is an SGX operation
-        if (operation.Contains("SGX", StringComparison.OrdinalIgnoreCase) || 
+        if (operation.Contains("SGX", StringComparison.OrdinalIgnoreCase) ||
             operation.Contains("Enclave", StringComparison.OrdinalIgnoreCase))
         {
             Interlocked.Increment(ref _totalSGXOperations);
-            
+
             if (stats.EnclaveStats == null)
             {
                 stats.EnclaveStats = new EnclaveStatistics();
             }
-            
+
             Interlocked.Increment(ref stats.EnclaveStats.TotalOperations);
-            
+
             if (operation.Contains("JavaScript", StringComparison.OrdinalIgnoreCase))
             {
                 Interlocked.Increment(ref stats.EnclaveStats.JavaScriptExecutions);
@@ -269,7 +269,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     public async Task RecordTransactionAsync(BlockchainType blockchainType, string transactionType, bool success)
     {
         var stats = await GetBlockchainStatisticsAsync(blockchainType);
-        
+
         Interlocked.Increment(ref stats.TotalTransactions);
         if (success)
         {
@@ -359,7 +359,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         {
             // Load persisted statistics
             await LoadPersistedStatisticsAsync();
-            
+
             Logger.LogInformation("Statistics Service initialized successfully");
             return true;
         }
@@ -374,10 +374,10 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     protected override async Task<bool> OnStartAsync()
     {
         Logger.LogInformation("Starting Statistics Service");
-        
+
         // Start monitoring all registered services
         await Task.CompletedTask;
-        
+
         Logger.LogInformation("Statistics Service started successfully");
         return true;
     }
@@ -386,14 +386,14 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Stopping Statistics Service");
-        
+
         // Persist current statistics
         await PersistStatisticsAsync();
-        
+
         // Dispose timers
         _aggregationTimer?.Dispose();
         _cleanupTimer?.Dispose();
-        
+
         Logger.LogInformation("Statistics Service stopped successfully");
         return true;
     }
@@ -462,14 +462,14 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         var allResponseTimes = _serviceStats.Values
             .Where(s => s.AverageResponseTime > 0)
             .Select(s => s.AverageResponseTime);
-        
+
         return allResponseTimes.Any() ? allResponseTimes.Average() : 0;
     }
 
     private double CalculatePercentileLatency(int percentile)
     {
         var allResponseTimes = new List<double>();
-        
+
         foreach (var stats in _serviceStats.Values)
         {
             if (percentile >= 99 && stats.P99ResponseTime > 0)
@@ -483,7 +483,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         }
 
         if (!allResponseTimes.Any()) return 0;
-        
+
         allResponseTimes.Sort();
         var index = (int)Math.Ceiling(percentile / 100.0 * allResponseTimes.Count) - 1;
         return allResponseTimes[Math.Max(0, Math.Min(index, allResponseTimes.Count - 1))];
@@ -493,7 +493,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     {
         var totalOps = _serviceStats.Values.Sum(s => s.TotalOperations);
         var failedOps = _serviceStats.Values.Sum(s => s.FailedOperations);
-        
+
         return totalOps > 0 ? (failedOps * 100.0 / totalOps) : 0;
     }
 
@@ -502,9 +502,9 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         var healthyTime = _serviceStats.Values
             .Where(s => s.Health == ServiceHealth.Healthy)
             .Sum(s => s.UptimeSeconds);
-        
+
         var totalTime = _serviceStats.Values.Sum(s => s.UptimeSeconds);
-        
+
         return totalTime > 0 ? (healthyTime * 100.0 / totalTime) : 100;
     }
 
@@ -530,16 +530,16 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         // Simple CPU usage calculation
         var startTime = DateTime.UtcNow;
         var startCpuUsage = _currentProcess.TotalProcessorTime;
-        
+
         await Task.Delay(100);
-        
+
         var endTime = DateTime.UtcNow;
         var endCpuUsage = _currentProcess.TotalProcessorTime;
-        
+
         var cpuUsedMs = (endCpuUsage - startCpuUsage).TotalMilliseconds;
         var totalMsPassed = (endTime - startTime).TotalMilliseconds;
         var cpuUsageTotal = cpuUsedMs / (Environment.ProcessorCount * totalMsPassed);
-        
+
         return Math.Round(cpuUsageTotal * 100, 2);
     }
 
@@ -576,7 +576,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     private double GetPercentile(List<long> sortedValues, int percentile)
     {
         if (sortedValues.Count == 0) return 0;
-        
+
         var index = (int)Math.Ceiling(percentile / 100.0 * sortedValues.Count) - 1;
         return sortedValues[Math.Max(0, Math.Min(index, sortedValues.Count - 1))];
     }
@@ -586,12 +586,12 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         // Simple CSV export implementation
         var csv = new StringBuilder();
         csv.AppendLine("Service,Total Operations,Success Rate,Avg Response Time");
-        
+
         foreach (var stats in _serviceStats.Values)
         {
             csv.AppendLine($"{stats.ServiceName},{stats.TotalOperations},{stats.SuccessRate:F2},{stats.AverageResponseTime:F2}");
         }
-        
+
         return Encoding.UTF8.GetBytes(csv.ToString());
     }
 
@@ -599,12 +599,12 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     {
         // Prometheus format export
         var metrics = new StringBuilder();
-        
+
         // System metrics
         metrics.AppendLine($"# HELP neo_service_layer_uptime_seconds Service uptime in seconds");
         metrics.AppendLine($"# TYPE neo_service_layer_uptime_seconds gauge");
         metrics.AppendLine($"neo_service_layer_uptime_seconds {(DateTime.UtcNow - _startTime).TotalSeconds}");
-        
+
         // Service metrics
         foreach (var stats in _serviceStats.Values)
         {
@@ -613,7 +613,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
             metrics.AppendLine($"neo_service_success_rate{{service=\"{serviceName}\"}} {stats.SuccessRate}");
             metrics.AppendLine($"neo_service_response_time_ms{{service=\"{serviceName}\"}} {stats.AverageResponseTime}");
         }
-        
+
         return Encoding.UTF8.GetBytes(metrics.ToString());
     }
 
@@ -628,11 +628,11 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
                 {
                     _serviceStats[kvp.Key] = kvp.Value;
                 }
-                
+
                 _totalOperations = persistedStats.TotalOperations;
                 _successfulOperations = persistedStats.SuccessfulOperations;
                 _totalSGXOperations = persistedStats.TotalSGXOperations;
-                
+
                 Logger.LogInformation("Loaded persisted statistics for {Count} services", _serviceStats.Count);
             }
         }
@@ -655,7 +655,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
                 TotalSGXOperations = _totalSGXOperations,
                 Timestamp = DateTime.UtcNow
             };
-            
+
             await _sgxPersistence.StoreStatisticsAsync(persistedStats, BlockchainType.NeoN3);
             Logger.LogInformation("Persisted statistics for {Count} services", _serviceStats.Count);
         }
@@ -670,19 +670,19 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     /// </summary>
     private class SGXPersistence : NeoServiceLayer.ServiceFramework.SGXPersistenceBase
     {
-        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger) 
+        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger)
             : base(serviceName, enclaveStorage, logger)
         {
         }
 
         public async Task<bool> StoreStatisticsAsync(PersistedStatistics stats, BlockchainType blockchainType)
         {
-            return await StoreSecurelyAsync("statistics:current", stats, 
-                new Dictionary<string, object> 
-                { 
+            return await StoreSecurelyAsync("statistics:current", stats,
+                new Dictionary<string, object>
+                {
                     ["type"] = "statistics",
                     ["timestamp"] = stats.Timestamp
-                }, 
+                },
                 blockchainType);
         }
 

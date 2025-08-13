@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
@@ -48,19 +48,19 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
         }
 
         public void LogOperation(
-            string operation, 
-            Dictionary<string, object> properties = null, 
+            string operation,
+            Dictionary<string, object> properties = null,
             LogLevel level = LogLevel.Information)
         {
             using var activity = _activitySource.StartActivity(operation, ActivityKind.Internal);
             activity?.SetTag("correlation.id", _correlationId);
-            
+
             var logProperties = MergeProperties(properties);
             logProperties["Operation"] = operation;
             logProperties["Timestamp"] = DateTimeOffset.UtcNow;
             logProperties["TraceId"] = activity?.TraceId.ToString() ?? "unknown";
             logProperties["SpanId"] = activity?.SpanId.ToString() ?? "unknown";
-            
+
             using (_logger.BeginScope(logProperties))
             {
                 _logger.Log(
@@ -72,8 +72,8 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
         }
 
         public void LogMetric(
-            string metricName, 
-            double value, 
+            string metricName,
+            double value,
             Dictionary<string, object> dimensions = null)
         {
             var logProperties = MergeProperties(dimensions);
@@ -81,7 +81,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
             logProperties["MetricValue"] = value;
             logProperties["MetricTimestamp"] = DateTimeOffset.UtcNow;
             logProperties["MetricType"] = "gauge";
-            
+
             using (_logger.BeginScope(logProperties))
             {
                 _logger.LogInformation(
@@ -93,26 +93,26 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
         }
 
         public void LogException(
-            Exception exception, 
-            string operation, 
+            Exception exception,
+            string operation,
             Dictionary<string, object> properties = null)
         {
             using var activity = _activitySource.StartActivity($"{operation}.Error", ActivityKind.Internal);
             activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
             activity?.RecordException(exception);
-            
+
             var logProperties = MergeProperties(properties);
             logProperties["Operation"] = operation;
             logProperties["ExceptionType"] = exception.GetType().Name;
             logProperties["ExceptionMessage"] = exception.Message;
             logProperties["StackTrace"] = exception.StackTrace;
             logProperties["ErrorTimestamp"] = DateTimeOffset.UtcNow;
-            
+
             if (exception.InnerException != null)
             {
                 logProperties["InnerException"] = exception.InnerException.Message;
             }
-            
+
             using (_logger.BeginScope(logProperties))
             {
                 _logger.LogError(
@@ -129,17 +129,17 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
             var scopeProperties = MergeProperties(properties);
             scopeProperties["ScopeName"] = scopeName;
             scopeProperties["ScopeStartTime"] = DateTimeOffset.UtcNow;
-            
+
             var activity = _activitySource.StartActivity(scopeName, ActivityKind.Internal);
             activity?.SetTag("correlation.id", _correlationId);
-            
+
             foreach (var prop in scopeProperties)
             {
                 activity?.SetTag(prop.Key, prop.Value?.ToString());
             }
-            
+
             var loggerScope = _logger.BeginScope(scopeProperties);
-            
+
             return new CompositeDisposable(activity, loggerScope);
         }
 
@@ -154,7 +154,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
         private Dictionary<string, object> MergeProperties(Dictionary<string, object> additionalProperties)
         {
             var merged = new Dictionary<string, object>(_contextProperties);
-            
+
             if (additionalProperties != null)
             {
                 foreach (var kvp in additionalProperties)
@@ -162,7 +162,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
                     merged[kvp.Key] = kvp.Value;
                 }
             }
-            
+
             return merged;
         }
 

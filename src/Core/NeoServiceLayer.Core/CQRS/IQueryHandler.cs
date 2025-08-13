@@ -1,4 +1,4 @@
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 
 namespace NeoServiceLayer.Core.CQRS
@@ -17,5 +17,5 @@ namespace NeoServiceLayer.Core.CQRS
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task containing the result</returns>
         Task&lt;TResult&gt; HandleAsync(TQuery query, CancellationToken cancellationToken = default);
-    }
+}
 }

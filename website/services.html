@@ -1,0 +1,740 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Services & Capabilities | Neo Service Layer Platform</title>
+    <meta name="description" content="Explore Neo Service Layer's comprehensive services including enclave computing, secure storage, blockchain integration, testing frameworks, and enterprise infrastructure.">
+    <meta name="keywords" content="Neo blockchain services, SGX enclave services, blockchain testing, chaos engineering, service mesh, compliance suite">
+    
+    <!-- CSS -->
+    <link rel="stylesheet" href="assets/css/variables.css">
+    <link rel="stylesheet" href="assets/css/reset.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/animations.css">
+    <link rel="stylesheet" href="assets/css/utilities.css">
+    <link rel="stylesheet" href="assets/css/main.css">
+    
+    <!-- External CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/aos@2.3.1/dist/aos.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar" id="navbar">
+        <div class="container">
+            <div class="navbar-inner">
+                <a href="/" class="navbar-brand">
+                    <div class="brand-logo">
+                        <svg viewBox="0 0 40 40" class="brand-icon">
+                            <path d="M20,2 L35,10 L35,30 L20,38 L5,30 L5,10 Z" 
+                                  fill="none" stroke="currentColor" stroke-width="2"/>
+                            <circle cx="20" cy="20" r="8" fill="currentColor" opacity="0.8"/>
+                        </svg>
+                        <span class="brand-text">Neo Service Layer</span>
+                    </div>
+                </a>
+
+                <div class="navbar-menu" id="navbarMenu">
+                    <a href="/" class="navbar-link">Home</a>
+                    <a href="/services.html" class="navbar-link active">Services</a>
+                    <a href="/docs" class="navbar-link">Documentation</a>
+                    <a href="/blog" class="navbar-link">Blog</a>
+                    <a href="/contact.html" class="navbar-link">Contact</a>
+                </div>
+
+                <div class="navbar-actions">
+                    <a href="https://github.com/neo-project/neo-service-layer" class="btn btn-outline btn-sm">
+                        <i class="fab fa-github"></i> GitHub
+                    </a>
+                    <a href="/docs/quick-start.html" class="btn btn-primary btn-sm">Get Started</a>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero Section -->
+    <section class="page-hero">
+        <div class="container">
+            <div class="page-hero-content">
+                <h1 class="page-title" data-aos="fade-up">
+                    Platform <span class="text-gradient">Services & Capabilities</span>
+                </h1>
+                <p class="page-description" data-aos="fade-up" data-aos-delay="100">
+                    A comprehensive suite of services for building secure, scalable, and tested blockchain applications
+                </p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Core Services Section -->
+    <section class="services-detailed">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">Core Platform Services</h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Six foundational services powering the Neo Service Layer ecosystem
+                </p>
+            </div>
+
+            <div class="services-grid">
+                <!-- Enclave Storage Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="100">
+                    <div class="service-icon">
+                        <i class="fas fa-lock"></i>
+                    </div>
+                    <h3>Enclave Storage Service</h3>
+                    <p class="service-overview">
+                        Secure, encrypted storage within Intel SGX enclaves with hardware-level protection
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Hardware-encrypted data at rest</li>
+                            <li><i class="fas fa-check"></i> Sealed storage with attestation</li>
+                            <li><i class="fas fa-check"></i> Automatic key rotation</li>
+                            <li><i class="fas fa-check"></i> ACID transaction support</li>
+                            <li><i class="fas fa-check"></i> Multi-enclave data sharing</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">Intel SGX</span>
+                        <span class="tech-badge">AES-256</span>
+                        <span class="tech-badge">TEE</span>
+                    </div>
+                </div>
+
+                <!-- Key Management Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="200">
+                    <div class="service-icon">
+                        <i class="fas fa-key"></i>
+                    </div>
+                    <h3>Key Management Service</h3>
+                    <p class="service-overview">
+                        Enterprise-grade cryptographic key lifecycle management with HSM integration
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Hierarchical key derivation</li>
+                            <li><i class="fas fa-check"></i> Multi-signature support</li>
+                            <li><i class="fas fa-check"></i> Key escrow and recovery</li>
+                            <li><i class="fas fa-check"></i> HSM/SGX key storage</li>
+                            <li><i class="fas fa-check"></i> Quantum-resistant algorithms</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">PKCS#11</span>
+                        <span class="tech-badge">Ed25519</span>
+                        <span class="tech-badge">BLS</span>
+                    </div>
+                </div>
+
+                <!-- Smart Contracts Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="300">
+                    <div class="service-icon">
+                        <i class="fas fa-file-contract"></i>
+                    </div>
+                    <h3>Smart Contracts Service</h3>
+                    <p class="service-overview">
+                        Confidential smart contract execution with Neo N3 integration and privacy features
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Private contract execution</li>
+                            <li><i class="fas fa-check"></i> Zero-knowledge proofs</li>
+                            <li><i class="fas fa-check"></i> Oracle integration</li>
+                            <li><i class="fas fa-check"></i> Cross-chain bridges</li>
+                            <li><i class="fas fa-check"></i> Gas optimization</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">Neo N3</span>
+                        <span class="tech-badge">C#</span>
+                        <span class="tech-badge">Python</span>
+                    </div>
+                </div>
+
+                <!-- Authentication Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="400">
+                    <div class="service-icon">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                    <h3>Authentication Service</h3>
+                    <p class="service-overview">
+                        Multi-factor authentication with biometric support and decentralized identity
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> OAuth 2.0 / OpenID Connect</li>
+                            <li><i class="fas fa-check"></i> WebAuthn/FIDO2 support</li>
+                            <li><i class="fas fa-check"></i> DID integration</li>
+                            <li><i class="fas fa-check"></i> Session management</li>
+                            <li><i class="fas fa-check"></i> Rate limiting</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">JWT</span>
+                        <span class="tech-badge">SAML</span>
+                        <span class="tech-badge">DID</span>
+                    </div>
+                </div>
+
+                <!-- Cross-Chain Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="500">
+                    <div class="service-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3>Cross-Chain Service</h3>
+                    <p class="service-overview">
+                        Seamless interoperability between Neo and other blockchain networks
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> Atomic swaps</li>
+                            <li><i class="fas fa-check"></i> Bridge protocols</li>
+                            <li><i class="fas fa-check"></i> Relay networks</li>
+                            <li><i class="fas fa-check"></i> Multi-chain wallets</li>
+                            <li><i class="fas fa-check"></i> Cross-chain messaging</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">IBC</span>
+                        <span class="tech-badge">Poly Network</span>
+                        <span class="tech-badge">XCMP</span>
+                    </div>
+                </div>
+
+                <!-- Permissions Service -->
+                <div class="service-detail-card" data-aos="fade-up" data-aos-delay="600">
+                    <div class="service-icon">
+                        <i class="fas fa-user-lock"></i>
+                    </div>
+                    <h3>Permissions Service</h3>
+                    <p class="service-overview">
+                        Fine-grained access control with role-based and attribute-based policies
+                    </p>
+                    <div class="service-features">
+                        <h4>Key Features:</h4>
+                        <ul>
+                            <li><i class="fas fa-check"></i> RBAC/ABAC support</li>
+                            <li><i class="fas fa-check"></i> Dynamic permissions</li>
+                            <li><i class="fas fa-check"></i> Policy engine</li>
+                            <li><i class="fas fa-check"></i> Audit logging</li>
+                            <li><i class="fas fa-check"></i> Delegation support</li>
+                        </ul>
+                    </div>
+                    <div class="service-tech">
+                        <span class="tech-badge">XACML</span>
+                        <span class="tech-badge">OPA</span>
+                        <span class="tech-badge">Casbin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testing Infrastructure Section -->
+    <section class="testing-services">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Comprehensive <span class="text-gradient">Testing Infrastructure</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Industry-leading testing capabilities ensuring reliability and security
+                </p>
+            </div>
+
+            <div class="testing-grid">
+                <!-- Chaos Engineering -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="100">
+                    <div class="testing-icon">
+                        <i class="fas fa-bolt"></i>
+                    </div>
+                    <h3>Chaos Engineering Framework</h3>
+                    <p>Test system resilience with controlled failure injection</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-network-wired"></i>
+                            <span>Network partitioning & latency injection</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-server"></i>
+                            <span>Service instance failure simulation</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-memory"></i>
+                            <span>Resource stress testing (CPU, memory, disk)</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-clock"></i>
+                            <span>Clock skew and time manipulation</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-project-diagram"></i>
+                            <span>Cascading failure analysis</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value">7</span>
+                            <span class="metric-label">Chaos Strategies</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">6</span>
+                            <span class="metric-label">Test Phases</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">99.9%</span>
+                            <span class="metric-label">Recovery Rate</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Service Health Testing -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="200">
+                    <div class="testing-icon">
+                        <i class="fas fa-heartbeat"></i>
+                    </div>
+                    <h3>Service Health & Dependency Testing</h3>
+                    <p>Comprehensive health monitoring and dependency validation</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-stethoscope"></i>
+                            <span>8-point health check system</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-sitemap"></i>
+                            <span>Dependency graph analysis</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-circle-notch"></i>
+                            <span>Circular dependency detection</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-chart-line"></i>
+                            <span>Performance degradation monitoring</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-play"></i>
+                            <span>Startup/shutdown testing</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value"><100ms</span>
+                            <span class="metric-label">Check Latency</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">99.99%</span>
+                            <span class="metric-label">Uptime</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">24/7</span>
+                            <span class="metric-label">Monitoring</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Transaction Testing -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="300">
+                    <div class="testing-icon">
+                        <i class="fas fa-exchange-alt"></i>
+                    </div>
+                    <h3>Cross-Service Transaction Testing</h3>
+                    <p>Distributed transaction validation and consistency testing</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-sync"></i>
+                            <span>Two-phase commit testing</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-code-branch"></i>
+                            <span>SAGA pattern validation</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-lock"></i>
+                            <span>Isolation level verification</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-undo"></i>
+                            <span>Compensation & rollback testing</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-check-double"></i>
+                            <span>Eventual consistency validation</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value">ACID</span>
+                            <span class="metric-label">Compliance</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">0</span>
+                            <span class="metric-label">Data Loss</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">100%</span>
+                            <span class="metric-label">Consistency</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Coverage Analysis -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="400">
+                    <div class="testing-icon">
+                        <i class="fas fa-chart-pie"></i>
+                    </div>
+                    <h3>Test Coverage Analysis</h3>
+                    <p>Automated coverage tracking with gap detection</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-file-code"></i>
+                            <span>Multi-format report parsing</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-search"></i>
+                            <span>Untested code detection</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-exclamation-triangle"></i>
+                            <span>Coverage gap identification</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-chart-area"></i>
+                            <span>Trend analysis & reporting</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-lightbulb"></i>
+                            <span>Improvement recommendations</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value">80%+</span>
+                            <span class="metric-label">Target Coverage</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">Real-time</span>
+                            <span class="metric-label">Analysis</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">Automated</span>
+                            <span class="metric-label">Reporting</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Performance Testing -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="500">
+                    <div class="testing-icon">
+                        <i class="fas fa-tachometer-alt"></i>
+                    </div>
+                    <h3>Performance & Load Testing</h3>
+                    <p>Comprehensive performance validation under stress</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-users"></i>
+                            <span>Concurrent user simulation</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-chart-bar"></i>
+                            <span>Throughput measurement</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-hourglass-half"></i>
+                            <span>Latency profiling (P50, P95, P99)</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-expand-arrows-alt"></i>
+                            <span>Scalability testing</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-fire"></i>
+                            <span>Stress & spike testing</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value">10K+</span>
+                            <span class="metric-label">TPS</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value"><100ms</span>
+                            <span class="metric-label">P99 Latency</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">Linear</span>
+                            <span class="metric-label">Scaling</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Security Testing -->
+                <div class="testing-card" data-aos="zoom-in" data-aos-delay="600">
+                    <div class="testing-icon">
+                        <i class="fas fa-shield-alt"></i>
+                    </div>
+                    <h3>Security & Compliance Testing</h3>
+                    <p>Vulnerability scanning and compliance validation</p>
+                    <div class="testing-capabilities">
+                        <div class="capability">
+                            <i class="fas fa-bug"></i>
+                            <span>Vulnerability scanning</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-user-secret"></i>
+                            <span>Penetration testing</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-clipboard-check"></i>
+                            <span>Compliance validation</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-key"></i>
+                            <span>Encryption verification</span>
+                        </div>
+                        <div class="capability">
+                            <i class="fas fa-file-shield"></i>
+                            <span>SGX attestation testing</span>
+                        </div>
+                    </div>
+                    <div class="testing-metrics">
+                        <div class="metric">
+                            <span class="metric-value">SOC2</span>
+                            <span class="metric-label">Compliant</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">0</span>
+                            <span class="metric-label">Critical Vulns</span>
+                        </div>
+                        <div class="metric">
+                            <span class="metric-value">A+</span>
+                            <span class="metric-label">Security Score</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Infrastructure Services -->
+    <section class="infrastructure-services">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Enterprise <span class="text-gradient">Infrastructure</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Production-ready infrastructure for mission-critical applications
+                </p>
+            </div>
+
+            <div class="infrastructure-grid">
+                <div class="infra-card" data-aos="fade-right" data-aos-delay="100">
+                    <div class="infra-icon">
+                        <i class="fas fa-project-diagram"></i>
+                    </div>
+                    <div class="infra-content">
+                        <h3>Service Mesh</h3>
+                        <p>Advanced traffic management and service orchestration</p>
+                        <ul>
+                            <li>Load balancing & failover</li>
+                            <li>Circuit breakers</li>
+                            <li>Service discovery</li>
+                            <li>Distributed tracing</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="infra-card" data-aos="fade-left" data-aos-delay="200">
+                    <div class="infra-icon">
+                        <i class="fas fa-chart-line"></i>
+                    </div>
+                    <div class="infra-content">
+                        <h3>Observability Suite</h3>
+                        <p>Complete monitoring and analytics platform</p>
+                        <ul>
+                            <li>Real-time metrics</li>
+                            <li>Distributed logging</li>
+                            <li>APM integration</li>
+                            <li>Custom dashboards</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="infra-card" data-aos="fade-right" data-aos-delay="300">
+                    <div class="infra-icon">
+                        <i class="fas fa-balance-scale"></i>
+                    </div>
+                    <div class="infra-content">
+                        <h3>Compliance Engine</h3>
+                        <p>Automated compliance and governance</p>
+                        <ul>
+                            <li>GDPR/CCPA compliance</li>
+                            <li>Audit trail generation</li>
+                            <li>Policy enforcement</li>
+                            <li>Data sovereignty</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <div class="infra-card" data-aos="fade-left" data-aos-delay="400">
+                    <div class="infra-icon">
+                        <i class="fas fa-sync-alt"></i>
+                    </div>
+                    <div class="infra-content">
+                        <h3>Resilience Framework</h3>
+                        <p>Built-in fault tolerance and recovery</p>
+                        <ul>
+                            <li>Auto-healing services</li>
+                            <li>Disaster recovery</li>
+                            <li>Backup & restore</li>
+                            <li>Multi-region failover</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Service Integration -->
+    <section class="service-integration">
+        <div class="container">
+            <div class="section-header">
+                <h2 class="section-title" data-aos="fade-up">
+                    Seamless <span class="text-gradient">Integration</span>
+                </h2>
+                <p class="section-subtitle" data-aos="fade-up" data-aos-delay="100">
+                    Connect with your existing infrastructure and tools
+                </p>
+            </div>
+
+            <div class="integration-logos" data-aos="fade-up" data-aos-delay="200">
+                <div class="logo-grid">
+                    <div class="integration-logo">
+                        <i class="fab fa-aws"></i>
+                        <span>AWS</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-microsoft"></i>
+                        <span>Azure</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-google"></i>
+                        <span>GCP</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-docker"></i>
+                        <span>Docker</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fas fa-dharmachakra"></i>
+                        <span>Kubernetes</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-github"></i>
+                        <span>GitHub</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-gitlab"></i>
+                        <span>GitLab</span>
+                    </div>
+                    <div class="integration-logo">
+                        <i class="fab fa-jenkins"></i>
+                        <span>Jenkins</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="cta-section">
+        <div class="container">
+            <div class="cta-content" data-aos="zoom-in">
+                <h2 class="cta-title">
+                    Ready to Experience Our <span class="text-gradient">Services</span>?
+                </h2>
+                <p class="cta-description">
+                    Start building with the most comprehensive blockchain platform available
+                </p>
+                <div class="cta-actions">
+                    <a href="/docs/quick-start.html" class="btn btn-primary btn-lg">
+                        <i class="fas fa-rocket"></i> Get Started
+                    </a>
+                    <a href="/contact.html" class="btn btn-outline btn-lg">
+                        <i class="fas fa-phone"></i> Contact Sales
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-brand">
+                        <span>Neo Service Layer</span>
+                    </div>
+                    <p class="footer-description">
+                        Enterprise-grade enclave computing platform
+                    </p>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="/">Home</a></li>
+                        <li><a href="/services.html">Services</a></li>
+                        <li><a href="/docs">Documentation</a></li>
+                        <li><a href="/blog">Blog</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Resources</h4>
+                    <ul>
+                        <li><a href="/docs/api-reference.html">API Reference</a></li>
+                        <li><a href="/docs/sdk-reference.html">SDKs</a></li>
+                        <li><a href="/security.html">Security</a></li>
+                        <li><a href="/roadmap.html">Roadmap</a></li>
+                    </ul>
+                </div>
+
+                <div class="footer-section">
+                    <h4>Connect</h4>
+                    <div class="footer-social">
+                        <a href="#"><i class="fab fa-github"></i></a>
+                        <a href="#"><i class="fab fa-twitter"></i></a>
+                        <a href="#"><i class="fab fa-discord"></i></a>
+                        <a href="#"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+            </div>
+
+            <div class="footer-bottom">
+                <p>&copy; 2024 Neo Service Layer. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script src="assets/js/main.js"></script>
+    <script>
+        AOS.init({
+            duration: 1000,
+            once: true
+        });
+    </script>
+</body>
+</html>

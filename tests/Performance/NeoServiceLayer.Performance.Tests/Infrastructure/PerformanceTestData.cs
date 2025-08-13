@@ -1,4 +1,4 @@
-using System.Collections.Concurrent;
+﻿using System.Collections.Concurrent;
 
 namespace NeoServiceLayer.Performance.Tests.Infrastructure
 {
@@ -25,7 +25,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         /// </summary>
         public static readonly string[] ProposalIds = [
             "proposal-001",
-            "proposal-002", 
+            "proposal-002",
             "proposal-003",
             "proposal-004",
             "proposal-005"
@@ -93,7 +93,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         public static string[] GenerateCacheKeys(int count)
         {
             var keys = new string[count];
-            
+
             for (int i = 0; i < count; i++)
             {
                 var keyType = _random.Next(4);
@@ -141,19 +141,19 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         public static IEnumerable<CacheOperation> GenerateConcurrentCacheOperations(int operationCount)
         {
             var operations = new ConcurrentBag<CacheOperation>();
-            
+
             Parallel.For(0, operationCount, i =>
             {
                 var operationType = _random.Next(3);
                 var key = $"concurrent:test:{i}";
-                
+
                 var operation = operationType switch
                 {
                     0 => new CacheOperation { Type = "GET", Key = key },
                     1 => new CacheOperation { Type = "SET", Key = key, Data = GenerateCacheData(512) },
                     _ => new CacheOperation { Type = "REMOVE", Key = key }
                 };
-                
+
                 operations.Add(operation);
             });
 
@@ -168,7 +168,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         public static JobConfiguration[] GenerateJobConfigurations(int jobCount)
         {
             var jobs = new JobConfiguration[jobCount];
-            
+
             for (int i = 0; i < jobCount; i++)
             {
                 jobs[i] = new JobConfiguration
@@ -194,7 +194,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         private static Dictionary<string, object> GenerateConditions(int count)
         {
             var conditions = new Dictionary<string, object>();
-            
+
             for (int i = 0; i < count; i++)
             {
                 conditions[$"condition_{i}"] = new
@@ -211,7 +211,7 @@ namespace NeoServiceLayer.Performance.Tests.Infrastructure
         private static Dictionary<string, object> GenerateActions(int count)
         {
             var actions = new Dictionary<string, object>();
-            
+
             for (int i = 0; i < count; i++)
             {
                 actions[$"action_{i}"] = new

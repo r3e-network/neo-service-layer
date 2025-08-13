@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
@@ -46,7 +46,7 @@ public partial class VotingService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
         // Execute privacy-preserving voting in SGX
 #pragma warning disable CS8602 // Dereference of a possibly null reference
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
@@ -66,7 +66,7 @@ public partial class VotingService
 
         // Extract privacy-preserving voting result
         var processedVote = resultJson.GetProperty("processedVote");
-        
+
         return new PrivacyVotingResult
         {
             BallotId = processedVote.GetProperty("ballotId").GetString() ?? "",
@@ -108,7 +108,7 @@ public partial class VotingService
         };
 
         string paramsJson = JsonSerializer.Serialize(jsParams);
-        
+
 #pragma warning disable CS8602 // Dereference of a possibly null reference
         string result = await _enclaveManager.ExecuteJavaScriptAsync(
             PrivacyComputingJavaScriptTemplates.VotingOperations,
@@ -139,7 +139,7 @@ public partial class VotingService
         // In a real implementation, this would query blockchain for NEO balance
         // For now, return a simulated weight
         await Task.CompletedTask;
-        
+
         // Simulate weight based on address hash
         var hash = voterAddress.GetHashCode();
         return 1 + Math.Abs(hash % 10); // Weight between 1-10

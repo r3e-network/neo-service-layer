@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -32,7 +32,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 var result = await CheckSingleConditionAsync(condition).ConfigureAwait(false);
                 if (!result)
                 {
-                    _logger.LogDebug("Condition {Type} failed: {Field} {Operator} {Value}", 
+                    _logger.LogDebug("Condition {Type} failed: {Field} {Operator} {Value}",
                         condition.Type, condition.Field, condition.Operator, condition.Value);
                     return false;
                 }
@@ -61,9 +61,9 @@ namespace NeoServiceLayer.Services.Automation.Services
             }
 
             // Fallback to default evaluation
-            _logger.LogWarning("No handler registered for condition type {Type}, using default evaluation", 
+            _logger.LogWarning("No handler registered for condition type {Type}, using default evaluation",
                 condition.Type);
-            
+
             return await DefaultConditionEvaluationAsync(condition).ConfigureAwait(false);
         }
 
@@ -136,7 +136,7 @@ namespace NeoServiceLayer.Services.Automation.Services
 
         private int CompareNumeric(string actual, string expected)
         {
-            if (decimal.TryParse(actual, out var actualNum) && 
+            if (decimal.TryParse(actual, out var actualNum) &&
                 decimal.TryParse(expected, out var expectedNum))
             {
                 return actualNum.CompareTo(expectedNum);

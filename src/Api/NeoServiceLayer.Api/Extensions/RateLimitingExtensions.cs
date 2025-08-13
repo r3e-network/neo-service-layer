@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Threading.RateLimiting;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.RateLimiting;
@@ -24,7 +24,7 @@ namespace NeoServiceLayer.Api.Extensions
                             PermitLimit = 100,
                             Window = TimeSpan.FromMinutes(1)
                         }));
-                
+
                 // Authentication endpoints - stricter limits
                 options.AddPolicy("authentication", httpContext =>
                     RateLimitPartition.GetFixedWindowLimiter(
@@ -35,7 +35,7 @@ namespace NeoServiceLayer.Api.Extensions
                             PermitLimit = 5,
                             Window = TimeSpan.FromMinutes(1)
                         }));
-                
+
                 // API endpoints - standard limits
                 options.AddPolicy("api", httpContext =>
                     RateLimitPartition.GetTokenBucketLimiter(
@@ -47,7 +47,7 @@ namespace NeoServiceLayer.Api.Extensions
                             TokensPerPeriod = 20,
                             AutoReplenishment = true
                         }));
-                
+
                 // Heavy operations - strict limits
                 options.AddPolicy("heavy", httpContext =>
                     RateLimitPartition.GetConcurrencyLimiter(
@@ -58,7 +58,7 @@ namespace NeoServiceLayer.Api.Extensions
                             QueueProcessingOrder = QueueProcessingOrder.OldestFirst,
                             QueueLimit = 5
                         }));
-                
+
                 // Admin endpoints - relaxed limits for authenticated admins
                 options.AddPolicy("admin", httpContext =>
                 {
@@ -66,7 +66,7 @@ namespace NeoServiceLayer.Api.Extensions
                     {
                         return RateLimitPartition.GetNoLimiter("admin");
                     }
-                    
+
                     return RateLimitPartition.GetFixedWindowLimiter(
                         partitionKey: httpContext.Connection.RemoteIpAddress?.ToString() ?? "anonymous",
                         factory: partition => new FixedWindowRateLimiterOptions
@@ -76,23 +76,23 @@ namespace NeoServiceLayer.Api.Extensions
                             Window = TimeSpan.FromMinutes(1)
                         });
                 });
-                
+
                 // Configure rejection response
                 options.OnRejected = async (context, token) =>
                 {
                     context.HttpContext.Response.StatusCode = 429;
-                    
+
                     if (context.Lease.TryGetMetadata(MetadataName.RetryAfter, out var retryAfter))
                     {
                         context.HttpContext.Response.Headers.RetryAfter = retryAfter.TotalSeconds.ToString();
                     }
-                    
+
                     await context.HttpContext.Response.WriteAsync(
-                        "Too many requests. Please retry later.", 
+                        "Too many requests. Please retry later.",
                         cancellationToken: token);
                 };
             });
-            
+
             return services;
         }
     }

@@ -1,10 +1,10 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Schema;
 
@@ -46,7 +46,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
                 // Discover all service interfaces and their implementations
                 var serviceTypes = DiscoverServiceTypes();
-                
+
                 foreach (var serviceType in serviceTypes)
                 {
                     var contract = await ExtractServiceContractAsync(serviceType);
@@ -62,7 +62,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                 result.Violations.AddRange(validationViolations);
 
                 result.Success = result.Violations.Count == 0;
-                
+
                 _logger.LogInformation("Contract discovery completed. Found {ContractCount} contracts with {ViolationCount} violations",
                     result.DiscoveredContracts.Count, result.Violations.Count);
             }
@@ -103,16 +103,16 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                 _logger.LogDebug("Validating contract compliance for service: {ServiceName}", serviceName);
 
                 var service = GetServiceInstance(serviceName);
-                
+
                 // Validate method signatures
                 await ValidateMethodSignaturesAsync(service, contract, result.Violations);
-                
+
                 // Validate input/output schemas
                 await ValidateDataSchemasAsync(service, contract, result.Violations);
-                
+
                 // Validate behavior contracts
                 await ValidateBehaviorContractsAsync(service, contract, result.Violations);
-                
+
                 // Validate error handling contracts
                 await ValidateErrorHandlingAsync(service, contract, result.Violations);
 
@@ -138,7 +138,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         /// Tests integration contracts between two services.
         /// </summary>
         public async Task<IntegrationContractTestResult> TestIntegrationContractAsync(
-            string consumerService, 
+            string consumerService,
             string providerService,
             IntegrationTestScenario scenario)
         {
@@ -153,7 +153,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
             try
             {
-                _logger.LogInformation("Testing integration contract: {Consumer} -> {Provider}", 
+                _logger.LogInformation("Testing integration contract: {Consumer} -> {Provider}",
                     consumerService, providerService);
 
                 var consumer = GetServiceInstance(consumerService);
@@ -172,7 +172,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Integration contract test failed: {Consumer} -> {Provider}", 
+                _logger.LogError(ex, "Integration contract test failed: {Consumer} -> {Provider}",
                     consumerService, providerService);
                 result.Success = false;
                 result.ErrorMessage = ex.Message;
@@ -190,7 +190,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         /// Validates data format contracts across services.
         /// </summary>
         public async Task<DataContractValidationResult> ValidateDataContractsAsync(
-            List<string> services, 
+            List<string> services,
             string dataType)
         {
             var result = new DataContractValidationResult
@@ -259,7 +259,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
 
                 // Generate integration documentation
                 result.IntegrationMatrix = GenerateIntegrationMatrix();
-                
+
                 // Generate API compatibility matrix
                 result.CompatibilityMatrix = GenerateCompatibilityMatrix();
 
@@ -297,12 +297,12 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                     var types = assembly.GetTypes()
                         .Where(t => t.IsInterface && t.Name.StartsWith("I") && t.Name.EndsWith("Service"))
                         .ToList();
-                    
+
                     serviceTypes.AddRange(types);
                 }
                 catch (ReflectionTypeLoadException ex)
                 {
-                    _logger.LogWarning("Could not load types from assembly {Assembly}: {Error}", 
+                    _logger.LogWarning("Could not load types from assembly {Assembly}: {Error}",
                         assembly.FullName, ex.Message);
                 }
             }
@@ -357,7 +357,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
                     IsOptional = p.IsOptional,
                     DefaultValue = p.DefaultValue
                 }).ToList(),
-                IsAsync = method.ReturnType.IsGenericType && 
+                IsAsync = method.ReturnType.IsGenericType &&
                          method.ReturnType.GetGenericTypeDefinition() == typeof(Task<>),
                 Documentation = ExtractMethodDocumentation(method)
             };
@@ -366,7 +366,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         private List<ContractDataType> ExtractDataTypeContracts(Type serviceType)
         {
             var dataTypes = new List<ContractDataType>();
-            
+
             // Extract data types used by the service
             var methods = serviceType.GetMethods();
             var usedTypes = new HashSet<Type>();
@@ -415,12 +415,12 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task ValidateMethodSignaturesAsync(
-            object service, 
-            ServiceContract contract, 
+            object service,
+            ServiceContract contract,
             List<ContractViolation> violations)
         {
             var serviceType = service.GetType();
-            
+
             foreach (var contractMethod in contract.Methods)
             {
                 var actualMethod = serviceType.GetMethod(contractMethod.Name);
@@ -466,8 +466,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task ValidateDataSchemasAsync(
-            object service, 
-            ServiceContract contract, 
+            object service,
+            ServiceContract contract,
             List<ContractViolation> violations)
         {
             // Validate that data schemas match contract definitions
@@ -489,8 +489,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task ValidateBehaviorContractsAsync(
-            object service, 
-            ServiceContract contract, 
+            object service,
+            ServiceContract contract,
             List<ContractViolation> violations)
         {
             // Validate behavioral contracts (preconditions, postconditions, invariants)
@@ -498,8 +498,8 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private async Task ValidateErrorHandlingAsync(
-            object service, 
-            ServiceContract contract, 
+            object service,
+            ServiceContract contract,
             List<ContractViolation> violations)
         {
             // Validate error handling contracts
@@ -509,46 +509,46 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         private async Task<List<ContractViolation>> ValidateContractConsistencyAsync()
         {
             var violations = new List<ContractViolation>();
-            
+
             // Validate consistency across service contracts
             // Check for incompatible data types, missing dependencies, etc.
-            
+
             return violations;
         }
 
         private double CalculateComplianceScore(ServiceContract contract, List<ContractViolation> violations)
         {
             if (contract.Methods.Count == 0) return 0.0;
-            
+
             var totalElements = contract.Methods.Count + contract.DataTypes.Count;
             var violationWeight = violations.Sum(v => GetViolationWeight(v.ViolationType));
-            
+
             return Math.Max(0.0, 100.0 - (violationWeight / totalElements * 100.0));
         }
 
         private double CalculateCompatibilityScore(List<ContractTestResult> testResults)
         {
             if (testResults.Count == 0) return 100.0;
-            
+
             var successfulTests = testResults.Count(tr => tr.Success);
             return (double)successfulTests / testResults.Count * 100.0;
         }
 
         private double CalculateDataConsistencyScore(
-            Dictionary<string, object> schemas, 
+            Dictionary<string, object> schemas,
             List<DataContractInconsistency> inconsistencies)
         {
             if (schemas.Count == 0) return 100.0;
-            
+
             var totalComparisons = schemas.Count * (schemas.Count - 1) / 2;
             if (totalComparisons == 0) return 100.0;
-            
+
             return Math.Max(0.0, 100.0 - (double)inconsistencies.Count / totalComparisons * 100.0);
         }
 
         private async Task<ContractTestResult> TestServiceInteractionAsync(
-            object consumer, 
-            object provider, 
+            object consumer,
+            object provider,
             ServiceInteraction interaction)
         {
             // Test a specific service interaction
@@ -563,7 +563,7 @@ namespace NeoServiceLayer.Integration.Tests.Framework
         }
 
         private List<DataContractInconsistency> FindDataContractInconsistencies(
-            Dictionary<string, object> schemas, 
+            Dictionary<string, object> schemas,
             string dataType)
         {
             // Find inconsistencies between data schemas

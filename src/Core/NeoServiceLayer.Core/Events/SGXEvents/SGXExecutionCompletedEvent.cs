@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 
 namespace NeoServiceLayer.Core.Events.SGXEvents
 {
@@ -74,10 +74,10 @@ namespace NeoServiceLayer.Core.Events.SGXEvents
         {
             return executionTimeMs switch
             {
-                &lt; 100 =&gt; "fast",
-                &lt; 1000 =&gt; "normal",
-                &lt; 5000 =&gt; "slow",
-                _ =&gt; "very_slow"
+                &lt; 100 = &gt; "fast",
+                &lt; 1000 = &gt; "normal",
+                &lt; 5000 = &gt; "slow",
+                _ = &gt; "very_slow"
             };
         }
 
@@ -91,10 +91,10 @@ namespace NeoServiceLayer.Core.Events.SGXEvents
         {
             return attestationStatus.ToLowerInvariant() switch
             {
-                "valid" =&gt; "high",
-                "expired" =&gt; "medium",
-                "invalid" =&gt; "low",
-                _ =&gt; "unknown"
+                "valid" = &gt; "high",
+                "expired" = &gt; "medium",
+                "invalid" = &gt; "low",
+                _ = &gt; "unknown"
             };
         }
     }

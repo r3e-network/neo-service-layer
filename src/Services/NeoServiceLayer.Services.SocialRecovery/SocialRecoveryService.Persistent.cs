@@ -1,4 +1,4 @@
-using System.Text.Json;
+﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.SocialRecovery.Configuration;
@@ -402,7 +402,7 @@ public partial class SocialRecoveryService
         {
             var key = $"{ACCOUNT_CONFIG_PREFIX}{accountAddress}";
             var data = await _persistentStorage.RetrieveAsync(key);
-            
+
             if (data != null)
             {
                 return JsonSerializer.Deserialize<AccountRecoveryConfig>(data);
