@@ -777,9 +777,9 @@ public partial class PredictionService : AIServiceBase, IPredictionService
     }
 
     /// <inheritdoc/>
-    protected override Task<ServiceHealth> OnGetHealthAsync()
+    protected override async Task<ServiceHealth> OnGetHealthAsync()
     {
-        var baseHealth = base.OnGetHealthAsync().Result;
+        var baseHealth = await base.OnGetHealthAsync().ConfigureAwait(false);
 
         if (baseHealth != ServiceHealth.Healthy)
         {

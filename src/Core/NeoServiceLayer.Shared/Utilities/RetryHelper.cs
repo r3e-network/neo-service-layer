@@ -46,9 +46,9 @@ public static class RetryHelper
 
         await ExecuteAsync(async () =>
         {
-            await action();
+            await action().ConfigureAwait(false);
             return true;
-        }, maxRetries, retryDelay ?? baseDelay, maxDelay, backoffMultiplier, exceptionFilter ?? retryCondition, logger, onRetry, retryDelay, exceptionFilter);
+        }, maxRetries, retryDelay ?? baseDelay, maxDelay, backoffMultiplier, exceptionFilter ?? retryCondition, logger, onRetry, retryDelay, exceptionFilter).ConfigureAwait(false);
     }
 
     /// <summary>
@@ -93,7 +93,7 @@ public static class RetryHelper
         {
             try
             {
-                return await func();
+                return await func().ConfigureAwait(false);
             }
             catch (Exception ex) when (attempt < maxRetries && effectiveCondition(ex))
             {
@@ -107,7 +107,7 @@ public static class RetryHelper
 
                 onRetry?.Invoke(ex, attempt, delay);
 
-                await Task.Delay(delay);
+                await Task.Delay(delay).ConfigureAwait(false);
             }
         }
 
@@ -214,9 +214,9 @@ public static class RetryHelper
 
         await ExecuteWithCircuitBreakerAsync(async () =>
         {
-            await action();
+            await action().ConfigureAwait(false);
             return true;
-        }, circuitBreaker);
+        }, circuitBreaker).ConfigureAwait(false);
     }
 
     /// <summary>

@@ -353,24 +353,45 @@ public partial class StorageService
     /// <param name="keyId">The encryption key ID.</param>
     /// <param name="algorithm">The encryption algorithm.</param>
     /// <returns>The encrypted data.</returns>
-    private Task<byte[]> EncryptDataAsync(byte[] data, string keyId, string algorithm)
+    private async Task<byte[]> EncryptDataAsync(byte[] data, string keyId, string algorithm)
     {
-        // In production, this would use the actual encryption key from the key management service
-        // For now, use a simple AES encryption
-        using var aes = Aes.Create();
-        aes.Key = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(keyId));
-        aes.GenerateIV();
-
-        using var msEncrypt = new MemoryStream();
-        // Prepend IV to encrypted data
-        msEncrypt.Write(aes.IV, 0, aes.IV.Length);
-
-        using (var csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(), CryptoStreamMode.Write))
+        // Use the enclave's KMS for secure encryption with proper key management
+        try
         {
-            csEncrypt.Write(data, 0, data.Length);
+            // Convert data to hex string for enclave processing
+            var dataHex = Convert.ToHexString(data);
+            
+            // Use enclave KMS to encrypt the data with the specified key
+            var encryptedHex = await _enclaveManager.KmsEncryptDataAsync(keyId, dataHex, algorithm);
+            
+            // Convert hex result back to bytes
+            var encryptedData = Convert.FromHexString(encryptedHex);
+            
+            return encryptedData;
         }
+        catch (Exception ex)
+        {
+            // Fallback to local encryption if enclave KMS is unavailable (with warning)
+            Logger.LogWarning(ex, "Enclave KMS unavailable, using fallback encryption for key {KeyId}", keyId);
+            
+            using var aes = Aes.Create();
+            // Use PBKDF2 for better key derivation than simple SHA256
+            using var keyDerivation = new Rfc2898DeriveBytes(keyId, 
+                System.Text.Encoding.UTF8.GetBytes("NeoStorageService"), 10000, HashAlgorithmName.SHA256);
+            aes.Key = keyDerivation.GetBytes(32); // 256-bit key
+            aes.GenerateIV();
 
-        return Task.FromResult(msEncrypt.ToArray());
+            using var msEncrypt = new MemoryStream();
+            // Prepend IV to encrypted data
+            msEncrypt.Write(aes.IV, 0, aes.IV.Length);
+
+            using (var csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(), CryptoStreamMode.Write))
+            {
+                csEncrypt.Write(data, 0, data.Length);
+            }
+
+            return msEncrypt.ToArray();
+        }
     }
 
     /// <summary>
@@ -380,31 +401,54 @@ public partial class StorageService
     /// <param name="keyId">The encryption key ID.</param>
     /// <param name="algorithm">The encryption algorithm.</param>
     /// <returns>The decrypted data.</returns>
-    private Task<byte[]> DecryptDataAsync(byte[] encryptedData, string keyId, string algorithm)
+    private async Task<byte[]> DecryptDataAsync(byte[] encryptedData, string keyId, string algorithm)
     {
-        if (encryptedData.Length < 16) // AES IV is 16 bytes
+        // Use the enclave's KMS for secure decryption with proper key management
+        try
         {
-            throw new ArgumentException("Encrypted data is too short to contain IV");
+            // Convert data to hex string for enclave processing
+            var dataHex = Convert.ToHexString(encryptedData);
+            
+            // Use enclave KMS to decrypt the data with the specified key
+            var decryptedHex = await _enclaveManager.KmsDecryptDataAsync(keyId, dataHex, algorithm);
+            
+            // Convert hex result back to bytes
+            var decryptedData = Convert.FromHexString(decryptedHex);
+            
+            return decryptedData;
         }
-
-        using var aes = Aes.Create();
-        aes.Key = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(keyId));
-
-        // Extract IV from the beginning of encrypted data
-        var iv = new byte[16];
-        Array.Copy(encryptedData, 0, iv, 0, 16);
-        aes.IV = iv;
-
-        // Extract actual encrypted content
-        var encryptedContent = new byte[encryptedData.Length - 16];
-        Array.Copy(encryptedData, 16, encryptedContent, 0, encryptedContent.Length);
-
-        using var msEncrypted = new MemoryStream(encryptedContent);
-        using var msPlain = new MemoryStream();
-        using (var csDecrypt = new CryptoStream(msEncrypted, aes.CreateDecryptor(), CryptoStreamMode.Read))
+        catch (Exception ex)
         {
-            csDecrypt.CopyTo(msPlain);
+            // Fallback to local decryption if enclave KMS is unavailable (with warning)
+            Logger.LogWarning(ex, "Enclave KMS unavailable, using fallback decryption for key {KeyId}", keyId);
+            
+            if (encryptedData.Length < 16) // AES IV is 16 bytes
+            {
+                throw new ArgumentException("Encrypted data is too short to contain IV");
+            }
+
+            using var aes = Aes.Create();
+            // Use PBKDF2 for better key derivation than simple SHA256 (matching encryption)
+            using var keyDerivation = new Rfc2898DeriveBytes(keyId, 
+                System.Text.Encoding.UTF8.GetBytes("NeoStorageService"), 10000, HashAlgorithmName.SHA256);
+            aes.Key = keyDerivation.GetBytes(32); // 256-bit key
+
+            // Extract IV from the beginning of encrypted data
+            var iv = new byte[16];
+            Array.Copy(encryptedData, 0, iv, 0, 16);
+            aes.IV = iv;
+
+            // Extract actual encrypted content
+            var encryptedContent = new byte[encryptedData.Length - 16];
+            Array.Copy(encryptedData, 16, encryptedContent, 0, encryptedContent.Length);
+
+            using var msEncrypted = new MemoryStream(encryptedContent);
+            using var msPlain = new MemoryStream();
+            using (var csDecrypt = new CryptoStream(msEncrypted, aes.CreateDecryptor(), CryptoStreamMode.Read))
+            {
+                csDecrypt.CopyTo(msPlain);
+            }
+            return msPlain.ToArray();
         }
-        return Task.FromResult(msPlain.ToArray());
     }
 }

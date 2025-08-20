@@ -91,7 +91,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
                 var result = new CrossChainTransactionResult();
 
                 // Step 1: Lock assets on source chain
-                var lockResult = await LockAssetsOnSourceChainAsync(request, bridgeConfig, cancellationToken);
+                var lockResult = await LockAssetsOnSourceChainAsync(request, bridgeConfig, cancellationToken).ConfigureAwait(false);
                 result.SourceTransactionHash = lockResult.TransactionHash;
                 result.SourceBlockNumber = lockResult.BlockNumber;
                 result.SourceGasConsumed = lockResult.GasConsumed;
@@ -108,7 +108,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
                     bridgeConfig.MinConfirmations, cancellationToken);
 
                 // Step 3: Mint/unlock assets on target chain
-                var mintResult = await MintAssetsOnTargetChainAsync(request, bridgeConfig, lockResult, cancellationToken);
+                var mintResult = await MintAssetsOnTargetChainAsync(request, bridgeConfig, lockResult, cancellationToken).ConfigureAwait(false);
                 result.TargetTransactionHash = mintResult.TransactionHash;
                 result.TargetBlockNumber = mintResult.BlockNumber;
                 result.TargetGasConsumed = mintResult.GasConsumed;
@@ -221,7 +221,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
             Logger.LogInformation("Initializing Cross-Chain Service...");
 
             // Load bridge configurations from enclave
-            await LoadBridgeConfigurationsAsync();
+            await LoadBridgeConfigurationsAsync().ConfigureAwait(false);
 
             Logger.LogInformation("Cross-Chain Service initialized successfully");
             return true;
@@ -238,7 +238,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
         try
         {
             Logger.LogInformation("Initializing enclave for Cross-Chain Service...");
-            return await _enclaveManager.InitializeEnclaveAsync();
+            return await _enclaveManager.InitializeEnclaveAsync().ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -310,7 +310,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
     {
         try
         {
-            var configData = await _enclaveManager.CallEnclaveFunctionAsync("loadBridgeConfigurations", "");
+            var configData = await _enclaveManager.CallEnclaveFunctionAsync("loadBridgeConfigurations", "").ConfigureAwait(false);
 
             if (!string.IsNullOrEmpty(configData) && configData != "null")
             {
@@ -411,7 +411,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
             {
                 // This would need to be implemented in the contract managers
                 // For now, we'll just wait a bit
-                await Task.Delay(pollInterval * 1000, cancellationToken);
+                await Task.Delay(pollInterval * 1000, cancellationToken).ConfigureAwait(false);
 
                 Logger.LogDebug("Waiting for confirmations: {TxHash}", transactionHash);
                 break; // Assume confirmed for now
@@ -423,7 +423,7 @@ public class CrossChainService : ServiceFramework.EnclaveBlockchainServiceBase
             catch (Exception ex)
             {
                 Logger.LogWarning(ex, "Error checking confirmations for {TxHash}", transactionHash);
-                await Task.Delay(pollInterval * 1000, cancellationToken);
+                await Task.Delay(pollInterval * 1000, cancellationToken).ConfigureAwait(false);
             }
         }
     }

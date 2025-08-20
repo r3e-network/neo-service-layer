@@ -1,0 +1,76 @@
+# Minimal Dockerfile for edge/IoT deployments
+# Ultra-lightweight runtime with only essential components
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build-env
+
+# Install minimal build dependencies
+RUN apk add --no-cache \
+    clang \
+    build-base \
+    && rm -rf /var/cache/apk/*
+
+WORKDIR /app
+
+# Copy and restore minimal dependencies
+COPY *.sln ./
+COPY src/Api/NeoServiceLayer.Api/*.csproj src/Api/NeoServiceLayer.Api/
+COPY src/Core/NeoServiceLayer.Core/*.csproj src/Core/NeoServiceLayer.Core/
+COPY src/Core/NeoServiceLayer.Shared/*.csproj src/Core/NeoServiceLayer.Shared/
+
+RUN dotnet restore src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+    --runtime alpine-x64 \
+    --no-cache
+
+# Copy minimal source code
+COPY src/Api/NeoServiceLayer.Api/ src/Api/NeoServiceLayer.Api/
+COPY src/Core/NeoServiceLayer.Core/ src/Core/NeoServiceLayer.Core/
+COPY src/Core/NeoServiceLayer.Shared/ src/Core/NeoServiceLayer.Shared/
+
+# Build with aggressive optimizations for size
+RUN dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+    --configuration Release \
+    --runtime alpine-x64 \
+    --self-contained true \
+    --no-restore \
+    --output /app/publish \
+    /p:PublishTrimmed=true \
+    /p:PublishSingleFile=true \
+    /p:TrimMode=full \
+    /p:OptimizationPreference=Size \
+    /p:DebugType=none \
+    /p:DebugSymbols=false \
+    /p:EnableCompressionInSingleFile=true \
+    /p:IncludeNativeLibrariesForSelfExtract=true
+
+# Ultra-minimal runtime - scratch or distroless
+FROM gcr.io/distroless/base-debian12 AS runtime
+
+# Copy CA certificates for HTTPS
+COPY --from=build-env /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+# Create minimal directory structure
+WORKDIR /app
+
+# Copy only the single executable
+COPY --from=build-env /app/publish/NeoServiceLayer.Api .
+
+# Set minimal environment
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    ASPNETCORE_URLS=http://+:8080 \
+    DOTNET_EnableDiagnostics=0
+
+# Expose port
+EXPOSE 8080
+
+# Health check (minimal)
+HEALTHCHECK --interval=60s --timeout=5s --start-period=30s --retries=2 \
+    CMD ["./NeoServiceLayer.Api", "--health-check"]
+
+# Set the entrypoint
+ENTRYPOINT ["./NeoServiceLayer.Api"]
+
+# Metadata
+LABEL org.opencontainers.image.title="Neo Service Layer API (Minimal)" \
+      org.opencontainers.image.description="Ultra-lightweight blockchain service for edge/IoT" \
+      org.opencontainers.image.version="1.0.0-minimal" \
+      org.opencontainers.image.variant="minimal"

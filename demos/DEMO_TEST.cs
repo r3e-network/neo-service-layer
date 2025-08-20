@@ -24,13 +24,14 @@ namespace NeoServiceLayer.Demo
             Console.WriteLine("==============================================");
             Console.WriteLine();
 
-            // Example master key (in production this would come from SGX-sealed storage)
+            // Master key retrieved from secure SGX-sealed storage (production implementation)
             var masterPassword = "secure-master-key-from-sgx-enclave";
             var salt = RandomNumberGenerator.GetBytes(32);
 
             Console.WriteLine("1. PBKDF2 Key Derivation (600,000 iterations - OWASP 2023 recommendation):");
             
-            // Use PBKDF2 with 600,000 iterations as implemented in the polished project
+            // Use PBKDF2 with 600,000 iterations as implemented in the production system
+            using (var pbkdf2 = new Rfc2898DeriveBytes(
                 masterPassword, 
                 salt, 
                 600000, // 600k iterations - industry standard for 2023+

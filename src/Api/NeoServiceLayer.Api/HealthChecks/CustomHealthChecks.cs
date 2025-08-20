@@ -13,6 +13,8 @@ using System.Threading.Tasks;
 using System.Threading;
 using System;
 using Microsoft.Extensions.Logging;
+using Npgsql;
+using StackExchange.Redis;
 
 
 namespace NeoServiceLayer.Api.HealthChecks;
@@ -75,7 +77,7 @@ public class DatabaseHealthCheck : IHealthCheck
     {
         try
         {
-            // SECURITY: Connection string should come from environment variable in production
+            // Get database connection string from environment (production security requirement)
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
                 ?? _configuration.GetConnectionString("DefaultConnection");
 
@@ -84,11 +86,21 @@ public class DatabaseHealthCheck : IHealthCheck
                 return HealthCheckResult.Unhealthy("Database connection string not configured. Set DATABASE_CONNECTION_STRING environment variable.");
             }
 
-            // Since we don't have a real database, just return healthy with basic data
+            // Test actual database connectivity
+            using var connection = new Npgsql.NpgsqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
+            
+            // Execute a simple query to verify database is operational
+            using var command = new Npgsql.NpgsqlCommand("SELECT 1", connection);
+            var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            
             var data = new Dictionary<string, object>
             {
                 ["connection_string"] = "configured",
-                ["status"] = "simulated_healthy"
+                ["server_version"] = connection.ServerVersion,
+                ["database"] = connection.Database,
+                ["state"] = connection.State.ToString(),
+                ["test_query_result"] = result?.ToString() ?? "null"
             };
 
             return HealthCheckResult.Healthy("Database is accessible", data);
@@ -119,7 +131,7 @@ public class RedisHealthCheck : IHealthCheck
     {
         try
         {
-            // SECURITY: Redis connection string should come from environment variable in production
+            // Get Redis connection string from environment (production security requirement)
             var connectionString = Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING")
                 ?? _configuration.GetConnectionString("Redis");
 
@@ -128,16 +140,30 @@ public class RedisHealthCheck : IHealthCheck
                 return HealthCheckResult.Degraded("Redis connection string not configured");
             }
 
-            // For now, just simulate Redis health check since we don't have a real Redis instance
-            // In production, you would use: var redis = ConnectionMultiplexer.Connect(connectionString);
-            var pingTime = TimeSpan.FromMilliseconds(10);
-            await Task.Delay(pingTime, cancellationToken); // Simulate ping
-
+            // Test actual Redis connectivity
+            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
+            using var redis = StackExchange.Redis.ConnectionMultiplexer.Connect(connectionString);
+            var database = redis.GetDatabase();
+            
+            // Perform actual ping test
+            var pingTime = await database.PingAsync().ConfigureAwait(false);
+            
+            // Test basic set/get operation
+            var testKey = $"healthcheck:{Guid.NewGuid()}";
+            var testValue = "test-value";
+            await database.StringSetAsync(testKey, testValue, TimeSpan.FromSeconds(10)).ConfigureAwait(false);
+            var retrievedValue = await database.StringGetAsync(testKey).ConfigureAwait(false);
+            await database.KeyDeleteAsync(testKey).ConfigureAwait(false);
+            
+            stopwatch.Stop();
+            
             var data = new Dictionary<string, object>
             {
                 ["ping_time_ms"] = pingTime.TotalMilliseconds,
+                ["total_test_time_ms"] = stopwatch.Elapsed.TotalMilliseconds,
                 ["status"] = "connected",
-                ["test_operation"] = "success" // Simulated success
+                ["test_operation"] = retrievedValue == testValue ? "success" : "failed",
+                ["server_info"] = redis.GetServer(redis.GetEndPoints().First()).Info("server").FirstOrDefault()?.Value ?? "unavailable"
             };
 
             return HealthCheckResult.Healthy("Redis is accessible", data);

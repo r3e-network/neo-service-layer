@@ -2,60 +2,123 @@ version: '3.8'
 
 services:
   neo-service-layer:
-    build:
-      context: .
-      dockerfile: Dockerfile
+    image: jinghuiliao/neo-service-layer:latest
     container_name: neo-service-layer
     ports:
-      - "5000:5000"
+      - "443:443"
+      - "80:80"
     environment:
       - ASPNETCORE_ENVIRONMENT=Production
-      - ConnectionStrings__DefaultConnection=Server=postgres;Database=neoservice;User Id=neoservice;Password=${DB_PASSWORD:?DB_PASSWORD required}
-      - Redis__ConnectionString=redis:6379
-      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY required}
-      - Neo__N3__RpcUrl=${NEO_N3_RPC:-http://seed1.neo.org:10332}
-      - Neo__X__RpcUrl=${NEO_X_RPC:-http://neox.example.com:10332}
+      - ASPNETCORE_URLS=https://+:443;http://+:80
+      - ASPNETCORE_HTTPS_PORT=443
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certificates/neo-service-layer.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${CERT_PASSWORD}
+      # JWT Configuration - MUST be set via environment
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY environment variable is required}
+      - JWT_ISSUER=${JWT_ISSUER:-https://neo-service-layer.io}
+      - JWT_AUDIENCE=${JWT_AUDIENCE:-https://neo-service-layer.io/api}
+      # Database Configuration
+      - ConnectionStrings__DefaultConnection=${DB_CONNECTION_STRING}
+      - ConnectionStrings__Redis=${REDIS_CONNECTION_STRING}
+      # Neo Networks
+      - NEO_N3_RPC=${NEO_N3_RPC:-https://seed1.neo.org:10331}
+      - NEO_X_RPC=${NEO_X_RPC:-https://mainnet.neo-x.org}
+      # SGX Configuration
+      - NEO_ALLOW_SGX_SIMULATION=false
+      - SGX_MODE=HW
+      # Security Headers
+      - Security__UseHttps=true
+      - Security__UseHsts=true
+      # CORS Configuration
+      - CORS_ALLOWED_ORIGINS=${CORS_ALLOWED_ORIGINS:-https://app.neo-service-layer.io}
+    volumes:
+      - ./certificates:/app/certificates:ro
+      - neo-data:/app/data
+      - neo-logs:/var/log/neo-service-layer
+      - neo-config:/app/config
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-k", "-f", "https://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    networks:
+      - neo-network
     depends_on:
       - postgres
       - redis
-    networks:
-      - neo-network
-    volumes:
-      - ./logs:/app/logs
-      - ./data:/app/data
-    restart: unless-stopped
 
   postgres:
     image: postgres:16-alpine
     container_name: neo-postgres
     environment:
-      - POSTGRES_DB=neoservice
-      - POSTGRES_USER=neoservice
-      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD required}
+      - POSTGRES_DB=neoservicelayer
+      - POSTGRES_USER=${DB_USER:-neoservice}
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD environment variable is required}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - ./scripts/database/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     ports:
       - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - neo-network
-    restart: unless-stopped
 
   redis:
     image: redis:7-alpine
     container_name: neo-redis
+    command: redis-server --requirepass ${REDIS_PASSWORD:?REDIS_PASSWORD environment variable is required} --appendonly yes --maxmemory 2gb --maxmemory-policy allkeys-lru
+    volumes:
+      - redis-data:/data
     ports:
       - "6379:6379"
-    volumes:
-      - redis_data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
     networks:
       - neo-network
+
+  nginx:
+    image: nginx:alpine
+    container_name: neo-nginx
+    ports:
+      - "8443:443"
+      - "8080:80"
+    volumes:
+      - ./config/nginx/nginx.production.conf:/etc/nginx/nginx.conf:ro
+      - ./certificates:/etc/nginx/ssl:ro
+      - ./config/nginx/ssl-params.conf:/etc/nginx/snippets/ssl-params.conf:ro
+    depends_on:
+      - neo-service-layer
     restart: unless-stopped
-    command: redis-server --appendonly yes
+    networks:
+      - neo-network
+
+volumes:
+  neo-data:
+    driver: local
+  neo-logs:
+    driver: local
+  neo-config:
+    driver: local
+  postgres-data:
+    driver: local
+  redis-data:
+    driver: local
 
 networks:
   neo-network:
     driver: bridge
-
-volumes:
-  postgres_data:
-  redis_data:
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16

@@ -14,6 +14,7 @@ using StackExchange.Redis;
 using MongoDB.Driver;
 using NeoServiceLayer.Api.HealthChecks;
 using NeoServiceLayer.Api.Middleware;
+using NeoServiceLayer.Api.Extensions;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Core.CQRS;
@@ -43,6 +44,9 @@ namespace NeoServiceLayer.Api
 
         public void ConfigureServices(IServiceCollection services)
         {
+            // Configure HTTPS and security
+            services.AddHttpsSecurity(_configuration);
+
             // Add API versioning
             services.AddApiVersioning(options =>
             {
@@ -126,15 +130,8 @@ namespace NeoServiceLayer.Api
             // Use Serilog request logging
             app.UseSerilogRequestLogging();
 
-            // Security headers
-            app.Use(async (context, next) =>
-            {
-                context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
-                context.Response.Headers.Add("X-Frame-Options", "DENY");
-                context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
-                context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
-                await next();
-            });
+            // Use security headers middleware
+            app.UseSecurityHeaders();
 
             // Use HTTPS redirection
             app.UseHttpsRedirection();
@@ -402,7 +399,7 @@ namespace NeoServiceLayer.Api
 
                 // Initialize enclave
                 var enclaveManager = services.GetRequiredService<IEnclaveManager>();
-                enclaveManager.InitializeAsync().Wait();
+                enclaveManager.InitializeAsync().GetAwaiter().GetResult();
 
                 // Register event handlers
                 var eventBus = services.GetRequiredService<IEventBus>();

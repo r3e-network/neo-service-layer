@@ -1,0 +1,152 @@
+# Multi-stage optimized Dockerfile for Neo Service Layer
+# Stage 1: Build environment with full SDK
+FROM mcr.microsoft.com/dotnet/sdk:9.0-alpine AS build-env
+
+# Install build dependencies
+RUN apk add --no-cache \
+    clang \
+    build-base \
+    linux-headers \
+    openssl-dev \
+    zlib-dev \
+    curl \
+    git \
+    && rm -rf /var/cache/apk/*
+
+# Set working directory
+WORKDIR /app
+
+# Copy solution and project files first (better layer caching)
+COPY *.sln ./
+COPY src/*/*.csproj ./temp/
+COPY tests/*/*.csproj ./temp/
+COPY contracts-neo-n3/*.csproj ./temp/
+
+# Create directory structure and move project files
+RUN for file in temp/*.csproj; do \
+        if [ -f "$file" ]; then \
+            projectName=$(basename "$file" .csproj); \
+            if echo "$projectName" | grep -q "\.Tests$"; then \
+                mkdir -p "tests/$projectName" && mv "$file" "tests/$projectName/"; \
+            elif echo "$projectName" | grep -q "Contracts"; then \
+                mkdir -p "contracts-neo-n3/" && mv "$file" "contracts-neo-n3/"; \
+            else \
+                # Find the correct subdirectory structure
+                if echo "$projectName" | grep -q "\.Api$"; then \
+                    mkdir -p "src/Api/$projectName" && mv "$file" "src/Api/$projectName/"; \
+                elif echo "$projectName" | grep -q "\.Services\."; then \
+                    mkdir -p "src/Services/$projectName" && mv "$file" "src/Services/$projectName/"; \
+                elif echo "$projectName" | grep -q "\.Infrastructure\."; then \
+                    mkdir -p "src/Infrastructure/$projectName" && mv "$file" "src/Infrastructure/$projectName/"; \
+                elif echo "$projectName" | grep -q "\.Core"; then \
+                    mkdir -p "src/Core/$projectName" && mv "$file" "src/Core/$projectName/"; \
+                else \
+                    mkdir -p "src/$projectName" && mv "$file" "src/$projectName/"; \
+                fi \
+            fi \
+        fi \
+    done && rm -rf temp
+
+# Restore dependencies (this layer will be cached if project files don't change)
+RUN dotnet restore --runtime alpine-x64 --no-cache
+
+# Copy source code
+COPY src/ ./src/
+COPY contracts-neo-n3/ ./contracts-neo-n3/
+
+# Build application with optimizations
+RUN dotnet publish src/Api/NeoServiceLayer.Api/NeoServiceLayer.Api.csproj \
+    --configuration Release \
+    --runtime alpine-x64 \
+    --self-contained true \
+    --no-restore \
+    --output /app/publish \
+    /p:PublishTrimmed=true \
+    /p:PublishSingleFile=false \
+    /p:TrimMode=partial \
+    /p:OptimizationPreference=Speed \
+    /p:DebugType=none \
+    /p:DebugSymbols=false \
+    /p:EnableCompressionInSingleFile=true
+
+# Remove unnecessary files to reduce image size
+RUN cd /app/publish && \
+    find . -name "*.pdb" -delete && \
+    find . -name "*.xml" -delete && \
+    find . -name "*.deps.json" -delete && \
+    find . -name "ref" -type d -exec rm -rf {} + 2>/dev/null || true
+
+# Stage 2: Runtime environment with minimal dependencies
+FROM mcr.microsoft.com/dotnet/aspnet:9.0-alpine AS runtime
+
+# Install runtime dependencies and security updates
+RUN apk add --no-cache \
+    ca-certificates \
+    tzdata \
+    libgcc \
+    libssl3 \
+    libcrypto3 \
+    zlib \
+    libstdc++ \
+    && apk upgrade --no-cache \
+    && rm -rf /var/cache/apk/*
+
+# Create non-root user for security
+RUN addgroup -g 1001 -S appgroup && \
+    adduser -u 1001 -S appuser -G appgroup
+
+# Set up application directory
+WORKDIR /app
+
+# Copy published application from build stage
+COPY --from=build-env --chown=appuser:appgroup /app/publish .
+
+# Create necessary directories
+RUN mkdir -p /app/logs /app/temp /app/data && \
+    chown -R appuser:appgroup /app
+
+# Set environment variables for optimization
+ENV DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=1 \
+    DOTNET_USE_POLLING_FILE_WATCHER=true \
+    DOTNET_RUNNING_IN_CONTAINER=true \
+    ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
+    DOTNET_EnableDiagnostics=0 \
+    DOTNET_TieredPGO=1 \
+    DOTNET_ReadyToRun=1 \
+    DOTNET_TC_QuickJitForLoops=1 \
+    COMPlus_EnableAVX=1 \
+    COMPlus_EnableAVX2=1
+
+# Configure garbage collection for container environments
+ENV DOTNET_gcServer=1 \
+    DOTNET_gcConcurrent=1 \
+    DOTNET_GCRetainVM=1 \
+    DOTNET_GCLOHThreshold=100000
+
+# Security hardening
+RUN chmod 755 /app && \
+    chmod -R 644 /app/* && \
+    chmod 755 /app/NeoServiceLayer.Api && \
+    chown -R appuser:appgroup /app
+
+# Switch to non-root user
+USER appuser
+
+# Health check
+HEALTHCHECK --interval=30s --timeout=10s --start-period=60s --retries=3 \
+    CMD wget --no-verbose --tries=1 --spider http://localhost:8080/health/live || exit 1
+
+# Expose port
+EXPOSE 8080
+
+# Set the entrypoint
+ENTRYPOINT ["./NeoServiceLayer.Api"]
+
+# Optional: Add metadata labels
+LABEL org.opencontainers.image.title="Neo Service Layer API" \
+      org.opencontainers.image.description="Enterprise blockchain service layer with SGX/TEE support" \
+      org.opencontainers.image.version="1.0.0" \
+      org.opencontainers.image.vendor="Neo Service Layer Team" \
+      org.opencontainers.image.licenses="MIT" \
+      org.opencontainers.image.source="https://github.com/your-org/neo-service-layer"

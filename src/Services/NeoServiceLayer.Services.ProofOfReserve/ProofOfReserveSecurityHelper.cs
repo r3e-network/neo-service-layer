@@ -411,10 +411,8 @@ public class ProofOfReserveSecurityHelper : IDisposable
 
         try
         {
-            // In a real implementation, this would use proper cryptographic signature verification
-            // For now, create a simple hash-based validation
-            var expectedSignature = ComputeRequestSignature(requestBody, publicKey);
-            var isValid = signature == expectedSignature;
+            // Use proper ECDSA signature verification for production security
+            var isValid = VerifyECDSASignature(requestBody, signature, publicKey);
 
             Logger.LogDebug("Request signature validation: {IsValid}", isValid);
             return isValid;
@@ -465,8 +463,74 @@ public class ProofOfReserveSecurityHelper : IDisposable
     /// <param name="requestBody">The request body.</param>
     /// <param name="publicKey">The public key.</param>
     /// <returns>The computed signature.</returns>
+    /// <summary>
+    /// Verifies ECDSA signature using the provided public key.
+    /// </summary>
+    /// <param name="data">The original data that was signed.</param>
+    /// <param name="signature">The signature to verify (base64 encoded).</param>
+    /// <param name="publicKeyHex">The public key in hex format.</param>
+    /// <returns>True if the signature is valid.</returns>
+    private bool VerifyECDSASignature(string data, string signature, string publicKeyHex)
+    {
+        try
+        {
+            // Convert hex public key to bytes
+            var publicKeyBytes = Convert.FromHexString(publicKeyHex.Replace("0x", ""));
+            
+            // Hash the data using SHA256
+            var dataBytes = Encoding.UTF8.GetBytes(data);
+            var hash = SHA256.HashData(dataBytes);
+            
+            // Convert base64 signature to bytes
+            var signatureBytes = Convert.FromBase64String(signature);
+            
+            // Use System.Security.Cryptography.ECDsa for signature verification
+            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
+            
+            // Import the public key (assuming P-256 curve)
+            try
+            {
+                // Try to import as uncompressed public key format
+                ecdsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
+            }
+            catch
+            {
+                // If that fails, try raw public key bytes (64 bytes for P-256)
+                if (publicKeyBytes.Length == 64)
+                {
+                    var point = new System.Security.Cryptography.ECPoint
+                    {
+                        X = publicKeyBytes[0..32],
+                        Y = publicKeyBytes[32..64]
+                    };
+                    var parameters = new System.Security.Cryptography.ECParameters
+                    {
+                        Curve = System.Security.Cryptography.ECCurve.NamedCurves.nistP256,
+                        Q = point
+                    };
+                    ecdsa.ImportParameters(parameters);
+                }
+                else
+                {
+                    Logger.LogWarning("Invalid public key format: expected 64 bytes for raw P-256 key");
+                    return false;
+                }
+            }
+            
+            // Verify the signature
+            return ecdsa.VerifyHash(hash, signatureBytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error verifying ECDSA signature");
+            return false;
+        }
+    }
+
+    [Obsolete("Use VerifyECDSASignature for proper cryptographic verification")]
     private string ComputeRequestSignature(string requestBody, string publicKey)
     {
+        // Legacy method kept for compatibility - should not be used for security
         var data = $"{requestBody}:{publicKey}:{DateTime.UtcNow:yyyy-MM-dd}";
         var hash = SHA256.HashData(Encoding.UTF8.GetBytes(data));
         return Convert.ToBase64String(hash);

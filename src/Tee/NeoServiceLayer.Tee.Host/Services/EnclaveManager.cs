@@ -381,15 +381,23 @@ public partial class EnclaveManager : IEnclaveManager, IDisposable
         {
             _logger.LogDebug("Initiating recovery for account: {AccountId}", accountId);
 
-            // For now, simulate recovery initiation
-            var recoveryId = Guid.NewGuid().ToString();
-            var result = $@"{{
-                ""success"": true,
-                ""recovery_id"": ""{recoveryId}"",
-                ""account_id"": ""{accountId}"",
-                ""status"": ""initiated"",
-                ""timestamp"": {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}
-            }}";
+            // Use the real enclave account recovery initiation function
+            string result = _enclaveWrapper.ExecuteJavaScript($"initiateAccountRecovery('{accountId}', {recoveryData})", "");
+            
+            // Parse and validate the result to ensure it contains required fields
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(result);
+                if (!doc.RootElement.TryGetProperty("success", out var success) || !success.GetBoolean())
+                {
+                    throw new InvalidOperationException("Recovery initiation failed in enclave");
+                }
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Invalid JSON response from enclave recovery initiation");
+                throw new InvalidOperationException("Invalid response from enclave recovery initiation", ex);
+            }
 
             _logger.LogDebug("Recovery initiated successfully for account: {AccountId}", accountId);
             return await Task.FromResult(result);
@@ -413,14 +421,23 @@ public partial class EnclaveManager : IEnclaveManager, IDisposable
         {
             _logger.LogDebug("Completing recovery: {RecoveryId}", recoveryId);
 
-            // For now, simulate recovery completion
-            var result = $@"{{
-                ""success"": true,
-                ""recovery_id"": ""{recoveryId}"",
-                ""transaction_hash"": ""0x{DateTimeOffset.UtcNow.ToUnixTimeSeconds():x16}"",
-                ""status"": ""completed"",
-                ""timestamp"": {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}
-            }}";
+            // Use the real enclave account recovery completion function
+            string result = _enclaveWrapper.ExecuteJavaScript($"completeAccountRecovery('{recoveryId}', {recoveryData})", "");
+            
+            // Parse and validate the result to ensure it contains required fields
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(result);
+                if (!doc.RootElement.TryGetProperty("success", out var success) || !success.GetBoolean())
+                {
+                    throw new InvalidOperationException("Recovery completion failed in enclave");
+                }
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Invalid JSON response from enclave recovery completion");
+                throw new InvalidOperationException("Invalid response from enclave recovery completion", ex);
+            }
 
             _logger.LogDebug("Recovery completed successfully: {RecoveryId}", recoveryId);
             return await Task.FromResult(result);
@@ -444,16 +461,30 @@ public partial class EnclaveManager : IEnclaveManager, IDisposable
         {
             _logger.LogDebug("Creating session key for account: {AccountId}", accountId);
 
-            // For now, simulate session key creation
-            var sessionKeyId = Guid.NewGuid().ToString();
-            var publicKey = $"0x{DateTimeOffset.UtcNow.ToUnixTimeSeconds():x16}";
-            var result = $@"{{
-                ""success"": true,
-                ""session_key_id"": ""{sessionKeyId}"",
-                ""public_key"": ""{publicKey}"",
-                ""account_id"": ""{accountId}"",
-                ""timestamp"": {DateTimeOffset.UtcNow.ToUnixTimeSeconds()}
-            }}";
+            // Use the real enclave session key creation function
+            string result = _enclaveWrapper.ExecuteJavaScript($"createSessionKey('{accountId}', {sessionKeyData})", "");
+            
+            // Parse and validate the result to ensure it contains required fields
+            try
+            {
+                using var doc = System.Text.Json.JsonDocument.Parse(result);
+                if (!doc.RootElement.TryGetProperty("success", out var success) || !success.GetBoolean())
+                {
+                    throw new InvalidOperationException("Session key creation failed in enclave");
+                }
+                
+                // Verify that essential fields are present
+                if (!doc.RootElement.TryGetProperty("session_key_id", out _) ||
+                    !doc.RootElement.TryGetProperty("public_key", out _))
+                {
+                    throw new InvalidOperationException("Enclave session key creation returned incomplete data");
+                }
+            }
+            catch (System.Text.Json.JsonException ex)
+            {
+                _logger.LogError(ex, "Invalid JSON response from enclave session key creation");
+                throw new InvalidOperationException("Invalid response from enclave session key creation", ex);
+            }
 
             _logger.LogDebug("Session key created successfully for account: {AccountId}", accountId);
             return await Task.FromResult(result);

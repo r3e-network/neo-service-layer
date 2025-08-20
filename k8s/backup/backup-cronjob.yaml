@@ -1,0 +1,386 @@
+# PostgreSQL Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: neo-service-layer
+spec:
+  # Run daily at 2:00 AM UTC
+  schedule: "0 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: postgres-backup
+            tier: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: postgres-backup
+            image: postgres:15-alpine
+            env:
+            - name: PGHOST
+              value: neo-postgres
+            - name: PGPORT
+              value: "5432"
+            - name: PGDATABASE
+              value: neo_service_layer
+            - name: PGUSER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: username
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-credentials
+                  key: password
+            - name: BACKUP_BUCKET
+              value: "neo-service-layer-backups"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: secret-key
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting PostgreSQL backup..."
+              DATE=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="postgres_backup_${DATE}.sql.gz"
+              
+              # Create backup with custom format for faster restore
+              pg_dump -Fc -Z9 --no-owner --no-privileges > /tmp/backup.dump
+              
+              # Also create SQL backup for portability
+              pg_dump --no-owner --no-privileges | gzip > /tmp/${BACKUP_FILE}
+              
+              # Install AWS CLI
+              apk add --no-cache aws-cli
+              
+              # Upload to S3
+              aws s3 cp /tmp/backup.dump s3://${BACKUP_BUCKET}/postgres/dumps/backup_${DATE}.dump
+              aws s3 cp /tmp/${BACKUP_FILE} s3://${BACKUP_BUCKET}/postgres/sql/${BACKUP_FILE}
+              
+              # Cleanup old backups (keep last 30 days)
+              aws s3 ls s3://${BACKUP_BUCKET}/postgres/dumps/ | while read -r line; do
+                createDate=$(echo $line | awk '{print $1}')
+                createDate=$(date -d "$createDate" +%s)
+                olderThan=$(date -d "30 days ago" +%s)
+                if [[ $createDate -lt $olderThan ]]; then
+                  fileName=$(echo $line | awk '{print $4}')
+                  aws s3 rm s3://${BACKUP_BUCKET}/postgres/dumps/$fileName
+                fi
+              done
+              
+              echo "Backup completed successfully"
+            volumeMounts:
+            - name: backup-temp
+              mountPath: /tmp
+          volumes:
+          - name: backup-temp
+            emptyDir: {}
+
+---
+# MongoDB Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: mongodb-backup
+  namespace: neo-service-layer
+spec:
+  # Run daily at 2:30 AM UTC
+  schedule: "30 2 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: mongodb-backup
+            tier: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: mongodb-backup
+            image: mongo:6-jammy
+            env:
+            - name: MONGO_HOST
+              value: neo-mongodb
+            - name: MONGO_PORT
+              value: "27017"
+            - name: MONGO_DATABASE
+              value: neo_service_layer
+            - name: MONGO_USERNAME
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: username
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: mongodb-credentials
+                  key: password
+            - name: BACKUP_BUCKET
+              value: "neo-service-layer-backups"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: secret-key
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting MongoDB backup..."
+              DATE=$(date +%Y%m%d_%H%M%S)
+              BACKUP_DIR="/tmp/mongodb_backup_${DATE}"
+              
+              # Create backup
+              mongodump \
+                --host=${MONGO_HOST}:${MONGO_PORT} \
+                --username=${MONGO_USERNAME} \
+                --password=${MONGO_PASSWORD} \
+                --authenticationDatabase=admin \
+                --db=${MONGO_DATABASE} \
+                --gzip \
+                --out=${BACKUP_DIR}
+              
+              # Create archive
+              cd /tmp
+              tar -czf mongodb_backup_${DATE}.tar.gz mongodb_backup_${DATE}
+              
+              # Install AWS CLI
+              apt-get update && apt-get install -y awscli
+              
+              # Upload to S3
+              aws s3 cp mongodb_backup_${DATE}.tar.gz s3://${BACKUP_BUCKET}/mongodb/
+              
+              # Cleanup old backups (keep last 30 days)
+              aws s3 ls s3://${BACKUP_BUCKET}/mongodb/ | while read -r line; do
+                createDate=$(echo $line | awk '{print $1}')
+                createDate=$(date -d "$createDate" +%s)
+                olderThan=$(date -d "30 days ago" +%s)
+                if [[ $createDate -lt $olderThan ]]; then
+                  fileName=$(echo $line | awk '{print $4}')
+                  aws s3 rm s3://${BACKUP_BUCKET}/mongodb/$fileName
+                fi
+              done
+              
+              echo "MongoDB backup completed successfully"
+            volumeMounts:
+            - name: backup-temp
+              mountPath: /tmp
+          volumes:
+          - name: backup-temp
+            emptyDir: {}
+
+---
+# Redis Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: redis-backup
+  namespace: neo-service-layer
+spec:
+  # Run every 6 hours
+  schedule: "0 */6 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: redis-backup
+            tier: backup
+        spec:
+          restartPolicy: OnFailure
+          containers:
+          - name: redis-backup
+            image: redis:7-alpine
+            env:
+            - name: REDIS_HOST
+              value: neo-redis-master
+            - name: REDIS_PORT
+              value: "6379"
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: redis-credentials
+                  key: password
+            - name: BACKUP_BUCKET
+              value: "neo-service-layer-backups"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: secret-key
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting Redis backup..."
+              DATE=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="redis_backup_${DATE}.rdb"
+              
+              # Trigger Redis BGSAVE
+              redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} BGSAVE
+              
+              # Wait for backup to complete
+              while [ $(redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} LASTSAVE) -eq $(redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} LASTSAVE) ]; do
+                sleep 1
+              done
+              
+              # Copy backup file
+              redis-cli -h ${REDIS_HOST} -p ${REDIS_PORT} -a ${REDIS_PASSWORD} --rdb /tmp/${BACKUP_FILE}
+              
+              # Compress backup
+              gzip /tmp/${BACKUP_FILE}
+              
+              # Install AWS CLI
+              apk add --no-cache aws-cli
+              
+              # Upload to S3
+              aws s3 cp /tmp/${BACKUP_FILE}.gz s3://${BACKUP_BUCKET}/redis/
+              
+              # Cleanup old backups (keep last 7 days for Redis)
+              aws s3 ls s3://${BACKUP_BUCKET}/redis/ | while read -r line; do
+                createDate=$(echo $line | awk '{print $1}')
+                createDate=$(date -d "$createDate" +%s)
+                olderThan=$(date -d "7 days ago" +%s)
+                if [[ $createDate -lt $olderThan ]]; then
+                  fileName=$(echo $line | awk '{print $4}')
+                  aws s3 rm s3://${BACKUP_BUCKET}/redis/$fileName
+                fi
+              done
+              
+              echo "Redis backup completed successfully"
+            volumeMounts:
+            - name: backup-temp
+              mountPath: /tmp
+          volumes:
+          - name: backup-temp
+            emptyDir: {}
+
+---
+# Configuration Backup CronJob
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: config-backup
+  namespace: neo-service-layer
+spec:
+  # Run daily at 3:00 AM UTC
+  schedule: "0 3 * * *"
+  concurrencyPolicy: Forbid
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: config-backup
+            tier: backup
+        spec:
+          serviceAccountName: config-backup-sa
+          restartPolicy: OnFailure
+          containers:
+          - name: config-backup
+            image: bitnami/kubectl:latest
+            env:
+            - name: BACKUP_BUCKET
+              value: "neo-service-layer-backups"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: access-key
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: backup-s3-credentials
+                  key: secret-key
+            command:
+            - /bin/bash
+            - -c
+            - |
+              set -e
+              echo "Starting configuration backup..."
+              DATE=$(date +%Y%m%d_%H%M%S)
+              BACKUP_DIR="/tmp/config_backup_${DATE}"
+              mkdir -p ${BACKUP_DIR}
+              
+              # Backup ConfigMaps
+              kubectl get configmaps -n neo-service-layer -o yaml > ${BACKUP_DIR}/configmaps.yaml
+              
+              # Backup Secrets (encrypted)
+              kubectl get secrets -n neo-service-layer -o yaml > ${BACKUP_DIR}/secrets.yaml
+              
+              # Backup Deployments
+              kubectl get deployments -n neo-service-layer -o yaml > ${BACKUP_DIR}/deployments.yaml
+              
+              # Backup Services
+              kubectl get services -n neo-service-layer -o yaml > ${BACKUP_DIR}/services.yaml
+              
+              # Backup Ingress
+              kubectl get ingress -n neo-service-layer -o yaml > ${BACKUP_DIR}/ingress.yaml
+              
+              # Backup PVCs
+              kubectl get pvc -n neo-service-layer -o yaml > ${BACKUP_DIR}/pvcs.yaml
+              
+              # Create archive
+              cd /tmp
+              tar -czf config_backup_${DATE}.tar.gz config_backup_${DATE}
+              
+              # Install AWS CLI
+              apt-get update && apt-get install -y awscli
+              
+              # Upload to S3 with encryption
+              aws s3 cp config_backup_${DATE}.tar.gz s3://${BACKUP_BUCKET}/configs/ --sse AES256
+              
+              # Cleanup old backups (keep last 30 days)
+              aws s3 ls s3://${BACKUP_BUCKET}/configs/ | while read -r line; do
+                createDate=$(echo $line | awk '{print $1}')
+                createDate=$(date -d "$createDate" +%s)
+                olderThan=$(date -d "30 days ago" +%s)
+                if [[ $createDate -lt $olderThan ]]; then
+                  fileName=$(echo $line | awk '{print $4}')
+                  aws s3 rm s3://${BACKUP_BUCKET}/configs/$fileName
+                fi
+              done
+              
+              echo "Configuration backup completed successfully"
+            volumeMounts:
+            - name: backup-temp
+              mountPath: /tmp
+          volumes:
+          - name: backup-temp
+            emptyDir: {}

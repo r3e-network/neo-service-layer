@@ -1,0 +1,129 @@
+# Velero Backup Schedule for complete cluster backup
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: neo-service-layer-daily
+  namespace: velero
+spec:
+  # Daily backup at 4:00 AM UTC
+  schedule: "0 4 * * *"
+  template:
+    # Backup all neo-service-layer resources
+    includedNamespaces:
+    - neo-service-layer
+    - neo-service-layer-staging
+    # Include persistent volumes
+    defaultVolumesToRestic: true
+    # TTL for backups (30 days)
+    ttl: 720h0m0s
+    # Storage location
+    storageLocation: default
+    # Volume snapshot location
+    volumeSnapshotLocations:
+    - default
+    # Hooks for application consistency
+    hooks:
+      resources:
+      - name: postgres-freeze
+        includedNamespaces:
+        - neo-service-layer
+        labelSelector:
+          matchLabels:
+            app: neo-postgres
+        pre:
+        - exec:
+            container: postgres
+            command:
+            - /bin/bash
+            - -c
+            - |
+              psql -U postgres -c "SELECT pg_start_backup('velero_backup', true);"
+            onError: Fail
+            timeout: 30s
+        post:
+        - exec:
+            container: postgres
+            command:
+            - /bin/bash
+            - -c
+            - |
+              psql -U postgres -c "SELECT pg_stop_backup();"
+            onError: Continue
+            timeout: 30s
+
+---
+# Velero Backup for disaster recovery (weekly)
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: neo-service-layer-dr-weekly
+  namespace: velero
+spec:
+  # Weekly backup on Sunday at 5:00 AM UTC
+  schedule: "0 5 * * 0"
+  template:
+    # Include all namespaces for DR
+    includedNamespaces:
+    - neo-service-layer
+    - neo-service-layer-staging
+    - ingress-nginx
+    - cert-manager
+    # Include cluster-scoped resources
+    includeClusterResources: true
+    # Include persistent volumes
+    defaultVolumesToRestic: true
+    # TTL for DR backups (90 days)
+    ttl: 2160h0m0s
+    # Storage location (different region for DR)
+    storageLocation: dr-location
+    # Labels for identification
+    metadata:
+      labels:
+        backup-type: disaster-recovery
+        app: neo-service-layer
+
+---
+# BackupStorageLocation for primary region
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws
+  objectStorage:
+    bucket: neo-service-layer-velero-backups
+    prefix: primary
+  config:
+    region: us-east-1
+    s3ForcePathStyle: "false"
+    serverSideEncryption: AES256
+
+---
+# BackupStorageLocation for DR region
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: dr-location
+  namespace: velero
+spec:
+  provider: aws
+  objectStorage:
+    bucket: neo-service-layer-velero-backups-dr
+    prefix: disaster-recovery
+  config:
+    region: us-west-2
+    s3ForcePathStyle: "false"
+    serverSideEncryption: AES256
+
+---
+# VolumeSnapshotLocation for AWS EBS
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: default
+  namespace: velero
+spec:
+  provider: aws
+  config:
+    region: us-east-1

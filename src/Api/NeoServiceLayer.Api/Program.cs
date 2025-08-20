@@ -28,6 +28,9 @@ using Serilog;
 // Create the builder
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Kestrel for production SSL/TLS
+builder.WebHost.ConfigureKestrelSecurity();
+
 // Configure Serilog
 builder.Host.UseSerilog((context, services, configuration) => configuration
     .ReadFrom.Configuration(context.Configuration)
@@ -105,28 +108,150 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configure JWT Authentication with secure key management
+var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
+if (string.IsNullOrEmpty(jwtSecret))
+{
+    if (builder.Environment.IsProduction())
+    {
+        throw new InvalidOperationException("JWT_SECRET_KEY environment variable is required in production");
+    }
+    
+    // Only for development/testing - never in production
+    jwtSecret = "development-jwt-secret-key-for-testing-only-must-be-at-least-32-characters-long";
+    Console.WriteLine("WARNING: Using development JWT secret. This is NOT secure for production!");
+}
 
-// SECURITY: JWT secret MUST come from environment variable only - no config fallback
-
-// In test environment, use a fixed key for consistency
-        // Only for development/testing - never in production
-    // Validate JWT secret key for production - STRICT enforcement
-
-    // Ensure minimum key length for security
+// Validate JWT secret key for production - STRICT enforcement
+if (jwtSecret.Length < 32)
+{
+    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+}
 
 // Prevent use of default/example keys
+var forbiddenKeys = new[]
+{
+    "your-secret-key-here",
+    "development-jwt-secret",
+    "test-secret",
+    "default-key",
+    "example-key",
+    "demo-key"
+};
 
+if (forbiddenKeys.Any(forbidden => jwtSecret.Contains(forbidden, StringComparison.OrdinalIgnoreCase)))
+{
+    throw new InvalidOperationException("Cannot use example or default JWT secret keys in production");
+}
 
+// Configure JWT Authentication
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "NeoServiceLayer",
+            ValidateAudience = true,
+            ValidAudience = builder.Configuration["Jwt:Audience"] ?? "NeoServiceLayer",
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecret)),
+            ClockSkew = TimeSpan.FromMinutes(5),
+            RequireExpirationTime = true,
+            RequireSignedTokens = true
+        };
+        
+        options.RequireHttpsMetadata = !builder.Environment.IsDevelopment();
+        options.SaveToken = false; // Don't store tokens in AuthenticationProperties
+        
+        options.Events = new JwtBearerEvents
+        {
+            OnAuthenticationFailed = context =>
+            {
+                Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+                return Task.CompletedTask;
+            },
+            OnTokenValidated = context =>
+            {
+                Console.WriteLine($"JWT Token validated for user: {context.Principal?.Identity?.Name}");
+                return Task.CompletedTask;
+            }
+        };
+    });
 
 // Configure Authorization
+builder.Services.AddAuthorization(options =>
+{
+    options.AddPolicy("RequireAdmin", policy => 
+        policy.RequireRole("Admin"));
+    
+    options.AddPolicy("RequireUser", policy => 
+        policy.RequireRole("User", "Admin"));
+    
+    options.AddPolicy("RequireEnclave", policy => 
+        policy.RequireClaim("enclave_access", "true"));
+        
+    options.AddPolicy("RequireHighSecurity", policy =>
+    {
+        policy.RequireRole("Admin");
+        policy.RequireClaim("security_level", "high");
+        policy.RequireAuthenticatedUser();
+    });
+});
 
 // Configure CORS
-        // Get endpoints configuration
+var corsOrigins = builder.Configuration.GetSection("Cors:AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
 
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        if (builder.Environment.IsDevelopment())
+        {
             // Allow localhost origins in development only
-            // No CORS in production without configuration
+            policy.WithOrigins("http://localhost:3000", "http://localhost:5173", "http://localhost:8080")
+                  .AllowAnyMethod()
+                  .AllowAnyHeader()
+                  .AllowCredentials();
+        }
+        else
+        {
+            // Production CORS - strict configuration required
+            if (corsOrigins.Length == 0)
+            {
+                throw new InvalidOperationException("CORS origins must be configured for production deployment");
+            }
+            
+            policy.WithOrigins(corsOrigins)
+                  .WithMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                  .WithHeaders("Content-Type", "Authorization", "X-Correlation-ID")
+                  .AllowCredentials()
+                  .SetPreflightMaxAge(TimeSpan.FromMinutes(30));
+        }
+    });
+});
 
 // Configure Rate Limiting
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    
+    options.AddFixedWindowLimiter("GlobalApi", limiterOptions =>
+    {
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.PermitLimit = builder.Environment.IsDevelopment() ? 1000 : 100;
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 50;
+    });
+    
+    options.AddFixedWindowLimiter("AuthApi", limiterOptions =>
+    {
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.PermitLimit = 10; // Stricter for auth endpoints
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 5;
+    });
+});
 
 // Add Comprehensive Health Checks
 builder.Services.AddHealthChecks()

@@ -1,0 +1,243 @@
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: default
+  namespace: neo-service-layer
+spec:
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+      tagOverrides:
+        request_id:
+          value: "%{REQUEST_ID}"
+        user_agent:
+          value: "%{REQUEST_HEADERS}"
+        response_flags:
+          value: "%{RESPONSE_FLAGS}"
+    - match:
+        metric: REQUEST_COUNT
+      disabled: false
+    - match:
+        metric: REQUEST_DURATION
+      disabled: false
+    - match:
+        metric: REQUEST_SIZE
+      disabled: false
+    - match:
+        metric: RESPONSE_SIZE
+      disabled: false
+  tracing:
+  - providers:
+    - name: jaeger
+  - customTags:
+      request_id:
+        header:
+          name: x-request-id
+      user_id:
+        header:
+          name: x-user-id
+      service_version:
+        environment:
+          name: SERVICE_VERSION
+          defaultValue: "unknown"
+  accessLogging:
+  - providers:
+    - name: otel
+  - filter:
+      expression: 'response.code >= 400'
+---
+apiVersion: telemetry.istio.io/v1alpha1
+kind: Telemetry
+metadata:
+  name: api-gateway-metrics
+  namespace: neo-service-layer
+spec:
+  selector:
+    matchLabels:
+      app: api-gateway
+  metrics:
+  - providers:
+    - name: prometheus
+  - overrides:
+    - match:
+        metric: ALL_METRICS
+      tagOverrides:
+        source_service:
+          value: "api-gateway"
+        destination_service:
+          value: "%{DESTINATION_SERVICE_NAME | 'unknown'}"
+        method:
+          value: "%{REQUEST_METHOD | 'unknown'}"
+        status_code:
+          value: "%{RESPONSE_CODE | 0}"
+        endpoint:
+          value: "%{REQUEST_URL_PATH | 'unknown'}"
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: istio-mesh-metrics
+  namespace: neo-service-layer
+  labels:
+    app: istio-mesh
+spec:
+  selector:
+    matchLabels:
+      app: istiod
+  endpoints:
+  - port: http-monitoring
+    interval: 15s
+    path: /stats/prometheus
+---
+apiVersion: v1
+kind: ServiceMonitor
+metadata:
+  name: istio-gateway-metrics
+  namespace: neo-service-layer
+  labels:
+    app: istio-gateway
+spec:
+  selector:
+    matchLabels:
+      istio: ingressgateway
+  endpoints:
+  - port: http-envoy-prom
+    interval: 15s
+    path: /stats/prometheus
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: custom-metrics
+  namespace: neo-service-layer
+spec:
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.wasm
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.wasm.v3.Wasm
+          config:
+            name: "neo_service_metrics"
+            root_id: "neo_service_metrics"
+            vm_config:
+              vm_id: "neo_service_metrics"
+              runtime: "envoy.wasm.runtime.v8"
+              code:
+                local:
+                  inline_string: |
+                    class NeoServiceMetrics {
+                      constructor(rootContext) {
+                        this.rootContext = rootContext;
+                      }
+                      
+                      onRequestHeaders() {
+                        const requestId = this.getRequestHeader("x-request-id");
+                        const userAgent = this.getRequestHeader("user-agent");
+                        const method = this.getRequestHeader(":method");
+                        const path = this.getRequestHeader(":path");
+                        
+                        // Record request metrics
+                        this.setRequestHeader("x-neo-request-start", Date.now().toString());
+                        
+                        return FilterHeadersStatus.Continue;
+                      }
+                      
+                      onResponseHeaders() {
+                        const startTime = this.getRequestHeader("x-neo-request-start");
+                        const statusCode = this.getResponseHeader(":status");
+                        const duration = Date.now() - parseInt(startTime);
+                        
+                        // Export metrics to Prometheus
+                        this.rootContext.setSharedData("request_duration_ms", duration);
+                        this.rootContext.setSharedData("response_status", statusCode);
+                        
+                        return FilterHeadersStatus.Continue;
+                      }
+                    }
+            configuration:
+              "@type": type.googleapis.com/google.protobuf.StringValue
+              value: |
+                {
+                  "metric_prefix": "neo_service",
+                  "labels": ["method", "status", "endpoint"]
+                }
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: request-id-filter
+  namespace: neo-service-layer
+spec:
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: GATEWAY
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.uuid_request_id
+        typed_config:
+          "@type": type.googleapis.com/envoy.extensions.filters.http.uuid_request_id.v3.UuidRequestId
+          pack_trace_reason: true
+---
+apiVersion: networking.istio.io/v1alpha3
+kind: EnvoyFilter
+metadata:
+  name: rate-limit-filter
+  namespace: neo-service-layer
+spec:
+  workloadSelector:
+    labels:
+      app: api-gateway
+  configPatches:
+  - applyTo: HTTP_FILTER
+    match:
+      context: SIDECAR_INBOUND
+      listener:
+        filterChain:
+          filter:
+            name: "envoy.filters.network.http_connection_manager"
+    patch:
+      operation: INSERT_BEFORE
+      value:
+        name: envoy.filters.http.local_ratelimit
+        typed_config:
+          "@type": type.googleapis.com/udpa.type.v1.TypedStruct
+          type_url: type.googleapis.com/envoy.extensions.filters.http.local_ratelimit.v3.LocalRateLimit
+          value:
+            stat_prefix: neo_service_rate_limiter
+            token_bucket:
+              max_tokens: 100
+              tokens_per_fill: 100
+              fill_interval: 60s
+            filter_enabled:
+              runtime_key: rate_limit_enabled
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+            filter_enforced:
+              runtime_key: rate_limit_enforced
+              default_value:
+                numerator: 100
+                denominator: HUNDRED
+            response_headers_to_add:
+            - append: false
+              header:
+                key: x-local-rate-limit
+                value: 'true'

@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Security.Cryptography;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -42,6 +43,8 @@ public class PermissionService : ServiceFramework.EnclaveBlockchainServiceBase, 
     private readonly ConcurrentDictionary<string, Models.ServicePermissionRegistration> _serviceRegistrations = new();
     private readonly ConcurrentDictionary<string, List<PermissionAuditLog>> _auditLogs = new();
     private readonly string _jwtSecret;
+    private volatile bool _isRunning = false;
+    private volatile bool _isInitialized = false;
     
     // Service metadata
     private const string ServiceDescription = "Permission management service with SGX enclave support";
@@ -61,7 +64,7 @@ public class PermissionService : ServiceFramework.EnclaveBlockchainServiceBase, 
         : base("PermissionService", "Comprehensive permission and access control service", "1.0.0", 
                logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
-        _sgxPersistence = new SGXPersistence("PermissionService", null, logger); // TODO: Fix interface mismatch
+        _sgxPersistence = new SGXPersistence("PermissionService", enclaveStorage, logger);
         _jwtSecret = jwtSecret ?? GenerateDefaultSecret();
         
         AddCapability<IPermissionService>();
@@ -69,6 +72,51 @@ public class PermissionService : ServiceFramework.EnclaveBlockchainServiceBase, 
         
         // Initialize default roles
         InitializeDefaultRoles();
+        _isInitialized = true;
+    }
+
+    /// <summary>
+    /// Starts the permission service.
+    /// </summary>
+    public async Task StartAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Logger.LogInformation("Starting Permission Service...");
+            
+            // Load persisted data from SGX storage
+            await LoadPersistedDataAsync().ConfigureAwait(false);
+            
+            _isRunning = true;
+            Logger.LogInformation("Permission Service started successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to start Permission Service");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Stops the permission service.
+    /// </summary>
+    public async Task StopAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            Logger.LogInformation("Stopping Permission Service...");
+            
+            // Persist current state to SGX storage
+            await PersistCurrentStateAsync().ConfigureAwait(false);
+            
+            _isRunning = false;
+            Logger.LogInformation("Permission Service stopped successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error stopping Permission Service");
+            throw;
+        }
     }
 
     /// <inheritdoc/>
@@ -1091,7 +1139,7 @@ public class PermissionService : ServiceFramework.EnclaveBlockchainServiceBase, 
     public string Version => ServiceVersion;
     
     /// <inheritdoc/>
-    public bool IsRunning => true; // Simplified - service is running if this property is accessed
+    public bool IsRunning => _isRunning && _isInitialized;
     
     /// <inheritdoc/>
     public IReadOnlyList<ServiceDependency> Dependencies => _dependencies.AsReadOnly();
@@ -1454,6 +1502,11 @@ public class PermissionService : ServiceFramework.EnclaveBlockchainServiceBase, 
         {
             Logger.LogError(ex, "Error loading persisted permission data");
         }
+    }
+
+    private async Task PersistCurrentStateAsync()
+    {
+        await PersistAllDataAsync().ConfigureAwait(false);
     }
 
     private async Task PersistAllDataAsync()

@@ -1,0 +1,258 @@
+# Blue-Green Deployment Strategy for Neo Service Layer
+apiVersion: argoproj.io/v1alpha1
+kind: Rollout
+metadata:
+  name: api-gateway-rollout
+  namespace: neo-service-layer
+  labels:
+    app: api-gateway
+    deployment-strategy: blue-green
+spec:
+  replicas: 6
+  strategy:
+    blueGreen:
+      # Active service points to the stable version
+      activeService: api-gateway-active
+      # Preview service points to the new version during testing
+      previewService: api-gateway-preview
+      # Automatically promote after successful tests
+      autoPromotionEnabled: false
+      # Scale down delay after promotion
+      scaleDownDelaySeconds: 300
+      # Preview replica count during testing
+      prePromotionAnalysis:
+        templates:
+        - templateName: api-gateway-success-rate
+        args:
+        - name: service-name
+          value: api-gateway-preview
+      # Post-promotion analysis
+      postPromotionAnalysis:
+        templates:
+        - templateName: api-gateway-success-rate
+        args:
+        - name: service-name
+          value: api-gateway-active
+      # Preview metadata
+      previewMetadata:
+        labels:
+          version: preview
+        annotations:
+          role: preview
+      # Active metadata
+      activeMetadata:
+        labels:
+          version: active
+        annotations:
+          role: active
+  selector:
+    matchLabels:
+      app: api-gateway
+  template:
+    metadata:
+      labels:
+        app: api-gateway
+    spec:
+      containers:
+      - name: api-gateway
+        image: neoservicelayer/api-gateway:latest
+        ports:
+        - name: http
+          containerPort: 8080
+          protocol: TCP
+        - name: metrics
+          containerPort: 9090
+          protocol: TCP
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ConnectionStrings__DefaultConnection
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: database-connection
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: jwt-secret
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 8080
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 8080
+          initialDelaySeconds: 15
+          periodSeconds: 5
+          timeoutSeconds: 3
+          failureThreshold: 2
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1001
+          readOnlyRootFilesystem: true
+          allowPrivilegeEscalation: false
+          capabilities:
+            drop:
+            - ALL
+        volumeMounts:
+        - name: tmp
+          mountPath: /tmp
+        - name: logs
+          mountPath: /app/logs
+      volumes:
+      - name: tmp
+        emptyDir: {}
+      - name: logs
+        emptyDir: {}
+      securityContext:
+        fsGroup: 1001
+      serviceAccountName: api-gateway-service-account
+---
+# Active Service (stable traffic)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-active
+  namespace: neo-service-layer
+  labels:
+    app: api-gateway
+    role: active
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-backend-protocol: "http"
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: LoadBalancer
+---
+# Preview Service (testing traffic)
+apiVersion: v1
+kind: Service
+metadata:
+  name: api-gateway-preview
+  namespace: neo-service-layer
+  labels:
+    app: api-gateway
+    role: preview
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-internal: "true"
+spec:
+  selector:
+    app: api-gateway
+  ports:
+  - name: http
+    port: 80
+    targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
+    protocol: TCP
+  type: LoadBalancer
+---
+# Analysis Template for Success Rate
+apiVersion: argoproj.io/v1alpha1
+kind: AnalysisTemplate
+metadata:
+  name: api-gateway-success-rate
+  namespace: neo-service-layer
+spec:
+  args:
+  - name: service-name
+  metrics:
+  - name: success-rate
+    # Run analysis for 5 minutes
+    interval: 30s
+    count: 10
+    successCondition: result[0] >= 0.99
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          sum(rate(istio_requests_total{destination_service_name="{{args.service-name}}",response_code!~"5.*"}[2m])) /
+          sum(rate(istio_requests_total{destination_service_name="{{args.service-name}}"}[2m]))
+  - name: response-time-p95
+    interval: 30s
+    count: 10
+    successCondition: result[0] <= 500
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          histogram_quantile(0.95,
+            sum(rate(istio_request_duration_milliseconds_bucket{destination_service_name="{{args.service-name}}"}[2m]))
+            by (le)
+          )
+  - name: error-rate
+    interval: 30s
+    count: 10
+    successCondition: result[0] <= 0.01
+    failureLimit: 3
+    provider:
+      prometheus:
+        address: http://prometheus.monitoring.svc.cluster.local:9090
+        query: |
+          sum(rate(istio_requests_total{destination_service_name="{{args.service-name}}",response_code=~"5.*"}[2m])) /
+          sum(rate(istio_requests_total{destination_service_name="{{args.service-name}}"}[2m]))
+---
+# Service Account for deployment
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: api-gateway-service-account
+  namespace: neo-service-layer
+  labels:
+    app: api-gateway
+---
+# RBAC for service account
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: api-gateway-role
+  namespace: neo-service-layer
+rules:
+- apiGroups: [""]
+  resources: ["configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: api-gateway-rolebinding
+  namespace: neo-service-layer
+subjects:
+- kind: ServiceAccount
+  name: api-gateway-service-account
+  namespace: neo-service-layer
+roleRef:
+  kind: Role
+  name: api-gateway-role
+  apiGroup: rbac.authorization.k8s.io

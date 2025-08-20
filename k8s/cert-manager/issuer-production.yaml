@@ -1,0 +1,53 @@
+# Production Certificate Issuer for Let's Encrypt
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    # Production Let's Encrypt server
+    server: https://acme-v02.api.letsencrypt.org/directory
+    email: admin@neoservicelayer.io
+    # Secret to store the ACME account private key
+    privateKeySecretRef:
+      name: letsencrypt-prod-account-key
+    # Enable HTTP01 challenge provider
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+          podTemplate:
+            metadata:
+              labels:
+                app: cert-manager-solver
+            spec:
+              nodeSelector:
+                kubernetes.io/os: linux
+      selector:
+        dnsNames:
+        - "*.neoservicelayer.io"
+        - neoservicelayer.io
+
+---
+# Staging Certificate Issuer for testing
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-staging
+  namespace: cert-manager
+spec:
+  acme:
+    # Staging Let's Encrypt server
+    server: https://acme-staging-v02.api.letsencrypt.org/directory
+    email: admin@neoservicelayer.io
+    privateKeySecretRef:
+      name: letsencrypt-staging-account-key
+    solvers:
+    - http01:
+        ingress:
+          class: nginx
+      selector:
+        dnsNames:
+        - "*.staging.neoservicelayer.io"
+        - staging.neoservicelayer.io

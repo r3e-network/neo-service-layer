@@ -142,8 +142,8 @@ public partial class EnclaveManager
                 ""signingAlgorithm"": ""{signingAlgorithm}""
             }}";
 
-            string result = CallEnclaveFunctionAsync("kmsVerifySignature", jsonPayload, cancellationToken).Result;
-            return Task.FromResult(bool.Parse(result));
+            string result = await CallEnclaveFunctionAsync("kmsVerifySignature", jsonPayload, cancellationToken).ConfigureAwait(false);
+            return bool.Parse(result);
         }
         catch (Exception ex)
         {
@@ -231,8 +231,8 @@ public partial class EnclaveManager
                 ""keyId"": ""{keyId}""
             }}";
 
-            string result = CallEnclaveFunctionAsync("kmsDeleteKey", jsonPayload, cancellationToken).Result;
-            return Task.FromResult(bool.Parse(result));
+            string result = await CallEnclaveFunctionAsync("kmsDeleteKey", jsonPayload, cancellationToken).ConfigureAwait(false);
+            return bool.Parse(result);
         }
         catch (Exception ex)
         {

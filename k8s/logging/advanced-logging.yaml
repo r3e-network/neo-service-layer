@@ -1,0 +1,688 @@
+# Advanced Logging and Tracing Configuration for Neo Service Layer
+# Fluent Bit DaemonSet for log collection
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: fluent-bit
+  namespace: kube-system
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: fluent-bit-read
+rules:
+- apiGroups: [""]
+  resources:
+  - namespaces
+  - pods
+  - pods/logs
+  - nodes
+  - nodes/proxy
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: fluent-bit-read
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: fluent-bit-read
+subjects:
+- kind: ServiceAccount
+  name: fluent-bit
+  namespace: kube-system
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: kube-system
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Daemon Off
+        Flush 1
+        Log_Level info
+        Parsers_File parsers.conf
+        Plugins_File plugins.conf
+        HTTP_Server On
+        HTTP_Listen 0.0.0.0
+        HTTP_Port 2020
+        Health_Check On
+
+    [INPUT]
+        Name tail
+        Path /var/log/containers/*neo-service-layer*.log
+        multiline.parser docker, cri
+        Tag kube.*
+        Mem_Buf_Limit 50MB
+        Skip_Long_Lines On
+
+    [INPUT]
+        Name systemd
+        Tag host.*
+        Systemd_Filter _SYSTEMD_UNIT=kubelet.service
+        Read_From_Tail On
+
+    [FILTER]
+        Name kubernetes
+        Match kube.*
+        Kube_URL https://kubernetes.default.svc:443
+        Kube_CA_File /var/run/secrets/kubernetes.io/serviceaccount/ca.crt
+        Kube_Token_File /var/run/secrets/kubernetes.io/serviceaccount/token
+        Kube_Tag_Prefix kube.var.log.containers.
+        Merge_Log On
+        Merge_Log_Key log_processed
+        K8S-Logging.Parser On
+        K8S-Logging.Exclude Off
+        Annotations Off
+        Labels On
+
+    [FILTER]
+        Name parser
+        Match kube.*neo-service-layer*
+        Key_Name log
+        Parser neo-service-json
+        Reserve_Data On
+
+    [FILTER]
+        Name nest
+        Match kube.*neo-service-layer*
+        Operation lift
+        Nested_under kubernetes
+        Add_prefix k8s_
+
+    [FILTER]
+        Name modify
+        Match kube.*neo-service-layer*
+        Add service neo-service-layer
+        Add environment ${ENVIRONMENT}
+        Add cluster ${CLUSTER_NAME}
+
+    [FILTER]
+        Name grep
+        Match kube.*neo-service-layer*
+        Exclude log HealthCheck
+
+    [OUTPUT]
+        Name es
+        Match kube.*neo-service-layer*
+        Host elasticsearch.logging.svc.cluster.local
+        Port 9200
+        Logstash_Format On
+        Logstash_Prefix neo-service-layer
+        Logstash_DateFormat %Y.%m.%d
+        Include_Tag_Key On
+        Type_Name _doc
+        Retry_Limit 3
+
+    [OUTPUT]
+        Name forward
+        Match kube.*neo-service-layer*
+        Host fluentd.logging.svc.cluster.local
+        Port 24224
+        tls On
+        tls.verify Off
+
+  parsers.conf: |
+    [PARSER]
+        Name   neo-service-json
+        Format json
+        Time_Key timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%L%z
+        Time_Keep On
+        Decode_Field_As escaped_utf8 message
+
+    [PARSER]
+        Name   neo-service-structured
+        Format regex
+        Regex ^(?<time>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z)\s+(?<level>\w+)\s+(?<category>[^\]]+)\s+(?<message>.*)$
+        Time_Key time
+        Time_Format %Y-%m-%dT%H:%M:%S.%LZ
+
+    [PARSER]
+        Name   istio-access
+        Format regex
+        Regex ^\[(?<timestamp>[^\]]*)\] "(?<method>\S+)(?: +(?<path>[^\"]*?)(?: +\S*)?)?" (?<response_code>[^ ]*) (?<response_flags>[^ ]*) (?<bytes_received>[^ ]*) (?<bytes_sent>[^ ]*) (?<duration>[^ ]*) (?<upstream_service_time>[^ ]*) "(?<x_forwarded_for>[^\"]*)" "(?<user_agent>[^\"]*)" "(?<request_id>[^\"]*)" "(?<authority>[^\"]*)" "(?<upstream_host>[^\"]*)"
+        Time_Key timestamp
+        Time_Format %Y-%m-%dT%H:%M:%S.%fZ
+
+  plugins.conf: |
+    [PLUGINS]
+        Path /fluent-bit/bin/out_gelf.so
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: fluent-bit
+  namespace: kube-system
+  labels:
+    k8s-app: fluent-bit-logging
+    version: v1
+    kubernetes.io/cluster-service: "true"
+spec:
+  selector:
+    matchLabels:
+      k8s-app: fluent-bit-logging
+  template:
+    metadata:
+      labels:
+        k8s-app: fluent-bit-logging
+        version: v1
+        kubernetes.io/cluster-service: "true"
+    spec:
+      serviceAccount: fluent-bit
+      serviceAccountName: fluent-bit
+      tolerations:
+      - key: node-role.kubernetes.io/master
+        operator: Exists
+        effect: NoSchedule
+      - operator: "Exists"
+        effect: "NoExecute"
+      - operator: "Exists"
+        effect: "NoSchedule"
+      containers:
+      - name: fluent-bit
+        image: fluent/fluent-bit:2.2.0
+        imagePullPolicy: Always
+        ports:
+          - containerPort: 2020
+        env:
+        - name: FLUENT_CONF
+          value: /fluent-bit/etc/fluent-bit.conf
+        - name: ENVIRONMENT
+          value: "production"
+        - name: CLUSTER_NAME
+          value: "neo-service-cluster"
+        volumeMounts:
+        - name: varlog
+          mountPath: /var/log
+        - name: varlibdockercontainers
+          mountPath: /var/lib/docker/containers
+          readOnly: true
+        - name: fluent-bit-config
+          mountPath: /fluent-bit/etc/
+        - name: mnt
+          mountPath: /mnt
+          readOnly: true
+        resources:
+          requests:
+            cpu: 100m
+            memory: 128Mi
+          limits:
+            cpu: 200m
+            memory: 256Mi
+      terminationGracePeriodSeconds: 10
+      volumes:
+      - name: varlog
+        hostPath:
+          path: /var/log
+      - name: varlibdockercontainers
+        hostPath:
+          path: /var/lib/docker/containers
+      - name: fluent-bit-config
+        configMap:
+          name: fluent-bit-config
+      - name: mnt
+        hostPath:
+          path: /mnt
+---
+# OpenTelemetry Collector for distributed tracing
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otelcol-config
+  namespace: neo-service-layer
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+          thrift_http:
+            endpoint: 0.0.0.0:14268
+          thrift_compact:
+            endpoint: 0.0.0.0:6831
+            
+      zipkin:
+        endpoint: 0.0.0.0:9411
+
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+        send_batch_max_size: 2048
+        
+      resource:
+        attributes:
+        - key: service.namespace
+          value: neo-service-layer
+          action: upsert
+        - key: deployment.environment
+          value: production
+          action: upsert
+          
+      memory_limiter:
+        limit_mib: 512
+        spike_limit_mib: 128
+        check_interval: 5s
+        
+      attributes:
+        actions:
+        - key: db.statement
+          action: hash
+        - key: http.user_agent
+          action: delete
+        - key: net.peer.ip
+          from_attribute: http.client_ip
+          action: update
+
+    exporters:
+      jaeger:
+        endpoint: jaeger-collector.tracing.svc.cluster.local:14250
+        tls:
+          insecure: true
+          
+      otlp/jaeger:
+        endpoint: jaeger-collector.tracing.svc.cluster.local:4317
+        tls:
+          insecure: true
+          
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: neo_service_layer
+        const_labels:
+          service: neo-service-layer
+          
+      logging:
+        loglevel: info
+        
+      elasticsearch/traces:
+        endpoints: ["http://elasticsearch.logging.svc.cluster.local:9200"]
+        index: neo-service-traces-%{+yyyy.MM.dd}
+        pipeline: traces-pipeline
+
+    extensions:
+      health_check:
+        endpoint: 0.0.0.0:13133
+      pprof:
+        endpoint: 0.0.0.0:1777
+      zpages:
+        endpoint: 0.0.0.0:55679
+
+    service:
+      extensions: [health_check, pprof, zpages]
+      pipelines:
+        traces:
+          receivers: [otlp, jaeger, zipkin]
+          processors: [memory_limiter, resource, attributes, batch]
+          exporters: [jaeger, otlp/jaeger, elasticsearch/traces]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [prometheus]
+        logs:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [logging, elasticsearch/traces]
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: neo-service-layer
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.89.0
+        command:
+          - /otelcol-contrib
+          - --config=/conf/config.yaml
+        ports:
+        - name: otlp-grpc
+          containerPort: 4317
+          protocol: TCP
+        - name: otlp-http
+          containerPort: 4318
+          protocol: TCP
+        - name: jaeger-grpc
+          containerPort: 14250
+          protocol: TCP
+        - name: jaeger-thrift-http
+          containerPort: 14268
+          protocol: TCP
+        - name: jaeger-thrift-compact
+          containerPort: 6831
+          protocol: UDP
+        - name: zipkin
+          containerPort: 9411
+          protocol: TCP
+        - name: metrics
+          containerPort: 8889
+          protocol: TCP
+        - name: health
+          containerPort: 13133
+          protocol: TCP
+        volumeMounts:
+        - name: config
+          mountPath: /conf
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: otelcol-config
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: neo-service-layer
+  labels:
+    app: otel-collector
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+    protocol: TCP
+  - name: otlp-http
+    port: 4318
+    targetPort: 4318
+    protocol: TCP
+  - name: jaeger-grpc
+    port: 14250
+    targetPort: 14250
+    protocol: TCP
+  - name: jaeger-thrift-http
+    port: 14268
+    targetPort: 14268
+    protocol: TCP
+  - name: jaeger-thrift-compact
+    port: 6831
+    targetPort: 6831
+    protocol: UDP
+  - name: zipkin
+    port: 9411
+    targetPort: 9411
+    protocol: TCP
+  - name: metrics
+    port: 8889
+    targetPort: 8889
+    protocol: TCP
+---
+# Jaeger All-in-One for tracing
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: jaeger
+  namespace: tracing
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: jaeger
+  template:
+    metadata:
+      labels:
+        app: jaeger
+    spec:
+      containers:
+      - name: jaeger
+        image: jaegertracing/all-in-one:1.51
+        ports:
+        - name: jaeger-ui
+          containerPort: 16686
+          protocol: TCP
+        - name: jaeger-collector-grpc
+          containerPort: 14250
+          protocol: TCP
+        - name: jaeger-collector-http
+          containerPort: 14268
+          protocol: TCP
+        - name: jaeger-agent
+          containerPort: 6831
+          protocol: UDP
+        - name: jaeger-agent-compact
+          containerPort: 6832
+          protocol: UDP
+        env:
+        - name: COLLECTOR_OTLP_ENABLED
+          value: "true"
+        - name: QUERY_BASE_PATH
+          value: /jaeger
+        resources:
+          requests:
+            cpu: 100m
+            memory: 256Mi
+          limits:
+            cpu: 500m
+            memory: 512Mi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-collector
+  namespace: tracing
+  labels:
+    app: jaeger
+spec:
+  selector:
+    app: jaeger
+  ports:
+  - name: jaeger-collector-grpc
+    port: 14250
+    targetPort: 14250
+    protocol: TCP
+  - name: jaeger-collector-http
+    port: 14268
+    targetPort: 14268
+    protocol: TCP
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+    protocol: TCP
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: jaeger-query
+  namespace: tracing
+  labels:
+    app: jaeger
+spec:
+  selector:
+    app: jaeger
+  ports:
+  - name: jaeger-ui
+    port: 16686
+    targetPort: 16686
+    protocol: TCP
+---
+# ElasticSearch for log storage
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: elasticsearch
+  namespace: logging
+spec:
+  serviceName: elasticsearch
+  replicas: 3
+  selector:
+    matchLabels:
+      app: elasticsearch
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      initContainers:
+      - name: increase-vm-max-map
+        image: busybox:1.36
+        command: ["sysctl", "-w", "vm.max_map_count=262144"]
+        securityContext:
+          privileged: true
+      containers:
+      - name: elasticsearch
+        image: elasticsearch:8.11.0
+        ports:
+        - name: rest
+          containerPort: 9200
+        - name: inter
+          containerPort: 9300
+        env:
+        - name: cluster.name
+          value: "neo-service-logs"
+        - name: node.name
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: discovery.seed_hosts
+          value: "elasticsearch-0.elasticsearch.logging.svc.cluster.local,elasticsearch-1.elasticsearch.logging.svc.cluster.local,elasticsearch-2.elasticsearch.logging.svc.cluster.local"
+        - name: cluster.initial_master_nodes
+          value: "elasticsearch-0,elasticsearch-1,elasticsearch-2"
+        - name: ES_JAVA_OPTS
+          value: "-Xms1g -Xmx1g"
+        - name: xpack.security.enabled
+          value: "false"
+        - name: xpack.monitoring.collection.enabled
+          value: "true"
+        volumeMounts:
+        - name: elasticsearch-data
+          mountPath: /usr/share/elasticsearch/data
+        resources:
+          requests:
+            cpu: 500m
+            memory: 2Gi
+          limits:
+            cpu: 1000m
+            memory: 2Gi
+        livenessProbe:
+          httpGet:
+            path: /_cluster/health
+            port: 9200
+          initialDelaySeconds: 60
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /_cluster/health?wait_for_status=green&timeout=1s
+            port: 9200
+          initialDelaySeconds: 30
+          periodSeconds: 5
+  volumeClaimTemplates:
+  - metadata:
+      name: elasticsearch-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: logging
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+  - name: rest
+    port: 9200
+    targetPort: 9200
+  - name: inter
+    port: 9300
+    targetPort: 9300
+---
+# Kibana for log visualization
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kibana
+  namespace: logging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: kibana
+  template:
+    metadata:
+      labels:
+        app: kibana
+    spec:
+      containers:
+      - name: kibana
+        image: kibana:8.11.0
+        ports:
+        - name: http
+          containerPort: 5601
+        env:
+        - name: ELASTICSEARCH_HOSTS
+          value: "http://elasticsearch.logging.svc.cluster.local:9200"
+        - name: SERVER_BASEPATH
+          value: "/kibana"
+        - name: XPACK_SECURITY_ENABLED
+          value: "false"
+        resources:
+          requests:
+            cpu: 200m
+            memory: 1Gi
+          limits:
+            cpu: 500m
+            memory: 2Gi
+        readinessProbe:
+          httpGet:
+            path: /kibana/api/status
+            port: 5601
+          initialDelaySeconds: 30
+          periodSeconds: 10
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: kibana
+  namespace: logging
+spec:
+  selector:
+    app: kibana
+  ports:
+  - name: http
+    port: 5601
+    targetPort: 5601

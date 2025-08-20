@@ -222,8 +222,8 @@ public partial class EnclaveManager
                 ""subscriptionId"": ""{subscriptionId}""
             }}";
 
-            string result = CallEnclaveFunctionAsync("eventUnsubscribe", jsonPayload, cancellationToken).Result;
-            return Task.FromResult(bool.Parse(result));
+            string result = await CallEnclaveFunctionAsync("eventUnsubscribe", jsonPayload, cancellationToken).ConfigureAwait(false);
+            return bool.Parse(result);
         }
         catch (Exception ex)
         {

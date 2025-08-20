@@ -6,6 +6,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
@@ -17,6 +18,23 @@ using System.Threading;
 
 namespace NeoServiceLayer.Services.Authentication.Services
 {
+    /// <summary>
+    /// Represents refresh token information stored in cache.
+    /// </summary>
+    public class RefreshTokenInfo
+    {
+        public Guid UserId { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public string JwtId { get; set; } = string.Empty;
+        public string? Username { get; set; }
+        public string? Email { get; set; }
+        public List<string> Roles { get; set; } = new();
+        public Dictionary<string, object> CustomClaims { get; set; } = new();
+        public DateTime CreatedAt { get; set; }
+        public DateTime ExpiresAt { get; set; }
+        public bool IsUsed { get; set; }
+        public bool IsRevoked { get; set; }
+    }
     /// <summary>
     /// Enhanced JWT token service with improved security features including:
     /// - Configurable token expiration
@@ -30,6 +48,7 @@ namespace NeoServiceLayer.Services.Authentication.Services
         private readonly IConfiguration _configuration;
         private readonly ILogger<EnhancedJwtTokenService> _logger;
         private readonly ITokenBlacklistService _blacklistService;
+        private readonly IDistributedCache _cache;
         private readonly string _jwtSecret;
         private readonly string _jwtIssuer;
         private readonly string _jwtAudience;
@@ -40,12 +59,14 @@ namespace NeoServiceLayer.Services.Authentication.Services
         public EnhancedJwtTokenService(
             IConfiguration configuration,
             ILogger<EnhancedJwtTokenService> logger,
-            ITokenBlacklistService blacklistService)
+            ITokenBlacklistService blacklistService,
+            IDistributedCache cache)
             : base("EnhancedJwtTokenService", "1.0.0", "Enhanced JWT token service with comprehensive features", logger)
         {
             _configuration = configuration;
             _logger = logger;
             _blacklistService = blacklistService;
+            _cache = cache;
 
             // Load configuration with validation
             _jwtSecret = configuration["Jwt:Secret"]
@@ -292,31 +313,152 @@ namespace NeoServiceLayer.Services.Authentication.Services
 
         private async Task StoreRefreshTokenAsync(Guid userId, string token, string jwtId)
         {
-            // Store refresh token metadata in database
-            // Implementation would depend on your data access layer
-            await Task.CompletedTask; // Placeholder
+            try
+            {
+                // Store refresh token metadata in distributed cache
+                var tokenInfo = new RefreshTokenInfo
+                {
+                    UserId = userId,
+                    Token = token,
+                    JwtId = jwtId,
+                    CreatedAt = DateTime.UtcNow,
+                    ExpiresAt = DateTime.UtcNow.AddDays(_refreshTokenExpirationDays),
+                    IsUsed = false
+                };
+
+                var cacheKey = $"refresh_token:{token}";
+                var serializedToken = System.Text.Json.JsonSerializer.Serialize(tokenInfo);
+                
+                await _cache.SetStringAsync(cacheKey, serializedToken, new DistributedCacheEntryOptions
+                {
+                    AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(_refreshTokenExpirationDays)
+                }).ConfigureAwait(false);
+
+                _logger.LogDebug("Stored refresh token for user {UserId} with JWT ID {JwtId}", userId, jwtId);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to store refresh token for user {UserId}", userId);
+                throw;
+            }
         }
 
         private async Task<RefreshTokenInfo> ValidateRefreshTokenAsync(string token)
         {
-            // Validate refresh token from database
-            // Implementation would depend on your data access layer
-            await Task.CompletedTask; // Placeholder
+            try
+            {
+                // Validate refresh token from cache
+                var cacheKey = $"refresh_token:{token}";
+                var tokenData = await _cache.GetStringAsync(cacheKey).ConfigureAwait(false);
+                
+                if (string.IsNullOrEmpty(tokenData))
+                {
+                    _logger.LogWarning("Refresh token not found in cache");
+                    return null;
+                }
 
-            // Return token info if valid
-            return null; // Placeholder
+                var tokenInfo = System.Text.Json.JsonSerializer.Deserialize<RefreshTokenInfo>(tokenData);
+                if (tokenInfo == null)
+                {
+                    _logger.LogWarning("Failed to deserialize refresh token data");
+                    return null;
+                }
+
+                // Check if token is expired
+                if (tokenInfo.ExpiresAt <= DateTime.UtcNow)
+                {
+                    _logger.LogWarning("Refresh token has expired");
+                    await _cache.RemoveAsync(cacheKey).ConfigureAwait(false);
+                    return null;
+                }
+
+                // Check if token is already used
+                if (tokenInfo.IsUsed)
+                {
+                    _logger.LogWarning("Refresh token has already been used");
+                    return null;
+                }
+
+                return tokenInfo;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error validating refresh token");
+                return null;
+            }
         }
 
         private async Task InvalidateRefreshTokenAsync(string token)
         {
-            // Mark refresh token as used/invalid in database
-            await Task.CompletedTask; // Placeholder
+            try
+            {
+                // Mark refresh token as used/invalid in cache
+                var cacheKey = $"refresh_token:{token}";
+                var tokenData = await _cache.GetStringAsync(cacheKey).ConfigureAwait(false);
+                
+                if (!string.IsNullOrEmpty(tokenData))
+                {
+                    var tokenInfo = System.Text.Json.JsonSerializer.Deserialize<RefreshTokenInfo>(tokenData);
+                    if (tokenInfo != null)
+                    {
+                        tokenInfo.IsUsed = true;
+                        var updatedTokenData = System.Text.Json.JsonSerializer.Serialize(tokenInfo);
+                        
+                        await _cache.SetStringAsync(cacheKey, updatedTokenData, new DistributedCacheEntryOptions
+                        {
+                            AbsoluteExpirationRelativeToNow = TimeSpan.FromDays(1) // Keep for audit trail
+                        }).ConfigureAwait(false);
+                        
+                        _logger.LogDebug("Invalidated refresh token for user {UserId}", tokenInfo.UserId);
+                    }
+                }
+                else
+                {
+                    _logger.LogWarning("Attempted to invalidate non-existent refresh token");
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to invalidate refresh token");
+                throw;
+            }
         }
 
         private async Task InvalidateTokenFamilyAsync(string jwtId)
         {
-            // Invalidate all tokens with the same JWT ID family
-            await Task.CompletedTask; // Placeholder
+            try
+            {
+                // Invalidate all tokens with the same JWT ID family from cache
+                var familyKey = $"token_family:{jwtId}";
+                var familyTokensData = await _cache.GetStringAsync(familyKey).ConfigureAwait(false);
+                
+                if (!string.IsNullOrEmpty(familyTokensData))
+                {
+                    var tokenList = System.Text.Json.JsonSerializer.Deserialize<List<string>>(familyTokensData);
+                    if (tokenList != null)
+                    {
+                        foreach (var token in tokenList)
+                        {
+                            await InvalidateRefreshTokenAsync(token).ConfigureAwait(false);
+                        }
+                        
+                        // Remove the family tracking
+                        await _cache.RemoveAsync(familyKey).ConfigureAwait(false);
+                        
+                        _logger.LogInformation("Invalidated token family {JwtId} containing {TokenCount} tokens", 
+                            jwtId, tokenList.Count);
+                    }
+                }
+                else
+                {
+                    _logger.LogDebug("No token family found for JWT ID {JwtId}", jwtId);
+                }
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to invalidate token family {JwtId}", jwtId);
+                throw;
+            }
         }
 
         protected override async Task<bool> OnInitializeAsync()

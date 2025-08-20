@@ -1,0 +1,253 @@
+# Main Ingress for Neo Service Layer API
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-service-layer-ingress
+  namespace: neo-service-layer
+  annotations:
+    # Ingress controller
+    kubernetes.io/ingress.class: "nginx"
+    
+    # TLS and certificate management
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/force-ssl-redirect: "true"
+    
+    # Security headers
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Content-Type-Options: nosniff";
+      more_set_headers "X-Frame-Options: DENY";
+      more_set_headers "X-XSS-Protection: 1; mode=block";
+      more_set_headers "Referrer-Policy: strict-origin-when-cross-origin";
+      more_set_headers "Content-Security-Policy: default-src 'self'; script-src 'self' 'unsafe-inline' 'unsafe-eval'; style-src 'self' 'unsafe-inline';";
+      more_set_headers "Strict-Transport-Security: max-age=31536000; includeSubDomains; preload";
+    
+    # Rate limiting
+    nginx.ingress.kubernetes.io/limit-connections: "10"
+    nginx.ingress.kubernetes.io/limit-rps: "100"
+    nginx.ingress.kubernetes.io/limit-whitelist: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    
+    # Timeouts
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "30"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "300"
+    nginx.ingress.kubernetes.io/proxy-body-size: "100m"
+    
+    # WebSocket support
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/proxy-set-headers: |
+      Upgrade $http_upgrade;
+      Connection "upgrade";
+    
+    # CORS configuration
+    nginx.ingress.kubernetes.io/enable-cors: "true"
+    nginx.ingress.kubernetes.io/cors-allow-origin: "https://app.neoservicelayer.io,https://admin.neoservicelayer.io"
+    nginx.ingress.kubernetes.io/cors-allow-methods: "GET, POST, PUT, DELETE, OPTIONS, PATCH"
+    nginx.ingress.kubernetes.io/cors-allow-headers: "DNT,X-CustomHeader,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,Authorization,X-Correlation-ID"
+    nginx.ingress.kubernetes.io/cors-expose-headers: "X-Correlation-ID,X-RateLimit-Limit,X-RateLimit-Remaining,X-RateLimit-Reset"
+    nginx.ingress.kubernetes.io/cors-allow-credentials: "true"
+    nginx.ingress.kubernetes.io/cors-max-age: "86400"
+    
+    # Rewrite rules
+    nginx.ingress.kubernetes.io/rewrite-target: /$2
+    
+spec:
+  tls:
+  - hosts:
+    - api.neoservicelayer.io
+    - api-v1.neoservicelayer.io
+    - api-v2.neoservicelayer.io
+    secretName: neo-service-layer-tls
+  
+  rules:
+  # Main API endpoint
+  - host: api.neoservicelayer.io
+    http:
+      paths:
+      - path: /()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api
+            port:
+              number: 443
+      
+      # Health check endpoints (no auth required)
+      - path: /health(/|$)(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api
+            port:
+              number: 443
+      
+      # Metrics endpoint (restricted access)
+      - path: /metrics
+        pathType: Exact
+        backend:
+          service:
+            name: neo-service-layer-api
+            port:
+              number: 443
+  
+  # API v1 specific endpoint
+  - host: api-v1.neoservicelayer.io
+    http:
+      paths:
+      - path: /()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api
+            port:
+              number: 443
+  
+  # API v2 specific endpoint (future)
+  - host: api-v2.neoservicelayer.io
+    http:
+      paths:
+      - path: /()(.*)
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api-v2
+            port:
+              number: 443
+
+---
+# Ingress for monitoring and internal services
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-service-layer-monitoring-ingress
+  namespace: neo-service-layer
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Basic authentication for monitoring endpoints
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: monitoring-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required - Neo Service Layer Monitoring'
+    
+    # IP whitelist for monitoring access
+    nginx.ingress.kubernetes.io/whitelist-source-range: "10.0.0.0/8,172.16.0.0/12,192.168.0.0/16"
+    
+spec:
+  tls:
+  - hosts:
+    - monitoring.neoservicelayer.io
+    - grafana.neoservicelayer.io
+    - prometheus.neoservicelayer.io
+    secretName: neo-monitoring-tls
+  
+  rules:
+  # Grafana
+  - host: grafana.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+  
+  # Prometheus
+  - host: prometheus.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-server
+            port:
+              number: 80
+  
+  # General monitoring endpoint
+  - host: monitoring.neoservicelayer.io
+    http:
+      paths:
+      - path: /grafana
+        pathType: Prefix
+        backend:
+          service:
+            name: grafana
+            port:
+              number: 3000
+      - path: /prometheus
+        pathType: Prefix
+        backend:
+          service:
+            name: prometheus-server
+            port:
+              number: 80
+      - path: /alertmanager
+        pathType: Prefix
+        backend:
+          service:
+            name: alertmanager
+            port:
+              number: 9093
+
+---
+# Ingress for WebSocket services
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-service-layer-websocket-ingress
+  namespace: neo-service-layer
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-prod"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # WebSocket specific configuration
+    nginx.ingress.kubernetes.io/proxy-http-version: "1.1"
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      proxy_set_header Upgrade $http_upgrade;
+      proxy_set_header Connection "upgrade";
+      proxy_set_header Host $host;
+      proxy_set_header X-Real-IP $remote_addr;
+      proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+      proxy_set_header X-Forwarded-Proto $scheme;
+    
+    # Increased timeouts for WebSocket
+    nginx.ingress.kubernetes.io/proxy-connect-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    
+spec:
+  tls:
+  - hosts:
+    - ws.neoservicelayer.io
+    - events.neoservicelayer.io
+    secretName: neo-websocket-tls
+  
+  rules:
+  # WebSocket endpoint
+  - host: ws.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-websocket-service
+            port:
+              number: 8080
+  
+  # Event streaming endpoint
+  - host: events.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-event-service
+            port:
+              number: 8081

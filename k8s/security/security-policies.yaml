@@ -1,0 +1,393 @@
+# Advanced Security Hardening for Neo Service Layer
+# Pod Security Policy and Network Policies
+apiVersion: policy/v1beta1
+kind: PodSecurityPolicy
+metadata:
+  name: neo-service-restricted
+  namespace: neo-service-layer
+  annotations:
+    seccomp.security.alpha.kubernetes.io/allowedProfileNames: 'runtime/default'
+    seccomp.security.alpha.kubernetes.io/defaultProfileName: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/allowedProfileNames: 'runtime/default'
+    apparmor.security.beta.kubernetes.io/defaultProfileName: 'runtime/default'
+spec:
+  privileged: false
+  allowPrivilegeEscalation: false
+  requiredDropCapabilities:
+    - ALL
+  volumes:
+    - 'configMap'
+    - 'emptyDir'
+    - 'projected'
+    - 'secret'
+    - 'downwardAPI'
+    - 'persistentVolumeClaim'
+  hostNetwork: false
+  hostIPC: false
+  hostPID: false
+  runAsUser:
+    rule: 'MustRunAsNonRoot'
+  supplementalGroups:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  fsGroup:
+    rule: 'MustRunAs'
+    ranges:
+      - min: 1
+        max: 65535
+  readOnlyRootFilesystem: true
+  seLinux:
+    rule: 'RunAsAny'
+---
+# Network Policy - Default Deny All
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: default-deny-all
+  namespace: neo-service-layer
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+---
+# Network Policy - Allow API Gateway Ingress
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: api-gateway-ingress
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: api-gateway
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: istio-system
+    - namespaceSelector:
+        matchLabels:
+          name: monitoring
+    - podSelector:
+        matchLabels:
+          app: load-balancer
+    ports:
+    - protocol: TCP
+      port: 8080
+    - protocol: TCP
+      port: 9090
+---
+# Network Policy - Inter-Service Communication
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: inter-service-communication
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      tier: backend
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    - podSelector:
+        matchLabels:
+          tier: backend
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - to:
+    - podSelector:
+        matchLabels:
+          tier: backend
+    - podSelector:
+        matchLabels:
+          app: database
+    - namespaceSelector:
+        matchLabels:
+          name: kube-system
+    ports:
+    - protocol: TCP
+      port: 5432
+    - protocol: TCP
+      port: 8080
+    - protocol: UDP
+      port: 53
+---
+# Network Policy - Database Access
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: database-access
+  namespace: neo-service-layer
+spec:
+  podSelector:
+    matchLabels:
+      app: postgresql
+  policyTypes:
+  - Ingress
+  ingress:
+  - from:
+    - podSelector:
+        matchLabels:
+          tier: backend
+    - podSelector:
+        matchLabels:
+          app: api-gateway
+    ports:
+    - protocol: TCP
+      port: 5432
+---
+# OPA Gatekeeper Constraint Template - Security Baseline
+apiVersion: templates.gatekeeper.sh/v1beta1
+kind: ConstraintTemplate
+metadata:
+  name: k8srequiredsecuritycontext
+  namespace: neo-service-layer
+spec:
+  crd:
+    spec:
+      names:
+        kind: K8sRequiredSecurityContext
+      validation:
+        openAPIV3Schema:
+          type: object
+          properties:
+            runAsNonRoot:
+              type: boolean
+            readOnlyRootFilesystem:
+              type: boolean
+            allowPrivilegeEscalation:
+              type: boolean
+  targets:
+    - target: admission.k8s.gatekeeper.sh
+      rego: |
+        package k8srequiredsecuritycontext
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.runAsNonRoot
+          msg := "Container must run as non-root user"
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          not container.securityContext.readOnlyRootFilesystem
+          msg := "Container must have read-only root filesystem"
+        }
+
+        violation[{"msg": msg}] {
+          container := input.review.object.spec.containers[_]
+          container.securityContext.allowPrivilegeEscalation
+          msg := "Container must not allow privilege escalation"
+        }
+---
+# Gatekeeper Constraint - Enforce Security Context
+apiVersion: constraints.gatekeeper.sh/v1beta1
+kind: K8sRequiredSecurityContext
+metadata:
+  name: security-context-constraint
+  namespace: neo-service-layer
+spec:
+  match:
+    kinds:
+      - apiGroups: ["apps"]
+        kinds: ["Deployment"]
+    namespaces: ["neo-service-layer"]
+  parameters:
+    runAsNonRoot: true
+    readOnlyRootFilesystem: true
+    allowPrivilegeEscalation: false
+---
+# Falco Security Rule - Runtime Security
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: falco-rules
+  namespace: neo-service-layer
+data:
+  neo_service_rules.yaml: |
+    - rule: Neo Service Suspicious Network Activity
+      desc: Detect suspicious network activity in Neo Service containers
+      condition: >
+        spawned_process and container and
+        (k8s_ns = "neo-service-layer") and
+        (proc.name in (netcat, nc, ncat, nmap, dig, nslookup, tcpdump))
+      output: >
+        Suspicious network tool executed in Neo Service container
+        (user=%user.name command=%proc.cmdline container=%container.name image=%container.image.repository)
+      priority: WARNING
+
+    - rule: Neo Service Unauthorized File Access
+      desc: Detect unauthorized file access in Neo Service containers
+      condition: >
+        open_read and container and
+        (k8s_ns = "neo-service-layer") and
+        (fd.name startswith "/etc/passwd" or
+         fd.name startswith "/etc/shadow" or
+         fd.name startswith "/root/" or
+         fd.name startswith "/var/run/secrets")
+      output: >
+        Unauthorized file access in Neo Service container
+        (user=%user.name file=%fd.name container=%container.name image=%container.image.repository)
+      priority: CRITICAL
+
+    - rule: Neo Service Privilege Escalation
+      desc: Detect privilege escalation attempts in Neo Service containers
+      condition: >
+        spawned_process and container and
+        (k8s_ns = "neo-service-layer") and
+        (proc.name in (sudo, su, doas, pbrun, pmrun, machinectl) or
+         proc.pname in (sudo, su, doas, pbrun, pmrun, machinectl))
+      output: >
+        Privilege escalation attempt in Neo Service container
+        (user=%user.name command=%proc.cmdline container=%container.name)
+      priority: CRITICAL
+
+    - rule: Neo Service Crypto Mining
+      desc: Detect crypto mining activity in Neo Service containers
+      condition: >
+        spawned_process and container and
+        (k8s_ns = "neo-service-layer") and
+        (proc.name in (xmrig, minerd, cpuminer, t-rex, phoenixminer) or
+         proc.cmdline contains "stratum+tcp" or
+         proc.cmdline contains "mining.pool")
+      output: >
+        Crypto mining activity detected in Neo Service container
+        (user=%user.name command=%proc.cmdline container=%container.name)
+      priority: CRITICAL
+---
+# RBAC - Security Admin Role
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: security-admin
+  namespace: neo-service-layer
+rules:
+- apiGroups: [""]
+  resources: ["pods", "services", "configmaps", "secrets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets", "statefulsets"]
+  verbs: ["get", "list", "watch"]
+- apiGroups: ["networking.k8s.io"]
+  resources: ["networkpolicies"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+- apiGroups: ["policy"]
+  resources: ["podsecuritypolicies"]
+  verbs: ["get", "list", "watch", "use"]
+- apiGroups: ["security.istio.io"]
+  resources: ["authorizationpolicies", "peerauthentications"]
+  verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+---
+# Image Security Scanning with Trivy
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: trivy-config
+  namespace: neo-service-layer
+data:
+  trivy.yaml: |
+    # Trivy configuration for Neo Service Layer
+    cache:
+      dir: /tmp/trivy-cache
+    db:
+      skip-update: false
+    vulnerability:
+      type: [os,library]
+    severity: [UNKNOWN,LOW,MEDIUM,HIGH,CRITICAL]
+    ignore-unfixed: true
+    security-checks: [vuln,config,secret]
+    skip-dirs: ["/var/lib/dpkg","/var/lib/apt"]
+    timeout: "15m"
+---
+# CronJob for Regular Security Scanning
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: security-scanner
+  namespace: neo-service-layer
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: trivy-scanner
+            image: aquasec/trivy:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              echo "🔒 Starting security scan for Neo Service Layer"
+              
+              # Scan running images
+              kubectl get pods -n neo-service-layer -o jsonpath='{.items[*].spec.containers[*].image}' | tr ' ' '\n' | sort -u > /tmp/images.txt
+              
+              while read -r image; do
+                echo "Scanning image: $image"
+                trivy image --format json --output "/tmp/scan-$(echo $image | sed 's/[^a-zA-Z0-9]/-/g').json" "$image"
+              done < /tmp/images.txt
+              
+              # Generate summary report
+              echo "Security scan completed. Results stored in /tmp/"
+              
+            volumeMounts:
+            - name: scan-results
+              mountPath: /tmp
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "1Gi"
+                cpu: "500m"
+          volumes:
+          - name: scan-results
+            emptyDir: {}
+          restartPolicy: OnFailure
+          serviceAccountName: security-scanner
+---
+# Service Account for Security Scanner
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: security-scanner
+  namespace: neo-service-layer
+---
+# RBAC for Security Scanner
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: security-scanner-role
+  namespace: neo-service-layer
+rules:
+- apiGroups: [""]
+  resources: ["pods"]
+  verbs: ["get", "list"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: security-scanner-binding
+  namespace: neo-service-layer
+subjects:
+- kind: ServiceAccount
+  name: security-scanner
+  namespace: neo-service-layer
+roleRef:
+  kind: Role
+  name: security-scanner-role
+  apiGroup: rbac.authorization.k8s.io

@@ -61,7 +61,7 @@ namespace NeoServiceLayer.Services.Authentication
             _loginAttempts = new Dictionary<string, List<LoginAttempt>>();
 
             // Seed with test users
-            SeedTestUsers();
+            _ = Task.Run(async () => await SeedTestUsersAsync().ConfigureAwait(false));
         }
 
         public async Task<Models.User> GetByIdAsync(string userId)
@@ -284,7 +284,7 @@ namespace NeoServiceLayer.Services.Authentication
             return hash == hashed;
         }
 
-        private void SeedTestUsers()
+        private async Task SeedTestUsersAsync()
         {
             // Create admin user
             var adminUser = new Models.User
@@ -299,9 +299,9 @@ namespace NeoServiceLayer.Services.Authentication
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            CreateAsync(adminUser).Wait();
-            AddUserToRoleAsync(adminUser.Id.ToString(), "admin").Wait();
-            AddUserToRoleAsync(adminUser.Id.ToString(), "user").Wait();
+            await CreateAsync(adminUser).ConfigureAwait(false);
+            await AddUserToRoleAsync(adminUser.Id.ToString(), "admin").ConfigureAwait(false);
+            await AddUserToRoleAsync(adminUser.Id.ToString(), "user").ConfigureAwait(false);
 
             // Create test user
             var testUser = new Models.User
@@ -316,7 +316,7 @@ namespace NeoServiceLayer.Services.Authentication
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
-            CreateAsync(testUser).Wait();
+            await CreateAsync(testUser).ConfigureAwait(false);
 
             _logger.LogInformation("Test users seeded successfully");
         }

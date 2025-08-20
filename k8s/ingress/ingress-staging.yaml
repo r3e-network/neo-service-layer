@@ -1,0 +1,51 @@
+# Staging environment Ingress configuration
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: neo-service-layer-staging-ingress
+  namespace: neo-service-layer-staging
+  annotations:
+    kubernetes.io/ingress.class: "nginx"
+    cert-manager.io/cluster-issuer: "letsencrypt-staging"
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    
+    # Staging-specific configuration
+    nginx.ingress.kubernetes.io/configuration-snippet: |
+      more_set_headers "X-Environment: staging";
+      more_set_headers "X-Robots-Tag: noindex, nofollow";
+    
+    # Relaxed rate limits for testing
+    nginx.ingress.kubernetes.io/limit-rps: "200"
+    
+    # Enable debug logging in staging
+    nginx.ingress.kubernetes.io/enable-access-log: "true"
+    
+spec:
+  tls:
+  - hosts:
+    - staging-api.neoservicelayer.io
+    - staging.neoservicelayer.io
+    secretName: neo-staging-tls
+  
+  rules:
+  - host: staging-api.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api-staging
+            port:
+              number: 443
+  
+  - host: staging.neoservicelayer.io
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: neo-service-layer-api-staging
+            port:
+              number: 443

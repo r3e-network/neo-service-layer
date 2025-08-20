@@ -24,6 +24,18 @@ using System.Threading;
 
 namespace NeoServiceLayer.Services.Authentication
 {
+    /// <summary>
+    /// Represents password reset token information stored in cache.
+    /// </summary>
+    public class PasswordResetTokenInfo
+    {
+        public Guid UserId { get; set; }
+        public string Token { get; set; } = string.Empty;
+        public DateTime ExpiresAt { get; set; }
+        public DateTime CreatedAt { get; set; }
+        public string? Email { get; set; }
+    }
+
     public class AuthenticationService : ServiceFrameworkEnclaveBase, IAuthenticationService
     {
         private readonly ILogger<AuthenticationService> _logger;
@@ -763,11 +775,65 @@ namespace NeoServiceLayer.Services.Authentication
                 var sessions = new List<SessionInfo>();
                 var pattern = $"session:*";
                 
-                // Note: In production, you'd use a more efficient pattern search
-                // For now, we'll return an empty array as placeholder
-                // Real implementation would scan cache for matching session keys
+                // Scan cache for active sessions for this user
+                var cacheKeys = new List<string>();
+                var sessionKeys = new List<string>();
                 
-                await Task.CompletedTask;
+                // Get all session keys from cache (implementation depends on cache provider)
+                // For Redis, we can use KEYS pattern
+                try
+                {
+                    // This is a simplified implementation - in production, you'd use a dedicated session store
+                    // or maintain an index of active sessions per user
+                    
+                    // Check for session tokens in a range (last 24 hours of possible session IDs)
+                    var now = DateTimeOffset.UtcNow;
+                    for (int hours = 0; hours < 24; hours++)
+                    {
+                        var timeKey = now.AddHours(-hours).ToString("yyyyMMddHH");
+                        var possibleSessionKey = $"session:{userId}:{timeKey}";
+                        
+                        var sessionData = await _cache.GetStringAsync(possibleSessionKey);
+                        if (!string.IsNullOrEmpty(sessionData))
+                        {
+                            sessionKeys.Add(possibleSessionKey);
+                        }
+                    }
+                    
+                    // Parse session data and create SessionInfo objects
+                    foreach (var sessionKey in sessionKeys)
+                    {
+                        var sessionData = await _cache.GetStringAsync(sessionKey);
+                        if (!string.IsNullOrEmpty(sessionData))
+                        {
+                            try
+                            {
+                                var sessionToken = System.Text.Json.JsonSerializer.Deserialize<SessionToken>(sessionData);
+                                if (sessionToken?.UserId == userId && sessionToken.ExpiresAt > DateTime.UtcNow)
+                                {
+                                    sessions.Add(new SessionInfo
+                                    {
+                                        SessionId = sessionKey.Replace($"session:{userId}:", ""),
+                                        UserId = sessionToken.UserId,
+                                        CreatedAt = sessionToken.CreatedAt,
+                                        ExpiresAt = sessionToken.ExpiresAt,
+                                        IpAddress = sessionToken.IpAddress ?? "unknown",
+                                        UserAgent = sessionToken.UserAgent ?? "unknown"
+                                    });
+                                }
+                            }
+                            catch (Exception parseEx)
+                            {
+                                _logger.LogWarning(parseEx, "Failed to parse session data for key {SessionKey}", sessionKey);
+                            }
+                        }
+                    }
+                }
+                catch (Exception cacheEx)
+                {
+                    _logger.LogError(cacheEx, "Failed to retrieve session data from cache for user {UserId}", userId);
+                }
+                
                 return sessions.ToArray();
             }
             catch (Exception ex)
@@ -968,10 +1034,31 @@ namespace NeoServiceLayer.Services.Authentication
         {
             try
             {
-                // In production, this would query from a persistent store
-                // For now, return empty array as placeholder
-                await Task.CompletedTask;
-                return Array.Empty<LoginAttempt>();
+                // Get failed login attempts from cache (stored during authentication failures)
+                var attempts = new List<LoginAttempt>();
+                var attemptKey = $"login_attempts:{userId}";
+                
+                var attemptsData = await _cache.GetStringAsync(attemptKey);
+                if (!string.IsNullOrEmpty(attemptsData))
+                {
+                    try
+                    {
+                        var attemptsList = System.Text.Json.JsonSerializer.Deserialize<List<LoginAttempt>>(attemptsData);
+                        if (attemptsList != null)
+                        {
+                            // Take the most recent attempts up to the specified count
+                            attempts.AddRange(attemptsList
+                                .OrderByDescending(a => a.AttemptTime)
+                                .Take(count));
+                        }
+                    }
+                    catch (Exception parseEx)
+                    {
+                        _logger.LogWarning(parseEx, "Failed to parse login attempts data for user {Username}", username);
+                    }
+                }
+                
+                return attempts.ToArray();
             }
             catch (Exception ex)
             {
@@ -1296,10 +1383,42 @@ namespace NeoServiceLayer.Services.Authentication
 
         public async Task<Guid?> FindUserIdByResetTokenAsync(string resetToken)
         {
-            // This would typically query the database for users with matching reset token
-            // For now, return null as a placeholder
-            await Task.CompletedTask;
-            return null;
+            try
+            {
+                // Look up the reset token in cache (tokens are stored when generated)
+                var tokenKey = $"reset_token:{resetToken}";
+                var tokenData = await _cache.GetStringAsync(tokenKey);
+                
+                if (!string.IsNullOrEmpty(tokenData))
+                {
+                    try
+                    {
+                        var tokenInfo = System.Text.Json.JsonSerializer.Deserialize<PasswordResetTokenInfo>(tokenData);
+                        if (tokenInfo != null && tokenInfo.ExpiresAt > DateTime.UtcNow)
+                        {
+                            return tokenInfo.UserId;
+                        }
+                        else if (tokenInfo != null && tokenInfo.ExpiresAt <= DateTime.UtcNow)
+                        {
+                            // Token is expired, clean it up
+                            await _cache.RemoveAsync(tokenKey);
+                        }
+                    }
+                    catch (Exception parseEx)
+                    {
+                        _logger.LogWarning(parseEx, "Failed to parse reset token data for token {ResetToken}", resetToken);
+                        // Clean up invalid token data
+                        await _cache.RemoveAsync(tokenKey);
+                    }
+                }
+                
+                return null;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to find user by reset token");
+                return null;
+            }
         }
 
         protected override async Task<bool> OnInitializeEnclaveAsync()

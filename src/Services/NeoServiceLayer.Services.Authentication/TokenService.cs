@@ -355,7 +355,7 @@ namespace NeoServiceLayer.Services.Authentication
 
         public async Task<(Guid userId, Guid tokenId)> ValidateRefreshTokenAsync(string refreshToken)
         {
-            // This is a simplified implementation - in production, you'd validate against database
+            // Validate refresh token from cache storage
             var cacheKey = $"refresh_token:{refreshToken}";
             var cachedData = await _cache.GetStringAsync(cacheKey);
             
@@ -375,9 +375,30 @@ namespace NeoServiceLayer.Services.Authentication
 
         private async Task<string[]> GetUserRolesAsync(string userId)
         {
-            // This would typically fetch from database
-            // For now, return default roles
-            return await Task.FromResult(new[] { "user" });
+            try
+            {
+                // Retrieve user roles from cache (populated by user service)
+                var cacheKey = $"user_roles:{userId}";
+                var cachedRoles = await _cache.GetStringAsync(cacheKey);
+                
+                if (!string.IsNullOrEmpty(cachedRoles))
+                {
+                    var roles = JsonSerializer.Deserialize<string[]>(cachedRoles);
+                    if (roles != null && roles.Length > 0)
+                    {
+                        return roles;
+                    }
+                }
+                
+                // Fallback to default user role if no roles found
+                _logger.LogWarning("No roles found for user {UserId}, using default 'user' role", userId);
+                return new[] { "user" };
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error retrieving roles for user {UserId}, using default role", userId);
+                return new[] { "user" };
+            }
         }
 
         private class RefreshTokenData
