@@ -1,6 +1,7 @@
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using NeoServiceLayer.Core.Security;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Blockchain;
 using NeoServiceLayer.ServiceFramework;
@@ -215,6 +216,25 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
     public async Task<string> TransferTokensAsync(CoreModels.CrossChainTransferRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
     {
         ArgumentNullException.ThrowIfNull(request);
+
+        // Validate blockchain address formats
+        if (!string.IsNullOrEmpty(request.DestinationAddress))
+        {
+            var targetBlockchainStr = targetBlockchain.ToString().ToUpperInvariant();
+            if (!InputValidation.IsValidBlockchainAddress(request.DestinationAddress, targetBlockchainStr))
+            {
+                throw new ArgumentException($"Invalid destination address format for {targetBlockchain}: {request.DestinationAddress}");
+            }
+        }
+
+        if (!string.IsNullOrEmpty(request.TokenAddress))
+        {
+            var sourceBlockchainStr = sourceBlockchain.ToString().ToUpperInvariant();
+            if (!InputValidation.IsValidBlockchainAddress(request.TokenAddress, sourceBlockchainStr))
+            {
+                throw new ArgumentException($"Invalid token address format for {sourceBlockchain}: {request.TokenAddress}");
+            }
+        }
 
         if (!SupportsBlockchain(sourceBlockchain) || !SupportsBlockchain(targetBlockchain))
         {
