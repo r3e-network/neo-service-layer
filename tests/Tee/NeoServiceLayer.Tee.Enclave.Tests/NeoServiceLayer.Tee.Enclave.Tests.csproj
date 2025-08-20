@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="../../../src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="../../../src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>
 
 </Project>

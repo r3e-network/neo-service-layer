@@ -4,17 +4,20 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Core.Events.SecurityEvents;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
 {
     /// <summary>
     /// Handles security threat detected events
     /// </summary>
-    public class SecurityThreatEventHandler : IEventHandlerWithRetry&lt;SecurityThreatDetectedEvent&gt;
+    public class SecurityThreatEventHandler : IEventHandlerWithRetry<SecurityThreatDetectedEvent>
     {
-        private readonly ILogger&lt;SecurityThreatEventHandler&gt; _logger;
+        private readonly ILogger<SecurityThreatEventHandler> _logger;
 
-        public SecurityThreatEventHandler(ILogger&lt;SecurityThreatEventHandler&gt; logger)
+        public SecurityThreatEventHandler(ILogger<SecurityThreatEventHandler> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -31,22 +34,22 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
                 string.Join(", ", domainEvent.DetectionPatterns));
 
             // High-risk threats require immediate action
-            if (domainEvent.RiskScore &gt; 0.8)
+            if (domainEvent.RiskScore > 0.8)
             {
                 await HandleHighRiskThreatAsync(domainEvent, cancellationToken);
             }
-            
+
             // Medium-risk threats require monitoring
-            else if (domainEvent.RiskScore &gt; 0.5)
+            else if (domainEvent.RiskScore > 0.5)
             {
                 await HandleMediumRiskThreatAsync(domainEvent, cancellationToken);
             }
-            
+
             // Log all threats for analysis
             await LogThreatForAnalysisAsync(domainEvent, cancellationToken);
         }
 
-        public async Task&lt;bool&gt; HandleFailureAsync(
+        public async Task<bool> HandleFailureAsync(
             SecurityThreatDetectedEvent domainEvent,
             Exception exception,
             int attemptNumber,
@@ -57,8 +60,8 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
                 domainEvent.EventId, attemptNumber, domainEvent.ThreatType, domainEvent.SourceIpAddress);
 
             // Always retry security events up to 3 times
-            var shouldRetry = attemptNumber &lt; 3;
-            
+            var shouldRetry = attemptNumber < 3;
+
             if (!shouldRetry)
             {
                 _logger.LogCritical(
@@ -82,7 +85,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Send immediate alerts to security team
             // 3. Escalate to incident response system
             // 4. Update threat intelligence feeds
-            
+
             await Task.Delay(100, cancellationToken); // Simulate processing time
         }
 
@@ -98,7 +101,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Add to watchlist
             // 3. Trigger rate limiting
             // 4. Send notification to security team
-            
+
             await Task.Delay(50, cancellationToken); // Simulate processing time
         }
 
@@ -109,7 +112,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Update threat patterns
             // 3. Feed ML models for threat detection improvement
             // 4. Update security dashboards
-            
+
             _logger.LogInformation(
                 "Threat logged for analysis: {ThreatType} with {PatternCount} detection patterns",
                 domainEvent.ThreatType, domainEvent.DetectionPatterns.Count);

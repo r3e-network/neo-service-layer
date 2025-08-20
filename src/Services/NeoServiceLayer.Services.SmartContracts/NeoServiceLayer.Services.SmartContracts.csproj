@@ -16,11 +16,15 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\NeoServiceLayer.Services.SmartContracts.NeoN3\NeoServiceLayer.Services.SmartContracts.NeoN3.csproj" />
-    <ProjectReference Include="..\NeoServiceLayer.Services.SmartContracts.NeoX\NeoServiceLayer.Services.SmartContracts.NeoX.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="../NeoServiceLayer.Services.SmartContracts.NeoN3/NeoServiceLayer.Services.SmartContracts.NeoN3.csproj" />
+    <ProjectReference Include="../NeoServiceLayer.Services.SmartContracts.NeoX/NeoServiceLayer.Services.SmartContracts.NeoX.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Include="../NeoServiceLayer.Services.Core/SGX/PrivacyComputingJavaScriptTemplates.cs" Link="SGX/PrivacyComputingJavaScriptTemplates.cs" />
   </ItemGroup>
 
 </Project>

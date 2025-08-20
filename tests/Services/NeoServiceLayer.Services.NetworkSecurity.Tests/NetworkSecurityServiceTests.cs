@@ -1,26 +1,34 @@
-﻿using FluentAssertions;
+using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
+using CoreConfig = NeoServiceLayer.Core.Configuration;
+using CoreIServiceConfiguration = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Services.NetworkSecurity;
 using NeoServiceLayer.Services.NetworkSecurity.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.NetworkSecurity.Tests
 {
     public class NetworkSecurityServiceTests
     {
         private readonly Mock<ILogger<NetworkSecurityService>> _mockLogger;
-        private readonly Mock<IServiceConfiguration> _mockConfiguration;
+        private readonly Mock<CoreIServiceConfiguration> _mockConfiguration;
         private readonly Mock<IEnclaveManager> _mockEnclaveManager;
         private readonly NetworkSecurityService _service;
 
         public NetworkSecurityServiceTests()
         {
             _mockLogger = new Mock<ILogger<NetworkSecurityService>>();
-            _mockConfiguration = new Mock<IServiceConfiguration>();
+            _mockConfiguration = new Mock<CoreIServiceConfiguration>();
             _mockEnclaveManager = new Mock<IEnclaveManager>();
 
             _mockEnclaveManager.Setup(x => x.IsInitialized).Returns(true);

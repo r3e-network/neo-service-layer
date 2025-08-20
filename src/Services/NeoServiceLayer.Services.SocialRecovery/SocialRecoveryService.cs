@@ -1,15 +1,22 @@
-﻿using System.Collections.Concurrent;
 using System.Numerics;
 using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Blockchain;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.SocialRecovery.Configuration;
-using CoreModels = NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SocialRecovery
 {
@@ -18,7 +25,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
     /// Provides secure, blockchain-integrated social recovery mechanisms with proper validation,
     /// persistent storage, and comprehensive error handling.
     /// </summary>
-    public partial class SocialRecoveryService : EnclaveBlockchainServiceBase, ISocialRecoveryService
+    public partial class SocialRecoveryService : ServiceFramework.EnclaveBlockchainServiceBase, ISocialRecoveryService
     {
         private readonly IBlockchainClientFactory _blockchainFactory;
         private readonly IOptions<SocialRecoveryOptions> _options;

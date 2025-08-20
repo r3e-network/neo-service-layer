@@ -1,253 +1,258 @@
-# Neo Service Layer - Complete Examples & Test Suite
+# NeoServiceLayer Examples
 
-This directory contains comprehensive examples and test scenarios demonstrating all capabilities of the Neo Service Layer platform.
+This directory contains comprehensive examples demonstrating how to use the NeoServiceLayer services in real-world scenarios.
 
-## 📁 Files Overview
+## Example Files
 
-### 1. **CompleteWorkflowExamples.cs**
-Comprehensive workflow examples covering all platform capabilities:
-- **Blockchain Transaction with Enclave Storage**: Complete end-to-end blockchain transaction flow
-- **Cross-Chain Asset Transfer**: SAGA pattern implementation for distributed transactions
-- **Resilient Multi-Service Workflow**: Demonstrates health monitoring and automatic failover
-- **Chaos Testing Scenario**: Production readiness testing with failure injection
-- **Security Testing Suite**: Comprehensive vulnerability scanning and compliance validation
-- **Performance Testing**: Load testing with various patterns (steady, spike, stress, soak)
-- **Integration Testing**: End-to-end testing across all services
+### 1. BasicUsageExamples.cs
+Basic usage examples for all major services including:
+- **Storage Service**: Data storage, retrieval, updating, and searching
+- **Backup Service**: Creating backups, scheduling, validation, and restoration
+- **Monitoring Service**: Metrics collection, alerting, health monitoring
+- **Cross-Chain Service**: Bridge registration, transfers, messaging
+- **Complete Workflows**: End-to-end integration examples
+- **Error Handling**: Robust error handling patterns
+- **Performance Monitoring**: Tracing and performance analysis
 
-### 2. **TestRunner.cs**
-Complete test suite runner that executes all test phases:
-- Unit Tests
-- Integration Tests (10 comprehensive scenarios)
-- Service Health Tests (8-point health checks)
-- Transaction Tests (2PC, SAGA, Isolation levels)
-- Chaos Engineering Tests (7 strategies)
-- Performance Tests
-- Security Tests
-- End-to-End Tests
-- Coverage Analysis
+### 2. AdvancedWorkflowExamples.cs
+Advanced real-world workflow scenarios:
+- **E-Commerce Platform**: Order processing with cross-chain payments
+- **DeFi Liquidity Pool**: Liquidity management and arbitrage
+- **IoT Data Pipeline**: High-volume sensor data processing
+- **Disaster Recovery**: Complete disaster recovery simulation
 
-### 3. **Program.cs**
-Interactive console application demonstrating all features:
-- Menu-driven interface
-- Live execution of all examples
-- Real-time monitoring and reporting
-- Visual progress indicators
+### 3. SecurityTestingExamples.cs
+Security testing and edge case scenarios:
+- **Input Validation**: SQL injection, XSS, path traversal prevention
+- **Cryptographic Security**: Encryption, key management, hashing
+- **Access Control**: RBAC, privilege escalation prevention
+- **Network Security**: MITM, replay attacks, DDoS protection
 
-## 🚀 Quick Start
+## Getting Started
 
-### Run the Interactive Demo
+### Prerequisites
+- .NET 9.0 SDK
+- NeoServiceLayer packages
+- Visual Studio or VS Code
 
-```bash
-cd examples
-dotnet run
-```
+### Running the Examples
 
-This launches an interactive menu where you can:
-1. Execute blockchain transactions
-2. Perform cross-chain transfers
-3. Run resilient workflows
-4. Execute chaos tests
-5. Run security scans
-6. Perform load testing
-7. Run integration tests
-8. Execute the complete test suite
-9. View service health
-10. Check test coverage
+1. **Basic Usage Examples**:
+   ```bash
+   dotnet run --project BasicUsageExamples.cs
+   ```
 
-### Run Specific Examples Programmatically
+2. **Advanced Workflow Examples**:
+   ```bash
+   dotnet run --project AdvancedWorkflowExamples.cs
+   ```
 
+3. **Security Testing Examples**:
+   ```bash
+   dotnet run --project SecurityTestingExamples.cs
+   ```
+
+## Key Concepts Demonstrated
+
+### Service Configuration
 ```csharp
-// Initialize services
-var serviceProvider = ConfigureServices();
-var examples = serviceProvider.GetRequiredService<CompleteWorkflowExamples>();
-
-// Run blockchain transaction example
-var txResult = await examples.ExecuteSecureBlockchainTransaction();
-Console.WriteLine($"Transaction ID: {txResult.TransactionId}");
-
-// Run cross-chain transfer
-var transferResult = await examples.ExecuteCrossChainTransfer();
-Console.WriteLine($"Transfer successful: {transferResult.Success}");
-
-// Run chaos testing
-var chaosResult = await examples.ExecuteChaosTestingScenario();
-Console.WriteLine($"Resilience Score: {chaosResult.ResilienceScore}");
-```
-
-## 📊 Test Scenarios
-
-### Scenario 1: Blockchain Transaction Flow
-- User authentication with MFA
-- Key generation in Intel SGX enclave
-- Smart contract deployment with privacy
-- Transaction execution and verification
-- Secure storage with attestation
-
-### Scenario 2: Distributed Consensus
-- Network partition simulation
-- Byzantine fault tolerance testing
-- Quorum maintenance validation
-- Recovery verification
-
-### Scenario 3: Security Testing
-- SQL injection attempts
-- XSS vulnerability scanning
-- Authentication bypass testing
-- Enclave side-channel attack simulation
-- Compliance validation (SOC2, ISO27001, GDPR, PCI-DSS)
-
-### Scenario 4: SAGA Pattern
-- Multi-service distributed transaction
-- Compensation mechanism testing
-- Idempotency validation
-- Eventual consistency verification
-
-### Scenario 5: Performance Under Load
-- CPU stress (80% utilization)
-- Memory pressure (1GB+ allocation)
-- Network latency injection
-- Graceful degradation validation
-
-### Scenario 6: Service Health Monitoring
-- 8-point health check system
-- Dependency graph analysis
-- Auto-recovery testing
-- Performance degradation detection
-
-### Scenario 7: Transaction Isolation
-- Dirty read prevention
-- Phantom read testing
-- Deadlock detection and resolution
-- Isolation level verification
-
-### Scenario 8: Cascading Failure
-- Root service failure injection
-- Cascade propagation monitoring
-- Circuit breaker validation
-- Recovery time measurement
-
-### Scenario 9: Coverage Analysis
-- Line coverage (target: 80%+)
-- Branch coverage (target: 70%+)
-- Method coverage (target: 85%+)
-- Gap identification and recommendations
-
-### Scenario 10: Disaster Recovery
-- Complete system failure simulation
-- Automatic detection and recovery
-- Data integrity validation
-- Service restoration verification
-
-## 🧪 Chaos Engineering Strategies
-
-1. **Network Partitioning**: Splits nodes into isolated groups
-2. **Service Failure**: Kills service instances with optional restart
-3. **Network Latency**: Injects delays in network communication
-4. **CPU Stress**: Consumes CPU resources (up to 80%)
-5. **Memory Pressure**: Allocates memory to create pressure
-6. **Disk I/O Stress**: Generates intensive disk operations
-7. **Cascading Failure**: Simulates dependent service failures
-
-## 📈 Performance Testing Patterns
-
-- **Steady Load**: Constant number of users over time
-- **Spike Test**: Sudden increase in load
-- **Stress Test**: Gradual increase to breaking point
-- **Soak Test**: Extended duration for memory leak detection
-
-## 🔒 Security Testing Coverage
-
-- **Injection Attacks**: SQL, NoSQL, Command injection
-- **Authentication**: Bypass attempts, session hijacking
-- **Authorization**: Privilege escalation, access control
-- **Enclave Security**: Side-channel attacks, attestation
-- **API Security**: Rate limiting, input validation
-- **Compliance**: SOC2, ISO27001, GDPR, PCI-DSS
-
-## 📊 Test Coverage Metrics
-
-Current coverage metrics:
-- **Line Coverage**: 89.5%
-- **Branch Coverage**: 82.3%
-- **Method Coverage**: 91.2%
-
-Service-specific coverage:
-- Core Services: 92%
-- API Layer: 88%
-- Infrastructure: 85%
-- Smart Contracts: 94%
-- Testing Framework: 81%
-
-## 🎯 Success Criteria
-
-All tests validate against these criteria:
-- **Performance**: P99 latency < 1000ms
-- **Availability**: > 99.9% uptime
-- **Security**: Zero critical vulnerabilities
-- **Resilience**: Recovery time < 5 minutes
-- **Data Integrity**: 100% consistency maintained
-- **Compliance**: All standards met
-
-## 📝 Output Examples
-
-### Successful Transaction
-```
-✅ Transaction completed successfully!
-Transaction ID: tx_abc123...
-Contract Address: 0x742d35...
-Storage Key: enclave_key_xyz...
-```
-
-### Chaos Test Results
-```
-=== CHAOS TEST RESULTS ===
-Test Name: ProductionReadinessTest
-Success: ✅
-Resilience Score: 8.5/10
-Recovery Time: 00:45
-Data Integrity: ✅ Maintained
-Max Performance Degradation: 30%
-```
-
-### Coverage Report
-```
-Overall Coverage Metrics:
-  Line Coverage:   89.5% ████████▒░
-  Branch Coverage: 82.3% ████████░░
-  Method Coverage: 91.2% █████████░
-```
-
-## 🔧 Configuration
-
-Test configuration can be customized in `appsettings.json`:
-
-```json
+private IServiceProvider ConfigureServices()
 {
-  "TestConfiguration": {
-    "ChaosTestDuration": "00:10:00",
-    "PerformanceTestLoad": 1000,
-    "SecurityTestDepth": "Comprehensive",
-    "CoverageThreshold": 80
-  }
+    var services = new ServiceCollection();
+    
+    // Core services
+    services.AddLogging(builder => builder.AddConsole());
+    services.AddSingleton<IHttpClientService, HttpClientService>();
+    services.AddSingleton<IBlockchainClientFactory, BlockchainClientFactory>();
+    
+    // Business services
+    services.AddTransient<StorageService>();
+    services.AddTransient<BackupService>();
+    services.AddTransient<MonitoringService>();
+    services.AddTransient<CrossChainService>();
+    
+    return services.BuildServiceProvider();
 }
 ```
 
-## 📚 Further Documentation
+### Data Storage Patterns
+```csharp
+var storeResult = await storageService.StoreDataAsync(new StorageRequest
+{
+    Key = $"user:{userId}",
+    Data = JsonSerializer.SerializeToUtf8Bytes(userData),
+    Metadata = new Dictionary<string, object>
+    {
+        { "type", "user_profile" },
+        { "version", "1.0" },
+        { "encrypted", false }
+    }
+});
+```
 
-- [Testing Guide](../website/docs/testing-guide.html)
-- [API Reference](../website/docs/api-reference.html)
-- [SDK Reference](../website/docs/sdk-reference.html)
-- [Service Documentation](../website/services.html)
+### Monitoring Integration
+```csharp
+await monitoringService.RecordMetricAsync(new MetricData
+{
+    Name = "api_response_time",
+    Value = responseTimeMs,
+    Tags = new Dictionary<string, string>
+    {
+        { "endpoint", "/api/users" },
+        { "method", "GET" }
+    },
+    Timestamp = DateTime.UtcNow
+});
+```
 
-## 🤝 Contributing
+### Cross-Chain Operations
+```csharp
+var transferResult = await crossChainService.InitiateCrossChainTransferAsync(new CrossChainTransferRequest
+{
+    TransferId = Guid.NewGuid().ToString(),
+    SourceChain = BlockchainType.NeoN3,
+    DestinationChain = BlockchainType.NeoX,
+    AssetType = "GAS",
+    Amount = 100.0m,
+    SourceAddress = sourceAddress,
+    DestinationAddress = destinationAddress
+});
+```
 
-When adding new test scenarios:
-1. Follow the existing pattern in `CompleteWorkflowExamples.cs`
-2. Add corresponding test runner in `TestRunner.cs`
-3. Update the interactive menu in `Program.cs`
-4. Document the scenario in this README
-5. Ensure minimum 80% code coverage
+## Best Practices Demonstrated
 
-## 📄 License
+### 1. Error Handling
+- Comprehensive try-catch blocks
+- Meaningful error messages
+- Graceful degradation
+- Retry mechanisms with exponential backoff
 
-Copyright 2024 Neo Service Layer. All rights reserved.
+### 2. Security
+- Input validation and sanitization
+- Secure data storage patterns
+- Authentication and authorization
+- Audit logging
+
+### 3. Performance
+- Asynchronous operations
+- Batch processing
+- Performance monitoring
+- Resource optimization
+
+### 4. Monitoring & Observability
+- Structured logging
+- Metrics collection
+- Health checks
+- Performance tracking
+
+### 5. Testing
+- Unit test patterns
+- Integration testing
+- Security testing
+- Performance testing
+
+## Example Scenarios
+
+### E-Commerce Order Processing
+1. Create customer profile and order
+2. Process cross-chain payment
+3. Create transaction backup
+4. Monitor payment status
+5. Fulfill order upon confirmation
+6. Generate analytics
+
+### DeFi Liquidity Pool Management
+1. Create liquidity pool
+2. Add liquidity providers
+3. Monitor pool metrics
+4. Execute cross-chain arbitrage
+5. Calculate and distribute rewards
+
+### IoT Data Pipeline
+1. Ingest sensor data from multiple devices
+2. Process and aggregate data
+3. Create hourly backups
+4. Generate analytics and alerts
+5. Handle high-volume data streams
+
+### Disaster Recovery
+1. Setup critical system state
+2. Create comprehensive backups
+3. Simulate disaster scenarios
+4. Execute recovery procedures
+5. Validate recovery completeness
+
+## Configuration Examples
+
+### Service Configuration
+Examples show how to properly configure dependency injection, logging, and service registration.
+
+### Environment-Specific Settings
+Demonstrate how to handle different environments (development, staging, production) with appropriate security and performance settings.
+
+### Monitoring Configuration
+Show how to set up comprehensive monitoring with metrics, alerts, and health checks.
+
+## Security Considerations
+
+### Input Validation
+- SQL injection prevention
+- XSS protection
+- Path traversal prevention
+- Buffer overflow protection
+
+### Data Protection
+- Encryption at rest
+- Secure key management
+- Data integrity verification
+- Access control
+
+### Network Security
+- Man-in-the-middle prevention
+- Replay attack protection
+- DDoS mitigation
+- SSL/TLS security
+
+## Performance Optimization
+
+### Concurrent Operations
+Examples demonstrate proper use of async/await patterns and concurrent execution.
+
+### Resource Management
+Proper disposal of resources and memory management.
+
+### Caching Strategies
+When and how to implement caching for improved performance.
+
+### Batch Processing
+Efficient handling of bulk operations.
+
+## Troubleshooting
+
+### Common Issues
+- Service configuration errors
+- Network connectivity issues
+- Authentication failures
+- Performance bottlenecks
+
+### Debugging Techniques
+- Structured logging
+- Performance profiling
+- Error tracking
+- Health monitoring
+
+## Contributing
+
+When adding new examples:
+1. Follow the established patterns
+2. Include comprehensive error handling
+3. Add monitoring and logging
+4. Document the scenario clearly
+5. Provide usage instructions
+
+## Additional Resources
+
+- [NeoServiceLayer Documentation](../docs/)
+- [API Reference](../docs/api/)
+- [Testing Guide](../tests/)
+- [Performance Benchmarks](../benchmarks/)

@@ -1,6 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -95,8 +103,8 @@ public partial class PatternRecognitionService
                     ModelId = modelId,
                     TotalAnalyses = analysisCount,
                     TotalAnomalies = anomalyCount,
-                    AnalysesThisWeek = recentAnalyses.Count,
-                    AnomaliesThisWeek = recentAnomalies.Count,
+                    AnalysesThisWeek = recentAnalyses.Count(),
+                    AnomaliesThisWeek = recentAnomalies.Count(),
                     AverageConfidence = recentAnalyses.Any() ? recentAnalyses.Average(a => a.Confidence) : 0.0,
                     AnomalyRate = analysisCount > 0 ? (double)anomalyCount / analysisCount : 0.0,
                     LastAnalysis = analysisHistory?.LastOrDefault()?.AnalyzedAt,
@@ -294,12 +302,12 @@ public partial class PatternRecognitionService
         csv.AppendLine("Type,Id,Timestamp,Confidence,Result");
         foreach (var analysis in analysisHistory)
         {
-            csv.AppendLine($"Analysis,{analysis.AnalysisId},{analysis.AnalyzedAt:O},{analysis.Confidence},{analysis.PatternType}");
+            csv.AppendLine($"Analysis,{analysis.Id},{analysis.AnalyzedAt:O},{analysis.Confidence},{analysis.Type}");
         }
 
         foreach (var anomaly in anomalyHistory)
         {
-            csv.AppendLine($"Anomaly,{anomaly.AnomalyId},{anomaly.DetectedAt:O},{anomaly.Confidence},{anomaly.AnomalyType}");
+            csv.AppendLine($"Anomaly,{anomaly.Id},{anomaly.DetectedAt:O},{anomaly.Confidence},{anomaly.Severity}");
         }
 
         return System.Text.Encoding.UTF8.GetBytes(csv.ToString());

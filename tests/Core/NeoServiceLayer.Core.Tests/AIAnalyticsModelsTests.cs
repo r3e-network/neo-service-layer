@@ -1,6 +1,13 @@
-﻿using FluentAssertions;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Core.Tests;
 
@@ -18,10 +25,10 @@ public class AIAnalyticsModelsTests
         var request = new SentimentAnalysisRequest();
 
         // Assert
-        request.TextData.Should().BeEmpty();
+        request.Text.Should().BeEmpty();
         request.Language.Should().Be("en");
-        request.Keywords.Should().BeEmpty();
-        request.IncludeEmotions.Should().BeFalse();
+        request.IncludeDetailedAnalysis.Should().BeFalse();
+        request.Parameters.Should().BeEmpty();
     }
 
     [Fact]
@@ -29,20 +36,20 @@ public class AIAnalyticsModelsTests
     {
         // Arrange
         var request = new SentimentAnalysisRequest();
-        var textData = new[] { "Hello world", "Test text" };
-        var keywords = new[] { "hello", "test" };
+        var text = "Hello world test text";
+        var parameters = new Dictionary<string, object> { ["keywords"] = new[] { "hello", "test" } };
 
         // Act
-        request.TextData = textData;
+        request.Text = text;
         request.Language = "fr";
-        request.Keywords = keywords;
-        request.IncludeEmotions = true;
+        request.Parameters = parameters;
+        request.IncludeDetailedAnalysis = true;
 
         // Assert
-        request.TextData.Should().BeEquivalentTo(textData);
+        request.Text.Should().Be(text);
         request.Language.Should().Be("fr");
-        request.Keywords.Should().BeEquivalentTo(keywords);
-        request.IncludeEmotions.Should().BeTrue();
+        request.Parameters.Should().BeEquivalentTo(parameters);
+        request.IncludeDetailedAnalysis.Should().BeTrue();
     }
 
     #endregion
@@ -56,13 +63,11 @@ public class AIAnalyticsModelsTests
         var result = new SentimentResult();
 
         // Assert
-        result.AnalysisId.Should().NotBeEmpty();
-        Guid.TryParse(result.AnalysisId, out _).Should().BeTrue();
-        result.OverallSentiment.Should().Be(0);
+        result.AnalysisId.Should().BeEmpty();
+        result.SentimentScore.Should().Be(0);
         result.Confidence.Should().Be(0);
-        result.AnalysisTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.SampleSize.Should().Be(0);
-        result.KeywordSentiments.Should().NotBeNull().And.BeEmpty();
+        result.AnalyzedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        result.DetailedSentiment.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
@@ -71,24 +76,22 @@ public class AIAnalyticsModelsTests
         // Arrange
         var result = new SentimentResult();
         var analysisId = "test-analysis-123";
-        var analysisTime = DateTime.UtcNow.AddMinutes(-5);
-        var keywordSentiments = new Dictionary<string, double> { ["positive"] = 0.8, ["negative"] = 0.2 };
+        var analyzedAt = DateTime.UtcNow.AddMinutes(-5);
+        var detailedSentiment = new Dictionary<string, double> { ["positive"] = 0.8, ["negative"] = 0.2 };
 
         // Act
         result.AnalysisId = analysisId;
-        result.OverallSentiment = 0.75;
+        result.SentimentScore = 0.75;
         result.Confidence = 0.9;
-        result.AnalysisTime = analysisTime;
-        result.SampleSize = 100;
-        result.KeywordSentiments = keywordSentiments;
+        result.AnalyzedAt = analyzedAt;
+        result.DetailedSentiment = detailedSentiment;
 
         // Assert
         result.AnalysisId.Should().Be(analysisId);
-        result.OverallSentiment.Should().Be(0.75);
+        result.SentimentScore.Should().Be(0.75);
         result.Confidence.Should().Be(0.9);
-        result.AnalysisTime.Should().Be(analysisTime);
-        result.SampleSize.Should().Be(100);
-        result.KeywordSentiments.Should().BeEquivalentTo(keywordSentiments);
+        result.AnalyzedAt.Should().Be(analyzedAt);
+        result.DetailedSentiment.Should().BeEquivalentTo(detailedSentiment);
     }
 
     #endregion
@@ -103,13 +106,11 @@ public class AIAnalyticsModelsTests
 
         // Assert
         registration.Name.Should().BeEmpty();
-        registration.Description.Should().BeEmpty();
-        registration.ModelFormat.Should().Be("onnx");
+        registration.Type.Should().BeEmpty();
+        registration.Version.Should().Be("1.0.0");
         registration.ModelData.Should().BeEmpty();
-        registration.ModelHash.Should().BeEmpty();
-        registration.InputSchema.Should().BeEmpty();
-        registration.OutputSchema.Should().BeEmpty();
-        registration.Owner.Should().BeEmpty();
+        registration.Configuration.Should().NotBeNull().And.BeEmpty();
+        registration.Description.Should().BeEmpty();
     }
 
     [Fact]
@@ -118,28 +119,23 @@ public class AIAnalyticsModelsTests
         // Arrange
         var registration = new ModelRegistration();
         var modelData = new byte[] { 1, 2, 3, 4, 5 };
-        var inputSchema = new[] { "input1", "input2" };
-        var outputSchema = new[] { "output1" };
+        var configuration = new Dictionary<string, object> { ["format"] = "tensorflow", ["version"] = "2.0" };
 
         // Act
         registration.Name = "Test Model";
-        registration.Description = "Test Description";
-        registration.ModelFormat = "tensorflow";
+        registration.Type = "neural_network";
+        registration.Version = "2.0.1";
         registration.ModelData = modelData;
-        registration.ModelHash = "abc123";
-        registration.InputSchema = inputSchema;
-        registration.OutputSchema = outputSchema;
-        registration.Owner = "test-owner";
+        registration.Configuration = configuration;
+        registration.Description = "Test Description";
 
         // Assert
         registration.Name.Should().Be("Test Model");
-        registration.Description.Should().Be("Test Description");
-        registration.ModelFormat.Should().Be("tensorflow");
+        registration.Type.Should().Be("neural_network");
+        registration.Version.Should().Be("2.0.1");
         registration.ModelData.Should().BeEquivalentTo(modelData);
-        registration.ModelHash.Should().Be("abc123");
-        registration.InputSchema.Should().BeEquivalentTo(inputSchema);
-        registration.OutputSchema.Should().BeEquivalentTo(outputSchema);
-        registration.Owner.Should().Be("test-owner");
+        registration.Configuration.Should().BeEquivalentTo(configuration);
+        registration.Description.Should().Be("Test Description");
     }
 
     #endregion
@@ -150,46 +146,37 @@ public class AIAnalyticsModelsTests
     public void FraudDetectionRequest_ShouldInitializeWithDefaults()
     {
         // Act
-        var request = new FraudDetectionRequest();
+        var request = new NeoServiceLayer.Core.Models.FraudDetectionRequest();
 
         // Assert
         request.TransactionId.Should().BeEmpty();
-        request.FromAddress.Should().BeEmpty();
-        request.ToAddress.Should().BeEmpty();
-        request.Amount.Should().Be(0);
-        request.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        request.Features.Should().NotBeNull().And.BeEmpty();
-        request.ModelId.Should().BeEmpty();
+        request.TransactionData.Should().NotBeNull().And.BeEmpty();
+        request.Parameters.Should().NotBeNull().And.BeEmpty();
         request.Threshold.Should().Be(0.8);
+        request.IncludeHistoricalAnalysis.Should().BeTrue();
     }
 
     [Fact]
     public void FraudDetectionRequest_Properties_ShouldBeSettable()
     {
         // Arrange
-        var request = new FraudDetectionRequest();
-        var timestamp = DateTime.UtcNow.AddHours(-1);
-        var features = new Dictionary<string, object> { ["velocity"] = 5, ["amount_ratio"] = 0.3 };
+        var request = new NeoServiceLayer.Core.Models.FraudDetectionRequest();
+        var transactionData = new Dictionary<string, object> { ["amount"] = 100.5m, ["from"] = "from-addr" };
+        var parameters = new Dictionary<string, object> { ["velocity"] = 5, ["amount_ratio"] = 0.3 };
 
         // Act
         request.TransactionId = "tx-123";
-        request.FromAddress = "from-addr";
-        request.ToAddress = "to-addr";
-        request.Amount = 100.5m;
-        request.Timestamp = timestamp;
-        request.Features = features;
-        request.ModelId = "fraud-model-1";
+        request.TransactionData = transactionData;
+        request.Parameters = parameters;
         request.Threshold = 0.95;
+        request.IncludeHistoricalAnalysis = false;
 
         // Assert
         request.TransactionId.Should().Be("tx-123");
-        request.FromAddress.Should().Be("from-addr");
-        request.ToAddress.Should().Be("to-addr");
-        request.Amount.Should().Be(100.5m);
-        request.Timestamp.Should().Be(timestamp);
-        request.Features.Should().BeEquivalentTo(features);
-        request.ModelId.Should().Be("fraud-model-1");
+        request.TransactionData.Should().BeEquivalentTo(transactionData);
+        request.Parameters.Should().BeEquivalentTo(parameters);
         request.Threshold.Should().Be(0.95);
+        request.IncludeHistoricalAnalysis.Should().BeFalse();
     }
 
     #endregion
@@ -200,46 +187,42 @@ public class AIAnalyticsModelsTests
     public void FraudDetectionResult_ShouldInitializeWithDefaults()
     {
         // Act
-        var result = new FraudDetectionResult();
+        var result = new NeoServiceLayer.Core.Models.FraudDetectionResult();
 
         // Assert
-        result.TransactionId.Should().BeEmpty();
-        result.IsFraud.Should().BeFalse();
-        result.FraudScore.Should().Be(0);
-        result.RiskFactors.Should().BeEmpty();
+        result.DetectionId.Should().BeEmpty();
+        result.IsFraudulent.Should().BeFalse();
+        result.RiskScore.Should().Be(0);
+        result.RiskFactors.Should().NotBeNull().And.BeEmpty();
         result.Confidence.Should().Be(0);
-        result.DetectionTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.ModelId.Should().BeEmpty();
-        result.Proof.Should().BeEmpty();
+        result.DetectedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        result.DetectedPatterns.Should().NotBeNull().And.BeEmpty();
+        result.Details.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
     public void FraudDetectionResult_Properties_ShouldBeSettable()
     {
         // Arrange
-        var result = new FraudDetectionResult();
+        var result = new NeoServiceLayer.Core.Models.FraudDetectionResult();
         var detectionTime = DateTime.UtcNow.AddMinutes(-2);
-        var riskFactors = new[] { "high_velocity", "unusual_amount" };
+        var riskFactors = new Dictionary<string, double> { ["high_velocity"] = 0.8, ["unusual_amount"] = 0.6 };
 
         // Act
-        result.TransactionId = "tx-456";
-        result.IsFraud = true;
-        result.FraudScore = 0.92;
+        result.DetectionId = "detection-456";
+        result.IsFraudulent = true;
+        result.RiskScore = 0.92;
         result.RiskFactors = riskFactors;
         result.Confidence = 0.88;
-        result.DetectionTime = detectionTime;
-        result.ModelId = "fraud-model-2";
-        result.Proof = "proof-data";
+        result.DetectedAt = detectionTime;
 
         // Assert
-        result.TransactionId.Should().Be("tx-456");
-        result.IsFraud.Should().BeTrue();
-        result.FraudScore.Should().Be(0.92);
+        result.DetectionId.Should().Be("detection-456");
+        result.IsFraudulent.Should().BeTrue();
+        result.RiskScore.Should().Be(0.92);
         result.RiskFactors.Should().BeEquivalentTo(riskFactors);
         result.Confidence.Should().Be(0.88);
-        result.DetectionTime.Should().Be(detectionTime);
-        result.ModelId.Should().Be("fraud-model-2");
-        result.Proof.Should().Be("proof-data");
+        result.DetectedAt.Should().Be(detectionTime);
     }
 
     #endregion
@@ -250,180 +233,162 @@ public class AIAnalyticsModelsTests
     public void AnomalyDetectionRequest_ShouldInitializeWithDefaults()
     {
         // Act
-        var request = new AnomalyDetectionRequest();
+        var request = new NeoServiceLayer.Core.Models.AnomalyDetectionRequest();
 
         // Assert
-        request.Data.Should().BeEmpty();
-        request.FeatureNames.Should().BeEmpty();
+        request.Data.Should().NotBeNull().And.BeEmpty();
+        request.Parameters.Should().NotBeNull().And.BeEmpty();
         request.Threshold.Should().Be(0.95);
-        request.ReturnScores.Should().BeTrue();
-        request.ModelId.Should().BeEmpty();
+        request.WindowSize.Should().Be(100);
     }
 
     [Fact]
     public void AnomalyDetectionRequest_Properties_ShouldBeSettable()
     {
         // Arrange
-        var request = new AnomalyDetectionRequest();
-        var data = new double[][] { [1.0, 2.0], [3.0, 4.0] };
-        var featureNames = new[] { "feature1", "feature2" };
+        var request = new NeoServiceLayer.Core.Models.AnomalyDetectionRequest();
+        var data = new Dictionary<string, object> { ["values"] = new double[] { 1.0, 2.0, 3.0 } };
+        var parameters = new Dictionary<string, object> { ["algorithm"] = "isolation_forest" };
 
         // Act
         request.Data = data;
-        request.FeatureNames = featureNames;
+        request.Parameters = parameters;
         request.Threshold = 0.85;
-        request.ReturnScores = false;
-        request.ModelId = "anomaly-model-1";
+        request.WindowSize = 50;
 
         // Assert
         request.Data.Should().BeEquivalentTo(data);
-        request.FeatureNames.Should().BeEquivalentTo(featureNames);
+        request.Parameters.Should().BeEquivalentTo(parameters);
         request.Threshold.Should().Be(0.85);
-        request.ReturnScores.Should().BeFalse();
-        request.ModelId.Should().Be("anomaly-model-1");
-    }
+        request.WindowSize.Should().Be(50);
+}
 
-    #endregion
+#endregion
 
-    #region AnomalyDetectionResult Tests
+#region AnomalyDetectionResult Tests
 
-    [Fact]
-    public void AnomalyDetectionResult_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var result = new AnomalyDetectionResult();
+[Fact]
+public void AnomalyDetectionResult_ShouldInitializeWithDefaults()
+{
+    // Act
+    var result = new NeoServiceLayer.Core.Models.AnomalyDetectionResult();
 
-        // Assert
-        result.AnalysisId.Should().NotBeEmpty();
-        Guid.TryParse(result.AnalysisId, out _).Should().BeTrue();
-        result.IsAnomaly.Should().BeEmpty();
-        result.AnomalyScores.Should().BeEmpty();
-        result.AnomalyCount.Should().Be(0);
-        result.DetectionTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.ModelId.Should().BeEmpty();
-        result.Proof.Should().BeEmpty();
-    }
+    // Assert
+    result.DetectionId.Should().BeEmpty();
+    result.AnomalyScore.Should().Be(0);
+    result.IsAnomalous.Should().BeFalse();
+    result.DetectedAnomalies.Should().NotBeNull().And.BeEmpty();
+    result.Confidence.Should().Be(0);
+    result.DetectedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    result.Details.Should().NotBeNull().And.BeEmpty();
+}
 
-    [Fact]
-    public void AnomalyDetectionResult_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var result = new AnomalyDetectionResult();
-        var analysisId = "analysis-789";
-        var isAnomaly = new[] { true, false, true };
-        var anomalyScores = new[] { 0.95, 0.3, 0.88 };
-        var detectionTime = DateTime.UtcNow.AddMinutes(-3);
+[Fact]
+public void AnomalyDetectionResult_Properties_ShouldBeSettable()
+{
+    // Arrange
+    var result = new NeoServiceLayer.Core.Models.AnomalyDetectionResult();
+    var detectionId = "detection-789";
+    var detectedAnomalies = new List<Anomaly>();
+    var detectionTime = DateTime.UtcNow.AddMinutes(-3);
 
-        // Act
-        result.AnalysisId = analysisId;
-        result.IsAnomaly = isAnomaly;
-        result.AnomalyScores = anomalyScores;
-        result.AnomalyCount = 2;
-        result.DetectionTime = detectionTime;
-        result.ModelId = "anomaly-model-2";
-        result.Proof = "anomaly-proof";
+    // Act
+    result.DetectionId = detectionId;
+    result.AnomalyScore = 0.95;
+    result.IsAnomalous = true;
+    result.DetectedAnomalies = detectedAnomalies;
+    result.Confidence = 0.88;
+    result.DetectedAt = detectionTime;
 
-        // Assert
-        result.AnalysisId.Should().Be(analysisId);
-        result.IsAnomaly.Should().BeEquivalentTo(isAnomaly);
-        result.AnomalyScores.Should().BeEquivalentTo(anomalyScores);
-        result.AnomalyCount.Should().Be(2);
-        result.DetectionTime.Should().Be(detectionTime);
-        result.ModelId.Should().Be("anomaly-model-2");
-        result.Proof.Should().Be("anomaly-proof");
-    }
+    // Assert
+    result.DetectionId.Should().Be(detectionId);
+    result.AnomalyScore.Should().Be(0.95);
+    result.IsAnomalous.Should().BeTrue();
+    result.DetectedAnomalies.Should().BeEquivalentTo(detectedAnomalies);
+    result.Confidence.Should().Be(0.88);
+    result.DetectedAt.Should().Be(detectionTime);
+}
 
-    #endregion
+#endregion
 
-    #region ClassificationRequest Tests
+#region ClassificationRequest Tests
 
-    [Fact]
-    public void ClassificationRequest_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var request = new ClassificationRequest();
+[Fact]
+public void ClassificationRequest_ShouldInitializeWithDefaults()
+{
+    // Act
+    var request = new NeoServiceLayer.Core.Models.ClassificationRequest();
 
-        // Assert
-        request.InputData.Should().BeEmpty();
-        request.FeatureNames.Should().BeEmpty();
-        request.ModelId.Should().BeEmpty();
-        request.ReturnProbabilities.Should().BeTrue();
-        request.ExpectedClasses.Should().BeEmpty();
-    }
+    // Assert
+    request.Data.Should().NotBeNull().And.BeEmpty();
+    request.ModelId.Should().BeNull();
+    request.Parameters.Should().NotBeNull().And.BeEmpty();
+    request.IncludeConfidenceScores.Should().BeTrue();
+}
 
-    [Fact]
-    public void ClassificationRequest_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var request = new ClassificationRequest();
-        var inputData = new object[] { 1.5, "text", true };
-        var featureNames = new[] { "numeric", "text", "boolean" };
-        var expectedClasses = new[] { "class1", "class2" };
+[Fact]
+public void ClassificationRequest_Properties_ShouldBeSettable()
+{
+    // Arrange
+    var request = new NeoServiceLayer.Core.Models.ClassificationRequest();
+    var data = new Dictionary<string, object> { ["features"] = new object[] { 1.5, "text", true } };
+    var parameters = new Dictionary<string, object> { ["algorithm"] = "random_forest" };
 
-        // Act
-        request.InputData = inputData;
-        request.FeatureNames = featureNames;
-        request.ModelId = "classification-model-1";
-        request.ReturnProbabilities = false;
-        request.ExpectedClasses = expectedClasses;
+    // Act
+    request.Data = data;
+    request.ModelId = "classification-model-1";
+    request.Parameters = parameters;
+    request.IncludeConfidenceScores = false;
 
-        // Assert
-        request.InputData.Should().BeEquivalentTo(inputData);
-        request.FeatureNames.Should().BeEquivalentTo(featureNames);
-        request.ModelId.Should().Be("classification-model-1");
-        request.ReturnProbabilities.Should().BeFalse();
-        request.ExpectedClasses.Should().BeEquivalentTo(expectedClasses);
-    }
+    // Assert
+    request.Data.Should().BeEquivalentTo(data);
+    request.ModelId.Should().Be("classification-model-1");
+    request.Parameters.Should().BeEquivalentTo(parameters);
+    request.IncludeConfidenceScores.Should().BeFalse();
+}
 
-    #endregion
+#endregion
 
-    #region ClassificationResult Tests
+#region ClassificationResult Tests
 
-    [Fact]
-    public void ClassificationResult_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var result = new ClassificationResult();
+[Fact]
+public void ClassificationResult_ShouldInitializeWithDefaults()
+{
+    // Act
+    var result = new NeoServiceLayer.Core.Models.ClassificationResult();
 
-        // Assert
-        result.ClassificationId.Should().NotBeEmpty();
-        Guid.TryParse(result.ClassificationId, out _).Should().BeTrue();
-        result.PredictedClasses.Should().BeEmpty();
-        result.Probabilities.Should().BeEmpty();
-        result.Confidence.Should().Be(0);
-        result.ClassificationTime.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.ModelId.Should().BeEmpty();
-        result.Proof.Should().BeEmpty();
-    }
+    // Assert
+    result.ClassificationId.Should().BeEmpty();
+    result.PredictedClass.Should().BeEmpty();
+    result.ClassProbabilities.Should().NotBeNull().And.BeEmpty();
+    result.Confidence.Should().Be(0);
+    result.ClassifiedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+    result.Details.Should().NotBeNull().And.BeEmpty();
+}
 
-    [Fact]
-    public void ClassificationResult_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var result = new ClassificationResult();
-        var classificationId = "classification-101";
-        var predictedClasses = new[] { "class1", "class2" };
-        var probabilities = new[] { 0.8, 0.2 };
-        var classificationTime = DateTime.UtcNow.AddMinutes(-1);
+[Fact]
+public void ClassificationResult_Properties_ShouldBeSettable()
+{
+    // Arrange
+    var result = new NeoServiceLayer.Core.Models.ClassificationResult();
+    var classificationId = "classification-101";
+    var classProbabilities = new Dictionary<string, double> { ["class1"] = 0.8, ["class2"] = 0.2 };
+    var classificationTime = DateTime.UtcNow.AddMinutes(-1);
 
-        // Act
-        result.ClassificationId = classificationId;
-        result.PredictedClasses = predictedClasses;
-        result.Probabilities = probabilities;
-        result.Confidence = 0.85;
-        result.ClassificationTime = classificationTime;
-        result.ModelId = "classification-model-2";
-        result.Proof = "classification-proof";
+    // Act
+    result.ClassificationId = classificationId;
+    result.PredictedClass = "class1";
+    result.ClassProbabilities = classProbabilities;
+    result.Confidence = 0.85;
+    result.ClassifiedAt = classificationTime;
 
-        // Assert
-        result.ClassificationId.Should().Be(classificationId);
-        result.PredictedClasses.Should().BeEquivalentTo(predictedClasses);
-        result.Probabilities.Should().BeEquivalentTo(probabilities);
-        result.Confidence.Should().Be(0.85);
-        result.ClassificationTime.Should().Be(classificationTime);
-        result.ModelId.Should().Be("classification-model-2");
-        result.Proof.Should().Be("classification-proof");
-    }
+    // Assert
+    result.ClassificationId.Should().Be(classificationId);
+    result.PredictedClass.Should().Be("class1");
+    result.ClassProbabilities.Should().BeEquivalentTo(classProbabilities);
+    result.Confidence.Should().Be(0.85);
+    result.ClassifiedAt.Should().Be(classificationTime);
+}
 
-    #endregion
+#endregion
 }

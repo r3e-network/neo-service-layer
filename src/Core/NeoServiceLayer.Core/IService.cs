@@ -1,4 +1,9 @@
-﻿using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core;
 
@@ -78,23 +83,6 @@ public interface IService
     /// <param name="availableServices">The available services.</param>
     /// <returns>True if all required dependencies are satisfied, false otherwise.</returns>
     Task<bool> ValidateDependenciesAsync(IEnumerable<IService> availableServices);
-}
-
-/// <summary>
-/// Interface for services that require enclave operations.
-/// </summary>
-public interface IEnclaveService : IService
-{
-    /// <summary>
-    /// Gets a value indicating whether the enclave is initialized.
-    /// </summary>
-    bool IsEnclaveInitialized { get; }
-
-    /// <summary>
-    /// Initializes the enclave.
-    /// </summary>
-    /// <returns>True if the enclave was initialized successfully, false otherwise.</returns>
-    Task<bool> InitializeEnclaveAsync();
 }
 
 /// <summary>
@@ -276,18 +264,3 @@ public enum ServiceHealth
     NotRunning
 }
 
-/// <summary>
-/// Enum representing the supported blockchain types.
-/// </summary>
-public enum BlockchainType
-{
-    /// <summary>
-    /// Neo N3 blockchain.
-    /// </summary>
-    NeoN3,
-
-    /// <summary>
-    /// NeoX blockchain (EVM-compatible).
-    /// </summary>
-    NeoX
-}

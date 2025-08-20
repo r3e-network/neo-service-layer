@@ -1,7 +1,8 @@
-﻿using System.Text.Json;
 using FluentAssertions;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Primitives;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
@@ -11,15 +12,41 @@ using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Services.ProofOfReserve.Models;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
-using AutomationSvc = NeoServiceLayer.Services.Automation;
-using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
+
+/// <summary>
+/// Mock implementation of IConfigurationSection for testing.
+/// </summary>
+public class MockConfigurationSection : IConfigurationSection
+{
+    public string Key => "mock";
+    public string Path => "mock";
+    public string? Value { get; set; }
+    
+    public string? this[string key]
+    {
+        get => null;
+        set { }
+    }
+    
+    public IEnumerable<IConfigurationSection> GetChildren() => Enumerable.Empty<IConfigurationSection>();
+    public IChangeToken GetReloadToken() => null!;
+    public IConfigurationSection GetSection(string key) => new MockConfigurationSection();
+}
 
 /// <summary>
 /// Mock implementation of IServiceConfiguration for testing.
@@ -84,10 +111,20 @@ public class MockServiceConfiguration : IServiceConfiguration
         return _values.Keys;
     }
 
-    public IServiceConfiguration? GetSection(string sectionName)
+    public IConfigurationSection GetSection(string sectionName)
     {
-        // For testing, return a new instance
-        return new MockServiceConfiguration();
+        // For testing, return a mock configuration section
+        return new MockConfigurationSection();
+    }
+    
+    public bool Exists(string key)
+    {
+        return _values.ContainsKey(key);
+    }
+    
+    public bool Remove(string key)
+    {
+        return _values.Remove(key);
     }
 
     public string GetConnectionString(string name)
@@ -160,7 +197,7 @@ public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
 
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.IBlockchainClientFactory, MockBlockchainClientFactory>();
 
         // Add HTTP client factory
         services.AddHttpClient();
@@ -169,9 +206,9 @@ public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
         services.AddSingleton<IServiceConfiguration>(provider => new MockServiceConfiguration());
         services.AddSingleton<IHttpClientService>(provider => new MockHttpClientService());
 
-        // Add enclave services (use mocks from TestBase)
-        services.AddSingleton<IEnclaveWrapper>(TestBase.MockEnclaveWrapper.Object);
-        services.AddSingleton<IEnclaveManager>(TestBase.MockEnclaveManager.Object);
+        // Add enclave services
+        services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
+        services.AddSingleton<IEnclaveManager, EnclaveManager>();
 
         // Add core services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
@@ -244,7 +281,8 @@ public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
             ReserveAddresses = new[] { "0xreserve1", "0xreserve2", "0xreserve3" },
             MinReserveRatio = 1.0m,
             TotalSupply = 10000000m,
-            MonitoringFrequencyMinutes = 60
+            // MonitoringFrequencyMinutes doesn't exist - use Metadata instead
+            Metadata = new Dictionary<string, object> { ["MonitoringFrequencyMinutes"] = 60 }
         };
 
         var assetId = await _proofOfReserveService.RegisterAssetAsync(assetRequest, BlockchainType.NeoX);
@@ -257,7 +295,8 @@ public class MultiServiceOrchestrationTests_Simplified : TestBase, IDisposable
             ReserveAddresses = assetRequest.ReserveAddresses,
             ReserveBalances = new[] { 4000000m, 3000000m, 4000000m }, // Total 11M reserves for 10M supply = 110% ratio
             AuditTimestamp = DateTime.UtcNow,
-            UpdateReason = "Initial reserve setup for testing"
+            // UpdateReason doesn't exist - use ValidationData instead
+            ValidationData = new Dictionary<string, object> { ["UpdateReason"] = "Initial reserve setup for testing" }
         };
 
         var updateResult = await _proofOfReserveService.UpdateReserveDataAsync(assetId, reserveUpdateRequest, BlockchainType.NeoX);

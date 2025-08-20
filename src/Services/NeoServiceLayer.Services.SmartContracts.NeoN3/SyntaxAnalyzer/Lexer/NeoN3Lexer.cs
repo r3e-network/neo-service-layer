@@ -1,7 +1,11 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using NeoServiceLayer.ServiceFramework;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Lexer;
 
@@ -318,42 +322,116 @@ public class NeoN3Lexer
         var ch = Current();
         Advance();
 
-        var type = ch switch
+        TokenType type;
+        switch (ch)
         {
-            '+' => Current() == '+' ? (Advance(), TokenType.Increment) :
-                   Current() == '=' ? (Advance(), TokenType.PlusAssign) : TokenType.Plus,
-            '-' => Current() == '-' ? (Advance(), TokenType.Decrement) :
-                   Current() == '=' ? (Advance(), TokenType.MinusAssign) :
-                   Current() == '>' ? (Advance(), TokenType.Arrow) : TokenType.Minus,
-            '*' => Current() == '=' ? (Advance(), TokenType.MultiplyAssign) : TokenType.Multiply,
-            '/' => Current() == '=' ? (Advance(), TokenType.DivideAssign) : TokenType.Divide,
-            '%' => Current() == '=' ? (Advance(), TokenType.ModuloAssign) : TokenType.Modulo,
-            '=' => Current() == '=' ? (Advance(), TokenType.Equal) :
-                   Current() == '>' ? (Advance(), TokenType.Lambda) : TokenType.Assign,
-            '!' => Current() == '=' ? (Advance(), TokenType.NotEqual) : TokenType.Not,
-            '<' => Current() == '=' ? (Advance(), TokenType.LessThanOrEqual) :
-                   Current() == '<' ? (Advance(), Current() == '=' ? (Advance(), TokenType.LeftShiftAssign) : TokenType.LeftShift) : TokenType.LessThan,
-            '>' => Current() == '=' ? (Advance(), TokenType.GreaterThanOrEqual) :
-                   Current() == '>' ? (Advance(), Current() == '=' ? (Advance(), TokenType.RightShiftAssign) : TokenType.RightShift) : TokenType.GreaterThan,
-            '&' => Current() == '&' ? (Advance(), TokenType.And) :
-                   Current() == '=' ? (Advance(), TokenType.AndAssign) : TokenType.BitwiseAnd,
-            '|' => Current() == '|' ? (Advance(), TokenType.Or) :
-                   Current() == '=' ? (Advance(), TokenType.OrAssign) : TokenType.BitwiseOr,
-            '^' => Current() == '=' ? (Advance(), TokenType.XorAssign) : TokenType.BitwiseXor,
-            '~' => TokenType.BitwiseNot,
-            '?' => Current() == '?' ? (Advance(), TokenType.NullCoalescing) : TokenType.Question,
-            ':' => TokenType.Colon,
-            '(' => TokenType.LeftParen,
-            ')' => TokenType.RightParen,
-            '{' => TokenType.LeftBrace,
-            '}' => TokenType.RightBrace,
-            '[' => TokenType.LeftBracket,
-            ']' => TokenType.RightBracket,
-            ';' => TokenType.Semicolon,
-            ',' => TokenType.Comma,
-            '.' => TokenType.Dot,
-            _ => TokenType.Unknown
-        };
+            case '+':
+                if (Current() == '+') { Advance(); type = TokenType.Increment; }
+                else if (Current() == '=') { Advance(); type = TokenType.PlusAssign; }
+                else type = TokenType.Plus;
+                break;
+            case '-':
+                if (Current() == '-') { Advance(); type = TokenType.Decrement; }
+                else if (Current() == '=') { Advance(); type = TokenType.MinusAssign; }
+                else if (Current() == '>') { Advance(); type = TokenType.Arrow; }
+                else type = TokenType.Minus;
+                break;
+            case '*':
+                if (Current() == '=') { Advance(); type = TokenType.MultiplyAssign; }
+                else type = TokenType.Multiply;
+                break;
+            case '/':
+                if (Current() == '=') { Advance(); type = TokenType.DivideAssign; }
+                else type = TokenType.Divide;
+                break;
+            case '%':
+                if (Current() == '=') { Advance(); type = TokenType.ModuloAssign; }
+                else type = TokenType.Modulo;
+                break;
+            case '=':
+                if (Current() == '=') { Advance(); type = TokenType.Equal; }
+                else if (Current() == '>') { Advance(); type = TokenType.Lambda; }
+                else type = TokenType.Assign;
+                break;
+            case '!':
+                if (Current() == '=') { Advance(); type = TokenType.NotEqual; }
+                else type = TokenType.Not;
+                break;
+            case '<':
+                if (Current() == '=') { Advance(); type = TokenType.LessThanOrEqual; }
+                else if (Current() == '<') 
+                { 
+                    Advance(); 
+                    if (Current() == '=') { Advance(); type = TokenType.LeftShiftAssign; }
+                    else type = TokenType.LeftShift;
+                }
+                else type = TokenType.LessThan;
+                break;
+            case '>':
+                if (Current() == '=') { Advance(); type = TokenType.GreaterThanOrEqual; }
+                else if (Current() == '>') 
+                { 
+                    Advance(); 
+                    if (Current() == '=') { Advance(); type = TokenType.RightShiftAssign; }
+                    else type = TokenType.RightShift;
+                }
+                else type = TokenType.GreaterThan;
+                break;
+            case '&':
+                if (Current() == '&') { Advance(); type = TokenType.And; }
+                else if (Current() == '=') { Advance(); type = TokenType.AndAssign; }
+                else type = TokenType.BitwiseAnd;
+                break;
+            case '|':
+                if (Current() == '|') { Advance(); type = TokenType.Or; }
+                else if (Current() == '=') { Advance(); type = TokenType.OrAssign; }
+                else type = TokenType.BitwiseOr;
+                break;
+            case '^':
+                if (Current() == '=') { Advance(); type = TokenType.XorAssign; }
+                else type = TokenType.BitwiseXor;
+                break;
+            case '~':
+                type = TokenType.BitwiseNot;
+                break;
+            case '?':
+                if (Current() == '?') { Advance(); type = TokenType.NullCoalescing; }
+                else type = TokenType.Question;
+                break;
+            case ':':
+                type = TokenType.Colon;
+                break;
+            case '(':
+                type = TokenType.LeftParen;
+                break;
+            case ')':
+                type = TokenType.RightParen;
+                break;
+            case '{':
+                type = TokenType.LeftBrace;
+                break;
+            case '}':
+                type = TokenType.RightBrace;
+                break;
+            case '[':
+                type = TokenType.LeftBracket;
+                break;
+            case ']':
+                type = TokenType.RightBracket;
+                break;
+            case ';':
+                type = TokenType.Semicolon;
+                break;
+            case ',':
+                type = TokenType.Comma;
+                break;
+            case '.':
+                type = TokenType.Dot;
+                break;
+            default:
+                type = TokenType.Unknown;
+                break;
+        }
 
         startLocation.EndLine = _line;
         startLocation.EndColumn = _column - 1;

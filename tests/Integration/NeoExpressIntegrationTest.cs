@@ -10,6 +10,10 @@ using Neo.Network.RPC;
 using Neo.SmartContract;
 using Neo.VM;
 using Neo.Wallets;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tests.Integration
 {

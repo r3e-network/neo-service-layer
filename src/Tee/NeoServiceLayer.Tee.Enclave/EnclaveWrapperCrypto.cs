@@ -1,6 +1,12 @@
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -134,11 +140,9 @@ public partial class EnclaveWrapper
             var dataBytes = Encoding.UTF8.GetBytes(data);
 
             // Create hash of the data
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var hash = sha256.ComputeHash(dataBytes);
 
             // Sign the hash using ECDSA
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportECPrivateKey(keyData.PrivateKey, out _);
 
             var signature = ecdsa.SignHash(hash);
@@ -179,7 +183,6 @@ public partial class EnclaveWrapper
             var envelopeBytes = Convert.FromBase64String(signature);
             var envelopeJson = Encoding.UTF8.GetString(envelopeBytes);
 
-            using var document = System.Text.Json.JsonDocument.Parse(envelopeJson);
             var root = document.RootElement;
 
             var signatureBytes = Convert.FromBase64String(root.GetProperty("Signature").GetString()!);
@@ -208,7 +211,6 @@ public partial class EnclaveWrapper
 
             // Compute hash of the provided data
             var dataBytes = Encoding.UTF8.GetBytes(data);
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var computedHash = sha256.ComputeHash(dataBytes);
 
             // Verify the hash matches
@@ -218,7 +220,6 @@ public partial class EnclaveWrapper
             }
 
             // Verify the signature
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportECPrivateKey(keyData.PrivateKey, out _);
 
             return ecdsa.VerifyHash(computedHash, signatureBytes);
@@ -252,17 +253,13 @@ public partial class EnclaveWrapper
             var dataBytes = Encoding.UTF8.GetBytes(data);
 
             // Generate cryptographically secure random IV using SGX
-            using var aes = System.Security.Cryptography.Aes.Create();
             aes.Key = keyData.SymmetricKey ?? throw new EnclaveException("Symmetric key not available");
-            
+
             // Use SGX-backed secure random for IV generation
             var secureIV = GenerateSecureRandomBytes(aes.BlockSize / 8);
             aes.IV = secureIV;
 
             // Encrypt the data
-            using var encryptor = aes.CreateEncryptor();
-            using var msEncrypt = new MemoryStream();
-            using var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write);
 
             csEncrypt.Write(dataBytes, 0, dataBytes.Length);
             csEncrypt.FlushFinalBlock();
@@ -304,7 +301,6 @@ public partial class EnclaveWrapper
             var envelopeBytes = Convert.FromBase64String(encryptedData);
             var envelopeJson = Encoding.UTF8.GetString(envelopeBytes);
 
-            using var document = System.Text.Json.JsonDocument.Parse(envelopeJson);
             var root = document.RootElement;
 
             var encryptedBytes = Convert.FromBase64String(root.GetProperty("EncryptedData").GetString()!);
@@ -332,14 +328,9 @@ public partial class EnclaveWrapper
             }
 
             // Decrypt the data
-            using var aes = System.Security.Cryptography.Aes.Create();
             aes.Key = keyData.SymmetricKey ?? throw new EnclaveException("Symmetric key not available");
             aes.IV = iv;
 
-            using var decryptor = aes.CreateDecryptor();
-            using var msDecrypt = new MemoryStream(encryptedBytes);
-            using var csDecrypt = new System.Security.Cryptography.CryptoStream(msDecrypt, decryptor, System.Security.Cryptography.CryptoStreamMode.Read);
-            using var srDecrypt = new StreamReader(csDecrypt);
 
             return srDecrypt.ReadToEnd();
         }
@@ -361,13 +352,13 @@ public partial class EnclaveWrapper
             // Use the Occlum storage interface via base class method
             var storageKey = $"key_store_{keyId}";
             var resultJson = StorageRetrieveDataAsync(storageKey, GetDefaultEncryptionKey()).GetAwaiter().GetResult();
-            
+
             if (string.IsNullOrEmpty(resultJson))
             {
                 _logger.LogWarning("Key {KeyId} not found in secure storage", keyId);
                 return null;
             }
-            
+
             // Deserialize key data from secure storage
             var keyData = System.Text.Json.JsonSerializer.Deserialize<KeyDataStorage>(resultJson);
             if (keyData == null)
@@ -375,14 +366,14 @@ public partial class EnclaveWrapper
                 _logger.LogError("Failed to deserialize key data for {KeyId}", keyId);
                 return null;
             }
-            
+
             // Convert from storage format to working format
             return new KeyData
             {
                 KeyId = keyId,
                 PrivateKey = Convert.FromBase64String(keyData.PrivateKeyBase64),
-                SymmetricKey = !string.IsNullOrEmpty(keyData.SymmetricKeyBase64) 
-                    ? Convert.FromBase64String(keyData.SymmetricKeyBase64) 
+                SymmetricKey = !string.IsNullOrEmpty(keyData.SymmetricKeyBase64)
+                    ? Convert.FromBase64String(keyData.SymmetricKeyBase64)
                     : null,
                 PublicKey = !string.IsNullOrEmpty(keyData.PublicKeyBase64)
                     ? Convert.FromBase64String(keyData.PublicKeyBase64)
@@ -412,8 +403,8 @@ public partial class EnclaveWrapper
             var storageData = new KeyDataStorage
             {
                 PrivateKeyBase64 = Convert.ToBase64String(keyData.PrivateKey),
-                SymmetricKeyBase64 = keyData.SymmetricKey != null 
-                    ? Convert.ToBase64String(keyData.SymmetricKey) 
+                SymmetricKeyBase64 = keyData.SymmetricKey != null
+                    ? Convert.ToBase64String(keyData.SymmetricKey)
                     : null,
                 PublicKeyBase64 = keyData.PublicKey != null
                     ? Convert.ToBase64String(keyData.PublicKey)
@@ -422,16 +413,16 @@ public partial class EnclaveWrapper
                 KeyType = keyData.KeyType,
                 KeySize = keyData.KeySize
             };
-            
+
             var keyDataJson = System.Text.Json.JsonSerializer.Serialize(storageData);
             var storageKey = $"key_store_{keyData.KeyId}";
-            
+
             // Store in secure enclave storage
-            var result = StorageStoreDataAsync(storageKey, 
-                System.Text.Encoding.UTF8.GetBytes(keyDataJson), 
+            var result = StorageStoreDataAsync(storageKey,
+                System.Text.Encoding.UTF8.GetBytes(keyDataJson),
                 GetDefaultEncryptionKey(),
                 compress: true).GetAwaiter().GetResult();
-            
+
             if (result.Contains("stored") || result.Contains("success"))
             {
                 _logger.LogInformation("Successfully stored key {KeyId} in secure storage", keyData.KeyId);
@@ -460,13 +451,12 @@ public partial class EnclaveWrapper
         // For now, use a fixed salt with PBKDF2 for better security than plaintext
         var masterPassword = Environment.GetEnvironmentVariable("ENCLAVE_MASTER_KEY") ?? "default-master-key";
         var salt = Encoding.UTF8.GetBytes("neo-enclave-storage-salt-v1");
-        
-        using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
+
             masterPassword,
             salt,
             100000, // 100,000 iterations
             System.Security.Cryptography.HashAlgorithmName.SHA256);
-        
+
         var keyBytes = pbkdf2.GetBytes(32); // 256-bit key
         return Convert.ToBase64String(keyBytes);
     }
@@ -482,30 +472,28 @@ public partial class EnclaveWrapper
         {
             return -1; // Invalid input
         }
-        
+
         try
         {
             // Use the native Occlum random generation
             var result = NativeOcclumEnclave.occlum_generate_random_bytes(buffer, (UIntPtr)buffer.Length);
-            
+
             if (result != 0)
             {
                 _logger.LogWarning("SGX random generation failed with code {Result}, using system fallback", result);
-                
+
                 // Fallback to system RNG if SGX fails
-                using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
                 rng.GetBytes(buffer);
                 return 0; // Success with fallback
             }
-            
+
             return result; // SGX success
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating secure random bytes, using system fallback");
-            
+
             // Final fallback to system RNG
-            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
             rng.GetBytes(buffer);
             return 0; // Success with fallback
         }
@@ -523,33 +511,33 @@ public partial class EnclaveWrapper
         {
             var keyId = Guid.NewGuid().ToString();
             var createdAt = DateTimeOffset.UtcNow;
-            
+
             KeyData keyData;
-            
+
             switch (keyType.ToUpper())
             {
                 case "ECDSA":
                     keyData = GenerateECDSAKey(keyId, keySize, createdAt);
                     break;
-                    
+
                 case "RSA":
                     keyData = GenerateRSAKey(keyId, keySize, createdAt);
                     break;
-                    
+
                 case "AES":
                     keyData = GenerateAESKey(keyId, keySize, createdAt);
                     break;
-                    
+
                 default:
                     _logger.LogWarning("Unknown key type {KeyType}, defaulting to ECDSA", keyType);
                     keyData = GenerateECDSAKey(keyId, keySize, createdAt);
                     break;
             }
-            
+
             // Store in secure storage
             if (StoreKeyInSecureStorage(keyData))
             {
-                _logger.LogInformation("Generated and stored {KeyType} key {KeyId} (size: {KeySize})", 
+                _logger.LogInformation("Generated and stored {KeyType} key {KeyId} (size: {KeySize})",
                     keyType, keyId, keySize);
                 return keyData;
             }
@@ -573,22 +561,21 @@ public partial class EnclaveWrapper
     {
         // Use SGX-backed secure random generation
         var secureRandom = GenerateSecureRandomBytes(32); // Seed for key generation
-        
-        using var ecdsa = keySize switch
+
         {
             256 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256),
             384 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP384),
             521 => System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP521),
             _ => throw new ArgumentException($"Unsupported ECDSA key size: {keySize}")
         };
-        
+
         // Generate key pair
         var privateKey = ecdsa.ExportECPrivateKey();
         var publicKey = ecdsa.ExportSubjectPublicKeyInfo();
-        
+
         // Securely clear the ECDSA instance
         ecdsa.Clear();
-        
+
         return new KeyData
         {
             KeyId = keyId,
@@ -610,15 +597,14 @@ public partial class EnclaveWrapper
         {
             throw new ArgumentException($"Invalid RSA key size: {keySize}. Must be between 2048-4096 and divisible by 8.");
         }
-        
-        using var rsa = System.Security.Cryptography.RSA.Create(keySize);
-        
+
+
         var privateKey = rsa.ExportRSAPrivateKey();
         var publicKey = rsa.ExportSubjectPublicKeyInfo();
-        
+
         // Securely clear the RSA instance
         rsa.Clear();
-        
+
         return new KeyData
         {
             KeyId = keyId,
@@ -640,10 +626,10 @@ public partial class EnclaveWrapper
         {
             throw new ArgumentException($"Invalid AES key size: {keySize}. Must be 128, 192, or 256.");
         }
-        
+
         var keySizeBytes = keySize / 8;
         var symmetricKey = GenerateSecureRandomBytes(keySizeBytes);
-        
+
         return new KeyData
         {
             KeyId = keyId,
@@ -667,31 +653,29 @@ public partial class EnclaveWrapper
         {
             throw new ArgumentException($"Invalid random bytes length: {length}");
         }
-        
+
         try
         {
             // Use the SGX-backed random generation from Occlum enclave
             var randomBytes = new byte[length];
             var result = GenerateRandomBytes(randomBytes);
-            
+
             if (result != 0)
             {
                 _logger.LogWarning("SGX random generation failed with code {Result}, falling back to system RNG", result);
-                
+
                 // Fallback to system RNG if SGX fails
-                using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
                 rng.GetBytes(randomBytes);
             }
-            
+
             return randomBytes;
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Error generating secure random bytes, using system fallback");
-            
+
             // Final fallback to system RNG
             var fallbackBytes = new byte[length];
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
             rng.GetBytes(fallbackBytes);
             return fallbackBytes;
         }
@@ -741,22 +725,21 @@ public partial class EnclaveWrapper
         try
         {
             // Use AES-256-GCM for authenticated encryption
-            using var aes = System.Security.Cryptography.AesGcm.Create();
             var processedKey = key.Length == 32 ? key : DeriveKey(key, 32);
-            
+
             // Generate secure random nonce using SGX
             var nonce = GenerateSecureRandomBytes(12); // GCM nonce is 96 bits
             var ciphertext = new byte[data.Length];
             var tag = new byte[16]; // GCM tag is 128 bits
-            
+
             aes.Encrypt(nonce, data, ciphertext, tag, null);
-            
+
             // Combine nonce + ciphertext + tag
             var result = new byte[nonce.Length + ciphertext.Length + tag.Length];
             Array.Copy(nonce, 0, result, 0, nonce.Length);
             Array.Copy(ciphertext, 0, result, nonce.Length, ciphertext.Length);
             Array.Copy(tag, 0, result, nonce.Length + ciphertext.Length, tag.Length);
-            
+
             _logger.LogDebug("Successfully encrypted {DataLength} bytes", data.Length);
             return result;
         }
@@ -788,17 +771,16 @@ public partial class EnclaveWrapper
             var nonce = new byte[12];
             var tag = new byte[16];
             var ciphertext = new byte[data.Length - 28];
-            
+
             Array.Copy(data, 0, nonce, 0, 12);
             Array.Copy(data, 12, ciphertext, 0, ciphertext.Length);
             Array.Copy(data, 12 + ciphertext.Length, tag, 0, 16);
 
-            using var aes = System.Security.Cryptography.AesGcm.Create();
             var processedKey = key.Length == 32 ? key : DeriveKey(key, 32);
-            
+
             var plaintext = new byte[ciphertext.Length];
             aes.Decrypt(nonce, ciphertext, tag, plaintext, null);
-            
+
             _logger.LogDebug("Successfully decrypted {DataLength} bytes", ciphertext.Length);
             return plaintext;
         }
@@ -837,7 +819,6 @@ public partial class EnclaveWrapper
             else
             {
                 // Fallback to HMAC-SHA256 for symmetric keys
-                using var hmac = new System.Security.Cryptography.HMACSHA256(key);
                 var signature = hmac.ComputeHash(data);
                 _logger.LogDebug("Successfully signed data with HMAC-SHA256 ({DataLength} bytes)", data.Length);
                 return signature;
@@ -897,7 +878,6 @@ public partial class EnclaveWrapper
         signature = Array.Empty<byte>();
         try
         {
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportECPrivateKey(privateKey, out _);
             signature = ecdsa.SignData(data, System.Security.Cryptography.HashAlgorithmName.SHA256);
             return true;
@@ -913,7 +893,6 @@ public partial class EnclaveWrapper
         signature = Array.Empty<byte>();
         try
         {
-            using var rsa = System.Security.Cryptography.RSA.Create();
             rsa.ImportRSAPrivateKey(privateKey, out _);
             signature = rsa.SignData(data, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
             return true;
@@ -928,7 +907,6 @@ public partial class EnclaveWrapper
     {
         try
         {
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportSubjectPublicKeyInfo(publicKey, out _);
             return ecdsa.VerifyData(data, signature, System.Security.Cryptography.HashAlgorithmName.SHA256);
         }
@@ -942,7 +920,6 @@ public partial class EnclaveWrapper
     {
         try
         {
-            using var rsa = System.Security.Cryptography.RSA.Create();
             rsa.ImportSubjectPublicKeyInfo(publicKey, out _);
             return rsa.VerifyData(data, signature, System.Security.Cryptography.HashAlgorithmName.SHA256, System.Security.Cryptography.RSASignaturePadding.Pkcs1);
         }
@@ -956,9 +933,8 @@ public partial class EnclaveWrapper
     {
         try
         {
-            using var hmac = new System.Security.Cryptography.HMACSHA256(key);
             var expectedSignature = hmac.ComputeHash(data);
-            
+
             // Constant-time comparison
             if (signature.Length != expectedSignature.Length)
                 return false;
@@ -991,7 +967,7 @@ public partial class EnclaveWrapper
         // Use HKDF for proper key derivation (preferred over PBKDF2 for key derivation)
         var salt = Encoding.UTF8.GetBytes("neo-service-layer-hkdf-salt-v1");
         var info = Encoding.UTF8.GetBytes("neo-encryption-key-derivation");
-        
+
         var derivedKey = new byte[targetLength];
         System.Security.Cryptography.HKDF.DeriveKey(
             System.Security.Cryptography.HashAlgorithmName.SHA256,
@@ -999,7 +975,7 @@ public partial class EnclaveWrapper
             derivedKey,
             salt,
             info);
-        
+
         return derivedKey;
     }
 

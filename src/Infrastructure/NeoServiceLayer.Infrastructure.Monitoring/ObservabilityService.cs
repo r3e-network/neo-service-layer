@@ -7,6 +7,9 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Infrastructure.Monitoring;
 
@@ -33,16 +36,16 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     {
         _meter = new Meter("NeoServiceLayer.Observability", "1.0.0");
         _activitySource = new ActivitySource("NeoServiceLayer.Tracing", "1.0.0");
-        
+
         // Add observability capability
         AddCapability<IObservabilityService>();
-        
+
         // Set metadata
         SetMetadata("MeterName", "NeoServiceLayer.Observability");
         SetMetadata("TracingEnabled", true);
         SetMetadata("MetricsEnabled", true);
         SetMetadata("HealthChecksEnabled", true);
-        
+
         // Initialize core metrics
         InitializeCoreMetrics();
     }
@@ -53,7 +56,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         try
         {
             // Update metric value
-            _metricValues.AddOrUpdate(name, 
+            _metricValues.AddOrUpdate(name,
                 new MetricValue { Value = value, Timestamp = DateTime.UtcNow, Tags = tags ?? new Dictionary<string, string>() },
                 (key, existing) =>
                 {
@@ -65,9 +68,9 @@ public class ObservabilityService : ServiceBase, IObservabilityService
                 });
 
             // Record to histogram for analysis
-            var histogram = _histograms.GetOrAdd(name, _ => 
+            var histogram = _histograms.GetOrAdd(name, _ =>
                 _meter.CreateHistogram<double>(name, "value", $"Histogram for {name}"));
-            
+
             if (tags != null && tags.Count > 0)
             {
                 var tagPairs = new KeyValuePair<string, object?>[tags.Count];
@@ -96,9 +99,9 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     {
         try
         {
-            var counter = _counters.GetOrAdd(name, _ => 
+            var counter = _counters.GetOrAdd(name, _ =>
                 _meter.CreateCounter<long>(name, "count", $"Counter for {name}"));
-            
+
             if (tags != null && tags.Count > 0)
             {
                 var tagPairs = new KeyValuePair<string, object?>[tags.Count];
@@ -139,7 +142,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         try
         {
             var activity = _activitySource.StartActivity(operationName);
-            
+
             if (activity != null && tags != null)
             {
                 foreach (var tag in tags)
@@ -172,7 +175,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         {
             activity.SetTag("operation.success", success.ToString());
             activity.SetTag("operation.end_time", DateTime.UtcNow.ToString("O"));
-            
+
             if (!success && !string.IsNullOrEmpty(error))
             {
                 activity.SetTag("error.message", error);
@@ -199,7 +202,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
                 ["service"] = Name
             });
 
-            Logger.LogTrace("Completed activity {OperationName} with ID {ActivityId}, success: {Success}, duration: {Duration}ms", 
+            Logger.LogTrace("Completed activity {OperationName} with ID {ActivityId}, success: {Success}, duration: {Duration}ms",
                 activity.OperationName, activity.Id, success, duration.TotalMilliseconds);
         }
         catch (Exception ex)
@@ -215,17 +218,16 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     /// <inheritdoc/>
     public async Task<T> TraceOperationAsync<T>(string operationName, Func<Task<T>> operation, Dictionary<string, string>? tags = null)
     {
-        using var activity = StartActivity(operationName, tags);
-        
+
         try
         {
             var startTime = DateTime.UtcNow;
             var result = await operation();
             var duration = DateTime.UtcNow - startTime;
-            
+
             // Track performance metrics
             TrackPerformanceMetric(operationName, duration, true);
-            
+
             CompleteActivity(activity, success: true);
             return result;
         }
@@ -233,7 +235,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         {
             var duration = DateTime.UtcNow - (activity?.StartTimeUtc ?? DateTime.UtcNow);
             TrackPerformanceMetric(operationName, duration, false);
-            
+
             CompleteActivity(activity, success: false, error: ex.Message);
             throw;
         }
@@ -255,9 +257,9 @@ public class ObservabilityService : ServiceBase, IObservabilityService
             };
 
             var jsonData = JsonSerializer.Serialize(eventData);
-            
+
             Logger.Log(logLevel, "StructuredEvent: {JsonData}", jsonData);
-            
+
             // Increment event counter
             IncrementCounter($"events.{eventName}", 1, new Dictionary<string, string>
             {
@@ -275,7 +277,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     public Dictionary<string, object> GetMetrics(string? namePrefix = null)
     {
         var result = new Dictionary<string, object>();
-        
+
         try
         {
             foreach (var kvp in _metricValues)
@@ -315,7 +317,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         {
             Logger.LogError(ex, "Failed to get metrics");
         }
-        
+
         return result;
     }
 
@@ -360,14 +362,14 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     public AlertResult CheckAlerts()
     {
         var alerts = new List<Alert>();
-        
+
         try
         {
             // Check performance alerts
             foreach (var kvp in _performanceMetrics)
             {
                 var metrics = kvp.Value;
-                
+
                 // High latency alert
                 if (metrics.AverageLatency > 5000) // 5 seconds
                 {
@@ -385,7 +387,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
                         }
                     });
                 }
-                
+
                 // High error rate alert
                 if (metrics.TotalCalls > 10 && (double)metrics.FailedCalls / metrics.TotalCalls > 0.1) // 10% error rate
                 {
@@ -444,10 +446,10 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         try
         {
             Logger.LogInformation("Initializing observability service...");
-            
+
             // Set initial health status
             SetHealthStatus(Name, true, "Service initialized");
-            
+
             Logger.LogInformation("Observability service initialized successfully");
             return true;
         }
@@ -483,12 +485,12 @@ public class ObservabilityService : ServiceBase, IObservabilityService
         {
             // Check internal health
             var unhealthyComponents = _healthStatuses.Values.Count(h => !h.IsHealthy);
-            
+
             if (unhealthyComponents > _healthStatuses.Count / 2)
             {
                 return ServiceHealth.Unhealthy;
             }
-            
+
             if (unhealthyComponents > 0)
             {
                 return ServiceHealth.Degraded;
@@ -511,9 +513,9 @@ public class ObservabilityService : ServiceBase, IObservabilityService
     private void InitializeCoreMetrics()
     {
         // Create observable gauges for system metrics
-        _gauges.TryAdd("system.memory", _meter.CreateObservableGauge("system_memory_bytes", "bytes", 
+        _gauges.TryAdd("system.memory", _meter.CreateObservableGauge("system_memory_bytes", "bytes",
             "System memory usage", () => GC.GetTotalMemory(false)));
-            
+
         _gauges.TryAdd("system.gc_collections", _meter.CreateObservableGauge("system_gc_collections", "count",
             "GC collection count", () => GC.CollectionCount(0) + GC.CollectionCount(1) + GC.CollectionCount(2)));
     }
@@ -538,12 +540,12 @@ public class ObservabilityService : ServiceBase, IObservabilityService
                 existing.MinLatency = Math.Min(existing.MinLatency, duration.TotalMilliseconds);
                 existing.MaxLatency = Math.Max(existing.MaxLatency, duration.TotalMilliseconds);
                 existing.LastUpdated = DateTime.UtcNow;
-                
+
                 if (success)
                     existing.SuccessfulCalls++;
                 else
                     existing.FailedCalls++;
-                    
+
                 return existing;
             });
     }
@@ -560,7 +562,7 @@ public class ObservabilityService : ServiceBase, IObservabilityService
             _meter?.Dispose();
             _activitySource?.Dispose();
         }
-        
+
         base.Dispose(disposing);
     }
 }
@@ -588,6 +590,6 @@ internal class PerformanceMetrics
     public double MinLatency { get; set; }
     public double MaxLatency { get; set; }
     public DateTime LastUpdated { get; set; }
-    
+
     public double AverageLatency => TotalCalls > 0 ? TotalLatency / TotalCalls : 0;
 }

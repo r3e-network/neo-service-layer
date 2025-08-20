@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Backup.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Backup;
 
@@ -626,16 +632,6 @@ internal class RestoreOperation
     public string ErrorMessage { get; set; } = string.Empty;
 }
 
-/// <summary>
-/// Restore status enumeration.
-/// </summary>
-internal enum RestoreStatus
-{
-    Pending,
-    Running,
-    Completed,
-    Failed
-}
 
 /// <summary>
 /// Statistics for backup service.

@@ -1,4 +1,3 @@
-﻿using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.Compliance;
@@ -13,6 +12,14 @@ using NeoServiceLayer.Services.SocialRecovery;
 using NeoServiceLayer.Services.Voting;
 using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.Tee.Enclave;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.HealthChecks;
 
@@ -172,7 +179,7 @@ public class BlockchainServicesHealthCheck : IHealthCheck
             // Check Smart Contracts Service
             try
             {
-                var deployedContracts = await _smartContractsService.ListAllDeployedContractsAsync(BlockchainType.NeoN3);
+                var deployedContracts = await _smartContractsService.ListAllDeployedContractsAsync(BlockchainType.NeoN3, cancellationToken);
                 healthChecks["SmartContracts"] = deployedContracts != null;
             }
             catch (Exception ex)

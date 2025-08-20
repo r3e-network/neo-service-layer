@@ -1,8 +1,6 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
-use std::ffi::CStr;
-use std::os::raw::{c_char, c_int};
-use std::ptr;
+use std::os::raw::c_int;
 use std::sync::{Arc, Mutex};
 use tokio::runtime::Runtime;
 use log::{info, warn, error};
@@ -221,7 +219,8 @@ impl EncaveRuntime {
 }
 
 // Global runtime instance for C FFI
-static mut RUNTIME: Option<Arc<Mutex<EncaveRuntime>>> = None;
+use std::sync::OnceLock;
+static RUNTIME: OnceLock<Arc<Mutex<EncaveRuntime>>> = OnceLock::new();
 
 /// Initialize the Occlum enclave runtime.
 #[no_mangle]
@@ -236,9 +235,7 @@ pub extern "C" fn occlum_init() -> c_int {
         
         match runtime {
             Ok(rt) => {
-                unsafe {
-                    RUNTIME = Some(Arc::new(Mutex::new(rt)));
-                }
+                let _ = RUNTIME.set(Arc::new(Mutex::new(rt)));
                 0 // Success
             }
             Err(e) => {
@@ -253,27 +250,24 @@ pub extern "C" fn occlum_init() -> c_int {
 #[no_mangle]
 pub extern "C" fn occlum_destroy() -> c_int {
     std::panic::catch_unwind(|| {
-        unsafe {
-            if let Some(runtime) = RUNTIME.take() {
-                // Properly shutdown the runtime and all services
-                let rt = tokio::runtime::Runtime::new().unwrap();
-                rt.block_on(async {
-                    if let Ok(mut runtime_guard) = runtime.lock() {
-                        // Shutdown all services gracefully
-                        if let Err(e) = runtime_guard.shutdown().await {
-                            error!("Error during runtime shutdown: {}", e);
-                        }
+        if let Some(runtime) = RUNTIME.get() {
+            // Properly shutdown the runtime and all services
+            let rt = tokio::runtime::Runtime::new().unwrap();
+            rt.block_on(async {
+                if let Ok(mut runtime_guard) = runtime.lock() {
+                    // Shutdown all services gracefully
+                    if let Err(e) = runtime_guard.shutdown().await {
+                        error!("Error during runtime shutdown: {}", e);
                     }
-                });
-                
-                // Drop the runtime after proper shutdown
-                drop(runtime);
-                info!("Enclave runtime destroyed successfully");
-                0 // Success
-            } else {
-                warn!("Runtime not initialized during destroy");
-                -1 // Error - not initialized
-            }
+                }
+            });
+            
+            // Runtime will be dropped when program exits
+            info!("Enclave runtime destroyed successfully");
+            0 // Success
+        } else {
+            warn!("Runtime not initialized during destroy");
+            -1 // Error - not initialized
         }
     }).unwrap_or_else(|e| {
         error!("Panic during runtime destruction: {:?}", e);
@@ -282,12 +276,12 @@ pub extern "C" fn occlum_destroy() -> c_int {
 }
 
 /// Helper function to safely get runtime reference.
+#[allow(dead_code)]
 fn with_runtime<F, R>(f: F) -> c_int 
 where
     F: FnOnce(&EncaveRuntime) -> Result<R, Box<dyn std::error::Error>>,
 {
-    unsafe {
-        if let Some(runtime_arc) = &RUNTIME {
+    if let Some(runtime_arc) = RUNTIME.get() {
             match runtime_arc.lock() {
                 Ok(runtime) => {
                     match f(&*runtime) {
@@ -303,15 +297,16 @@ where
                     -2
                 }
             }
-        } else {
-            error!("Runtime not initialized");
-            -3
-        }
+    } else {
+        error!("Runtime not initialized");
+        -3
     }
 }
 
 /// Helper function to convert C string to Rust string.
-unsafe fn c_str_to_string(ptr: *const c_char) -> Result<String, Box<dyn std::error::Error>> {
+#[allow(dead_code)]
+unsafe fn c_str_to_string(ptr: *const std::os::raw::c_char) -> Result<String, Box<dyn std::error::Error>> {
+    use std::ffi::CStr;
     if ptr.is_null() {
         return Ok(String::new());
     }
@@ -320,12 +315,14 @@ unsafe fn c_str_to_string(ptr: *const c_char) -> Result<String, Box<dyn std::err
 }
 
 /// Helper function to write result to C buffer.
+#[allow(dead_code)]
 unsafe fn write_result_to_buffer(
     result: &str,
-    buffer: *mut c_char,
+    buffer: *mut std::os::raw::c_char,
     buffer_size: usize,
     actual_size: *mut usize,
 ) -> c_int {
+    use std::ptr;
     let result_bytes = result.as_bytes();
     let write_size = std::cmp::min(result_bytes.len(), buffer_size.saturating_sub(1));
     

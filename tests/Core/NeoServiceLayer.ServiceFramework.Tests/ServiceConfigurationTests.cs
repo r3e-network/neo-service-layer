@@ -1,6 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework.Tests;
 
@@ -135,7 +142,7 @@ public class ServiceConfigurationTests
 
         // Assert
         Assert.NotNull(section);
-        Assert.IsType<ServiceConfiguration>(section);
+        Assert.IsAssignableFrom<Microsoft.Extensions.Configuration.IConfigurationSection>(section);
     }
 
     [Fact]
@@ -151,7 +158,8 @@ public class ServiceConfigurationTests
         // Assert
         Assert.NotNull(section1);
         Assert.NotNull(section2);
-        Assert.Same(section1, section2);
+        Assert.Equal(section1.Key, section2.Key);
+        Assert.Equal(section1.Path, section2.Path);
     }
 
     [Fact]

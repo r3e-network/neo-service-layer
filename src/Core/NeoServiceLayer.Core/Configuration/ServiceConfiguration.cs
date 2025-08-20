@@ -1,9 +1,62 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Configuration;
+
+/// <summary>
+/// Service configuration interface for secure configuration management.
+/// </summary>
+public interface IServiceConfiguration
+{
+    /// <summary>
+    /// Gets a configuration value for the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration value.</typeparam>
+    /// <param name="key">The configuration key.</param>
+    /// <param name="defaultValue">The default value if the key is not found.</param>
+    /// <returns>The configuration value.</returns>
+    T GetValue<T>(string key, T defaultValue = default!);
+
+    /// <summary>
+    /// Sets a configuration value for the specified key.
+    /// </summary>
+    /// <typeparam name="T">The type of the configuration value.</typeparam>
+    /// <param name="key">The configuration key.</param>
+    /// <param name="value">The configuration value.</param>
+    void SetValue<T>(string key, T value);
+
+    /// <summary>
+    /// Checks if a configuration value exists for the specified key.
+    /// </summary>
+    /// <param name="key">The configuration key.</param>
+    /// <returns>True if the key exists; otherwise, false.</returns>
+    bool HasValue(string key);
+
+    /// <summary>
+    /// Gets a configuration section for the specified key.
+    /// </summary>
+    /// <param name="key">The section key.</param>
+    /// <returns>The configuration section.</returns>
+    IConfigurationSection GetSection(string key);
+
+    /// <summary>
+    /// Reloads the configuration from its sources.
+    /// </summary>
+    void Reload();
+
+    /// <summary>
+    /// Gets all configuration values from a section.
+    /// </summary>
+    /// <param name="sectionKey">The section key, or null for root.</param>
+    /// <returns>A dictionary of configuration values.</returns>
+    IDictionary<string, object> GetAllValues(string? sectionKey = null);
+}
 
 /// <summary>
 /// Exception thrown when configuration operations fail.

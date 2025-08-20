@@ -1,5 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events
 {
@@ -44,7 +48,7 @@ namespace NeoServiceLayer.Core.Events
             InitiatedBy = initiatedBy;
             CausationId = causationId;
             CorrelationId = correlationId ?? Guid.NewGuid();
-            Metadata = new Dictionary& lt; string, object&gt; ();
+            Metadata = new Dictionary<string, object>();
         }
 
         public Guid EventId { get; }
@@ -65,7 +69,7 @@ namespace NeoServiceLayer.Core.Events
 
         public string InitiatedBy { get; }
 
-        public IDictionary&lt;string, object&gt; Metadata { get; }
+        public IDictionary<string, object> Metadata { get; }
 
         /// <summary>
         /// Adds metadata to the event. Can only be called during construction.

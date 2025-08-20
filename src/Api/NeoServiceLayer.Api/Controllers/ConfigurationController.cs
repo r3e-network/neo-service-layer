@@ -1,9 +1,15 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration;
 using NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -201,7 +207,7 @@ public class ConfigurationController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var exportRequest = new ExportConfigurationRequest { Format = ConfigurationExportFormat.Json };
+            var exportRequest = new ExportConfigurationRequest { Format = "json" };
             var result = await _configurationService.ExportConfigurationAsync(exportRequest, blockchain);
 
             return Ok(CreateResponse(result, "Configuration backup created successfully"));
@@ -239,7 +245,7 @@ public class ConfigurationController : BaseApiController
             var importRequest = new ImportConfigurationRequest
             {
                 ConfigurationData = string.Empty, // ConfigurationRestoreRequest doesn't have Data property
-                Format = ConfigurationExportFormat.Json
+                Format = "json"
             };
             var result = await _configurationService.ImportConfigurationAsync(importRequest, blockchain);
 

@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -8,33 +7,42 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.NetworkSecurity.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.NetworkSecurity;
 
 /// <summary>
 /// Service providing secure network communication capabilities for SGX enclaves.
 /// </summary>
-public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INetworkSecurityService
+public partial class NetworkSecurityService : ServiceFramework.EnclaveBlockchainServiceBase, INetworkSecurityService
 {
     private new readonly IEnclaveManager _enclaveManager;
-    private readonly IServiceConfiguration _configuration;
+    private readonly CoreConfig _configuration;
     private readonly IPersistentStorageProvider? _persistentStorage;
     private readonly ConcurrentDictionary<string, SecureChannel> _channels = new();
     private readonly ConcurrentDictionary<string, FirewallRule> _firewallRules = new();
     private readonly ConcurrentDictionary<string, NetworkStatistics> _statistics = new();
     private readonly List<SecurityEvent> _securityEvents = new();
     private readonly object _eventLock = new();
+    
+    // Cryptographic algorithm instances
+    private readonly ECDsa ecdsa = ECDsa.Create();
+    private readonly RSA rsa = RSA.Create();
+    private readonly SHA256 sha256 = SHA256.Create();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="NetworkSecurityService"/> class.
     /// </summary>
     public NetworkSecurityService(
         IEnclaveManager enclaveManager,
-        IServiceConfiguration configuration,
+        CoreConfig configuration,
         ILogger<NetworkSecurityService> logger,
         IPersistentStorageProvider? persistentStorage = null)
         : base("NetworkSecurity", "Secure Network Communication Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
@@ -111,7 +119,6 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
             var channelId = $"ch_{Guid.NewGuid():N}";
 
             // Generate key pair for the channel
-            using var ecdsa = ECDsa.Create(ECCurve.NamedCurves.nistP384);
             var publicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
             var channel = new SecureChannel
@@ -474,7 +481,6 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
     {
         try
         {
-            using var rsa = RSA.Create();
 
             // Import the public key
             var publicKeyBytes = Convert.FromBase64String(publicKey);
@@ -497,7 +503,6 @@ public partial class NetworkSecurityService : EnclaveBlockchainServiceBase, INet
     {
         try
         {
-            using var rsa = RSA.Create();
 
             // Import the private key
             var privateKeyBytes = Convert.FromBase64String(privateKey);

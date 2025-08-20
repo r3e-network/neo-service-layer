@@ -1,20 +1,27 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Automation.Models;
+using NeoServiceLayer.Services.Automation.Services;
+using ServiceFrameworkBase = NeoServiceLayer.ServiceFramework.ServiceBase;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Automation.Services
 {
     /// <summary>
     /// Service for evaluating automation conditions with extensible handlers.
     /// </summary>
-    public class ConditionEvaluationService : IConditionEvaluationService
+    public class ConditionEvaluationService : ServiceFrameworkBase, IConditionEvaluationService
     {
         private readonly ILogger<ConditionEvaluationService> _logger;
         private readonly Dictionary<AutomationConditionType, IConditionHandler> _handlers;
 
         public ConditionEvaluationService(ILogger<ConditionEvaluationService> logger)
+            : base("ConditionEvaluationService", "ConditionEvaluationService service", "1.0.0", logger)
         {
             _logger = logger;
             _handlers = new Dictionary<AutomationConditionType, IConditionHandler>();
@@ -99,6 +106,39 @@ namespace NeoServiceLayer.Services.Automation.Services
             await Task.CompletedTask.ConfigureAwait(false);
             return result;
         }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            _logger.LogDebug("Initializing Condition Evaluation Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            _logger.LogInformation("Starting Condition Evaluation Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            _logger.LogInformation("Stopping Condition Evaluation Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            try
+            {
+                var handlerCount = _handlers.Count;
+                _logger.LogDebug("Condition Evaluation Service health check: {HandlerCount} handlers loaded", handlerCount);
+                return await Task.FromResult(ServiceHealth.Healthy);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Condition Evaluation Service health check failed");
+                return await Task.FromResult(ServiceHealth.Unhealthy);
+            }
+        }
     }
 
     /// <summary>
@@ -106,11 +146,11 @@ namespace NeoServiceLayer.Services.Automation.Services
     /// </summary>
     public abstract class ConditionHandlerBase : IConditionHandler
     {
-        protected readonly ILogger _logger;
+        protected readonly ILogger Logger;
 
         protected ConditionHandlerBase(ILogger logger)
         {
-            _logger = logger;
+            Logger = logger;
         }
 
         public abstract AutomationConditionType SupportedType { get; }
@@ -144,5 +184,6 @@ namespace NeoServiceLayer.Services.Automation.Services
 
             return string.Compare(actual, expected, StringComparison.OrdinalIgnoreCase);
         }
+
     }
 }

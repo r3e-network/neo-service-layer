@@ -1,25 +1,263 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Storage.Models;
+using ServiceFrameworkConfig = NeoServiceLayer.ServiceFramework.IServiceConfiguration;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
 /// <summary>
 /// Core implementation of the Storage service.
 /// </summary>
-public partial class StorageService : EnclaveBlockchainServiceBase, IStorageService, IDisposable
+public partial class StorageService : ServiceFramework.EnclaveBlockchainServiceBase, IStorageService, IDisposable
 {
     private new readonly IEnclaveManager _enclaveManager;
-    private readonly IServiceConfiguration _configuration;
+    private readonly ServiceFrameworkConfig _configuration;
     private readonly Dictionary<string, StorageMetadata> _metadataCache = new();
     private int _requestCount;
     private int _successCount;
     private int _failureCount;
     private DateTime _lastRequestTime;
+    private bool _isRunning;
+
+    /// <summary>
+    /// Gets a value indicating whether the service is running.
+    /// </summary>
+    public bool IsRunning => _isRunning;
+
+    // LoggerMessage delegates for performance optimization
+    private static readonly Action<ILogger, Exception?> _persistentMetadataStorageNotAvailable =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(9001, "PersistentMetadataStorageNotAvailable"),
+            "Persistent metadata storage not available, using in-memory cache only");
+
+    private static readonly Action<ILogger, Exception?> _initializingPersistentMetadataStorage =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9002, "InitializingPersistentMetadataStorage"),
+            "Initializing persistent metadata storage...");
+
+    private static readonly Action<ILogger, Exception?> _persistentMetadataStorageInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9003, "PersistentMetadataStorageInitialized"),
+            "Persistent metadata storage initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _persistentMetadataStorageInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9004, "PersistentMetadataStorageInitializationFailed"),
+            "Error initializing persistent metadata storage");
+
+    private static readonly Action<ILogger, Exception?> _loadingMetadataFromPersistentStorage =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9005, "LoadingMetadataFromPersistentStorage"),
+            "Loading metadata from persistent storage...");
+
+    private static readonly Action<ILogger, int, Exception?> _metadataEntriesLoadedFromPersistentStorage =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(9006, "MetadataEntriesLoadedFromPersistentStorage"),
+            "Loaded {Count} metadata entries from persistent storage");
+
+    private static readonly Action<ILogger, Exception> _loadMetadataFromPersistentStorageFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9007, "LoadMetadataFromPersistentStorageFailed"),
+            "Error loading metadata from persistent storage");
+
+    private static readonly Action<ILogger, string, Exception> _persistMetadataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9008, "PersistMetadataFailed"),
+            "Error persisting metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _removePersistedMetadataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9009, "RemovePersistedMetadataFailed"),
+            "Error removing persisted metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _updateMetadataIndexesFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9010, "UpdateMetadataIndexesFailed"),
+            "Error updating metadata indexes for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _removeMetadataIndexesFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9011, "RemoveMetadataIndexesFailed"),
+            "Error removing metadata indexes for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _queryMetadataByOwnerFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9012, "QueryMetadataByOwnerFailed"),
+            "Error querying metadata by owner {Owner}");
+
+    private static readonly Action<ILogger, Exception> _persistStorageStatisticsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9013, "PersistStorageStatisticsFailed"),
+            "Error persisting storage statistics");
+
+    private static readonly Action<ILogger, Exception?> _performingMetadataMaintenance =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9014, "PerformingMetadataMaintenance"),
+            "Performing metadata maintenance...");
+
+    private static readonly Action<ILogger, string, Exception?> _metadataStorageValidationFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9015, "MetadataStorageValidationFailed"),
+            "Metadata storage validation failed: {Errors}");
+
+    private static readonly Action<ILogger, Exception?> _metadataMaintenanceCompleted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9016, "MetadataMaintenanceCompleted"),
+            "Metadata maintenance completed successfully");
+
+    private static readonly Action<ILogger, Exception> _metadataMaintenanceFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9017, "MetadataMaintenanceFailed"),
+            "Error during metadata maintenance");
+
+    private static readonly Action<ILogger, Exception?> _storageServiceInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9018, "StorageServiceInitializing"),
+            "Initializing Storage Service...");
+
+    private static readonly Action<ILogger, Exception?> _storageServiceInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9019, "StorageServiceInitialized"),
+            "Storage Service initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _storageServiceInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9020, "StorageServiceInitializationFailed"),
+            "Error initializing Storage Service");
+
+    private static readonly Action<ILogger, Exception?> _storageServiceEnclaveInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9021, "StorageServiceEnclaveInitializing"),
+            "Initializing Storage Service enclave...");
+
+    private static readonly Action<ILogger, Exception> _storageServiceEnclaveInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9022, "StorageServiceEnclaveInitializationFailed"),
+            "Error initializing Storage Service enclave.");
+
+    private static readonly Action<ILogger, Exception?> _storageServiceStarting =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9023, "StorageServiceStarting"),
+            "Starting Storage Service...");
+
+    private static readonly Action<ILogger, Exception> _storageServiceStartFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9024, "StorageServiceStartFailed"),
+            "Error starting Storage Service.");
+
+    private static readonly Action<ILogger, Exception?> _storageServiceStopping =
+        LoggerMessage.Define(LogLevel.Information, new EventId(9025, "StorageServiceStopping"),
+            "Stopping Storage Service...");
+
+    private static readonly Action<ILogger, Exception> _storageServiceStopFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9026, "StorageServiceStopFailed"),
+            "Error stopping Storage Service.");
+
+    private static readonly Action<ILogger, int, Exception?> _metadataCacheRefreshed =
+        LoggerMessage.Define<int>(LogLevel.Debug, new EventId(9027, "MetadataCacheRefreshed"),
+            "Refreshed metadata cache with {Count} items");
+
+    private static readonly Action<ILogger, Exception> _metadataCacheRefreshFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(9028, "MetadataCacheRefreshFailed"),
+            "Failed to refresh metadata cache");
+
+    private static readonly Action<ILogger, Exception> _healthCheckFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(9029, "HealthCheckFailed"),
+            "Health check failed");
+
+    private static readonly Action<ILogger, int, string, Exception?> _keysListedWithPrefix =
+        LoggerMessage.Define<int, string>(LogLevel.Debug, new EventId(9030, "KeysListedWithPrefix"),
+            "Listed {Count} keys with prefix {Prefix}");
+
+    private static readonly Action<ILogger, string, Exception> _listKeysWithPrefixFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9031, "ListKeysWithPrefixFailed"),
+            "Failed to list keys with prefix {Prefix}");
+
+    // Data operations delegates
+    private static readonly Action<ILogger, string, long, Exception> _dataStorageFailed =
+        LoggerMessage.Define<string, long>(LogLevel.Error, new EventId(9032, "DataStorageFailed"),
+            "Failed to store data for key {Key} (size: {Size} bytes)");
+
+    private static readonly Action<ILogger, string, Exception?> _dataNotFoundWarning =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9033, "DataNotFoundWarning"),
+            "Data not found for key {Key}");
+
+    private static readonly Action<ILogger, string, long, Exception?> _dataStoredSuccessfully =
+        LoggerMessage.Define<string, long>(LogLevel.Information, new EventId(9034, "DataStoredSuccessfully"),
+            "Stored data for key {Key} (size: {Size} bytes)");
+
+    private static readonly Action<ILogger, string, Exception?> _dataNotFoundForRetrieval =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9035, "DataNotFoundForRetrieval"),
+            "Data not found for key {Key} during retrieval");
+
+    private static readonly Action<ILogger, string, Exception?> _dataRetrievedSuccessfully =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9036, "DataRetrievedSuccessfully"),
+            "Retrieved data for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _dataRetrievalFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9037, "DataRetrievalFailed"),
+            "Failed to retrieve data for key {Key}");
+
+    // Metadata operations delegates
+    private static readonly Action<ILogger, string, Exception> _getMetadataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9038, "GetMetadataFailed"),
+            "Failed to get metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _updateMetadataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9039, "UpdateMetadataFailed"),
+            "Failed to update metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _deleteMetadataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9040, "DeleteMetadataFailed"),
+            "Failed to delete metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _metadataNotFoundWarning =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9041, "MetadataNotFoundWarning"),
+            "Metadata not found for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _gettingMetadataForKey =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9042, "GettingMetadataForKey"),
+            "Getting metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _getMetadataForKeyFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9043, "GetMetadataForKeyFailed"),
+            "Failed to get metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _updatingMetadataForKey =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(9044, "UpdatingMetadataForKey"),
+            "Updating metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _updateMetadataForKeyFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9045, "UpdateMetadataForKeyFailed"),
+            "Failed to update metadata for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _metadataValidationWarning =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9046, "MetadataValidationWarning"),
+            "Metadata validation failed for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _metadataExceptionWarning =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9047, "MetadataExceptionWarning"),
+            "Exception occurred while processing metadata for key {Key}");
+
+    // Transaction operations delegates
+    private static readonly Action<ILogger, string, Exception?> _atomicTransactionStarted =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9048, "AtomicTransactionStarted"),
+            "Starting atomic transaction with ID {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception> _atomicTransactionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9049, "AtomicTransactionFailed"),
+            "Failed to execute atomic transaction with ID {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _operationInTransactionExecuted =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9050, "OperationInTransactionExecuted"),
+            "Executed operation in transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _operationInTransactionFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9051, "OperationInTransactionFailed"),
+            "Failed to execute operation in transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception> _transactionExecutionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9052, "TransactionExecutionFailed"),
+            "Failed to execute transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _batchTransactionOperationExecuted =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(9053, "BatchTransactionOperationExecuted"),
+            "Executed batch operation in transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _batchTransactionOperationFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(9054, "BatchTransactionOperationFailed"),
+            "Failed to execute batch operation in transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception> _batchTransactionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(9055, "BatchTransactionFailed"),
+            "Failed to execute batch transaction {TransactionId}");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="StorageService"/> class.
@@ -30,10 +268,10 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     /// <param name="persistentStorage">The persistent storage provider.</param>
     public StorageService(
         IEnclaveManager enclaveManager,
-        IServiceConfiguration configuration,
+        ServiceFrameworkConfig configuration,
         ILogger<StorageService> logger,
         IPersistentStorageProvider? persistentStorage = null)
-        : base("Storage", "Privacy-Preserving Data Storage Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+        : base("Storage", "Privacy-Preserving Data Storage Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         _enclaveManager = enclaveManager;
         _configuration = configuration;
@@ -57,12 +295,50 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
         AddRequiredDependency<IEnclaveService>("EnclaveManager", "1.0.0");
     }
 
+    /// <summary>
+    /// Initializes the Storage service.
+    /// </summary>
+    /// <returns>True if initialization was successful.</returns>
+    public new async Task<bool> InitializeAsync()
+    {
+        // Call the base class InitializeAsync which handles enclave initialization
+        return await base.InitializeAsync();
+    }
+
+    /// <summary>
+    /// Starts the Storage service.
+    /// </summary>
+    /// <returns>True if the service started successfully.</returns>
+    public async Task<bool> StartAsync()
+    {
+        var result = await OnStartAsync();
+        if (result)
+        {
+            _isRunning = true;
+        }
+        return result;
+    }
+
+    /// <summary>
+    /// Stops the Storage service.
+    /// </summary>
+    /// <returns>True if the service stopped successfully.</returns>
+    public async Task<bool> StopAsync()
+    {
+        var result = await OnStopAsync();
+        if (result)
+        {
+            _isRunning = false;
+        }
+        return result;
+    }
+
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
         try
         {
-            Logger.LogInformation("Initializing Storage Service...");
+            _storageServiceInitializing(Logger, null);
 
             // Initialize service-specific components
             await RefreshMetadataCacheAsync();
@@ -70,12 +346,12 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
             // Initialize persistent storage if available
             await InitializePersistentMetadataAsync();
 
-            Logger.LogInformation("Storage Service initialized successfully");
+            _storageServiceInitialized(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing Storage Service");
+            _storageServiceInitializationFailed(Logger, ex);
             return false;
         }
     }
@@ -85,13 +361,13 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     {
         try
         {
-            Logger.LogInformation("Initializing Storage Service enclave...");
+            _storageServiceEnclaveInitializing(Logger, null);
             await _enclaveManager.InitializeAsync();
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing Storage Service enclave.");
+            _storageServiceEnclaveInitializationFailed(Logger, ex);
             return false;
         }
     }
@@ -101,7 +377,7 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     {
         try
         {
-            Logger.LogInformation("Starting Storage Service...");
+            _storageServiceStarting(Logger, null);
 
             // Load existing storage metadata from the enclave
             await RefreshMetadataCacheAsync();
@@ -110,7 +386,7 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error starting Storage Service.");
+            _storageServiceStartFailed(Logger, ex);
             return false;
         }
     }
@@ -120,13 +396,13 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
     {
         try
         {
-            Logger.LogInformation("Stopping Storage Service...");
+            _storageServiceStopping(Logger, null);
             _metadataCache.Clear();
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error stopping Storage Service.");
+            _storageServiceStopFailed(Logger, ex);
             return Task.FromResult(false);
         }
     }
@@ -157,11 +433,11 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
                 }
             }
 
-            Logger.LogDebug("Refreshed metadata cache with {Count} items", _metadataCache.Count);
+            _metadataCacheRefreshed(Logger, _metadataCache.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to refresh metadata cache");
+            _metadataCacheRefreshFailed(Logger, ex);
         }
     }
 
@@ -284,7 +560,7 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Health check failed");
+            _healthCheckFailed(Logger, ex);
             return ServiceHealth.Unhealthy;
         }
     }
@@ -332,13 +608,13 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
             }
 
             RecordSuccess();
-            Logger.LogDebug("Listed {Count} keys with prefix {Prefix}", metadataList.Count, prefix);
+            _keysListedWithPrefix(Logger, metadataList.Count, prefix, null);
             return metadataList;
         }
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Failed to list keys with prefix {Prefix}", prefix);
+            _listKeysWithPrefixFailed(Logger, prefix, ex);
             throw;
         }
     }
@@ -364,4 +640,5 @@ public partial class StorageService : EnclaveBlockchainServiceBase, IStorageServ
         }
         base.Dispose(disposing);
     }
+
 }

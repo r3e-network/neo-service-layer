@@ -1,15 +1,21 @@
-﻿using System;
 using System.Security.Cryptography;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Blockchain;
+using CoreBlockchainType = NeoServiceLayer.Core.BlockchainType;
 using NeoServiceLayer.ServiceFramework;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
 
-// Use Infrastructure namespace for IBlockchainClientFactory
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Randomness;
 
@@ -22,62 +28,18 @@ public class RandomnessException : Exception
     public RandomnessException(string message, Exception innerException) : base(message, innerException) { }
 }
 
-/// <summary>
-/// Represents a verifiable random result.
-/// </summary>
-public class VerifiableRandomResult
-{
-    /// <summary>
-    /// Gets or sets the random value.
-    /// </summary>
-    public int Value { get; set; }
-
-    /// <summary>
-    /// Gets or sets the seed used for the random number generation.
-    /// </summary>
-    public string Seed { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the proof of the random number generation.
-    /// </summary>
-    public string Proof { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the timestamp of the random number generation.
-    /// </summary>
-    public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// Gets or sets the blockchain type.
-    /// </summary>
-    public BlockchainType BlockchainType { get; set; }
-
-    /// <summary>
-    /// Gets or sets the block height at which the randomness was generated.
-    /// </summary>
-    public long BlockHeight { get; set; }
-
-    /// <summary>
-    /// Gets or sets the block hash at which the randomness was generated.
-    /// </summary>
-    public string BlockHash { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the request ID.
-    /// </summary>
-    public string RequestId { get; set; } = string.Empty;
-}
 
 /// <summary>
 /// Implementation of the Randomness service.
 /// </summary>
-public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomnessService
+public partial class RandomnessService : ServiceFramework.EnclaveBlockchainServiceBase, IRandomnessService
 {
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IBlockchainClientFactory _blockchainClientFactory;
-    private readonly IServiceConfiguration _configuration;
+    private readonly CoreConfig _configuration;
     private readonly Dictionary<string, VerifiableRandomResult> _results = new();
     private readonly IServiceProvider? _serviceProvider;
+    private readonly SHA256 sha256 = SHA256.Create();
     private IKeyManagementService? _keyManagementService;
     private const string RandomnessSigningKeyId = "randomness-signing-key";
     private int _requestCount;
@@ -96,10 +58,10 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     public RandomnessService(
         IEnclaveManager enclaveManager,
         IBlockchainClientFactory blockchainClientFactory,
-        IServiceConfiguration configuration,
+        CoreConfig configuration,
         ILogger<RandomnessService> logger,
         IServiceProvider? serviceProvider = null)
-        : base("Randomness", "Provably Fair Randomness Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+        : base("Randomness", "Provably Fair Randomness Service", "1.0.0", logger, new[] { CoreBlockchainType.NeoN3, CoreBlockchainType.NeoX })
     {
         _enclaveManager = enclaveManager;
         _blockchainClientFactory = blockchainClientFactory;
@@ -125,7 +87,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     }
 
     /// <inheritdoc/>
-    public async Task<int> GenerateRandomNumberAsync(int min, int max, BlockchainType blockchainType)
+    public async Task<int> GenerateRandomNumberAsync(int min, int max, CoreBlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -191,7 +153,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     }
 
     /// <inheritdoc/>
-    public async Task<byte[]> GenerateRandomBytesAsync(int length, BlockchainType blockchainType)
+    public async Task<byte[]> GenerateRandomBytesAsync(int length, CoreBlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -257,7 +219,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     }
 
     /// <inheritdoc/>
-    public async Task<string> GenerateRandomStringAsync(int length, string? charset, BlockchainType blockchainType)
+    public async Task<string> GenerateRandomStringAsync(int length, string? charset, CoreBlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -337,7 +299,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     }
 
     /// <inheritdoc/>
-    public async Task<VerifiableRandomResult> GenerateVerifiableRandomNumberAsync(int min, int max, string seed, BlockchainType blockchainType)
+    public async Task<VerifiableRandomResult> GenerateVerifiableRandomNumberAsync(int min, int max, string seed, CoreBlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -635,7 +597,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
         try
         {
             // Check if key exists
-            var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(RandomnessSigningKeyId, BlockchainType.NeoN3);
+            var keyMetadata = await _keyManagementService.GetKeyMetadataAsync(RandomnessSigningKeyId, CoreBlockchainType.NeoN3);
         }
         catch (Exception)
         {
@@ -647,7 +609,7 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
                 "Sign,Verify",
                 false, // Not exportable for security
                 "Randomness service signing key for verifiable random number generation",
-                BlockchainType.NeoN3);
+                CoreBlockchainType.NeoN3);
         }
     }
 
@@ -655,7 +617,6 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     {
         // Generate a deterministic development key based on service instance
         // This is NOT secure and should only be used in development
-        using var sha256 = SHA256.Create();
         var instanceId = $"dev-randomness-{Environment.MachineName}-{Environment.ProcessId}";
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(instanceId));
         return Convert.ToHexString(hash);
@@ -665,7 +626,6 @@ public partial class RandomnessService : EnclaveBlockchainServiceBase, IRandomne
     {
         // Generate a deterministic development public key
         // This is NOT secure and should only be used in development
-        using var sha256 = SHA256.Create();
         var instanceId = $"dev-randomness-pubkey-{Environment.MachineName}-{Environment.ProcessId}";
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(instanceId));
         return Convert.ToHexString(hash);

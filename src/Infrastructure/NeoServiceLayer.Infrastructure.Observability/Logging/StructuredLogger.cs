@@ -1,8 +1,12 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Observability.Logging
 {
@@ -52,14 +56,13 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
             Dictionary<string, object> properties = null,
             LogLevel level = LogLevel.Information)
         {
-            using var activity = _activitySource.StartActivity(operation, ActivityKind.Internal);
-            activity?.SetTag("correlation.id", _correlationId);
+            Activity.Current?.SetTag("correlation.id", _correlationId);
 
             var logProperties = MergeProperties(properties);
             logProperties["Operation"] = operation;
             logProperties["Timestamp"] = DateTimeOffset.UtcNow;
-            logProperties["TraceId"] = activity?.TraceId.ToString() ?? "unknown";
-            logProperties["SpanId"] = activity?.SpanId.ToString() ?? "unknown";
+            logProperties["TraceId"] = Activity.Current?.TraceId.ToString() ?? "unknown";
+            logProperties["SpanId"] = Activity.Current?.SpanId.ToString() ?? "unknown";
 
             using (_logger.BeginScope(logProperties))
             {
@@ -97,9 +100,12 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
             string operation,
             Dictionary<string, object> properties = null)
         {
-            using var activity = _activitySource.StartActivity($"{operation}.Error", ActivityKind.Internal);
-            activity?.SetStatus(ActivityStatusCode.Error, exception.Message);
-            activity?.RecordException(exception);
+            Activity.Current?.SetStatus(ActivityStatusCode.Error, exception.Message);
+            // RecordException is not available in current OpenTelemetry version
+            // Instead, add exception details as tags
+            Activity.Current?.SetTag("exception.type", exception.GetType().FullName);
+            Activity.Current?.SetTag("exception.message", exception.Message);
+            Activity.Current?.SetTag("exception.stacktrace", exception.StackTrace);
 
             var logProperties = MergeProperties(properties);
             logProperties["Operation"] = operation;
@@ -131,11 +137,11 @@ namespace NeoServiceLayer.Infrastructure.Observability.Logging
             scopeProperties["ScopeStartTime"] = DateTimeOffset.UtcNow;
 
             var activity = _activitySource.StartActivity(scopeName, ActivityKind.Internal);
-            activity?.SetTag("correlation.id", _correlationId);
+            Activity.Current?.SetTag("correlation.id", _correlationId);
 
             foreach (var prop in scopeProperties)
             {
-                activity?.SetTag(prop.Key, prop.Value?.ToString());
+                Activity.Current?.SetTag(prop.Key, prop.Value?.ToString());
             }
 
             var loggerScope = _logger.BeginScope(scopeProperties);

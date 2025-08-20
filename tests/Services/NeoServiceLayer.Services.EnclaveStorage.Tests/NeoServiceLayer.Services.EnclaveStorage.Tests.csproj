@@ -24,8 +24,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.EnclaveStorage\NeoServiceLayer.Services.EnclaveStorage.csproj" />
-    <ProjectReference Include="..\..\TestInfrastructure\NeoServiceLayer.TestInfrastructure.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj">
+      <Aliases>EnclaveStorageAlias</Aliases>
+    </ProjectReference>
+    <ProjectReference Include="../../TestInfrastructure/NeoServiceLayer.TestInfrastructure.csproj" />
   </ItemGroup>
 
 </Project>

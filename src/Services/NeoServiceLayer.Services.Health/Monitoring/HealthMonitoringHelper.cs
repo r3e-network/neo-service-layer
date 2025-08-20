@@ -1,5 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Health.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Services.Health.Monitoring;
 
@@ -8,7 +16,7 @@ namespace NeoServiceLayer.Services.Health.Monitoring;
 /// </summary>
 public class HealthMonitoringHelper
 {
-    private readonly ILogger<HealthMonitoringHelper> _logger;
+    private readonly ILogger<HealthMonitoringHelper> Logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="HealthMonitoringHelper"/> class.
@@ -16,7 +24,7 @@ public class HealthMonitoringHelper
     /// <param name="logger">The logger.</param>
     public HealthMonitoringHelper(ILogger<HealthMonitoringHelper> logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -42,19 +50,22 @@ public class HealthMonitoringHelper
             var healthReport = new NodeHealthReport
             {
                 NodeAddress = nodeAddress,
-                Status = isOnline ? NodeStatus.Online : NodeStatus.Offline,
+                Status = isOnline ? HealthStatus.Healthy : HealthStatus.Unhealthy,
                 BlockHeight = blockHeight,
                 ResponseTime = responseTime,
                 UptimePercentage = uptimePercentage,
                 LastSeen = DateTime.UtcNow,
-                Metrics = new HealthMetrics
+                Metrics = new List<HealthMetrics>
                 {
-                    TotalRequests = Random.Shared.NextInt64(1000, 10000),
-                    SuccessfulRequests = Random.Shared.NextInt64(900, 9900),
-                    AverageResponseTime = responseTime,
-                    SuccessRate = uptimePercentage / 100,
-                    MemoryUsage = Random.Shared.NextInt64(1000000, 8000000),
-                    CpuUsage = Random.Shared.NextDouble() * 100
+                    new HealthMetrics
+                    {
+                        TotalRequests = Random.Shared.NextInt64(1000, 10000),
+                        SuccessfulRequests = Random.Shared.NextInt64(900, 9900),
+                        AverageResponseTime = responseTime.TotalMilliseconds,
+                        SuccessRate = uptimePercentage / 100,
+                        MemoryUsage = Random.Shared.NextInt64(1000000, 8000000),
+                        CpuUsage = Random.Shared.NextDouble() * 100
+                    }
                 }
             };
 
@@ -62,12 +73,12 @@ public class HealthMonitoringHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error performing health check for node {NodeAddress}", nodeAddress);
+            Logger.LogError(ex, "Error performing health check for node {NodeAddress}", nodeAddress);
 
             return new NodeHealthReport
             {
                 NodeAddress = nodeAddress,
-                Status = NodeStatus.Offline,
+                Status = HealthStatus.Unhealthy,
                 LastSeen = DateTime.UtcNow,
                 ResponseTime = DateTime.UtcNow - startTime
             };
@@ -87,19 +98,19 @@ public class HealthMonitoringHelper
         var alerts = new List<HealthAlert>();
 
         // Check response time threshold
-        if (healthReport.ResponseTime > threshold.MaxResponseTime)
+        if (healthReport.ResponseTime.TotalMilliseconds > threshold.MaxResponseTime)
         {
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighResponseTime",
-                Message = $"Node response time ({healthReport.ResponseTime.TotalMilliseconds:F0}ms) exceeds threshold ({threshold.MaxResponseTime.TotalMilliseconds:F0}ms)",
+                Severity = (AlertSeverity)HealthAlertSeverity.Warning,
+                AlertType = AlertType.Performance,
+                Message = $"Node response time ({healthReport.ResponseTime.TotalMilliseconds:F0}ms) exceeds threshold ({threshold.MaxResponseTime:F0}ms)",
                 Details = new Dictionary<string, object>
                 {
                     ["ActualResponseTime"] = healthReport.ResponseTime.TotalMilliseconds,
-                    ["ThresholdResponseTime"] = threshold.MaxResponseTime.TotalMilliseconds
+                    ["ThresholdResponseTime"] = threshold.MaxResponseTime
                 }
             });
         }
@@ -111,8 +122,8 @@ public class HealthMonitoringHelper
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Error,
-                AlertType = "LowUptime",
+                Severity = (AlertSeverity)HealthAlertSeverity.Error,
+                AlertType = AlertType.Performance,
                 Message = $"Node uptime ({healthReport.UptimePercentage:F1}%) below threshold ({threshold.MinUptimePercentage:F1}%)",
                 Details = new Dictionary<string, object>
                 {
@@ -123,14 +134,14 @@ public class HealthMonitoringHelper
         }
 
         // Check if node is offline
-        if (healthReport.Status == NodeStatus.Offline)
+        if (healthReport.Status == HealthStatus.Unhealthy)
         {
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Critical,
-                AlertType = "NodeOffline",
+                Severity = (AlertSeverity)HealthAlertSeverity.Critical,
+                AlertType = AlertType.Connectivity,
                 Message = "Node is offline and not responding",
                 Details = new Dictionary<string, object>
                 {
@@ -142,18 +153,19 @@ public class HealthMonitoringHelper
 
         // Check memory usage threshold (using custom thresholds)
         if (threshold.CustomThresholds.TryGetValue("MaxMemoryUsage", out var maxMemoryUsage) &&
-            healthReport.Metrics.MemoryUsage > maxMemoryUsage)
+            healthReport.Metrics.Any() && healthReport.Metrics.First().MemoryUsage > maxMemoryUsage)
         {
+            var memoryUsage = healthReport.Metrics.First().MemoryUsage;
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighMemoryUsage",
-                Message = $"Node memory usage ({healthReport.Metrics.MemoryUsage / 1_000_000:F0}MB) exceeds threshold ({maxMemoryUsage / 1_000_000:F0}MB)",
+                Severity = (AlertSeverity)HealthAlertSeverity.Warning,
+                AlertType = AlertType.Performance,
+                Message = $"Node memory usage ({memoryUsage / 1_000_000:F0}MB) exceeds threshold ({maxMemoryUsage / 1_000_000:F0}MB)",
                 Details = new Dictionary<string, object>
                 {
-                    ["ActualMemoryUsage"] = healthReport.Metrics.MemoryUsage,
+                    ["ActualMemoryUsage"] = memoryUsage,
                     ["ThresholdMemoryUsage"] = maxMemoryUsage
                 }
             });
@@ -161,18 +173,19 @@ public class HealthMonitoringHelper
 
         // Check CPU usage threshold (using custom thresholds)
         if (threshold.CustomThresholds.TryGetValue("MaxCpuUsage", out var maxCpuUsage) &&
-            healthReport.Metrics.CpuUsage > maxCpuUsage)
+            healthReport.Metrics.Any() && healthReport.Metrics.First().CpuUsage > maxCpuUsage)
         {
+            var cpuUsage = healthReport.Metrics.First().CpuUsage;
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighCpuUsage",
-                Message = $"Node CPU usage ({healthReport.Metrics.CpuUsage:F1}%) exceeds threshold ({maxCpuUsage:F1}%)",
+                Severity = (AlertSeverity)HealthAlertSeverity.Warning,
+                AlertType = AlertType.Performance,
+                Message = $"Node CPU usage ({cpuUsage:F1}%) exceeds threshold ({maxCpuUsage:F1}%)",
                 Details = new Dictionary<string, object>
                 {
-                    ["ActualCpuUsage"] = healthReport.Metrics.CpuUsage,
+                    ["ActualCpuUsage"] = cpuUsage,
                     ["ThresholdCpuUsage"] = maxCpuUsage
                 }
             });
@@ -193,8 +206,8 @@ public class HealthMonitoringHelper
             return 0;
         }
 
-        var onlineNodes = monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online);
-        var healthyNodes = monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online && n.UptimePercentage >= 95.0);
+        var onlineNodes = monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy);
+        var healthyNodes = monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy && n.UptimePercentage >= 95.0);
 
         var onlineRatio = (double)onlineNodes / monitoredNodes.Count;
         var healthyRatio = (double)healthyNodes / monitoredNodes.Count;

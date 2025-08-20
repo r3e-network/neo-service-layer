@@ -7,6 +7,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.ServiceFramework.Permissions;
 using NeoServiceLayer.Services.Permissions;
+using System.Threading;
+
 
 namespace NeoServiceLayer.ServiceFramework.Extensions;
 
@@ -98,10 +100,9 @@ public class PermissionSetupService : BackgroundService
 
             // Setup permissions for all known services
             var configurations = GetDefaultServiceConfigurations();
-            
-            using var scope = _serviceProvider.CreateScope();
+
             await scope.ServiceProvider.SetupBulkServicePermissionsAsync(configurations);
-            
+
             _logger.LogInformation("Completed automatic permission setup for {Count} services", configurations.Length);
         }
         catch (Exception ex)

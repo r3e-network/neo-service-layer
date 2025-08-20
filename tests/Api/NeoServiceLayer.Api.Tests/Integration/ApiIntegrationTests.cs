@@ -1,4 +1,4 @@
-﻿using System.Net.Http.Headers;
+using System.Net.Http.Headers;
 using System.Text;
 using System.Text.Json;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,6 +17,14 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.KeyManagement;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Tests.Integration;
 
@@ -561,7 +569,7 @@ public class ApiWebApplicationFactory : WebApplicationFactory<Program>
                     TransactionId = "test-transaction",
                     IsFraudulent = false,
                     FraudScore = 0.15,
-                    RiskLevel = NeoServiceLayer.AI.PatternRecognition.Models.RiskLevel.Low,
+                    RiskLevel = "Low",
                     Success = true
                 });
 

@@ -1,4 +1,10 @@
-﻿using NeoServiceLayer.Tee.Enclave;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Tee.Enclave;
+
 
 namespace NeoServiceLayer.Tee.Host.Tests;
 
@@ -767,6 +773,23 @@ public class TestEnclaveWrapper : IEnclaveWrapper
         }
 
         return DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+    }
+
+    /// <summary>
+    /// Gets the enclave attestation report.
+    /// </summary>
+    /// <returns>The attestation report as a byte array.</returns>
+    public byte[] GetAttestation()
+    {
+        if (!_initialized)
+        {
+            throw new EnclaveException("Enclave is not initialized. Call Initialize() first.");
+        }
+
+        // Return a mock attestation report for testing
+        var attestation = new byte[256];
+        new Random().NextBytes(attestation);
+        return attestation;
     }
 
     /// <summary>

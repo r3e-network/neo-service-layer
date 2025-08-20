@@ -1,4 +1,10 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Monitoring.Models;
 
@@ -436,7 +442,7 @@ public class GetLogsRequest
     /// <summary>
     /// Gets or sets the log level filter.
     /// </summary>
-    public LogLevel? LogLevel { get; set; }
+    public MonitoringLogLevel? LogLevel { get; set; }
 
     /// <summary>
     /// Gets or sets the start time filter.
@@ -467,7 +473,7 @@ public class GetLogsRequest
 /// <summary>
 /// Log level enumeration.
 /// </summary>
-public enum LogLevel
+public enum MonitoringLogLevel
 {
     /// <summary>
     /// Trace level.
@@ -549,7 +555,7 @@ public class LogEntry
     /// <summary>
     /// Gets or sets the log level.
     /// </summary>
-    public LogLevel Level { get; set; }
+    public MonitoringLogLevel Level { get; set; }
 
     /// <summary>
     /// Gets or sets the log message.

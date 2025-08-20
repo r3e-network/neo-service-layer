@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Core.Models;
+using Models = NeoServiceLayer.AI.Prediction.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -15,7 +21,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="definition">The model definition.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The model ID.</returns>
-    Task<string> CreateModelAsync(PredictionModelDefinition definition, BlockchainType blockchainType);
+    Task<string> CreateModelAsync(Models.PredictionModelDefinition definition, BlockchainType blockchainType);
 
     // Note: PredictAsync, AnalyzeSentimentAsync, and RegisterModelAsync are inherited from Core.IPredictionService
 
@@ -25,7 +31,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="request">The market forecast request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The market forecast result.</returns>
-    Task<MarketForecast> ForecastMarketAsync(MarketForecastRequest request, BlockchainType blockchainType);
+    Task<Models.MarketForecast> ForecastMarketAsync(Models.MarketForecastRequest request, BlockchainType blockchainType);
 
     // Note: RegisterModelAsync is inherited from Core.IPredictionService
 
@@ -34,7 +40,7 @@ public interface IPredictionService : Core.IPredictionService
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The list of models.</returns>
-    Task<IEnumerable<PredictionModel>> GetModelsAsync(BlockchainType blockchainType);
+    Task<IEnumerable<Models.PredictionModel>> GetModelsAsync(BlockchainType blockchainType);
 
     /// <summary>
     /// Gets a specific model by ID.
@@ -42,7 +48,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="modelId">The model ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The model.</returns>
-    Task<PredictionModel> GetModelAsync(string modelId, BlockchainType blockchainType);
+    Task<Models.PredictionModel> GetModelAsync(string modelId, BlockchainType blockchainType);
 
     /// <summary>
     /// Gets prediction history for a model.
@@ -50,7 +56,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="modelId">The model ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The prediction history.</returns>
-    Task<IEnumerable<CoreModels.PredictionResult>> GetPredictionHistoryAsync(string modelId, BlockchainType blockchainType);
+    Task<IEnumerable<Core.Models.PredictionResult>> GetPredictionHistoryAsync(string modelId, BlockchainType blockchainType);
 
     /// <summary>
     /// Retrains a model with new data.
@@ -59,7 +65,7 @@ public interface IPredictionService : Core.IPredictionService
     /// <param name="definition">The updated model definition.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>True if successful.</returns>
-    Task<bool> RetrainModelAsync(string modelId, PredictionModelDefinition definition, BlockchainType blockchainType);
+    Task<bool> RetrainModelAsync(string modelId, Models.PredictionModelDefinition definition, BlockchainType blockchainType);
 
     /// <summary>
     /// Deletes a model.

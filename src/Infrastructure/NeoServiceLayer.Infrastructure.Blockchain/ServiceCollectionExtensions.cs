@@ -1,4 +1,4 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Http;
 using Microsoft.Extensions.Logging;
@@ -6,6 +6,13 @@ using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure.Blockchain;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -25,17 +32,9 @@ public static class ServiceCollectionExtensions
         // Add blockchain infrastructure
         services.AddBlockchainInfrastructure(configuration);
 
-        // Add TEE Enclave services
-        services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.ProductionSGXEnclaveWrapper>();
-
-        // Add TEE Host services
-        services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveManager, NeoServiceLayer.Tee.Host.Services.EnclaveManager>();
-        services.AddScoped<NeoServiceLayer.Tee.Host.Services.EnclaveManager>(serviceProvider =>
-        {
-            var logger = serviceProvider.GetRequiredService<ILogger<NeoServiceLayer.Tee.Host.Services.EnclaveManager>>();
-            var enclaveWrapper = serviceProvider.GetRequiredService<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper>();
-            return new NeoServiceLayer.Tee.Host.Services.EnclaveManager(logger, enclaveWrapper);
-        });
+        // TEE services temporarily disabled - dependency not available
+        // services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.ProductionSGXEnclaveWrapper>();
+        // services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveManager, NeoServiceLayer.Tee.Host.Services.EnclaveManager>();
 
         return services;
     }

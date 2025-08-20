@@ -1,4 +1,3 @@
-﻿using System;
 using System.Security.Claims;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -7,6 +6,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Services.Permissions;
 using NeoServiceLayer.Services.Permissions.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Web.Middleware;
 
@@ -247,16 +251,16 @@ public class PermissionMiddleware
     /// </summary>
     /// <param name="method">The HTTP method.</param>
     /// <returns>The corresponding access type.</returns>
-    private static AccessType MapHttpMethodToAccessType(string method)
+    private static NeoServiceLayer.Services.Permissions.Models.AccessType MapHttpMethodToAccessType(string method)
     {
         return method.ToUpperInvariant() switch
         {
-            "GET" => AccessType.Read,
-            "POST" => AccessType.Write,
-            "PUT" => AccessType.Write,
-            "PATCH" => AccessType.Write,
-            "DELETE" => AccessType.Delete,
-            _ => AccessType.Read
+            "GET" => NeoServiceLayer.Services.Permissions.Models.AccessType.Read,
+            "POST" => NeoServiceLayer.Services.Permissions.Models.AccessType.Write,
+            "PUT" => NeoServiceLayer.Services.Permissions.Models.AccessType.Write,
+            "PATCH" => NeoServiceLayer.Services.Permissions.Models.AccessType.Write,
+            "DELETE" => NeoServiceLayer.Services.Permissions.Models.AccessType.Delete,
+            _ => NeoServiceLayer.Services.Permissions.Models.AccessType.Read
         };
     }
 

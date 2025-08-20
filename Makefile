@@ -132,7 +132,7 @@ status: ## Show project status and health
 
 ##@ Build
 
-all: clean restore build test ## Clean, restore, build, and test everything
+all: clean restore build build-sgx test ## Clean, restore, build (including SGX), and test everything
 
 quick: clean-minimal build-minimal test-minimal ## Quick build and test (minimal clean, no restore)
 
@@ -147,7 +147,7 @@ restore-locked: ## Restore packages using lock file
 	$(DOTNET) restore $(SOLUTION) --locked-mode --verbosity $(VERBOSITY)
 	@echo "$(GREEN)✅ Locked restore completed$(NC)"
 
-build: restore ## Build the solution
+build: restore ## Build the solution (C# projects)
 	@echo "$(BLUE)🔨 Building solution ($(CONFIGURATION))...$(NC)"
 	@mkdir -p $(LOGS_DIR)
 	$(DOTNET) build $(SOLUTION) \
@@ -159,7 +159,7 @@ build: restore ## Build the solution
 		-p:InformationalVersion=$(VERSION)-$(COMMIT) \
 		-p:TreatWarningsAsErrors=false \
 		-p:WarningLevel=4 | tee $(LOGS_DIR)/build.log
-	@echo "$(GREEN)✅ Build completed successfully$(NC)"
+	@echo "$(GREEN)✅ .NET build completed successfully$(NC)"
 
 build-minimal: ## Build without restore (fast rebuild)
 	@echo "$(BLUE)⚡ Fast build (no restore)...$(NC)"
@@ -211,6 +211,104 @@ build-contracts: ## Build Neo smart contracts
 			echo "$(YELLOW)⚠️  Contract build script not found$(NC)"; \
 		fi
 	@echo "$(GREEN)✅ Contract build completed$(NC)"
+
+##@ SGX and Rust Build Targets
+
+# Rust and SGX configuration
+CARGO := cargo
+RUSTC := rustc
+SGX_SDK := /opt/intel/sgxsdk
+SGX_MODE ?= SIM
+ENCLAVE_DIR := src/Tee/NeoServiceLayer.Tee.Enclave
+ENCLAVE_NAME := neo-service-enclave
+RUST_INSTALLED := $(shell command -v cargo 2> /dev/null)
+
+build-sgx: check-rust build-rust-enclave build-tee-components ## Build all SGX and Rust components
+	@echo "$(GREEN)✅ SGX components built successfully$(NC)"
+
+check-rust: ## Check if Rust is installed
+ifndef RUST_INSTALLED
+	@echo "$(RED)❌ Rust is not installed. Please install Rust from https://rustup.rs/$(NC)"
+	@echo "  Run: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh"
+	@exit 1
+else
+	@echo "$(GREEN)✅ Rust is installed: $(shell cargo --version)$(NC)"
+endif
+
+build-rust-enclave: check-rust ## Build Rust SGX enclave
+	@echo "$(BLUE)🦀 Building Rust SGX enclave...$(NC)"
+	@mkdir -p $(LOGS_DIR)
+	@cd $(ENCLAVE_DIR) && \
+	if [ -f "Cargo.toml" ]; then \
+		echo "  Building $(ENCLAVE_NAME) (this may take several minutes on first build)..."; \
+		$(CARGO) build --release 2>&1 | tee ../../$(LOGS_DIR)/rust-build.log; \
+		if [ -f "target/release/libneo_service_enclave.so" ]; then \
+			echo "$(GREEN)  ✅ Rust enclave built successfully$(NC)"; \
+		else \
+			echo "$(RED)  ❌ Rust enclave build failed$(NC)"; \
+			exit 1; \
+		fi \
+	else \
+		echo "$(YELLOW)  ⚠️  No Cargo.toml found in $(ENCLAVE_DIR)$(NC)"; \
+	fi
+
+build-tee-components: ## Build TEE host and enclave C# wrappers
+	@echo "$(BLUE)🔐 Building TEE components...$(NC)"
+	@echo "  SGX Mode: $(SGX_MODE)"
+	@echo "  Building TEE Host..."
+	@$(DOTNET) build src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj \
+		--configuration $(CONFIGURATION) \
+		--verbosity quiet || echo "$(YELLOW)  ⚠️  TEE Host build warnings$(NC)"
+	@echo "  Building TEE Enclave wrapper..."
+	@$(DOTNET) build src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj \
+		--configuration $(CONFIGURATION) \
+		--verbosity quiet || echo "$(YELLOW)  ⚠️  TEE Enclave wrapper build warnings$(NC)"
+
+build-all: build build-sgx build-contracts ## Build everything including SGX and contracts
+	@echo "$(GREEN)✅ Complete build finished (C#, Rust SGX, Contracts)$(NC)"
+
+clean-sgx: ## Clean SGX and Rust artifacts
+	@echo "$(YELLOW)🧹 Cleaning SGX artifacts...$(NC)"
+	@if [ -d "$(ENCLAVE_DIR)/target" ]; then \
+		rm -rf $(ENCLAVE_DIR)/target; \
+		echo "  Cleaned Rust build artifacts"; \
+	fi
+	@if [ -d "src/Tee/NeoServiceLayer.Tee.Host/bin" ]; then \
+		rm -rf src/Tee/NeoServiceLayer.Tee.Host/bin src/Tee/NeoServiceLayer.Tee.Host/obj; \
+		echo "  Cleaned TEE Host artifacts"; \
+	fi
+	@if [ -d "src/Tee/NeoServiceLayer.Tee.Enclave/bin" ]; then \
+		rm -rf src/Tee/NeoServiceLayer.Tee.Enclave/bin src/Tee/NeoServiceLayer.Tee.Enclave/obj; \
+		echo "  Cleaned TEE Enclave artifacts"; \
+	fi
+	@echo "$(GREEN)✅ SGX cleanup completed$(NC)"
+
+test-sgx: build-sgx ## Test SGX components
+	@echo "$(BLUE)🧪 Testing SGX components...$(NC)"
+	@if [ -f "$(ENCLAVE_DIR)/Cargo.toml" ]; then \
+		echo "  Running Rust enclave tests..."; \
+		cd $(ENCLAVE_DIR) && $(CARGO) test --release 2>&1 | tee ../../$(LOGS_DIR)/rust-test.log || true; \
+	fi
+	@if [ -f "scripts/sgx/run-sgx-tests-docker.sh" ]; then \
+		echo "  Running SGX simulation tests..."; \
+		bash scripts/sgx/run-sgx-tests-docker.sh 2>&1 | tee $(LOGS_DIR)/sgx-test.log || true; \
+	fi
+	@echo "$(GREEN)✅ SGX tests completed$(NC)"
+
+info-sgx: ## Show SGX and Rust configuration
+	@echo "$(BLUE)ℹ️  SGX Build Information$(NC)"
+	@echo "  SGX Mode: $(SGX_MODE)"
+	@echo "  SGX SDK: $(SGX_SDK)"
+	@echo "  Enclave Directory: $(ENCLAVE_DIR)"
+	@echo "  Rust Version: $(shell cargo --version 2>/dev/null || echo 'Not installed')"
+	@echo "  Target Architecture: $(shell uname -m)"
+	@echo ""
+	@echo "  Rust Projects:"
+	@find . -name "Cargo.toml" -type f | while read -r cargo; do \
+		dir=$$(dirname "$$cargo"); \
+		name=$$(grep "^name" "$$cargo" | cut -d'"' -f2 | head -1); \
+		echo "    - $$name ($$dir)"; \
+	done
 
 analyze: build ## Run code analysis
 	@echo "$(BLUE)🔍 Running code analysis...$(NC)"
@@ -629,17 +727,21 @@ neo-express-start: ## Start Neo Express blockchain
 
 ##@ Maintenance
 
-clean: ## Clean build artifacts
+clean: clean-sgx ## Clean build artifacts including SGX
 	@echo "$(YELLOW)🧹 Cleaning build artifacts...$(NC)"
 	$(DOTNET) clean $(SOLUTION) --configuration $(CONFIGURATION) --verbosity quiet
 	@rm -rf $(RESULTS_DIR) $(COVERAGE_DIR) $(BENCHMARK_DIR) $(ARTIFACTS_DIR)
 	@find . -type d -name "bin" -o -name "obj" | grep -v "node_modules" | xargs rm -rf
 	@echo "$(GREEN)✅ Clean completed$(NC)"
 
-clean-all: clean ## Deep clean including packages and caches
+clean-all: clean ## Deep clean including packages, caches, and Rust artifacts
 	@echo "$(RED)🧹 Performing deep clean...$(NC)"
 	@rm -rf ~/.nuget/packages/neoservicelayer.*
 	@$(DOTNET) nuget locals all --clear
+	@if [ -d "$(ENCLAVE_DIR)/target" ]; then \
+		echo "  Cleaning Rust target directory..."; \
+		rm -rf $(ENCLAVE_DIR)/target; \
+	fi
 	@echo "$(GREEN)✅ Deep clean completed$(NC)"
 
 update-packages: ## Update NuGet packages

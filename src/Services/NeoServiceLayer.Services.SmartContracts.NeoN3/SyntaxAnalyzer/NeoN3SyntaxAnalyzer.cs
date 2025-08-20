@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
@@ -11,6 +10,10 @@ using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Optimization;
 using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Parser;
 using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Security;
 using NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer.Semantic;
+using NeoServiceLayer.ServiceFramework;
+using System.ComponentModel.DataAnnotations;
+using System;
+
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
 
@@ -19,7 +22,7 @@ namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
 /// </summary>
 public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
 {
-    private readonly ILogger<NeoN3SyntaxAnalyzer> _logger;
+    private readonly ILogger<NeoN3SyntaxAnalyzer> Logger;
     private readonly INeoN3Parser _parser;
     private readonly ISemanticAnalyzer _semanticAnalyzer;
     private readonly ISecurityAnalyzer _securityAnalyzer;
@@ -35,7 +38,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         IOptimizationAnalyzer? optimizationAnalyzer = null,
         ICodeFormatter? codeFormatter = null)
     {
-        _logger = logger;
+        Logger = logger;
         _parser = parser ?? new NeoN3Parser();
         _semanticAnalyzer = semanticAnalyzer ?? new SemanticAnalyzer();
         _securityAnalyzer = securityAnalyzer ?? new SecurityAnalyzer();
@@ -53,21 +56,21 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         var stopwatch = Stopwatch.StartNew();
         options ??= new AnalysisOptions();
 
-        _logger.LogInformation("Starting Neo N3 syntax analysis");
+        Logger.LogInformation("Starting Neo N3 syntax analysis");
 
         var result = new SyntaxAnalysisResult();
 
         try
         {
             // Lexical analysis
-            _logger.LogDebug("Performing lexical analysis");
+            Logger.LogDebug("Performing lexical analysis");
             var lexer = new NeoN3Lexer(sourceCode);
             var tokens = lexer.Tokenize();
 
             cancellationToken.ThrowIfCancellationRequested();
 
             // Syntax analysis (parsing)
-            _logger.LogDebug("Parsing tokens into AST");
+            Logger.LogDebug("Parsing tokens into AST");
             var parseResult = await _parser.ParseAsync(tokens, cancellationToken);
 
             if (!parseResult.Success)
@@ -83,7 +86,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Semantic analysis
             if (options.EnableSemanticAnalysis && parseResult.Ast != null)
             {
-                _logger.LogDebug("Performing semantic analysis");
+                Logger.LogDebug("Performing semantic analysis");
                 var semanticResult = await _semanticAnalyzer.AnalyzeAsync(
                     parseResult.Ast,
                     cancellationToken);
@@ -99,7 +102,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Custom validation rules
             if (options.CustomRules.Any() && result.Ast != null)
             {
-                _logger.LogDebug("Applying custom validation rules");
+                Logger.LogDebug("Applying custom validation rules");
                 var validationContext = CreateValidationContext(result);
 
                 foreach (var rule in options.CustomRules.Concat(_validationRules))
@@ -113,7 +116,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Security analysis
             if (options.EnableSecurityAnalysis)
             {
-                _logger.LogDebug("Performing security analysis");
+                Logger.LogDebug("Performing security analysis");
                 var securityResult = await AnalyzeSecurityAsync(sourceCode, cancellationToken);
 
                 // Add security issues as errors/warnings
@@ -146,7 +149,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Optimization analysis
             if (options.EnableOptimizationAnalysis)
             {
-                _logger.LogDebug("Performing optimization analysis");
+                Logger.LogDebug("Performing optimization analysis");
                 var optimizationResult = await SuggestOptimizationsAsync(sourceCode, cancellationToken);
 
                 // Add optimization suggestions as info messages
@@ -164,7 +167,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
             // Calculate metrics
             if (result.Ast != null)
             {
-                _logger.LogDebug("Calculating code metrics");
+                Logger.LogDebug("Calculating code metrics");
                 result.Metrics = CalculateMetrics(result.Ast, sourceCode);
             }
 
@@ -193,7 +196,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during syntax analysis");
+            Logger.LogError(ex, "Error during syntax analysis");
             result.Success = false;
             result.Errors.Add(new SyntaxError
             {
@@ -206,7 +209,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         {
             stopwatch.Stop();
             result.AnalysisDurationMs = stopwatch.ElapsedMilliseconds;
-            _logger.LogInformation("Syntax analysis completed in {Duration}ms", result.AnalysisDurationMs);
+            Logger.LogInformation("Syntax analysis completed in {Duration}ms", result.AnalysisDurationMs);
         }
 
         return result;
@@ -218,7 +221,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         string manifest,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Validating Neo N3 bytecode");
+        Logger.LogInformation("Validating Neo N3 bytecode");
 
         var result = new BytecodeValidationResult
         {
@@ -255,7 +258,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating bytecode");
+            Logger.LogError(ex, "Error validating bytecode");
             result.IsValid = false;
             result.Errors.Add(new ValidationError
             {
@@ -272,7 +275,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         string sourceCode,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Performing security analysis");
+        Logger.LogInformation("Performing security analysis");
 
         try
         {
@@ -303,7 +306,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during security analysis");
+            Logger.LogError(ex, "Error during security analysis");
             return new SecurityAnalysisResult
             {
                 SecurityScore = 0,
@@ -326,7 +329,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         string sourceCode,
         CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Analyzing code for optimization opportunities");
+        Logger.LogInformation("Analyzing code for optimization opportunities");
 
         try
         {
@@ -344,7 +347,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during optimization analysis");
+            Logger.LogError(ex, "Error during optimization analysis");
             return new OptimizationResult();
         }
     }
@@ -352,7 +355,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
     /// <inheritdoc/>
     public string FormatCode(string sourceCode, FormattingOptions? options = null)
     {
-        _logger.LogDebug("Formatting Neo N3 code");
+        Logger.LogDebug("Formatting Neo N3 code");
 
         try
         {
@@ -360,7 +363,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error formatting code");
+            Logger.LogError(ex, "Error formatting code");
             return sourceCode; // Return original code if formatting fails
         }
     }
@@ -493,7 +496,7 @@ public class NeoN3SyntaxAnalyzer : INeoN3SyntaxAnalyzer
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Error applying validation rule {RuleId}", rule.Id);
+            Logger.LogWarning(ex, "Error applying validation rule {RuleId}", rule.Id);
         }
     }
 

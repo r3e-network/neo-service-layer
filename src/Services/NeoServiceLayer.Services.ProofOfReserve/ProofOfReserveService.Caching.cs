@@ -1,6 +1,13 @@
-﻿using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Caching.Memory;
 using NeoServiceLayer.Core;
+using ProofModels = NeoServiceLayer.Services.ProofOfReserve.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -55,7 +62,7 @@ public partial class ProofOfReserveService
     /// <param name="assetId">The asset ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve status info.</returns>
-    private async Task<ReserveStatusInfo> GetReserveStatusWithCachingAsync(string assetId, BlockchainType blockchainType)
+    private async Task<ProofModels.ReserveStatusInfo> GetReserveStatusWithCachingAsync(string assetId, BlockchainType blockchainType)
     {
         var cacheKey = ProofOfReserveCacheHelper.BuildCacheKey(
             ProofOfReserveCacheHelper.CacheKeys.ReserveStatus,
@@ -82,7 +89,7 @@ public partial class ProofOfReserveService
     /// <param name="assetId">The asset ID.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve status info.</returns>
-    private async Task<ReserveStatusInfo> GetReserveStatusInternalAsync(string assetId, BlockchainType blockchainType)
+    private async Task<ProofModels.ReserveStatusInfo> GetReserveStatusInternalAsync(string assetId, BlockchainType blockchainType)
     {
         await Task.CompletedTask;
 
@@ -92,14 +99,21 @@ public partial class ProofOfReserveService
             {
                 var latestSnapshot = _reserveHistory[assetId].LastOrDefault();
 
-                return new ReserveStatusInfo
+                return new ProofModels.ReserveStatusInfo
                 {
                     AssetId = assetId,
                     AssetSymbol = asset.AssetSymbol,
                     TotalSupply = latestSnapshot?.TotalSupply ?? 0m,
                     TotalReserves = latestSnapshot?.TotalReserves ?? 0m,
                     ReserveRatio = asset.CurrentReserveRatio,
-                    Health = asset.Health,
+                    Health = new NeoServiceLayer.Core.ReserveHealthStatus
+                    {
+                        AssetId = assetId,
+                        IsHealthy = asset.Health == NeoServiceLayer.Core.ReserveHealthStatusEnum.Healthy,
+                        CurrentRatio = asset.CurrentReserveRatio,
+                        MinimumRatio = asset.MinReserveRatio,
+                        LastUpdated = asset.LastUpdated
+                    },
                     LastUpdated = asset.LastUpdated,
                     LastAudit = latestSnapshot?.Timestamp ?? DateTime.MinValue,
                     ReserveBreakdown = latestSnapshot?.ReserveAddresses ?? Array.Empty<string>(),
@@ -157,11 +171,25 @@ public partial class ProofOfReserveService
                 var latestSnapshot = _reserveHistory[assetId].LastOrDefault();
                 if (latestSnapshot != null)
                 {
-                    return latestSnapshot.Health;
+                    return new NeoServiceLayer.Core.ReserveHealthStatus
+                    {
+                        AssetId = assetId,
+                        IsHealthy = latestSnapshot.Health == NeoServiceLayer.Core.ReserveHealthStatusEnum.Healthy,
+                        CurrentRatio = asset.CurrentReserveRatio,
+                        MinimumRatio = asset.MinReserveRatio,
+                        LastUpdated = asset.LastUpdated
+                    };
                 }
                 else
                 {
-                    return asset.Health;
+                    return new NeoServiceLayer.Core.ReserveHealthStatus
+                    {
+                        AssetId = assetId,
+                        IsHealthy = asset.Health == NeoServiceLayer.Core.ReserveHealthStatusEnum.Healthy,
+                        CurrentRatio = asset.CurrentReserveRatio,
+                        MinimumRatio = asset.MinReserveRatio,
+                        LastUpdated = asset.LastUpdated
+                    };
                 }
             }
         }
@@ -213,8 +241,8 @@ public partial class ProofOfReserveService
                 {
                     var shouldAlert = alertConfig.Type switch
                     {
-                        ReserveAlertType.LowReserveRatio => asset.CurrentReserveRatio < alertConfig.Threshold,
-                        ReserveAlertType.ComplianceViolation => asset.Health == ReserveHealthStatus.Undercollateralized,
+                        "LowReserveRatio" => asset.CurrentReserveRatio < alertConfig.Threshold,
+                        "ComplianceViolation" => asset.Health == NeoServiceLayer.Core.ReserveHealthStatusEnum.Undercollateralized,
                         _ => false
                     };
 
@@ -224,11 +252,11 @@ public partial class ProofOfReserveService
                         {
                             AlertId = alertConfig.AlertId,
                             AssetId = alertConfig.AssetId,
-                            AlertType = alertConfig.Type,
+                            AlertType = alertConfig.Type.ToString(),
                             Message = $"Alert: {alertConfig.AlertName} - Current ratio: {asset.CurrentReserveRatio:P2}",
-                            Severity = asset.Health == ReserveHealthStatus.Undercollateralized ? AlertSeverity.Critical : AlertSeverity.Warning,
-                            TriggeredAt = DateTime.UtcNow,
-                            IsActive = true
+                            Severity = asset.Health == NeoServiceLayer.Core.ReserveHealthStatusEnum.Undercollateralized ? "Critical" : "Warning",
+                            CreatedAt = DateTime.UtcNow,
+                            IsResolved = false
                         });
                     }
                 }
@@ -273,7 +301,7 @@ public partial class ProofOfReserveService
     /// <param name="to">The end date.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve snapshots.</returns>
-    private async Task<ReserveSnapshot[]> GetReserveSnapshotsWithCachingAsync(
+    private async Task<ProofModels.ReserveSnapshot[]> GetReserveSnapshotsWithCachingAsync(
         string assetId,
         DateTime from,
         DateTime to,
@@ -308,7 +336,7 @@ public partial class ProofOfReserveService
     /// <param name="to">The end date.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The reserve snapshots.</returns>
-    private async Task<ReserveSnapshot[]> GetReserveSnapshotsInternalAsync(
+    private async Task<ProofModels.ReserveSnapshot[]> GetReserveSnapshotsInternalAsync(
         string assetId,
         DateTime from,
         DateTime to,
@@ -321,12 +349,11 @@ public partial class ProofOfReserveService
             if (_reserveHistory.TryGetValue(assetId, out var history))
             {
                 return history.Where(s => s.Timestamp >= from && s.Timestamp <= to)
-                             .Select(ConvertModelsSnapshotToCoreSnapshot)
                              .ToArray();
             }
         }
 
-        return Array.Empty<ReserveSnapshot>();
+        return Array.Empty<ProofModels.ReserveSnapshot>();
     }
 
     /// <summary>
@@ -379,24 +406,17 @@ public partial class ProofOfReserveService
         BlockchainType blockchainType)
     {
         var asset = GetMonitoredAsset(assetId);
-        var coreSnapshots = await GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType);
-        var snapshots = coreSnapshots.Select(ConvertCoreSnapshotToModelsSnapshot).ToArray();
+        var snapshots = await GetReserveSnapshotsInternalAsync(assetId, from, to, blockchainType);
 
         var report = new AuditReport
         {
             ReportId = Guid.NewGuid().ToString(),
             AssetId = assetId,
-            AssetSymbol = asset.AssetSymbol,
             PeriodStart = from,
             PeriodEnd = to,
             GeneratedAt = DateTime.UtcNow,
-            TotalSnapshots = snapshots.Length,
             AverageReserveRatio = snapshots.Length > 0 ? snapshots.Average(s => s.ReserveRatio) : 0,
-            MinReserveRatio = snapshots.Length > 0 ? snapshots.Min(s => s.ReserveRatio) : 0,
-            MaxReserveRatio = snapshots.Length > 0 ? snapshots.Max(s => s.ReserveRatio) : 0,
-            CompliancePercentage = snapshots.Length > 0 ?
-                (decimal)snapshots.Count(s => s.ReserveRatio >= asset.MinReserveRatio) / snapshots.Length * 100 : 0,
-            Recommendations = GenerateAuditRecommendations(ConvertModelsAssetToCoreAsset(asset), snapshots.Select(ConvertModelsSnapshotToCoreSnapshot).ToArray())
+            Alerts = new List<ReserveAlert>()
         };
 
         Logger.LogInformation("Generated audit report {ReportId} for asset {AssetId} covering period {From} to {To}",

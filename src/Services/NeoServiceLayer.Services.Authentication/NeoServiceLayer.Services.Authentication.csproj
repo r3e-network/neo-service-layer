@@ -9,20 +9,29 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="9.0.0" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.3.0" />
-    <PackageReference Include="System.IdentityModel.Tokens.Jwt" Version="8.3.0" />
-    <PackageReference Include="OtpNet" Version="1.4.0" />
-    <PackageReference Include="BCrypt.Net-Next" Version="4.0.3" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" />
+    <PackageReference Include="System.IdentityModel.Tokens.Jwt" />
+    <PackageReference Include="Otp.NET" />
+    <PackageReference Include="BCrypt.Net-Next" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="StackExchange.Redis" />
+    <PackageReference Include="QRCoder" />
+    <PackageReference Include="Scriban" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Security\NeoServiceLayer.Infrastructure.Security.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Observability/NeoServiceLayer.Infrastructure.Observability.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.EventSourcing/NeoServiceLayer.Infrastructure.EventSourcing.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.CQRS/NeoServiceLayer.Infrastructure.CQRS.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,4 +1,10 @@
 using System;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Domain.ValueObjects
 {

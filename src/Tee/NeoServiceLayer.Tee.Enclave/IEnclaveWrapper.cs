@@ -1,4 +1,9 @@
-﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -80,7 +85,7 @@ public interface IEnclaveWrapper : IDisposable
     /// JSON string containing computation results, execution metadata, and performance metrics.
     /// </returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="computationId"/> or <paramref name="computationCode"/> 
+    /// Thrown when <paramref name="computationId"/> or <paramref name="computationCode"/>
     /// is null or empty.
     /// </exception>
     /// <exception cref="EnclaveException">
@@ -154,7 +159,7 @@ public interface IEnclaveWrapper : IDisposable
     /// The maximum value (inclusive). Must be greater than <paramref name="min"/>.
     /// </param>
     /// <returns>
-    /// A cryptographically secure random integer between <paramref name="min"/> and 
+    /// A cryptographically secure random integer between <paramref name="min"/> and
     /// <paramref name="max"/> (inclusive).
     /// </returns>
     /// <exception cref="ArgumentException">
@@ -281,12 +286,12 @@ public interface IEnclaveWrapper : IDisposable
     /// Cannot be null or empty.
     /// </param>
     /// <param name="keyUsage">
-    /// Comma-separated list of allowed key operations. 
+    /// Comma-separated list of allowed key operations.
     /// Valid operations: "Sign", "Verify", "Encrypt", "Decrypt", "KeyDerivation".
     /// Cannot be null or empty.
     /// </param>
     /// <param name="exportable">
-    /// <c>true</c> if the private key material can be exported from the enclave; 
+    /// <c>true</c> if the private key material can be exported from the enclave;
     /// otherwise, <c>false</c> for maximum security.
     /// </param>
     /// <param name="description">
@@ -297,7 +302,7 @@ public interface IEnclaveWrapper : IDisposable
     /// public key (if applicable), and usage constraints.
     /// </returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="keyId"/>, <paramref name="keyType"/>, or 
+    /// Thrown when <paramref name="keyId"/>, <paramref name="keyType"/>, or
     /// <paramref name="keyUsage"/> is null, empty, or contains invalid values.
     /// </exception>
     /// <exception cref="EnclaveException">
@@ -422,8 +427,8 @@ public interface IEnclaveWrapper : IDisposable
     /// Must be alphanumeric and unique within the enclave.
     /// </param>
     /// <param name="modelType">
-    /// The machine learning algorithm type. 
-    /// Supported values: "LinearRegression", "LogisticRegression", "NeuralNetwork", 
+    /// The machine learning algorithm type.
+    /// Supported values: "LinearRegression", "LogisticRegression", "NeuralNetwork",
     /// "RandomForest", "SVM", "AnomalyDetection".
     /// Cannot be null or empty.
     /// </param>
@@ -505,7 +510,7 @@ public interface IEnclaveWrapper : IDisposable
     /// public key, creation timestamp, and initial configuration.
     /// </returns>
     /// <exception cref="ArgumentException">
-    /// Thrown when <paramref name="accountId"/> or <paramref name="accountData"/> 
+    /// Thrown when <paramref name="accountId"/> or <paramref name="accountData"/>
     /// is null, empty, or contains invalid JSON.
     /// </exception>
     /// <exception cref="EnclaveException">
@@ -655,6 +660,26 @@ public interface IEnclaveWrapper : IDisposable
     /// and ensuring temporal ordering of transactions within the enclave.
     /// </remarks>
     long GetTrustedTime();
+
+    /// <summary>
+    /// Gets the enclave attestation report.
+    /// </summary>
+    /// <returns>
+    /// The attestation report as a byte array containing cryptographic proof
+    /// of the enclave's identity and measurement.
+    /// </returns>
+    /// <exception cref="InvalidOperationException">
+    /// Thrown when the enclave is not initialized.
+    /// </exception>
+    /// <exception cref="EnclaveException">
+    /// Thrown when attestation generation fails.
+    /// </exception>
+    /// <remarks>
+    /// The attestation report provides cryptographic proof that the enclave
+    /// is running genuine code on genuine Intel SGX hardware. This is essential
+    /// for establishing trust with remote parties.
+    /// </remarks>
+    byte[] GetAttestation();
 
     #endregion
 }

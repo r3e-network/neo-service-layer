@@ -1,4 +1,9 @@
-﻿namespace NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System;
+using NeoServiceLayer.Core;
+
+namespace NeoServiceLayer.Services.Configuration.Models;
 
 /// <summary>
 /// Configuration scope enumeration.
@@ -57,7 +62,12 @@ public enum ConfigurationValueType
     Boolean,
 
     /// <summary>
-    /// Double value type.
+    /// Decimal value type.
+    /// </summary>
+    Decimal,
+
+    /// <summary>
+    /// Double precision floating point value type.
     /// </summary>
     Double,
 
@@ -79,12 +89,7 @@ public enum ConfigurationValueType
     /// <summary>
     /// Binary data value type.
     /// </summary>
-    Binary,
-
-    /// <summary>
-    /// Encrypted value type.
-    /// </summary>
-    Encrypted
+    Binary
 }
 
 /// <summary>
@@ -95,6 +100,8 @@ public class GetConfigurationRequest
     /// <summary>
     /// Gets or sets the configuration key.
     /// </summary>
+    [Required]
+    [StringLength(256)]
     public string Key { get; set; } = string.Empty;
 
     /// <summary>
@@ -103,29 +110,14 @@ public class GetConfigurationRequest
     public ConfigurationScope Scope { get; set; } = ConfigurationScope.Global;
 
     /// <summary>
-    /// Gets or sets the environment filter.
+    /// Gets or sets whether to include metadata.
     /// </summary>
-    public string? Environment { get; set; }
-
-    /// <summary>
-    /// Gets or sets the service filter.
-    /// </summary>
-    public string? ServiceName { get; set; }
+    public bool IncludeMetadata { get; set; } = false;
 
     /// <summary>
     /// Gets or sets the default value to return if key is not found.
     /// </summary>
     public object? DefaultValue { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether to decrypt encrypted values.
-    /// </summary>
-    public bool DecryptValue { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>
@@ -146,32 +138,7 @@ public class ConfigurationResult
     /// <summary>
     /// Gets or sets the value type.
     /// </summary>
-    public ConfigurationValueType ValueType { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether the value was found.
-    /// </summary>
-    public bool Found { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether the value is encrypted.
-    /// </summary>
-    public bool IsEncrypted { get; set; }
-
-    /// <summary>
-    /// Gets or sets the configuration scope.
-    /// </summary>
-    public ConfigurationScope Scope { get; set; }
-
-    /// <summary>
-    /// Gets or sets the last modified timestamp.
-    /// </summary>
-    public DateTime? LastModified { get; set; }
-
-    /// <summary>
-    /// Gets or sets the version of the configuration.
-    /// </summary>
-    public int Version { get; set; }
+    public ConfigurationValueType ValueType { get; set; } = ConfigurationValueType.String;
 
     /// <summary>
     /// Gets or sets whether the operation was successful.
@@ -179,14 +146,34 @@ public class ConfigurationResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Gets or sets the error message if the operation failed.
+    /// Gets or sets the error message if operation failed.
     /// </summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the message for the operation result.
+    /// </summary>
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration version.
+    /// </summary>
+    public int Version { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the configuration was found.
+    /// </summary>
+    public bool Found { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the last modified timestamp.
+    /// </summary>
+    public DateTime? LastModified { get; set; }
 }
 
 /// <summary>
@@ -197,17 +184,20 @@ public class SetConfigurationRequest
     /// <summary>
     /// Gets or sets the configuration key.
     /// </summary>
+    [Required]
+    [StringLength(256)]
     public string Key { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the configuration value.
     /// </summary>
-    public object? Value { get; set; }
+    [Required]
+    public object Value { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the value type.
     /// </summary>
-    public ConfigurationValueType ValueType { get; set; }
+    public ConfigurationValueType ValueType { get; set; } = ConfigurationValueType.String;
 
     /// <summary>
     /// Gets or sets the configuration scope.
@@ -215,19 +205,9 @@ public class SetConfigurationRequest
     public ConfigurationScope Scope { get; set; } = ConfigurationScope.Global;
 
     /// <summary>
-    /// Gets or sets the environment.
+    /// Gets or sets additional metadata.
     /// </summary>
-    public string? Environment { get; set; }
-
-    /// <summary>
-    /// Gets or sets the service name.
-    /// </summary>
-    public string? ServiceName { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether to encrypt the value.
-    /// </summary>
-    public bool EncryptValue { get; set; } = false;
+    public Dictionary<string, object> Metadata { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the configuration description.
@@ -235,19 +215,9 @@ public class SetConfigurationRequest
     public string Description { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the configuration tags.
+    /// Gets or sets whether to encrypt the value.
     /// </summary>
-    public string[] Tags { get; set; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Gets or sets whether to create a backup before updating.
-    /// </summary>
-    public bool CreateBackup { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public bool EncryptValue { get; set; }
 }
 
 /// <summary>
@@ -266,9 +236,24 @@ public class ConfigurationSetResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Gets or sets the error message if the operation failed.
+    /// Gets or sets the error message if operation failed.
+    /// </summary>
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if operation failed.
     /// </summary>
     public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the new version number after the update.
+    /// </summary>
+    public int? NewVersion { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether this was a new configuration.
+    /// </summary>
+    public bool IsNew { get; set; }
 
     /// <summary>
     /// Gets or sets the previous value.
@@ -276,24 +261,9 @@ public class ConfigurationSetResult
     public object? PreviousValue { get; set; }
 
     /// <summary>
-    /// Gets or sets the new version number.
-    /// </summary>
-    public int NewVersion { get; set; }
-
-    /// <summary>
     /// Gets or sets the timestamp of the operation.
     /// </summary>
     public DateTime Timestamp { get; set; }
-
-    /// <summary>
-    /// Gets or sets the backup ID if a backup was created.
-    /// </summary>
-    public string? BackupId { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>
@@ -304,6 +274,8 @@ public class DeleteConfigurationRequest
     /// <summary>
     /// Gets or sets the configuration key.
     /// </summary>
+    [Required]
+    [StringLength(256)]
     public string Key { get; set; } = string.Empty;
 
     /// <summary>
@@ -312,24 +284,9 @@ public class DeleteConfigurationRequest
     public ConfigurationScope Scope { get; set; } = ConfigurationScope.Global;
 
     /// <summary>
-    /// Gets or sets the environment filter.
+    /// Gets or sets the deletion reason.
     /// </summary>
-    public string? Environment { get; set; }
-
-    /// <summary>
-    /// Gets or sets the service filter.
-    /// </summary>
-    public string? ServiceName { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether to create a backup before deletion.
-    /// </summary>
-    public bool CreateBackup { get; set; } = true;
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    public string? Reason { get; set; }
 }
 
 /// <summary>
@@ -348,14 +305,14 @@ public class ConfigurationDeleteResult
     public bool Success { get; set; }
 
     /// <summary>
-    /// Gets or sets the error message if the operation failed.
+    /// Gets or sets the error message if operation failed.
     /// </summary>
-    public string? ErrorMessage { get; set; }
+    public string? Message { get; set; }
 
     /// <summary>
-    /// Gets or sets the deleted value.
+    /// Gets or sets whether the key existed before deletion.
     /// </summary>
-    public object? DeletedValue { get; set; }
+    public bool KeyExisted { get; set; }
 
     /// <summary>
     /// Gets or sets the timestamp of the operation.
@@ -363,12 +320,72 @@ public class ConfigurationDeleteResult
     public DateTime Timestamp { get; set; }
 
     /// <summary>
-    /// Gets or sets the backup ID if a backup was created.
+    /// Gets or sets the error message if operation failed.
     /// </summary>
-    public string? BackupId { get; set; }
+    public string? ErrorMessage { get; set; }
+}
+
+/// <summary>
+/// Validate configuration request.
+/// </summary>
+public class ValidateConfigurationRequest
+{
+    /// <summary>
+    /// Gets or sets the configuration key.
+    /// </summary>
+    [Required]
+    [StringLength(256)]
+    public string Key { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets additional metadata.
+    /// Gets or sets the configuration value to validate.
     /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
+    [Required]
+    public object Value { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the schema identifier for validation.
+    /// </summary>
+    public string? SchemaId { get; set; }
+
+    /// <summary>
+    /// Gets or sets the configuration scope.
+    /// </summary>
+    public ConfigurationScope Scope { get; set; } = ConfigurationScope.Global;
+}
+
+/// <summary>
+/// Configuration validation result.
+/// </summary>
+public class ConfigurationValidationResult
+{
+    /// <summary>
+    /// Gets or sets the configuration key.
+    /// </summary>
+    public string Key { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the configuration is valid.
+    /// </summary>
+    public bool IsValid { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the operation was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if operation failed.
+    /// </summary>
+    public string? Message { get; set; }
+
+    /// <summary>
+    /// Gets or sets validation errors.
+    /// </summary>
+    public ValidationError[] ValidationErrors { get; set; } = Array.Empty<ValidationError>();
+
+    /// <summary>
+    /// Gets or sets the error message if operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 }

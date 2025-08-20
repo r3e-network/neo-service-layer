@@ -1,7 +1,11 @@
-﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
@@ -40,7 +44,7 @@ public interface IFairOrderingService : IEnclaveService, IBlockchainService
     /// <param name="request">The MEV analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The MEV protection result.</returns>
-    Task<MevProtectionResult> AnalyzeMevRiskAsync(MevAnalysisRequest request, BlockchainType blockchainType);
+    Task<MevProtectionResult> AnalyzeMevRiskAsync(Models.MevAnalysisRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Submits a transaction with fairness protection.
@@ -63,7 +67,7 @@ public interface IFairOrderingService : IEnclaveService, IBlockchainService
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The ordering pools.</returns>
-    Task<IEnumerable<OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType);
+    Task<IEnumerable<Models.OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType);
 
     /// <summary>
     /// Updates the configuration of an ordering pool.

@@ -116,6 +116,33 @@ dotnet_naming_symbols.local_variables.applicable_kinds = local
 
 dotnet_naming_style.local_variable_style.capitalization = camel_case
 
+# Static Analysis Rules Enhancement
+dotnet_analyzer_diagnostic.category-style.severity = warning
+dotnet_analyzer_diagnostic.category-maintainability.severity = warning
+dotnet_analyzer_diagnostic.category-reliability.severity = error
+dotnet_analyzer_diagnostic.category-security.severity = error
+dotnet_analyzer_diagnostic.category-performance.severity = warning
+
+# Security Rules
+dotnet_diagnostic.CA2100.severity = error  # Review SQL queries for security vulnerabilities
+dotnet_diagnostic.CA3001.severity = error  # Review code for SQL injection vulnerabilities
+dotnet_diagnostic.CA3075.severity = error  # Insecure DTD processing in XML
+dotnet_diagnostic.CA5350.severity = error  # Do not use weak cryptographic algorithms
+dotnet_diagnostic.CA5351.severity = error  # Do not use broken cryptographic algorithms
+
+# Performance Rules
+dotnet_diagnostic.CA1802.severity = warning  # Use literals where appropriate
+dotnet_diagnostic.CA1805.severity = warning  # Do not initialize unnecessarily
+dotnet_diagnostic.CA1810.severity = warning  # Initialize reference type static fields inline
+dotnet_diagnostic.CA1821.severity = warning  # Remove empty finalizers
+dotnet_diagnostic.CA1822.severity = suggestion  # Mark members as static
+
+# Reliability Rules
+dotnet_diagnostic.CA2000.severity = warning  # Dispose objects before losing scope
+dotnet_diagnostic.CA2002.severity = error    # Do not lock on objects with weak identity
+dotnet_diagnostic.CA2007.severity = warning  # Consider calling ConfigureAwait on the awaited task
+dotnet_diagnostic.CA2008.severity = warning  # Do not create tasks without passing a TaskScheduler
+
 # CSharp code style settings:
 [*.cs]
 # Newline settings

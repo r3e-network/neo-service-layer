@@ -23,8 +23,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
   </ItemGroup>
+  <ItemGroup>
 
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
 </Project>

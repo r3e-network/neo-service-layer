@@ -7,6 +7,9 @@ using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -15,7 +18,7 @@ namespace NeoServiceLayer.Services.Authentication
     /// </summary>
     public class AuthenticationHealthCheck : IHealthCheck
     {
-        private readonly ILogger<AuthenticationHealthCheck> _logger;
+        private readonly ILogger<AuthenticationHealthCheck> Logger;
         private readonly IDistributedCache _cache;
         private readonly IConfiguration _configuration;
         private readonly ITokenService _tokenService;
@@ -30,7 +33,7 @@ namespace NeoServiceLayer.Services.Authentication
             IUserRepository userRepository,
             IAuthenticationMetricsCollector metricsCollector)
         {
-            _logger = logger;
+            Logger = logger;
             _cache = cache;
             _configuration = configuration;
             _tokenService = tokenService;
@@ -99,14 +102,14 @@ namespace NeoServiceLayer.Services.Authentication
                 if (unhealthyReasons.Count > 0)
                 {
                     var message = $"Authentication service is unhealthy: {string.Join("; ", unhealthyReasons)}";
-                    _logger.LogError(message);
+                    Logger.LogError(message);
                     return HealthCheckResult.Unhealthy(message, null, data);
                 }
 
                 if (degradedReasons.Count > 0)
                 {
                     var message = $"Authentication service is degraded: {string.Join("; ", degradedReasons)}";
-                    _logger.LogWarning(message);
+                    Logger.LogWarning(message);
                     return HealthCheckResult.Degraded(message, null, data);
                 }
 
@@ -114,11 +117,11 @@ namespace NeoServiceLayer.Services.Authentication
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Health check failed with exception");
+                Logger.LogError(ex, "Health check failed with exception");
                 stopwatch.Stop();
                 data["ResponseTime"] = $"{stopwatch.ElapsedMilliseconds}ms";
                 data["Error"] = ex.Message;
-                
+
                 return HealthCheckResult.Unhealthy(
                     "Authentication service health check failed",
                     ex,
@@ -134,7 +137,7 @@ namespace NeoServiceLayer.Services.Authentication
                 var issuer = _configuration["Authentication:Issuer"];
                 var audience = _configuration["Authentication:Audience"];
 
-                var isValid = !string.IsNullOrEmpty(jwtSecret) && 
+                var isValid = !string.IsNullOrEmpty(jwtSecret) &&
                              jwtSecret.Length >= 32 &&
                              !string.IsNullOrEmpty(issuer) &&
                              !string.IsNullOrEmpty(audience);
@@ -148,7 +151,7 @@ namespace NeoServiceLayer.Services.Authentication
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to check JWT configuration");
+                Logger.LogError(ex, "Failed to check JWT configuration");
                 data["JwtConfiguration"] = "Error";
                 return false;
             }
@@ -160,34 +163,34 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 var testKey = $"health_check:{Guid.NewGuid()}";
                 var testValue = DateTime.UtcNow.ToString();
-                
+
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 // Test write
-                await _cache.SetStringAsync(testKey, testValue, 
-                    new DistributedCacheEntryOptions 
-                    { 
-                        SlidingExpiration = TimeSpan.FromSeconds(10) 
-                    }, 
+                await _cache.SetStringAsync(testKey, testValue,
+                    new DistributedCacheEntryOptions
+                    {
+                        SlidingExpiration = TimeSpan.FromSeconds(10)
+                    },
                     cancellationToken);
-                
+
                 // Test read
                 var retrievedValue = await _cache.GetStringAsync(testKey, cancellationToken);
-                
+
                 // Test delete
                 await _cache.RemoveAsync(testKey, cancellationToken);
-                
+
                 stopwatch.Stop();
-                
+
                 var isHealthy = retrievedValue == testValue;
                 data["CacheStatus"] = isHealthy ? "Connected" : "Connection Failed";
                 data["CacheResponseTime"] = $"{stopwatch.ElapsedMilliseconds}ms";
-                
+
                 return isHealthy;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Cache health check failed");
+                Logger.LogError(ex, "Cache health check failed");
                 data["CacheStatus"] = "Error";
                 data["CacheError"] = ex.Message;
                 return false;
@@ -199,27 +202,27 @@ namespace NeoServiceLayer.Services.Authentication
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 // Test token generation
                 var tokenPair = await _tokenService.GenerateTokenPairAsync(
-                    "health_check_user", 
+                    "health_check_user",
                     new[] { "test" },
                     new Dictionary<string, string> { ["test"] = "health_check" });
-                
+
                 // Test token validation
                 var isValid = await _tokenService.ValidateTokenAsync(tokenPair.AccessToken);
-                
+
                 stopwatch.Stop();
-                
+
                 data["TokenServiceStatus"] = isValid ? "Operational" : "Failed";
                 data["TokenGenerationTime"] = $"{stopwatch.ElapsedMilliseconds}ms";
                 data["TokenValidation"] = isValid;
-                
+
                 return isValid;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Token service health check failed");
+                Logger.LogError(ex, "Token service health check failed");
                 data["TokenServiceStatus"] = "Error";
                 data["TokenServiceError"] = ex.Message;
                 return false;
@@ -231,22 +234,22 @@ namespace NeoServiceLayer.Services.Authentication
             try
             {
                 var stopwatch = Stopwatch.StartNew();
-                
+
                 // Test user retrieval (using a known test user)
                 var user = await _userRepository.GetByIdAsync("admin-001");
-                
+
                 stopwatch.Stop();
-                
+
                 var isHealthy = user != null;
                 data["UserRepositoryStatus"] = isHealthy ? "Connected" : "Connection Failed";
                 data["UserRepositoryResponseTime"] = $"{stopwatch.ElapsedMilliseconds}ms";
                 data["TestUserFound"] = isHealthy;
-                
+
                 return isHealthy;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "User repository health check failed");
+                Logger.LogError(ex, "User repository health check failed");
                 data["UserRepositoryStatus"] = "Error";
                 data["UserRepositoryError"] = ex.Message;
                 return false;
@@ -258,29 +261,29 @@ namespace NeoServiceLayer.Services.Authentication
             try
             {
                 var metrics = await _metricsCollector.GetMetricsAsync();
-                
+
                 data["MetricsStatus"] = "Operational";
                 data["TotalLogins"] = metrics.LoginMetrics.TotalAttempts;
                 data["TotalTokensGenerated"] = metrics.TokenMetrics.AccessTokensGenerated;
                 data["SecurityEvents"] = metrics.SecurityMetrics.SecurityEventsByType.Count;
-                
+
                 // Check for anomalies
-                var failureRate = metrics.LoginMetrics.TotalAttempts > 0 
-                    ? (double)metrics.LoginMetrics.FailedLogins / metrics.LoginMetrics.TotalAttempts 
+                var failureRate = metrics.LoginMetrics.TotalAttempts > 0
+                    ? (double)metrics.LoginMetrics.FailedLogins / metrics.LoginMetrics.TotalAttempts
                     : 0;
-                
+
                 if (failureRate > 0.5) // More than 50% failure rate
                 {
                     data["LoginFailureRate"] = $"{failureRate:P}";
                     data["MetricsWarning"] = "High login failure rate detected";
                     return false;
                 }
-                
+
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Metrics health check failed");
+                Logger.LogError(ex, "Metrics health check failed");
                 data["MetricsStatus"] = "Error";
                 data["MetricsError"] = ex.Message;
                 return false;
@@ -294,36 +297,36 @@ namespace NeoServiceLayer.Services.Authentication
                 // Check if rate limiting configuration is present
                 var rateLimitEnabled = _configuration.GetValue<bool>("RateLimit:Enabled", true);
                 var defaultLimit = _configuration.GetValue<int>("RateLimit:DefaultRequestsPerMinute", 60);
-                
+
                 data["RateLimitingEnabled"] = rateLimitEnabled;
                 data["DefaultRateLimit"] = $"{defaultLimit} requests/minute";
-                
+
                 if (!rateLimitEnabled)
                 {
                     data["RateLimitingStatus"] = "Disabled";
                     return true; // Not unhealthy if disabled by configuration
                 }
-                
+
                 // Test rate limit storage
                 var testKey = $"rate_limit_health_check:{DateTime.UtcNow.Ticks}";
-                await _cache.SetStringAsync(testKey, "1", 
-                    new DistributedCacheEntryOptions 
-                    { 
-                        SlidingExpiration = TimeSpan.FromSeconds(5) 
-                    }, 
+                await _cache.SetStringAsync(testKey, "1",
+                    new DistributedCacheEntryOptions
+                    {
+                        SlidingExpiration = TimeSpan.FromSeconds(5)
+                    },
                     cancellationToken);
-                
+
                 var value = await _cache.GetStringAsync(testKey, cancellationToken);
                 await _cache.RemoveAsync(testKey, cancellationToken);
-                
+
                 var isHealthy = value == "1";
                 data["RateLimitingStatus"] = isHealthy ? "Operational" : "Failed";
-                
+
                 return isHealthy;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Rate limiting health check failed");
+                Logger.LogError(ex, "Rate limiting health check failed");
                 data["RateLimitingStatus"] = "Error";
                 data["RateLimitingError"] = ex.Message;
                 return false;
@@ -337,14 +340,14 @@ namespace NeoServiceLayer.Services.Authentication
     public class DetailedAuthenticationHealthCheck : IHealthCheck
     {
         private readonly IEnumerable<IHealthCheck> _healthChecks;
-        private readonly ILogger<DetailedAuthenticationHealthCheck> _logger;
+        private readonly ILogger<DetailedAuthenticationHealthCheck> Logger;
 
         public DetailedAuthenticationHealthCheck(
             IEnumerable<IHealthCheck> healthChecks,
             ILogger<DetailedAuthenticationHealthCheck> logger)
         {
             _healthChecks = healthChecks;
-            _logger = logger;
+            Logger = logger;
         }
 
         public async Task<HealthCheckResult> CheckHealthAsync(
@@ -362,12 +365,12 @@ namespace NeoServiceLayer.Services.Authentication
                     var result = await healthCheck.CheckHealthAsync(context, cancellationToken);
                     var checkName = healthCheck.GetType().Name;
                     results[checkName] = result;
-                    
+
                     if (result.Status < worstStatus)
                     {
                         worstStatus = result.Status;
                     }
-                    
+
                     overallData[checkName] = new
                     {
                         Status = result.Status.ToString(),
@@ -377,14 +380,14 @@ namespace NeoServiceLayer.Services.Authentication
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Health check failed for {HealthCheck}", healthCheck.GetType().Name);
+                    Logger.LogError(ex, "Health check failed for {HealthCheck}", healthCheck.GetType().Name);
                     worstStatus = HealthStatus.Unhealthy;
                 }
             }
-            
+
             overallData["CheckCount"] = results.Count;
             overallData["Timestamp"] = DateTime.UtcNow;
-            
+
             var description = worstStatus switch
             {
                 HealthStatus.Healthy => "All authentication components are healthy",
@@ -392,7 +395,7 @@ namespace NeoServiceLayer.Services.Authentication
                 HealthStatus.Unhealthy => "Authentication service has critical issues",
                 _ => "Unknown status"
             };
-            
+
             return new HealthCheckResult(worstStatus, description, data: overallData);
         }
     }

@@ -3,6 +3,13 @@ using Moq;
 using System.Security.Cryptography;
 using System.Text;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Tee.Tests
 {
@@ -829,7 +836,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
             if (key.Length != 32)
                 throw new ArgumentException("AES-256 key must be 32 bytes");
 
-            using var aes = new AesGcm(key);
             var nonce = new byte[12];
             _rng.GetBytes(nonce);
             
@@ -855,7 +861,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
             if (encryptedData.Length < 28) // 12 + 0 + 16 minimum
                 throw new ArgumentException("Encrypted data too short");
 
-            using var aes = new AesGcm(key);
             
             var nonce = encryptedData[0..12];
             var ciphertext = encryptedData[12..^16];
@@ -941,7 +946,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
         private byte[] SignEd25519(byte[] data, byte[] privateKey)
         {
             // Simplified Ed25519 signing simulation
-            using var hmac = new HMACSHA256(privateKey);
             var hash = hmac.ComputeHash(data);
             var signature = new byte[64];
             hash.CopyTo(signature, 0);
@@ -965,7 +969,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
         {
             // Simplified secp256k1 signing simulation
             var hash = SHA256.HashData(data);
-            using var hmac = new HMACSHA256(privateKey);
             var signature = hmac.ComputeHash(hash);
             
             // Extend to 64 bytes for compact signature format

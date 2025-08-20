@@ -1,6 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Oracle.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using System;
+
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -723,7 +731,6 @@ public partial class OracleService
                 });
 
                 // Wait for all tasks with timeout
-                using var cts = new CancellationTokenSource(TimeSpan.FromMilliseconds(request.BatchTimeoutMs));
                 var completedTasks = await Task.WhenAll(tasks);
                 results.AddRange(completedTasks);
 
@@ -868,7 +875,6 @@ public partial class OracleService
             {
                 try
                 {
-                    using var jsonDoc = System.Text.Json.JsonDocument.Parse(data);
                     score *= 1.1; // Bonus for valid JSON
                 }
                 catch

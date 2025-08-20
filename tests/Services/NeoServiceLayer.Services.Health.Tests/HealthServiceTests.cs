@@ -1,11 +1,18 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health;
+using NeoServiceLayer.Services.Health.Models;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.Health.Tests;
 
@@ -43,7 +50,7 @@ public class HealthServiceTests : IDisposable
             IsConsensusNode = true,
             Thresholds = new HealthThreshold
             {
-                MaxResponseTime = TimeSpan.FromSeconds(5),
+                MaxResponseTime = 5000, // 5 seconds in milliseconds
                 MinUptimePercentage = 95.0
             }
         };
@@ -170,7 +177,7 @@ public class HealthServiceTests : IDisposable
 
         var newThreshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(10),
+            MaxResponseTime = 10000,
             MinUptimePercentage = 90.0
         };
 

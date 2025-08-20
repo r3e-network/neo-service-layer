@@ -1,0 +1,233 @@
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace NeoServiceLayer.Services.Permissions.Models
+{
+    /// <summary>
+    /// Service permission model.
+    /// </summary>
+    public class ServicePermission
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Name { get; set; } = string.Empty;
+        public string Resource { get; set; } = string.Empty;
+        public string ResourcePattern { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+        public List<AccessType> AllowedAccess { get; set; } = new();
+        public string Effect { get; set; } = "Allow";
+        public bool CanDelegate { get; set; }
+        public bool RequiresMfa { get; set; }
+        public Dictionary<string, object> Conditions { get; set; } = new();
+        public TimeRestriction? TimeRestriction { get; set; }
+        public PolicyConditions? PolicyConditions { get; set; }
+        public BlockchainConditions? BlockchainConditions { get; set; }
+    }
+
+    /// <summary>
+    /// Role model.
+    /// </summary>
+    public class Role
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string RoleId { get; set; } = Guid.NewGuid().ToString();
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public bool IsSystem { get; set; }
+        public bool IsActive { get; set; } = true;
+        public List<string> Permissions { get; set; } = new();
+        public List<ServicePermission> ServicePermissions { get; set; } = new();
+        public List<string> AllowedServices { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
+        public TimeRestriction? TimeRestriction { get; set; }
+        public PolicyConditions? PolicyConditions { get; set; }
+        public int Priority { get; set; } = 100;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public string CreatedBy { get; set; } = "system";
+    }
+
+    /// <summary>
+    /// Principal model.
+    /// </summary>
+    public class Principal
+    {
+        public string Id { get; set; } = string.Empty;
+        public string Type { get; set; } = string.Empty;
+        public List<string> Roles { get; set; } = new();
+        public Dictionary<string, object> Attributes { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Data access policy.
+    /// </summary>
+    public class DataAccessPolicy
+    {
+        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Name { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public string Resource { get; set; } = string.Empty;
+        public string ResourcePattern { get; set; } = string.Empty;
+        public List<string> AllowedActions { get; set; } = new();
+        public List<string> DeniedActions { get; set; } = new();
+        public List<string> RequiredRoles { get; set; } = new();
+        public List<string> Principals { get; set; } = new();
+        public bool RequiresMfa { get; set; }
+        public bool AllowDelegation { get; set; }
+        public Dictionary<string, object> Conditions { get; set; } = new();
+        public TimeRestriction? TimeRestriction { get; set; }
+        public PolicyConditions? PolicyConditions { get; set; }
+        public BlockchainConditions? BlockchainConditions { get; set; }
+        public PolicyEffect Effect { get; set; } = PolicyEffect.Allow;
+        public int Priority { get; set; } = 100;
+        public bool IsEnabled { get; set; } = true;
+    }
+
+    /// <summary>
+    /// Time restriction for policies.
+    /// </summary>
+    public class TimeRestriction
+    {
+        public DateTime? StartTime { get; set; }
+        public DateTime? EndTime { get; set; }
+        public List<int> AllowedDaysOfWeek { get; set; } = new();
+        public List<string> AllowedTimeRanges { get; set; } = new();
+        public List<DayOfWeek> AllowedDays { get; set; } = new();
+        public List<int> AllowedHours { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Policy conditions.
+    /// </summary>
+    public class PolicyConditions
+    {
+        public Dictionary<string, object> RequiredAttributes { get; set; } = new();
+        public List<string> RequiredRoles { get; set; } = new();
+        public Dictionary<string, string> IpRestrictions { get; set; } = new();
+        public List<string> IpAddresses { get; set; } = new();
+        public Dictionary<string, object> Attributes { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Blockchain conditions.
+    /// </summary>
+    public class BlockchainConditions
+    {
+        public string RequiredNetwork { get; set; } = string.Empty;
+        public decimal? MinimumBalance { get; set; }
+        public List<string> RequiredTokens { get; set; } = new();
+        public Dictionary<string, object> SmartContractConditions { get; set; } = new();
+        public decimal? MinimumTokenBalance { get; set; }
+        public List<string> RequiredNFTs { get; set; } = new();
+        public List<string> RequiredContracts { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Access type enumeration.
+    /// </summary>
+    public enum AccessType
+    {
+        Read,
+        Write,
+        Execute,
+        Delete,
+        Admin,
+        Full
+    }
+    
+    /// <summary>
+    /// Permission scope enumeration.
+    /// </summary>
+    public enum PermissionScope
+    {
+        Global,
+        Service,
+        Resource,
+        User
+    }
+    
+    /// <summary>
+    /// Policy effect enumeration.
+    /// </summary>
+    public enum PolicyEffect
+    {
+        Allow,
+        Deny
+    }
+    
+    /// <summary>
+    /// Permission model.
+    /// </summary>
+    public class Permission
+    {
+        public string PermissionId { get; set; } = Guid.NewGuid().ToString();
+        public string Resource { get; set; } = string.Empty;
+        public string Action { get; set; } = string.Empty;
+        public PermissionScope Scope { get; set; } = PermissionScope.Resource;
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    }
+    
+    /// <summary>
+    /// Service permission registration.
+    /// </summary>
+    public class ServicePermissionRegistration
+    {
+        public string ServiceName { get; set; } = string.Empty;
+        public string Description { get; set; } = string.Empty;
+        public List<ServicePermission> Permissions { get; set; } = new();
+    }
+    
+    /// <summary>
+    /// Service permissions attribute.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class, AllowMultiple = false)]
+    public class ServicePermissionsAttribute : Attribute
+    {
+        public bool AutoRegister { get; set; }
+        public string ResourcePrefix { get; set; } = string.Empty;
+        public string? Description { get; set; }
+    }
+    
+    /// <summary>
+    /// Allow anonymous access attribute.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method, AllowMultiple = false)]
+    public class AllowAnonymousAccessAttribute : Attribute
+    {
+    }
+}
+
+namespace NeoServiceLayer.Services.Permissions
+{
+    /// <summary>
+    /// Permission result.
+    /// </summary>
+    public class PermissionResult
+    {
+        public bool IsAllowed { get; set; }
+        public string? Reason { get; set; }
+    }
+    
+    /// <summary>
+    /// Operation result.
+    /// </summary>
+    public class OperationResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+    }
+    
+    /// <summary>
+    /// Interface for permission service.
+    /// </summary>
+    public interface IPermissionService
+    {
+        Task<bool> CheckPermissionAsync(string principalId, string resource, string action);
+        Task<PermissionResult> CheckServicePermissionAsync(string principalId, string serviceName, Models.AccessType accessType);
+        Task<bool> HasRoleAsync(string principalId, string roleName);
+        Task<List<string>> GetUserRolesAsync(string principalId);
+        Task<List<Models.ServicePermission>> GetUserPermissionsAsync(string principalId);
+        Task<OperationResult> RegisterServiceAsync(Models.ServicePermissionRegistration registration);
+        Task<OperationResult> CreateRoleAsync(Models.Role role);
+        Task<OperationResult> CreateDataAccessPolicyAsync(Models.DataAccessPolicy policy);
+    }
+}

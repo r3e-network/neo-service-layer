@@ -1,10 +1,21 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Neo.X;
+using System.Text.Json;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Neo.X.Tests;
 
@@ -381,8 +392,8 @@ public class NeoXClientTests : IDisposable
         return new Transaction
         {
             Hash = "0x0000000000000000000000000000000000000000000000000000000000000000",
-            Sender = "0x1234567890123456789012345678901234567890",
-            Recipient = "0xabcdef1234567890abcdef1234567890abcdef12",
+            From = "0x1234567890123456789012345678901234567890",
+            To = "0xabcdef1234567890abcdef1234567890abcdef12",
             Value = 1.5m,
             Data = "0x",
             Timestamp = DateTime.UtcNow,

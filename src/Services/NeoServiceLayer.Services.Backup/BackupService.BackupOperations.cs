@@ -1,6 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup.Models;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System.IO.Compression;
+using System.IO;
+using System;
+
 
 namespace NeoServiceLayer.Services.Backup;
 
@@ -233,7 +241,7 @@ public partial class BackupService
     private async Task<byte[]> CompressWithGzipAsync(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var gzipStream = new System.IO.Compression.GZipStream(output, System.IO.Compression.CompressionLevel.SmallestSize))
+        using (var gzipStream = new GZipStream(output, CompressionLevel.Optimal))
         {
             await gzipStream.WriteAsync(data.AsMemory(0, data.Length));
             await gzipStream.FlushAsync();
@@ -256,7 +264,7 @@ public partial class BackupService
     private async Task<byte[]> CompressWithZipAsync(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var zip = new System.IO.Compression.ZipArchive(output, System.IO.Compression.ZipArchiveMode.Create, leaveOpen: true))
+        using (var zip = new System.IO.Compression.ZipArchive(output, System.IO.Compression.ZipArchiveMode.Create, true))
         {
             var entry = zip.CreateEntry("backup.dat", System.IO.Compression.CompressionLevel.SmallestSize);
             entry.LastWriteTime = DateTimeOffset.UtcNow;
@@ -283,7 +291,7 @@ public partial class BackupService
     private async Task<byte[]> CompressWithDeflateAsync(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var deflateStream = new System.IO.Compression.DeflateStream(output, System.IO.Compression.CompressionLevel.SmallestSize))
+        using (var deflateStream = new System.IO.Compression.DeflateStream(output, System.IO.Compression.CompressionLevel.SmallestSize, true))
         {
             await deflateStream.WriteAsync(data.AsMemory(0, data.Length));
             await deflateStream.FlushAsync();
@@ -306,7 +314,7 @@ public partial class BackupService
     private async Task<byte[]> CompressWithBrotliAsync(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var brotliStream = new System.IO.Compression.BrotliStream(output, System.IO.Compression.CompressionLevel.SmallestSize))
+        using (var brotliStream = new System.IO.Compression.BrotliStream(output, System.IO.Compression.CompressionLevel.SmallestSize, true))
         {
             await brotliStream.WriteAsync(data.AsMemory(0, data.Length));
             await brotliStream.FlushAsync();
@@ -368,13 +376,11 @@ public partial class BackupService
         aes.Key = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(encryptionKey));
         aes.GenerateIV();
 
-        using var encryptor = aes.CreateEncryptor();
         using var msEncrypt = new MemoryStream();
-
         // Prepend IV to encrypted data
         msEncrypt.Write(aes.IV, 0, aes.IV.Length);
 
-        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, aes.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write))
         {
             csEncrypt.Write(data, 0, data.Length);
         }
@@ -414,7 +420,7 @@ public partial class BackupService
     private byte[] CompressWithGzip(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var gzip = new System.IO.Compression.GZipStream(output, System.IO.Compression.CompressionMode.Compress))
+        using (var gzip = new GZipStream(output, CompressionLevel.Optimal))
         {
             gzip.Write(data, 0, data.Length);
         }
@@ -429,7 +435,7 @@ public partial class BackupService
     private byte[] CompressWithZip(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var zip = new System.IO.Compression.ZipArchive(output, System.IO.Compression.ZipArchiveMode.Create))
+        using (var zip = new ZipArchive(output, ZipArchiveMode.Create, true))
         {
             var entry = zip.CreateEntry("backup.dat");
             using var entryStream = entry.Open();
@@ -445,7 +451,6 @@ public partial class BackupService
     /// <returns>Checksum string.</returns>
     private string ComputeChecksum(byte[] data)
     {
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(data);
         return Convert.ToHexString(hash);
     }
@@ -576,14 +581,12 @@ public partial class BackupService
             aes.Key = encryptionKeyBytes;
             aes.GenerateIV();
 
-            using var encryptor = aes.CreateEncryptor();
             using var msEncrypt = new MemoryStream();
-
             // Write IV first
             await msEncrypt.WriteAsync(aes.IV);
 
             // Encrypt data
-            using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+            using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, aes.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write))
             {
                 await csEncrypt.WriteAsync(data);
                 await csEncrypt.FlushFinalBlockAsync();
@@ -658,4 +661,5 @@ public partial class BackupService
             throw new InvalidOperationException($"Storage integrity verification failed for backup {backupId}", ex);
         }
     }
+
 }

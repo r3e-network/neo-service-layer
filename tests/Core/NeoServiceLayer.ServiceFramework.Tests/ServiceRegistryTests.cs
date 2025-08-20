@@ -1,7 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.ServiceFramework.Tests;
 
@@ -288,6 +294,6 @@ public class ServiceRegistryTests
 /// <summary>
 /// Interface for testing service registry.
 /// </summary>
-public interface ITestService : IService
+public interface IRegistryTestService : IService
 {
 }

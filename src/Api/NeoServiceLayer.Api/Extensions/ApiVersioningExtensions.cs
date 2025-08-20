@@ -1,6 +1,12 @@
-﻿using Microsoft.AspNetCore.Mvc;
-using Microsoft.AspNetCore.Mvc.Versioning;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
 using Microsoft.Extensions.DependencyInjection;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Extensions
 {
@@ -28,14 +34,15 @@ namespace NeoServiceLayer.Api.Extensions
                 );
             });
 
-            services.AddVersionedApiExplorer(options =>
-            {
-                // Format: 'v'major[.minor][-status]
-                options.GroupNameFormat = "'v'VVV";
+            // TODO: Add Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer package
+            // services.AddVersionedApiExplorer(options =>
+            // {
+            //     // Format: 'v'major[.minor][-status]
+            //     options.GroupNameFormat = "'v'VVV";
 
-                // Substitute version in URL
-                options.SubstituteApiVersionInUrl = true;
-            });
+            //     // Substitute version in URL
+            //     options.SubstituteApiVersionInUrl = true;
+            // });
 
             return services;
         }

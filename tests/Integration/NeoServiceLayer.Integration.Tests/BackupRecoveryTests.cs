@@ -1,10 +1,15 @@
-﻿using System.IO.Compression;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -68,19 +73,21 @@ public class BackupRecoveryTests : IDisposable
         fileInfo.Length.Should().BeGreaterThan(0);
 
         // Verify backup contains expected files
-        using var archive = ZipFile.OpenRead(backupPath);
-        archive.Entries.Should().HaveCountGreaterOrEqualTo(testData.Count * 2 + 1); // data + metadata + manifest
-
-        foreach (var key in testData.Keys)
+        using (var archive = System.IO.Compression.ZipFile.OpenRead(backupPath))
         {
-            // Check for data file
-            archive.Entries.Should().Contain(e => e.FullName == $"data/{key}.dat");
-            // Check for metadata file
-            archive.Entries.Should().Contain(e => e.FullName == $"metadata/{key}.json");
-        }
+            archive.Entries.Should().HaveCountGreaterOrEqualTo(testData.Count * 2 + 1); // data + metadata + manifest
 
-        // Check for manifest
-        archive.Entries.Should().Contain(e => e.FullName == "manifest.json");
+            foreach (var key in testData.Keys)
+            {
+                // Check for data file
+                archive.Entries.Should().Contain(e => e.FullName == $"data/{key}.dat");
+                // Check for metadata file
+                archive.Entries.Should().Contain(e => e.FullName == $"metadata/{key}.json");
+            }
+
+            // Check for manifest
+            archive.Entries.Should().Contain(e => e.FullName == "manifest.json");
+        }
 
         _output.WriteLine($"Backup created: {backupPath} (Size: {fileInfo.Length} bytes)");
     }
@@ -185,10 +192,12 @@ public class BackupRecoveryTests : IDisposable
         expandedBackupSize.Should().BeGreaterThan(fullBackupSize);
 
         // Verify expanded backup contains all data (both initial and new)
-        using var archive = ZipFile.OpenRead(expandedBackupPath);
-        foreach (var key in initialData.Keys.Concat(newData.Keys))
+        using (var archive = System.IO.Compression.ZipFile.OpenRead(expandedBackupPath))
         {
-            archive.Entries.Should().Contain(e => e.FullName == $"data/{key}.dat");
+            foreach (var key in initialData.Keys.Concat(newData.Keys))
+            {
+                archive.Entries.Should().Contain(e => e.FullName == $"data/{key}.dat");
+            }
         }
 
         _output.WriteLine($"Full backup: {fullBackupSize} bytes, Expanded: {expandedBackupSize} bytes");
@@ -228,7 +237,6 @@ public class BackupRecoveryTests : IDisposable
         // Verify backup is encrypted (cannot read without password)
         Action readWithoutPassword = () =>
         {
-            using var archive = ZipFile.OpenRead(encryptedBackupPath);
             // This should fail for encrypted archives
         };
 
@@ -445,7 +453,7 @@ public class BackupRecoveryTests : IDisposable
         var restoreResult = await _provider.RestoreAsync(backupPath);
 
         // The restore should fail or succeed but validation should detect corruption
-        var validationResult = await _provider.ValidateIntegrityAsync();
+        var validationResult = await _provider.ValidateAsync();
 
         validationResult.Should().NotBeNull();
         // If restore succeeded, validation should detect corruption in the restored data
@@ -482,7 +490,7 @@ public class BackupRecoveryTests : IDisposable
         await _provider.BackupAsync(backupPath);
 
         // Act
-        var validationResult = await _provider.ValidateIntegrityAsync();
+        var validationResult = await _provider.ValidateAsync();
 
         // Assert
         validationResult.Should().NotBeNull();

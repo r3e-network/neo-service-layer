@@ -1,4 +1,4 @@
-﻿namespace NeoServiceLayer.Web.Models;
+namespace NeoServiceLayer.Web.Models;
 
 /// <summary>
 /// View model for error pages.

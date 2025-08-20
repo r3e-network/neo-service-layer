@@ -1,6 +1,12 @@
-﻿using System.Net;
 using System.Net.Sockets;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
@@ -179,8 +185,7 @@ public static class ResilienceHelper
         ILogger logger,
         string operationName = "operation")
     {
-        using var cts = new CancellationTokenSource(timeout);
-
+        using var cts = new CancellationTokenSource();
         try
         {
             var operationTask = operation();

@@ -10,7 +10,7 @@
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
     <Message Text="TestContract.cs -&gt; TestContract.nef" Importance="high" />
-    <Exec WorkingDirectory="$(TargetDir)" Command="nccs $(MSBuildProjectDirectory)\TestContract.cs -o TestContract.nef" />
+    <Exec WorkingDirectory="$(TargetDir)" Command="nccs $(MSBuildProjectDirectory)/TestContract.cs -o TestContract.nef" />
   </Target>
 
 </Project>

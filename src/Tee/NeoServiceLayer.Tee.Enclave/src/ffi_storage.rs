@@ -5,10 +5,11 @@ use std::fs::{File, OpenOptions};
 use std::io::{Read, Write, Seek, SeekFrom};
 use std::path::Path;
 
-// Import SGX cryptographic functions
+// Import SGX cryptographic functions with storage-specific signatures
 extern "C" {
     fn sgx_read_rand(rand: *mut u8, length: usize) -> c_uint;
-    fn sgx_aes_gcm_encrypt(
+    // Storage-specific encryption functions - different signatures from crypto module
+    fn sgx_storage_encrypt(
         key: *const u8,
         src: *const u8,
         src_len: usize,
@@ -19,7 +20,7 @@ extern "C" {
         dst: *mut u8,
         tag: *mut u8,
     ) -> c_uint;
-    fn sgx_aes_gcm_decrypt(
+    fn sgx_storage_decrypt(
         key: *const u8,
         src: *const u8,
         src_len: usize,
@@ -36,6 +37,7 @@ extern "C" {
 const SGX_SUCCESS: c_uint = 0x00000000;
 const SGX_ERROR_INVALID_PARAMETER: c_uint = 0x00000002;
 const SGX_ERROR_OUT_OF_MEMORY: c_uint = 0x00000003;
+#[allow(dead_code)]
 const SGX_ERROR_UNEXPECTED: c_uint = 0x00001001;
 const STORAGE_ERROR_FILE_NOT_FOUND: c_int = -1001;
 const STORAGE_ERROR_ACCESS_DENIED: c_int = -1002;
@@ -290,7 +292,7 @@ fn encrypt_data(data: &[u8], key: &[u8]) -> Result<Vec<u8>, ()> {
         let mut tag = [0u8; 16]; // GCM tag size
         
         // Encrypt using SGX AES-GCM
-        let result = sgx_aes_gcm_encrypt(
+        let result = sgx_storage_encrypt(
             enc_key.as_ptr(),
             data.as_ptr(),
             data.len(),
@@ -337,7 +339,7 @@ fn decrypt_data(data: &[u8], key: &[u8]) -> Result<Vec<u8>, ()> {
         let mut decrypted = vec![0u8; encrypted.len()];
         
         // Decrypt using SGX AES-GCM
-        let result = sgx_aes_gcm_decrypt(
+        let result = sgx_storage_decrypt(
             dec_key.as_ptr(),
             encrypted.as_ptr(),
             encrypted.len(),

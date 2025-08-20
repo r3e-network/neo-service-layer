@@ -1,8 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Automation;
-using AutomationService = NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Services.Automation.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -12,7 +19,7 @@ namespace NeoServiceLayer.Web.Controllers;
 [Tags("Automation")]
 public class AutomationController : BaseApiController
 {
-    private readonly AutomationService.IAutomationService _automationService;
+    private readonly IAutomationService _automationService;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AutomationController"/> class.
@@ -20,7 +27,7 @@ public class AutomationController : BaseApiController
     /// <param name="automationService">The automation service.</param>
     /// <param name="logger">The logger.</param>
     public AutomationController(
-        AutomationService.IAutomationService automationService,
+        IAutomationService automationService,
         ILogger<AutomationController> logger) : base(logger)
     {
         _automationService = automationService;
@@ -43,7 +50,7 @@ public class AutomationController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 500)]
     public async Task<IActionResult> CreateJob(
-        [FromBody] AutomationService.AutomationJobRequest request,
+        [FromBody] AutomationJobRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -79,7 +86,7 @@ public class AutomationController : BaseApiController
     /// <response code="404">Job not found.</response>
     [HttpGet("job/{jobId}/status/{blockchainType}")]
     [Authorize(Roles = "Admin,KeyManager,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<AutomationService.AutomationJobStatus>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<AutomationJobStatus>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -236,7 +243,7 @@ public class AutomationController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("jobs/{address}/{blockchainType}")]
     [Authorize(Roles = "Admin,KeyManager,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AutomationService.AutomationJob>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AutomationJob>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> GetJobs(
@@ -280,7 +287,7 @@ public class AutomationController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> UpdateJob(
         [FromRoute] string jobId,
-        [FromBody] AutomationService.AutomationJobUpdate update,
+        [FromBody] AutomationJobUpdate update,
         [FromRoute] string blockchainType)
     {
         try
@@ -315,7 +322,7 @@ public class AutomationController : BaseApiController
     /// <response code="404">Job not found.</response>
     [HttpGet("job/{jobId}/history/{blockchainType}")]
     [Authorize(Roles = "Admin,KeyManager,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AutomationService.AutomationExecution>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<AutomationExecution>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]

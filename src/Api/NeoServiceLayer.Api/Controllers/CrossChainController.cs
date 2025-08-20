@@ -1,9 +1,17 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
+using CoreModels = NeoServiceLayer.Core;
 using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.CrossChain.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -42,7 +50,7 @@ public class CrossChainController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<CrossChainTransferResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     public async Task<IActionResult> InitiateTransfer(
-        [FromBody] CrossChainTransferRequest request,
+        [FromBody] Core.Models.CrossChainTransferRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -93,13 +101,13 @@ public class CrossChainController : BaseApiController
             var sourceBlockchain = ParseBlockchainType(blockchainType);
             var targetBlockchain = BlockchainType.NeoX; // Default target, should be configurable
 
-            // Convert to RemoteCallRequest as expected by service
-            var remoteCallRequest = new RemoteCallRequest
+            // Convert to Core.Models.RemoteCallRequest as expected by service
+            var remoteCallRequest = new NeoServiceLayer.Core.Models.RemoteCallRequest
             {
                 ContractAddress = request.ContractAddress,
-                FunctionName = request.Method,
+                MethodName = request.Method,
                 Parameters = request.Parameters,
-                Caller = request.CallerAddress
+                GasLimit = 1000000 // Default gas limit
             };
 
             var result = await _crossChainService.ExecuteRemoteCallAsync(remoteCallRequest, sourceBlockchain, targetBlockchain);
@@ -266,10 +274,10 @@ public class CrossChainController : BaseApiController
         try
         {
             var blockchain = ParseBlockchainType(request.ChainId);
-            var mapping = new TokenMapping
+            var mapping = new NeoServiceLayer.Core.Models.TokenMapping
             {
-                SourceToken = request.ContractAddress,
-                DestinationToken = request.CallbackUrl,
+                SourceTokenAddress = request.ContractAddress,
+                DestinationTokenAddress = request.CallbackUrl,
                 SourceChain = blockchain,
                 DestinationChain = blockchain
             };
@@ -284,5 +292,21 @@ public class CrossChainController : BaseApiController
         {
             return HandleException(ex, "registering event listener");
         }
+    }
+
+    // Local DTO classes for missing types
+    // RemoteCallRequest is not needed - using Core.Models.RemoteCallRequest
+
+    public class TokenMapping
+    {
+        public string NeoTokenAddress { get; set; }
+        public string NeoXTokenAddress { get; set; }
+        public string TokenSymbol { get; set; }
+        public string TokenName { get; set; }
+        public int Decimals { get; set; }
+        public string SourceToken { get; set; }
+        public string DestinationToken { get; set; }
+        public BlockchainType SourceChain { get; set; }
+        public BlockchainType DestinationChain { get; set; }
     }
 }

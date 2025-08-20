@@ -7,6 +7,9 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Services.Authentication.Infrastructure;
+using NeoServiceLayer.ServiceFramework;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.Services.Authentication.Queries
 {
@@ -32,7 +35,7 @@ namespace NeoServiceLayer.Services.Authentication.Queries
         private readonly ISessionReadModelStore _sessionStore;
         private readonly ITokenReadModelStore _tokenStore;
         private readonly IMemoryCache _cache;
-        private readonly ILogger<AuthenticationQueryHandlers> _logger;
+        private readonly ILogger<AuthenticationQueryHandlers> Logger;
 
         public AuthenticationQueryHandlers(
             IUserReadModelStore userStore,
@@ -45,7 +48,7 @@ namespace NeoServiceLayer.Services.Authentication.Queries
             _sessionStore = sessionStore;
             _tokenStore = tokenStore;
             _cache = cache;
-            _logger = logger;
+            Logger = logger;
         }
 
         public async Task<UserDto?> HandleAsync(GetUserByIdQuery query, CancellationToken cancellationToken = default)
@@ -180,7 +183,7 @@ namespace NeoServiceLayer.Services.Authentication.Queries
         public async Task<RefreshTokenValidationResult> HandleAsync(ValidateRefreshTokenQuery query, CancellationToken cancellationToken = default)
         {
             var token = await _tokenStore.GetByTokenAsync(query.Token);
-            
+
             if (token == null)
             {
                 return new RefreshTokenValidationResult(false, null, null, "Token not found");
@@ -313,6 +316,11 @@ namespace NeoServiceLayer.Services.Authentication.Queries
         public List<LoginAttemptReadModel> RecentLoginAttempts { get; set; } = new();
         public int FailedLoginAttempts { get; set; }
         public DateTime? LockedUntil { get; set; }
+        
+        // Additional properties for compatibility
+        public string PasswordHash { get; set; } = string.Empty;
+        public string? TwoFactorSecret { get; set; }
+        public List<string>? BackupCodes { get; set; }
     }
 
     public class SessionReadModel

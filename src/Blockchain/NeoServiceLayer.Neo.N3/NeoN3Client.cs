@@ -3,8 +3,13 @@ using System.Net.Http;
 using System.Net.WebSockets;
 using System.Text;
 using System.Text.Json;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
+using Block = NeoServiceLayer.Infrastructure.Block;
+using Transaction = NeoServiceLayer.Infrastructure.Transaction;
+using ContractEvent = NeoServiceLayer.Infrastructure.ContractEvent;
 
 namespace NeoServiceLayer.Neo.N3;
 
@@ -125,7 +130,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     {
         try
         {
-            _logger.LogDebug("Sending transaction from {Sender} to {Recipient} with value {Value} via {RpcUrl}", transaction.Sender, transaction.Recipient, transaction.Value, _rpcUrl);
+            _logger.LogDebug("Sending transaction from {From} to {To} with value {Value} via {RpcUrl}", transaction.From, transaction.To, transaction.Value, _rpcUrl);
 
             var rawTransaction = BuildRawTransaction(transaction);
             var response = await CallRpcMethodAsync<JsonElement>("sendrawtransaction", rawTransaction);
@@ -134,7 +139,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to send transaction from {Sender} to {Recipient}", transaction.Sender, transaction.Recipient);
+            _logger.LogError(ex, "Failed to send transaction from {From} to {To}", transaction.From, transaction.To);
             throw;
         }
     }
@@ -267,6 +272,57 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     }
 
     /// <inheritdoc/>
+    public async Task<IEnumerable<ContractEvent>> GetBlockEventsAsync(long blockHeight)
+    {
+        try
+        {
+            _logger.LogDebug("Getting events from block {BlockHeight} via {RpcUrl}", blockHeight, _rpcUrl);
+
+            var request = new
+            {
+                jsonrpc = "2.0",
+                method = "getapplicationlog",
+                @params = new object[] { blockHeight },
+                id = GetNextRequestId()
+            };
+
+            var response = await SendRpcRequestAsync<dynamic>(request);
+            var events = new List<ContractEvent>();
+
+            if (response?.executions != null)
+            {
+                foreach (var execution in response.executions)
+                {
+                    if (execution.notifications != null)
+                    {
+                        foreach (var notification in execution.notifications)
+                        {
+                            events.Add(new ContractEvent
+                            {
+                                ContractHash = notification.contract?.ToString() ?? "",
+                                EventName = notification.eventname?.ToString() ?? "",
+                                BlockIndex = (uint)blockHeight,
+                                Parameters = new Dictionary<string, object>
+                                {
+                                    ["state"] = notification.state?.ToString() ?? ""
+                                },
+                                Timestamp = DateTime.UtcNow
+                            });
+                        }
+                    }
+                }
+            }
+
+            return events;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get events from block {BlockHeight}", blockHeight);
+            return new List<ContractEvent>();
+        }
+    }
+
+    /// <inheritdoc/>
     public async Task<string> CallContractMethodAsync(string contractAddress, string method, params object[] args)
     {
         try
@@ -382,8 +438,8 @@ public class NeoN3Client : IBlockchainClient, IDisposable
         return new Transaction
         {
             Hash = txData.GetProperty("hash").GetString() ?? string.Empty,
-            Sender = ExtractSenderFromTransaction(txData),
-            Recipient = ExtractRecipientFromTransaction(txData),
+            From = ExtractSenderFromTransaction(txData),
+            To = ExtractRecipientFromTransaction(txData),
             Value = ExtractValueFromTransaction(txData),
             Data = txData.GetRawText(),
             Timestamp = DateTime.UtcNow, // Neo N3 transactions don't have individual timestamps
@@ -457,7 +513,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
     {
         // This would build a proper Neo N3 raw transaction
         // For now, return a placeholder
-        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{transaction.Sender}:{transaction.Recipient}:{transaction.Value}"));
+        return Convert.ToBase64String(Encoding.UTF8.GetBytes($"{transaction.From}:{transaction.To}:{transaction.Value}"));
     }
 
     /// <summary>
@@ -591,8 +647,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
 
                             foreach (var contractEvent in contractEvents)
                             {
-                                contractEvent.BlockHash = block.Hash;
-                                contractEvent.BlockHeight = height;
+                                contractEvent.BlockIndex = (uint)height;
                                 contractEvent.TransactionHash = transaction.Hash;
 
                                 await callback(contractEvent);
@@ -644,7 +699,7 @@ public class NeoN3Client : IBlockchainClient, IDisposable
                 {
                     var contractEvent = new ContractEvent
                     {
-                        ContractAddress = contractAddress,
+                        ContractHash = contractAddress,
                         EventName = eventName,
                         Parameters = GenerateEventParameters(eventName),
                         Timestamp = transaction.Timestamp
@@ -1049,6 +1104,92 @@ public class NeoN3Client : IBlockchainClient, IDisposable
             // Return default gas price on error
             return 0.00001m;
         }
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters)
+    {
+        var payload = new
+        {
+            method = "invokefunction",
+            @params = new object[]
+            {
+                contractAddress,
+                method,
+                parameters.Select(p => new { type = "String", value = p.ToString() }).ToArray()
+            },
+            id = Interlocked.Increment(ref _requestId)
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        var response = await _httpClient.PostAsync(_rpcUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+        var result = await response.Content.ReadAsStringAsync();
+
+        var doc = JsonDocument.Parse(result);
+        if (doc.RootElement.TryGetProperty("result", out var resultElement))
+        {
+            return resultElement.GetRawText();
+        }
+
+        throw new InvalidOperationException("Failed to call contract method");
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters)
+    {
+        var payload = new
+        {
+            method = "sendrawtransaction",
+            @params = new object[]
+            {
+                contractAddress,
+                method,
+                parameters.Select(p => new { type = "String", value = p.ToString() }).ToArray()
+            },
+            id = Interlocked.Increment(ref _requestId)
+        };
+
+        var json = JsonSerializer.Serialize(payload);
+        var response = await _httpClient.PostAsync(_rpcUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+        var result = await response.Content.ReadAsStringAsync();
+
+        var doc = JsonDocument.Parse(result);
+        if (doc.RootElement.TryGetProperty("result", out var resultElement))
+        {
+            return resultElement.GetString() ?? string.Empty;
+        }
+
+        throw new InvalidOperationException("Failed to invoke contract method");
+    }
+
+    /// <summary>
+    /// Gets the next request ID for RPC calls.
+    /// </summary>
+    /// <returns>The next request ID.</returns>
+    private int GetNextRequestId()
+    {
+        return Interlocked.Increment(ref _requestId);
+    }
+
+    /// <summary>
+    /// Sends an RPC request and returns the result.
+    /// </summary>
+    /// <typeparam name="T">The type of the result.</typeparam>
+    /// <param name="request">The request object.</param>
+    /// <returns>The result of the RPC call.</returns>
+    private async Task<T> SendRpcRequestAsync<T>(object request)
+    {
+        var json = JsonSerializer.Serialize(request);
+        var response = await _httpClient.PostAsync(_rpcUrl, new StringContent(json, Encoding.UTF8, "application/json"));
+        var result = await response.Content.ReadAsStringAsync();
+
+        var doc = JsonDocument.Parse(result);
+        if (doc.RootElement.TryGetProperty("result", out var resultElement))
+        {
+            return JsonSerializer.Deserialize<T>(resultElement.GetRawText()) ?? throw new InvalidOperationException("Failed to deserialize result");
+        }
+
+        throw new InvalidOperationException("RPC request failed");
     }
 
     /// <summary>

@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Storage.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -22,13 +28,13 @@ public partial class StorageService
     {
         if (_persistentMetadataStorage == null)
         {
-            Logger.LogWarning("Persistent metadata storage not available, using in-memory cache only");
+            _persistentMetadataStorageNotAvailable(Logger, null);
             return;
         }
 
         try
         {
-            Logger.LogInformation("Initializing persistent metadata storage...");
+            _initializingPersistentMetadataStorage(Logger, null);
 
             if (!_persistentMetadataStorage.IsInitialized)
             {
@@ -38,11 +44,11 @@ public partial class StorageService
             // Load existing metadata into cache
             await LoadMetadataFromPersistentStorageAsync();
 
-            Logger.LogInformation("Persistent metadata storage initialized successfully");
+            _persistentMetadataStorageInitialized(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing persistent metadata storage");
+            _persistentMetadataStorageInitializationFailed(Logger, ex);
         }
     }
 
@@ -55,7 +61,7 @@ public partial class StorageService
 
         try
         {
-            Logger.LogInformation("Loading metadata from persistent storage...");
+            _loadingMetadataFromPersistentStorage(Logger, null);
 
             var metadataKeys = await _persistentMetadataStorage.ListKeysAsync(METADATA_PREFIX);
 
@@ -74,11 +80,11 @@ public partial class StorageService
                 }
             }
 
-            Logger.LogInformation("Loaded {Count} metadata entries from persistent storage", _metadataCache.Count);
+            _metadataEntriesLoadedFromPersistentStorage(Logger, _metadataCache.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading metadata from persistent storage");
+            _loadMetadataFromPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -98,7 +104,7 @@ public partial class StorageService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "StorageMetadata",
                     ["StorageKey"] = storageKey,
@@ -113,7 +119,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting metadata for key {Key}", storageKey);
+            _persistMetadataFailed(Logger, storageKey, ex);
         }
     }
 
@@ -134,7 +140,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing persisted metadata for key {Key}", storageKey);
+            _removePersistedMetadataFailed(Logger, storageKey, ex);
         }
     }
 
@@ -194,7 +200,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating metadata indexes for key {Key}", storageKey);
+            _updateMetadataIndexesFailed(Logger, storageKey, ex);
         }
     }
 
@@ -218,7 +224,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing metadata indexes for key {Key}", storageKey);
+            _removeMetadataIndexesFailed(Logger, storageKey, ex);
         }
     }
 
@@ -261,7 +267,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error querying metadata by owner {Owner}", owner);
+            _queryMetadataByOwnerFailed(Logger, owner, ex);
             // Fallback to in-memory cache
             return _metadataCache.Values.Where(m => m.Owner == owner).ToList();
         }
@@ -301,7 +307,7 @@ public partial class StorageService
             {
                 Encrypt = false,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Statistics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O")
@@ -310,7 +316,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting storage statistics");
+            _persistStorageStatisticsFailed(Logger, ex);
         }
     }
 
@@ -323,14 +329,13 @@ public partial class StorageService
 
         try
         {
-            Logger.LogInformation("Performing metadata maintenance...");
+            _performingMetadataMaintenance(Logger, null);
 
             // Validate storage integrity
-            var validationResult = await _persistentMetadataStorage.ValidateIntegrityAsync();
+            var validationResult = await _persistentMetadataStorage.ValidateAsync();
             if (!validationResult.IsValid)
             {
-                Logger.LogWarning("Metadata storage validation failed: {Errors}",
-                    string.Join(", ", validationResult.Errors));
+                _metadataStorageValidationFailed(Logger, string.Join(", ", validationResult.Errors), null);
             }
 
             // Compact storage if supported
@@ -342,11 +347,11 @@ public partial class StorageService
             // Update statistics
             await PersistStorageStatisticsAsync();
 
-            Logger.LogInformation("Metadata maintenance completed successfully");
+            _metadataMaintenanceCompleted(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during metadata maintenance");
+            _metadataMaintenanceFailed(Logger, ex);
         }
     }
 }

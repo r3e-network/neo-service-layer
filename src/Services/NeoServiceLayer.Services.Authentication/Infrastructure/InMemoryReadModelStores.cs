@@ -4,6 +4,9 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NeoServiceLayer.Services.Authentication.Queries;
+using NeoServiceLayer.ServiceFramework;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Infrastructure
 {
@@ -62,7 +65,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var lowerSearchTerm = searchTerm.ToLowerInvariant();
-                query = query.Where(u => 
+                query = query.Where(u =>
                     u.Username.ToLowerInvariant().Contains(lowerSearchTerm) ||
                     u.Email.ToLowerInvariant().Contains(lowerSearchTerm));
             }
@@ -88,7 +91,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
                 var lowerSearchTerm = searchTerm.ToLowerInvariant();
-                query = query.Where(u => 
+                query = query.Where(u =>
                     u.Username.ToLowerInvariant().Contains(lowerSearchTerm) ||
                     u.Email.ToLowerInvariant().Contains(lowerSearchTerm));
             }
@@ -110,6 +113,11 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
                 .Where(u => u.Permissions.Contains(permission))
                 .ToList();
             return Task.FromResult(users);
+        }
+
+        public Task<List<UserReadModel>> GetAllAsync()
+        {
+            return Task.FromResult(_users.Values.ToList());
         }
 
         public Task<UserStatistics> GetStatisticsAsync()
@@ -229,7 +237,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
         public Task SaveAsync(SessionReadModel session)
         {
             _sessions.AddOrUpdate(session.Id, session, (_, _) => session);
-            
+
             _userSessionIndex.AddOrUpdate(session.UserId,
                 new List<Guid> { session.Id },
                 (_, existing) =>
@@ -326,7 +334,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
         {
             _tokens.AddOrUpdate(token.Id, token, (_, _) => token);
             _tokenIndex.AddOrUpdate(token.Token, token.Id, (_, _) => token.Id);
-            
+
             _userTokenIndex.AddOrUpdate(token.UserId,
                 new List<Guid> { token.Id },
                 (_, existing) =>

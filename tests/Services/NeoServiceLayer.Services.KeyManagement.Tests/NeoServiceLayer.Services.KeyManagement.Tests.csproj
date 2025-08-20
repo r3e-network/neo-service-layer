@@ -22,7 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.KeyManagement/NeoServiceLayer.Services.KeyManagement.csproj" />
   </ItemGroup>
+  <ItemGroup>
 
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
 </Project>

@@ -9,7 +9,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <InternalsVisibleTo Include="NeoServiceLayer.Integration.Tests" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.AspNetCore.OpenApi" />
     <PackageReference Include="Asp.Versioning.Mvc" />
     
@@ -36,53 +41,55 @@
 
   <ItemGroup>
     <!-- Core Dependencies -->
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj" />
     
     <!-- All Service Layer Services -->
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.KeyManagement\NeoServiceLayer.Services.KeyManagement.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Oracle\NeoServiceLayer.Services.Oracle.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Voting\NeoServiceLayer.Services.Voting.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ZeroKnowledge\NeoServiceLayer.Services.ZeroKnowledge.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Backup\NeoServiceLayer.Services.Backup.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compliance\NeoServiceLayer.Services.Compliance.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.ProofOfReserve\NeoServiceLayer.Services.ProofOfReserve.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Health\NeoServiceLayer.Services.Health.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Monitoring\NeoServiceLayer.Services.Monitoring.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Notification\NeoServiceLayer.Services.Notification.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.AbstractAccount\NeoServiceLayer.Services.AbstractAccount.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Configuration\NeoServiceLayer.Services.Configuration.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Compute\NeoServiceLayer.Services.Compute.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.Automation\NeoServiceLayer.Services.Automation.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.CrossChain\NeoServiceLayer.Services.CrossChain.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EventSubscription\NeoServiceLayer.Services.EventSubscription.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SmartContracts\NeoServiceLayer.Services.SmartContracts.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SecretsManagement\NeoServiceLayer.Services.SecretsManagement.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.NetworkSecurity\NeoServiceLayer.Services.NetworkSecurity.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.EnclaveStorage\NeoServiceLayer.Services.EnclaveStorage.csproj" />
-    <ProjectReference Include="..\..\Services\NeoServiceLayer.Services.SocialRecovery\NeoServiceLayer.Services.SocialRecovery.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.KeyManagement/NeoServiceLayer.Services.KeyManagement.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Randomness/NeoServiceLayer.Services.Randomness.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Oracle/NeoServiceLayer.Services.Oracle.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Storage/NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Voting/NeoServiceLayer.Services.Voting.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.ZeroKnowledge/NeoServiceLayer.Services.ZeroKnowledge.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Backup/NeoServiceLayer.Services.Backup.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Compliance/NeoServiceLayer.Services.Compliance.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.ProofOfReserve/NeoServiceLayer.Services.ProofOfReserve.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Health/NeoServiceLayer.Services.Health.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Monitoring/NeoServiceLayer.Services.Monitoring.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Notification/NeoServiceLayer.Services.Notification.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.AbstractAccount/NeoServiceLayer.Services.AbstractAccount.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Configuration/NeoServiceLayer.Services.Configuration.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Compute/NeoServiceLayer.Services.Compute.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Automation/NeoServiceLayer.Services.Automation.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.CrossChain/NeoServiceLayer.Services.CrossChain.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.EventSubscription/NeoServiceLayer.Services.EventSubscription.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.SmartContracts/NeoServiceLayer.Services.SmartContracts.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.SecretsManagement/NeoServiceLayer.Services.SecretsManagement.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.NetworkSecurity/NeoServiceLayer.Services.NetworkSecurity.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.SocialRecovery/NeoServiceLayer.Services.SocialRecovery.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Statistics/NeoServiceLayer.Services.Statistics.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Permissions/NeoServiceLayer.Services.Permissions.csproj" />
     
     <!-- AI Services -->
-    <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.Prediction\NeoServiceLayer.AI.Prediction.csproj" />
-    <ProjectReference Include="..\..\AI\NeoServiceLayer.AI.PatternRecognition\NeoServiceLayer.AI.PatternRecognition.csproj" />
+    <ProjectReference Include="../../AI/NeoServiceLayer.AI.Prediction/NeoServiceLayer.AI.Prediction.csproj" />
+    <ProjectReference Include="../../AI/NeoServiceLayer.AI.PatternRecognition/NeoServiceLayer.AI.PatternRecognition.csproj" />
     
     <!-- Advanced Services -->
-    <ProjectReference Include="..\..\Advanced\NeoServiceLayer.Advanced.FairOrdering\NeoServiceLayer.Advanced.FairOrdering.csproj" />
+    <ProjectReference Include="../../Advanced/NeoServiceLayer.Advanced.FairOrdering/NeoServiceLayer.Advanced.FairOrdering.csproj" />
     
     <!-- TEE and Infrastructure -->
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Enclave\NeoServiceLayer.Tee.Enclave.csproj" />
-    <ProjectReference Include="..\..\Infrastructure\NeoServiceLayer.Infrastructure.Persistence\NeoServiceLayer.Infrastructure.Persistence.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="wwwroot\css\" />
-    <Folder Include="wwwroot\js\" />
-    <Folder Include="wwwroot\lib\" />
+    <Folder Include="wwwroot/css/" />
+    <Folder Include="wwwroot/js/" />
+    <Folder Include="wwwroot/lib/" />
   </ItemGroup>
 
 </Project> 

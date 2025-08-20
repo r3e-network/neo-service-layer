@@ -1,6 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace NeoServiceLayer.Services.Automation;
+
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents a request to update an existing automation job.
@@ -50,4 +56,9 @@ public class AutomationJobUpdate
     /// </summary>
     [Range(0, 10)]
     public int? MaxRetries { get; set; }
+
+    /// <summary>
+    /// Gets or sets the updated parameters for the automation job.
+    /// </summary>
+    public Dictionary<string, object>? Parameters { get; set; }
 }

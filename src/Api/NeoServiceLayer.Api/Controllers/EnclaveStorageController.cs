@@ -1,9 +1,16 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Services.EnclaveStorage.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -46,7 +53,7 @@ public class EnclaveStorageController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 413)]
     [ProducesResponseType(typeof(ApiResponse<object>), 507)]
     public async Task<IActionResult> StoreData(
-        [FromBody] SealDataRequest request,
+        [FromBody] NeoServiceLayer.Services.EnclaveStorage.Models.SealDataRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -141,7 +148,7 @@ public class EnclaveStorageController : BaseApiController
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> UpdateData(
         [FromRoute] string key,
-        [FromBody] SealDataRequest request,
+        [FromBody] NeoServiceLayer.Services.EnclaveStorage.Models.SealDataRequest request,
         [FromRoute] string blockchainType)
     {
         try
@@ -236,7 +243,7 @@ public class EnclaveStorageController : BaseApiController
     /// <returns>List of data keys and metadata.</returns>
     /// <response code="200">Keys retrieved successfully.</response>
     [HttpGet("{blockchainType}/keys")]
-    [ProducesResponseType(typeof(ApiResponse<SealedItemsList>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Services.EnclaveStorage.Models.SealedItemsList>), 200)]
     public async Task<IActionResult> ListDataKeys(
         [FromRoute] string blockchainType,
         [FromQuery] string? prefix = null,
@@ -306,7 +313,7 @@ public class EnclaveStorageController : BaseApiController
     /// <response code="403">Insufficient permissions for backup operation.</response>
     [HttpPost("{blockchainType}/backup")]
     [Authorize(Roles = "Admin,Backup")]
-    [ProducesResponseType(typeof(ApiResponse<BackupResult>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Services.EnclaveStorage.Models.BackupResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 403)]
     public async Task<IActionResult> CreateBackup(
         [FromBody] BackupRequest request,

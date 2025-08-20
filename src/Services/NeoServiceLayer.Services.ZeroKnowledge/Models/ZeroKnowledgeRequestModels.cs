@@ -1,5 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge.Models;
 
@@ -54,6 +60,11 @@ public class GenerateProofRequest
     /// Gets or sets the commitment blinding factor.
     /// </summary>
     public string? BlindingFactor { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional parameters for proof generation.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
 }
 
 /// <summary>

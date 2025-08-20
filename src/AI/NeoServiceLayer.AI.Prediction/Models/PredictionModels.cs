@@ -1,7 +1,80 @@
-﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction.Models;
+
+/// <summary>
+/// AI model type enumeration.
+/// </summary>
+public enum AIModelType
+{
+    /// <summary>
+    /// General prediction model.
+    /// </summary>
+    Prediction,
+    
+    /// <summary>
+    /// Linear regression model.
+    /// </summary>
+    LinearRegression,
+    
+    /// <summary>
+    /// Random forest model.
+    /// </summary>
+    RandomForest,
+    
+    /// <summary>
+    /// Neural network model.
+    /// </summary>
+    NeuralNetwork,
+    
+    /// <summary>
+    /// Support vector machine.
+    /// </summary>
+    SVM,
+    
+    /// <summary>
+    /// Time series model.
+    /// </summary>
+    TimeSeries
+}
+
+/// <summary>
+/// Sentiment type enumeration.
+/// </summary>
+public enum SentimentType
+{
+    /// <summary>
+    /// Very negative sentiment.
+    /// </summary>
+    VeryNegative,
+    
+    /// <summary>
+    /// Negative sentiment.
+    /// </summary>
+    Negative,
+    
+    /// <summary>
+    /// Neutral sentiment.
+    /// </summary>
+    Neutral,
+    
+    /// <summary>
+    /// Positive sentiment.
+    /// </summary>
+    Positive,
+    
+    /// <summary>
+    /// Very positive sentiment.
+    /// </summary>
+    VeryPositive
+}
 
 /// <summary>
 /// Represents a prediction model.
@@ -244,6 +317,16 @@ public class SentimentAnalysisRequest
     /// Gets or sets whether to include market sentiment.
     /// </summary>
     public bool IncludeMarketSentiment { get; set; }
+    
+    /// <summary>
+    /// Gets or sets whether to include detailed analysis.
+    /// </summary>
+    public bool IncludeDetailedAnalysis { get; set; }
+    
+    /// <summary>
+    /// Gets or sets additional parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the analysis depth.
@@ -516,32 +599,6 @@ public class SentimentScore
     /// Gets or sets the compound score.
     /// </summary>
     public double Compound { get; set; }
-}
-
-/// <summary>
-/// Represents sentiment type.
-/// </summary>
-public enum SentimentType
-{
-    /// <summary>
-    /// Positive sentiment.
-    /// </summary>
-    Positive,
-
-    /// <summary>
-    /// Negative sentiment.
-    /// </summary>
-    Negative,
-
-    /// <summary>
-    /// Neutral sentiment.
-    /// </summary>
-    Neutral,
-
-    /// <summary>
-    /// Mixed sentiment.
-    /// </summary>
-    Mixed
 }
 
 /// <summary>
@@ -919,6 +976,32 @@ public class PredictionAnalysisResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+    
+    // Additional properties for compatibility
+    /// <summary>
+    /// Gets or sets the prediction ID.
+    /// </summary>
+    public string PredictionId { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the predicted value.
+    /// </summary>
+    public object PredictedValue { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the actual value (for comparison).
+    /// </summary>
+    public object ActualValue { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets when the prediction was made.
+    /// </summary>
+    public DateTime PredictedAt { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Gets or sets the processing time in milliseconds.
+    /// </summary>
+    public long ProcessingTimeMs { get; set; }
 }
 
 /// <summary>
@@ -1022,4 +1105,41 @@ public class UncertaintyResult
     /// Gets or sets the confidence bounds.
     /// </summary>
     public Dictionary<string, double> ConfidenceBounds { get; set; } = new();
+}
+
+/// <summary>
+/// Represents prediction request.
+/// </summary>
+public class PredictionRequest
+{
+    /// <summary>
+    /// Gets or sets the model ID.
+    /// </summary>
+    [Required]
+    public string ModelId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the input data.
+    /// </summary>
+    public Dictionary<string, object> InputData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the prediction type.
+    /// </summary>
+    public PredictionType PredictionType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the time horizon in hours.
+    /// </summary>
+    public int TimeHorizon { get; set; } = 24;
+
+    /// <summary>
+    /// Gets or sets the confidence level.
+    /// </summary>
+    public double ConfidenceLevel { get; set; } = 0.95;
+
+    /// <summary>
+    /// Gets or sets additional parameters.
+    /// </summary>
+    public Dictionary<string, object> Parameters { get; set; } = new();
 }

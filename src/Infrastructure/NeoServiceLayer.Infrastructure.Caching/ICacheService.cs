@@ -1,5 +1,9 @@
-﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Caching
 {
@@ -69,6 +73,16 @@ namespace NeoServiceLayer.Infrastructure.Caching
         /// <param name="keys">The cache keys to remove.</param>
         /// <returns>The number of keys that were removed.</returns>
         Task<int> RemoveManyAsync(IEnumerable<string> keys);
+
+        /// <summary>
+        /// Gets a value from cache or sets it using the provided factory function if not found.
+        /// </summary>
+        /// <typeparam name="T">The type of the cached value.</typeparam>
+        /// <param name="key">The cache key.</param>
+        /// <param name="factory">Factory function to create the value if not found in cache.</param>
+        /// <param name="expiration">Optional expiration time.</param>
+        /// <returns>The cached or newly created value.</returns>
+        Task<T?> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null) where T : class;
 
         /// <summary>
         /// Gets cache statistics and health information.

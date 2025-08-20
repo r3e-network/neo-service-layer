@@ -4,17 +4,20 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Core.Events.SGXEvents;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
 {
     /// <summary>
     /// Handles SGX execution completed events
     /// </summary>
-    public class SGXExecutionEventHandler : IEventHandler&lt;SGXExecutionCompletedEvent&gt;
+    public class SGXExecutionEventHandler : IEventHandler<SGXExecutionCompletedEvent>
     {
-        private readonly ILogger&lt;SGXExecutionEventHandler&gt; _logger;
+        private readonly ILogger<SGXExecutionEventHandler> _logger;
 
-        public SGXExecutionEventHandler(ILogger&lt;SGXExecutionEventHandler&gt; logger)
+        public SGXExecutionEventHandler(ILogger<SGXExecutionEventHandler> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -51,7 +54,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
         private async Task HandleSuccessfulExecutionAsync(SGXExecutionCompletedEvent domainEvent, CancellationToken cancellationToken)
         {
             // Performance analysis
-            if (domainEvent.ExecutionTimeMs &gt; 5000) // Slow execution
+            if (domainEvent.ExecutionTimeMs > 5000) // Slow execution
             {
                 _logger.LogWarning(
                     "Slow SGX execution detected: {ExecutionId} took {ExecutionTime}ms",
@@ -89,7 +92,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Alert operations team
             // 3. Check for security implications
             // 4. Update reliability metrics
-            
+
             await Task.Delay(20, cancellationToken); // Simulate processing time
         }
 
@@ -100,7 +103,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Send data to time-series database
             // 3. Trigger performance analysis
             // 4. Update dashboards
-            
+
             _logger.LogDebug(
                 "Performance metrics updated for SGX execution {ExecutionId}: {ExecutionTime}ms",
                 domainEvent.ExecutionId, domainEvent.ExecutionTimeMs);

@@ -1,7 +1,10 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NeoServiceLayer.Core.Events;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Aggregates
 {
@@ -22,6 +25,15 @@ namespace NeoServiceLayer.Core.Aggregates
         /// Current version of the aggregate (for optimistic concurrency)
         /// </summary>
         public long Version { get; protected set; }
+
+        /// <summary>
+        /// Sets the aggregate ID (for infrastructure use only)
+        /// </summary>
+        /// <param name="id">The aggregate ID</param>
+        public void SetId(string id)
+        {
+            Id = id;
+        }
 
         /// <summary>
         /// Timestamp when the aggregate was created
@@ -131,6 +143,22 @@ namespace NeoServiceLayer.Core.Aggregates
                 LastModifiedAt = domainEvent.OccurredAt;
                 LastModifiedBy = domainEvent.InitiatedBy;
             }
+        }
+
+        /// <summary>
+        /// Gets uncommitted events
+        /// </summary>
+        public IReadOnlyList<IDomainEvent> GetUncommittedEvents()
+        {
+            return _uncommittedEvents.AsReadOnly();
+        }
+
+        /// <summary>
+        /// Clears uncommitted events
+        /// </summary>
+        public void ClearUncommittedEvents()
+        {
+            _uncommittedEvents.Clear();
         }
 
         /// <summary>

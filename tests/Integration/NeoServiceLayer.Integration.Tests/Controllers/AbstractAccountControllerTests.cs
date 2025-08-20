@@ -1,14 +1,20 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Integration.Tests.Helpers;
 using NeoServiceLayer.Web;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests.Controllers;
 
-public class AbstractAccountControllerTests : IntegrationTestBase
+public class AbstractAccountControllerTests : Helpers.IntegrationTestBase
 {
     public AbstractAccountControllerTests() : base()
     {

@@ -1,8 +1,14 @@
-﻿using System.Diagnostics;
 using System.Runtime.InteropServices;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Diagnostics;
+using System;
+
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -25,7 +31,7 @@ public partial class MonitoringService
         {
             try
             {
-                Logger.LogDebug("Getting performance statistics for time range {TimeRange}", request.TimeRange);
+                _gettingPerformanceStatistics(Logger, request.TimeRange, null);
 
                 var cutoffTime = DateTime.UtcNow - request.TimeRange;
                 var servicePerformances = new List<ServicePerformance>();
@@ -73,8 +79,7 @@ public partial class MonitoringService
                     }
                 };
 
-                Logger.LogInformation("Performance statistics calculated for {ServiceCount} services over {TimeRange}",
-                    servicePerformances.Count, request.TimeRange);
+                _performanceStatisticsCalculated(Logger, servicePerformances.Count, request.TimeRange, null);
 
                 return new PerformanceStatisticsResult
                 {
@@ -91,7 +96,7 @@ public partial class MonitoringService
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to get performance statistics");
+                _collectPerformanceStatisticsFailed(Logger, ex);
 
                 return new PerformanceStatisticsResult
                 {
@@ -115,8 +120,7 @@ public partial class MonitoringService
 
         try
         {
-            Logger.LogDebug("Calculating performance trend for service {ServiceName} over {TimeRange}",
-                serviceName, timeRange);
+            _calculatingPerformanceTrend(Logger, serviceName, timeRange, null);
 
             var cutoffTime = DateTime.UtcNow - timeRange;
             var metrics = new List<ServiceMetric>();
@@ -175,7 +179,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to calculate performance trend for service {ServiceName}", serviceName);
+            _collectPerformanceStatisticsFailed(Logger, ex);
 
             return new Models.PerformanceTrend
             {
@@ -315,7 +319,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to generate performance summary");
+            _collectPerformanceStatisticsFailed(Logger, ex);
 
             return new PerformanceSummary
             {
@@ -349,7 +353,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to get CPU usage");
+            _calculateMemoryMetricsFailed(Logger, ex);
             return 0.0;
         }
     }
@@ -378,7 +382,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to get memory usage");
+            _calculateMemoryMetricsFailed(Logger, ex);
             return 0.0;
         }
     }

@@ -1,7 +1,14 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Core.SGX;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+using NeoServiceLayer.Services.Voting.Models;
+
 
 namespace NeoServiceLayer.Services.Voting;
 
@@ -18,7 +25,7 @@ public partial class VotingService
     /// <param name="candidates">The candidates to evaluate.</param>
     /// <returns>The privacy-preserving voting result.</returns>
     private async Task<PrivacyVotingResult> ExecutePrivacyPreservingVotingAsync(
-        string voterAddress, VotingStrategy strategy, IEnumerable<CandidateInfo> candidates)
+        string voterAddress, VotingStrategy strategy, IEnumerable<Candidate> candidates)
     {
         // Prepare voter proof for privacy-preserving voting
         var voterProof = new
@@ -151,7 +158,7 @@ public partial class VotingService
     /// <param name="strategy">The voting strategy.</param>
     /// <param name="candidates">The candidates.</param>
     /// <returns>Serialized choice string.</returns>
-    private string SerializeCandidateChoices(VotingStrategy strategy, IEnumerable<CandidateInfo> candidates)
+    private string SerializeCandidateChoices(VotingStrategy strategy, IEnumerable<Candidate> candidates)
     {
         var choices = candidates.Select(c => new
         {
@@ -169,13 +176,13 @@ public partial class VotingService
     /// <param name="candidate">The candidate.</param>
     /// <param name="strategy">The voting strategy.</param>
     /// <returns>The candidate's weight.</returns>
-    private double CalculateCandidateWeight(CandidateInfo candidate, VotingStrategy strategy)
+    private double CalculateCandidateWeight(Candidate candidate, VotingStrategy strategy)
     {
         double weight = 1.0;
 
         if (strategy.Rules.VoteForBestProfit)
         {
-            weight *= (candidate.ExpectedReward / 100.0); // Normalize expected reward
+            weight *= ((double)candidate.ExpectedReward / 100.0); // Normalize expected reward
         }
 
         if (strategy.Rules.OnlyActiveNodes && !candidate.IsActive)

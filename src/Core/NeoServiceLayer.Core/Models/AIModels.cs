@@ -1,4 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
+
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -164,6 +170,11 @@ public enum AIModelType
 /// </summary>
 public class AIModelDefinition
 {
+    /// <summary>
+    /// Gets or sets the model ID.
+    /// </summary>
+    public string Id { get; set; } = Guid.NewGuid().ToString();
+    
     /// <summary>
     /// Gets or sets the model name.
     /// </summary>

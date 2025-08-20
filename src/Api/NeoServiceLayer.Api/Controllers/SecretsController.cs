@@ -1,10 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
 using System.Security;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.SecretsManagement;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -605,10 +612,10 @@ public class SecretResponse
     /// </summary>
     public required SecretMetadata Metadata { get; set; }
 
-    /// <summary>
-    /// Gets or sets the secret value.
-    /// </summary>
-    public required string Value { get; set; }
+/// <summary>
+/// Gets or sets the secret value.
+/// </summary>
+public required string Value { get; set; }
 }
 
 #endregion

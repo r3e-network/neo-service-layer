@@ -1,9 +1,11 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Metrics;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using OpenTelemetry;
 using OpenTelemetry.Exporter;
@@ -11,6 +13,10 @@ using OpenTelemetry.Logs;
 using OpenTelemetry.Metrics;
 using OpenTelemetry.Resources;
 using OpenTelemetry.Trace;
+using System.Linq;
+using System.Net.Http;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
 {
@@ -68,7 +74,8 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
                             .AddHttpClientInstrumentation(options =>
                             {
                                 options.RecordException = true;
-                                options.SetHttpFlavor = true;
+                                // SetHttpFlavor is deprecated in newer versions
+                                // The HTTP flavor is now automatically recorded
                             })
                             .AddEntityFrameworkCoreInstrumentation(options =>
                             {
@@ -95,7 +102,8 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
                             .AddAspNetCoreInstrumentation()
                             .AddHttpClientInstrumentation()
                             .AddRuntimeInstrumentation()
-                            .AddProcessInstrumentation()
+                            // AddProcessInstrumentation is replaced by AddRuntimeInstrumentation in newer versions
+                            // Runtime instrumentation already includes process metrics
                             .AddMeter("NeoServiceLayer.*")
                             .AddMeter("SGX.*")
                             .AddMeter("Blockchain.*")
@@ -352,8 +360,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
         {
             _logger.LogInformation("Telemetry service started");
 
-            using var activity = _instrumentation.StartActivity("TelemetryService.Start");
-            activity?.SetTag("service.start", DateTime.UtcNow);
+            Activity.Current?.SetTag("service.start", DateTime.UtcNow);
 
             return Task.CompletedTask;
         }
@@ -362,8 +369,7 @@ namespace NeoServiceLayer.Infrastructure.Observability.Telemetry
         {
             _logger.LogInformation("Telemetry service stopped");
 
-            using var activity = _instrumentation.StartActivity("TelemetryService.Stop");
-            activity?.SetTag("service.stop", DateTime.UtcNow);
+            Activity.Current?.SetTag("service.stop", DateTime.UtcNow);
 
             return Task.CompletedTask;
         }

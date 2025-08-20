@@ -21,9 +21,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
-    <ProjectReference Include="..\..\..\src\Infrastructure\NeoServiceLayer.Infrastructure.Blockchain\NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/NeoServiceLayer.Infrastructure.Blockchain.csproj" />
   </ItemGroup>
 
   <ItemGroup>

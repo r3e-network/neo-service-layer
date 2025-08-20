@@ -1,9 +1,17 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Storage.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -464,9 +472,13 @@ public class StorageController : BaseApiController
                 return StatusCode(500, CreateErrorResponse("Failed to update access control"));
             }
 
-            // Generate a share token (simplified - in production this would be a secure token)
-            var shareToken = Convert.ToBase64String(
-                System.Text.Encoding.UTF8.GetBytes($"{storageId}:{recipientId}:{DateTime.UtcNow.Ticks}"));
+            // Generate a secure share token using cryptographic random bytes
+            var tokenBytes = new byte[32];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(tokenBytes);
+            }
+            var shareToken = Convert.ToBase64String(tokenBytes);
 
             _logger.LogInformation("Shared storage item {StorageId} with user {RecipientId} on {Blockchain}",
                 storageId, recipientId, blockchainType);

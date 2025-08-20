@@ -1,5 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve.Models;
 
@@ -62,6 +68,16 @@ public class ProofOfReserve
     /// Gets or sets when the proof was generated.
     /// </summary>
     public DateTime GeneratedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the total supply.
+    /// </summary>
+    public decimal TotalSupply { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total reserves.
+    /// </summary>
+    public decimal TotalReserves { get; set; }
 }
 
 /// <summary>
@@ -117,7 +133,7 @@ public class MonitoredAsset
     /// <summary>
     /// Gets or sets the asset health status.
     /// </summary>
-    public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
+    public NeoServiceLayer.Core.ReserveHealthStatusEnum Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatusEnum.Healthy;
 
     /// <summary>
     /// Gets or sets when the asset was last updated.
@@ -193,7 +209,7 @@ public class ReserveSnapshot
     /// <summary>
     /// Gets or sets the health status of this snapshot.
     /// </summary>
-    public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatus.Healthy;
+    public NeoServiceLayer.Core.ReserveHealthStatusEnum Health { get; set; } = NeoServiceLayer.Core.ReserveHealthStatusEnum.Healthy;
 
     /// <summary>
     /// Gets or sets the verification status.
@@ -760,4 +776,41 @@ public enum SeverityLevel
     /// Critical severity.
     /// </summary>
     Critical
+}
+
+
+/// <summary>
+/// Represents the status of a reserve.
+/// </summary>
+public enum ReserveStatus
+{
+    /// <summary>
+    /// Reserve status is unknown.
+    /// </summary>
+    Unknown,
+
+    /// <summary>
+    /// Reserve is healthy and fully backed.
+    /// </summary>
+    Healthy,
+
+    /// <summary>
+    /// Reserve is at warning level.
+    /// </summary>
+    Warning,
+
+    /// <summary>
+    /// Reserve is critical (underbacked).
+    /// </summary>
+    Critical,
+
+    /// <summary>
+    /// Reserve proof is pending.
+    /// </summary>
+    Pending,
+
+    /// <summary>
+    /// Reserve is being audited.
+    /// </summary>
+    Auditing
 }

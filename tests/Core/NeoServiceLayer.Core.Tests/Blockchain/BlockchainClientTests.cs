@@ -1,5 +1,16 @@
-﻿using System.Text.Json;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Infrastructure;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+using Moq;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Core.Tests.Blockchain;
 
@@ -9,12 +20,12 @@ namespace NeoServiceLayer.Core.Tests.Blockchain;
 public class BlockchainClientTests
 {
     private readonly IFixture _fixture;
-    private readonly Mock<IBlockchainClient> _blockchainClientMock;
+    private readonly Mock<Infrastructure.IBlockchainClient> _blockchainClientMock;
 
     public BlockchainClientTests()
     {
         _fixture = new Fixture();
-        _blockchainClientMock = new Mock<IBlockchainClient>();
+        _blockchainClientMock = new Mock<Infrastructure.IBlockchainClient>();
     }
 
     #region Block Operations Tests
@@ -134,7 +145,7 @@ public class BlockchainClientTests
     public async Task SendTransactionAsync_ShouldReturnTransactionHash()
     {
         // Arrange
-        var transaction = CreateTestTransaction();
+        var transaction = CreateInfrastructureTransaction();
         var expectedTxHash = "0x" + new string('a', 64);
 
         _blockchainClientMock.Setup(x => x.SendTransactionAsync(transaction))
@@ -147,7 +158,7 @@ public class BlockchainClientTests
         result.Should().Be(expectedTxHash);
         result.Should().StartWith("0x");
         result.Length.Should().Be(66); // 0x + 64 hex characters
-        _blockchainClientMock.Verify(x => x.SendTransactionAsync(transaction), Times.Once);
+        _blockchainClientMock.Verify(x => x.SendTransactionAsync(It.IsAny<Infrastructure.Transaction>()), Times.Once);
     }
 
     [Fact]
@@ -187,13 +198,13 @@ public class BlockchainClientTests
         var expectedSubscriptionId = Guid.NewGuid().ToString();
         var callbackInvoked = false;
 
-        Func<Block, Task> callback = async (block) =>
+        Func<Infrastructure.Block, Task> callback = async (block) =>
         {
             callbackInvoked = true;
             await Task.CompletedTask;
         };
 
-        _blockchainClientMock.Setup(x => x.SubscribeToBlocksAsync(callback))
+        _blockchainClientMock.Setup(x => x.SubscribeToBlocksAsync(It.IsAny<Func<Infrastructure.Block, Task>>()))
                             .ReturnsAsync(expectedSubscriptionId);
 
         // Act
@@ -226,9 +237,9 @@ public class BlockchainClientTests
         // Arrange
         var expectedSubscriptionId = Guid.NewGuid().ToString();
 
-        Func<Transaction, Task> callback = async (tx) => await Task.CompletedTask;
+        Func<Infrastructure.Transaction, Task> callback = async (tx) => await Task.CompletedTask;
 
-        _blockchainClientMock.Setup(x => x.SubscribeToTransactionsAsync(callback))
+        _blockchainClientMock.Setup(x => x.SubscribeToTransactionsAsync(It.IsAny<Func<Infrastructure.Transaction, Task>>()))
                             .ReturnsAsync(expectedSubscriptionId);
 
         // Act
@@ -282,9 +293,9 @@ public class BlockchainClientTests
         var eventName = "Transfer";
         var expectedSubscriptionId = Guid.NewGuid().ToString();
 
-        Func<ContractEvent, Task> callback = async (evt) => await Task.CompletedTask;
+        Func<Infrastructure.ContractEvent, Task> callback = async (evt) => await Task.CompletedTask;
 
-        _blockchainClientMock.Setup(x => x.SubscribeToContractEventsAsync(contractAddress, eventName, callback))
+        _blockchainClientMock.Setup(x => x.SubscribeToContractEventsAsync(contractAddress, eventName, It.IsAny<Func<Infrastructure.ContractEvent, Task>>()))
                             .ReturnsAsync(expectedSubscriptionId);
 
         // Act
@@ -397,7 +408,7 @@ public class BlockchainClientTests
     public void Block_ShouldInitializeWithDefaults()
     {
         // Act
-        var block = new Block();
+        var block = new Core.Models.Block();
 
         // Assert
         block.Hash.Should().Be(string.Empty);
@@ -411,7 +422,7 @@ public class BlockchainClientTests
     public void Transaction_ShouldInitializeWithDefaults()
     {
         // Act
-        var transaction = new Transaction();
+        var transaction = new Core.Models.Transaction();
 
         // Assert
         transaction.Hash.Should().Be(string.Empty);
@@ -428,16 +439,16 @@ public class BlockchainClientTests
     public void ContractEvent_ShouldInitializeWithDefaults()
     {
         // Act
-        var contractEvent = new ContractEvent();
+        var contractEvent = new Core.Models.ContractEvent();
 
         // Assert
-        contractEvent.ContractAddress.Should().Be(string.Empty);
+        contractEvent.ContractHash.Should().Be(string.Empty);
         contractEvent.EventName.Should().Be(string.Empty);
-        contractEvent.EventData.Should().Be(string.Empty);
         contractEvent.Parameters.Should().NotBeNull().And.BeEmpty();
         contractEvent.TransactionHash.Should().Be(string.Empty);
         contractEvent.BlockHash.Should().Be(string.Empty);
         contractEvent.BlockHeight.Should().Be(0);
+        contractEvent.BlockIndex.Should().Be(0u);
         contractEvent.Timestamp.Should().Be(default);
     }
 
@@ -449,7 +460,7 @@ public class BlockchainClientTests
 
         // Act
         var json = JsonSerializer.Serialize(originalBlock);
-        var deserializedBlock = JsonSerializer.Deserialize<Block>(json);
+        var deserializedBlock = JsonSerializer.Deserialize<Core.Models.Block>(json);
 
         // Assert
         deserializedBlock.Should().NotBeNull();
@@ -467,7 +478,7 @@ public class BlockchainClientTests
 
         // Act
         var json = JsonSerializer.Serialize(originalTransaction);
-        var deserializedTransaction = JsonSerializer.Deserialize<Transaction>(json);
+        var deserializedTransaction = JsonSerializer.Deserialize<Core.Models.Transaction>(json);
 
         // Assert
         deserializedTransaction.Should().NotBeNull();
@@ -485,11 +496,11 @@ public class BlockchainClientTests
 
         // Act
         var json = JsonSerializer.Serialize(originalEvent);
-        var deserializedEvent = JsonSerializer.Deserialize<ContractEvent>(json);
+        var deserializedEvent = JsonSerializer.Deserialize<Core.Models.ContractEvent>(json);
 
         // Assert
         deserializedEvent.Should().NotBeNull();
-        deserializedEvent!.ContractAddress.Should().Be(originalEvent.ContractAddress);
+        deserializedEvent!.ContractHash.Should().Be(originalEvent.ContractHash);
         deserializedEvent.EventName.Should().Be(originalEvent.EventName);
         deserializedEvent.Parameters.Should().HaveCount(originalEvent.Parameters.Count);
     }
@@ -498,9 +509,9 @@ public class BlockchainClientTests
 
     #region Helper Methods
 
-    private Block CreateTestBlock(long height = 123456L, string? hash = null)
+    private Infrastructure.Block CreateTestBlock(long height = 123456L, string? hash = null)
     {
-        return new Block
+        return new Infrastructure.Block
         {
             Hash = hash ?? $"0x{new string('1', 64)}",
             Height = height,
@@ -508,15 +519,15 @@ public class BlockchainClientTests
             PreviousHash = $"0x{new string('0', 64)}",
             Transactions =
             [
-                CreateTestTransaction("0x" + new string('a', 64)),
-                CreateTestTransaction("0x" + new string('b', 64))
+                CreateInfrastructureTransaction("0x" + new string('a', 64)),
+                CreateInfrastructureTransaction("0x" + new string('b', 64))
             ]
         };
     }
 
-    private static Transaction CreateTestTransaction(string? hash = null)
+    private static Infrastructure.Transaction CreateTestTransaction(string? hash = null)
     {
-        return new Transaction
+        return new Infrastructure.Transaction
         {
             Hash = hash ?? $"0x{new string('c', 64)}",
             Sender = "NTrezR3C4X8aMLVg7vozt5wguyNfFhwuFx",
@@ -529,13 +540,27 @@ public class BlockchainClientTests
         };
     }
 
-    private static ContractEvent CreateTestContractEvent()
+    private static Infrastructure.Transaction CreateInfrastructureTransaction(string? hash = null)
     {
-        return new ContractEvent
+        return new Infrastructure.Transaction
         {
-            ContractAddress = "0x1234567890abcdef1234567890abcdef12345678",
+            Hash = hash ?? $"0x{new string('c', 64)}",
+            Sender = "NTrezR3C4X8aMLVg7vozt5wguyNfFhwuFx",
+            Recipient = "AK2nJJpJr6o664CWJKi1QRXjqeic2zRp8y",
+            Value = 1000000m,
+            Data = "transfer test",
+            Timestamp = DateTime.UtcNow,
+            BlockHash = $"0x{new string('d', 64)}",
+            BlockHeight = 123456L
+        };
+    }
+
+    private static Core.Models.ContractEvent CreateTestContractEvent()
+    {
+        return new Core.Models.ContractEvent
+        {
+            ContractHash = "0x1234567890abcdef1234567890abcdef12345678",
             EventName = "Transfer",
-            EventData = "transfer data",
             Parameters = new Dictionary<string, object>
             {
                 { "from", "NTrezR3C4X8aMLVg7vozt5wguyNfFhwuFx" },

@@ -1,4 +1,3 @@
-﻿using System;
 using System.IO;
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -6,6 +5,12 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Tee.Enclave.Native;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -1491,7 +1496,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 _logger.LogDebug("Signing data using SGX simulation fallback");
 
                 // Use HMAC-SHA256 as a simulation of digital signing
-                using var hmac = new HMACSHA256(key.Length >= 32 ? key[..32] : key.Concat(new byte[32 - key.Length]).ToArray());
+                using var hmac = new HMACSHA256(key);
                 byte[] signature = hmac.ComputeHash(data);
 
                 _logger.LogDebug("Data signed successfully using HMAC-SHA256 simulation. Data size: {DataSize}, Signature size: {SignatureSize}",
@@ -1567,7 +1572,7 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
                 _logger.LogDebug("Verifying signature using SGX simulation fallback");
 
                 // Verify using HMAC-SHA256 simulation
-                using var hmac = new HMACSHA256(key.Length >= 32 ? key[..32] : key.Concat(new byte[32 - key.Length]).ToArray());
+                using var hmac = new HMACSHA256(key);
                 byte[] computedSignature = hmac.ComputeHash(data);
 
                 bool verified = signature.SequenceEqual(computedSignature);
@@ -1780,6 +1785,37 @@ public class OcclumEnclaveWrapper : IEnclaveWrapper
         {
             _logger.LogError(ex, "Failed to get trusted time");
             throw new EnclaveException($"Failed to get trusted time: {ex.Message}", ex);
+        }
+    }
+
+    /// <summary>
+    /// Gets the enclave attestation report.
+    /// </summary>
+    /// <returns>
+    /// The attestation report as a byte array containing cryptographic proof
+    /// of the enclave's identity and measurement.
+    /// </returns>
+    public byte[] GetAttestation()
+    {
+        EnsureInitialized();
+
+        try
+        {
+            // In production, this would call Occlum attestation APIs
+            // For simulation mode, generate a simulated attestation report
+            var attestation = new byte[256];
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(attestation);
+            }
+
+            _logger.LogDebug("Generated attestation report (simulation mode)");
+            return attestation;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get attestation");
+            throw new EnclaveException($"Failed to get attestation: {ex.Message}", ex);
         }
     }
 

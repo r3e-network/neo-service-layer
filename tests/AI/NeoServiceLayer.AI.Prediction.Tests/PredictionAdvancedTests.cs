@@ -1,9 +1,9 @@
-﻿using System.Text.Json;
 using AutoFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.Prediction;
+using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -13,8 +13,12 @@ using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
-using CoreModels = NeoServiceLayer.Core.Models;
-using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
 
@@ -76,7 +80,7 @@ public class PredictionAdvancedTests : IDisposable
             {
                 Name = "Default Prediction Model",
                 Type = NeoServiceLayer.Core.Models.AIModelType.Prediction,
-                PredictionType = NeoServiceLayer.AI.Prediction.Models.PredictionType.Price,
+                PredictionType = PredictionModels.PredictionType.Price,
                 TargetVariable = "price",
                 Algorithm = "neural_network",
                 InputFeatures = new List<string> { "price", "volume", "time" }
@@ -250,7 +254,7 @@ public class PredictionAdvancedTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.Label.Should().Be(CoreModels.SentimentLabel.Positive);
+        result.Label.Should().Be(SentimentLabel.Positive);
         result.SentimentScore.Should().BeGreaterThan(0.3); // Positive sentiment score
         result.Confidence.Should().BeGreaterThan(0.5);
         result.DetailedSentiment.Should().NotBeEmpty();
@@ -272,7 +276,7 @@ public class PredictionAdvancedTests : IDisposable
         var result = await _service.AnalyzeSentimentAsync(request, BlockchainType.NeoX);
 
         // Assert
-        result.Label.Should().Be(CoreModels.SentimentLabel.Negative);
+        result.Label.Should().Be(SentimentLabel.Negative);
         result.SentimentScore.Should().BeLessThan(-0.3); // Negative sentiment score
         result.DetailedSentiment.Should().NotBeEmpty();
         result.DetailedSentiment.Should().ContainKey("negative");
@@ -294,7 +298,7 @@ public class PredictionAdvancedTests : IDisposable
         var result = await _service.AnalyzeSentimentAsync(request, BlockchainType.NeoX);
 
         // Assert
-        result.Label.Should().Be(CoreModels.SentimentLabel.Neutral);
+        result.Label.Should().Be(SentimentLabel.Neutral);
         result.SentimentScore.Should().BeInRange(-0.2, 0.2); // Neutral sentiment score range
         result.DetailedSentiment.Should().NotBeEmpty();
         result.DetailedSentiment.Should().ContainKey("neutral");
@@ -344,7 +348,7 @@ public class PredictionAdvancedTests : IDisposable
         modelId.Should().NotBeNullOrEmpty();
         modelId.Should().StartWith("pred_model_");
 
-        _mockStorageProvider.Verify(x => x.StoreAsync(
+        _mockStorageProvider.Verify(x => x.StoreDataAsync(
             It.Is<string>(key => key.Contains("prediction_model") && key.Contains(modelId)),
             It.IsAny<byte[]>(),
             It.IsAny<StorageOptions>()), Times.Once);
@@ -391,7 +395,7 @@ public class PredictionAdvancedTests : IDisposable
 
         // Assert
         result.Should().BeTrue();
-        _mockStorageProvider.Verify(x => x.StoreAsync(
+        _mockStorageProvider.Verify(x => x.StoreDataAsync(
             It.Is<string>(key => key.Contains(modelId)),
             It.IsAny<byte[]>(),
             It.IsAny<StorageOptions>()), Times.AtLeastOnce);
@@ -474,7 +478,7 @@ public class PredictionAdvancedTests : IDisposable
     {
         // Arrange
         var modelId = _testModelIds["uncertainty_model"];
-        var predictionRequest = CreatePredictionRequest("NEO", timeHorizon: 24);
+        var predictionRequest = CreatePredictionRequestForUncertainty("NEO", timeHorizon: 24);
         SetupTrainedPredictionModel(modelId, "bayesian_neural_network");
 
         // Act
@@ -618,10 +622,17 @@ public class PredictionAdvancedTests : IDisposable
 
     private void SetupStorageProvider()
     {
-        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
+        // Mock the underlying interface methods, not the extension methods
+        _mockStorageProvider.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
                           .ReturnsAsync(true);
-        _mockStorageProvider.Setup(x => x.DeleteAsync(It.IsAny<string>()))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.IsAny<string>()))
+                          .ReturnsAsync((byte[]?)null);
+        _mockStorageProvider.Setup(x => x.DeleteDataAsync(It.IsAny<string>()))
                           .ReturnsAsync(true);
+        _mockStorageProvider.Setup(x => x.ExistsAsync(It.IsAny<string>()))
+                          .ReturnsAsync(false);
+        _mockStorageProvider.Setup(x => x.ListKeysAsync(It.IsAny<string>(), It.IsAny<int>()))
+                          .ReturnsAsync(Array.Empty<string>());
     }
 
     private PredictionModels.MarketForecastRequest CreateMarketForecastRequest(
@@ -651,7 +662,7 @@ public class PredictionAdvancedTests : IDisposable
         };
     }
 
-    private CoreModels.SentimentAnalysisRequest CreateSentimentAnalysisRequest(
+    private Core.Models.SentimentAnalysisRequest CreateSentimentAnalysisRequest(
         string symbol,
         List<string> newsData,
         List<string> socialMediaData,
@@ -660,7 +671,7 @@ public class PredictionAdvancedTests : IDisposable
         // Combine all text data into a single text for Core sentiment analysis
         var allText = string.Join("\n", newsData.Concat(socialMediaData));
 
-        return new CoreModels.SentimentAnalysisRequest
+        return new Core.Models.SentimentAnalysisRequest
         {
             Text = allText,
             Language = "en",
@@ -692,7 +703,7 @@ public class PredictionAdvancedTests : IDisposable
         return new PredictionModels.PredictionModelDefinition
         {
             Name = $"{modelType} Model",
-            Type = AIModelType.Prediction,
+            Type = NeoServiceLayer.Core.Models.AIModelType.Prediction,
             Algorithm = algorithm,
             InputFeatures = features.ToList(),
             Version = "2.0",
@@ -715,9 +726,29 @@ public class PredictionAdvancedTests : IDisposable
         };
     }
 
-    private CoreModels.PredictionRequest CreatePredictionRequest(string symbol, int timeHorizon)
+    private Core.Models.PredictionRequest CreatePredictionRequest(string symbol, int timeHorizon)
     {
-        return new CoreModels.PredictionRequest
+        return new Core.Models.PredictionRequest
+        {
+            ModelId = _defaultModelId,
+            InputData = new Dictionary<string, object>
+            {
+                ["symbol"] = symbol,
+                ["time_horizon"] = timeHorizon,
+                ["price_history"] = GeneratePriceHistory(symbol, 100),
+                ["volume_history"] = GenerateVolumeHistory(100),
+                ["market_indicators"] = new { RSI = 45.5, MACD = 0.12 }
+            },
+            Parameters = new Dictionary<string, object>
+            {
+                ["confidence_level"] = 0.95
+            }
+        };
+    }
+    
+    private PredictionModels.PredictionRequest CreatePredictionRequestForUncertainty(string symbol, int timeHorizon)
+    {
+        return new PredictionModels.PredictionRequest
         {
             ModelId = _defaultModelId,
             InputData = new Dictionary<string, object>
@@ -735,7 +766,7 @@ public class PredictionAdvancedTests : IDisposable
         };
     }
 
-    private CoreModels.PredictionRequest CreateAdvancedPredictionRequest(
+    private Core.Models.PredictionRequest CreateAdvancedPredictionRequest(
         string symbol,
         bool includeTechnicalAnalysis,
         bool includeSentimentData,
@@ -780,7 +811,7 @@ public class PredictionAdvancedTests : IDisposable
             };
         }
 
-        return new CoreModels.PredictionRequest
+        return new Core.Models.PredictionRequest
         {
             ModelId = "advanced_ensemble_model",
             InputData = inputData,
@@ -947,7 +978,7 @@ public class PredictionAdvancedTests : IDisposable
             ["volatility"] = 0.15
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(symbol))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(symbol))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(marketData)));
     }
 
@@ -961,7 +992,7 @@ public class PredictionAdvancedTests : IDisposable
             ["volatility"] = 0.45
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(symbol))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(symbol))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(marketData)));
     }
 
@@ -1004,7 +1035,7 @@ public class PredictionAdvancedTests : IDisposable
         };
 
         // Note: ListAsync is not available on IPersistentStorageProvider - using alternative approach
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.IsAny<string>()))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(models)));
     }
 
@@ -1019,7 +1050,7 @@ public class PredictionAdvancedTests : IDisposable
             CreatedAt = DateTime.UtcNow.AddDays(-5)
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(modelId))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(modelId))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(model)));
     }
 
@@ -1035,14 +1066,14 @@ public class PredictionAdvancedTests : IDisposable
             Version = "2.0"
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(modelId))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(modelId))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(model)));
     }
 
     private void SetupPredictionHistory(string modelId)
     {
         var history = Enumerable.Range(0, 20)
-            .Select(i => new CoreModels.PredictionResult
+            .Select(i => new PredictionModels.PredictionAnalysisResult
             {
                 ModelId = modelId,
                 PredictionId = $"pred_{i}",
@@ -1055,7 +1086,7 @@ public class PredictionAdvancedTests : IDisposable
             .ToList();
 
         // Note: ListAsync is not available on IPersistentStorageProvider - using alternative approach
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(modelId))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(modelId))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(history)));
     }
 
@@ -1080,7 +1111,7 @@ public class PredictionAdvancedTests : IDisposable
             ["social_sentiment"] = 0.58
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(symbol))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(symbol))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(multiModalData)));
     }
 
@@ -1097,17 +1128,17 @@ public class PredictionAdvancedTests : IDisposable
                 CreatedAt = DateTime.UtcNow.AddDays(-10)
             };
 
-            _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(modelId))))
+            _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(modelId))))
                 .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(model)));
         }
     }
 
     private void SetupStorageForHighLoad()
     {
-        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
+        _mockStorageProvider.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
             .ReturnsAsync(true);
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.IsAny<string>()))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(new Dictionary<string, object>
             {
                 ["model_available"] = true,
@@ -1129,7 +1160,7 @@ public class PredictionAdvancedTests : IDisposable
             ["volatility_history"] = Enumerable.Range(0, 365).Select(i => 0.10 + (i % 30) * 0.001).ToArray()
         };
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(key => key.Contains(symbol))))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(key => key.Contains(symbol))))
             .ReturnsAsync(System.Text.Encoding.UTF8.GetBytes(System.Text.Json.JsonSerializer.Serialize(longTermData)));
     }
 

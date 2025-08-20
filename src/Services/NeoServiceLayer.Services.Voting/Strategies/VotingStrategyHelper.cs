@@ -1,6 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Voting.Models;
+using VotingRulesDomain = NeoServiceLayer.Services.Voting.Domain.ValueObjects.VotingRules;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting.Strategies;
 
@@ -9,7 +17,7 @@ namespace NeoServiceLayer.Services.Voting.Strategies;
 /// </summary>
 public class VotingStrategyHelper
 {
-    private readonly ILogger<VotingStrategyHelper> _logger;
+    private readonly ILogger<VotingStrategyHelper> Logger;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="VotingStrategyHelper"/> class.
@@ -17,7 +25,7 @@ public class VotingStrategyHelper
     /// <param name="logger">The logger.</param>
     public VotingStrategyHelper(ILogger<VotingStrategyHelper> logger)
     {
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -26,16 +34,16 @@ public class VotingStrategyHelper
     /// <param name="strategy">The voting strategy.</param>
     /// <param name="allCandidates">All available candidates.</param>
     /// <returns>Eligible candidates.</returns>
-    public IEnumerable<CandidateInfo> GetEligibleCandidates(VotingStrategy strategy, IEnumerable<CandidateInfo> allCandidates)
+    public IEnumerable<Candidate> GetEligibleCandidates(VotingStrategy strategy, IEnumerable<Candidate> allCandidates)
     {
-        return strategy.StrategyType switch
+        return strategy.Type switch
         {
-            Core.VotingStrategyType.Manual => allCandidates.Where(c => c.IsActive),
-            Core.VotingStrategyType.Automatic => allCandidates.OrderByDescending(c => c.VotesReceived).Take(21),
-            Core.VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward),
-            Core.VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsActive && c.UptimePercentage >= 98.0),
-            Core.VotingStrategyType.Conditional => GetConditionalCandidates(allCandidates, strategy),
-            Core.VotingStrategyType.Custom => GetCustomCandidates(allCandidates, strategy),
+            VotingStrategyType.SimpleMajority => allCandidates.Where(c => c.IsActive),
+            VotingStrategyType.Weighted => allCandidates.OrderByDescending(c => c.VotesReceived).Take(21),
+            VotingStrategyType.SuperMajority => allCandidates.OrderByDescending(c => c.ExpectedReward),
+            VotingStrategyType.Unanimous => allCandidates.Where(c => c.IsActive && c.UptimePercentage >= 98.0),
+            VotingStrategyType.RankedChoice => GetConditionalCandidates(allCandidates, strategy),
+            VotingStrategyType.Delegated => GetCustomCandidates(allCandidates, strategy),
             _ => allCandidates.Where(c => c.IsActive)
         };
     }
@@ -46,7 +54,7 @@ public class VotingStrategyHelper
     /// <param name="candidates">The candidates to filter.</param>
     /// <param name="rules">The voting rules.</param>
     /// <returns>Selected candidates.</returns>
-    public IEnumerable<CandidateInfo> ApplyVotingRules(IEnumerable<CandidateInfo> candidates, VotingRules rules)
+    public IEnumerable<Candidate> ApplyVotingRules(IEnumerable<Candidate> candidates, VotingRules rules)
     {
         var filteredCandidates = candidates.AsEnumerable();
 
@@ -82,7 +90,7 @@ public class VotingStrategyHelper
     /// <param name="allCandidates">All available candidates.</param>
     /// <param name="strategy">The voting strategy.</param>
     /// <returns>Filtered candidates.</returns>
-    private static IEnumerable<CandidateInfo> GetCustomCandidates(IEnumerable<CandidateInfo> allCandidates, VotingStrategy strategy)
+    private static IEnumerable<Candidate> GetCustomCandidates(IEnumerable<Candidate> allCandidates, VotingStrategy strategy)
     {
         // Apply custom filtering logic based on strategy parameters
         var candidates = allCandidates.AsEnumerable();
@@ -121,9 +129,9 @@ public class VotingStrategyHelper
     /// <param name="allCandidates">All available candidates.</param>
     /// <param name="strategy">The voting strategy.</param>
     /// <returns>Conditional candidates.</returns>
-    public IEnumerable<CandidateInfo> GetConditionalCandidates(IEnumerable<CandidateInfo> allCandidates, VotingStrategy strategy)
+    public IEnumerable<Candidate> GetConditionalCandidates(IEnumerable<Candidate> allCandidates, VotingStrategy strategy)
     {
-        var result = new List<CandidateInfo>();
+        var result = new List<Candidate>();
         var candidateDict = allCandidates.ToDictionary(c => c.Address);
 
         // First, try preferred candidates
@@ -164,7 +172,7 @@ public class VotingStrategyHelper
     /// <param name="candidates">Available candidates.</param>
     /// <param name="maxCount">Maximum number of candidates.</param>
     /// <returns>Balanced candidates.</returns>
-    public IEnumerable<CandidateInfo> GetBalancedCandidates(IEnumerable<CandidateInfo> candidates, int maxCount)
+    public IEnumerable<Candidate> GetBalancedCandidates(IEnumerable<Candidate> candidates, int maxCount)
     {
         var activeCandidates = candidates.Where(c => c.IsActive).ToList();
 
@@ -180,7 +188,7 @@ public class VotingStrategyHelper
     /// </summary>
     /// <param name="candidates">The candidates to assess.</param>
     /// <returns>Risk assessment.</returns>
-    public VotingRiskAssessment CalculateRiskAssessment(CandidateInfo[] candidates)
+    public VotingRiskAssessment CalculateRiskAssessment(Candidate[] candidates)
     {
         if (candidates.Length == 0)
         {
@@ -249,16 +257,13 @@ public class VotingStrategyHelper
     /// <param name="strategyType">The strategy type.</param>
     /// <param name="candidateCount">Number of recommended candidates.</param>
     /// <returns>Reasoning text.</returns>
-    public string GenerateRecommendationReasoning(Core.VotingStrategyType strategyType, int candidateCount)
+    public string GenerateRecommendationReasoning(VotingStrategyType strategyType, int candidateCount)
     {
         return strategyType switch
         {
-            Core.VotingStrategyType.Automatic => $"Recommended {candidateCount} candidates using automatic selection to ensure voting power goes to operational nodes.",
-            Core.VotingStrategyType.Manual => $"Manual selection of {candidateCount} candidates based on user preferences.",
-            Core.VotingStrategyType.Conditional => $"Applied conditional voting logic with {candidateCount} candidates based on preferences.",
-            Core.VotingStrategyType.ProfitOptimized => $"Recommended {candidateCount} candidates with highest expected rewards to maximize returns.",
-            Core.VotingStrategyType.StabilityFocused => $"Recommended {candidateCount} highly reliable candidates for stable returns.",
-            Core.VotingStrategyType.Custom => $"Applied custom voting logic with {candidateCount} candidates based on custom parameters.",
+            VotingStrategyType.SimpleMajority => $"Recommended {candidateCount} candidates using simple majority voting (>50% required).",
+            VotingStrategyType.SuperMajority => $"Recommended {candidateCount} candidates using super majority voting (≥67% required).",
+            VotingStrategyType.Unanimous => $"Recommended {candidateCount} candidates requiring unanimous consensus.",
             _ => $"Recommended {candidateCount} candidates based on specified criteria."
         };
     }
@@ -269,7 +274,7 @@ public class VotingStrategyHelper
     /// <param name="candidates">Recommended candidates.</param>
     /// <param name="preferences">User preferences.</param>
     /// <returns>Confidence score (0-1).</returns>
-    public double CalculateConfidenceScore(CandidateInfo[] candidates, VotingPreferences preferences)
+    public double CalculateConfidenceScore(Candidate[] candidates, VotingPreferences preferences)
     {
         if (candidates.Length == 0) return 0;
 

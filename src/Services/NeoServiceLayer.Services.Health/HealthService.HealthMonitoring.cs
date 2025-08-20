@@ -1,5 +1,15 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Services.Health.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Services.Health;
 
@@ -26,8 +36,8 @@ public partial class HealthService
             }
 
             var totalConsensusNodes = consensusNodes.Count;
-            var activeConsensusNodes = consensusNodes.Count(n => n.Status == NodeStatus.Online);
-            var healthyConsensusNodes = consensusNodes.Count(n => n.Status == NodeStatus.Online && n.UptimePercentage >= 95.0);
+            var activeConsensusNodes = consensusNodes.Count(n => n.Status == HealthStatus.Healthy);
+            var healthyConsensusNodes = consensusNodes.Count(n => n.Status == HealthStatus.Healthy && n.UptimePercentage >= 95.0);
 
             var currentBlockHeight = consensusNodes.Any() ? consensusNodes.Max(n => n.BlockHeight) : 0;
             var averageBlockTime = TimeSpan.FromSeconds(15); // Neo N3 target block time
@@ -43,7 +53,7 @@ public partial class HealthService
                 AverageBlockTime = averageBlockTime,
                 CurrentBlockHeight = currentBlockHeight,
                 LastBlockTime = DateTime.UtcNow,
-                ConsensusNodes = consensusNodes,
+                ConsensusNodes = consensusNodes.Select(n => n.NodeAddress).ToList(),
                 NetworkMetrics = new Dictionary<string, object>
                 {
                     ["TotalNodes"] = _monitoredNodes.Count,
@@ -65,7 +75,7 @@ public partial class HealthService
         lock (_nodesLock)
         {
             var totalNodes = _monitoredNodes.Count;
-            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online);
+            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy);
             var averageResponseTime = totalNodes > 0
                 ? TimeSpan.FromMilliseconds(_monitoredNodes.Values.Average(n => n.ResponseTime.TotalMilliseconds))
                 : TimeSpan.Zero;
@@ -75,7 +85,7 @@ public partial class HealthService
                 TotalRequests = totalNodes,
                 SuccessfulRequests = onlineNodes,
                 FailedRequests = totalNodes - onlineNodes,
-                AverageResponseTime = averageResponseTime,
+                AverageResponseTime = averageResponseTime.TotalMilliseconds,
                 SuccessRate = totalNodes > 0 ? (double)onlineNodes / totalNodes : 0,
                 CustomMetrics = new Dictionary<string, object>
                 {
@@ -133,12 +143,12 @@ public partial class HealthService
             var healthReport = new NodeHealthReport
             {
                 NodeAddress = nodeAddress,
-                Status = healthData.IsOnline ? NodeStatus.Online : NodeStatus.Offline,
+                Status = healthData.IsOnline ? HealthStatus.Healthy : HealthStatus.Unhealthy,
                 BlockHeight = healthData.BlockHeight,
                 ResponseTime = responseTime,
                 UptimePercentage = healthData.UptimePercentage,
                 LastSeen = DateTime.UtcNow,
-                Metrics = healthData.Metrics,
+                Metrics = new List<HealthMetrics> { healthData.Metrics },
                 PublicKey = healthData.PublicKey,
                 IsConsensusNode = healthData.IsConsensusNode,
                 ConsensusRank = healthData.ConsensusRank,
@@ -178,7 +188,7 @@ public partial class HealthService
             var errorReport = new NodeHealthReport
             {
                 NodeAddress = nodeAddress,
-                Status = NodeStatus.Offline,
+                Status = HealthStatus.Unhealthy,
                 LastSeen = DateTime.UtcNow,
                 ResponseTime = DateTime.UtcNow - startTime
             };
@@ -270,7 +280,7 @@ public partial class HealthService
         if (consensusNodes.Count == 0)
             return false;
 
-        var onlineConsensusNodes = consensusNodes.Count(n => n.Status == NodeStatus.Online);
+        var onlineConsensusNodes = consensusNodes.Count(n => n.Status == HealthStatus.Healthy);
         var consensusParticipation = (double)onlineConsensusNodes / consensusNodes.Count;
 
         // Network is healthy if at least 67% of consensus nodes are online (Byzantine fault tolerance)
@@ -340,7 +350,7 @@ public partial class HealthService
                 TotalRequests = systemMetrics.TotalRequests,
                 SuccessfulRequests = systemMetrics.SuccessfulRequests,
                 FailedRequests = systemMetrics.FailedRequests,
-                AverageResponseTime = networkTest.ResponseTime,
+                AverageResponseTime = networkTest.ResponseTime.TotalMilliseconds,
                 SuccessRate = (double)systemMetrics.SuccessfulRequests / Math.Max(systemMetrics.TotalRequests, 1),
                 MemoryUsage = systemMetrics.MemoryUsage,
                 CpuUsage = systemMetrics.CpuUsage,
@@ -753,7 +763,7 @@ public partial class HealthService
                 if (existingUptime > 0)
                 {
                     // Gradually adjust uptime based on current status
-                    var adjustment = node.Status == NodeStatus.Online ? 0.1 : -0.5;
+                    var adjustment = node.Status == HealthStatus.Healthy ? 0.1 : -0.5;
                     var newUptime = Math.Max(0, Math.Min(100, existingUptime + adjustment));
 
                     return new UptimeResult
@@ -819,7 +829,7 @@ public partial class HealthService
             if (response.IsSuccessStatusCode)
             {
                 var responseContent = await response.Content.ReadAsStringAsync();
-                using var document = System.Text.Json.JsonDocument.Parse(responseContent);
+                var document = System.Text.Json.JsonDocument.Parse(responseContent);
                 return document.RootElement.Clone();
             }
 
@@ -871,7 +881,7 @@ public partial class HealthService
     {
         try
         {
-            using var document = System.Text.Json.JsonDocument.Parse(response);
+            var document = System.Text.Json.JsonDocument.Parse(response);
             return document.RootElement.TryGetProperty("jsonrpc", out _);
         }
         catch

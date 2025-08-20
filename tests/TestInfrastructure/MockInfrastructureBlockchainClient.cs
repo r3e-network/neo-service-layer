@@ -1,8 +1,10 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -81,7 +83,7 @@ public class MockInfrastructureBlockchainClient : MockBlockchainClient, NeoServi
     /// </summary>
     /// <param name="transaction">The transaction.</param>
     /// <returns>The estimated gas.</returns>
-    public async Task<decimal> EstimateGasAsync(Transaction transaction)
+    public async Task<decimal> EstimateGasAsync(NeoServiceLayer.Infrastructure.Transaction transaction)
     {
         await Task.Delay(20); // Simulate network delay
 

@@ -1,7 +1,13 @@
-﻿using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -327,8 +333,8 @@ public abstract class CryptographicServiceBase : EnclaveBlockchainServiceBase
         try
         {
             // Perform a simple cryptographic operation to verify health
-            using var rng = RandomNumberGenerator.Create();
             var testData = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
             rng.GetBytes(testData);
 
             return Task.FromResult(ServiceHealth.Healthy);

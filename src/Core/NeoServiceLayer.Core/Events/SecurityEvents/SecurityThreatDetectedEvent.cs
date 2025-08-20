@@ -1,5 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events.SecurityEvents
 {
@@ -17,21 +21,21 @@ namespace NeoServiceLayer.Core.Events.SecurityEvents
             string sourceIpAddress,
             string userAgent,
             string requestPath,
-            List&lt; string&gt; detectionPatterns,
+            List<string> detectionPatterns,
             Guid? causationId = null,
             Guid? correlationId = null)
             : base(aggregateId, "SecurityService", aggregateVersion, initiatedBy, causationId, correlationId)
         {
             ThreatType = threatType ?? throw new ArgumentNullException(nameof(threatType));
-        RiskScore = riskScore;
+            RiskScore = riskScore;
             SourceIpAddress = sourceIpAddress ?? throw new ArgumentNullException(nameof(sourceIpAddress));
-        UserAgent = userAgent ?? string.Empty;
+            UserAgent = userAgent ?? string.Empty;
             RequestPath = requestPath ?? string.Empty;
-            DetectionPatterns = detectionPatterns ?? new List&lt;string&gt;();
+            DetectionPatterns = detectionPatterns ?? new List<string>();
 
             AddMetadata("threat_category", GetThreatCategory(threatType));
-        AddMetadata("severity_level", GetSeverityLevel(riskScore));
-        AddMetadata("requires_immediate_action", riskScore &gt; 0.8);
+            AddMetadata("severity_level", GetSeverityLevel(riskScore));
+            AddMetadata("requires_immediate_action", riskScore > 0.8);
         }
 
         /// <summary>
@@ -62,31 +66,31 @@ namespace NeoServiceLayer.Core.Events.SecurityEvents
         /// <summary>
         /// List of detection patterns that matched
         /// </summary>
-        public List&lt;string&gt; DetectionPatterns { get; }
+        public List<string> DetectionPatterns { get; }
 
-private static string GetThreatCategory(string threatType)
-{
-    return threatType.ToLowerInvariant() switch
-    {
-        var t when t.Contains("sql") = &gt; "injection",
-        var t when t.Contains("xss") = &gt; "cross_site_scripting",
-        var t when t.Contains("code") = &gt; "code_injection",
-        var t when t.Contains("path") = &gt; "path_traversal",
-        var t when t.Contains("ddos") = &gt; "denial_of_service",
-        _ = &gt; "unknown"
+        private static string GetThreatCategory(string threatType)
+        {
+            return threatType.ToLowerInvariant() switch
+            {
+                var t when t.Contains("sql") => "injection",
+                var t when t.Contains("xss") => "cross_site_scripting",
+                var t when t.Contains("code") => "code_injection",
+                var t when t.Contains("path") => "path_traversal",
+                var t when t.Contains("ddos") => "denial_of_service",
+                _ => "unknown"
             };
-}
+        }
 
-private static string GetSeverityLevel(double riskScore)
-{
-    return riskScore switch
-    {
-        &gt;= 0.9 = &gt; "critical",
-        &gt;= 0.7 = &gt; "high",
-        &gt;= 0.5 = &gt; "medium",
-        &gt;= 0.3 = &gt; "low",
-        _ = &gt; "info"
+        private static string GetSeverityLevel(double riskScore)
+        {
+            return riskScore switch
+            {
+                >= 0.9 => "critical",
+                >= 0.7 => "high",
+                >= 0.5 => "medium",
+                >= 0.3 => "low",
+                _ => "info"
             };
-}
+        }
     }
 }

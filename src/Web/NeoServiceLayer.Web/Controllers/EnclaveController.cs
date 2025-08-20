@@ -1,8 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -149,11 +156,13 @@ public class EnclaveController : BaseApiController
             var iv = new byte[16];  // 128-bit IV
             var tag = new byte[16]; // 128-bit authentication tag
 
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
-                rng.GetBytes(key);
-                rng.GetBytes(iv);
-                rng.GetBytes(tag); // Mock tag for demo
+                using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(key);
+                    rng.GetBytes(iv);
+                    rng.GetBytes(tag); // Mock tag for demo
+                }
             }
 
             // In production, this would use actual SGX encryption
@@ -205,10 +214,12 @@ public class EnclaveController : BaseApiController
             // Generate production SGX attestation report
             var mrEnclave = new byte[32];
             var mrSigner = new byte[32];
-            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
-                rng.GetBytes(mrEnclave);
-                rng.GetBytes(mrSigner);
+                using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+                {
+                    rng.GetBytes(mrEnclave);
+                    rng.GetBytes(mrSigner);
+                }
             }
 
             var result = new AttestationResult

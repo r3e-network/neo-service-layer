@@ -1,11 +1,21 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Blockchain;
 using NeoServiceLayer.Services.Backup;
+using NeoServiceLayer.Services.Backup.Models;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+using NeoServiceLayer.Core;
+
 
 namespace NeoServiceLayer.Services.Backup.Tests;
 
@@ -22,7 +32,7 @@ public class BackupServiceTests : TestBase
         _blockchainClientFactoryMock = new Mock<IBlockchainClientFactory>();
         _httpClientServiceMock = new Mock<IHttpClientService>();
 
-        // BackupService expects IBlockchainClientFactory and IHttpClientService
+        // BackupService constructor matches actual implementation
         _service = new BackupService(_loggerMock.Object, _blockchainClientFactoryMock.Object, _httpClientServiceMock.Object);
     }
 

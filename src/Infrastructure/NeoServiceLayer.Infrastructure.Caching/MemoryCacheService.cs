@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
@@ -6,6 +5,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Caching
 {
@@ -16,6 +18,87 @@ namespace NeoServiceLayer.Infrastructure.Caching
     {
         private readonly IMemoryCache _cache;
         private readonly ILogger<MemoryCacheService> _logger;
+
+        // LoggerMessage delegates for performance optimization
+        private static readonly Action<ILogger, MemoryCacheServiceOptions, Exception?> _serviceInitialized =
+            LoggerMessage.Define<MemoryCacheServiceOptions>(LogLevel.Information, new EventId(3001, "ServiceInitialized"),
+                "MemoryCacheService initialized with options: {@Options}");
+
+        private static readonly Action<ILogger, string, Exception?> _cacheHit =
+            LoggerMessage.Define<string>(LogLevel.Trace, new EventId(3002, "CacheHit"),
+                "Cache hit for key: {Key}");
+
+        private static readonly Action<ILogger, string, Exception?> _cacheMiss =
+            LoggerMessage.Define<string>(LogLevel.Trace, new EventId(3003, "CacheMiss"),
+                "Cache miss for key: {Key}");
+
+        private static readonly Action<ILogger, string, Exception?> _getCacheError =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(3004, "GetCacheError"),
+                "Error getting cache value for key: {Key}");
+
+        private static readonly Action<ILogger, string, TimeSpan, Exception?> _valuesCached =
+            LoggerMessage.Define<string, TimeSpan>(LogLevel.Trace, new EventId(3005, "ValueCached"),
+                "Cached value for key: {Key} with expiration: {Expiration}");
+
+        private static readonly Action<ILogger, string, Exception?> _setCacheError =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(3006, "SetCacheError"),
+                "Error setting cache value for key: {Key}");
+
+        private static readonly Action<ILogger, string, Exception?> _cacheEntryRemoved =
+            LoggerMessage.Define<string>(LogLevel.Trace, new EventId(3007, "CacheEntryRemoved"),
+                "Removed cache entry for key: {Key}");
+
+        private static readonly Action<ILogger, string, Exception?> _removeCacheError =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(3008, "RemoveCacheError"),
+                "Error removing cache value for key: {Key}");
+
+        private static readonly Action<ILogger, string, bool, Exception?> _cacheExistenceCheck =
+            LoggerMessage.Define<string, bool>(LogLevel.Trace, new EventId(3009, "CacheExistenceCheck"),
+                "Cache existence check for key: {Key} = {Exists}");
+
+        private static readonly Action<ILogger, string, Exception?> _existenceCheckError =
+            LoggerMessage.Define<string>(LogLevel.Error, new EventId(3010, "ExistenceCheckError"),
+                "Error checking cache key existence: {Key}");
+
+        private static readonly Action<ILogger, Exception?> _cacheCleared =
+            LoggerMessage.Define(LogLevel.Information, new EventId(3011, "CacheCleared"),
+                "Memory cache cleared successfully");
+
+        private static readonly Action<ILogger, Exception?> _clearCacheError =
+            LoggerMessage.Define(LogLevel.Error, new EventId(3012, "ClearCacheError"),
+                "Error clearing memory cache");
+
+        private static readonly Action<ILogger, int, Exception?> _multipleEntriesRetrieved =
+            LoggerMessage.Define<int>(LogLevel.Trace, new EventId(3013, "MultipleEntriesRetrieved"),
+                "Retrieved {Count} cache entries");
+
+        private static readonly Action<ILogger, Exception?> _getMultipleError =
+            LoggerMessage.Define(LogLevel.Error, new EventId(3014, "GetMultipleError"),
+                "Error getting multiple cache values");
+
+        private static readonly Action<ILogger, int, bool, Exception?> _multipleEntriesSet =
+            LoggerMessage.Define<int, bool>(LogLevel.Trace, new EventId(3015, "MultipleEntriesSet"),
+                "Set {Count} cache entries, success: {Success}");
+
+        private static readonly Action<ILogger, Exception?> _setMultipleError =
+            LoggerMessage.Define(LogLevel.Error, new EventId(3016, "SetMultipleError"),
+                "Error setting multiple cache values");
+
+        private static readonly Action<ILogger, int, Exception?> _multipleEntriesRemoved =
+            LoggerMessage.Define<int>(LogLevel.Trace, new EventId(3017, "MultipleEntriesRemoved"),
+                "Removed {Count} cache entries");
+
+        private static readonly Action<ILogger, Exception?> _removeMultipleError =
+            LoggerMessage.Define(LogLevel.Error, new EventId(3018, "RemoveMultipleError"),
+                "Error removing multiple cache values");
+
+        private static readonly Action<ILogger, Exception?> _statisticsError =
+            LoggerMessage.Define(LogLevel.Error, new EventId(3019, "StatisticsError"),
+                "Error getting cache statistics");
+
+        private static readonly Action<ILogger, object, EvictionReason, Exception?> _entryEvicted =
+            LoggerMessage.Define<object, EvictionReason>(LogLevel.Trace, new EventId(3020, "EntryEvicted"),
+                "Cache entry evicted: {Key}, Reason: {Reason}");
         private readonly MemoryCacheServiceOptions _options;
         private readonly ConcurrentDictionary<string, DateTime> _keyTimestamps;
         private readonly object _statisticsLock = new();
@@ -41,7 +124,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
             _options = options?.Value ?? new MemoryCacheServiceOptions();
             _keyTimestamps = new ConcurrentDictionary<string, DateTime>();
 
-            _logger.LogInformation("MemoryCacheService initialized with options: {@Options}", _options);
+            _serviceInitialized(_logger, _options, null);
         }
 
         /// <inheritdoc/>
@@ -57,17 +140,17 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 if (_cache.TryGetValue(fullKey, out var value) && value is T typedValue)
                 {
                     Interlocked.Increment(ref _hitCount);
-                    _logger.LogTrace("Cache hit for key: {Key}", fullKey);
+                    _cacheHit(_logger, fullKey, null);
                     return typedValue;
                 }
 
                 Interlocked.Increment(ref _missCount);
-                _logger.LogTrace("Cache miss for key: {Key}", fullKey);
+                _cacheMiss(_logger, fullKey, null);
                 return null;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting cache value for key: {Key}", key);
+                _getCacheError(_logger, key, ex);
                 Interlocked.Increment(ref _missCount);
                 return null;
             }
@@ -104,12 +187,12 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 _cache.Set(fullKey, value, cacheEntryOptions);
                 _keyTimestamps[fullKey] = DateTime.UtcNow;
 
-                _logger.LogTrace("Cached value for key: {Key} with expiration: {Expiration}", fullKey, expirationTime);
+                _valuesCached(_logger, fullKey, expirationTime, null);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting cache value for key: {Key}", key);
+                _setCacheError(_logger, key, ex);
                 return false;
             }
             finally
@@ -130,12 +213,12 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 _cache.Remove(fullKey);
                 _keyTimestamps.TryRemove(fullKey, out _);
 
-                _logger.LogTrace("Removed cache entry for key: {Key}", fullKey);
+                _cacheEntryRemoved(_logger, fullKey, null);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing cache value for key: {Key}", key);
+                _removeCacheError(_logger, key, ex);
                 return false;
             }
             finally
@@ -155,12 +238,12 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 var fullKey = GetFullKey<object>(key);
                 var exists = _cache.TryGetValue(fullKey, out _);
 
-                _logger.LogTrace("Cache existence check for key: {Key} = {Exists}", fullKey, exists);
+                _cacheExistenceCheck(_logger, fullKey, exists, null);
                 return exists;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error checking cache key existence: {Key}", key);
+                _existenceCheckError(_logger, key, ex);
                 return false;
             }
             finally
@@ -197,12 +280,12 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 Interlocked.Exchange(ref _missCount, 0);
                 Interlocked.Exchange(ref _evictionCount, 0);
 
-                _logger.LogInformation("Memory cache cleared successfully");
+                _cacheCleared(_logger, null);
                 return true;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error clearing memory cache");
+                _clearCacheError(_logger, ex);
                 return false;
             }
             finally
@@ -230,12 +313,12 @@ namespace NeoServiceLayer.Infrastructure.Caching
                     }
                 }
 
-                _logger.LogTrace("Retrieved {Count} cache entries", result.Count);
+                _multipleEntriesRetrieved(_logger, result.Count, null);
                 return result;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting multiple cache values");
+                _getMultipleError(_logger, ex);
                 return result;
             }
         }
@@ -252,13 +335,13 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 var success = results.All(r => r);
-                _logger.LogTrace("Set {Count} cache entries, success: {Success}", items.Count, success);
+                _multipleEntriesSet(_logger, items.Count, success, null);
 
                 return success;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error setting multiple cache values");
+                _setMultipleError(_logger, ex);
                 return false;
             }
         }
@@ -275,14 +358,53 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 var results = await Task.WhenAll(tasks).ConfigureAwait(false);
 
                 var removedCount = results.Count(r => r);
-                _logger.LogTrace("Removed {Count} cache entries", removedCount);
+                _multipleEntriesRemoved(_logger, removedCount, null);
 
                 return removedCount;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error removing multiple cache values");
+                _removeMultipleError(_logger, ex);
                 return 0;
+            }
+        }
+
+        /// <inheritdoc/>
+        public async Task<T?> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return default;
+
+            try
+            {
+                // First try to get the value from cache
+                var cached = await GetAsync<T>(key).ConfigureAwait(false);
+                if (cached != null)
+                {
+                    return cached;
+                }
+
+                // Value not in cache, use factory to create it
+                var value = await factory().ConfigureAwait(false);
+                if (value != null)
+                {
+                    await SetAsync(key, value, expiration).ConfigureAwait(false);
+                }
+
+                return value;
+            }
+            catch (Exception ex)
+            {
+                _getCacheError(_logger, key, ex);
+                // If cache operation fails, still try to get the value from factory
+                try
+                {
+                    return await factory().ConfigureAwait(false);
+                }
+                catch
+                {
+                    return default;
+                }
             }
         }
 
@@ -317,7 +439,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error getting cache statistics");
+                _statisticsError(_logger, ex);
                 return new CacheStatistics { IsHealthy = false };
             }
             finally
@@ -370,7 +492,7 @@ namespace NeoServiceLayer.Infrastructure.Caching
                 _keyTimestamps.TryRemove(stringKey, out _);
             }
 
-            _logger.LogTrace("Cache entry evicted: {Key}, Reason: {Reason}", key, reason);
+            _entryEvicted(_logger, key, reason, null);
         }
 
         /// <inheritdoc/>

@@ -1,6 +1,132 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
+
 
 namespace NeoServiceLayer.Core.Models;
+
+/// <summary>
+/// Represents the status of a cross-chain message.
+/// </summary>
+public enum MessageStatus
+{
+    /// <summary>
+    /// Message is pending.
+    /// </summary>
+    Pending = 0,
+    
+    /// <summary>
+    /// Message is in progress.
+    /// </summary>
+    InProgress = 1,
+    
+    /// <summary>
+    /// Message completed successfully.
+    /// </summary>
+    Completed = 2,
+    
+    /// <summary>
+    /// Message failed.
+    /// </summary>
+    Failed = 3,
+    
+    /// <summary>
+    /// Message was cancelled.
+    /// </summary>
+    Cancelled = 4
+}
+
+/// <summary>
+/// Represents the type of cross-chain operation.
+/// </summary>
+public enum OperationType
+{
+    /// <summary>
+    /// Message operation.
+    /// </summary>
+    Message = 0,
+    
+    /// <summary>
+    /// Transfer operation.
+    /// </summary>
+    Transfer = 1,
+    
+    /// <summary>
+    /// Remote call operation.
+    /// </summary>
+    RemoteCall = 2
+}
+
+/// <summary>
+/// Represents the risk level of an operation.
+/// </summary>
+public enum RiskLevel
+{
+    /// <summary>
+    /// Minimal risk.
+    /// </summary>
+    Minimal = 0,
+    
+    /// <summary>
+    /// Low risk.
+    /// </summary>
+    Low = 1,
+    
+    /// <summary>
+    /// Medium risk.
+    /// </summary>
+    Medium = 2,
+    
+    /// <summary>
+    /// High risk.
+    /// </summary>
+    High = 3,
+    
+    /// <summary>
+    /// Critical risk.
+    /// </summary>
+    Critical = 4
+}
+
+/// <summary>
+/// Represents the type of blockchain asset.
+/// </summary>
+public enum AssetType
+{
+    /// <summary>
+    /// Native blockchain asset.
+    /// </summary>
+    Native = 0,
+    
+    /// <summary>
+    /// Token asset.
+    /// </summary>
+    Token = 1,
+    
+    /// <summary>
+    /// Stablecoin asset.
+    /// </summary>
+    Stablecoin = 2,
+    
+    /// <summary>
+    /// Wrapped asset.
+    /// </summary>
+    Wrapped = 3,
+    
+    /// <summary>
+    /// Synthetic asset.
+    /// </summary>
+    Synthetic = 4,
+    
+    /// <summary>
+    /// Non-fungible token.
+    /// </summary>
+    NFT = 5
+}
 
 #region Cross-Chain Models
 
@@ -58,6 +184,18 @@ public class CrossChainTransferRequest
     /// Gets or sets additional transfer data.
     /// </summary>
     public byte[] Data { get; set; } = Array.Empty<byte>();
+    
+    /// <summary>
+    /// Gets or sets the sender address.
+    /// </summary>
+    [Required]
+    public string Sender { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the receiver address.
+    /// </summary>
+    [Required] 
+    public string Receiver { get; set; } = string.Empty;
 }
 
 /// <summary>

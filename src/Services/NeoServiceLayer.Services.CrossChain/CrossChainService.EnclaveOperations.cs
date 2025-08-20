@@ -1,8 +1,16 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.CrossChain.Models;
-using CoreModels = NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+using System.Text.Json;
+using CoreModels = NeoServiceLayer.Core.Models;
+using ServiceCrossChainMessageRequest = NeoServiceLayer.Services.CrossChain.Models.CrossChainMessageRequest;
+
 
 namespace NeoServiceLayer.Services.CrossChain;
 
@@ -18,7 +26,6 @@ public partial class CrossChainService
         switch (keyInfo.Type)
         {
             case CryptoKeyType.ECDSA:
-                using (var ecdsa = System.Security.Cryptography.ECDsa.Create(System.Security.Cryptography.ECCurve.NamedCurves.nistP256))
                 {
                     var privateKey = ecdsa.ExportECPrivateKey();
                     var publicKey = ecdsa.ExportSubjectPublicKeyInfo();
@@ -32,7 +39,6 @@ public partial class CrossChainService
                 }
                 break;
             case CryptoKeyType.AES:
-                using (var aes = System.Security.Cryptography.Aes.Create())
                 {
                     aes.KeySize = keyInfo.Size;
                     aes.GenerateKey();
@@ -62,10 +68,8 @@ public partial class CrossChainService
         var privateKeyBytes = Convert.FromBase64String(privateKeyData);
 
         // Sign data using ECDSA
-        using var ecdsa = System.Security.Cryptography.ECDsa.Create();
         ecdsa.ImportECPrivateKey(privateKeyBytes, out _);
 
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(data);
         var signature = ecdsa.SignHash(hash);
 
@@ -88,10 +92,8 @@ public partial class CrossChainService
             var publicKeyBytes = Convert.FromBase64String(publicKeyData);
 
             // Verify signature using ECDSA
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
 
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var hash = sha256.ComputeHash(data);
             var isValid = ecdsa.VerifyHash(hash, signature);
 
@@ -118,18 +120,15 @@ public partial class CrossChainService
         var keyBytes = Convert.FromBase64String(keyData);
 
         // Encrypt using AES-256-CBC
-        using var aes = System.Security.Cryptography.Aes.Create();
         aes.Key = keyBytes;
         aes.Mode = System.Security.Cryptography.CipherMode.CBC;
         aes.GenerateIV();
 
-        using var encryptor = aes.CreateEncryptor();
-        using var msEncrypt = new MemoryStream();
-
+        using var msEncrypt = new System.IO.MemoryStream();
         // Prepend IV to encrypted data
         msEncrypt.Write(aes.IV, 0, aes.IV.Length);
 
-        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, aes.CreateEncryptor(), System.Security.Cryptography.CryptoStreamMode.Write))
         {
             csEncrypt.Write(data, 0, data.Length);
         }
@@ -156,7 +155,6 @@ public partial class CrossChainService
             var keyBytes = Convert.FromBase64String(keyData);
 
             // Decrypt using AES-256-CBC
-            using var aes = System.Security.Cryptography.Aes.Create();
             aes.Key = keyBytes;
             aes.Mode = System.Security.Cryptography.CipherMode.CBC;
 
@@ -165,12 +163,12 @@ public partial class CrossChainService
             Array.Copy(encryptedData, 0, iv, 0, 16);
             aes.IV = iv;
 
-            using var decryptor = aes.CreateDecryptor();
-            using var msDecrypt = new MemoryStream(encryptedData, 16, encryptedData.Length - 16);
-            using var csDecrypt = new System.Security.Cryptography.CryptoStream(msDecrypt, decryptor, System.Security.Cryptography.CryptoStreamMode.Read);
-            using var msPlain = new MemoryStream();
-
-            csDecrypt.CopyTo(msPlain);
+            using var msPlain = new System.IO.MemoryStream();
+            using var msDecrypt = new System.IO.MemoryStream(encryptedData, 16, encryptedData.Length - 16);
+            using (var csDecrypt = new System.Security.Cryptography.CryptoStream(msDecrypt, aes.CreateDecryptor(), System.Security.Cryptography.CryptoStreamMode.Read))
+            {
+                csDecrypt.CopyTo(msPlain);
+            }
             var decryptedData = msPlain.ToArray();
 
             Logger.LogDebug("Data decrypted with key {KeyId}. Encrypted: {Encrypted} bytes, Decrypted: {Decrypted} bytes",
@@ -233,7 +231,7 @@ public partial class CrossChainService
     /// <param name="sourceBlockchain">The source blockchain.</param>
     /// <param name="targetBlockchain">The target blockchain.</param>
     /// <returns>The message hash.</returns>
-    private Task<string> ComputeMessageHashAsync(CoreModels.CrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
+    private Task<string> ComputeMessageHashAsync(ServiceCrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
     {
         // Compute deterministic hash of cross-chain message
         var messageData = System.Text.Json.JsonSerializer.Serialize(new
@@ -247,7 +245,6 @@ public partial class CrossChainService
             Timestamp = DateTime.UtcNow.ToString("O")
         });
 
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(messageData));
         var hash = Convert.ToHexString(hashBytes).ToLowerInvariant();
 
@@ -257,76 +254,7 @@ public partial class CrossChainService
         return Task.FromResult(hash);
     }
 
-    /// <summary>
-    /// Signs a message hash.
-    /// </summary>
-    /// <param name="messageHash">The message hash.</param>
-    /// <returns>The signature.</returns>
-    private async Task<string> SignMessageAsync(string messageHash)
-    {
-        // Use the cryptographic service base to sign
-        var keyId = await GenerateKeyAsync(CryptoKeyType.ECDSA, 256, CryptoKeyUsage.Signing);
-        var hashBytes = System.Text.Encoding.UTF8.GetBytes(messageHash);
-        var signatureBytes = await SignDataAsync(keyId, hashBytes);
-        return Convert.ToBase64String(signatureBytes);
-    }
 
-    /// <summary>
-    /// Verifies a cross-chain message proof within the enclave.
-    /// </summary>
-    /// <param name="proof">The proof to verify.</param>
-    /// <returns>True if the proof is valid.</returns>
-    private async Task<bool> VerifyProofInEnclaveAsync(CoreModels.CrossChainMessageProof proof)
-    {
-        try
-        {
-            // Verify the cryptographic proof of the cross-chain message
-
-            // 1. Verify the message hash
-            var computedHash = await ComputeMessageHashFromProofAsync(proof);
-            if (computedHash != proof.MessageHash)
-            {
-                Logger.LogWarning("Message hash mismatch in proof verification");
-                return false;
-            }
-
-            // 2. Verify the signature
-            var signatureBytes = Convert.FromBase64String(proof.Signature);
-            var messageHashBytes = Convert.FromHexString(proof.MessageHash);
-            var publicKeyBytes = Convert.FromBase64String(proof.PublicKey);
-
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
-            ecdsa.ImportSubjectPublicKeyInfo(publicKeyBytes, out _);
-
-            var isSignatureValid = ecdsa.VerifyData(messageHashBytes, signatureBytes, System.Security.Cryptography.HashAlgorithmName.SHA256);
-
-            if (!isSignatureValid)
-            {
-                Logger.LogWarning("Invalid signature in proof verification");
-                return false;
-            }
-
-            // 3. Verify the merkle proof (if applicable)
-            if (proof.MerkleProof != null && proof.MerkleProof.Length > 0)
-            {
-                var merkleProofJson = System.Text.Json.JsonSerializer.Serialize(proof.MerkleProof);
-                var isMerkleValid = await VerifyMerkleProofAsync(merkleProofJson, proof.MessageHash);
-                if (!isMerkleValid)
-                {
-                    Logger.LogWarning("Invalid merkle proof in verification");
-                    return false;
-                }
-            }
-
-            Logger.LogDebug("Cross-chain proof verified successfully for message {MessageHash}", proof.MessageHash);
-            return true;
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Error verifying cross-chain proof");
-            return false;
-        }
-    }
 
     /// <summary>
     /// Processes a cross-chain message asynchronously.
@@ -335,7 +263,7 @@ public partial class CrossChainService
     /// <param name="request">The message request.</param>
     /// <param name="sourceBlockchain">The source blockchain.</param>
     /// <param name="targetBlockchain">The target blockchain.</param>
-    private async Task ProcessMessageAsync(string messageId, CoreModels.CrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
+    private async Task ProcessMessageAsync(string messageId, ServiceCrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
     {
         try
         {
@@ -402,116 +330,6 @@ public partial class CrossChainService
         }
     }
 
-    /// <summary>
-    /// Processes a cross-chain transfer asynchronously.
-    /// </summary>
-    /// <param name="transferId">The transfer ID.</param>
-    /// <param name="request">The transfer request.</param>
-    /// <param name="sourceBlockchain">The source blockchain.</param>
-    /// <param name="targetBlockchain">The target blockchain.</param>
-    private async Task ProcessTransferAsync(string transferId, CoreModels.CrossChainTransferRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
-    {
-        try
-        {
-            // Update status to processing
-            UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Processing);
-
-            if (_blockchainClientFactory != null)
-            {
-                // Use real blockchain clients for transfer
-                var sourceClient = _blockchainClientFactory.CreateClient(sourceBlockchain);
-                var targetClient = _blockchainClientFactory.CreateClient(targetBlockchain);
-
-                // Get bridge contracts
-                var sourceBridge = GetBridgeContract(sourceBlockchain, targetBlockchain);
-
-                // Lock tokens on source chain
-                Logger.LogInformation("Locking {Amount} {Token} on {Source} chain for transfer {TransferId}",
-                    request.Amount, request.TokenAddress, sourceBlockchain, transferId);
-
-                var lockTxHash = await sourceClient.InvokeContractMethodAsync(
-                    sourceBridge,
-                    "lockTokens",
-                    request.TokenAddress,
-                    request.Amount.ToString(),
-                    request.Receiver,
-                    targetBlockchain.ToString()
-                );
-
-                // Wait for confirmations on source chain
-                var sourceConfirmations = GetRequiredConfirmations(sourceBlockchain);
-                await WaitForConfirmationsAsync(sourceClient, lockTxHash, sourceConfirmations);
-
-                UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Confirmed);
-                Logger.LogInformation("Tokens locked on source chain: {TxHash}", lockTxHash);
-
-                // Generate cross-chain proof
-                var proof = await GenerateTransferProofAsync(lockTxHash, request, sourceBlockchain, targetBlockchain);
-
-                // Monitor for relay completion on target chain
-                var targetBridge = GetBridgeContract(targetBlockchain, sourceBlockchain);
-                var relayCompleted = await MonitorRelayCompletionAsync(
-                    targetClient, targetBridge, transferId, proof);
-
-                if (relayCompleted)
-                {
-                    // Get target chain transaction hash
-                    var targetTxHash = await GetTargetTransactionHashAsync(
-                        targetClient, targetBridge, transferId);
-
-                    // Update transaction with hashes
-                    lock (_messagesLock)
-                    {
-                        if (_transactionHistory.TryGetValue(request.Sender, out var history))
-                        {
-                            var transaction = history.FirstOrDefault(t => t.Id == transferId);
-                            if (transaction != null)
-                            {
-                                transaction.Status = CrossChainMessageState.Completed;
-                                transaction.CompletedAt = DateTime.UtcNow;
-                                transaction.SourceTransactionHash = lockTxHash;
-                                transaction.TargetTransactionHash = targetTxHash ?? "pending";
-                            }
-                        }
-                    }
-
-                    Logger.LogInformation("Cross-chain transfer {TransferId} completed: {SourceTx} -> {TargetTx}",
-                        transferId, lockTxHash, targetTxHash);
-                }
-                else
-                {
-                    throw new InvalidOperationException("Transfer relay timeout on target chain");
-                }
-            }
-            else
-            {
-                // Fallback simulation
-                Logger.LogWarning("Blockchain client not available, simulating transfer");
-                await Task.Delay(TimeSpan.FromMinutes(2));
-
-                UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Completed);
-
-                lock (_messagesLock)
-                {
-                    if (_transactionHistory.TryGetValue(request.Sender, out var history))
-                    {
-                        var transaction = history.FirstOrDefault(t => t.Id == transferId);
-                        if (transaction != null)
-                        {
-                            transaction.SourceTransactionHash = Guid.NewGuid().ToString();
-                            transaction.TargetTransactionHash = Guid.NewGuid().ToString();
-                            transaction.CompletedAt = DateTime.UtcNow;
-                        }
-                    }
-                }
-            }
-        }
-        catch (Exception ex)
-        {
-            Logger.LogError(ex, "Failed to process cross-chain transfer {TransferId}", transferId);
-            UpdateTransferStatus(transferId, request.Sender, CrossChainMessageState.Failed);
-        }
-    }
 
     /// <summary>
     /// Updates the status of a cross-chain message.
@@ -527,19 +345,19 @@ public partial class CrossChainService
                 switch (state)
                 {
                     case CrossChainMessageState.Processing:
-                        status.Status = CoreModels.MessageStatus.Processing;
+                        status.Status = (Models.MessageStatus)(int)CoreModels.MessageStatus.InProgress;
                         status.ProcessedAt = DateTime.UtcNow;
                         break;
                     case CrossChainMessageState.Completed:
-                        status.Status = CoreModels.MessageStatus.Completed;
+                        status.Status = (Models.MessageStatus)(int)CoreModels.MessageStatus.Completed;
                         status.ProcessedAt = DateTime.UtcNow;
                         break;
                     case CrossChainMessageState.Failed:
-                        status.Status = CoreModels.MessageStatus.Failed;
+                        status.Status = (Models.MessageStatus)(int)CoreModels.MessageStatus.Failed;
                         status.ErrorMessage = "Processing failed";
                         break;
                     default:
-                        status.Status = CoreModels.MessageStatus.Pending;
+                        status.Status = (Models.MessageStatus)(int)CoreModels.MessageStatus.Pending;
                         break;
                 }
             }
@@ -560,17 +378,6 @@ public partial class CrossChainService
             BlockchainType.NeoX => 12,
             _ => 6
         };
-    }
-
-    /// <summary>
-    /// Gets the chain pair configuration.
-    /// </summary>
-    /// <param name="sourceBlockchain">The source blockchain.</param>
-    /// <param name="targetBlockchain">The target blockchain.</param>
-    /// <returns>The chain pair configuration.</returns>
-    private CrossChainPair? GetChainPair(BlockchainType sourceBlockchain, BlockchainType targetBlockchain)
-    {
-        return _supportedChains.FirstOrDefault(p => p.SourceChain == sourceBlockchain && p.TargetChain == targetBlockchain);
     }
 
     // Helper methods for cross-chain operations
@@ -613,7 +420,7 @@ public partial class CrossChainService
         return Task.CompletedTask;
     }
 
-    private Task<string> ComputeMessageHashFromProofAsync(CoreModels.CrossChainMessageProof proof)
+    private Task<string> ComputeMessageHashFromProofAsync(CrossChainMessageProof proof)
     {
         // Reconstruct message data from proof and compute hash
         var messageData = System.Text.Json.JsonSerializer.Serialize(new
@@ -627,7 +434,6 @@ public partial class CrossChainService
             proof.Timestamp
         });
 
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(messageData));
         return Task.FromResult(Convert.ToHexString(hashBytes).ToLowerInvariant());
     }
@@ -648,7 +454,6 @@ public partial class CrossChainService
                     sibling.Hash + currentHash :
                     currentHash + sibling.Hash;
 
-                using var sha256 = System.Security.Cryptography.SHA256.Create();
                 var hashBytes = sha256.ComputeHash(Convert.FromHexString(combinedData));
                 currentHash = Convert.ToHexString(hashBytes).ToLowerInvariant();
             }
@@ -677,7 +482,6 @@ public partial class CrossChainService
 
                 if (!string.IsNullOrEmpty(attestationReport))
                 {
-                    using var sha256 = System.Security.Cryptography.SHA256.Create();
                     var keyMaterial = $"crosschain-kek-{attestationReport}";
                     var hash = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(keyMaterial));
                     return Convert.ToBase64String(hash);
@@ -694,53 +498,13 @@ public partial class CrossChainService
         return "crosschain_key_encryption_key_v1";
     }
 
-    private string GetBridgeContract(BlockchainType source, BlockchainType target)
-    {
-        var key = $"CrossChain:BridgeContracts:{source}To{target}";
-        var contract = Configuration?.GetValue(key, "");
 
-        if (string.IsNullOrEmpty(contract))
-        {
-            throw new InvalidOperationException($"Bridge contract not configured for {source} to {target}. Configure '{key}' in appsettings.json");
-        }
-
-        return contract;
-    }
-
-    private string SerializeMessage(CoreModels.CrossChainMessageRequest request)
+    private string SerializeMessage(ServiceCrossChainMessageRequest request)
     {
         return System.Text.Json.JsonSerializer.Serialize(request);
     }
 
-    private int GetRequiredConfirmations(BlockchainType blockchain)
-    {
-        var key = $"CrossChain:Confirmations:{blockchain}";
-        return Configuration?.GetValue(key, blockchain switch
-        {
-            BlockchainType.NeoN3 => 6,
-            BlockchainType.NeoX => 12,
-            _ => 10
-        }) ?? 10;
-    }
 
-    private async Task WaitForConfirmationsAsync(NeoServiceLayer.Infrastructure.IBlockchainClient client, string txHash, int requiredConfirmations)
-    {
-        var startTime = DateTime.UtcNow;
-        var timeout = TimeSpan.FromMinutes(30);
-
-        while (DateTime.UtcNow - startTime < timeout)
-        {
-            var tx = await client.GetTransactionAsync(txHash);
-            if (tx?.Confirmations >= requiredConfirmations)
-            {
-                return;
-            }
-
-            await Task.Delay(TimeSpan.FromSeconds(10));
-        }
-
-        throw new TimeoutException($"Transaction {txHash} did not reach {requiredConfirmations} confirmations within timeout");
-    }
 
     private async Task<bool> MonitorTargetChainAsync(NeoServiceLayer.Infrastructure.IBlockchainClient client, string messageId, BlockchainType targetChain)
     {

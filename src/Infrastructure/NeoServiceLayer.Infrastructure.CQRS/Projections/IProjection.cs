@@ -1,6 +1,10 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NeoServiceLayer.Core.Events;
+using System.Collections.Generic;
+using System.Linq;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.CQRS.Projections
 {
@@ -51,7 +55,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Projections
         {
             if (string.IsNullOrWhiteSpace(projectionName))
                 throw new ArgumentException("Projection name cannot be null or empty", nameof(projectionName));
-            
+
             ProjectionName = projectionName;
         }
 

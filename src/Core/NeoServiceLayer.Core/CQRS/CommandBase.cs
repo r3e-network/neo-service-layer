@@ -1,4 +1,9 @@
-﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.CQRS
 {
@@ -35,11 +40,11 @@ namespace NeoServiceLayer.Core.CQRS
     /// Base implementation for commands that return results
     /// </summary>
     /// <typeparam name="TResult">Type of result returned</typeparam>
-    public abstract class CommandBase&lt;TResult&gt; : CommandBase, ICommand&lt;TResult&gt;
+    public abstract class CommandBase<TResult> : CommandBase, ICommand<TResult>
     {
         protected CommandBase(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
             : base(initiatedBy, correlationId, expectedVersion)
-    {
+        {
+        }
     }
-}
 }

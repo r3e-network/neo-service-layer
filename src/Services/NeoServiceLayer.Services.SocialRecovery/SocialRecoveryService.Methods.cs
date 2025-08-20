@@ -1,7 +1,13 @@
-﻿using System.Numerics;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.SocialRecovery.Configuration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Numerics;
+
 
 namespace NeoServiceLayer.Services.SocialRecovery;
 
@@ -238,7 +244,7 @@ public partial class SocialRecoveryService
                 throw new ArgumentException("Factor hash cannot be empty", nameof(factorHash));
             }
 
-            // Get authenticated account from context  
+            // Get authenticated account from context
             var accountAddress = await GetAuthenticatedAccountAddressAsync();
 
             Logger.LogInformation("Adding auth factor {Type} for account {Account}", factorType, accountAddress);

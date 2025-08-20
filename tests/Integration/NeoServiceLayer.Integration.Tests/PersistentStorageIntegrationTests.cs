@@ -1,4 +1,3 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -14,6 +13,14 @@ using NeoServiceLayer.Services.Notification.Models;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -205,6 +212,11 @@ public class PersistentStorageIntegrationTests : IDisposable
         // Arrange
         var storageService = _serviceProvider.GetRequiredService<IStorageService>();
         await storageService.InitializeAsync();
+        // Initialize enclave for SGX-enabled services
+        if (storageService is IEnclaveService enclaveService && !enclaveService.IsEnclaveInitialized)
+        {
+            await enclaveService.InitializeEnclaveAsync();
+        }
         await storageService.StartAsync();
 
         const string key = "persistent_test_key";
@@ -216,6 +228,11 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Simulate service restart by stopping and starting
         await storageService.StopAsync();
+        // Re-initialize enclave after restart
+        if (storageService is IEnclaveService enclaveServiceRestart && !enclaveServiceRestart.IsEnclaveInitialized)
+        {
+            await enclaveServiceRestart.InitializeEnclaveAsync();
+        }
         await storageService.StartAsync();
 
         // Retrieve data after restart
@@ -236,11 +253,17 @@ public class PersistentStorageIntegrationTests : IDisposable
         var keyService = _serviceProvider.GetRequiredService<IKeyManagementService>();
         var notificationService = _serviceProvider.GetRequiredService<INotificationService>();
 
-        // Initialize all services
+        // Initialize all services including enclaves
         await storageService.InitializeAsync();
+        if (storageService is IEnclaveService storageEnclaveService)
+            await storageEnclaveService.InitializeEnclaveAsync();
         await storageService.StartAsync();
+        
         await keyService.InitializeAsync();
+        if (keyService is IEnclaveService keyEnclaveService)
+            await keyEnclaveService.InitializeEnclaveAsync();
         await keyService.StartAsync();
+        
         await notificationService.InitializeAsync();
         await notificationService.StartAsync();
 
@@ -394,7 +417,7 @@ public class PersistentStorageIntegrationTests : IDisposable
             {
                 if (transaction != null)
                 {
-                    await transaction.StoreAsync(item.Key, item.Value, options);
+                    await transaction.StoreDataAsync(item.Key, item.Value, options);
                 }
                 else
                 {
@@ -448,7 +471,7 @@ public class PersistentStorageIntegrationTests : IDisposable
         {
             if (transaction != null)
             {
-                await transaction.StoreAsync(item.Key, item.Value, options);
+                await transaction.StoreDataAsync(item.Key, item.Value, options);
             }
             else
             {
@@ -515,7 +538,7 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Assert - Verify storage provider integrity
         var storageProvider = _serviceProvider.GetRequiredService<IPersistentStorageProvider>();
-        var validationResult = await storageProvider.ValidateIntegrityAsync();
+        var validationResult = await storageProvider.ValidateAsync();
 
         validationResult.Should().NotBeNull();
         validationResult.IsValid.Should().BeTrue();
@@ -595,7 +618,7 @@ public class PersistentStorageIntegrationTests : IDisposable
 
         // Act - Check storage health
         var statistics = await storageProvider.GetStatisticsAsync();
-        var validationResult = await storageProvider.ValidateIntegrityAsync();
+        var validationResult = await storageProvider.ValidateAsync();
 
         // Create some monitoring metrics
         var metrics = new Dictionary<string, object>

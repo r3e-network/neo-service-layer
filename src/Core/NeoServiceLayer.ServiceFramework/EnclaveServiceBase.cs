@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -128,6 +134,65 @@ public abstract class EnclaveServiceBase : ServiceBase, IEnclaveService
             throw;
         }
     }
+
+    /// <inheritdoc/>
+    public virtual async Task<string?> GetAttestationAsync()
+    {
+        if (!_isEnclaveInitialized)
+        {
+            throw new InvalidOperationException("Enclave is not initialized. Call InitializeEnclaveAsync first.");
+        }
+
+        // Default implementation - can be overridden by derived classes
+        try
+        {
+            if (_enclaveManager != null)
+            {
+                // Generate a challenge for attestation (in production, this would be provided by the requester)
+                var challenge = Guid.NewGuid().ToString("N");
+                var attestation = await _enclaveManager.GetAttestationReportAsync(challenge);
+                return attestation;
+            }
+
+            // Return null if no enclave manager is available
+            return null;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting attestation for service {ServiceName}", Name);
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public virtual async Task<bool> ValidateEnclaveAsync()
+    {
+        if (!_isEnclaveInitialized)
+        {
+            return false;
+        }
+
+        try
+        {
+            // Basic validation - can be overridden by derived classes
+            if (_enclaveManager != null)
+            {
+                // Try to get attestation as a validation check
+                var attestation = await GetAttestationAsync();
+                return !string.IsNullOrEmpty(attestation);
+            }
+
+            return _isEnclaveInitialized;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error validating enclave for service {ServiceName}", Name);
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
+    public virtual bool HasEnclaveCapabilities => _enclaveManager != null;
 }
 
 /// <summary>

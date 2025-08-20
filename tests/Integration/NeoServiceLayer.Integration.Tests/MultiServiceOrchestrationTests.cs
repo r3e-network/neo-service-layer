@@ -1,4 +1,3 @@
-﻿using System.Net.Http;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -12,13 +11,20 @@ using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.Monitoring;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Services.ProofOfReserve.Models;
+using NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Advanced.FairOrdering;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
-using AutomationSvc = NeoServiceLayer.Services.Automation;
-using FairOrderingSvc = NeoServiceLayer.Advanced.FairOrdering;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -30,8 +36,8 @@ public class MultiServiceOrchestrationTests : IDisposable
     private readonly ServiceProvider _serviceProvider;
     private readonly ILogger<MultiServiceOrchestrationTests> _logger;
     private readonly IProofOfReserveService _proofOfReserveService;
-    private readonly AutomationSvc.IAutomationService _automationService;
-    private readonly FairOrderingSvc.IFairOrderingService _fairOrderingService;
+    private readonly IAutomationService _automationService;
+    private readonly NeoServiceLayer.Advanced.FairOrdering.IFairOrderingService _fairOrderingService;
     private readonly ICrossChainService _crossChainService;
     private readonly IMonitoringService _monitoringService;
     private readonly IConfigurationService _configurationService;
@@ -44,7 +50,7 @@ public class MultiServiceOrchestrationTests : IDisposable
 
         // Add logging
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Debug));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.IBlockchainClientFactory, MockBlockchainClientFactory>();
 
         // Add enclave services
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
@@ -57,8 +63,8 @@ public class MultiServiceOrchestrationTests : IDisposable
 
         // Add all services
         services.AddSingleton<IProofOfReserveService, ProofOfReserveService>();
-        services.AddSingleton<AutomationSvc.IAutomationService, AutomationSvc.AutomationService>();
-        services.AddSingleton<FairOrderingSvc.IFairOrderingService, FairOrderingSvc.FairOrderingService>();
+        services.AddSingleton<IAutomationService, AutomationService>();
+        services.AddSingleton<NeoServiceLayer.Advanced.FairOrdering.IFairOrderingService, NeoServiceLayer.Advanced.FairOrdering.FairOrderingService>();
         services.AddSingleton<ICrossChainService, CrossChainService>();
         services.AddSingleton<IMonitoringService, MonitoringService>();
         services.AddSingleton<IConfigurationService, ConfigurationService>();
@@ -70,8 +76,8 @@ public class MultiServiceOrchestrationTests : IDisposable
         // Get service instances
         _logger = _serviceProvider.GetRequiredService<ILogger<MultiServiceOrchestrationTests>>();
         _proofOfReserveService = _serviceProvider.GetRequiredService<IProofOfReserveService>();
-        _automationService = _serviceProvider.GetRequiredService<AutomationSvc.IAutomationService>();
-        _fairOrderingService = _serviceProvider.GetRequiredService<FairOrderingSvc.IFairOrderingService>();
+        _automationService = _serviceProvider.GetRequiredService<IAutomationService>();
+        _fairOrderingService = _serviceProvider.GetRequiredService<NeoServiceLayer.Advanced.FairOrdering.IFairOrderingService>();
         _crossChainService = _serviceProvider.GetRequiredService<ICrossChainService>();
         _monitoringService = _serviceProvider.GetRequiredService<IMonitoringService>();
         _configurationService = _serviceProvider.GetRequiredService<IConfigurationService>();
@@ -131,7 +137,8 @@ public class MultiServiceOrchestrationTests : IDisposable
             },
             MinReserveRatio = 1.0m,
             TotalSupply = 10000000m,
-            MonitoringFrequencyMinutes = 60 // Fixed property name
+            // MonitoringFrequencyMinutes doesn't exist - use Metadata instead
+            Metadata = new Dictionary<string, object> { ["MonitoringFrequencyMinutes"] = 60 }
         };
 
         var assetId = await _proofOfReserveService.RegisterAssetAsync(assetRequest, BlockchainType.NeoX);
@@ -154,8 +161,9 @@ public class MultiServiceOrchestrationTests : IDisposable
         var updateRequest = new ReserveUpdateRequest
         {
             AssetId = assetId,
-            NewReserveAmount = 10500000m,
-            UpdateReason = "Monthly reserve audit",
+            ReserveAmount = 10500000m,
+            // UpdateReason doesn't exist - use ValidationData instead
+            ValidationData = new Dictionary<string, object> { ["UpdateReason"] = "Monthly reserve audit" },
             AuditorSignature = "0xauditor_signature"
         };
 

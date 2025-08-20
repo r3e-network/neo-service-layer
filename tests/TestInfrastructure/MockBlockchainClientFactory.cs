@@ -1,8 +1,14 @@
-﻿// No alias needed - will use fully qualified names
 using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Blockchain;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -10,7 +16,7 @@ namespace NeoServiceLayer.TestInfrastructure;
 /// Mock blockchain client factory for testing purposes.
 /// This class provides a test implementation that wraps the production factory.
 /// </summary>
-public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlockchainClientFactory
+public class MockBlockchainClientFactory : IBlockchainClientFactory
 {
     private readonly ILoggerFactory _loggerFactory;
 
@@ -82,7 +88,7 @@ public class MockBlockchainClientFactory : NeoServiceLayer.Infrastructure.IBlock
     /// </summary>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The blockchain client.</returns>
-    public NeoServiceLayer.Core.IBlockchainClient GetMockClient(BlockchainType blockchainType)
+    public NeoServiceLayer.Infrastructure.IBlockchainClient GetMockClient(BlockchainType blockchainType)
     {
         // Return as Core interface for backward compatibility
         return new MockBlockchainClient(_loggerFactory.CreateLogger<MockBlockchainClient>(), blockchainType);

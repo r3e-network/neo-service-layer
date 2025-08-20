@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
 
-namespace NeoServiceLayer.Infrastructure;
+
+namespace NeoServiceLayer.Infrastructure.Blockchain;
 
 /// <summary>
 /// Interface for blockchain client factories.

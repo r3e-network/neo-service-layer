@@ -1,8 +1,15 @@
-﻿using System.Linq;
 using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using CoreModels = NeoServiceLayer.Core.Models;
+using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -18,7 +25,7 @@ public partial class PredictionService
     /// <param name="testData">The test data.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The validation result.</returns>
-    public async Task<CoreModels.ValidationResult> ValidatePredictionAccuracyAsync(string modelId, List<object> testData, BlockchainType blockchainType)
+    public async Task<PredictionModels.ValidationResult> ValidatePredictionAccuracyAsync(string modelId, List<object> testData, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(modelId);
         ArgumentNullException.ThrowIfNull(testData);
@@ -69,7 +76,7 @@ public partial class PredictionService
             var mape = CalculateMeanAbsolutePercentageError(predictions, actuals);
             var r2 = CalculateR2Score(predictions, actuals);
 
-            return new CoreModels.ValidationResult
+            return new PredictionModels.ValidationResult
             {
                 MeanAbsoluteError = mae,
                 RootMeanSquareError = rmse,
@@ -89,7 +96,7 @@ public partial class PredictionService
     /// <param name="lookbackDays">The lookback days.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The backtest result.</returns>
-    public async Task<CoreModels.BacktestResult> BacktestPredictionModelAsync(string modelId, List<object> historicalData, int lookbackDays, BlockchainType blockchainType)
+    public async Task<PredictionModels.BacktestResult> BacktestPredictionModelAsync(string modelId, List<object> historicalData, int lookbackDays, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(modelId);
         ArgumentNullException.ThrowIfNull(historicalData);
@@ -117,7 +124,7 @@ public partial class PredictionService
             var maxDrawdown = CalculateMaxDrawdown(trades);
             var profitFactor = CalculateProfitFactor(trades);
 
-            return new CoreModels.BacktestResult
+            return new PredictionModels.BacktestResult
             {
                 TotalTrades = totalTrades,
                 WinRate = totalTrades > 0 ? (double)winningTrades / totalTrades : 0,
@@ -137,7 +144,7 @@ public partial class PredictionService
     /// <param name="confidenceLevel">The confidence level.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The uncertainty result.</returns>
-    public async Task<CoreModels.UncertaintyResult> AssessPredictionUncertaintyAsync(string modelId, CoreModels.PredictionRequest predictionRequest, double confidenceLevel, BlockchainType blockchainType)
+    public async Task<PredictionModels.UncertaintyResult> AssessPredictionUncertaintyAsync(string modelId, PredictionModels.PredictionRequest predictionRequest, double confidenceLevel, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(modelId);
         ArgumentNullException.ThrowIfNull(predictionRequest);
@@ -175,7 +182,7 @@ public partial class PredictionService
             var lowerBound = predictionIntervals.Count > 0 ? predictionIntervals.Values.Average(p => p.Lower) : 95.0;
             var upperBound = predictionIntervals.Count > 0 ? predictionIntervals.Values.Average(p => p.Upper) : 105.0;
 
-            return new CoreModels.UncertaintyResult
+            return new PredictionModels.UncertaintyResult
             {
                 PredictionIntervals = predictionIntervals,
                 EpistemicUncertainty = epistemicUncertainty,

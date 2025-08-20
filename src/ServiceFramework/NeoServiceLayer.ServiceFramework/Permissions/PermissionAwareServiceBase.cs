@@ -10,6 +10,8 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Permissions;
 using NeoServiceLayer.Services.Permissions.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Threading;
+
 
 namespace NeoServiceLayer.ServiceFramework.Permissions;
 
@@ -59,13 +61,13 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
     protected override async Task<bool> OnInitializeAsync()
     {
         var baseResult = await base.OnInitializeAsync();
-        
+
         if (baseResult)
         {
             // Auto-register service permissions if configured
             await RegisterServicePermissionsAsync();
         }
-        
+
         return baseResult;
     }
 
@@ -78,9 +80,9 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
     /// <param name="serviceId">Optional service ID (if null, uses current service name).</param>
     /// <returns>True if permission is granted.</returns>
     protected async Task<bool> CheckPermissionAsync(
-        string resource, 
-        string action, 
-        string? userId = null, 
+        string resource,
+        string action,
+        string? userId = null,
         string? serviceId = null)
     {
         if (PermissionService == null)
@@ -172,7 +174,7 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
 
                 if (!hasPermission)
                 {
-                    var message = attr.DenialMessage ?? 
+                    var message = attr.DenialMessage ??
                         $"Access denied to {resource} for action {attr.Action}";
                     Logger.LogWarning("Permission denied for method {MethodName}: {Message}", callerName, message);
                     return false;
@@ -294,13 +296,13 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
         foreach (var method in methods)
         {
             var permissionAttrs = method.GetCustomAttributes<RequirePermissionAttribute>().ToList();
-            
+
             // If method doesn't have explicit permissions, create default based on method name
             if (!permissionAttrs.Any())
             {
                 var action = DetermineActionFromMethodName(method.Name);
                 var resourcePattern = $"{serviceAttr.ResourcePrefix}:*";
-                
+
                 permissions.Add(new ServicePermission
                 {
                     ResourcePattern = resourcePattern,
@@ -313,10 +315,10 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
                 // Add explicit permissions
                 foreach (var attr in permissionAttrs)
                 {
-                    var resourcePattern = attr.Resource.Contains(':') 
-                        ? attr.Resource 
+                    var resourcePattern = attr.Resource.Contains(':')
+                        ? attr.Resource
                         : $"{serviceAttr.ResourcePrefix}:{attr.Resource}";
-                        
+
                     permissions.Add(new ServicePermission
                     {
                         ResourcePattern = resourcePattern,
@@ -343,7 +345,7 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
         }
         else
         {
-            Logger.LogInformation("Registered {PermissionCount} permissions for service {ServiceName}", 
+            Logger.LogInformation("Registered {PermissionCount} permissions for service {ServiceName}",
                 permissions.Count, ServiceName);
         }
     }
@@ -386,23 +388,23 @@ public abstract class PermissionAwareServiceBase : EnclaveBlockchainServiceBase
     private static string DetermineActionFromMethodName(string methodName)
     {
         var lower = methodName.ToLowerInvariant();
-        
-        if (lower.StartsWith("get") || lower.StartsWith("list") || lower.StartsWith("find") || 
+
+        if (lower.StartsWith("get") || lower.StartsWith("list") || lower.StartsWith("find") ||
             lower.StartsWith("query") || lower.StartsWith("check") || lower.Contains("exists"))
             return "read";
-            
+
         if (lower.StartsWith("create") || lower.StartsWith("add") || lower.StartsWith("insert") ||
             lower.StartsWith("update") || lower.StartsWith("modify") || lower.StartsWith("set") ||
             lower.StartsWith("save") || lower.StartsWith("store"))
             return "write";
-            
+
         if (lower.StartsWith("delete") || lower.StartsWith("remove") || lower.StartsWith("clear"))
             return "delete";
-            
+
         if (lower.StartsWith("execute") || lower.StartsWith("run") || lower.StartsWith("invoke") ||
             lower.StartsWith("process") || lower.StartsWith("perform"))
             return "execute";
-            
+
         return "read"; // Default fallback
     }
 }

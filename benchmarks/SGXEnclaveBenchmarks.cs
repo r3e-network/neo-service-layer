@@ -8,6 +8,12 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Tee.Enclave;
 using System.Text;
 using System.Security.Cryptography;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Benchmarks
 {
@@ -535,7 +541,6 @@ namespace NeoServiceLayer.Benchmarks
             await Task.Delay(Math.Max(1, data.Length / 10000));
             
             // Generate realistic signature
-            using var hmac = new HMACSHA256(_keyData[keyId]);
             var signature = hmac.ComputeHash(data);
             
             // Extend to 64 bytes for Ed25519 signature simulation
@@ -555,7 +560,6 @@ namespace NeoServiceLayer.Benchmarks
             await Task.Delay(1);
             
             // Verify signature
-            using var hmac = new HMACSHA256(_keyData[keyId]);
             var expectedSignature = hmac.ComputeHash(data);
             
             return expectedSignature.SequenceEqual(signature.Take(32));

@@ -1,6 +1,12 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -60,13 +66,13 @@ public partial class StorageService
             var result = await _enclaveManager.ExecuteJavaScriptAsync($"beginTransaction('{JsonSerializer.Serialize(transactionData)}')");
 
             RecordSuccess();
-            Logger.LogDebug("Started storage transaction {TransactionId} for {BlockchainType}", transactionId, blockchainType);
+            _atomicTransactionStarted(Logger, transactionId, null);
             return transactionId;
         }
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Failed to begin storage transaction for {BlockchainType}", blockchainType);
+            _atomicTransactionFailed(Logger, "unknown", ex);
             throw;
         }
     }
@@ -135,11 +141,11 @@ public partial class StorageService
             if (success)
             {
                 RecordSuccess();
-                Logger.LogDebug("Committed storage transaction {TransactionId}", transactionId);
+                _operationInTransactionExecuted(Logger, transactionId, null);
             }
             else
             {
-                Logger.LogWarning("Failed to commit storage transaction {TransactionId}", transactionId);
+                _operationInTransactionFailed(Logger, transactionId, null);
             }
 
             return success;
@@ -147,7 +153,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Failed to commit storage transaction {TransactionId}", transactionId);
+            _transactionExecutionFailed(Logger, transactionId, ex);
 
             // Mark transaction as failed
             lock (_transactionLock)
@@ -223,11 +229,11 @@ public partial class StorageService
             if (success)
             {
                 RecordSuccess();
-                Logger.LogDebug("Rolled back storage transaction {TransactionId}", transactionId);
+                _batchTransactionOperationExecuted(Logger, transactionId, null);
             }
             else
             {
-                Logger.LogWarning("Failed to rollback storage transaction {TransactionId}", transactionId);
+                _batchTransactionOperationFailed(Logger, transactionId, null);
             }
 
             return success;
@@ -235,7 +241,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Failed to rollback storage transaction {TransactionId}", transactionId);
+            _batchTransactionFailed(Logger, transactionId, ex);
 
             // Mark transaction as failed
             lock (_transactionLock)

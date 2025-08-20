@@ -22,10 +22,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\Blockchain\NeoServiceLayer.Neo.X\NeoServiceLayer.Neo.X.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="../../Blockchain/NeoServiceLayer.Neo.X/NeoServiceLayer.Neo.X.csproj" />
   </ItemGroup>
 
 </Project>

@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -248,7 +254,6 @@ public partial class OracleService
     private string ComputeValidationHash(string dataSource)
     {
         // Compute a cryptographic hash using SHA-256
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var data = $"{dataSource}:{DateTime.UtcNow:yyyy-MM-dd}:{Environment.MachineName}";
         var dataBytes = System.Text.Encoding.UTF8.GetBytes(data);
         var hashBytes = sha256.ComputeHash(dataBytes);
@@ -399,7 +404,6 @@ public partial class OracleService
     /// <returns>The key ID.</returns>
     private string GenerateKeyId(string dataSourceUrl)
     {
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var urlBytes = System.Text.Encoding.UTF8.GetBytes(dataSourceUrl);
         var hashBytes = sha256.ComputeHash(urlBytes);
         return Convert.ToHexString(hashBytes)[..16]; // Use first 16 characters

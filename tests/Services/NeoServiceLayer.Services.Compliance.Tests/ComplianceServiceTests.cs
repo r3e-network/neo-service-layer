@@ -1,4 +1,3 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
@@ -6,21 +5,27 @@ using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Compliance.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
-using ComplianceResponseModels = NeoServiceLayer.Services.Compliance.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 
 namespace NeoServiceLayer.Services.Compliance.Tests;
 
 public class ComplianceServiceTests
 {
     private readonly Mock<IEnclaveManager> _enclaveManagerMock;
-    private readonly Mock<IServiceConfiguration> _configurationMock;
+    private readonly Mock<CoreConfig> _configurationMock;
     private readonly Mock<ILogger<ComplianceService>> _loggerMock;
     private readonly ComplianceService _service;
 
     public ComplianceServiceTests()
     {
         _enclaveManagerMock = new Mock<IEnclaveManager>();
-        _configurationMock = new Mock<IServiceConfiguration>();
+        _configurationMock = new Mock<CoreConfig>();
         _loggerMock = new Mock<ILogger<ComplianceService>>();
 
         _configurationMock
@@ -44,7 +49,7 @@ public class ComplianceServiceTests
                     {
                         Passed = true,
                         RiskScore = 0,
-                        Violations = new List<RuleViolation>()
+                        Violations = new List<ComplianceViolation>()
                     });
                 }
                 else if (script.Contains("verifyAddress"))
@@ -53,7 +58,7 @@ public class ComplianceServiceTests
                     {
                         Passed = true,
                         RiskScore = 0,
-                        Violations = new List<RuleViolation>()
+                        Violations = new List<ComplianceViolation>()
                     });
                 }
                 else if (script.Contains("verifyContract"))
@@ -62,7 +67,7 @@ public class ComplianceServiceTests
                     {
                         Passed = true,
                         RiskScore = 0,
-                        Violations = new List<RuleViolation>()
+                        Violations = new List<ComplianceViolation>()
                     });
                 }
                 else if (script.Contains("getComplianceRules"))
@@ -75,7 +80,7 @@ public class ComplianceServiceTests
                             RuleName = "Blacklist Check",
                             RuleDescription = "Check if an address is on the blacklist",
                             RuleType = "Address",
-                            Parameters = new Dictionary<string, string>
+                            Parameters = new Dictionary<string, object>
                             {
                                 { "blacklist", "address1,address2,address3" }
                             },
@@ -235,7 +240,7 @@ public class ComplianceServiceTests
             RuleName = "Whitelist Check",
             RuleDescription = "Check if an address is on the whitelist",
             RuleType = "Address",
-            Parameters = new Dictionary<string, string>
+            Parameters = new Dictionary<string, object>
             {
                 { "whitelist", "address4,address5,address6" }
             },
@@ -265,7 +270,7 @@ public class ComplianceServiceTests
             RuleName = "Blacklist Check",
             RuleDescription = "Check if an address is on the blacklist",
             RuleType = "Address",
-            Parameters = new Dictionary<string, string>
+            Parameters = new Dictionary<string, object>
             {
                 { "blacklist", "address1,address2,address3" }
             },
@@ -296,7 +301,7 @@ public class ComplianceServiceTests
             RuleName = "Blacklist Check",
             RuleDescription = "Check if an address is on the blacklist",
             RuleType = "Address",
-            Parameters = new Dictionary<string, string>
+            Parameters = new Dictionary<string, object>
             {
                 { "blacklist", "address1,address2,address3" }
             },

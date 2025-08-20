@@ -1,8 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -145,7 +152,7 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new GetNotificationHistoryRequest { PageSize = pageSize, PageNumber = pageNumber };
+            // var request = new GetNotificationHistoryRequest { PageSize = pageSize, PageNumber = pageNumber };
             // GetNotificationHistoryAsync method is not available in service interface - return not implemented
             return StatusCode(501, new { error = "Notification history functionality not implemented in current interface" });
         }
@@ -161,7 +168,9 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new GetNotificationStatusRequest { NotificationId = notificationId };
+            // var request = new GetNotificationStatusRequest { NotificationId = notificationId };
+            // GetNotificationStatusAsync method requires NotificationStatusRequest, not GetNotificationStatusRequest
+            var request = new NotificationStatusRequest { NotificationId = notificationId };
             var result = await _notificationService.GetNotificationStatusAsync(request, BlockchainType.NeoN3);
             return Ok(result);
         }
@@ -192,7 +201,7 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            request.ChannelId = channelId;
+            // request.ChannelId = channelId; // ChannelId property doesn't exist on UpdateNotificationChannelRequest
             // UpdateChannelAsync method is not available in service interface - return not implemented
             return StatusCode(501, new { error = "Channel update functionality not implemented in current interface" });
         }
@@ -208,7 +217,7 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new DeleteNotificationChannelRequest { ChannelId = channelId };
+            // var request = new DeleteNotificationChannelRequest { ChannelId = channelId };
             // DeleteChannelAsync method is not available in service interface - return not implemented
             return Task.FromResult<IActionResult>(StatusCode(501, new { error = "Channel deletion functionality not implemented in current interface" }));
         }
@@ -224,7 +233,7 @@ public class NotificationController : ControllerBase
     {
         try
         {
-            var request = new GetNotificationChannelsRequest { PageSize = pageSize, PageNumber = pageNumber };
+            // var request = new GetNotificationChannelsRequest { PageSize = pageSize, PageNumber = pageNumber };
             // GetChannelsAsync method is not available in service interface - return not implemented
             return Task.FromResult<IActionResult>(StatusCode(501, new { error = "Channel listing functionality not implemented in current interface" }));
         }
@@ -249,4 +258,13 @@ public class NotificationController : ControllerBase
             return Task.FromResult<IActionResult>(StatusCode(500, new { error = ex.Message }));
         }
     }
+}
+
+// Temporary stub class for missing model
+public class UpdateNotificationTemplateRequest
+{
+    public string TemplateId { get; set; }
+    public string Name { get; set; }
+    public string Content { get; set; }
+    public Dictionary<string, object> Variables { get; set; }
 }

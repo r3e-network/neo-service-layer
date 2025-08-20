@@ -1,4 +1,7 @@
-﻿namespace NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using Microsoft.Extensions.Configuration;
+
+namespace NeoServiceLayer.ServiceFramework;
 
 /// <summary>
 /// Interface for service configuration.
@@ -35,14 +38,14 @@ public interface IServiceConfiguration
     /// </summary>
     /// <param name="key">The configuration key.</param>
     /// <returns>True if the key exists, false otherwise.</returns>
-    bool ContainsKey(string key);
+    bool Exists(string key);
 
     /// <summary>
     /// Removes a configuration key.
     /// </summary>
     /// <param name="key">The configuration key.</param>
     /// <returns>True if the key was removed, false if it was not found.</returns>
-    bool RemoveKey(string key);
+    bool Remove(string key);
 
     /// <summary>
     /// Gets all configuration keys.
@@ -55,7 +58,7 @@ public interface IServiceConfiguration
     /// </summary>
     /// <param name="sectionName">The section name.</param>
     /// <returns>The configuration section, or null if it was not found.</returns>
-    IServiceConfiguration? GetSection(string sectionName);
+    IConfigurationSection? GetSection(string sectionName);
 
     /// <summary>
     /// Gets a connection string.

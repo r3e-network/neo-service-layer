@@ -1,6 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace NeoServiceLayer.Services.Automation;
+
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents a condition that must be met for an automation job to execute.
@@ -11,7 +17,25 @@ public class AutomationCondition
     /// Gets or sets the type of condition.
     /// </summary>
     [Required]
-    public string Type { get; set; } = string.Empty;
+    public AutomationConditionType Type { get; set; }
+
+    /// <summary>
+    /// Gets or sets the field to evaluate.
+    /// </summary>
+    [Required]
+    public string Field { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the comparison operator.
+    /// </summary>
+    [Required]
+    public string Operator { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the value to compare against.
+    /// </summary>
+    [Required]
+    public string Value { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the condition expression.
@@ -54,4 +78,9 @@ public class AutomationCondition
     /// Gets or sets a description of what this condition checks.
     /// </summary>
     public string? Description { get; set; }
+
+    /// <summary>
+    /// Gets or sets the condition configuration.
+    /// </summary>
+    public Dictionary<string, object> Configuration { get; set; } = new();
 }

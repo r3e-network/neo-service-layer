@@ -1,4 +1,3 @@
-﻿using System.Numerics;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
@@ -11,14 +10,20 @@ using Nethereum.Hex.HexTypes;
 using Nethereum.RPC.Eth.DTOs;
 using Nethereum.Web3;
 using Nethereum.Web3.Accounts;
-using ContractEvent = NeoServiceLayer.Core.SmartContracts.ContractEvent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Numerics;
+
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoX;
 
 /// <summary>
 /// Neo X (EVM-compatible) implementation of the smart contract manager.
 /// </summary>
-public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartContractManager
+public class NeoXSmartContractManager : ServiceFramework.EnclaveBlockchainServiceBase, ISmartContractManager
 {
     private Web3 _web3;
     private readonly IServiceConfiguration _configuration;
@@ -459,7 +464,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
 
             // Try to get from enclave storage
             var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("getContractMetadata",
-                JsonSerializer.Serialize(new { contractHash, blockchain = "NeoX" }));
+                JsonSerializer.Serialize(new { contractHash, blockchain = "NeoX" }), cancellationToken);
 
             if (!string.IsNullOrEmpty(enclaveData) && enclaveData != "null")
             {
@@ -523,7 +528,7 @@ public class NeoXSmartContractManager : EnclaveBlockchainServiceBase, ISmartCont
             Logger.LogDebug("Listing deployed contracts");
 
             // Get from enclave storage
-            var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("listDeployedContracts", "NeoX");
+            var enclaveData = await _enclaveManager.CallEnclaveFunctionAsync("listDeployedContracts", "NeoX", cancellationToken);
 
             if (!string.IsNullOrEmpty(enclaveData) && enclaveData != "null")
             {

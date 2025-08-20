@@ -5,6 +5,9 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Npgsql;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing
 {
@@ -13,12 +16,12 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
     /// </summary>
     public class EventSourcingInitializer : IHostedService
     {
-        private readonly ILogger&lt;EventSourcingInitializer&gt; _logger;
+        private readonly ILogger<EventSourcingInitializer> _logger;
         private readonly EventStoreConfiguration _eventStoreConfiguration;
 
         public EventSourcingInitializer(
-            ILogger&lt;EventSourcingInitializer&gt; logger,
-            IOptions&lt;EventStoreConfiguration&gt; eventStoreConfiguration)
+            ILogger<EventSourcingInitializer> logger,
+            IOptions<EventStoreConfiguration> eventStoreConfiguration)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _eventStoreConfiguration = eventStoreConfiguration?.Value ?? throw new ArgumentNullException(nameof(eventStoreConfiguration));

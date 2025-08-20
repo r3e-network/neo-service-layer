@@ -33,8 +33,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Blockchain\NeoServiceLayer.Neo.X\NeoServiceLayer.Neo.X.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Blockchain/NeoServiceLayer.Neo.X/NeoServiceLayer.Neo.X.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
   </ItemGroup>
 
 </Project>

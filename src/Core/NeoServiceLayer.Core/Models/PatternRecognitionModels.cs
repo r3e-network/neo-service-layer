@@ -1,4 +1,11 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
+
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -177,6 +184,11 @@ public class ClassificationRequest
     public Dictionary<string, object> Parameters { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the algorithm to use.
+    /// </summary>
+    public string Algorithm { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets whether to include confidence scores.
     /// </summary>
     public bool IncludeConfidenceScores { get; set; } = true;
@@ -216,6 +228,40 @@ public class ClassificationResult
     /// Gets or sets additional classification details.
     /// </summary>
     public Dictionary<string, object> Details { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the classification (alias for PredictedClass).
+    /// </summary>
+    public string Classification 
+    { 
+        get => PredictedClass; 
+        set => PredictedClass = value; 
+    }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the risk factors.
+    /// </summary>
+    public List<string> Factors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the processing time.
+    /// </summary>
+    public TimeSpan ProcessingTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the operation was successful.
+    /// </summary>
+    public bool Success { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the error message if operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 }
 
 /// <summary>

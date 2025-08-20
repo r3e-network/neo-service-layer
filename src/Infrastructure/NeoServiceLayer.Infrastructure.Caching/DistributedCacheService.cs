@@ -262,6 +262,45 @@ namespace NeoServiceLayer.Infrastructure.Caching
         }
 
         /// <inheritdoc/>
+        public async Task<T?> GetOrSetAsync<T>(string key, Func<Task<T>> factory, TimeSpan? expiration = null) where T : class
+        {
+            if (string.IsNullOrWhiteSpace(key))
+                return default;
+
+            try
+            {
+                // First try to get the value from cache
+                var cached = await GetAsync<T>(key).ConfigureAwait(false);
+                if (cached != null)
+                {
+                    return cached;
+                }
+
+                // Value not in cache, use factory to create it
+                var value = await factory().ConfigureAwait(false);
+                if (value != null)
+                {
+                    await SetAsync(key, value, expiration).ConfigureAwait(false);
+                }
+
+                return value;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in GetOrSetAsync for key: {Key}", key);
+                // If cache operation fails, still try to get the value from factory
+                try
+                {
+                    return await factory().ConfigureAwait(false);
+                }
+                catch
+                {
+                    return default;
+                }
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task<CacheStatistics> GetStatisticsAsync()
         {
             try

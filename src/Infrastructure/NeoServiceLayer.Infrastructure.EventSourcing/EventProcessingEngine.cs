@@ -11,6 +11,7 @@ using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core.Events;
 using Polly;
 
+
 namespace NeoServiceLayer.Infrastructure.EventSourcing
 {
     /// <summary>
@@ -18,25 +19,25 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
     /// </summary>
     public class EventProcessingEngine : BackgroundService
     {
-        private readonly ILogger&lt;EventProcessingEngine&gt; _logger;
+        private readonly ILogger<EventProcessingEngine> _logger;
         private readonly IServiceProvider _serviceProvider;
         private readonly EventProcessingConfiguration _configuration;
-        private readonly ConcurrentQueue&lt;PendingEventHandler&gt; _eventQueue;
+        private readonly ConcurrentQueue<PendingEventHandler> _eventQueue;
         private readonly SemaphoreSlim _processingLimiter;
-        private readonly ConcurrentDictionary&lt;Type, List&lt;Type&gt;&gt; _handlerRegistry;
+        private readonly ConcurrentDictionary<Type, List<Type>> _handlerRegistry;
 
         public EventProcessingEngine(
-            ILogger&lt;EventProcessingEngine&gt; logger,
+            ILogger<EventProcessingEngine> logger,
             IServiceProvider serviceProvider,
-            IOptions&lt;EventProcessingConfiguration&gt; configuration)
+            IOptions<EventProcessingConfiguration> configuration)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _serviceProvider = serviceProvider ?? throw new ArgumentNullException(nameof(serviceProvider));
             _configuration = configuration?.Value ?? throw new ArgumentNullException(nameof(configuration));
 
-            _eventQueue = new ConcurrentQueue&lt;PendingEventHandler&gt;();
+            _eventQueue = new ConcurrentQueue<PendingEventHandler>();
             _processingLimiter = new SemaphoreSlim(_configuration.MaxConcurrentHandlers, _configuration.MaxConcurrentHandlers);
-            _handlerRegistry = new ConcurrentDictionary&lt;Type, List&lt;Type&gt;&gt;();
+            _handlerRegistry = new ConcurrentDictionary<Type, List<Type>>();
 
             RegisterHandlers();
         }
@@ -68,15 +69,15 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         {
             _logger.LogInformation("Event processing engine started");
 
-            var processingTasks = new List&lt;Task&gt;();
+            var processingTasks = new List<Task>();
 
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
                     // Process events in batches
-                    var batch = new List&lt;PendingEventHandler&gt;();
-                    for (int i = 0; i &lt; _configuration.ProcessingBatchSize && _eventQueue.TryDequeue(out var pendingHandler); i++)
+                    var batch = new List<PendingEventHandler>();
+                    for (int i = 0; i < _configuration.ProcessingBatchSize && _eventQueue.TryDequeue(out var pendingHandler); i++)
                     {
                         batch.Add(pendingHandler);
                     }
@@ -84,7 +85,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                     if (batch.Any())
                     {
                         // Start processing tasks for the batch
-                        var batchTasks = batch.Select(async pendingHandler =&gt;
+                        var batchTasks = batch.Select(async pendingHandler =>
                         {
                             await _processingLimiter.WaitAsync(stoppingToken);
                             try
@@ -101,7 +102,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                     }
 
                     // Clean up completed tasks
-                    var completedTasks = processingTasks.Where(t =&gt; t.IsCompleted).ToList();
+                    var completedTasks = processingTasks.Where(t => t.IsCompleted).ToList();
                     foreach (var completedTask in completedTasks)
                     {
                         processingTasks.Remove(completedTask);
@@ -141,18 +142,18 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         private async Task ProcessEventHandlerAsync(PendingEventHandler pendingHandler, CancellationToken cancellationToken)
         {
             var retryPolicy = Policy
-                .Handle&lt;Exception&gt;()
+                .Handle<Exception>()
                 .WaitAndRetryAsync(
                     retryCount: _configuration.MaxRetryAttempts,
-                    sleepDurationProvider: retryAttempt =&gt; TimeSpan.FromMilliseconds(_configuration.RetryDelayMs * Math.Pow(2, retryAttempt - 1)),
-                    onRetry: (outcome, timespan, retryCount, context) =&gt;
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromMilliseconds(_configuration.RetryDelayMs * Math.Pow(2, retryAttempt - 1)),
+                    onRetry: (outcome, timespan, retryCount, context) =>
                     {
                         _logger.LogWarning(
                             "Retry {RetryCount} for event handler {HandlerType} processing event {EventType} after {Delay}ms. Error: {Error}",
-                            retryCount, pendingHandler.HandlerType.Name, pendingHandler.Event.EventType, timespan.TotalMilliseconds, outcome.Exception?.Message);
+                            retryCount, pendingHandler.HandlerType.Name, pendingHandler.Event.EventType, timespan.TotalMilliseconds, outcome?.Message);
                     });
 
-            await retryPolicy.ExecuteAsync(async () =&gt;
+            await retryPolicy.ExecuteAsync(async () =>
             {
                 using var scope = _serviceProvider.CreateScope();
                 var handler = scope.ServiceProvider.GetService(pendingHandler.HandlerType);
@@ -207,17 +208,17 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             _logger.LogInformation("Event handler registry initialized");
         }
 
-        public void RegisterHandler&lt;TEvent, THandler&gt;()
+        public void RegisterHandler<TEvent, THandler>()
             where TEvent : class, IDomainEvent
-            where THandler : class, IEventHandler&lt;TEvent&gt;
+            where THandler : class, IEventHandler<TEvent>
         {
             var eventType = typeof(TEvent);
             var handlerType = typeof(THandler);
 
             _handlerRegistry.AddOrUpdate(
                 eventType,
-                new List&lt;Type&gt; { handlerType },
-                (key, existing) =&gt;
+                new List<Type> { handlerType },
+                (key, existing) =>
                 {
                     if (!existing.Contains(handlerType))
                     {

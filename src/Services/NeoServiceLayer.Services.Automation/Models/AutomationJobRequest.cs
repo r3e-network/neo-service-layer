@@ -1,6 +1,12 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace NeoServiceLayer.Services.Automation;
+
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents a request to create an automation job.
@@ -56,6 +62,11 @@ public class AutomationJobRequest
     /// Gets or sets the conditions that must be met for execution.
     /// </summary>
     public AutomationCondition[] Conditions { get; set; } = Array.Empty<AutomationCondition>();
+
+    /// <summary>
+    /// Gets or sets the condition configuration for the automation.
+    /// </summary>
+    public Dictionary<string, object> ConditionConfiguration { get; set; } = new();
 
     /// <summary>
     /// Gets or sets whether the job should be enabled immediately.

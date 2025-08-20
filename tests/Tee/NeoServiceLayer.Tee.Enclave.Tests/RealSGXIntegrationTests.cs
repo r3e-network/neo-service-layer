@@ -1,4 +1,3 @@
-﻿using System;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
@@ -6,6 +5,11 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Tee.Enclave;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
@@ -53,7 +57,9 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // This ensures we're always testing with the real SGX SDK, even in simulation mode
             _output.WriteLine("Using ProductionSGXEnclaveWrapper for real SGX SDK testing");
             var prodLogger = loggerFactory.CreateLogger<ProductionSGXEnclaveWrapper>();
-            _enclave = new ProductionSGXEnclaveWrapper(prodLogger);
+            var occlumLogger = loggerFactory.CreateLogger<OcclumEnclaveWrapper>();
+            var occlumWrapper = new OcclumEnclaveWrapper(occlumLogger);
+            _enclave = new ProductionSGXEnclaveWrapper(occlumWrapper, prodLogger);
 
             // Check if we're running in an SGX environment (real or simulated)
             _isRealSGXAvailable = CheckRealSGXAvailability();

@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -10,17 +9,20 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using CoreServiceStatus = NeoServiceLayer.Core.ServiceStatus;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Services.Statistics.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using System;
+
 
 namespace NeoServiceLayer.Services.Statistics;
 
 /// <summary>
 /// Implementation of the statistics service that collects and provides metrics for the Neo Service Layer.
 /// </summary>
-public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsService
+public class StatisticsService : ServiceFramework.EnclaveBlockchainServiceBase, IStatisticsService
 {
     private readonly SGXPersistence _sgxPersistence;
     private readonly ConcurrentDictionary<string, ServiceStatistics> _serviceStats = new();
@@ -70,7 +72,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     /// <inheritdoc/>
     public async Task<SystemStatistics> GetSystemStatisticsAsync()
     {
-        var activeServices = _serviceStats.Values.Count(s => s.Status == ServiceStatus.Running);
+        var activeServices = _serviceStats.Values.Count(s => s.Status == Models.ServiceStatus.Running);
         var healthyServices = _serviceStats.Values.Count(s => s.Health == ServiceHealth.Healthy);
 
         var stats = new SystemStatistics
@@ -107,7 +109,7 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
         var newStats = new ServiceStatistics
         {
             ServiceName = serviceName,
-            Status = ServiceStatus.Running,
+            Status = Models.ServiceStatus.Running,
             Health = ServiceHealth.Healthy,
             UptimeSeconds = 0,
             LastUpdated = DateTime.UtcNow
@@ -194,15 +196,15 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
 
         // Update service statistics
         var stats = await GetServiceStatisticsAsync(serviceName);
-        Interlocked.Increment(ref stats.TotalOperations);
+        stats.TotalOperations++;
 
         if (success)
         {
-            Interlocked.Increment(ref stats.SuccessfulOperations);
+            stats.SuccessfulOperations++;
         }
         else
         {
-            Interlocked.Increment(ref stats.FailedOperations);
+            stats.FailedOperations++;
         }
 
         // Update operation breakdown
@@ -254,11 +256,11 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
                 stats.EnclaveStats = new EnclaveStatistics();
             }
 
-            Interlocked.Increment(ref stats.EnclaveStats.TotalOperations);
+            stats.EnclaveStats.TotalOperations++;
 
             if (operation.Contains("JavaScript", StringComparison.OrdinalIgnoreCase))
             {
-                Interlocked.Increment(ref stats.EnclaveStats.JavaScriptExecutions);
+                stats.EnclaveStats.JavaScriptExecutions++;
             }
         }
 
@@ -270,14 +272,14 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     {
         var stats = await GetBlockchainStatisticsAsync(blockchainType);
 
-        Interlocked.Increment(ref stats.TotalTransactions);
+        stats.TotalTransactions++;
         if (success)
         {
-            Interlocked.Increment(ref stats.SuccessfulTransactions);
+            stats.SuccessfulTransactions++;
         }
         else
         {
-            Interlocked.Increment(ref stats.FailedTransactions);
+            stats.FailedTransactions++;
         }
 
         // Update transaction breakdown
@@ -670,8 +672,8 @@ public class StatisticsService : EnclaveBlockchainServiceBase, IStatisticsServic
     /// </summary>
     private class SGXPersistence : NeoServiceLayer.ServiceFramework.SGXPersistenceBase
     {
-        public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger)
-            : base(serviceName, enclaveStorage, logger)
+        public SGXPersistence(string serviceName, Services.EnclaveStorage.IEnclaveStorageService? enclaveStorage, ILogger logger)
+            : base(serviceName, enclaveStorage as ServiceFramework.Interfaces.IEnclaveStorageService, logger)
         {
         }
 

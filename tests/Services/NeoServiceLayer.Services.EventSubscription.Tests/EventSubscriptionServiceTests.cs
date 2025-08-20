@@ -1,24 +1,31 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using CoreIServiceConfiguration = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.EventSubscription.Tests;
 
 public class EventSubscriptionServiceTests
 {
     private readonly Mock<IEnclaveManager> _enclaveManagerMock;
-    private readonly Mock<IServiceConfiguration> _configurationMock;
+    private readonly Mock<CoreIServiceConfiguration> _configurationMock;
     private readonly Mock<ILogger<EventSubscriptionService>> _loggerMock;
     private readonly EventSubscriptionService _service;
 
     public EventSubscriptionServiceTests()
     {
         _enclaveManagerMock = new Mock<IEnclaveManager>();
-        _configurationMock = new Mock<IServiceConfiguration>();
+        _configurationMock = new Mock<CoreIServiceConfiguration>();
         _loggerMock = new Mock<ILogger<EventSubscriptionService>>();
 
         _configurationMock

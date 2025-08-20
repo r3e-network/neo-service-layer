@@ -1,9 +1,14 @@
-﻿using System.Collections.Concurrent;
+using System;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-// using NeoServiceLayer.Services.Monitoring;
-// using NeoServiceLayer.Services.Notification;
+using NeoServiceLayer.ServiceFramework;
+
 
 namespace NeoServiceLayer.Infrastructure.Security;
 
@@ -15,7 +20,7 @@ public class SecurityMonitoringService : BackgroundService
     private readonly ISecurityLogger _securityLogger;
     //private readonly IMonitoringService _monitoringService;
     //private readonly INotificationService _notificationService;
-    private readonly ILogger<SecurityMonitoringService> _logger;
+    private readonly ILogger<SecurityMonitoringService> Logger;
     private readonly SecurityMonitoringConfiguration _configuration;
     private readonly ConcurrentDictionary<string, SecurityThreatDetector> _threatDetectors;
     private readonly ConcurrentDictionary<string, DateTime> _alertCooldowns;
@@ -30,7 +35,7 @@ public class SecurityMonitoringService : BackgroundService
         _securityLogger = securityLogger ?? throw new ArgumentNullException(nameof(securityLogger));
         // _monitoringService = monitoringService ?? throw new ArgumentNullException(nameof(monitoringService));
         // _notificationService = notificationService ?? throw new ArgumentNullException(nameof(notificationService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
         _threatDetectors = new ConcurrentDictionary<string, SecurityThreatDetector>();
         _alertCooldowns = new ConcurrentDictionary<string, DateTime>();
@@ -45,7 +50,7 @@ public class SecurityMonitoringService : BackgroundService
     /// <returns>A task representing the asynchronous operation.</returns>
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
     {
-        _logger.LogInformation("Security monitoring service started");
+        Logger.LogInformation("Security monitoring service started");
 
         while (!stoppingToken.IsCancellationRequested)
         {
@@ -61,12 +66,12 @@ public class SecurityMonitoringService : BackgroundService
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error in security monitoring service");
+                Logger.LogError(ex, "Error in security monitoring service");
                 await Task.Delay(TimeSpan.FromMinutes(1), stoppingToken);
             }
         }
 
-        _logger.LogInformation("Security monitoring service stopped");
+        Logger.LogInformation("Security monitoring service stopped");
     }
 
     /// <summary>
@@ -106,7 +111,7 @@ public class SecurityMonitoringService : BackgroundService
     /// <returns>A task representing the asynchronous processing operation.</returns>
     private async Task ProcessThreatAsync(SecurityThreat threat)
     {
-        _logger.LogWarning("Security threat detected: {ThreatType} - {Description} (Severity: {Severity})",
+        Logger.LogWarning("Security threat detected: {ThreatType} - {Description} (Severity: {Severity})",
             threat.ThreatType, threat.Description, threat.Severity);
 
         // Check cooldown
@@ -115,7 +120,7 @@ public class SecurityMonitoringService : BackgroundService
         {
             if (DateTime.UtcNow - lastAlertTime < _configuration.AlertCooldownPeriod)
             {
-                _logger.LogDebug("Skipping alert for {ThreatType} due to cooldown", threat.ThreatType);
+                Logger.LogDebug("Skipping alert for {ThreatType} due to cooldown", threat.ThreatType);
                 return;
             }
         }
@@ -205,10 +210,25 @@ public class SecurityMonitoringService : BackgroundService
             ["security.threats.detected"] = threats.Count
         };
 
-        // TODO: Implement metric recording when monitoring service is available
-        foreach (var metric in metrics)
+        // Record security metrics using APM system
+        try
         {
-            _logger.LogDebug("Security metric {MetricName}: {MetricValue}", metric.Key, metric.Value);
+            foreach (var metric in metrics)
+            {
+                // Use the APM system to record security metrics
+                // TODO: Implement APM integration
+                // // ApplicationPerformanceMonitoring // TODO: Fix this reference.RecordRequest(
+                //     "SECURITY_METRIC",
+                //     metric.Key,
+                //     0.001, // Minimal duration for metrics
+                //     200);
+
+                Logger.LogDebug("Security metric {MetricName}: {MetricValue}", metric.Key, metric.Value);
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogWarning(ex, "Failed to record security metrics to APM system");
         }
     }
 
@@ -298,6 +318,17 @@ public enum ThreatSeverity
 {
     Low,
     Medium,
+    High,
+    Critical
+}
+
+/// <summary>
+/// Severity levels for alerts.
+/// </summary>
+public enum AlertSeverity
+{
+    Low,
+    Warning,
     High,
     Critical
 }

@@ -1,4 +1,4 @@
-﻿using System;
+using Asp.Versioning;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -8,6 +8,10 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Api.Models;
 using NeoServiceLayer.Services.Authentication;
+using NeoServiceLayer.Services.Authentication.Models;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Controllers
 {
@@ -94,7 +98,7 @@ namespace NeoServiceLayer.Api.Controllers
 
                 var userDetail = new UserDetailDto
                 {
-                    Id = user.Id,
+                    Id = user.Id.ToString(),
                     Username = user.Username,
                     Email = user.Email,
                     FirstName = user.FirstName,
@@ -112,7 +116,7 @@ namespace NeoServiceLayer.Api.Controllers
                     LastPasswordChangeAt = user.LastPasswordChangeAt,
                     RequiresPasswordChange = user.RequiresPasswordChange,
                     CreatedAt = user.CreatedAt,
-                    UpdatedAt = user.UpdatedAt,
+                    UpdatedAt = user.UpdatedAt ?? DateTime.UtcNow,
                     Roles = roles.ToList(),
                     RecentLoginAttempts = loginAttempts.Select(a => new LoginAttemptDto
                     {
@@ -169,7 +173,7 @@ namespace NeoServiceLayer.Api.Controllers
                     return BadRequest(CreateErrorResponse("Email already exists"));
                 }
 
-                var user = new User
+                var user = new NeoServiceLayer.Services.Authentication.Models.User
                 {
                     Username = request.Username,
                     Email = request.Email,
@@ -189,7 +193,7 @@ namespace NeoServiceLayer.Api.Controllers
                 {
                     foreach (var role in request.Roles)
                     {
-                        await _userRepository.AddUserToRoleAsync(createdUser.Id, role);
+                        await _userRepository.AddUserToRoleAsync(createdUser.Id.ToString(), role);
                     }
                 }
 
@@ -203,7 +207,7 @@ namespace NeoServiceLayer.Api.Controllers
 
                 var userDto = new UserDto
                 {
-                    Id = createdUser.Id,
+                    Id = createdUser.Id.ToString(),
                     Username = createdUser.Username,
                     Email = createdUser.Email,
                     FirstName = createdUser.FirstName,
@@ -282,7 +286,7 @@ namespace NeoServiceLayer.Api.Controllers
 
                 var userDto = new UserDto
                 {
-                    Id = user.Id,
+                    Id = user.Id.ToString(),
                     Username = user.Username,
                     Email = user.Email,
                     FirstName = user.FirstName,
@@ -370,9 +374,8 @@ namespace NeoServiceLayer.Api.Controllers
                     return BadRequest(CreateErrorResponse("Cannot lock your own account"));
                 }
 
-                user.IsLocked = true;
+                user.LockoutEnd = request.LockUntil ?? DateTime.UtcNow.AddDays(30);
                 user.LockReason = request.Reason;
-                user.LockedUntil = request.LockUntil ?? DateTime.UtcNow.AddDays(30);
 
                 await _userRepository.UpdateAsync(user);
 
@@ -405,9 +408,8 @@ namespace NeoServiceLayer.Api.Controllers
                     return NotFound(CreateErrorResponse($"User {userId} not found"));
                 }
 
-                user.IsLocked = false;
+                user.LockoutEnd = null;
                 user.LockReason = null;
-                user.LockedUntil = null;
                 user.FailedLoginAttempts = 0;
 
                 await _userRepository.UpdateAsync(user);
@@ -759,7 +761,7 @@ namespace NeoServiceLayer.Api.Controllers
         public DateTime UpdatedAt { get; set; }
         public List<string> Roles { get; set; }
         public List<LoginAttemptDto> RecentLoginAttempts { get; set; }
-        public Dictionary<string, string> Metadata { get; set; }
+        public Dictionary<string, object> Metadata { get; set; }
     }
 
     public class LoginAttemptDto

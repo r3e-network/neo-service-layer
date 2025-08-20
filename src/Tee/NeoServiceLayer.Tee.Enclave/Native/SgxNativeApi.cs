@@ -1,5 +1,10 @@
-﻿using System;
 using System.Runtime.InteropServices;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Native;
 
@@ -45,6 +50,10 @@ public static class SgxNativeApi
     #endregion
 
     #region P/Invoke Declarations
+
+    // Alternative library names for different platforms
+    private const string SgxUrtsDll = "sgx_urts";
+    private const string SgxUtilsDll = "sgx_utils";
 
     [DllImport(SGX_URTS_LIB, CallingConvention = CallingConvention.Cdecl)]
     private static extern SgxStatus sgx_create_enclave(
@@ -374,6 +383,33 @@ public static class SgxNativeApi
         }
     }
     #endregion
+
+    #region High-Level APIs
+
+    /// <summary>
+    /// Initializes the SGX platform.
+    /// </summary>
+    /// <returns>SGX status code.</returns>
+    public static SgxStatus InitializeSGX()
+    {
+        // In production, this would initialize the SGX platform
+        // For simulation mode, just return success
+        return SgxStatus.Success;
+    }
+
+    /// <summary>
+    /// Gets the enclave measurement.
+    /// </summary>
+    /// <returns>Enclave measurement as a hex string.</returns>
+    public static string GetEnclaveMeasurement()
+    {
+        // In production, this would return the actual enclave measurement
+        // For simulation mode, return a dummy value
+        return "0000000000000000000000000000000000000000000000000000000000000000";
+    }
+
+    #endregion
+    #endregion
 }
 
 /// <summary>
@@ -406,5 +442,4 @@ public class SgxException : Exception
     {
         ErrorCode = errorCode;
     }
-}
 }

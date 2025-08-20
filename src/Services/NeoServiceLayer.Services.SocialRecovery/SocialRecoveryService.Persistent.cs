@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.SocialRecovery.Configuration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SocialRecovery;
 
@@ -159,7 +165,7 @@ public partial class SocialRecoveryService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Guardian",
                     ["Address"] = guardian.Address,
@@ -193,7 +199,7 @@ public partial class SocialRecoveryService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = request.ExpiresAt.AddDays(30) - DateTime.UtcNow, // Keep for 30 days after expiry
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "RecoveryRequest",
                     ["AccountAddress"] = request.AccountAddress,
@@ -228,7 +234,7 @@ public partial class SocialRecoveryService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "TrustRelations",
                     ["Address"] = address,
@@ -259,7 +265,7 @@ public partial class SocialRecoveryService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AuthFactors",
                     ["AccountAddress"] = accountAddress,
@@ -290,7 +296,7 @@ public partial class SocialRecoveryService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AccountConfig",
                     ["AccountAddress"] = config.AccountAddress,
@@ -335,7 +341,7 @@ public partial class SocialRecoveryService
                 Encrypt = false, // Audit logs don't need encryption
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(365), // Keep audit logs for 1 year
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AuditEvent",
                     ["EventType"] = eventType,
@@ -378,7 +384,7 @@ public partial class SocialRecoveryService
             {
                 Encrypt = false,
                 Compress = false,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Metrics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O")

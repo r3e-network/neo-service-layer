@@ -12,9 +12,13 @@ extern "C" {
     
     /// SGX SDK cryptographic hash functions
     fn sgx_sha256_msg(src: *const u8, src_len: usize, hash: *mut [u8; 32]) -> c_uint;
+    #[allow(dead_code)]
     fn sgx_sha256_init(ctx: *mut SgxSha256Context) -> c_uint;
+    #[allow(dead_code)]
     fn sgx_sha256_update(ctx: *mut SgxSha256Context, src: *const u8, len: usize) -> c_uint;
+    #[allow(dead_code)]
     fn sgx_sha256_final(ctx: *mut SgxSha256Context, hash: *mut [u8; 32]) -> c_uint;
+    #[allow(dead_code)]
     fn sgx_sha256_close(ctx: *mut SgxSha256Context) -> c_uint;
     
     /// SGX SDK RIPEMD160 hash functions (needed for Neo addresses)
@@ -35,6 +39,7 @@ extern "C" {
     fn sgx_ecdsa_verify(data: *const u8, data_size: usize, public_key: *const SgxEc256PublicKey, signature: *const SgxEc256Signature, result: *mut u8, ecc_handle: SgxEccStateHandle) -> c_uint;
     
     /// SGX SDK AES functions for encryption
+    #[allow(dead_code)]
     fn sgx_rijndael128_cmac_msg(key: *const SgxCmacKey, src: *const u8, src_len: usize, mac: *mut SgxCmacMac) -> c_uint;
     fn sgx_aes_gcm_encrypt(key: *const SgxAesGcmKey, src: *const u8, src_len: usize, dst: *mut u8, iv: *const u8, iv_len: usize, aad: *const u8, aad_len: usize, mac: *mut SgxAesMac) -> c_uint;
     fn sgx_aes_gcm_decrypt(key: *const SgxAesGcmKey, src: *const u8, src_len: usize, dst: *mut u8, iv: *const u8, iv_len: usize, aad: *const u8, aad_len: usize, mac: *const SgxAesMac) -> c_uint;

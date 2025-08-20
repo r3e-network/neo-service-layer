@@ -1,10 +1,16 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Compute.Tests;
 
@@ -24,6 +30,10 @@ public class ComputeServiceTests : IDisposable
         _configurationMock
             .Setup(c => c.GetValue(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string key, string defaultValue) => defaultValue);
+        
+        _configurationMock
+            .Setup(c => c.GetValue(It.IsAny<string>(), It.IsAny<int>()))
+            .Returns((string key, int defaultValue) => defaultValue);
 
         _enclaveManagerMock
             .Setup(e => e.InitializeEnclaveAsync())
@@ -111,7 +121,7 @@ public class ComputeServiceTests : IDisposable
             .Setup(e => e.VerifySignatureAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<string>()))
             .ReturnsAsync(true);
 
-        _service = new ComputeService(_enclaveManagerMock.Object, _configurationMock.Object, _loggerMock.Object);
+        _service = new ComputeService(_configurationMock.Object, _enclaveManagerMock.Object, _loggerMock.Object);
     }
 
     public void Dispose()
@@ -314,7 +324,7 @@ public class ComputeServiceTests : IDisposable
             BlockchainType.NeoN3);
 
         // Assert
-        Assert.Equal(ComputationStatus.Completed, result);
+        Assert.Equal("Completed", result.Status);
         // GetComputationStatusAsync may not call ExecuteJavaScriptAsync if computation is in cache
     }
 

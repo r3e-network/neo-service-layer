@@ -1,8 +1,12 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.AI.PatternRecognition.Models;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 {
@@ -33,7 +37,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            _logger.LogDebug("Analyzing trends in {Count} data points", request.Data.Length);
+            Logger.LogDebug("Analyzing trends in {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
 
@@ -166,7 +170,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             var patterns = new List<DetectedPattern>();
 
-            // Detect cycles using autocorrelation
+            // Analyze momentum
             var maxLag = Math.Min(data.Length / 2, 100);
             var autocorrelations = new double[maxLag];
 

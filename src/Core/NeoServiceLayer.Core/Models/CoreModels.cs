@@ -1,4 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -284,6 +290,26 @@ public class FairTransactionRequest
     /// Gets or sets additional preferences.
     /// </summary>
     public Dictionary<string, object> Preferences { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the from address (convenience property).
+    /// </summary>
+    public string From { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the to address (convenience property).
+    /// </summary>
+    public string To { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the transaction value (convenience property).
+    /// </summary>
+    public decimal Value { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the transaction data (convenience property).
+    /// </summary>
+    public byte[] Data { get; set; } = Array.Empty<byte>();
 }
 
 /// <summary>
@@ -294,12 +320,52 @@ public class FairnessAnalysisResult
     /// <summary>
     /// Gets or sets the analysis ID.
     /// </summary>
-    public string AnalysisId { get; set; } = string.Empty;
+    public string AnalysisId { get; set; } = Guid.NewGuid().ToString();
+
+    /// <summary>
+    /// Gets or sets the transaction ID.
+    /// </summary>
+    public string TransactionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the transaction hash.
+    /// </summary>
+    public string TransactionHash { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the fairness score (0-1).
     /// </summary>
     public double FairnessScore { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk level.
+    /// </summary>
+    public string RiskLevel { get; set; } = "Low";
+
+    /// <summary>
+    /// Gets or sets the estimated MEV.
+    /// </summary>
+    public decimal EstimatedMEV { get; set; }
+
+    /// <summary>
+    /// Gets or sets the risk factors.
+    /// </summary>
+    public List<string> RiskFactors { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the detected risks.
+    /// </summary>
+    public List<string> DetectedRisks { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the recommendations.
+    /// </summary>
+    public List<string> Recommendations { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the protection fee.
+    /// </summary>
+    public decimal ProtectionFee { get; set; }
 
     /// <summary>
     /// Gets or sets the MEV risk level.
@@ -1173,6 +1239,46 @@ public class ForecastMetrics
     /// Gets or sets the R-squared value.
     /// </summary>
     public double RSquared { get; set; }
+}
+
+#endregion
+
+#region Voting Types
+
+/// <summary>
+/// Voting strategy types for Neo blockchain governance.
+/// </summary>
+public enum VotingStrategyType
+{
+    /// <summary>
+    /// Manual candidate selection.
+    /// </summary>
+    Manual,
+
+    /// <summary>
+    /// Automatic candidate selection.
+    /// </summary>
+    Automatic,
+
+    /// <summary>
+    /// Profit-optimized selection.
+    /// </summary>
+    ProfitOptimized,
+
+    /// <summary>
+    /// Stability-focused selection.
+    /// </summary>
+    StabilityFocused,
+
+    /// <summary>
+    /// Conditional selection based on preferences.
+    /// </summary>
+    Conditional,
+
+    /// <summary>
+    /// Custom selection with user-defined criteria.
+    /// </summary>
+    Custom
 }
 
 #endregion

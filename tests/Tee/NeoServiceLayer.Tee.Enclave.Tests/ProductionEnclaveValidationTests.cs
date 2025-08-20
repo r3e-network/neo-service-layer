@@ -1,10 +1,13 @@
-﻿using System;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
@@ -195,12 +198,12 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             _enclave.Initialize();
             var piiData = """
                 {
-                    "customerName": "John Doe",
+                "customerName": "John Doe",
                     "ssn": "123-45-6789",
                     "creditCard": "4532-1234-5678-9012",
                     "medicalRecord": "Patient has diabetes type 2"
                 }
-                """;
+            """;
             var piiBytes = Encoding.UTF8.GetBytes(piiData);
             var encryptionKey = "gdpr-compliant-key";
 
@@ -391,15 +394,15 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             var accountId = "financial-account-001";
             var accountData = """
                 {
-                    "accountType": "business",
+                "accountType": "business",
                     "complianceLevel": "SOX",
                     "auditRequired": true,
                     "multiSigThreshold": 2
                 }
-                """;
+            """;
             var transactionData = """
                 {
-                    "transactionType": "wire_transfer",
+                "transactionType": "wire_transfer",
                     "amount": "1000000.00",
                     "currency": "USD",
                     "from": "account-001",
@@ -408,7 +411,7 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
                     "memo": "Business payment for services",
                     "complianceChecked": true
                 }
-                """;
+            """;
 
             // Act
             var accountResult = _enclave.CreateAbstractAccount(accountId, accountData);
@@ -446,12 +449,12 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             };
             var parameters = """
                 {
-                    "modelType": "riskAssessment",
+                "modelType": "riskAssessment",
                     "confidenceThreshold": 0.85,
                     "auditTrail": true,
                     "regulatoryCompliance": "Basel III"
                 }
-                """;
+            """;
 
             // Act
             var trainingResult = _enclave.TrainAIModel(modelId, "risk_assessment", trainingData, parameters);

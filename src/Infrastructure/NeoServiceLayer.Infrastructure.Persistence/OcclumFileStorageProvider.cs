@@ -1,7 +1,16 @@
-﻿using System.IO.Compression;
+using System;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.IO;
+using System.IO.Compression;
+using System.Linq;
 using System.Security.Cryptography;
+using System.Text;
 using System.Text.Json;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Infrastructure.Persistence;
 
@@ -13,6 +22,71 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 {
     private readonly string _storagePath;
     private readonly ILogger<OcclumFileStorageProvider> _logger;
+
+    // LoggerMessage delegates for performance optimization
+    private static readonly Action<ILogger, string, Exception?> _storageDirectoryCreated =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2001, "StorageDirectoryCreated"),
+            "Created Occlum storage directory: {StoragePath}");
+
+    private static readonly Action<ILogger, Exception?> _providerInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(2002, "ProviderInitialized"),
+            "Occlum file storage provider initialized successfully");
+
+    private static readonly Action<ILogger, Exception?> _initializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(2003, "InitializationFailed"),
+            "Failed to initialize Occlum file storage provider");
+
+    private static readonly Action<ILogger, string, Exception?> _dataStored =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(2004, "DataStored"),
+            "Stored data with key {Key} in Occlum file system");
+
+    private static readonly Action<ILogger, string, Exception?> _storeDataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2005, "StoreDataFailed"),
+            "Failed to store data with key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _dataExpired =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2006, "DataExpired"),
+            "Data with key {Key} has expired, removing");
+
+    private static readonly Action<ILogger, string, Exception?> _dataRetrieved =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(2007, "DataRetrieved"),
+            "Retrieved data with key {Key} from Occlum file system");
+
+    private static readonly Action<ILogger, string, string, string, Exception?> _retrieveDataFailed =
+        LoggerMessage.Define<string, string, string>(LogLevel.Error, new EventId(2008, "RetrieveDataFailed"),
+            "Failed to retrieve data with key {Key}. Exception details: {ExceptionType}: {ExceptionMessage}");
+
+    private static readonly Action<ILogger, string, Exception?> _dataDeleted =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(2009, "DataDeleted"),
+            "Deleted data with key {Key} from Occlum file system");
+
+    private static readonly Action<ILogger, string, Exception?> _deleteDataFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2010, "DeleteDataFailed"),
+            "Failed to delete data with key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _backupStarted =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2011, "BackupStarted"),
+            "Starting backup of Occlum storage to {BackupPath}");
+
+    private static readonly Action<ILogger, string, Exception?> _backupCompleted =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2012, "BackupCompleted"),
+            "Backup completed successfully from {BackupPath}");
+
+    private static readonly Action<ILogger, string, Exception?> _backupFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2013, "BackupFailed"),
+            "Failed to backup Occlum storage to {BackupPath}");
+
+    private static readonly Action<ILogger, Exception?> _providerDisposed =
+        LoggerMessage.Define(LogLevel.Information, new EventId(2014, "ProviderDisposed"),
+            "Occlum file storage provider disposed");
+
+    private static readonly Action<ILogger, int, long, Exception?> _decryptionSuccessful =
+        LoggerMessage.Define<int, long>(LogLevel.Debug, new EventId(2015, "DecryptionSuccessful"),
+            "Decryption successful. Input size: {InputSize}, Output size: {OutputSize}");
+
+    private static readonly Action<ILogger, int, string, string, Exception?> _decryptionFailed =
+        LoggerMessage.Define<int, string, string>(LogLevel.Error, new EventId(2016, "DecryptionFailed"),
+            "Decryption failed. Input size: {InputSize}, Exception: {ExceptionType}: {ExceptionMessage}");
     private readonly object _lock = new();
     private bool _initialized;
     private bool _disposed;
@@ -32,7 +106,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     }
 
     /// <inheritdoc/>
-    public string ProviderName => "OcclumFileStorage";
+    public string Name => "OcclumFileStorage";
 
     /// <inheritdoc/>
     public bool IsInitialized => _initialized;
@@ -61,7 +135,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 if (!Directory.Exists(_storagePath))
                 {
                     Directory.CreateDirectory(_storagePath);
-                    _logger.LogInformation("Created Occlum storage directory: {StoragePath}", _storagePath);
+                    _storageDirectoryCreated(_logger, _storagePath, null);
                 }
 
                 // Create metadata directory
@@ -72,19 +146,19 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 }
 
                 _initialized = true;
-                _logger.LogInformation("Occlum file storage provider initialized successfully");
+                _providerInitialized(_logger, null);
                 return Task.FromResult(true);
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize Occlum file storage provider");
+                _initializationFailed(_logger, ex);
                 return Task.FromResult(false);
             }
         }
     }
 
     /// <inheritdoc/>
-    public async Task<bool> StoreAsync(string key, byte[] data, StorageOptions? options = null)
+    public async Task<bool> StoreDataAsync(string key, byte[] data, StorageOptions? options = null)
     {
         if (!_initialized) throw new InvalidOperationException("Storage provider not initialized");
         if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -114,32 +188,34 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 Key = key,
                 OriginalSize = data.Length,
                 StoredSize = processedData.Length,
-                IsCompressed = options.Compress,
-                IsEncrypted = options.Encrypt,
-                CompressionAlgorithm = options.Compress ? options.CompressionAlgorithm : null,
+                IsCompressed = options?.Compress ?? false,
+                IsEncrypted = options?.Encrypt ?? false,
+                CompressionAlgorithm = (options?.Compress ?? false) ? options.CompressionAlgorithm : null,
                 CreatedAt = DateTime.UtcNow,
                 LastModified = DateTime.UtcNow,
                 LastAccessed = DateTime.UtcNow,
-                ExpiresAt = options.TimeToLive.HasValue ? DateTime.UtcNow.Add(options.TimeToLive.Value) : null,
+                ExpiresAt = options?.TimeToLive.HasValue == true ? DateTime.UtcNow.Add(options.TimeToLive.Value) : null,
                 Checksum = CalculateChecksum(data),
-                CustomMetadata = new Dictionary<string, string>(options.Metadata)
+                CustomMetadata = options?.Metadata?.ToDictionary(
+                    kvp => kvp.Key, 
+                    kvp => (object)(kvp.Value?.ToString() ?? string.Empty)) ?? new Dictionary<string, object>()
             };
 
             var metadataJson = JsonSerializer.Serialize(metadata);
             await File.WriteAllTextAsync(metadataPath, metadataJson);
 
-            _logger.LogDebug("Stored data with key {Key} in Occlum file system", key);
+            _dataStored(_logger, key, null);
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to store data with key {Key}", key);
+            _storeDataFailed(_logger, key, ex);
             return false;
         }
     }
 
     /// <inheritdoc/>
-    public async Task<byte[]?> RetrieveAsync(string key)
+    public async Task<byte[]?> RetrieveDataAsync(string key)
     {
         if (!_initialized) throw new InvalidOperationException("Storage provider not initialized");
         if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -167,8 +243,8 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
             // Check expiration
             if (metadata.ExpiresAt.HasValue && metadata.ExpiresAt.Value <= DateTime.UtcNow)
             {
-                _logger.LogInformation("Data with key {Key} has expired, removing", key);
-                await DeleteAsync(key);
+                _dataExpired(_logger, key, null);
+                await DeleteDataAsync(key);
                 return null;
             }
 
@@ -181,18 +257,18 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
             var updatedMetadataJson = JsonSerializer.Serialize(metadata);
             await File.WriteAllTextAsync(metadataPath, updatedMetadataJson);
 
-            _logger.LogDebug("Retrieved data with key {Key} from Occlum file system", key);
+            _dataRetrieved(_logger, key, null);
             return originalData;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to retrieve data with key {Key}. Exception details: {ExceptionType}: {ExceptionMessage}", key, ex.GetType().Name, ex.Message);
+            _retrieveDataFailed(_logger, key, ex.GetType().Name, ex.Message, ex);
             return null;
         }
     }
 
     /// <inheritdoc/>
-    public Task<bool> DeleteAsync(string key)
+    public Task<bool> DeleteDataAsync(string key)
     {
         if (!_initialized) throw new InvalidOperationException("Storage provider not initialized");
         if (string.IsNullOrEmpty(key)) throw new ArgumentException("Key cannot be null or empty", nameof(key));
@@ -218,14 +294,14 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
             if (deleted)
             {
-                _logger.LogDebug("Deleted data with key {Key} from Occlum file system", key);
+                _dataDeleted(_logger, key, null);
             }
 
             return Task.FromResult(deleted);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to delete data with key {Key}", key);
+            _deleteDataFailed(_logger, key, ex);
             return Task.FromResult(false);
         }
     }
@@ -358,12 +434,12 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         {
             var transaction = new OcclumFileStorageTransaction(_storagePath, _logger);
             _logger.LogDebug("Started transaction {TransactionId}", transaction.TransactionId);
-            return Task.FromResult<IStorageTransaction?>(transaction);
+            return Task.FromResult<IStorageTransaction>(transaction);
         }
         catch (Exception ex)
         {
             _logger.LogError(ex, "Failed to begin transaction");
-            return Task.FromResult<IStorageTransaction?>(null);
+            throw new InvalidOperationException("Failed to create transaction");
         }
     }
 
@@ -375,7 +451,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
         try
         {
-            _logger.LogInformation("Starting backup of Occlum storage to {BackupPath}", backupPath);
+            _backupStarted(_logger, backupPath, null);
 
             // Create backup directory
             var backupDir = Path.GetDirectoryName(backupPath);
@@ -423,7 +499,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 var manifest = new
                 {
                     Version = "1.0",
-                    Provider = ProviderName,
+                    Provider = Name,
                     BackupDate = DateTime.UtcNow,
                     StoragePath = _storagePath,
                     DataFileCount = dataFiles.Length,
@@ -441,7 +517,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                     File.Delete(backupPath);
                 }
 
-                using (var archive = System.IO.Compression.ZipFile.Open(backupPath, System.IO.Compression.ZipArchiveMode.Create))
+                using (var archive = ZipFile.Open(backupPath, ZipArchiveMode.Create))
                 {
                     // Add all files from temp backup directory
                     var filesToBackup = Directory.GetFiles(tempBackupDir, "*", SearchOption.AllDirectories);
@@ -468,7 +544,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to backup Occlum storage to {BackupPath}", backupPath);
+            _backupFailed(_logger, backupPath, ex);
             return false;
         }
     }
@@ -503,9 +579,9 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                 var manifestJson = await File.ReadAllTextAsync(manifestPath);
                 var manifest = JsonSerializer.Deserialize<JsonDocument>(manifestJson);
 
-                if (manifest?.RootElement.GetProperty("Provider").GetString() != ProviderName)
+                if (manifest?.RootElement.GetProperty("Provider").GetString() != Name)
                 {
-                    throw new InvalidOperationException($"Invalid backup file: provider mismatch. Expected {ProviderName}");
+                    throw new InvalidOperationException($"Invalid backup file: provider mismatch. Expected {Name}");
                 }
 
                 // Clear existing storage (after creating a safety backup)
@@ -554,7 +630,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
                         Directory.Delete(safetyBackupPath, recursive: true);
                     }
 
-                    _logger.LogInformation("Restore completed successfully from {BackupPath}", backupPath);
+                    _backupCompleted(_logger, backupPath, null);
                     return true;
                 }
                 catch
@@ -595,7 +671,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     }
 
     /// <inheritdoc/>
-    public async Task<StorageValidationResult> ValidateIntegrityAsync()
+    public async Task<StorageValidationResult> ValidateAsync()
     {
         var result = new StorageValidationResult { IsValid = true };
 
@@ -605,7 +681,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
             foreach (var key in keys)
             {
                 var metadata = await GetMetadataAsync(key).ConfigureAwait(false);
-                var data = await RetrieveAsync(key).ConfigureAwait(false);
+                var data = await RetrieveDataAsync(key).ConfigureAwait(false);
 
                 if (metadata == null || data == null)
                 {
@@ -644,7 +720,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         if (!_disposed)
         {
             _disposed = true;
-            _logger.LogInformation("Occlum file storage provider disposed");
+            _providerDisposed(_logger, null);
         }
     }
 
@@ -665,13 +741,13 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         var processedData = data;
 
         // Compress if requested
-        if (options.Compress)
+        if (options.Compress == true)
         {
             processedData = await CompressDataAsync(processedData, options.CompressionAlgorithm);
         }
 
         // Encrypt if requested
-        if (options.Encrypt)
+        if (options.Encrypt == true)
         {
             processedData = await EncryptDataAsync(processedData, options.EncryptionKey);
         }
@@ -700,8 +776,8 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
     private async Task<byte[]> CompressDataAsync(byte[] data, CompressionAlgorithm algorithm)
     {
-        using var input = new MemoryStream(data);
         using var output = new MemoryStream();
+        using var input = new MemoryStream(data);
 
         switch (algorithm)
         {
@@ -720,8 +796,8 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
     private async Task<byte[]> DecompressDataAsync(byte[] data, CompressionAlgorithm algorithm)
     {
-        using var input = new MemoryStream(data);
         using var output = new MemoryStream();
+        using var input = new MemoryStream(data);
 
         switch (algorithm)
         {
@@ -740,24 +816,23 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
 
     private async Task<byte[]> EncryptDataAsync(byte[] data, string? encryptionKey = null)
     {
-        // Use SGX-derived encryption key for secure storage
         using var aes = Aes.Create();
+        using var output = new MemoryStream();
+        using var input = new MemoryStream(data);
+        
+        // Use SGX-derived encryption key for secure storage
         aes.Key = await GetStorageEncryptionKeyAsync();
         aes.GenerateIV();
-
-        using var encryptor = aes.CreateEncryptor();
-        using var input = new MemoryStream(data);
-        using var output = new MemoryStream();
 
         // Write IV first
         await output.WriteAsync(aes.IV);
 
         // Use CryptoStream properly with explicit closing
-        using (var cryptoStream = new CryptoStream(output, encryptor, CryptoStreamMode.Write, leaveOpen: true))
+        using (var cryptoStream = new CryptoStream(output, aes.CreateEncryptor(), CryptoStreamMode.Write))
         {
             await input.CopyToAsync(cryptoStream);
             // Explicitly close the crypto stream to flush final block
-            cryptoStream.Close();
+            cryptoStream.FlushFinalBlock();
         }
 
         return output.ToArray();
@@ -767,10 +842,10 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
     {
         try
         {
-            // Simple AES decryption - in production, use proper key management
             using var aes = Aes.Create();
+            using var output = new MemoryStream();
             using var input = new MemoryStream(encryptedData);
-
+            
             // Read IV
             var iv = new byte[16];
             var bytesRead = await input.ReadAsync(iv);
@@ -783,27 +858,25 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
             // Use SGX-derived encryption key for secure storage
             aes.Key = await GetStorageEncryptionKeyAsync();
 
-            using var decryptor = aes.CreateDecryptor();
-            using var cryptoStream = new CryptoStream(input, decryptor, CryptoStreamMode.Read);
-            using var output = new MemoryStream();
-
-            await cryptoStream.CopyToAsync(output);
+            using (var cryptoStream = new CryptoStream(input, aes.CreateDecryptor(), CryptoStreamMode.Read))
+            {
+                await cryptoStream.CopyToAsync(output);
+            }
             var result = output.ToArray();
 
-            _logger.LogDebug("Decryption successful. Input size: {InputSize}, Output size: {OutputSize}", encryptedData.Length, result.Length);
+            _decryptionSuccessful(_logger, encryptedData.Length, result.Length, null);
             return result;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Decryption failed. Input size: {InputSize}, Exception: {ExceptionType}: {ExceptionMessage}",
-                encryptedData.Length, ex.GetType().Name, ex.Message);
+            _decryptionFailed(_logger, encryptedData.Length, ex.GetType().Name, ex.Message, ex);
             throw;
         }
     }
 
     private string CalculateChecksum(byte[] data)
     {
-        using var sha256 = SHA256.Create();
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(data);
         return Convert.ToHexString(hash);
     }
@@ -853,7 +926,6 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         // Use a fixed salt derived from the storage path for consistency
         var saltSource = $"neo-storage-{_storagePath}-v2";
         var salt = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(saltSource));
-
         using var pbkdf2 = new System.Security.Cryptography.Rfc2898DeriveBytes(
             masterPassword,
             salt,
@@ -875,6 +947,7 @@ public class OcclumFileStorageProvider : IPersistentStorageProvider
         var sealedBytes = Convert.FromBase64String(sealedKey);
 
         var info = System.Text.Encoding.UTF8.GetBytes("neo-storage-encryption-v1");
+        await Task.Delay(1).ConfigureAwait(false); // Simulate async operation
         var salt = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(_storagePath));
 
         return System.Security.Cryptography.HKDF.DeriveKey(
@@ -895,12 +968,55 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     private readonly string _storagePath;
     private readonly string _transactionPath;
     private readonly ILogger _logger;
+
+    // LoggerMessage delegates for transaction operations
+    private static readonly Action<ILogger, string, string, Exception?> _operationQueued =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(2101, "OperationQueued"),
+            "Queued store operation for key {Key} in transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _queueOperationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2102, "QueueOperationFailed"),
+            "Failed to queue store operation for key {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _transactionCommitted =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2103, "TransactionCommitted"),
+            "Transaction {TransactionId} committed successfully");
+
+    private static readonly Action<ILogger, string, Exception?> _commitFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2104, "CommitFailed"),
+            "Failed to commit transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _transactionRolledBack =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(2105, "TransactionRolledBack"),
+            "Transaction {TransactionId} rolled back");
+
+    private static readonly Action<ILogger, string, Exception?> _rollbackFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(2106, "RollbackFailed"),
+            "Failed to rollback transaction {TransactionId}");
+
+    private static readonly Action<ILogger, string, Exception?> _cleanupFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(2107, "CleanupFailed"),
+            "Failed to cleanup transaction directory {TransactionPath}");
+
+    private static readonly Action<ILogger, Exception?> _backupNotImplemented =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(2108, "BackupNotImplemented"),
+            "BackupAsync not fully implemented");
+
+    private static readonly Action<ILogger, Exception?> _restoreNotImplemented =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(2109, "RestoreNotImplemented"),
+            "RestoreAsync not fully implemented");
+
+    private static readonly Action<ILogger, Exception?> _compactNotImplemented =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(2110, "CompactNotImplemented"),
+            "CompactAsync not fully implemented");
     private readonly Dictionary<string, byte[]> _pendingOperations;
     private readonly HashSet<string> _pendingDeletes;
     private readonly DateTime _createdAt;
     private readonly TimeSpan _timeout;
     private bool _isActive;
     private bool _disposed;
+    private bool _isCommitted;
+    private bool _isRolledBack;
 
     public OcclumFileStorageTransaction(string storagePath, ILogger logger)
     {
@@ -921,10 +1037,14 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     public string TransactionId => _transactionId;
 
     public bool IsActive => _isActive && !_disposed && !IsExpired;
+    
+    public bool IsCommitted => _isCommitted;
+    
+    public bool IsRolledBack => _isRolledBack;
 
     private bool IsExpired => DateTime.UtcNow - _createdAt > _timeout;
 
-    public Task<bool> StoreAsync(string key, byte[] data, StorageOptions? options = null)
+    public Task<bool> StoreDataAsync(string key, byte[] data, StorageOptions? options = null)
     {
         if (IsExpired) throw new TimeoutException("Transaction has expired");
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
@@ -932,17 +1052,17 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
         try
         {
             _pendingOperations[key] = data;
-            _logger.LogDebug("Queued store operation for key {Key} in transaction {TransactionId}", key, _transactionId);
+            _operationQueued(_logger, key, _transactionId, null);
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to queue store operation for key {Key}", key);
+            _queueOperationFailed(_logger, key, ex);
             return Task.FromResult(false);
         }
     }
 
-    public Task<bool> DeleteAsync(string key)
+    public Task<bool> DeleteDataAsync(string key)
     {
         if (IsExpired) throw new TimeoutException("Transaction has expired");
         if (!IsActive) throw new InvalidOperationException("Transaction is not active");
@@ -951,12 +1071,12 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
         {
             _pendingDeletes.Add(key);
             _pendingOperations.Remove(key); // Remove from pending stores if it exists
-            _logger.LogDebug("Queued delete operation for key {Key} in transaction {TransactionId}", key, _transactionId);
+            _operationQueued(_logger, key, _transactionId, null);
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to queue delete operation for key {Key}", key);
+            _queueOperationFailed(_logger, key, ex);
             return Task.FromResult(false);
         }
     }
@@ -1005,12 +1125,13 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
             }
 
             _isActive = false;
-            _logger.LogInformation("Transaction {TransactionId} committed successfully", _transactionId);
+            _isCommitted = true;
+            _transactionCommitted(_logger, _transactionId, null);
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to commit transaction {TransactionId}", _transactionId);
+            _commitFailed(_logger, _transactionId, ex);
             return Task.FromResult(false);
         }
         finally
@@ -1026,12 +1147,13 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
         try
         {
             _isActive = false;
-            _logger.LogInformation("Transaction {TransactionId} rolled back", _transactionId);
+            _isRolledBack = true;
+            _transactionRolledBack(_logger, _transactionId, null);
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to rollback transaction {TransactionId}", _transactionId);
+            _rollbackFailed(_logger, _transactionId, ex);
             return Task.FromResult(false);
         }
         finally
@@ -1064,7 +1186,7 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to cleanup transaction directory {TransactionPath}", _transactionPath);
+            _cleanupFailed(_logger, _transactionPath, ex);
         }
     }
 
@@ -1085,5 +1207,29 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
         using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(data);
         return Convert.ToBase64String(hash);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> BackupAsync(string backupPath)
+    {
+        // TODO: Implement full backup functionality
+        _backupNotImplemented(_logger, null);
+        return Task.FromResult(false);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> RestoreAsync(string backupPath)
+    {
+        // TODO: Implement full restore functionality
+        _restoreNotImplemented(_logger, null);
+        return Task.FromResult(false);
+    }
+
+    /// <inheritdoc/>
+    public Task<bool> CompactAsync()
+    {
+        // TODO: Implement storage compaction
+        _compactNotImplemented(_logger, null);
+        return Task.FromResult(true);
     }
 }

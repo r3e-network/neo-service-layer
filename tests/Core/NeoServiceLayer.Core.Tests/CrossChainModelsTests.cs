@@ -1,6 +1,13 @@
-﻿using FluentAssertions;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Core.Tests;
 
@@ -18,14 +25,10 @@ public class CrossChainModelsTests
         var request = new CrossChainMessageRequest();
 
         // Assert
-        request.MessageId.Should().NotBeEmpty();
-        Guid.TryParse(request.MessageId, out _).Should().BeTrue();
-        request.Sender.Should().BeEmpty();
-        request.Receiver.Should().BeEmpty();
-        request.Recipient.Should().BeEmpty();
-        request.Data.Should().BeEmpty();
-        request.Nonce.Should().Be(0);
-        request.Metadata.Should().NotBeNull().And.BeEmpty();
+        request.Message.Should().NotBeNull().And.BeEmpty();
+        request.DestinationAddress.Should().BeEmpty();
+        request.MessageType.Should().BeEmpty();
+        request.Parameters.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
@@ -37,22 +40,16 @@ public class CrossChainModelsTests
         var metadata = new Dictionary<string, object> { ["key"] = "value" };
 
         // Act
-        request.MessageId = "msg-123";
-        request.Sender = "sender-address";
-        request.Receiver = "receiver-address";
-        request.Recipient = "recipient-address";
-        request.Data = data;
-        request.Nonce = 42;
-        request.Metadata = metadata;
+        request.Message = data;
+        request.DestinationAddress = "destination-address";
+        request.MessageType = "test-message";
+        request.Parameters = metadata;
 
         // Assert
-        request.MessageId.Should().Be("msg-123");
-        request.Sender.Should().Be("sender-address");
-        request.Receiver.Should().Be("receiver-address");
-        request.Recipient.Should().Be("recipient-address");
-        request.Data.Should().BeEquivalentTo(data);
-        request.Nonce.Should().Be(42);
-        request.Metadata.Should().BeEquivalentTo(metadata);
+        request.Message.Should().BeEquivalentTo(data);
+        request.DestinationAddress.Should().Be("destination-address");
+        request.MessageType.Should().Be("test-message");
+        request.Parameters.Should().BeEquivalentTo(metadata);
     }
 
     #endregion
@@ -66,13 +63,11 @@ public class CrossChainModelsTests
         var request = new CrossChainTransferRequest();
 
         // Assert
-        request.TransferId.Should().NotBeEmpty();
-        Guid.TryParse(request.TransferId, out _).Should().BeTrue();
         request.TokenAddress.Should().BeEmpty();
         request.Amount.Should().Be(0);
+        request.DestinationAddress.Should().BeEmpty();
+        request.Data.Should().NotBeNull().And.BeEmpty();
         request.Sender.Should().BeEmpty();
-        request.Receiver.Should().BeEmpty();
-        request.Metadata.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
@@ -83,20 +78,18 @@ public class CrossChainModelsTests
         var metadata = new Dictionary<string, object> { ["gas"] = 21000 };
 
         // Act
-        request.TransferId = "transfer-456";
         request.TokenAddress = "0xtoken123";
         request.Amount = 100.5m;
+        request.DestinationAddress = "0xdestination";
+        request.Data = new byte[] { 1, 2, 3 };
         request.Sender = "0xsender";
-        request.Receiver = "0xreceiver";
-        request.Metadata = metadata;
 
         // Assert
-        request.TransferId.Should().Be("transfer-456");
         request.TokenAddress.Should().Be("0xtoken123");
         request.Amount.Should().Be(100.5m);
+        request.DestinationAddress.Should().Be("0xdestination");
+        request.Data.Should().BeEquivalentTo(new byte[] { 1, 2, 3 });
         request.Sender.Should().Be("0xsender");
-        request.Receiver.Should().Be("0xreceiver");
-        request.Metadata.Should().BeEquivalentTo(metadata);
     }
 
     #endregion
@@ -110,13 +103,10 @@ public class CrossChainModelsTests
         var request = new RemoteCallRequest();
 
         // Assert
-        request.CallId.Should().NotBeEmpty();
-        Guid.TryParse(request.CallId, out _).Should().BeTrue();
         request.ContractAddress.Should().BeEmpty();
-        request.FunctionName.Should().BeEmpty();
+        request.MethodName.Should().BeEmpty();
         request.Parameters.Should().BeEmpty();
-        request.Caller.Should().BeEmpty();
-        request.Metadata.Should().NotBeNull().And.BeEmpty();
+        request.GasLimit.Should().Be(0);
     }
 
     [Fact]
@@ -125,23 +115,17 @@ public class CrossChainModelsTests
         // Arrange
         var request = new RemoteCallRequest();
         var parameters = new object[] { "param1", 42, true };
-        var metadata = new Dictionary<string, object> { ["timeout"] = 30 };
-
         // Act
-        request.CallId = "call-789";
         request.ContractAddress = "0xcontract";
-        request.FunctionName = "transfer";
+        request.MethodName = "transfer";
         request.Parameters = parameters;
-        request.Caller = "0xcaller";
-        request.Metadata = metadata;
+        request.GasLimit = 21000;
 
         // Assert
-        request.CallId.Should().Be("call-789");
         request.ContractAddress.Should().Be("0xcontract");
-        request.FunctionName.Should().Be("transfer");
+        request.MethodName.Should().Be("transfer");
         request.Parameters.Should().BeEquivalentTo(parameters);
-        request.Caller.Should().Be("0xcaller");
-        request.Metadata.Should().BeEquivalentTo(metadata);
+        request.GasLimit.Should().Be(21000);
     }
 
     #endregion
@@ -158,10 +142,8 @@ public class CrossChainModelsTests
         message.MessageId.Should().BeEmpty();
         message.SourceChain.Should().Be(BlockchainType.NeoN3);
         message.DestinationChain.Should().Be(BlockchainType.NeoN3);
-        message.Sender.Should().BeEmpty();
-        message.Receiver.Should().BeEmpty();
-        message.Data.Should().BeEmpty();
-        message.Status.Should().Be(MessageStatus.Pending);
+        message.Content.Should().BeEmpty();
+        message.Status.Should().Be(CrossChainMessageStatus.Pending);
         message.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
     }
 
@@ -177,20 +159,16 @@ public class CrossChainModelsTests
         message.MessageId = "cross-msg-123";
         message.SourceChain = BlockchainType.NeoN3;
         message.DestinationChain = BlockchainType.NeoX;
-        message.Sender = "neo-sender";
-        message.Receiver = "neox-receiver";
-        message.Data = data;
-        message.Status = MessageStatus.Processing;
+        message.Content = data;
+        message.Status = CrossChainMessageStatus.Processing;
         message.CreatedAt = createdAt;
 
         // Assert
         message.MessageId.Should().Be("cross-msg-123");
         message.SourceChain.Should().Be(BlockchainType.NeoN3);
         message.DestinationChain.Should().Be(BlockchainType.NeoX);
-        message.Sender.Should().Be("neo-sender");
-        message.Receiver.Should().Be("neox-receiver");
-        message.Data.Should().BeEquivalentTo(data);
-        message.Status.Should().Be(MessageStatus.Processing);
+        message.Content.Should().BeEquivalentTo(data);
+        message.Status.Should().Be(CrossChainMessageStatus.Processing);
         message.CreatedAt.Should().Be(createdAt);
     }
 
@@ -205,12 +183,12 @@ public class CrossChainModelsTests
         var route = new CrossChainRoute();
 
         // Assert
-        route.Source.Should().Be(BlockchainType.NeoN3);
-        route.Destination.Should().Be(BlockchainType.NeoN3);
-        route.IntermediateChains.Should().BeEmpty();
-        route.EstimatedFee.Should().Be(0);
-        route.EstimatedTime.Should().Be(TimeSpan.Zero);
-        route.ReliabilityScore.Should().Be(0);
+        route.RouteId.Should().BeEmpty();
+        route.SourceChain.Should().Be(BlockchainType.NeoN3);
+        route.DestinationChain.Should().Be(BlockchainType.NeoN3);
+        route.IntermediateHops.Should().BeEmpty();
+        route.EstimatedCost.Should().Be(0);
+        route.EstimatedTimeSeconds.Should().Be(0);
     }
 
     [Fact]
@@ -218,95 +196,53 @@ public class CrossChainModelsTests
     {
         // Arrange
         var route = new CrossChainRoute();
-        var intermediateChains = new[] { "polygon", "arbitrum" };
+        var intermediateChains = new List<BlockchainType> { BlockchainType.NeoN3, BlockchainType.NeoX };
         var estimatedTime = TimeSpan.FromMinutes(15);
 
         // Act
-        route.Source = BlockchainType.NeoN3;
-        route.Destination = BlockchainType.NeoX;
-        route.IntermediateChains = intermediateChains;
-        route.EstimatedFee = 0.001m;
-        route.EstimatedTime = estimatedTime;
-        route.ReliabilityScore = 0.95;
+        route.RouteId = "route-123";
+        route.SourceChain = BlockchainType.NeoN3;
+        route.DestinationChain = BlockchainType.NeoX;
+        route.IntermediateHops = intermediateChains;
+        route.EstimatedCost = 0.001m;
+        route.EstimatedTimeSeconds = 900; // 15 minutes
 
         // Assert
-        route.Source.Should().Be(BlockchainType.NeoN3);
-        route.Destination.Should().Be(BlockchainType.NeoX);
-        route.IntermediateChains.Should().BeEquivalentTo(intermediateChains);
-        route.EstimatedFee.Should().Be(0.001m);
-        route.EstimatedTime.Should().Be(estimatedTime);
-        route.ReliabilityScore.Should().Be(0.95);
+        route.RouteId.Should().Be("route-123");
+        route.SourceChain.Should().Be(BlockchainType.NeoN3);
+        route.DestinationChain.Should().Be(BlockchainType.NeoX);
+        route.IntermediateHops.Should().BeEquivalentTo(intermediateChains);
+        route.EstimatedCost.Should().Be(0.001m);
+        route.EstimatedTimeSeconds.Should().Be(900);
     }
 
     #endregion
 
-    #region CrossChainOperation Tests
-
-    [Fact]
-    public void CrossChainOperation_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var operation = new CrossChainOperation();
-
-        // Assert
-        operation.OperationId.Should().NotBeEmpty();
-        Guid.TryParse(operation.OperationId, out _).Should().BeTrue();
-        operation.Type.Should().Be(OperationType.Message);
-        operation.SourceChain.Should().Be(BlockchainType.NeoN3);
-        operation.DestinationChain.Should().Be(BlockchainType.NeoN3);
-        operation.Amount.Should().Be(0);
-        operation.Parameters.Should().NotBeNull().And.BeEmpty();
-    }
-
-    [Fact]
-    public void CrossChainOperation_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var operation = new CrossChainOperation();
-        var parameters = new Dictionary<string, object> { ["gasPrice"] = "20000000000" };
-
-        // Act
-        operation.OperationId = "op-456";
-        operation.Type = OperationType.Transfer;
-        operation.SourceChain = BlockchainType.NeoN3;
-        operation.DestinationChain = BlockchainType.NeoX;
-        operation.Amount = 50.0m;
-        operation.Parameters = parameters;
-
-        // Assert
-        operation.OperationId.Should().Be("op-456");
-        operation.Type.Should().Be(OperationType.Transfer);
-        operation.SourceChain.Should().Be(BlockchainType.NeoN3);
-        operation.DestinationChain.Should().Be(BlockchainType.NeoX);
-        operation.Amount.Should().Be(50.0m);
-        operation.Parameters.Should().BeEquivalentTo(parameters);
-    }
-
-    #endregion
 
     #region Enum Tests
 
     [Fact]
-    public void MessageStatus_ShouldHaveCorrectValues()
+    public void CrossChainMessageStatus_ShouldHaveCorrectValues()
     {
         // Assert
-        Enum.GetValues<MessageStatus>().Should().BeEquivalentTo([
-            MessageStatus.Pending,
-            MessageStatus.Processing,
-            MessageStatus.Completed,
-            MessageStatus.Failed,
-            MessageStatus.Cancelled
+        Enum.GetValues<CrossChainMessageStatus>().Should().BeEquivalentTo([
+            CrossChainMessageStatus.Pending,
+            CrossChainMessageStatus.Processing,
+            CrossChainMessageStatus.Delivered,
+            CrossChainMessageStatus.Failed,
+            CrossChainMessageStatus.Cancelled
         ]);
     }
 
     [Fact]
-    public void OperationType_ShouldHaveCorrectValues()
+    public void CrossChainOperation_ShouldHaveCorrectValues()
     {
         // Assert
-        Enum.GetValues<OperationType>().Should().BeEquivalentTo([
-            OperationType.Message,
-            OperationType.Transfer,
-            OperationType.RemoteCall
+        Enum.GetValues<CrossChainOperation>().Should().BeEquivalentTo([
+            CrossChainOperation.MessageTransfer,
+            CrossChainOperation.TokenTransfer,
+            CrossChainOperation.ContractCall,
+            CrossChainOperation.DataSync
         ]);
     }
 
@@ -316,7 +252,10 @@ public class CrossChainModelsTests
         // Assert
         Enum.GetValues<BlockchainType>().Should().BeEquivalentTo([
             BlockchainType.NeoN3,
-            BlockchainType.NeoX
+            BlockchainType.NeoX,
+            BlockchainType.Ethereum,
+            BlockchainType.Test,
+            BlockchainType.Bitcoin
         ]);
     }
 

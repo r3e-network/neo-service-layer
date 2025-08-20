@@ -1,6 +1,10 @@
 using System;
 using System.Threading.Tasks;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -10,42 +14,48 @@ namespace NeoServiceLayer.Services.Authentication
         Task<AuthenticationResult> AuthenticateAsync(string username, string password);
         Task<AuthenticationResult> AuthenticateWithMfaAsync(string username, string password, string mfaCode);
         Task<RegistrationResult> RegisterAsync(UserRegistrationRequest request);
+        Task<bool> UserExistsAsync(string username, string email);
         Task<bool> ValidateTokenAsync(string token);
         Task RevokeTokenAsync(string token);
-        
+
         // Token Management
         Task<TokenPair> GenerateTokenPairAsync(string userId, string[] roles);
         Task<TokenPair> RefreshTokenAsync(string refreshToken);
         Task<bool> IsTokenBlacklistedAsync(string token);
-        
+
         // MFA Management
         Task<MfaSetupResult> SetupMfaAsync(string userId, MfaType type);
         Task<bool> ValidateMfaCodeAsync(string userId, string code);
         Task<bool> DisableMfaAsync(string userId, string verificationCode);
         Task<string[]> GenerateBackupCodesAsync(string userId);
-        
+
         // Session Management
         Task<SessionInfo> CreateSessionAsync(string userId, string deviceId);
         Task<SessionInfo[]> GetActiveSessionsAsync(string userId);
         Task RevokeSessionAsync(string sessionId);
         Task RevokeAllSessionsAsync(string userId);
-        
+
         // Password Management
         Task<bool> ChangePasswordAsync(string userId, string currentPassword, string newPassword);
         Task<string> InitiatePasswordResetAsync(string email);
         Task<bool> CompletePasswordResetAsync(string token, string newPassword);
         Task<bool> ValidatePasswordStrengthAsync(string password);
-        
+
         // Account Security
         Task<bool> LockAccountAsync(string userId, string reason);
         Task<bool> UnlockAccountAsync(string userId);
         Task<AccountSecurityStatus> GetAccountSecurityStatusAsync(string userId);
         Task<LoginAttempt[]> GetRecentLoginAttemptsAsync(string userId, int count = 10);
-        
+
         // Rate Limiting & Protection
         Task<bool> CheckRateLimitAsync(string identifier, string action);
         Task RecordFailedAttemptAsync(string identifier);
         Task ResetFailedAttemptsAsync(string identifier);
+
+        // User Lookup Methods
+        Task<Guid?> FindUserIdByUsernameOrEmailAsync(string usernameOrEmail);
+        Task<Guid?> FindUserIdByEmailAsync(string email);
+        Task<Guid?> FindUserIdByResetTokenAsync(string resetToken);
     }
 
     public class AuthenticationResult
@@ -100,14 +110,7 @@ namespace NeoServiceLayer.Services.Authentication
         public MfaType Type { get; set; }
     }
 
-    public enum MfaType
-    {
-        None = 0,
-        Totp = 1,
-        Sms = 2,
-        Email = 3,
-        Hardware = 4
-    }
+    // MfaType enum moved to Models/MfaSettings.cs to avoid duplication
 
     public class SessionInfo
     {

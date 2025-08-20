@@ -4,6 +4,9 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 {
@@ -41,15 +44,15 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                     case "RSA":
                         result = GenerateRSAKey(keySize);
                         break;
-                    
+
                     case "ECDSA":
                         result = GenerateECDSAKey(keySize);
                         break;
-                    
+
                     case "AES":
                         result = GenerateAESKey(keySize);
                         break;
-                    
+
                     default:
                         throw new NotSupportedException($"Algorithm {algorithm} is not supported");
                 }
@@ -76,7 +79,6 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                 if (keyData == null)
                     throw new InvalidOperationException($"Key {keyId} not found in key store");
 
-                using var rsa = RSA.Create();
                 rsa.ImportRSAPrivateKey(keyData.PrivateKeyBytes, out _);
 
                 var signature = rsa.SignData(
@@ -105,7 +107,6 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                 if (keyData == null)
                     throw new InvalidOperationException($"Key {keyId} not found in key store");
 
-                using var rsa = RSA.Create();
                 rsa.ImportSubjectPublicKeyInfo(keyData.PublicKeyBytes, out _);
 
                 var signatureBytes = Convert.FromBase64String(signature);
@@ -142,7 +143,6 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                 }
                 else if (keyData.Algorithm == "RSA")
                 {
-                    using var rsa = RSA.Create();
                     rsa.ImportSubjectPublicKeyInfo(keyData.PublicKeyBytes, out _);
                     return rsa.Encrypt(data, RSAEncryptionPadding.OaepSHA256);
                 }
@@ -175,7 +175,6 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                 }
                 else if (keyData.Algorithm == "RSA")
                 {
-                    using var rsa = RSA.Create();
                     rsa.ImportRSAPrivateKey(keyData.PrivateKeyBytes, out _);
                     return rsa.Decrypt(encryptedData, RSAEncryptionPadding.OaepSHA256);
                 }
@@ -193,8 +192,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 
         private KeyGenerationResult GenerateRSAKey(int keySize)
         {
-            using var rsa = RSA.Create(keySize);
-            
+
             var publicKey = rsa.ExportSubjectPublicKeyInfo();
             var privateKey = rsa.ExportRSAPrivateKey();
 
@@ -222,8 +220,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
                 _ => throw new ArgumentException($"Invalid key size {keySize} for ECDSA")
             };
 
-            using var ecdsa = ECDsa.Create(curve);
-            
+
             var publicKey = ecdsa.ExportSubjectPublicKeyInfo();
             var privateKey = ecdsa.ExportECPrivateKey();
 
@@ -245,7 +242,6 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
             if (keySize != 128 && keySize != 192 && keySize != 256)
                 throw new ArgumentException($"Invalid key size {keySize} for AES");
 
-            using var aes = Aes.Create();
             aes.KeySize = keySize;
             aes.GenerateKey();
 
@@ -277,7 +273,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
         private byte[] UnprotectPrivateKey(string encryptedPrivateKey)
         {
             var protectedData = Convert.FromBase64String(encryptedPrivateKey);
-            
+
             return ProtectedData.Unprotect(
                 protectedData,
                 Encoding.UTF8.GetBytes("NeoServiceLayer"),
@@ -286,11 +282,9 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 
         private byte[] EncryptWithAES(byte[] key, byte[] data)
         {
-            using var aes = Aes.Create();
             aes.Key = key;
             aes.GenerateIV();
 
-            using var encryptor = aes.CreateEncryptor();
             var encrypted = encryptor.TransformFinalBlock(data, 0, data.Length);
 
             // Prepend IV to encrypted data
@@ -303,19 +297,17 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 
         private byte[] DecryptWithAES(byte[] key, byte[] encryptedData)
         {
-            using var aes = Aes.Create();
             aes.Key = key;
 
             // Extract IV from encrypted data
             var iv = new byte[aes.BlockSize / 8];
             var cipherText = new byte[encryptedData.Length - iv.Length];
-            
+
             Array.Copy(encryptedData, 0, iv, 0, iv.Length);
             Array.Copy(encryptedData, iv.Length, cipherText, 0, cipherText.Length);
 
             aes.IV = iv;
 
-            using var decryptor = aes.CreateDecryptor();
             return decryptor.TransformFinalBlock(cipherText, 0, cipherText.Length);
         }
     }

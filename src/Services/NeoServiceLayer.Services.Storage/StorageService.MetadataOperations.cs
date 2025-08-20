@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -64,8 +70,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Error deleting data with key {Key} for blockchain {BlockchainType}",
-                key, blockchainType);
+            _deleteMetadataFailed(Logger, key, ex);
             throw;
         }
     }
@@ -108,8 +113,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Error getting metadata for key {Key} for blockchain {BlockchainType}",
-                key, blockchainType);
+            _getMetadataFailed(Logger, key, ex);
             throw;
         }
     }
@@ -149,8 +153,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Error checking existence of key {Key} for blockchain {BlockchainType}",
-                key, blockchainType);
+            _getMetadataForKeyFailed(Logger, key, ex);
             throw;
         }
     }
@@ -187,7 +190,7 @@ public partial class StorageService
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to get keys from enclave, using cache only");
+                _metadataExceptionWarning(Logger, "cache", ex);
             }
 
             RecordSuccess();
@@ -196,8 +199,7 @@ public partial class StorageService
         catch (Exception ex)
         {
             RecordFailure(ex);
-            Logger.LogError(ex, "Error listing keys with prefix {Prefix} for blockchain {BlockchainType}",
-                prefix, blockchainType);
+            _getMetadataForKeyFailed(Logger, prefix, ex);
             throw;
         }
     }
@@ -224,12 +226,12 @@ public partial class StorageService
                 _metadataCache[key] = metadata;
             }
 
-            Logger.LogDebug("Updated metadata for key {Key}", key);
+            _gettingMetadataForKey(Logger, key, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating metadata for key {Key}", key);
+            _updateMetadataForKeyFailed(Logger, key, ex);
             throw;
         }
     }
@@ -249,7 +251,7 @@ public partial class StorageService
             // Verify deletion was successful
             if (!deleteResult)
             {
-                Logger.LogWarning("Failed to delete chunk {ChunkKey}", chunkKey);
+                _metadataNotFoundWarning(Logger, chunkKey, null);
             }
         }
     }
@@ -313,14 +315,14 @@ public partial class StorageService
             }
             catch (Exception ex)
             {
-                Logger.LogWarning(ex, "Failed to get enclave storage usage information");
+                _metadataExceptionWarning(Logger, "storage_usage", ex);
             }
 
             return usage;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error getting storage usage for blockchain {BlockchainType}", blockchainType);
+            _getMetadataFailed(Logger, blockchainType.ToString(), ex);
             throw;
         }
     }
@@ -359,20 +361,20 @@ public partial class StorageService
                 }
                 catch (Exception ex)
                 {
-                    Logger.LogWarning(ex, "Failed to delete expired item with key {Key}", key);
+                    _metadataExceptionWarning(Logger, key, ex);
                 }
             }
 
             if (cleanedCount > 0)
             {
-                Logger.LogInformation("Cleaned up {CleanedCount} expired storage items", cleanedCount);
+                _updatingMetadataForKey(Logger, $"cleaned_{cleanedCount}", null);
             }
 
             return cleanedCount;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error cleaning up expired items for blockchain {BlockchainType}", blockchainType);
+            _deleteMetadataFailed(Logger, blockchainType.ToString(), ex);
             throw;
         }
     }

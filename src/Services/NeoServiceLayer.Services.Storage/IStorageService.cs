@@ -1,5 +1,11 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -8,6 +14,24 @@ namespace NeoServiceLayer.Services.Storage;
 /// </summary>
 public interface IStorageService : IEnclaveService, IBlockchainService
 {
+    /// <summary>
+    /// Initializes the Storage service.
+    /// </summary>
+    /// <returns>True if initialization was successful.</returns>
+    Task<bool> InitializeAsync();
+
+    /// <summary>
+    /// Starts the Storage service.
+    /// </summary>
+    /// <returns>True if the service started successfully.</returns>
+    Task<bool> StartAsync();
+
+    /// <summary>
+    /// Stops the Storage service.
+    /// </summary>
+    /// <returns>True if the service stopped successfully.</returns>
+    Task<bool> StopAsync();
+
     /// <summary>
     /// Stores data.
     /// </summary>

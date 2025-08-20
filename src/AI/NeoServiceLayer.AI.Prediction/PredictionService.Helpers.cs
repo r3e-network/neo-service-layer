@@ -1,8 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -55,7 +61,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "CryptoPricePredictor",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.Price,
                 TargetVariable = "price",
                 InputFeatures = new List<string> { "price", "volume", "market_cap", "sentiment" },
@@ -64,7 +70,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "MarketTrendAnalyzer",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.MarketTrend,
                 TargetVariable = "trend",
                 InputFeatures = new List<string> { "price_history", "volume_profile", "technical_indicators" },
@@ -73,7 +79,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "VolatilityPredictor",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.Volatility,
                 TargetVariable = "volatility",
                 InputFeatures = new List<string> { "price_returns", "volume", "market_events" },
@@ -82,7 +88,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "advanced_ensemble_model",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.Classification,
                 TargetVariable = "classification",
                 InputFeatures = new List<string> { "price_history", "volume", "technical_indicators", "sentiment_data" },
@@ -92,7 +98,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "TimeSeriesForecaster",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.TimeSeries,
                 TargetVariable = "future_value",
                 InputFeatures = new List<string> { "historical_values", "timestamps" },
@@ -101,7 +107,7 @@ public partial class PredictionService
             new Models.PredictionModelDefinition
             {
                 Name = "SentimentAnalyzer",
-                Type = AIModelType.Prediction,
+                Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                 PredictionType = Models.PredictionType.Sentiment,
                 TargetVariable = "sentiment",
                 InputFeatures = new List<string> { "text", "context" },
@@ -136,7 +142,7 @@ public partial class PredictionService
                     Id = modelId,
                     Name = definition.Name,
                     Description = definition.Name + " prediction model",
-                    Type = AIModelType.Prediction,
+                    Type = (Core.Models.AIModelType)Models.AIModelType.Prediction,
                     ModelType = modelType,
                     Version = "1.0.0",
                     CreatedAt = DateTime.UtcNow,

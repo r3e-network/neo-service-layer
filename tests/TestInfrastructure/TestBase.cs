@@ -1,4 +1,3 @@
-﻿using System;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -7,10 +6,8 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
-using NeoServiceLayer.Tee.Enclave;
-using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using System.Collections.Generic;
+
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -19,17 +16,20 @@ namespace NeoServiceLayer.TestInfrastructure;
 /// </summary>
 public abstract class TestBase
 {
-    protected static readonly Mock<IEnclaveWrapper> MockEnclaveWrapper;
-    protected static readonly Mock<IEnclaveManager> MockEnclaveManager;
+    // TODO: Add TEE assembly references to enable these mocks
+    // protected static readonly Mock<IEnclaveWrapper> MockEnclaveWrapper;
+    // protected static readonly Mock<IEnclaveManager> MockEnclaveManager;
 
     static TestBase()
     {
-        MockEnclaveWrapper = new Mock<IEnclaveWrapper>();
-        MockEnclaveManager = new Mock<IEnclaveManager>();
-        SetupMockEnclaveWrapper();
-        SetupMockEnclaveManager();
+        // TODO: Add TEE assembly references to enable these mocks
+        // MockEnclaveWrapper = new Mock<IEnclaveWrapper>();
+        // MockEnclaveManager = new Mock<IEnclaveManager>();
+        // SetupMockEnclaveWrapper();
+        // SetupMockEnclaveManager();
     }
 
+    /*
     private static void SetupMockEnclaveWrapper()
     {
         // Setup basic enclave operations
@@ -172,6 +172,7 @@ public abstract class TestBase
                 return $"{{\"success\": true, \"session_key_id\": \"{sessionKeyId}\", \"public_key\": \"{publicKey}\"}}";
             });
     }
+    */
 
     /// <summary>
     /// Verifies that a logger was called with a specific log level and message.

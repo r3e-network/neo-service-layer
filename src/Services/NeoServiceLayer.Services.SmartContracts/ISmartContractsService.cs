@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SmartContracts;
 
@@ -98,7 +104,7 @@ public interface ISmartContractsService : IService
     /// <param name="toBlock">The ending block number (optional, defaults to latest).</param>
     /// <param name="cancellationToken">The cancellation token.</param>
     /// <returns>A list of contract events.</returns>
-    Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
+    Task<IEnumerable<NeoServiceLayer.Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         BlockchainType blockchainType,
         string contractHash,
         string? eventName = null,

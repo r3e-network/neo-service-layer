@@ -1,4 +1,11 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -148,7 +155,12 @@ public class ZkCircuit
     /// <summary>
     /// Gets or sets the circuit type.
     /// </summary>
-    public ZkCircuitType Type { get; set; }
+    public ZkCircuitType CircuitType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the circuit constraints.
+    /// </summary>
+    public Dictionary<string, object> Constraints { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the compiled circuit data.
@@ -256,4 +268,121 @@ public enum ZkCircuitType
     /// Custom circuit.
     /// </summary>
     Custom
+}
+
+/// <summary>
+/// Represents a zero-knowledge computation request.
+/// </summary>
+public class ZkComputationRequest
+{
+    /// <summary>
+    /// Gets or sets the computation ID.
+    /// </summary>
+    public string ComputationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the computation type.
+    /// </summary>
+    public string ComputationType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the input data for computation.
+    /// </summary>
+    public Dictionary<string, object> InputData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the public data for computation.
+    /// </summary>
+    public Dictionary<string, object> PublicData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the private data for computation.
+    /// </summary>
+    public Dictionary<string, object> PrivateData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the circuit to use for computation.
+    /// </summary>
+    public string CircuitId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether to generate a proof of computation.
+    /// </summary>
+    public bool GenerateProof { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets additional metadata for the computation.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
+
+/// <summary>
+/// Represents the result of a zero-knowledge computation.
+/// </summary>
+public class ZkComputationResult
+{
+    /// <summary>
+    /// Gets or sets the computation ID.
+    /// </summary>
+    public string ComputationId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether the computation was successful.
+    /// </summary>
+    public bool Success { get; set; }
+
+    /// <summary>
+    /// Gets or sets the result data from the computation.
+    /// </summary>
+    public Dictionary<string, object> ResultData { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the proof of computation if generated.
+    /// </summary>
+    public string? ProofData { get; set; }
+
+    /// <summary>
+    /// Gets or sets the execution time in milliseconds.
+    /// </summary>
+    public long ExecutionTimeMs { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when computation was completed.
+    /// </summary>
+    public DateTime CompletedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets any error message if computation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
+
+    /// <summary>
+    /// Gets or sets the circuit ID used for computation.
+    /// </summary>
+    public string CircuitId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets additional metadata for the computation result.
+    /// </summary>
+    public Dictionary<string, object> Metadata { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the computation results.
+    /// </summary>
+    public object[] Results { get; set; } = Array.Empty<object>();
+
+    /// <summary>
+    /// Gets or sets the generated proof.
+    /// </summary>
+    public string? Proof { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when computation was completed.
+    /// </summary>
+    public DateTime ComputedAt { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets whether the computation result is valid.
+    /// </summary>
+    public bool IsValid { get; set; }
 }

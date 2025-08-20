@@ -1,7 +1,13 @@
-﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
 
-namespace NeoServiceLayer.Services.Automation;
+
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents an automation job that can be scheduled or triggered.
@@ -113,4 +119,9 @@ public class AutomationJob
     /// Gets or sets the maximum number of retries allowed.
     /// </summary>
     public int MaxRetries { get; set; } = 3;
+
+    /// <summary>
+    /// Gets or sets when the job was last updated.
+    /// </summary>
+    public DateTime? UpdatedAt { get; set; }
 }

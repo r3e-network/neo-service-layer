@@ -1,8 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.Infrastructure.Persistence;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SmartContracts;
 
@@ -157,7 +164,7 @@ public partial class SmartContractsService
     /// <summary>
     /// Persists contract events to storage.
     /// </summary>
-    private async Task PersistContractEventAsync(Core.SmartContracts.ContractEvent contractEvent)
+    private async Task PersistContractEventAsync(NeoServiceLayer.Core.SmartContracts.ContractEvent contractEvent)
     {
         if (_persistentStorage == null) return;
 

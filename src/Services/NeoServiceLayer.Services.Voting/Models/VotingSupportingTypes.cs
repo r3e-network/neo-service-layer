@@ -1,4 +1,11 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Voting.Domain.ValueObjects;
+
 
 namespace NeoServiceLayer.Services.Voting.Models;
 
@@ -405,6 +412,11 @@ public class Candidate
     public string PublicKey { get; set; } = string.Empty;
 
     /// <summary>
+    /// Gets or sets the candidate's blockchain address.
+    /// </summary>
+    public string Address { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets the candidate's name.
     /// </summary>
     public string Name { get; set; } = string.Empty;
@@ -425,14 +437,58 @@ public class Candidate
     public CandidateStatus Status { get; set; }
 
     /// <summary>
+    /// Gets or sets whether the candidate is currently active.
+    /// </summary>
+    public bool IsActive { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the candidate is a consensus node.
+    /// </summary>
+    public bool IsConsensusNode { get; set; }
+
+    /// <summary>
     /// Gets or sets the total votes received.
     /// </summary>
     public int TotalVotes { get; set; }
 
     /// <summary>
+    /// Gets or sets the votes received count.
+    /// </summary>
+    public long VotesReceived { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the last active time.
+    /// </summary>
+    public DateTime LastActiveTime { get; set; } = DateTime.UtcNow;
+    
+    /// <summary>
+    /// Gets or sets the commission rate.
+    /// </summary>
+    public decimal CommissionRate { get; set; } = 0.05m;
+    
+    /// <summary>
+    /// Gets or sets the vote count (alias for TotalVotes).
+    /// </summary>
+    public int VoteCount 
+    { 
+        get => TotalVotes; 
+        set => TotalVotes = value; 
+    }
+
+    /// <summary>
     /// Gets or sets the total voting power received.
     /// </summary>
     public double TotalVotingPower { get; set; }
+
+    /// <summary>
+    /// Gets or sets the expected reward amount.
+    /// </summary>
+    public decimal ExpectedReward { get; set; }
+
+    /// <summary>
+    /// Gets or sets the uptime percentage.
+    /// </summary>
+    public double UptimePercentage { get; set; } = 100.0;
 
     /// <summary>
     /// Gets or sets the candidate's rank.
@@ -455,9 +511,19 @@ public class Candidate
     public CandidatePerformance? Performance { get; set; }
 
     /// <summary>
+    /// Gets or sets detailed candidate metrics.
+    /// </summary>
+    public CandidateMetrics Metrics { get; set; } = new();
+
+    /// <summary>
     /// Gets or sets additional candidate metadata.
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets additional information about the candidate.
+    /// </summary>
+    public Dictionary<string, object> AdditionalInfo { get; set; } = new();
 }
 
 /// <summary>
@@ -492,6 +558,52 @@ public class CandidatePerformance
 
     /// <summary>
     /// Gets or sets additional performance metrics.
+    /// </summary>
+    public Dictionary<string, double> AdditionalMetrics { get; set; } = new();
+}
+
+/// <summary>
+/// Represents detailed candidate metrics.
+/// </summary>
+public class CandidateMetrics
+{
+    /// <summary>
+    /// Gets or sets the performance score.
+    /// </summary>
+    public double PerformanceScore { get; set; } = 1.0;
+
+    /// <summary>
+    /// Gets or sets the reliability score.
+    /// </summary>
+    public double ReliabilityScore { get; set; } = 1.0;
+    
+    /// <summary>
+    /// Gets or sets the number of blocks produced.
+    /// </summary>
+    public int BlocksProduced { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the number of blocks missed.
+    /// </summary>
+    public int BlocksMissed { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the voter count.
+    /// </summary>
+    public int VoterCount { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the average response time in milliseconds.
+    /// </summary>
+    public double AverageResponseTime { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the total rewards distributed.
+    /// </summary>
+    public decimal TotalRewardsDistributed { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional metric values.
     /// </summary>
     public Dictionary<string, double> AdditionalMetrics { get; set; } = new();
 }
@@ -992,74 +1104,5 @@ public enum CandidateStatus
     Disqualified
 }
 
-/// <summary>
-/// Voting strategy type enumeration.
-/// </summary>
-public enum VotingStrategyType
-{
-    /// <summary>
-    /// Simple majority voting strategy.
-    /// </summary>
-    SimpleMajority,
 
-    /// <summary>
-    /// Weighted voting based on power distribution.
-    /// </summary>
-    WeightedVoting,
-
-    /// <summary>
-    /// Delegated voting strategy.
-    /// </summary>
-    DelegatedVoting,
-
-    /// <summary>
-    /// Automatic voting based on predefined rules.
-    /// </summary>
-    AutomaticVoting,
-
-    /// <summary>
-    /// Risk-based voting strategy.
-    /// </summary>
-    RiskBased,
-
-    /// <summary>
-    /// Performance-based voting strategy.
-    /// </summary>
-    PerformanceBased,
-
-    /// <summary>
-    /// Custom voting strategy.
-    /// </summary>
-    Custom
-}
-
-/// <summary>
-/// Risk level enumeration.
-/// </summary>
-public enum RiskLevel
-{
-    /// <summary>
-    /// Minimal risk.
-    /// </summary>
-    Minimal,
-
-    /// <summary>
-    /// Low risk.
-    /// </summary>
-    Low,
-
-    /// <summary>
-    /// Medium risk.
-    /// </summary>
-    Medium,
-
-    /// <summary>
-    /// High risk.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Critical risk.
-    /// </summary>
-    Critical
-}
+// Duplicate enum definitions removed - using definitions from VotingModels.cs

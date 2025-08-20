@@ -1,11 +1,18 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Voting;
+using NeoServiceLayer.Services.Voting.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.Voting.Tests;
 
@@ -39,7 +46,7 @@ public class VotingServiceTests : IDisposable
             Name = "Test Strategy",
             Description = "Test voting strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.StabilityFocused,
+            Type = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules
             {
                 MaxCandidates = 21,
@@ -89,7 +96,7 @@ public class VotingServiceTests : IDisposable
         {
             Name = "Test Strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.StabilityFocused,
+            Type = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules { MaxCandidates = 5 }
         };
 
@@ -123,7 +130,7 @@ public class VotingServiceTests : IDisposable
         {
             Name = "Test Strategy",
             OwnerAddress = "test-owner-address",
-            StrategyType = VotingStrategyType.Automatic
+            Type = VotingStrategyType.Automatic
         };
 
         _mockStorageService.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>(), It.IsAny<BlockchainType>()))
@@ -138,7 +145,7 @@ public class VotingServiceTests : IDisposable
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
         result.First().Name.Should().Be("Test Strategy");
-        result.First().StrategyType.Should().Be(VotingStrategyType.Automatic);
+        result.First().Type.Should().Be(VotingStrategyType.Automatic);
     }
 
     [Fact]
@@ -254,7 +261,7 @@ public class VotingServiceTests : IDisposable
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().BeAssignableTo<IEnumerable<CandidateInfo>>();
+        result.Should().BeAssignableTo<IEnumerable<Candidate>>();
     }
 
     [Fact]

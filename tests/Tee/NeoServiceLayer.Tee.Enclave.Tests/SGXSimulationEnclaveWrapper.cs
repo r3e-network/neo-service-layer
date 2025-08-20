@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.IO;
 using System.Security.Cryptography;
@@ -6,6 +5,11 @@ using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Shared.Extensions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Tests;
 
@@ -40,6 +44,7 @@ public class SGXSimulationEnclaveWrapper : NeoServiceLayer.Tee.Enclave.IEnclaveW
     private readonly Random _secureRandom = new();
     private readonly RSA _rsa = RSA.Create(2048);
     private readonly AesCcm _aes;
+    private readonly RandomNumberGenerator rng = RandomNumberGenerator.Create();
     private byte[] _enclaveIdentity;
     private string _attestationReport;
 
@@ -156,7 +161,6 @@ public class SGXSimulationEnclaveWrapper : NeoServiceLayer.Tee.Enclave.IEnclaveW
         if (min >= max)
             throw new ArgumentException("Min must be less than max");
 
-        using var rng = RandomNumberGenerator.Create();
         byte[] randomBytes = new byte[4];
         rng.GetBytes(randomBytes);
         uint randomValue = BitConverter.ToUInt32(randomBytes);
@@ -961,6 +965,16 @@ public class SGXSimulationEnclaveWrapper : NeoServiceLayer.Tee.Enclave.IEnclaveW
     {
         EnsureInitialized();
         return _attestationReport;
+    }
+
+    /// <summary>
+    /// Gets the SGX attestation data as bytes for verification.
+    /// </summary>
+    /// <returns>Attestation data as byte array.</returns>
+    public byte[] GetAttestation()
+    {
+        EnsureInitialized();
+        return Encoding.UTF8.GetBytes(_attestationReport);
     }
 
     /// <summary>

@@ -1,11 +1,18 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.AI.Prediction;
+using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using CoreModels = NeoServiceLayer.Core.Models;
 using PredictionModels = NeoServiceLayer.AI.Prediction.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 

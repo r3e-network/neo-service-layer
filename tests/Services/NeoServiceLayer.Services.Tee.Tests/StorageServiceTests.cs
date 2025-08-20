@@ -5,6 +5,13 @@ using System.Text.Json;
 using Xunit;
 using System.IO.Compression;
 using System.Security.Cryptography;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Tee.Tests
 {
@@ -893,8 +900,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
 
         private byte[] CompressData(byte[] data)
         {
-            using var output = new MemoryStream();
-            using (var gzip = new GZipStream(output, CompressionLevel.Optimal))
             {
                 gzip.Write(data, 0, data.Length);
             }
@@ -903,9 +908,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
 
         private byte[] DecompressData(byte[] compressedData)
         {
-            using var input = new MemoryStream(compressedData);
-            using var gzip = new GZipStream(input, CompressionMode.Decompress);
-            using var output = new MemoryStream();
             gzip.CopyTo(output);
             return output.ToArray();
         }
@@ -915,7 +917,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
             // Derive encryption key
             var derivedKey = DeriveKey(userKey);
             
-            using var aes = new AesGcm(derivedKey);
             var nonce = new byte[12];
             RandomNumberGenerator.Fill(nonce);
             
@@ -940,7 +941,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
 
             var derivedKey = DeriveKey(userKey);
             
-            using var aes = new AesGcm(derivedKey);
             
             var nonce = encryptedData[0..12];
             var ciphertext = encryptedData[12..^16];
@@ -962,7 +962,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
 
         private byte[] DeriveKey(string userKey)
         {
-            using var pbkdf2 = new Rfc2898DeriveBytes(
                 Encoding.UTF8.GetBytes(userKey),
                 _masterKey,
                 100000,

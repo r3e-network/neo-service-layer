@@ -25,9 +25,12 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Randomness\NeoServiceLayer.Services.Randomness.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Randomness/NeoServiceLayer.Services.Randomness.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
   </ItemGroup>
+  <ItemGroup>
 
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
 </Project>

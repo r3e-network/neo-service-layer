@@ -1,7 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -154,17 +159,24 @@ public partial class PatternRecognitionService
     {
         return new BehaviorProfile
         {
-            Address = request.Address,
-            TransactionFrequency = (int)characteristics.TransactionFrequency,
-            AverageTransactionAmount = (decimal)characteristics.AverageAmount,
-            TransactionTimePatterns = CreateTimePatternsList(characteristics),
-            AddressInteractions = CreateAddressInteractionsIntDictionary(request),
-            UnusualTimePatterns = characteristics.WeekendActivityRatio > 0.7 || characteristics.WeekendActivityRatio < 0.1,
-            SuspiciousAddressInteractions = HasSuspiciousInteractions(request),
-            AnalyzedPeriod = request.AnalysisPeriod,
-            ProfileGeneratedAt = DateTime.UtcNow,
-            NormalityScore = normalityScore,
-            RiskLevel = DetermineRiskLevel(normalityScore, characteristics)
+            UserId = request.Address,
+            ActivityLevel = DetermineActivityLevel(characteristics.TransactionFrequency),
+            RiskLevel = DetermineRiskLevel(normalityScore, characteristics),
+            CreatedAt = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
+            Metadata = new Dictionary<string, object>
+            {
+                ["Address"] = request.Address,
+                ["TransactionFrequency"] = (int)characteristics.TransactionFrequency,
+                ["AverageTransactionAmount"] = (decimal)characteristics.AverageAmount,
+                ["TransactionTimePatterns"] = CreateTimePatternsList(characteristics),
+                ["AddressInteractions"] = CreateAddressInteractionsIntDictionary(request),
+                ["UnusualTimePatterns"] = characteristics.WeekendActivityRatio > 0.7 || characteristics.WeekendActivityRatio < 0.1,
+                ["SuspiciousAddressInteractions"] = HasSuspiciousInteractions(request),
+                ["AnalyzedPeriod"] = request.AnalysisPeriod,
+                ["ProfileGeneratedAt"] = DateTime.UtcNow,
+                ["NormalityScore"] = normalityScore
+            }
         };
     }
 
@@ -285,6 +297,17 @@ public partial class PatternRecognitionService
         if (normalityScore < 0.6) return Models.RiskLevel.Medium;
         if (characteristics.IsHighFrequencyTrader && !characteristics.HasRegularPattern) return Models.RiskLevel.Medium;
         return Models.RiskLevel.Low;
+    }
+
+    /// <summary>
+    /// Determines activity level based on transaction frequency.
+    /// </summary>
+    private Models.ActivityLevel DetermineActivityLevel(double transactionFrequency)
+    {
+        if (transactionFrequency < 1) return Models.ActivityLevel.Low;
+        if (transactionFrequency < 10) return Models.ActivityLevel.Normal;
+        if (transactionFrequency < 50) return Models.ActivityLevel.High;
+        return Models.ActivityLevel.VeryHigh;
     }
 
     /// <summary>

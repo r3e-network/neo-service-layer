@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -23,13 +29,13 @@ public partial class SecretsManagementService
     {
         if (_persistentStorage == null)
         {
-            Logger.LogWarning("Persistent storage not available for secrets management service");
+            _persistentStorageUnavailable(Logger, null);
             return;
         }
 
         try
         {
-            Logger.LogInformation("Loading persistent secret metadata...");
+            _loadingPersistentSecrets(Logger, null);
 
             // Load secret metadata
             var metadataKeys = await _persistentStorage.ListKeysAsync(SECRET_METADATA_PREFIX);
@@ -45,7 +51,7 @@ public partial class SecretsManagementService
                     }
                 }
             }
-            Logger.LogInformation("Loaded {Count} secret metadata entries from persistent storage", _secretCache.Count);
+            _persistentSecretsLoaded(Logger, _secretCache.Count, null);
 
             // Load statistics
             var statsData = await _persistentStorage.RetrieveAsync(SECRET_STATS_KEY);
@@ -62,7 +68,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading persistent secret metadata");
+            _persistentSecretsLoadError(Logger, ex);
         }
     }
 
@@ -82,7 +88,7 @@ public partial class SecretsManagementService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "SecretMetadata",
                     ["SecretId"] = metadata.SecretId,
@@ -106,7 +112,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting secret metadata for {SecretId}", metadata.SecretId);
+            _secretMetadataPersistError(Logger, metadata.SecretId, ex);
         }
     }
 
@@ -147,7 +153,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing persisted secret metadata for {SecretId}", secretId);
+            _secretMetadataRemovalError(Logger, secretId, ex);
         }
     }
 
@@ -192,7 +198,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating secret indexes for {SecretId}", metadata.SecretId);
+            _secretIndexUpdateError(Logger, metadata.SecretId, ex);
         }
     }
 
@@ -215,7 +221,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing secret indexes for {SecretId}", secretId);
+            _secretIndexRemovalError(Logger, secretId, ex);
         }
     }
 
@@ -236,7 +242,7 @@ public partial class SecretsManagementService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(365), // Keep audit logs for 1 year
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AuditLog",
                     ["SecretId"] = entry.SecretId,
@@ -247,7 +253,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting audit log for secret {SecretId}", entry.SecretId);
+            _auditLogPersistError(Logger, entry.SecretId, ex);
         }
     }
 
@@ -280,7 +286,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error retrieving audit history for secret {SecretId}", secretId);
+            _auditHistoryRetrievalError(Logger, secretId, ex);
         }
 
         return auditEntries.OrderByDescending(e => e.Timestamp).ToList();
@@ -314,7 +320,7 @@ public partial class SecretsManagementService
             {
                 Encrypt = false,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Statistics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O")
@@ -323,7 +329,7 @@ public partial class SecretsManagementService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting secret statistics");
+            _statisticsPersistError(Logger, ex);
         }
     }
 
@@ -354,11 +360,11 @@ public partial class SecretsManagementService
                 }
             }
 
-            Logger.LogInformation("Completed cleanup of old secrets data");
+            _cleanupCompleted(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during secrets data cleanup");
+            _cleanupError(Logger, ex);
         }
     }
 }

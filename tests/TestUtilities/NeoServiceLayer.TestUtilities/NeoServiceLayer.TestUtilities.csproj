@@ -20,11 +20,19 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="../../src/Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj" />
     <ProjectReference Include="../../src/Infrastructure/NeoServiceLayer.Infrastructure.Resilience/NeoServiceLayer.Infrastructure.Resilience.csproj" />
     <ProjectReference Include="../../src/Infrastructure/NeoServiceLayer.Infrastructure.Monitoring/NeoServiceLayer.Infrastructure.Monitoring.csproj" />
-    <ProjectReference Include="../../src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
   </ItemGroup>
+  <ItemGroup>
 
+    <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="Moq" />
+    <PackageReference Include="xunit" />
+    <PackageReference Include="xunit.runner.visualstudio" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" />
+    <PackageReference Include="coverlet.collector" />
+  </ItemGroup>
 </Project>

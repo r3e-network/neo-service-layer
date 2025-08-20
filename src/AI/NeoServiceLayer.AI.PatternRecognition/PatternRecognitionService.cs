@@ -1,14 +1,21 @@
-﻿using System.Text;
 using System.Text.Json;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using CoreConfiguration = NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Core.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using static NeoServiceLayer.Core.Models.DetectionSensitivity;
 using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
-using CoreModels = NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -17,9 +24,9 @@ namespace NeoServiceLayer.AI.PatternRecognition;
 /// </summary>
 public partial class PatternRecognitionService : AIServiceBase, IPatternRecognitionService
 {
-    private readonly Dictionary<string, AIModels.PatternModel> _models = new();
-    private readonly Dictionary<string, List<AIModels.PatternAnalysisResult>> _analysisHistory = new();
-    private readonly Dictionary<string, List<AIModels.AnomalyDetectionResult>> _anomalyHistory = new();
+    private readonly Dictionary<string, Models.PatternModel> _models = new();
+    private readonly Dictionary<string, List<Models.PatternAnalysisResult>> _analysisHistory = new();
+    private readonly Dictionary<string, List<Models.AnomalyDetectionResult>> _anomalyHistory = new();
     private readonly object _modelsLock = new();
     private readonly IPersistentStorageProvider? _storageProvider;
 
@@ -30,8 +37,8 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     /// <param name="configuration">The service configuration.</param>
     /// <param name="storageProvider">The storage provider.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
-    public PatternRecognitionService(ILogger<PatternRecognitionService> logger, IServiceConfiguration? configuration = null, IPersistentStorageProvider? storageProvider = null, IEnclaveManager? enclaveManager = null)
-        : base("PatternRecognitionService", "Fraud detection and behavioral analysis service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager, configuration)
+    public PatternRecognitionService(ILogger<PatternRecognitionService> logger, CoreConfiguration.IServiceConfiguration? configuration = null, IPersistentStorageProvider? storageProvider = null, IEnclaveManager? enclaveManager = null)
+        : base("PatternRecognitionService", "Fraud detection and behavioral analysis service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
         _storageProvider = storageProvider;
@@ -44,7 +51,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     /// <summary>
     /// Gets the service configuration.
     /// </summary>
-    protected new IServiceConfiguration? Configuration { get; }
+    protected new CoreConfiguration.IServiceConfiguration? Configuration { get; }
 
     /// <inheritdoc/>
     public async Task<string> CreatePatternModelAsync(AIModels.PatternModelDefinition definition, BlockchainType blockchainType)
@@ -68,7 +75,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 ModelId = modelId,
                 Name = definition.Name,
                 Description = definition.Description,
-                Type = AIModelType.PatternRecognition,
+                Type = AIModels.PatternType.Unknown, // Default pattern type
                 PatternType = definition.PatternType,
                 Algorithm = definition.Algorithm,
                 TrainedModel = trainedModel,
@@ -123,7 +130,26 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     detectionId);
 
                 // Convert Core request to AI request for enclave processing
-                var aiRequest = AIModels.FraudDetectionHelper.ConvertFromCore(request);
+                var aiRequest = new AIModels.FraudDetectionRequest
+                {
+                    TransactionId = request.TransactionId,
+                    TransactionData = request.TransactionData,
+                    Parameters = request.Parameters,
+                    Metadata = request.Parameters
+                };
+                
+                // Extract specific properties from transaction data
+                if (request.TransactionData != null)
+                {
+                    if (request.TransactionData.TryGetValue("Amount", out var amount))
+                        aiRequest.TransactionAmount = Convert.ToDecimal(amount);
+                    if (request.TransactionData.TryGetValue("IsNewAddress", out var isNew))
+                        aiRequest.IsNewAddress = Convert.ToBoolean(isNew);
+                    if (request.TransactionData.TryGetValue("HighFrequency", out var highFreq))
+                        aiRequest.HighFrequency = Convert.ToBoolean(highFreq);
+                    if (request.TransactionData.TryGetValue("UnusualTime", out var unusualTime))
+                        aiRequest.UnusualTimePattern = Convert.ToBoolean(unusualTime);
+                }
 
                 // Debug log the request details
                 Logger.LogDebug("AI Request - Amount: {Amount}, IsNewAddress: {IsNew}, HighFrequency: {HighFreq}, UnusualTime: {UnusualTime}",
@@ -149,7 +175,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     DetectedAt = DateTime.UtcNow,
                     Details = new Dictionary<string, object>
                     {
-                        ["analyzed_data_points"] = request.TransactionData.Count,
+                        ["analyzed_data_points"] = request.TransactionData?.Count ?? 0,
                         ["sensitivity"] = request.Sensitivity.ToString(),
                         ["fraud_score"] = fraudScore,
                         ["risk_level"] = DetermineRiskLevelFromScore(fraudScore).ToString()
@@ -192,7 +218,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     }
 
     /// <inheritdoc/>
-    public async Task<CoreModels.AnomalyDetectionResult> DetectAnomaliesAsync(CoreModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
+    public async Task<AIModels.AnomalyDetectionResult> DetectAnomaliesAsync(AIModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -210,22 +236,48 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 Logger.LogDebug("Detecting anomalies {DetectionId} for data points",
                     detectionId);
 
+                // Convert to Core model for detection
+                var coreRequest = new CoreModels.AnomalyDetectionRequest
+                {
+                    Data = new Dictionary<string, object>
+                    {
+                        ["ModelId"] = request.ModelId,
+                        ["DataPoints"] = request.DataPoints,
+                        ["FeatureNames"] = request.FeatureNames
+                    },
+                    Parameters = request.Parameters,
+                    Threshold = request.Parameters.ContainsKey("Threshold") 
+                        ? Convert.ToDouble(request.Parameters["Threshold"]) 
+                        : 0.95,
+                    WindowSize = request.Parameters.ContainsKey("WindowSize") 
+                        ? Convert.ToInt32(request.Parameters["WindowSize"]) 
+                        : 100
+                };
+                
                 // Detect anomalies within the enclave
-                var anomalies = await DetectAnomaliesInEnclaveAsync(request);
+                var anomalies = await DetectAnomaliesInEnclaveAsync(coreRequest);
                 var anomalyScore = CalculateAnomalyScore(anomalies);
 
-                var result = new CoreModels.AnomalyDetectionResult
+                var result = new AIModels.AnomalyDetectionResult
                 {
                     DetectionId = detectionId,
-                    DetectedAnomalies = anomalies.ToList(),
+                    DetectedAnomalies = anomalies.Select(a => new AIModels.Anomaly
+                    {
+                        Id = a.AnomalyId,
+                        Type = AIModels.AnomalyType.StatisticalOutlier, // Default type
+                        Description = a.Description,
+                        Severity = a.Score,
+                        Confidence = a.Score,
+                        DetectedAt = a.DetectedAt
+                    }).ToList(),
                     AnomalyScore = anomalyScore,
                     IsAnomalous = anomalies.Length > 0,
                     Confidence = anomalies.Length > 0 ? anomalies.Average(a => 0.8) : 0.5, // Simulated confidence
                     DetectedAt = DateTime.UtcNow,
                     Details = new Dictionary<string, object>
                     {
-                        ["total_data_points"] = request.Data?.Count ?? 0,
-                        ["anomaly_threshold"] = request.Threshold,
+                        ["total_data_points"] = request.DataPoints?.Length ?? 0,
+                        ["anomaly_threshold"] = coreRequest.Threshold,
                         ["anomaly_count"] = anomalies.Length
                     }
                 };
@@ -239,14 +291,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Logger.LogError(ex, "Failed to detect anomalies {DetectionId}", detectionId);
 
-                return new CoreModels.AnomalyDetectionResult
+                return new AIModels.AnomalyDetectionResult
                 {
                     DetectionId = detectionId,
                     DetectedAt = DateTime.UtcNow,
                     AnomalyScore = 0.0,
                     IsAnomalous = false,
                     Confidence = 0.0,
-                    DetectedAnomalies = new List<CoreModels.Anomaly>(),
+                    DetectedAnomalies = new List<AIModels.Anomaly>(),
                     Details = new Dictionary<string, object>
                     {
                         ["error"] = ex.Message
@@ -317,7 +369,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     BehaviorScore = riskScore,
                     RiskLevel = riskLevel,
                     IsNewUserProfile = isNewUser,
-                    BehaviorPatterns = behaviorPatterns,
+                    BehaviorPatterns = behaviorPatterns.Select(bp => new AIModels.DetectedPattern 
+                    { 
+                        Id = Guid.NewGuid().ToString(),
+                        Name = bp, 
+                        Description = bp,
+                        Confidence = 0.8,
+                        DetectedAt = DateTime.UtcNow
+                    }).ToList(),
                     RiskFactors = riskFactors,
                     DeviationFromProfile = deviationFromProfile,
                     Recommendations = GenerateBehaviorRecommendations(riskScore, riskFactors),
@@ -374,17 +433,15 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
                 var result = new AIModels.PatternAnalysisResult
                 {
-                    AnalysisId = analysisId,
+                    Id = analysisId,  // Set Id instead of AnalysisId
                     ModelId = request.ModelId,
                     InputData = request.InputData,
-                    DetectedPatterns = patterns.ToList(),
+                    Patterns = patterns,  // Set Patterns instead of DetectedPatterns
                     Confidence = confidence,
-                    ConfidenceScore = confidence,
-                    PatternsFound = patterns.Length,
                     AnalyzedAt = DateTime.UtcNow,
                     Success = true,
-                    Metadata = request.Metadata,
-                    AnalysisMetrics = new Dictionary<string, double>
+                    Metadata = request.Parameters,
+                    AnalysisMetrics = new Dictionary<string, object>
                     {
                         ["pattern_complexity"] = patterns.Length * 0.2,
                         ["relationship_density"] = Math.Min(1.0, patterns.Length * 0.15),
@@ -403,7 +460,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                             ["suspicious_nodes"] = new[] { "node_x", "node_y" }
                         }
                         : new Dictionary<string, object>(),
-                    ProcessingMetrics = new Dictionary<string, double>
+                    ProcessingMetrics = new Dictionary<string, object>
                     {
                         ["data_points_processed"] = GetDataPointsCount(request.InputData),
                         ["processing_time_ms"] = 300,
@@ -435,13 +492,13 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
                 return new AIModels.PatternAnalysisResult
                 {
-                    AnalysisId = analysisId,
+                    Id = analysisId,  // Set Id instead of AnalysisId
                     ModelId = request.ModelId,
                     InputData = request.InputData,
                     Success = false,
-                    ErrorMessage = ex.Message,
+                    Message = ex.Message,  // Use Message instead of ErrorMessage
                     AnalyzedAt = DateTime.UtcNow,
-                    Metadata = request.Metadata
+                    Metadata = request.Parameters  // Use Parameters instead of Metadata
                 };
             }
         });
@@ -560,7 +617,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         // Timing patterns (modifier)
         var timingModifier = profile.UnusualTimePatterns ? 0.15 : 0.0;
 
-        // Interaction patterns (modifier) 
+        // Interaction patterns (modifier)
         var interactionModifier = profile.SuspiciousAddressInteractions ? 0.1 : 0.0;
 
         // Weight frequency heavily (75%), amount moderately (15%), and apply modifiers (10%)
@@ -804,7 +861,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     ModelId = modelId,
                     Name = definition.Name,
                     Description = definition.Description,
-                    Type = definition.Type,
+                    Type = (AIModels.PatternType)(int)definition.Type,
                     CreatedAt = existingModel.CreatedAt,
                     UpdatedAt = DateTime.UtcNow,
                     IsActive = definition.IsActive,
@@ -932,7 +989,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             if (profile != null)
             {
                 // Update the LastUpdated timestamp to reflect when the profile was accessed
-                profile.LastUpdated = DateTime.UtcNow;
+                profile.UpdatedAt = DateTime.UtcNow;
 
                 Logger.LogInformation("Retrieved behavior profile for user {UserId} on blockchain {BlockchainType}",
                     userId, blockchainType);
@@ -959,7 +1016,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
 
             // Update the profile with current timestamp
             profile.UserId = userId;
-            profile.LastUpdated = DateTime.UtcNow;
+            profile.UpdatedAt = DateTime.UtcNow;
 
             var serializedProfile = JsonSerializer.Serialize(profile);
             await _storageProvider!.StoreAsync(key, Encoding.UTF8.GetBytes(serializedProfile));
@@ -991,7 +1048,14 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Logger.LogDebug("Classifying data {ClassificationId}", classificationId);
 
-                var classification = await ClassifyDataInEnclaveAsync(request);
+                // Convert Core model to local model for enclave processing
+                var localRequest = new AIModels.ClassificationRequest
+                {
+                    Data = request.Data,
+                    ModelId = request.ModelId ?? string.Empty,
+                    Parameters = request.Parameters
+                };
+                var classification = await ClassifyDataInEnclaveAsync(localRequest);
                 var confidence = await CalculateClassificationConfidenceAsync(classification);
 
                 var result = new CoreModels.ClassificationResult
@@ -999,13 +1063,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     ClassificationId = classificationId,
                     PredictedClass = classification,
                     Confidence = confidence,
-                    ClassifiedAt = DateTime.UtcNow,
-                    ClassProbabilities = new Dictionary<string, double> { [classification] = confidence },
-                    Details = new Dictionary<string, object>
-                    {
-                        ["classification_method"] = "enclave_analysis",
-                        ["data_size"] = request.Data?.Count ?? 0
-                    }
+                    ClassProbabilities = new Dictionary<string, double> { [classification] = confidence }
                 };
 
                 return result;
@@ -1017,10 +1075,9 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                 return new CoreModels.ClassificationResult
                 {
                     ClassificationId = classificationId,
-                    ClassifiedAt = DateTime.UtcNow,
                     PredictedClass = "Error",
                     Confidence = 0.0,
-                    Details = new Dictionary<string, object> { ["error"] = ex.Message }
+                    ClassProbabilities = new Dictionary<string, double> { ["Error"] = 0.0 }
                 };
             }
         });
@@ -1058,8 +1115,8 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
                     TransactionId = request.TransactionId,
                     FraudScore = fraudScore,
                     IsFraudulent = isFraudulent,
-                    RiskLevel = DetermineRiskLevel(fraudScore),
-                    RiskFactors = riskFactors,
+                    RiskLevel = DetermineRiskLevel(fraudScore).ToString(),
+                    RiskFactors = riskFactors.Select(kvp => kvp.Key).ToList(),
                     DetectedAt = DateTime.UtcNow,
                     Success = true
                 };
@@ -1085,194 +1142,92 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     // Implementation for Core interface
     async Task<Core.AnomalyDetectionResult> Core.IPatternRecognitionService.DetectAnomaliesAsync(Core.AnomalyDetectionRequest request, BlockchainType blockchainType)
     {
-        // Convert Core request (double[][]) to CoreModels request (Dictionary<string, object>)
-        var dataDict = new Dictionary<string, object>();
-        if (request.Data != null)
-        {
-            for (int i = 0; i < request.Data.Length; i++)
-            {
-                dataDict[$"row_{i}"] = request.Data[i];
-            }
-        }
+        // Convert Core request (AIAnalyticsTypes) to CoreModels request (Dictionary<string, object>)
+        var dataDict = request.DataPoints ?? new Dictionary<string, object>();
 
-        var coreModelsRequest = new CoreModels.AnomalyDetectionRequest
+        // Convert to AI request for processing
+        var aiRequest = new AIModels.AnomalyDetectionRequest
         {
-            Data = dataDict,
-            Threshold = request.Threshold
+            DataPoints = dataDict.Values.OfType<double>().ToArray(),
+            Threshold = request.Threshold,
+            Parameters = dataDict
         };
 
-        var result = await DetectAnomaliesAsync(coreModelsRequest, blockchainType);
+        var result = await DetectAnomaliesAsync(aiRequest, blockchainType);
 
-        // Convert CoreModels result to Core result
+        // Convert CoreModels result to Core result (AIAnalyticsTypes)
         return new Core.AnomalyDetectionResult
         {
-            AnalysisId = result.DetectionId,
-            IsAnomaly = new[] { result.IsAnomalous },
-            AnomalyScores = new[] { result.AnomalyScore },
-            AnomalyCount = result.IsAnomalous ? 1 : 0,
-            DetectionTime = result.DetectedAt,
-            ModelId = string.Empty,
-            Proof = string.Empty
+            IsAnomaly = result.IsAnomalous,
+            AnomalyScore = result.AnomalyScore,
+            AnomalyType = result.IsAnomalous ? "Statistical Outlier" : "Normal",
+            Details = result.Details ?? new Dictionary<string, object>()
         };
     }
 
     // Implementation for Core interface
     async Task<Core.FraudDetectionResult> Core.IPatternRecognitionService.DetectFraudAsync(Core.FraudDetectionRequest request, BlockchainType blockchainType)
     {
-        // Core.FraudDetectionRequest already has the same properties as CoreModels
+        // Convert Core.FraudDetectionRequest (AIAnalyticsTypes) to CoreModels
         var coreModelsRequest = new CoreModels.FraudDetectionRequest
         {
+            TransactionId = request.TransactionId,
             TransactionData = new Dictionary<string, object>
             {
-                ["transactionId"] = request.TransactionId,
-                ["fromAddress"] = request.FromAddress,
-                ["toAddress"] = request.ToAddress,
-                ["amount"] = request.Amount,
-                ["timestamp"] = request.Timestamp
+                ["UserId"] = request.UserId,
+                ["Amount"] = request.Amount
             },
-            Sensitivity = CoreModels.DetectionSensitivity.High
+            Parameters = request.Metadata,
+            Sensitivity = CoreModels.DetectionSensitivity.High,
+            Threshold = 0.6,
+            IncludeHistoricalAnalysis = true
         };
 
-        // Add features if provided
-        if (request.Features != null)
+        // Add metadata to transaction data
+        foreach (var kvp in request.Metadata)
         {
-            foreach (var kvp in request.Features)
-            {
-                coreModelsRequest.TransactionData[kvp.Key] = kvp.Value;
-            }
+            coreModelsRequest.TransactionData[kvp.Key] = kvp.Value;
         }
 
         var result = await DetectFraudAsync(coreModelsRequest, blockchainType);
 
-        // Convert CoreModels result to Core result
+        // Convert CoreModels result to Core result (AIAnalyticsTypes)
         return new Core.FraudDetectionResult
         {
-            TransactionId = request.TransactionId,
-            IsFraud = result.IsFraudulent,
-            FraudScore = result.RiskScore,
-            RiskFactors = result.RiskFactors?.Keys.ToArray() ?? Array.Empty<string>(),
-            Confidence = result.Confidence,
-            DetectionTime = result.DetectedAt,
-            ModelId = request.ModelId,
-            Proof = string.Empty
+            IsFraudulent = result.IsFraudulent,
+            RiskScore = result.RiskScore,
+            RiskFactors = result.RiskFactors?.Keys.ToList() ?? new List<string>(),
+            Recommendation = result.IsFraudulent ? "Block transaction and review" : "Transaction approved"
         };
     }
 
     // Implementation for Core interface
     async Task<Core.ClassificationResult> Core.IPatternRecognitionService.ClassifyDataAsync(Core.ClassificationRequest request, BlockchainType blockchainType)
     {
-        // Convert Core request (object[] InputData) to CoreModels request (Dictionary<string, object> Data)
-        var dataDict = new Dictionary<string, object>();
-        if (request.InputData != null && request.FeatureNames != null)
+        // Convert Core request (AIAnalyticsTypes) to CoreModels
+        var dataDict = request.Features ?? new Dictionary<string, object>();
+        
+        // Add the data as a feature
+        if (!string.IsNullOrEmpty(request.Data))
         {
-            for (int i = 0; i < Math.Min(request.InputData.Length, request.FeatureNames.Length); i++)
-            {
-                dataDict[request.FeatureNames[i]] = request.InputData[i];
-            }
-        }
-        else if (request.InputData != null)
-        {
-            for (int i = 0; i < request.InputData.Length; i++)
-            {
-                dataDict[$"feature_{i}"] = request.InputData[i];
-            }
+            dataDict["input_data"] = request.Data;
         }
 
         var coreModelsRequest = new CoreModels.ClassificationRequest
         {
             Data = dataDict,
-            ModelId = request.ModelId
+            ModelId = request.ClassificationModel
         };
 
         var result = await ClassifyDataAsync(coreModelsRequest, blockchainType);
 
-        // Convert CoreModels result to Core result
+        // Convert CoreModels result to Core result (AIAnalyticsTypes)
         return new Core.ClassificationResult
         {
-            ClassificationId = result.ClassificationId,
-            PredictedClasses = new[] { result.PredictedClass },
-            Probabilities = result.ClassProbabilities?.Values.ToArray() ?? Array.Empty<double>(),
+            PredictedClass = result.PredictedClass,
             Confidence = result.Confidence,
-            ClassificationTime = result.ClassifiedAt,
-            ModelId = request.ModelId,
-            Proof = string.Empty
+            ClassProbabilities = result.ClassProbabilities ?? new Dictionary<string, double>()
         };
-    }
-
-    /// <inheritdoc/>
-    public async Task<AIModels.AnomalyDetectionResult> DetectAnomaliesAsync(AIModels.AnomalyDetectionRequest request, BlockchainType blockchainType)
-    {
-        ArgumentNullException.ThrowIfNull(request);
-
-        if (!SupportsBlockchain(blockchainType))
-        {
-            throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
-        }
-
-        return await ExecuteInEnclaveAsync(async () =>
-        {
-            var detectionId = Guid.NewGuid().ToString();
-
-            try
-            {
-                Logger.LogDebug("AI Anomaly detection {DetectionId} for {DataPointCount} data points",
-                    detectionId, request.DataPoints.Length);
-
-                // Get threshold from parameters or use default
-                var threshold = request.Parameters.TryGetValue("threshold", out var thresholdObj)
-                    ? Convert.ToDouble(thresholdObj)
-                    : 0.95;
-
-                // Create Core request from AI request  
-                var coreRequest = new CoreModels.AnomalyDetectionRequest
-                {
-                    Data = ConvertDataPointsToDictionary(request.DataPoints, request.FeatureNames),
-                    Threshold = threshold
-                };
-
-                var anomalies = await DetectAnomaliesInEnclaveAsync(coreRequest);
-                var anomalyScore = CalculateAnomalyScore(anomalies);
-
-                // Convert Core.Anomaly to AI DetectedAnomaly
-                var aiAnomalies = anomalies.Select(a => new AIModels.DetectedAnomaly
-                {
-                    Id = a.AnomalyId,
-                    Type = a.Type.ToString(),
-                    Description = a.Description,
-                    Severity = a.Score,
-                    Confidence = 0.85, // Default confidence
-                    DataPoint = new Dictionary<string, object> { ["score"] = a.Score },
-                    DetectedAt = a.DetectedAt,
-                    DataPointIndex = 0, // Default index
-                    AnomalyType = ConvertCoreAnomalyTypeToAI(a.Type)
-                }).ToList();
-
-                var result = new AIModels.AnomalyDetectionResult
-                {
-                    DetectionId = detectionId,
-                    Anomalies = aiAnomalies,
-                    AnomalyScore = anomalyScore,
-                    DetectedAt = DateTime.UtcNow,
-                    Success = true,
-                    Metadata = request.Metadata
-                };
-
-                return result;
-            }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed AI anomaly detection {DetectionId}", detectionId);
-
-                return new AIModels.AnomalyDetectionResult
-                {
-                    DetectionId = detectionId,
-                    Success = false,
-                    ErrorMessage = ex.Message,
-                    DetectedAt = DateTime.UtcNow,
-                    Metadata = request.Metadata
-                };
-            }
-        });
     }
 
 
@@ -1292,7 +1247,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Name = "Default Fraud Detection Model",
                 Description = "General-purpose fraud detection model for blockchain transactions",
-                Type = CoreModels.AIModelType.Classification,
+                Type = AIModels.PatternRecognitionType.FraudDetection,
                 Version = "1.0.0",
                 PatternType = AIModels.PatternRecognitionType.FraudDetection,
                 DetectionAlgorithms = new List<string> { "RandomForest", "LogisticRegression" },
@@ -1325,7 +1280,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Name = "Default Anomaly Detection Model",
                 Description = "General-purpose anomaly detection model for blockchain behavior",
-                Type = ConvertToAIModelType(AIModels.PatternRecognitionType.AnomalyDetection),
+                Type = AIModels.PatternRecognitionType.AnomalyDetection,
                 Version = "1.0.0",
                 PatternType = AIModels.PatternRecognitionType.AnomalyDetection,
                 DetectionAlgorithms = new List<string> { "IsolationForest", "OneClassSVM" },
@@ -1357,7 +1312,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             {
                 Name = "Default Behavioral Analysis Model",
                 Description = "General-purpose behavioral analysis model for user patterns",
-                Type = CoreModels.AIModelType.Classification,
+                Type = AIModels.PatternRecognitionType.FraudDetection,
                 Version = "1.0.0",
                 PatternType = AIModels.PatternRecognitionType.BehavioralAnalysis,
                 DetectionAlgorithms = new List<string> { "GradientBoosting", "NeuralNetwork" },
@@ -1402,12 +1357,12 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
     /// </summary>
     /// <param name="request">The classification request.</param>
     /// <returns>The predicted class.</returns>
-    private async Task<string> ClassifyDataInEnclaveAsync(CoreModels.ClassificationRequest request)
+    private async Task<string> ClassifyDataInEnclaveAsync(AIModels.ClassificationRequest request)
     {
         await Task.Delay(150); // Simulate classification time
 
         // In production, this would use real ML models within the enclave
-        var dataSize = request.Data?.Count ?? 0;
+        var dataSize = request.Data?.Count() ?? 0;
         var hasModelId = !string.IsNullOrEmpty(request.ModelId);
 
         // Simple classification logic based on data characteristics
@@ -1807,7 +1762,7 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
             var amountRisk = request.TransactionAmount switch
             {
                 > 100000 => 0.9,  // Very high amounts
-                > 50000 => 0.75,  // High amounts  
+                > 50000 => 0.75,  // High amounts
                 > 15000 => 0.6,   // Medium-high amounts
                 > 10000 => 0.5,   // Medium amounts
                 >= 5000 => 0.38,  // Moderate amounts (reduced to ensure normal velocity passes)
@@ -1998,10 +1953,10 @@ public partial class PatternRecognitionService : AIServiceBase, IPatternRecognit
         {
             UserId = request.Address,
             TransactionFrequency = transactionHistory.Count,
-            AverageTransactionAmount = CalculateAverageAmount(transactionHistory),
+            AverageTransactionAmount = (double)CalculateAverageAmount(transactionHistory),
             UnusualTimePatterns = unusualTimePatterns,
             SuspiciousAddressInteractions = CheckSuspiciousInteractions(transactionHistory),
-            LastUpdated = DateTime.UtcNow
+            UpdatedAt = DateTime.UtcNow
         };
     }
 

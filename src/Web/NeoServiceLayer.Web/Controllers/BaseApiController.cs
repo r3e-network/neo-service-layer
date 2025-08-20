@@ -1,8 +1,17 @@
-﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Web.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Security.Claims;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.IO;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -159,7 +168,7 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>The service health status.</returns>
     [HttpGet("health")]
     [AllowAnonymous]
-    [ProducesResponseType(typeof(ServiceHealthStatus), 200)]
+    [ProducesResponseType(typeof(NeoServiceLayer.Core.ServiceHealthStatus), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 500)]
     public virtual async Task<IActionResult> GetHealth()
     {
@@ -186,7 +195,7 @@ public abstract class BaseApiController : ControllerBase
     /// <returns>The detailed service status.</returns>
     [HttpGet("status")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ServiceStatus>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Core.ServiceStatus>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 500)]
     public virtual async Task<IActionResult> GetStatus()
@@ -265,7 +274,7 @@ public abstract class BaseApiController : ControllerBase
     /// Checks the health of the service. Override in derived controllers for service-specific health checks.
     /// </summary>
     /// <returns>The service health status.</returns>
-    protected virtual async Task<ServiceHealthStatus> CheckServiceHealthAsync()
+    protected virtual async Task<NeoServiceLayer.Web.Models.ServiceHealthStatus> CheckServiceHealthAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
 
@@ -275,7 +284,7 @@ public abstract class BaseApiController : ControllerBase
         // Check real dependencies
         var dependencies = await CheckRealDependenciesAsync();
 
-        return new ServiceHealthStatus
+        return new NeoServiceLayer.Web.Models.ServiceHealthStatus
         {
             ServiceName = serviceName,
             Status = dependencies.All(d => d.Value == "Connected" || d.Value == "Active" || d.Value == "Available") ? "Healthy" : "Degraded",
@@ -290,7 +299,7 @@ public abstract class BaseApiController : ControllerBase
     /// Gets the detailed status of the service. Override in derived controllers for service-specific status.
     /// </summary>
     /// <returns>The service status.</returns>
-    protected virtual async Task<ServiceStatus> GetServiceStatusAsync()
+    protected virtual async Task<NeoServiceLayer.Web.Models.ServiceStatus> GetServiceStatusAsync()
     {
         var serviceName = GetType().Name.Replace("Controller", "");
 
@@ -299,23 +308,29 @@ public abstract class BaseApiController : ControllerBase
         var processMetrics = await GetProcessMetricsAsync();
         var configuration = await GetServiceConfigurationAsync();
 
-        return new ServiceStatus
+        return new NeoServiceLayer.Web.Models.ServiceStatus
         {
-            ServiceName = serviceName,
+            Name = serviceName,
             IsHealthy = systemMetrics.IsHealthy,
             Status = systemMetrics.IsHealthy ? "Running" : "Degraded",
-            Timestamp = DateTime.UtcNow,
+            LastCheck = DateTime.UtcNow,
             Version = GetAssemblyVersion(),
-            Uptime = processMetrics.Uptime,
-            RequestsToday = (int)Math.Min(processMetrics.RequestsToday, int.MaxValue),
-            SuccessRate = processMetrics.SuccessRate,
-            AverageResponseTime = processMetrics.AverageResponseTime,
-            ActiveConnections = processMetrics.ActiveConnections,
-            MemoryUsage = systemMetrics.MemoryUsagePercent,
-            CpuUsage = systemMetrics.CpuUsagePercent,
+            Uptime = (int)processMetrics.Uptime.TotalMinutes,
+            ResponseTime = processMetrics.AverageResponseTime.TotalMilliseconds,
             ErrorRate = processMetrics.ErrorRate,
-            LastError = processMetrics.LastError,
-            Configuration = configuration
+            Category = "Core",
+            Endpoint = $"/api/{serviceName.ToLower()}",
+            Metadata = new Dictionary<string, object>
+            {
+                ["RequestsToday"] = processMetrics.RequestsToday,
+                ["SuccessRate"] = processMetrics.SuccessRate,
+                ["ActiveConnections"] = processMetrics.ActiveConnections,
+                ["MemoryUsage"] = systemMetrics.MemoryUsagePercent,
+                ["CpuUsage"] = systemMetrics.CpuUsagePercent,
+                ["LastError"] = processMetrics.LastError ?? "None",
+                ["Configuration"] = configuration
+            },
+            HealthChecks = new List<NeoServiceLayer.Web.Models.HealthCheckResult>()
         };
     }
 
@@ -441,9 +456,11 @@ public abstract class BaseApiController : ControllerBase
         // Check network connectivity
         try
         {
-            using var ping = new System.Net.NetworkInformation.Ping();
-            var reply = await ping.SendPingAsync("8.8.8.8", 5000);
-            dependencies["Network"] = reply.Status == System.Net.NetworkInformation.IPStatus.Success ? "Available" : "Limited";
+            using (var ping = new System.Net.NetworkInformation.Ping())
+            {
+                var reply = await ping.SendPingAsync("8.8.8.8", 5000);
+                dependencies["Network"] = reply.Status == System.Net.NetworkInformation.IPStatus.Success ? "Available" : "Limited";
+            }
         }
         catch
         {
@@ -735,7 +752,7 @@ public abstract class BaseApiController : ControllerBase
         try
         {
             // Test connectivity to configured blockchain endpoints
-            using var httpClient = new HttpClient();
+            var httpClient = new HttpClient();
             httpClient.Timeout = TimeSpan.FromSeconds(10);
 
             // Test Neo N3 connectivity

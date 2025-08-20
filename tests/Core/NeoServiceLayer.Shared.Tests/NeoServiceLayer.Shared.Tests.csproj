@@ -25,7 +25,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Shared\NeoServiceLayer.Shared.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj" />
   </ItemGroup>
 
 </Project> 

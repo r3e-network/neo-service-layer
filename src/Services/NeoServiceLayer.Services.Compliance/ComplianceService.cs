@@ -1,20 +1,28 @@
-﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Compliance.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Compliance;
 
 /// <summary>
 /// Implementation of the Compliance service.
 /// </summary>
-public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplianceService
+public partial class ComplianceService : ServiceFramework.EnclaveBlockchainServiceBase, IComplianceService
 {
     private new readonly IEnclaveManager _enclaveManager;
-    private readonly IServiceConfiguration _configuration;
+    private readonly CoreConfig _configuration;
     private readonly IServiceProvider? _serviceProvider;
     private readonly Dictionary<string, ComplianceRule> _ruleCache = new();
     private readonly ConcurrentDictionary<string, ComplianceRule> _complianceRules = new();
@@ -37,7 +45,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
     /// <param name="serviceProvider">The service provider.</param>
     public ComplianceService(
         IEnclaveManager enclaveManager,
-        IServiceConfiguration configuration,
+        CoreConfig configuration,
         ILogger<ComplianceService> logger,
         IServiceProvider? serviceProvider = null)
         : base("Compliance", "Compliance Gateway Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
@@ -176,12 +184,17 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
 
             // Add additional information
             verificationResult.Timestamp = DateTime.UtcNow;
-            verificationResult.BlockchainType = blockchainType;
+            verificationResult.BlockchainType = blockchainType.ToString();
             verificationResult.VerificationId = Guid.NewGuid().ToString();
 
             // Generate a proof for the verification result
             string dataToSign = $"{verificationResult.VerificationId}:{transactionData}:{verificationResult.Passed}:{verificationResult.RiskScore}";
-            verificationResult.Proof = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key");
+            verificationResult.Proof = new Dictionary<string, object>
+            {
+                ["signature"] = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key") ?? string.Empty,
+                ["timestamp"] = DateTime.UtcNow,
+                ["algorithm"] = "ECDSA-SHA256"
+            };
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
@@ -235,12 +248,17 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
 
             // Add additional information
             verificationResult.Timestamp = DateTime.UtcNow;
-            verificationResult.BlockchainType = blockchainType;
+            verificationResult.BlockchainType = blockchainType.ToString();
             verificationResult.VerificationId = Guid.NewGuid().ToString();
 
             // Generate a proof for the verification result
             string dataToSign = $"{verificationResult.VerificationId}:{address}:{verificationResult.Passed}:{verificationResult.RiskScore}";
-            verificationResult.Proof = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key");
+            verificationResult.Proof = new Dictionary<string, object>
+            {
+                ["signature"] = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key") ?? string.Empty,
+                ["timestamp"] = DateTime.UtcNow,
+                ["algorithm"] = "ECDSA-SHA256"
+            };
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
@@ -294,12 +312,17 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
 
             // Add additional information
             verificationResult.Timestamp = DateTime.UtcNow;
-            verificationResult.BlockchainType = blockchainType;
+            verificationResult.BlockchainType = blockchainType.ToString();
             verificationResult.VerificationId = Guid.NewGuid().ToString();
 
             // Generate a proof for the verification result
             string dataToSign = $"{verificationResult.VerificationId}:{contractData}:{verificationResult.Passed}:{verificationResult.RiskScore}";
-            verificationResult.Proof = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key");
+            verificationResult.Proof = new Dictionary<string, object>
+            {
+                ["signature"] = await _enclaveManager.SignDataAsync(dataToSign, "compliance-service-key") ?? string.Empty,
+                ["timestamp"] = DateTime.UtcNow,
+                ["algorithm"] = "ECDSA-SHA256"
+            };
 
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
@@ -654,11 +677,11 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             var result = new ComplianceCheckResult
             {
                 CheckId = Guid.NewGuid().ToString(),
-                Passed = true,
+                IsCompliant = true,
                 ComplianceScore = 95,
                 CheckedAt = DateTime.UtcNow,
-                RiskLevel = "Low",
-                Details = new Dictionary<string, string>
+                RiskLevel = RiskLevel.Low,
+                Details = new Dictionary<string, object>
                 {
                     ["RuleId"] = "default-rule",
                     ["RuleName"] = "Default Compliance Check",
@@ -691,15 +714,15 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             {
                 ReportId = Guid.NewGuid().ToString(),
                 GeneratedAt = DateTime.UtcNow,
-                ReportType = request.ReportType,
-                Status = "Completed",
-                ReportData = new ComplianceReportData()
+                ReportType = Enum.TryParse<ReportType>(request.ReportType, out var reportType) ? reportType : ReportType.Compliance,
+                Status = ReportStatus.Completed,
+                ReportData = System.Text.Json.JsonSerializer.Serialize(new
                 {
-                    ["totalChecks"] = 100,
-                    ["passedChecks"] = 95,
-                    ["failedChecks"] = 5,
-                    ["averageRiskScore"] = 0.2m
-                }
+                    totalChecks = 100,
+                    passedChecks = 95,
+                    failedChecks = 5,
+                    averageRiskScore = 0.2m
+                })
             };
 
             return result;
@@ -726,11 +749,11 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             var rule = new ComplianceRule
             {
                 RuleId = Guid.NewGuid().ToString(),
-                RuleName = request.RuleName,
-                RuleType = request.RuleType,
-                RuleDescription = request.Description ?? "",
+                Name = request.RuleName,
+                Type = request.RuleType,
+                Description = request.Description ?? "",
                 Conditions = request.Conditions ?? new List<ComplianceCondition>(),
-                Enabled = request.IsEnabled,
+                IsActive = request.IsEnabled,
                 CreatedAt = DateTime.UtcNow,
                 LastModifiedAt = DateTime.UtcNow
             };
@@ -776,10 +799,10 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 };
             }
 
-            existingRule.RuleName = request.RuleName ?? existingRule.RuleName;
+            existingRule.Name = request.RuleName ?? existingRule.Name;
             existingRule.Description = request.Description ?? existingRule.Description;
             existingRule.Conditions = request.Conditions ?? existingRule.Conditions;
-            existingRule.IsEnabled = request.IsEnabled ?? existingRule.IsEnabled;
+            existingRule.IsActive = request.IsEnabled ?? existingRule.IsActive;
             existingRule.LastModifiedAt = DateTime.UtcNow;
 
             var success = await UpdateComplianceRuleAsync(existingRule, blockchainType);
@@ -842,8 +865,8 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         {
             var allRules = await GetComplianceRulesAsync(blockchainType);
             var filteredRules = allRules
-                .Where(r => string.IsNullOrEmpty(request.RuleType) || r.RuleType == request.RuleType)
-                .Where(r => !request.IsEnabledOnly || r.IsEnabled)
+                .Where(r => string.IsNullOrEmpty(request.RuleType) || r.Type == request.RuleType)
+                .Where(r => !request.IsEnabledOnly || r.IsActive)
                 .Skip(request.Skip)
                 .Take(request.Take)
                 .ToList();
@@ -878,11 +901,10 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             return new AuditResult
             {
                 AuditId = Guid.NewGuid().ToString(),
-                Status = AuditStatus.Running,
-                Success = true,
-                Message = "Audit started successfully",
+                Status = AuditStatus.InProgress,
+                Summary = "Audit started successfully",
                 StartedAt = DateTime.UtcNow,
-                EstimatedCompletion = DateTime.UtcNow.AddHours(1)
+                Progress = 0
             };
         }
         catch (Exception ex)
@@ -907,11 +929,9 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             return new AuditResult
             {
                 AuditId = request.AuditId,
-                Status = AuditStatus.Running,
-                Success = true,
-                Message = "Audit is currently running",
+                Status = AuditStatus.InProgress,
+                Summary = "Audit is currently running",
                 StartedAt = DateTime.UtcNow.AddMinutes(-30),
-                EstimatedCompletion = DateTime.UtcNow.AddMinutes(30),
                 Progress = 50
             };
         }
@@ -939,8 +959,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 ViolationId = Guid.NewGuid().ToString(),
                 Success = true,
                 Message = "Violation reported successfully",
-                Timestamp = DateTime.UtcNow,
-                Severity = request.Severity,
+                ReportedAt = DateTime.UtcNow,
                 Status = ViolationStatus.Open
             };
         }
@@ -967,8 +986,8 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             {
                 Violations = new List<ComplianceViolation>(),
                 TotalCount = 0,
-                Success = true,
-                Timestamp = DateTime.UtcNow
+                Page = 1,
+                PageSize = 10
             };
         }
         catch (Exception ex)
@@ -994,7 +1013,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             {
                 PlanId = Guid.NewGuid().ToString(),
                 Success = true,
-                Message = "Remediation plan created successfully",
+                Status = RemediationStatus.NotStarted,
                 CreatedAt = DateTime.UtcNow,
                 EstimatedCompletion = DateTime.UtcNow.AddDays(7)
             };
@@ -1020,16 +1039,15 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
         {
             return new ComplianceDashboardResult
             {
-                Success = true,
-                GeneratedAt = DateTime.UtcNow,
-                Metrics = new Dictionary<string, decimal>
+                OverallComplianceScore = _successCount > 0 ? (_successCount * 100.0 / (_successCount + _failureCount)) : 0,
+                Metrics = new ComplianceMetrics
                 {
-                    ["totalRules"] = _ruleCache.Count,
-                    ["activeRules"] = _ruleCache.Values.Count(r => r.IsEnabled),
-                    ["totalChecks"] = _requestCount,
-                    ["successfulChecks"] = _successCount,
-                    ["failedChecks"] = _failureCount
-                }
+                    TotalChecks = _requestCount,
+                    PassedChecks = _successCount,
+                    FailedChecks = _failureCount,
+                    ComplianceScore = _requestCount > 0 ? (_successCount * 100.0 / _requestCount) : 0
+                },
+                GeneratedAt = DateTime.UtcNow
             };
         }
         catch (Exception ex)
@@ -1054,11 +1072,6 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             return new CertificationResult
             {
                 CertificationId = Guid.NewGuid().ToString(),
-                Success = true,
-                Message = "Certification request submitted successfully",
-                RequestedAt = DateTime.UtcNow,
-                EstimatedCompletion = DateTime.UtcNow.AddDays(30),
-                CertificationType = request.CertificationType,
                 Status = CertificationStatus.Pending
             };
         }
@@ -1114,16 +1127,10 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             return new KycVerificationResult
             {
                 VerificationId = verificationId,
-                Success = true,
-                Status = "Verified",
-                VerificationLevel = request.VerificationLevel,
-                Details = new VerificationDetails
-                {
-                    Method = "DocumentAndBiometric",
-                    Steps = verificationSteps,
-                    ConfidenceScore = 0.95,
-                    Notes = "All verification checks passed"
-                },
+                IsVerified = true,
+                Status = KycStatus.Approved,
+                ConfidenceScore = 95.0,
+                Issues = new List<string>(),
                 VerifiedAt = DateTime.UtcNow
             };
         }
@@ -1149,21 +1156,10 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             return new KycStatusResult
             {
                 UserId = request.UserId,
-                Status = "Verified",
-                VerificationLevel = "Enhanced",
-                LastUpdated = DateTime.UtcNow.AddDays(-30),
-                ExpiresAt = DateTime.UtcNow.AddYears(2),
-                History = request.IncludeHistory ? new List<KycHistoryEntry>
-                {
-                    new KycHistoryEntry
-                    {
-                        EntryId = Guid.NewGuid().ToString(),
-                        Action = "Initial Verification",
-                        Status = "Completed",
-                        Timestamp = DateTime.UtcNow.AddDays(-30),
-                        PerformedBy = "System"
-                    }
-                } : null
+                Status = KycStatus.Approved,
+                Level = KycLevel.Enhanced,
+                LastVerifiedAt = DateTime.UtcNow.AddDays(-30),
+                ExpiresAt = DateTime.UtcNow.AddYears(2)
             };
         }
         catch (Exception ex)
@@ -1194,23 +1190,30 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             {
                 screeningResults.Add(new ScreeningResult
                 {
-                    ScreeningType = screeningType,
-                    MatchFound = false,
+                    Type = screeningType,
+                    IsClear = true,
                     Matches = new List<string>(),
-                    Confidence = 0.95
+                    RiskScore = 0.0
                 });
             }
 
             return new AmlScreeningResult
             {
                 ScreeningId = screeningId,
-                TransactionId = request.TransactionId,
-                Passed = riskScore < request.RiskThreshold,
+                Cleared = riskScore < request.RiskThreshold,
                 RiskScore = riskScore,
-                Results = screeningResults,
-                Recommendations = riskScore > 50
-                    ? new List<string> { "Enhanced due diligence recommended", "Monitor future transactions" }
-                    : new List<string> { "Standard monitoring sufficient" },
+                Alerts = riskScore > 50 
+                    ? new List<AmlAlert> 
+                    { 
+                        new AmlAlert 
+                        { 
+                            AlertId = Guid.NewGuid().ToString(),
+                            AlertType = "HighRisk",
+                            Description = "Transaction risk exceeds threshold",
+                            Severity = "High"
+                        }
+                    }
+                    : new List<AmlAlert>(),
                 ScreenedAt = DateTime.UtcNow
             };
         }
@@ -1240,16 +1243,8 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 ReportId = reportId,
                 Success = true,
                 Status = "Filed",
-                CaseNumber = $"SAR-{DateTime.UtcNow:yyyyMMdd}-{reportId.Substring(0, 8)}",
-                AuthoritiesNotified = request.NotifyAuthorities,
-                NotificationDetails = request.NotifyAuthorities ? new NotificationDetails
-                {
-                    NotificationId = Guid.NewGuid().ToString(),
-                    Recipients = new List<string> { "compliance@authority.gov" },
-                    SentAt = DateTime.UtcNow,
-                    Method = "SecureAPI"
-                } : null,
-                CreatedAt = DateTime.UtcNow
+                FiledAt = DateTime.UtcNow,
+                RegulatoryReference = $"SAR-{DateTime.UtcNow:yyyyMMdd}-{reportId.Substring(0, 8)}"
             };
         }
         catch (Exception ex)
@@ -1368,7 +1363,7 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
                 EntityId = request.EntityId,
                 OverallRiskScore = overallScore,
                 RiskLevel = GetRiskLevel(overallScore),
-                Factors = riskFactors,
+                Factors = riskFactors.ToDictionary(f => f.Name, f => (double)f.ScoreContribution),
                 Mitigations = GenerateMitigations(riskFactors),
                 AssessedAt = DateTime.UtcNow
             };
@@ -1396,30 +1391,30 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
             {
                 EntityId = request.EntityId,
                 CurrentRiskScore = 35,
-                RiskLevel = "Medium",
+                RiskLevel = RiskLevel.Medium,
                 History = new List<RiskHistoryEntry>
                 {
                     new RiskHistoryEntry
                     {
                         Timestamp = DateTime.UtcNow.AddDays(-30),
                         RiskScore = 25,
-                        RiskLevel = "Low",
+                        RiskLevel = RiskLevel.Low,
                         Trigger = "Initial Assessment"
                     },
                     new RiskHistoryEntry
                     {
                         Timestamp = DateTime.UtcNow.AddDays(-15),
                         RiskScore = 35,
-                        RiskLevel = "Medium",
+                        RiskLevel = RiskLevel.Medium,
                         Trigger = "Transaction Pattern Change"
                     }
                 },
-                RiskCategories = new Dictionary<string, int>
+                RiskCategories = new Dictionary<string, double>
                 {
-                    ["TransactionVolume"] = 30,
-                    ["GeographicRisk"] = 40,
-                    ["CustomerType"] = 35,
-                    ["ProductRisk"] = 35
+                    ["TransactionVolume"] = 30.0,
+                    ["GeographicRisk"] = 40.0,
+                    ["CustomerType"] = 35.0,
+                    ["ProductRisk"] = 35.0
                 },
                 DetailedAnalysis = request.IncludeDetails ? new RiskAnalysis
                 {
@@ -1474,17 +1469,17 @@ public partial class ComplianceService : EnclaveBlockchainServiceBase, IComplian
 
     private int CalculateOverallRiskScore(List<RiskFactorResult> factors)
     {
-        return Math.Min(factors.Sum(f => f.ScoreContribution), 100);
+        return (int)Math.Min(factors.Sum(f => f.ScoreContribution), 100);
     }
 
-    private string GetRiskLevel(int score)
+    private RiskLevel GetRiskLevel(int score)
     {
         return score switch
         {
-            < 25 => "Low",
-            < 50 => "Medium",
-            < 75 => "High",
-            _ => "Critical"
+            < 25 => RiskLevel.Low,
+            < 50 => RiskLevel.Medium,
+            < 75 => RiskLevel.High,
+            _ => RiskLevel.Critical
         };
     }
 

@@ -1,4 +1,8 @@
-﻿namespace NeoServiceLayer.Infrastructure.Persistence;
+using System;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+
+namespace NeoServiceLayer.Infrastructure.Persistence;
 
 /// <summary>
 /// Interface for persistent storage providers in the Neo Service Layer.
@@ -9,7 +13,7 @@ public interface IPersistentStorageProvider : IDisposable
     /// <summary>
     /// Gets the name of the storage provider.
     /// </summary>
-    string ProviderName { get; }
+    string Name { get; }
 
     /// <summary>
     /// Gets whether the storage provider is initialized.
@@ -44,21 +48,21 @@ public interface IPersistentStorageProvider : IDisposable
     /// <param name="data">The data to store.</param>
     /// <param name="options">Storage options.</param>
     /// <returns>True if successful, false otherwise.</returns>
-    Task<bool> StoreAsync(string key, byte[] data, StorageOptions? options = null);
+    Task<bool> StoreDataAsync(string key, byte[] data, StorageOptions? options = null);
 
     /// <summary>
     /// Retrieves data with the specified key.
     /// </summary>
     /// <param name="key">The storage key.</param>
     /// <returns>The retrieved data or null if not found.</returns>
-    Task<byte[]?> RetrieveAsync(string key);
+    Task<byte[]?> RetrieveDataAsync(string key);
 
     /// <summary>
     /// Deletes data with the specified key.
     /// </summary>
     /// <param name="key">The storage key.</param>
     /// <returns>True if successful, false otherwise.</returns>
-    Task<bool> DeleteAsync(string key);
+    Task<bool> DeleteDataAsync(string key);
 
     /// <summary>
     /// Checks if data exists with the specified key.
@@ -80,7 +84,7 @@ public interface IPersistentStorageProvider : IDisposable
     /// <param name="prefix">The key prefix.</param>
     /// <param name="limit">Maximum number of keys to return.</param>
     /// <returns>The list of keys.</returns>
-    Task<IEnumerable<string>> ListKeysAsync(string? prefix = null, int limit = 1000);
+    Task<IEnumerable<string>> ListKeysAsync(string prefix = "", int limit = 1000);
 
     /// <summary>
     /// Gets storage statistics.
@@ -118,7 +122,7 @@ public interface IPersistentStorageProvider : IDisposable
     /// Validates the integrity of the storage.
     /// </summary>
     /// <returns>The validation result.</returns>
-    Task<StorageValidationResult> ValidateIntegrityAsync();
+    Task<StorageValidationResult> ValidateAsync();
 }
 
 /// <summary>
@@ -129,12 +133,12 @@ public class StorageOptions
     /// <summary>
     /// Gets or sets whether to encrypt the data.
     /// </summary>
-    public bool Encrypt { get; set; } = true;
+    public bool Encrypt { get; set; }
 
     /// <summary>
     /// Gets or sets whether to compress the data.
     /// </summary>
-    public bool Compress { get; set; } = true;
+    public bool Compress { get; set; }
 
     /// <summary>
     /// Gets or sets the encryption key to use.
@@ -154,7 +158,7 @@ public class StorageOptions
     /// <summary>
     /// Gets or sets custom metadata for the storage entry.
     /// </summary>
-    public Dictionary<string, string> Metadata { get; set; } = new();
+    public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
 /// <summary>
@@ -215,12 +219,12 @@ public class StorageMetadata
     /// <summary>
     /// Gets or sets the data checksum.
     /// </summary>
-    public string Checksum { get; set; } = string.Empty;
+    public string? Checksum { get; set; }
 
     /// <summary>
     /// Gets or sets custom metadata.
     /// </summary>
-    public Dictionary<string, string> CustomMetadata { get; set; } = new();
+    public Dictionary<string, object> CustomMetadata { get; set; } = new();
 }
 
 /// <summary>
@@ -313,27 +317,27 @@ public enum CompressionAlgorithm
     /// <summary>
     /// No compression.
     /// </summary>
-    None,
+    None = 0,
 
     /// <summary>
     /// LZ4 compression (fast).
     /// </summary>
-    LZ4,
+    LZ4 = 1,
 
     /// <summary>
     /// GZip compression (balanced).
     /// </summary>
-    GZip,
+    GZip = 2,
 
     /// <summary>
     /// Brotli compression (high compression).
     /// </summary>
-    Brotli,
+    Brotli = 3,
 
     /// <summary>
     /// LZMA compression (highest compression).
     /// </summary>
-    LZMA
+    LZMA = 4
 }
 
 /// <summary>
@@ -358,14 +362,14 @@ public interface IStorageTransaction : IDisposable
     /// <param name="data">The data to store.</param>
     /// <param name="options">Storage options.</param>
     /// <returns>True if successful, false otherwise.</returns>
-    Task<bool> StoreAsync(string key, byte[] data, StorageOptions? options = null);
+    Task<bool> StoreDataAsync(string key, byte[] data, StorageOptions? options = null);
 
     /// <summary>
     /// Deletes data within the transaction.
     /// </summary>
     /// <param name="key">The storage key.</param>
     /// <returns>True if successful, false otherwise.</returns>
-    Task<bool> DeleteAsync(string key);
+    Task<bool> DeleteDataAsync(string key);
 
     /// <summary>
     /// Commits the transaction.

@@ -34,11 +34,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\AI\NeoServiceLayer.AI.PatternRecognition\NeoServiceLayer.AI.PatternRecognition.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
-    <ProjectReference Include="..\..\..\src\Tee\NeoServiceLayer.Tee.Host\NeoServiceLayer.Tee.Host.csproj" />
-    <ProjectReference Include="..\..\Tee\NeoServiceLayer.Tee.Host.Tests\NeoServiceLayer.Tee.Host.Tests.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/AI/NeoServiceLayer.AI.PatternRecognition/NeoServiceLayer.AI.PatternRecognition.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Storage/NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Host.Tests/NeoServiceLayer.Tee.Host.Tests.csproj" />
   </ItemGroup>
 
 </Project>

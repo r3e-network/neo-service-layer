@@ -1,7 +1,23 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Permissions.Models;
+
+/// <summary>
+/// Result of a policy operation.
+/// </summary>
+public class PolicyResult
+{
+    public bool Success { get; set; }
+    public string PolicyId { get; set; } = string.Empty;
+    public string Message { get; set; } = string.Empty;
+    public Dictionary<string, object> Metadata { get; set; } = new();
+}
 
 /// <summary>
 /// Represents a permission in the system.

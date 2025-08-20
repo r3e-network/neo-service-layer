@@ -1,11 +1,18 @@
-﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health.Storage;
+using NeoServiceLayer.Services.Health.Models;
 using NeoServiceLayer.Services.Storage;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Health.Tests.Storage;
 
@@ -34,7 +41,7 @@ public class HealthStorageHelperTests
             ["node1"] = new NodeHealthReport
             {
                 NodeAddress = "node1",
-                Status = NodeStatus.Online,
+                Status = HealthStatus.Healthy,
                 UptimePercentage = 99.5
             }
         };
@@ -52,7 +59,7 @@ public class HealthStorageHelperTests
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
         result["node1"].NodeAddress.Should().Be("node1");
-        result["node1"].Status.Should().Be(NodeStatus.Online);
+        result["node1"].Status.Should().Be(HealthStatus.Healthy);
     }
 
     [Fact]
@@ -97,8 +104,8 @@ public class HealthStorageHelperTests
             {
                 Id = "alert1",
                 NodeAddress = "node1",
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighResponseTime",
+                Severity = AlertSeverity.Warning,
+                AlertType = AlertType.Performance,
                 Message = "Test alert"
             }
         };
@@ -116,7 +123,7 @@ public class HealthStorageHelperTests
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
         result["alert1"].Id.Should().Be("alert1");
-        result["alert1"].Severity.Should().Be(HealthAlertSeverity.Warning);
+        result["alert1"].Severity.Should().Be(AlertSeverity.Warning);
     }
 
     [Fact]
@@ -127,7 +134,7 @@ public class HealthStorageHelperTests
         {
             ["node1"] = new HealthThreshold
             {
-                MaxResponseTime = TimeSpan.FromSeconds(5),
+                MaxResponseTime = 5000,
                 MinUptimePercentage = 95.0
             }
         };
@@ -144,7 +151,7 @@ public class HealthStorageHelperTests
         // Assert
         result.Should().NotBeNull();
         result.Should().HaveCount(1);
-        result["node1"].MaxResponseTime.Should().Be(TimeSpan.FromSeconds(5));
+        result["node1"].MaxResponseTime.Should().Be(5000);
         result["node1"].MinUptimePercentage.Should().Be(95.0);
     }
 
@@ -157,7 +164,7 @@ public class HealthStorageHelperTests
             ["node1"] = new NodeHealthReport
             {
                 NodeAddress = "node1",
-                Status = NodeStatus.Online
+                Status = HealthStatus.Healthy
             }
         };
 
@@ -182,7 +189,7 @@ public class HealthStorageHelperTests
             {
                 Id = "alert1",
                 NodeAddress = "node1",
-                Severity = HealthAlertSeverity.Error
+                Severity = AlertSeverity.Critical
             }
         };
 
@@ -205,7 +212,7 @@ public class HealthStorageHelperTests
         {
             ["node1"] = new HealthThreshold
             {
-                MaxResponseTime = TimeSpan.FromSeconds(10),
+                MaxResponseTime = 10000,
                 MinUptimePercentage = 90.0
             }
         };

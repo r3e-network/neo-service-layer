@@ -1,0 +1,70 @@
+{
+  "timestamp": "/home/ubuntu/neo-service-layer",
+  "total_assemblies": 10,
+  "passed_assemblies": 10,
+  "failed_assemblies": 0,
+  "error_assemblies": 0,
+  "total_tests": 630,
+  "assemblies": [
+    {
+      "name": "NeoServiceLayer.AI.Prediction.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/AI/NeoServiceLayer.AI.Prediction.Tests/bin/Release/net9.0/NeoServiceLayer.AI.Prediction.Tests.dll",
+      "tests": 28,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Core.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Core/NeoServiceLayer.Core.Tests/bin/Release/net9.0/NeoServiceLayer.Core.Tests.dll",
+      "tests": 239,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Neo.N3.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Blockchain/NeoServiceLayer.Neo.N3.Tests/bin/Release/net9.0/NeoServiceLayer.Neo.N3.Tests.dll",
+      "tests": 11,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Neo.X.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Blockchain/NeoServiceLayer.Neo.X.Tests/bin/Release/net9.0/NeoServiceLayer.Neo.X.Tests.dll",
+      "tests": 17,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Performance.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Performance/NeoServiceLayer.Performance.Tests/bin/Release/net9.0/NeoServiceLayer.Performance.Tests.dll",
+      "tests": 8,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Compliance.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Compliance.Tests/bin/Release/net9.0/NeoServiceLayer.Services.Compliance.Tests.dll",
+      "tests": 10,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Services.EventSubscription.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.EventSubscription.Tests/bin/Release/net9.0/NeoServiceLayer.Services.EventSubscription.Tests.dll",
+      "tests": 11,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Services.NetworkSecurity.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.NetworkSecurity.Tests/bin/Release/net9.0/NeoServiceLayer.Services.NetworkSecurity.Tests.dll",
+      "tests": 15,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Shared.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/bin/Release/net9.0/NeoServiceLayer.Shared.Tests.dll",
+      "tests": 282,
+      "status": "passed"
+    },
+    {
+      "name": "NeoServiceLayer.Tee.Host.Tests.dll",
+      "path": "/home/ubuntu/neo-service-layer/tests/AI/NeoServiceLayer.AI.Prediction.Tests/bin/Release/net9.0/NeoServiceLayer.Tee.Host.Tests.dll",
+      "tests": 9,
+      "status": "passed"
+    }
+  ]
+}

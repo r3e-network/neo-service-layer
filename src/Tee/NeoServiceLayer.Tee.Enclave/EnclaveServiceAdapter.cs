@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -197,4 +203,75 @@ public class EnclaveServiceAdapter : IEnclaveService
         // Enclave service has no external dependencies
         return await Task.FromResult(true);
     }
+
+    /// <inheritdoc/>
+    public async Task<string?> GetAttestationAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Getting attestation report...");
+
+            if (!IsEnclaveInitialized)
+            {
+                throw new InvalidOperationException("Enclave is not initialized");
+            }
+
+            var attestation = _enclaveWrapper.GetAttestation();
+
+            // Convert attestation to JSON string
+            var report = new
+            {
+                Provider = "SGX",
+                Timestamp = DateTime.UtcNow,
+                Data = Convert.ToBase64String(attestation ?? Array.Empty<byte>()),
+                IsValid = attestation != null && attestation.Length > 0
+            };
+
+            return await Task.FromResult(System.Text.Json.JsonSerializer.Serialize(report));
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error getting attestation");
+            throw;
+        }
+    }
+
+    /// <inheritdoc/>
+    public async Task<bool> ValidateEnclaveAsync()
+    {
+        try
+        {
+            _logger.LogInformation("Validating enclave...");
+
+            if (!IsEnclaveInitialized)
+            {
+                return false;
+            }
+
+            // Perform validation checks
+            var trustedTime = _enclaveWrapper.GetTrustedTime();
+            var attestation = _enclaveWrapper.GetAttestation();
+
+            var isValid = trustedTime > 0 && attestation != null && attestation.Length > 0;
+
+            if (isValid)
+            {
+                _logger.LogInformation("Enclave validation successful");
+            }
+            else
+            {
+                _logger.LogWarning("Enclave validation failed");
+            }
+
+            return await Task.FromResult(isValid);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error validating enclave");
+            return false;
+        }
+    }
+
+    /// <inheritdoc/>
+    public bool HasEnclaveCapabilities => true;
 }

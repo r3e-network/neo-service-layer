@@ -1,22 +1,31 @@
-﻿using System.Text.Json;
+extern alias EnclaveStorageAlias;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.AbstractAccount.Models;
-using NeoServiceLayer.Services.EnclaveStorage;
+using EnclaveModels = EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage.Models;
+using EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.AbstractAccount;
 
 /// <summary>
 /// Implementation of the Abstract Account Service that provides account abstraction functionality.
 /// </summary>
-public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbstractAccountService
+public partial class AbstractAccountService : ServiceFramework.EnclaveBlockchainServiceBase, IAbstractAccountService
 {
     private readonly Dictionary<string, AbstractAccountInfo> _accounts = new();
     private readonly Dictionary<string, List<TransactionHistoryItem>> _transactionHistory = new();
     private readonly object _accountsLock = new();
     private readonly SGXPersistence _sgxPersistence;
+    private readonly IEnclaveStorageService? _enclaveStorage;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="AbstractAccountService"/> class.
@@ -30,6 +39,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         IEnclaveStorageService? enclaveStorage = null)
         : base("AbstractAccountService", "Account abstraction and smart wallet functionality", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
+        _enclaveStorage = enclaveStorage;
         _sgxPersistence = new SGXPersistence("AbstractAccountService", enclaveStorage, logger);
         AddCapability<IAbstractAccountService>();
         AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
@@ -39,11 +49,17 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
     /// <summary>
     /// Inner class for SGX persistence operations.
     /// </summary>
-    private class SGXPersistence : SGXPersistenceBase
+    private class SGXPersistence
     {
+        private readonly IEnclaveStorageService? _enclaveStorage;
+        private readonly ILogger _logger;
+        private readonly string _serviceName;
+        
         public SGXPersistence(string serviceName, IEnclaveStorageService? enclaveStorage, ILogger logger)
-            : base(serviceName, enclaveStorage, logger)
         {
+            _serviceName = serviceName;
+            _enclaveStorage = enclaveStorage;
+            _logger = logger;
         }
 
         public async Task<bool> StoreAccountAsync(string accountId, AbstractAccountInfo account, BlockchainType blockchainType)
@@ -76,6 +92,54 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
         public async Task<List<TransactionHistoryItem>?> GetTransactionHistoryAsync(string accountId, BlockchainType blockchainType)
         {
             return await RetrieveSecurelyAsync<List<TransactionHistoryItem>>($"history:{accountId}", blockchainType);
+        }
+        
+        private async Task<bool> StoreSecurelyAsync<T>(string key, T data, Dictionary<string, object> metadata, BlockchainType blockchainType)
+        {
+            if (_enclaveStorage == null)
+                return false;
+                
+            try
+            {
+                var json = System.Text.Json.JsonSerializer.Serialize(data);
+                var sealRequest = new EnclaveModels.SealDataRequest
+                {
+                    Key = $"{_serviceName}:{key}",
+                    Data = System.Text.Encoding.UTF8.GetBytes(json),
+                    Metadata = metadata
+                };
+                
+                var result = await _enclaveStorage.SealDataAsync(sealRequest, BlockchainType.NeoN3);
+                return result.Success;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to store data for key {Key}", key);
+                return false;
+            }
+        }
+        
+        private async Task<T?> RetrieveSecurelyAsync<T>(string key, BlockchainType blockchainType)
+        {
+            if (_enclaveStorage == null)
+                return default;
+                
+            try
+            {
+                var storageKey = $"{_serviceName}:{key}";
+                var unsealResult = await _enclaveStorage.UnsealDataAsync(storageKey, BlockchainType.NeoN3);
+                
+                if (!unsealResult.Success || unsealResult.Data == null || unsealResult.Data.Length == 0)
+                    return default;
+                    
+                var json = System.Text.Encoding.UTF8.GetString(unsealResult.Data);
+                return System.Text.Json.JsonSerializer.Deserialize<T>(json);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to retrieve data for key {Key}", key);
+                return default;
+            }
         }
     }
 
@@ -196,7 +260,7 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
                     ToAddress = request.ToAddress,
                     Value = request.Value,
                     GasUsed = txResult.GasUsed,
-                    Status = txResult.Success ? TransactionStatus.Success : TransactionStatus.Failed,
+                    Status = txResult.Success ? Models.TransactionStatus.Success : Models.TransactionStatus.Failed,
                     ExecutedAt = DateTime.UtcNow,
                     Metadata = request.Metadata
                 };
@@ -761,7 +825,11 @@ public partial class AbstractAccountService : EnclaveBlockchainServiceBase, IAbs
             Logger.LogDebug("Loading accounts from SGX storage");
 
             // List all stored accounts
-            var storedItems = await _sgxPersistence.ListStoredItemsAsync("account:", BlockchainType.NeoN3);
+            var listRequest = new EnclaveModels.ListSealedItemsRequest
+            {
+                Service = "account:"
+            };
+            var storedItems = await _enclaveStorage.ListSealedItemsAsync(listRequest, BlockchainType.NeoN3);
             if (storedItems == null || storedItems.ItemCount == 0)
             {
                 Logger.LogDebug("No accounts found in SGX storage");

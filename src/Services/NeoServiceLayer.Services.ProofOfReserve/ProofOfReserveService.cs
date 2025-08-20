@@ -1,16 +1,24 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
 /// <summary>
 /// Implementation of the Proof of Reserve Service that provides asset backing verification capabilities.
 /// </summary>
-public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProofOfReserveService
+public partial class ProofOfReserveService : ServiceFramework.EnclaveBlockchainServiceBase, IProofOfReserveService
 {
     private readonly Dictionary<string, Models.MonitoredAsset> _monitoredAssets = new();
     private readonly Dictionary<string, List<Models.ReserveSnapshot>> _reserveHistory = new();
@@ -31,7 +39,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// <param name="persistentStorage">The persistent storage provider.</param>
     public ProofOfReserveService(
         ILogger<ProofOfReserveService> logger,
-        IServiceConfiguration? configuration = null,
+        CoreConfig? configuration = null,
         IEnclaveManager? enclaveManager = null,
         ProofOfReserveConfigurationService? configurationService = null,
         IPersistentStorageProvider? persistentStorage = null)
@@ -71,19 +79,19 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     /// <summary>
     /// Gets the service configuration.
     /// </summary>
-    protected new IServiceConfiguration? Configuration { get; }
+    protected new CoreConfig? Configuration { get; }
 
     /// <inheritdoc/>
-    public async Task<string> RegisterAssetAsync(AssetRegistrationRequest request, BlockchainType blockchainType)
+    public async Task<string> RegisterAssetAsync(AssetRegistrationRequest registration, BlockchainType blockchainType)
     {
-        ArgumentNullException.ThrowIfNull(request);
+        ArgumentNullException.ThrowIfNull(registration);
 
         if (!SupportsBlockchain(blockchainType))
         {
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await RegisterAssetWithResilienceAsync(request, blockchainType);
+        return await RegisterAssetWithResilienceAsync(registration, blockchainType);
     }
 
     /// <inheritdoc/>
@@ -136,8 +144,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        var coreSnapshots = await GetReserveSnapshotsWithCachingAsync(assetId, from, to, blockchainType);
-        return coreSnapshots.Select(ConvertCoreSnapshotToModelsSnapshot).ToArray();
+        var snapshots = await GetReserveSnapshotsWithCachingAsync(assetId, from, to, blockchainType);
+        return snapshots;
     }
 
     /// <inheritdoc/>
@@ -235,17 +243,17 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdateReserveDataAsync(string assetId, ReserveUpdateRequest reserveData, BlockchainType blockchainType)
+    public async Task<bool> UpdateReserveDataAsync(string assetId, ReserveUpdateRequest data, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(assetId);
-        ArgumentNullException.ThrowIfNull(reserveData);
+        ArgumentNullException.ThrowIfNull(data);
 
         if (!SupportsBlockchain(blockchainType))
         {
             throw new NotSupportedException($"Blockchain {blockchainType} is not supported");
         }
 
-        return await UpdateReserveDataWithResilienceAsync(assetId, reserveData, blockchainType);
+        return await UpdateReserveDataWithResilienceAsync(assetId, data, blockchainType);
     }
 
     /// <inheritdoc/>
@@ -281,7 +289,7 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
                 AlertId = Guid.NewGuid().ToString(),
                 AssetId = assetId,
                 AlertName = $"Reserve Threshold Alert for {assetId}",
-                Type = ReserveAlertType.LowReserveRatio,
+                Type = ReserveAlertType.LowReserveRatio.ToString(),
                 Threshold = threshold,
                 IsEnabled = true,
                 CreatedAt = DateTime.UtcNow
@@ -544,8 +552,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
     private async Task<byte[]> ComputeMerkleRootAsync(List<byte[]> data)
     {
         // Implementation for computing Merkle root
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var combined = data.SelectMany(d => d).ToArray();
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
         return await Task.FromResult(sha256.ComputeHash(combined));
     }
 
@@ -596,8 +604,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
             TotalSupply = coreSnapshot.TotalSupply,
             TotalReserves = coreSnapshot.TotalReserves,
             ReserveAddresses = coreSnapshot.ReserveAddresses,
-            ReserveBalances = coreSnapshot.ReserveBalances,
-            Health = coreSnapshot.Health,
+            ReserveBalances = coreSnapshot.ReserveBalances?.Values.ToArray() ?? Array.Empty<decimal>(),
+            Health = ConvertHealthStatusToEnum(coreSnapshot.Health),
             AdditionalData = coreSnapshot.Metadata
         };
     }
@@ -616,8 +624,8 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
             ReserveRatio = modelsSnapshot.ReserveRatio,
             Timestamp = modelsSnapshot.Timestamp,
             ReserveAddresses = modelsSnapshot.ReserveAddresses,
-            ReserveBalances = modelsSnapshot.ReserveBalances,
-            Health = modelsSnapshot.Health,
+            ReserveBalances = ConvertBalancesToDictionary(modelsSnapshot.ReserveAddresses, modelsSnapshot.ReserveBalances),
+            Health = ConvertEnumToHealthStatus(modelsSnapshot.Health),
             Metadata = modelsSnapshot.AdditionalData
         };
     }
@@ -630,16 +638,65 @@ public partial class ProofOfReserveService : EnclaveBlockchainServiceBase, IProo
         return new Core.MonitoredAsset
         {
             AssetId = modelsAsset.AssetId,
-            AssetSymbol = modelsAsset.AssetSymbol,
             AssetName = modelsAsset.AssetName,
-            Type = Core.AssetType.Token, // Default conversion - may need to be more sophisticated
-            BlockchainType = modelsAsset.BlockchainType,
-            Health = modelsAsset.Health,
-            CurrentReserveRatio = modelsAsset.CurrentReserveRatio,
-            MinReserveRatio = modelsAsset.MinReserveRatio,
+            AssetType = "Token", // Default type
             IsActive = modelsAsset.IsActive,
             LastUpdated = modelsAsset.LastUpdated
         };
+    }
+
+    /// <summary>
+    /// Converts ReserveHealthStatus to ReserveHealthStatusEnum.
+    /// </summary>
+    private Core.ReserveHealthStatusEnum ConvertHealthStatusToEnum(Core.ReserveHealthStatus status)
+    {
+        // Convert based on health level or other criteria
+        if (status.IsHealthy)
+        {
+            return Core.ReserveHealthStatusEnum.Healthy;
+        }
+        else if (status.HasWarnings)
+        {
+            return Core.ReserveHealthStatusEnum.Warning;
+        }
+        else
+        {
+            return Core.ReserveHealthStatusEnum.Critical;
+        }
+    }
+
+    /// <summary>
+    /// Converts ReserveHealthStatusEnum to ReserveHealthStatus.
+    /// </summary>
+    private Core.ReserveHealthStatus ConvertEnumToHealthStatus(Core.ReserveHealthStatusEnum statusEnum)
+    {
+        var status = new Core.ReserveHealthStatus
+        {
+            IsHealthy = statusEnum == Core.ReserveHealthStatusEnum.Healthy,
+            StatusLevel = statusEnum.ToString(),
+            LastChecked = DateTime.UtcNow
+        };
+        
+        // Add warnings if status is Warning
+        if (statusEnum == Core.ReserveHealthStatusEnum.Warning)
+        {
+            status.Warnings.Add("Reserve health status indicates warnings");
+        }
+        
+        return status;
+    }
+
+    /// <summary>
+    /// Converts balance arrays to dictionary.
+    /// </summary>
+    private Dictionary<string, decimal> ConvertBalancesToDictionary(string[] addresses, decimal[] balances)
+    {
+        var result = new Dictionary<string, decimal>();
+        for (int i = 0; i < Math.Min(addresses?.Length ?? 0, balances?.Length ?? 0); i++)
+        {
+            result[addresses[i]] = balances[i];
+        }
+        return result;
     }
 }
 

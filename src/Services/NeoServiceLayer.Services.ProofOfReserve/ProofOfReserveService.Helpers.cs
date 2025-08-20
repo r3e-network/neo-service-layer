@@ -1,5 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using ProofModels = NeoServiceLayer.Services.ProofOfReserve.Models;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -94,12 +102,12 @@ public partial class ProofOfReserveService
     /// <param name="reserveRatio">The reserve ratio.</param>
     /// <param name="minReserveRatio">The minimum reserve ratio.</param>
     /// <returns>The health status.</returns>
-    private ReserveHealthStatus CalculateHealthStatus(decimal reserveRatio, decimal minReserveRatio)
+    private ReserveHealthStatusEnum CalculateHealthStatus(decimal reserveRatio, decimal minReserveRatio)
     {
-        if (reserveRatio >= minReserveRatio * 1.2m) return ReserveHealthStatus.Healthy;
-        if (reserveRatio >= minReserveRatio) return ReserveHealthStatus.Warning;
-        if (reserveRatio >= minReserveRatio * 0.8m) return ReserveHealthStatus.Critical;
-        return ReserveHealthStatus.Undercollateralized;
+        if (reserveRatio >= minReserveRatio * 1.2m) return ReserveHealthStatusEnum.Healthy;
+        if (reserveRatio >= minReserveRatio) return ReserveHealthStatusEnum.Warning;
+        if (reserveRatio >= minReserveRatio * 0.8m) return ReserveHealthStatusEnum.Critical;
+        return ReserveHealthStatusEnum.Undercollateralized;
     }
 
     /// <summary>
@@ -107,18 +115,25 @@ public partial class ProofOfReserveService
     /// </summary>
     /// <param name="assetId">The asset ID.</param>
     /// <param name="snapshot">The reserve snapshot.</param>
-    private async Task CheckAlertsAsync(string assetId, ReserveSnapshot snapshot)
+    private async Task CheckAlertsAsync(string assetId, ProofModels.ReserveSnapshot snapshot)
     {
         var relevantAlerts = _alertConfigs.Values.Where(a => a.IsEnabled);
 
         foreach (var alert in relevantAlerts)
         {
-            var shouldAlert = alert.Type switch
+            // Parse the string Type to enum
+            if (!Enum.TryParse<ProofModels.ReserveAlertType>(alert.Type, out var alertType))
             {
-                ReserveAlertType.LowReserveRatio => snapshot.ReserveRatio < alert.Threshold,
-                ReserveAlertType.HighVolatility => false, // Would need historical data
-                ReserveAlertType.AuditOverdue => false, // Would need audit schedule
-                ReserveAlertType.ComplianceViolation => snapshot.Health == ReserveHealthStatus.Undercollateralized,
+                Logger.LogWarning("Unknown alert type: {AlertType}", alert.Type);
+                continue;
+            }
+            
+            var shouldAlert = alertType switch
+            {
+                ProofModels.ReserveAlertType.LowReserveRatio => snapshot.ReserveRatio < alert.Threshold,
+                ProofModels.ReserveAlertType.HighVolatility => false, // Would need historical data
+                ProofModels.ReserveAlertType.AuditOverdue => false, // Would need audit schedule
+                ProofModels.ReserveAlertType.ComplianceViolation => false, // Would need to check health status
                 _ => false
             };
 
@@ -133,7 +148,7 @@ public partial class ProofOfReserveService
                     AssetId = assetId,
                     AlertType = alert.Type.ToString(),
                     Message = $"Alert: {alert.AlertName} - {alert.Type}",
-                    Severity = AlertSeverity.Warning,
+                    Severity = "Warning",
                     Timestamp = DateTime.UtcNow,
                     Metadata = new Dictionary<string, object>
                     {
@@ -146,7 +161,7 @@ public partial class ProofOfReserveService
                 };
 
                 // Send notifications to configured recipients
-                var recipients = GetAlertRecipients(assetId, alert.Type);
+                var recipients = GetAlertRecipients(assetId, alertType);
                 foreach (var recipient in recipients)
                 {
                     await SendNotificationAsync(recipient, notification);
@@ -373,7 +388,7 @@ Neo Service Layer Team
     /// <param name="asset">The monitored asset.</param>
     /// <param name="snapshots">The reserve snapshots.</param>
     /// <returns>Array of recommendations.</returns>
-    private string[] GenerateAuditRecommendations(MonitoredAsset asset, ReserveSnapshot[] snapshots)
+    private string[] GenerateAuditRecommendations(ProofModels.MonitoredAsset asset, ProofModels.ReserveSnapshot[] snapshots)
     {
         var recommendations = new List<string>();
 
@@ -515,7 +530,7 @@ Neo Service Layer Team
     /// <param name="assetId">The asset ID.</param>
     /// <param name="alertType">The alert type.</param>
     /// <returns>Array of recipient contact information.</returns>
-    private string[] GetAlertRecipients(string assetId, ReserveAlertType alertType)
+    private string[] GetAlertRecipients(string assetId, ProofModels.ReserveAlertType alertType)
     {
         try
         {

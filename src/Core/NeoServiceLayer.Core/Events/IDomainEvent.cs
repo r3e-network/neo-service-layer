@@ -1,4 +1,9 @@
-﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events
 {
@@ -58,6 +63,6 @@ namespace NeoServiceLayer.Core.Events
         /// <summary>
         /// Additional metadata associated with the event
         /// </summary>
-        IDictionary&lt;string, object&gt; Metadata { get; }
-}
+        IDictionary<string, object> Metadata { get; }
+    }
 }

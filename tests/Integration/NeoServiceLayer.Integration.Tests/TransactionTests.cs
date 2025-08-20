@@ -1,9 +1,15 @@
-﻿using System.Diagnostics;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -51,7 +57,7 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Transaction support not implemented");
             return;
         }
-        await transaction.StoreAsync(key, data, options);
+        await transaction.StoreDataAsync(key, data, options);
         await transaction.CommitAsync();
 
         // Assert
@@ -80,7 +86,7 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Transaction support not implemented");
             return;
         }
-        await transaction.StoreAsync(key, data, options);
+        await transaction.StoreDataAsync(key, data, options);
         await transaction.RollbackAsync();
 
         // Assert
@@ -120,7 +126,7 @@ public class TransactionTests : IDisposable
 
         foreach (var item in testData)
         {
-            await transaction.StoreAsync(item.Key, item.Value, options);
+            await transaction.StoreDataAsync(item.Key, item.Value, options);
         }
 
         await transaction.CommitAsync();
@@ -161,7 +167,7 @@ public class TransactionTests : IDisposable
 
         foreach (var item in testData)
         {
-            await transaction.StoreAsync(item.Key, item.Value, options);
+            await transaction.StoreDataAsync(item.Key, item.Value, options);
         }
 
         await transaction.RollbackAsync();
@@ -208,14 +214,14 @@ public class TransactionTests : IDisposable
         }
 
         // Create new data
-        await transaction.StoreAsync("new_key1", System.Text.Encoding.UTF8.GetBytes("new_data1"), options);
-        await transaction.StoreAsync("new_key2", System.Text.Encoding.UTF8.GetBytes("new_data2"), options);
+        await transaction.StoreDataAsync("new_key1", System.Text.Encoding.UTF8.GetBytes("new_data1"), options);
+        await transaction.StoreDataAsync("new_key2", System.Text.Encoding.UTF8.GetBytes("new_data2"), options);
 
         // Update existing data
-        await transaction.StoreAsync("existing_key1", System.Text.Encoding.UTF8.GetBytes("updated_data1"), options);
+        await transaction.StoreDataAsync("existing_key1", System.Text.Encoding.UTF8.GetBytes("updated_data1"), options);
 
         // Delete existing data
-        await transaction.DeleteAsync("existing_key2");
+        await transaction.DeleteDataAsync("existing_key2");
 
         await transaction.CommitAsync();
 
@@ -276,7 +282,7 @@ public class TransactionTests : IDisposable
                     {
                         var key = $"concurrent_tx{transactionIndex}_op{opIndex}";
                         var data = System.Text.Encoding.UTF8.GetBytes($"data_tx{transactionIndex}_op{opIndex}");
-                        await transaction.StoreAsync(key, data, options);
+                        await transaction.StoreDataAsync(key, data, options);
                     }
 
                     await transaction.CommitAsync();
@@ -339,7 +345,7 @@ public class TransactionTests : IDisposable
                     // Store data
                     var key = $"mixed_result_tx{transactionIndex}";
                     var data = System.Text.Encoding.UTF8.GetBytes($"mixed_result_data{transactionIndex}");
-                    await transaction.StoreAsync(key, data, options);
+                    await transaction.StoreDataAsync(key, data, options);
 
                     // Intentionally fail odd-numbered transactions
                     if (transactionIndex % 2 == 1)
@@ -407,7 +413,7 @@ public class TransactionTests : IDisposable
         }
 
         // Store some data
-        await transaction.StoreAsync("timeout_key", System.Text.Encoding.UTF8.GetBytes("timeout_data"), options);
+        await transaction.StoreDataAsync("timeout_key", System.Text.Encoding.UTF8.GetBytes("timeout_data"), options);
 
         // Simulate long-running operation
         await Task.Delay(TimeSpan.FromSeconds(3));
@@ -442,7 +448,7 @@ public class TransactionTests : IDisposable
             _output.WriteLine("Skipping test - Transaction support not implemented");
             return;
         }
-        await transaction.StoreAsync("abandoned_key", System.Text.Encoding.UTF8.GetBytes("abandoned_data"), options);
+        await transaction.StoreDataAsync("abandoned_key", System.Text.Encoding.UTF8.GetBytes("abandoned_data"), options);
 
         // Wait for cleanup
         await Task.Delay(TimeSpan.FromSeconds(2));
@@ -480,7 +486,7 @@ public class TransactionTests : IDisposable
         }
 
         // Parent transaction operations
-        await parentTransaction.StoreAsync("parent_key1", System.Text.Encoding.UTF8.GetBytes("parent_data1"), options);
+        await parentTransaction.StoreDataAsync("parent_key1", System.Text.Encoding.UTF8.GetBytes("parent_data1"), options);
 
         // Child transaction - Note: Nested transactions are not supported in current implementation
         var childTransaction = await _provider.BeginTransactionAsync();
@@ -491,12 +497,12 @@ public class TransactionTests : IDisposable
             return;
         }
 
-        await childTransaction.StoreAsync("child_key1", System.Text.Encoding.UTF8.GetBytes("child_data1"), options);
-        await childTransaction.StoreAsync("child_key2", System.Text.Encoding.UTF8.GetBytes("child_data2"), options);
+        await childTransaction.StoreDataAsync("child_key1", System.Text.Encoding.UTF8.GetBytes("child_data1"), options);
+        await childTransaction.StoreDataAsync("child_key2", System.Text.Encoding.UTF8.GetBytes("child_data2"), options);
 
         // Rollback child, commit parent
         await childTransaction.RollbackAsync();
-        await parentTransaction.StoreAsync("parent_key2", System.Text.Encoding.UTF8.GetBytes("parent_data2"), options);
+        await parentTransaction.StoreDataAsync("parent_key2", System.Text.Encoding.UTF8.GetBytes("parent_data2"), options);
         await parentTransaction.CommitAsync();
 
         // Assert
@@ -546,7 +552,7 @@ public class TransactionTests : IDisposable
         {
             var key = $"large_tx_key_{i}";
             var data = System.Text.Encoding.UTF8.GetBytes($"large_tx_data_{i}");
-            await transaction.StoreAsync(key, data, options);
+            await transaction.StoreDataAsync(key, data, options);
         }
 
         await transaction.CommitAsync();
@@ -614,7 +620,7 @@ public class TransactionTests : IDisposable
                     {
                         var key = $"acid_tx{transactionIndex}_op{opIndex}";
                         var data = System.Text.Encoding.UTF8.GetBytes($"acid_data_{transactionIndex}_{opIndex}");
-                        await transaction.StoreAsync(key, data, options);
+                        await transaction.StoreDataAsync(key, data, options);
                         operations.Add(key);
                     }
 

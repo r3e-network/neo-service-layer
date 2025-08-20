@@ -1,6 +1,13 @@
-﻿using FluentAssertions;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Core.Tests;
 
@@ -15,7 +22,7 @@ public class AdvancedMiscellaneousModelsTests
     public void FairnessAnalysisResult_ShouldInitializeWithDefaults()
     {
         // Act
-        var result = new FairnessAnalysisResult();
+        var result = new NeoServiceLayer.Core.Models.FairnessAnalysisResult();
 
         // Assert
         result.AnalysisId.Should().NotBeEmpty();
@@ -37,10 +44,10 @@ public class AdvancedMiscellaneousModelsTests
     public void FairnessAnalysisResult_Properties_ShouldBeSettable()
     {
         // Arrange
-        var result = new FairnessAnalysisResult();
-        var riskFactors = new[] { "high_value", "frequent_trader" };
-        var detectedRisks = new[] { "sandwich_attack", "front_running" };
-        var recommendations = new[] { "use_private_pool", "increase_slippage" };
+        var result = new NeoServiceLayer.Core.Models.FairnessAnalysisResult();
+        var riskFactors = new List<string> { "high_value", "frequent_trader" };
+        var detectedRisks = new List<string> { "sandwich_attack", "front_running" };
+        var recommendations = new List<string> { "use_private_pool", "increase_slippage" };
         var details = new Dictionary<string, object> { ["confidence"] = 0.95 };
         var analyzedAt = DateTime.UtcNow.AddMinutes(-2);
 
@@ -81,151 +88,34 @@ public class AdvancedMiscellaneousModelsTests
     public void TransactionAnalysisRequest_ShouldInitializeWithDefaults()
     {
         // Act
-        var request = new TransactionAnalysisRequest();
+        var request = new NeoServiceLayer.Core.Models.TransactionAnalysisRequest();
 
         // Assert
-        request.TransactionId.Should().BeEmpty();
-        request.From.Should().BeEmpty();
-        request.To.Should().BeEmpty();
-        request.Value.Should().Be(0);
-        request.TransactionData.Should().BeEmpty();
-        request.Context.Should().NotBeNull().And.BeEmpty();
-        request.RequestedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
+        request.Transaction.Should().NotBeNull();
+        request.Depth.Should().Be(AnalysisDepth.Standard);
+        request.IncludeMevAnalysis.Should().BeTrue();
+        request.Parameters.Should().NotBeNull().And.BeEmpty();
     }
 
     [Fact]
     public void TransactionAnalysisRequest_Properties_ShouldBeSettable()
     {
         // Arrange
-        var request = new TransactionAnalysisRequest();
-        var context = new Dictionary<string, object> { ["network"] = "mainnet" };
-        var requestedAt = DateTime.UtcNow.AddMinutes(-1);
+        var request = new NeoServiceLayer.Core.Models.TransactionAnalysisRequest();
+        var parameters = new Dictionary<string, object> { ["network"] = "mainnet" };
+        var transaction = new PendingTransaction();
 
         // Act
-        request.TransactionId = "tx-analysis-123";
-        request.From = "0xfrom456";
-        request.To = "0xto789";
-        request.Value = 10.5m;
-        request.TransactionData = "0xdata123";
-        request.Context = context;
-        request.RequestedAt = requestedAt;
+        request.Transaction = transaction;
+        request.Depth = AnalysisDepth.Deep;
+        request.IncludeMevAnalysis = false;
+        request.Parameters = parameters;
 
         // Assert
-        request.TransactionId.Should().Be("tx-analysis-123");
-        request.From.Should().Be("0xfrom456");
-        request.To.Should().Be("0xto789");
-        request.Value.Should().Be(10.5m);
-        request.TransactionData.Should().Be("0xdata123");
-        request.Context.Should().BeEquivalentTo(context);
-        request.RequestedAt.Should().Be(requestedAt);
-    }
-
-    #endregion
-
-    #region RiskAssessmentRequest Tests
-
-    [Fact]
-    public void RiskAssessmentRequest_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var request = new RiskAssessmentRequest();
-
-        // Assert
-        request.TransactionId.Should().BeEmpty();
-        request.FromAddress.Should().BeEmpty();
-        request.ToAddress.Should().BeEmpty();
-        request.Amount.Should().Be(0);
-        request.AssetType.Should().BeEmpty();
-        request.TransactionData.Should().NotBeNull().And.BeEmpty();
-        request.RiskFactors.Should().BeEmpty();
-        request.Timestamp.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        request.ModelId.Should().Be("default-risk-model");
-    }
-
-    [Fact]
-    public void RiskAssessmentRequest_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var request = new RiskAssessmentRequest();
-        var transactionData = new Dictionary<string, object> { ["gasPrice"] = "20000000000" };
-        var riskFactors = new[] { "new_address", "large_amount" };
-        var timestamp = DateTime.UtcNow.AddMinutes(-3);
-
-        // Act
-        request.TransactionId = "risk-tx-123";
-        request.FromAddress = "0xriskfrom";
-        request.ToAddress = "0xriskto";
-        request.Amount = 1000m;
-        request.AssetType = "Token";
-        request.TransactionData = transactionData;
-        request.RiskFactors = riskFactors;
-        request.Timestamp = timestamp;
-        request.ModelId = "advanced-risk-model";
-
-        // Assert
-        request.TransactionId.Should().Be("risk-tx-123");
-        request.FromAddress.Should().Be("0xriskfrom");
-        request.ToAddress.Should().Be("0xriskto");
-        request.Amount.Should().Be(1000m);
-        request.AssetType.Should().Be("Token");
-        request.TransactionData.Should().BeEquivalentTo(transactionData);
-        request.RiskFactors.Should().BeEquivalentTo(riskFactors);
-        request.Timestamp.Should().Be(timestamp);
-        request.ModelId.Should().Be("advanced-risk-model");
-    }
-
-    #endregion
-
-    #region RiskAssessmentResult Tests
-
-    [Fact]
-    public void RiskAssessmentResult_ShouldInitializeWithDefaults()
-    {
-        // Act
-        var result = new RiskAssessmentResult();
-
-        // Assert
-        result.AssessmentId.Should().BeEmpty();
-        result.TransactionId.Should().BeEmpty();
-        result.RiskScore.Should().Be(0);
-        result.RiskLevel.Should().Be(RiskLevel.Minimal);
-        result.RiskFactors.Should().BeEmpty();
-        result.AssessedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        result.Success.Should().BeFalse();
-        result.ErrorMessage.Should().BeNull();
-        result.Metadata.Should().NotBeNull().And.BeEmpty();
-    }
-
-    [Fact]
-    public void RiskAssessmentResult_Properties_ShouldBeSettable()
-    {
-        // Arrange
-        var result = new RiskAssessmentResult();
-        var riskFactors = new[] { "suspicious_pattern", "blacklisted_address" };
-        var metadata = new Dictionary<string, object> { ["model_version"] = "v2.1" };
-        var assessedAt = DateTime.UtcNow.AddMinutes(-1);
-
-        // Act
-        result.AssessmentId = "assessment-456";
-        result.TransactionId = "tx-risk-789";
-        result.RiskScore = 0.75;
-        result.RiskLevel = RiskLevel.High;
-        result.RiskFactors = riskFactors;
-        result.AssessedAt = assessedAt;
-        result.Success = true;
-        result.ErrorMessage = "No errors";
-        result.Metadata = metadata;
-
-        // Assert
-        result.AssessmentId.Should().Be("assessment-456");
-        result.TransactionId.Should().Be("tx-risk-789");
-        result.RiskScore.Should().Be(0.75);
-        result.RiskLevel.Should().Be(RiskLevel.High);
-        result.RiskFactors.Should().BeEquivalentTo(riskFactors);
-        result.AssessedAt.Should().Be(assessedAt);
-        result.Success.Should().BeTrue();
-        result.ErrorMessage.Should().Be("No errors");
-        result.Metadata.Should().BeEquivalentTo(metadata);
+        request.Transaction.Should().Be(transaction);
+        request.Depth.Should().Be(AnalysisDepth.Deep);
+        request.IncludeMevAnalysis.Should().BeFalse();
+        request.Parameters.Should().BeEquivalentTo(parameters);
     }
 
     #endregion
@@ -239,15 +129,10 @@ public class AdvancedMiscellaneousModelsTests
         var preferences = new NotificationPreferences();
 
         // Assert
-        preferences.UserId.Should().BeEmpty();
-        preferences.EmailEnabled.Should().BeTrue();
-        preferences.SmsEnabled.Should().BeFalse();
-        preferences.PushEnabled.Should().BeTrue();
-        preferences.WebhookEnabled.Should().BeFalse();
-        preferences.NotificationTypes.Should().BeEmpty();
-        preferences.Settings.Should().NotBeNull().And.BeEmpty();
-        preferences.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(1));
-        preferences.UpdatedAt.Should().BeNull();
+        preferences.PreferredChannels.Should().BeEquivalentTo(new[] { "Email" });
+        preferences.EnableNotifications.Should().BeTrue();
+        preferences.QuietHoursStart.Should().BeNull();
+        preferences.QuietHoursEnd.Should().BeNull();
     }
 
     [Fact]
@@ -255,32 +140,21 @@ public class AdvancedMiscellaneousModelsTests
     {
         // Arrange
         var preferences = new NotificationPreferences();
-        var notificationTypes = new[] { "transaction", "security_alert" };
-        var settings = new Dictionary<string, object> { ["quiet_hours"] = "22:00-08:00" };
-        var createdAt = DateTime.UtcNow.AddDays(-1);
-        var updatedAt = DateTime.UtcNow.AddHours(-1);
+        var preferredChannels = new[] { "Email", "SMS", "Push" };
+        var quietStart = TimeSpan.FromHours(22);
+        var quietEnd = TimeSpan.FromHours(8);
 
         // Act
-        preferences.UserId = "user-123";
-        preferences.EmailEnabled = false;
-        preferences.SmsEnabled = true;
-        preferences.PushEnabled = false;
-        preferences.WebhookEnabled = true;
-        preferences.NotificationTypes = notificationTypes;
-        preferences.Settings = settings;
-        preferences.CreatedAt = createdAt;
-        preferences.UpdatedAt = updatedAt;
+        preferences.PreferredChannels = preferredChannels;
+        preferences.EnableNotifications = false;
+        preferences.QuietHoursStart = quietStart;
+        preferences.QuietHoursEnd = quietEnd;
 
         // Assert
-        preferences.UserId.Should().Be("user-123");
-        preferences.EmailEnabled.Should().BeFalse();
-        preferences.SmsEnabled.Should().BeTrue();
-        preferences.PushEnabled.Should().BeFalse();
-        preferences.WebhookEnabled.Should().BeTrue();
-        preferences.NotificationTypes.Should().BeEquivalentTo(notificationTypes);
-        preferences.Settings.Should().BeEquivalentTo(settings);
-        preferences.CreatedAt.Should().Be(createdAt);
-        preferences.UpdatedAt.Should().Be(updatedAt);
+        preferences.PreferredChannels.Should().BeEquivalentTo(preferredChannels);
+        preferences.EnableNotifications.Should().BeFalse();
+        preferences.QuietHoursStart.Should().Be(quietStart);
+        preferences.QuietHoursEnd.Should().Be(quietEnd);
     }
 
     #endregion

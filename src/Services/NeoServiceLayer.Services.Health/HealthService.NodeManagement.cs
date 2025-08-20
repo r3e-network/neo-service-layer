@@ -1,5 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Health.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Services.Health;
 
@@ -65,10 +72,10 @@ public partial class HealthService
             {
                 NodeAddress = request.NodeAddress,
                 PublicKey = request.PublicKey,
-                Status = NodeStatus.Unknown,
+                Status = HealthStatus.Unknown,
                 IsConsensusNode = request.IsConsensusNode,
                 LastSeen = DateTime.UtcNow,
-                Metrics = new HealthMetrics(),
+                Metrics = new List<HealthMetrics>(),
                 AdditionalData = request.Metadata
             };
 
@@ -208,7 +215,7 @@ public partial class HealthService
     {
         lock (_nodesLock)
         {
-            return _monitoredNodes.Values.Where(n => n.Status == NodeStatus.Online).ToList();
+            return _monitoredNodes.Values.Where(n => n.Status == HealthStatus.Healthy).ToList();
         }
     }
 
@@ -217,7 +224,7 @@ public partial class HealthService
     /// </summary>
     /// <param name="status">The node status to filter by.</param>
     /// <returns>List of nodes with the specified status.</returns>
-    public List<NodeHealthReport> GetNodesByStatus(NodeStatus status)
+    public List<NodeHealthReport> GetNodesByStatus(HealthStatus status)
     {
         lock (_nodesLock)
         {
@@ -264,10 +271,10 @@ public partial class HealthService
         lock (_nodesLock)
         {
             var totalNodes = _monitoredNodes.Count;
-            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online);
-            var offlineNodes = _monitoredNodes.Values.Count(n => n.Status == NodeStatus.Offline);
+            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy);
+            var offlineNodes = _monitoredNodes.Values.Count(n => n.Status == HealthStatus.Unhealthy);
             var consensusNodes = _monitoredNodes.Values.Count(n => n.IsConsensusNode);
-            var onlineConsensusNodes = _monitoredNodes.Values.Count(n => n.IsConsensusNode && n.Status == NodeStatus.Online);
+            var onlineConsensusNodes = _monitoredNodes.Values.Count(n => n.IsConsensusNode && n.Status == HealthStatus.Healthy);
 
             double averageUptime;
             if (totalNodes > 0)

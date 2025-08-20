@@ -1,6 +1,6 @@
-﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
@@ -9,13 +9,19 @@ using NeoServiceLayer.Services.Configuration.Models;
 using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Configuration;
 
 /// <summary>
 /// Core implementation of the Configuration service for dynamic configuration management with enclave security.
 /// </summary>
-public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfigurationService
+public partial class ConfigurationService : ServiceFramework.EnclaveBlockchainServiceBase, IConfigurationService
 {
     private readonly Dictionary<string, ConfigurationEntry> _configurations = new();
     private readonly Dictionary<string, Models.ConfigurationSubscription> _subscriptions = new();
@@ -27,6 +33,355 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     private const string ConfigurationEncryptionKeyId = "configuration-encryption-key";
     private string? _cachedEncryptionKey;
     private Timer? _cleanupTimer;
+
+    // LoggerMessage delegates for performance optimization
+    private static readonly Action<ILogger, Exception?> _serviceInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6001, "ServiceInitializing"),
+            "Initializing Configuration Service...");
+
+    private static readonly Action<ILogger, Exception?> _serviceInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6002, "ServiceInitialized"),
+            "Configuration Service initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _serviceInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6003, "ServiceInitializationFailed"),
+            "Failed to initialize Configuration Service");
+
+    private static readonly Action<ILogger, Exception?> _enclaveInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6004, "EnclaveInitializing"),
+            "Initializing Configuration Service enclave operations...");
+
+    private static readonly Action<ILogger, Exception?> _enclaveInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6005, "EnclaveInitialized"),
+            "Configuration Service enclave operations initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _enclaveInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6006, "EnclaveInitializationFailed"),
+            "Failed to initialize Configuration Service enclave operations");
+
+    private static readonly Action<ILogger, Exception?> _serviceStarting =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6007, "ServiceStarting"),
+            "Starting Configuration Service...");
+
+    private static readonly Action<ILogger, Exception?> _serviceStarted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6008, "ServiceStarted"),
+            "Configuration Service started successfully");
+
+    private static readonly Action<ILogger, Exception> _serviceStartFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6009, "ServiceStartFailed"),
+            "Failed to start Configuration Service");
+
+    private static readonly Action<ILogger, Exception?> _serviceStopping =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6010, "ServiceStopping"),
+            "Stopping Configuration Service...");
+
+    private static readonly Action<ILogger, Exception?> _serviceStopped =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6011, "ServiceStopped"),
+            "Configuration Service stopped successfully");
+
+    private static readonly Action<ILogger, Exception> _serviceStopFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6012, "ServiceStopFailed"),
+            "Failed to stop Configuration Service");
+
+    private static readonly Action<ILogger, Exception> _healthCheckFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6013, "HealthCheckFailed"),
+            "Configuration Service health check failed");
+
+    private static readonly Action<ILogger, int, Exception?> _defaultConfigurationsLoaded =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6014, "DefaultConfigurationsLoaded"),
+            "Loaded {Count} default configurations");
+
+    private static readonly Action<ILogger, Exception> _defaultConfigurationsLoadFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6015, "DefaultConfigurationsLoadFailed"),
+            "Failed to load default configurations");
+
+    private static readonly Action<ILogger, Exception?> _configurationStorageInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6016, "ConfigurationStorageInitialized"),
+            "Configuration storage initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _configurationStorageInitializationFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6017, "ConfigurationStorageInitializationFailed"),
+            "Failed to initialize configuration storage");
+
+    private static readonly Action<ILogger, int, Exception?> _encryptedConfigurationsLoaded =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6018, "EncryptedConfigurationsLoaded"),
+            "Loaded {Count} encrypted configurations from enclave storage");
+
+    private static readonly Action<ILogger, Exception> _encryptedConfigurationsLoadFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(6019, "EncryptedConfigurationsLoadFailed"),
+            "Failed to load encrypted configurations from enclave storage");
+
+    private static readonly Action<ILogger, string, Exception> _configurationLoadFromKeyFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(6020, "ConfigurationLoadFromKeyFailed"),
+            "Failed to load configuration from key {Key}");
+
+    private static readonly Action<ILogger, Exception?> _configurationMonitoringStarted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6021, "ConfigurationMonitoringStarted"),
+            "Configuration monitoring started successfully");
+
+    private static readonly Action<ILogger, Exception> _configurationMonitoringStartFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6022, "ConfigurationMonitoringStartFailed"),
+            "Failed to start configuration monitoring");
+
+    private static readonly Action<ILogger, Exception?> _configurationMonitoringStopped =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6023, "ConfigurationMonitoringStopped"),
+            "Configuration monitoring stopped successfully");
+
+    private static readonly Action<ILogger, Exception> _configurationMonitoringStopFailed =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(6024, "ConfigurationMonitoringStopFailed"),
+            "Failed to stop configuration monitoring gracefully");
+
+    private static readonly Action<ILogger, int, Exception?> _pendingConfigurationsPersisted =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6025, "PendingConfigurationsPersisted"),
+            "Persisted {Count} pending configurations");
+
+    private static readonly Action<ILogger, Exception> _pendingConfigurationsPersistFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6026, "PendingConfigurationsPersistFailed"),
+            "Failed to persist pending configurations");
+
+    private static readonly Action<ILogger, Exception?> _creatingConfigurationEncryptionKey =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6027, "CreatingConfigurationEncryptionKey"),
+            "Creating configuration encryption key");
+
+    private static readonly Action<ILogger, Exception?> _keyManagementServiceNotAvailable =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(6028, "KeyManagementServiceNotAvailable"),
+            "KeyManagementService not available. Using enclave-derived key.");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationPersisted =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6029, "ConfigurationPersisted"),
+            "Persisted configuration {Key} to storage");
+
+    private static readonly Action<ILogger, string, Exception> _configurationPersistFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6030, "ConfigurationPersistFailed"),
+            "Failed to persist configuration {Key}");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationRemovedFromStorage =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6031, "ConfigurationRemovedFromStorage"),
+            "Removed configuration {Key} from storage");
+
+    private static readonly Action<ILogger, string, Exception> _configurationRemovalFromStorageFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6032, "ConfigurationRemovalFromStorageFailed"),
+            "Failed to remove configuration {Key} from storage");
+
+    // Configuration management operations
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _settingConfiguration =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Information, new EventId(6033, "SettingConfiguration"),
+            "Setting configuration {Key} on {Blockchain} with enclave security");
+
+    private static readonly Action<ILogger, string, int, Exception?> _configurationSetSuccessfully =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(6034, "ConfigurationSetSuccessfully"),
+            "Configuration {Key} set successfully with version {Version}");
+
+    private static readonly Action<ILogger, string, Exception> _configurationSetFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6035, "ConfigurationSetFailed"),
+            "Failed to set configuration {Key}");
+
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _gettingConfiguration =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Debug, new EventId(6036, "GettingConfiguration"),
+            "Getting configuration {Key} on {Blockchain}");
+
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _configurationNotFound =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Warning, new EventId(6037, "ConfigurationNotFound"),
+            "Configuration {Key} not found on {Blockchain}");
+
+    private static readonly Action<ILogger, string, Exception> _getConfigurationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6038, "GetConfigurationFailed"),
+            "Failed to get configuration {Key}");
+
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _deletingConfiguration =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Information, new EventId(6039, "DeletingConfiguration"),
+            "Deleting configuration {Key} on {Blockchain}");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationDeletedSuccessfully =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6040, "ConfigurationDeletedSuccessfully"),
+            "Configuration {Key} deleted successfully");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationNotFoundForDeletion =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(6041, "ConfigurationNotFoundForDeletion"),
+            "Configuration {Key} not found for deletion");
+
+    private static readonly Action<ILogger, string, Exception> _deleteConfigurationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6042, "DeleteConfigurationFailed"),
+            "Failed to delete configuration {Key}");
+
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _listingConfigurations =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Debug, new EventId(6043, "ListingConfigurations"),
+            "Listing configurations with prefix {Prefix} on {Blockchain}");
+
+    private static readonly Action<ILogger, Exception> _listConfigurationsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6044, "ListConfigurationsFailed"),
+            "Failed to list configurations");
+
+    private static readonly Action<ILogger, string, int, Exception?> _batchConfigurationProcessing =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(6045, "BatchConfigurationProcessing"),
+            "Processing batch configuration update {BatchId} with {RequestCount} requests");
+
+    private static readonly Action<ILogger, string, Exception> _batchConfigurationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6046, "BatchConfigurationFailed"),
+            "Failed to process batch configuration update {BatchId}");
+
+    private static readonly Action<ILogger, string, BlockchainType, Exception?> _gettingConfigurationsByPattern =
+        LoggerMessage.Define<string, BlockchainType>(LogLevel.Debug, new EventId(6047, "GettingConfigurationsByPattern"),
+            "Getting configurations by pattern {Pattern} on {Blockchain}");
+
+    private static readonly Action<ILogger, string, Exception> _getConfigurationsByPatternFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6048, "GetConfigurationsByPatternFailed"),
+            "Failed to get configurations by pattern {Pattern}");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationValidationSuccess =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6049, "ConfigurationValidationSuccess"),
+            "Configuration {Key} validated successfully in enclave");
+
+    private static readonly Action<ILogger, string, Exception> _configurationValidationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6050, "ConfigurationValidationFailed"),
+            "Configuration validation failed for key {Key}");
+
+    private static readonly Action<ILogger, Exception> _configurationEncryptionFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6051, "ConfigurationEncryptionFailed"),
+            "Failed to encrypt configuration value");
+
+    private static readonly Action<ILogger, object, Models.ConfigurationValueType, Exception?> _configurationConversionWarning =
+        LoggerMessage.Define<object, Models.ConfigurationValueType>(LogLevel.Warning, new EventId(6052, "ConfigurationConversionWarning"),
+            "Failed to convert value {Value} to type {ValueType}, returning original value");
+
+    // Persistent storage operations
+    private static readonly Action<ILogger, Exception?> _persistentStorageNotAvailable =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(6053, "PersistentStorageNotAvailable"),
+            "Persistent storage not available for configuration service");
+
+    private static readonly Action<ILogger, Exception?> _loadingPersistentConfigurations =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6054, "LoadingPersistentConfigurations"),
+            "Loading persistent configurations...");
+
+    private static readonly Action<ILogger, int, Exception?> _persistentConfigurationsLoaded =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6055, "PersistentConfigurationsLoaded"),
+            "Loaded {Count} configurations from persistent storage");
+
+    private static readonly Action<ILogger, Exception> _loadPersistentConfigurationsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6056, "LoadPersistentConfigurationsFailed"),
+            "Error loading persistent configurations");
+
+    private static readonly Action<ILogger, string, Exception> _persistConfigurationEntryFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6057, "PersistConfigurationEntryFailed"),
+            "Error persisting configuration {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _removePersistedConfigurationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6058, "RemovePersistedConfigurationFailed"),
+            "Error removing persisted configuration {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _updateConfigurationIndexesFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6059, "UpdateConfigurationIndexesFailed"),
+            "Error updating configuration indexes for {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _removeConfigurationIndexesFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6060, "RemoveConfigurationIndexesFailed"),
+            "Error removing configuration indexes for {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _addConfigurationHistoryFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6061, "AddConfigurationHistoryFailed"),
+            "Error adding configuration history for {Key}");
+
+    private static readonly Action<ILogger, int, Exception?> _persistentSubscriptionsLoaded =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6062, "PersistentSubscriptionsLoaded"),
+            "Loaded {Count} active subscriptions from persistent storage");
+
+    private static readonly Action<ILogger, Exception> _loadPersistentSubscriptionsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6063, "LoadPersistentSubscriptionsFailed"),
+            "Error loading persistent subscriptions");
+
+    private static readonly Action<ILogger, string, Exception> _persistSubscriptionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6064, "PersistSubscriptionFailed"),
+            "Error persisting subscription {SubscriptionId}");
+
+    private static readonly Action<ILogger, string, Exception> _removePersistedSubscriptionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6065, "RemovePersistedSubscriptionFailed"),
+            "Error removing persisted subscription {SubscriptionId}");
+
+    private static readonly Action<ILogger, string, Exception> _persistAuditEntryFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6066, "PersistAuditEntryFailed"),
+            "Error persisting audit entry for {Key}");
+
+    private static readonly Action<ILogger, Exception> _persistStatisticsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6067, "PersistStatisticsFailed"),
+            "Error persisting configuration statistics");
+
+    private static readonly Action<ILogger, Exception?> _cleanupCompleted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(6068, "CleanupCompleted"),
+            "Completed cleanup of old configuration data");
+
+    private static readonly Action<ILogger, Exception> _cleanupFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6069, "CleanupFailed"),
+            "Error during configuration data cleanup");
+
+    private static readonly Action<ILogger, string, Exception> _getConfigurationHistoryFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6070, "GetConfigurationHistoryFailed"),
+            "Error retrieving configuration history for {Key}");
+
+    // Advanced operations delegates
+    private static readonly Action<ILogger, string, Exception?> _importingConfigurationsFromFile =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6071, "ImportingConfigurationsFromFile"),
+            "Importing configurations from file: {FilePath}");
+
+    private static readonly Action<ILogger, Exception> _importConfigurationsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6072, "ImportConfigurationsFailed"),
+            "Failed to import configurations");
+
+    private static readonly Action<ILogger, int, Exception?> _configurationsImportedSuccessfully =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(6073, "ConfigurationsImportedSuccessfully"),
+            "Successfully imported {Count} configurations");
+
+    private static readonly Action<ILogger, Exception> _exportConfigurationsFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6074, "ExportConfigurationsFailed"),
+            "Failed to export configurations");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationsExportedToFile =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6075, "ConfigurationsExportedToFile"),
+            "Configurations exported to file: {FilePath}");
+
+    private static readonly Action<ILogger, Exception> _createBackupFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6076, "CreateBackupFailed"),
+            "Failed to create configuration backup");
+
+    private static readonly Action<ILogger, Exception> _restoreBackupFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6077, "RestoreBackupFailed"),
+            "Failed to restore configuration backup");
+
+    private static readonly Action<ILogger, string, Exception?> _performingConfigurationValidation =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(6078, "PerformingConfigurationValidation"),
+            "Performing configuration validation for schema: {SchemaName}");
+
+    private static readonly Action<ILogger, Exception> _configurationValidationFailed2 =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6079, "ConfigurationValidationFailed2"),
+            "Configuration validation failed");
+
+    // Subscription and notification delegates
+    private static readonly Action<ILogger, string, Exception?> _notifyingSubscribersOfConfigurationChange =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6080, "NotifyingSubscribersOfConfigurationChange"),
+            "Notifying subscribers of configuration change for key: {Key}");
+
+    private static readonly Action<ILogger, Exception> _notifySubscribersFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6081, "NotifySubscribersFailed"),
+            "Failed to notify subscribers");
+
+    private static readonly Action<ILogger, string, Exception?> _configurationSubscriptionCreated =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(6082, "ConfigurationSubscriptionCreated"),
+            "Created configuration subscription for key: {Key}");
+
+    private static readonly Action<ILogger, Exception> _createSubscriptionFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(6083, "CreateSubscriptionFailed"),
+            "Failed to create configuration subscription");
+
+    private static readonly Action<ILogger, string, Exception> _notifySubscriberFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6084, "NotifySubscriberFailed"),
+            "Failed to notify subscriber: {SubscriptionId}");
+
+    private static readonly Action<ILogger, string, string, Exception?> _notifyingSubscriberOfDeletion =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(6085, "NotifyingSubscriberOfDeletion"),
+            "Notifying subscriber {SubscriptionId} of configuration deletion for key: {Key}");
+
+    private static readonly Action<ILogger, string, Exception> _notifySubscriberOfDeletionFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(6086, "NotifySubscriberOfDeletionFailed"),
+            "Failed to notify subscribers of configuration deletion for key: {Key}");
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ConfigurationService"/> class.
@@ -74,7 +429,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
-        Logger.LogInformation("Initializing Configuration Service...");
+        _serviceInitializing(Logger, null);
 
         try
         {
@@ -87,12 +442,12 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Initialize configuration storage
             await InitializeConfigurationStorageAsync();
 
-            Logger.LogInformation("Configuration Service initialized successfully");
+            _serviceInitialized(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Configuration Service");
+            _serviceInitializationFailed(Logger, ex);
             return false;
         }
     }
@@ -100,7 +455,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeEnclaveAsync()
     {
-        Logger.LogInformation("Initializing Configuration Service enclave operations...");
+        _enclaveInitializing(Logger, null);
 
         try
         {
@@ -110,12 +465,12 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Load encrypted configurations from secure storage
             await LoadEncryptedConfigurationsAsync();
 
-            Logger.LogInformation("Configuration Service enclave operations initialized successfully");
+            _enclaveInitialized(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize Configuration Service enclave operations");
+            _enclaveInitializationFailed(Logger, ex);
             return false;
         }
     }
@@ -123,19 +478,19 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <inheritdoc/>
     protected override async Task<bool> OnStartAsync()
     {
-        Logger.LogInformation("Starting Configuration Service...");
+        _serviceStarting(Logger, null);
 
         try
         {
             // Start configuration monitoring
             await StartConfigurationMonitoringAsync();
 
-            Logger.LogInformation("Configuration Service started successfully");
+            _serviceStarted(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to start Configuration Service");
+            _serviceStartFailed(Logger, ex);
             return false;
         }
     }
@@ -143,7 +498,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
     /// <inheritdoc/>
     protected override async Task<bool> OnStopAsync()
     {
-        Logger.LogInformation("Stopping Configuration Service...");
+        _serviceStopping(Logger, null);
 
         try
         {
@@ -159,12 +514,12 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Persist statistics
             await PersistStatisticsAsync();
 
-            Logger.LogInformation("Configuration Service stopped successfully");
+            _serviceStopped(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to stop Configuration Service");
+            _serviceStopFailed(Logger, ex);
             return false;
         }
     }
@@ -201,7 +556,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Configuration Service health check failed");
+            _healthCheckFailed(Logger, ex);
             return ServiceHealth.Unhealthy;
         }
     }
@@ -235,7 +590,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     Version = 1,
-                    BlockchainType = BlockchainType.NeoN3
+                    BlockchainType = "NeoN3"
                 };
 
                 lock (_configLock)
@@ -244,11 +599,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 }
             }
 
-            Logger.LogInformation("Loaded {Count} default configurations", defaultConfigs.Count);
+            _defaultConfigurationsLoaded(Logger, defaultConfigs.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to load default configurations");
+            _defaultConfigurationsLoadFailed(Logger, ex);
             throw;
         }
     }
@@ -268,11 +623,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 await GetStorageEncryptionKeyAsync(),
                 CancellationToken.None);
 
-            Logger.LogInformation("Configuration storage initialized successfully");
+            _configurationStorageInitialized(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to initialize configuration storage");
+            _configurationStorageInitializationFailed(Logger, ex);
             throw;
         }
     }
@@ -315,16 +670,16 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                     }
                     catch (Exception ex)
                     {
-                        Logger.LogWarning(ex, "Failed to load configuration from key {Key}", key);
+                        _configurationLoadFromKeyFailed(Logger, key, ex);
                     }
                 }
 
-                Logger.LogInformation("Loaded {Count} encrypted configurations from enclave storage", keys.Length);
+                _encryptedConfigurationsLoaded(Logger, keys.Length, null);
             }
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to load encrypted configurations from enclave storage");
+            _encryptedConfigurationsLoadFailed(Logger, ex);
         }
     }
 
@@ -339,11 +694,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Initialize configuration change monitoring in the enclave
             await _enclaveManager.ExecuteJavaScriptAsync("startConfigurationMonitoring()");
 
-            Logger.LogInformation("Configuration monitoring started successfully");
+            _configurationMonitoringStarted(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to start configuration monitoring");
+            _configurationMonitoringStartFailed(Logger, ex);
             throw;
         }
     }
@@ -359,11 +714,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             // Stop configuration monitoring in the enclave
             await _enclaveManager.ExecuteJavaScriptAsync("stopConfigurationMonitoring()");
 
-            Logger.LogInformation("Configuration monitoring stopped successfully");
+            _configurationMonitoringStopped(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to stop configuration monitoring gracefully");
+            _configurationMonitoringStopFailed(Logger, ex);
         }
     }
 
@@ -387,11 +742,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 await PersistConfigurationAsync(config);
             }
 
-            Logger.LogInformation("Persisted {Count} pending configurations", configurationsToPersist.Count);
+            _pendingConfigurationsPersisted(Logger, configurationsToPersist.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist pending configurations");
+            _pendingConfigurationsPersistFailed(Logger, ex);
         }
     }
 
@@ -420,7 +775,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
             catch
             {
                 // Key doesn't exist, create it
-                Logger.LogInformation("Creating configuration encryption key");
+                _creatingConfigurationEncryptionKey(Logger, null);
                 await _keyManagementService.CreateKeyAsync(
                     ConfigurationEncryptionKeyId,
                     "AES256",
@@ -434,7 +789,7 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
         }
 
         // Fallback: derive key from enclave identity
-        Logger.LogWarning("KeyManagementService not available. Using enclave-derived key.");
+        _keyManagementServiceNotAvailable(Logger, null);
         if (_attestationService == null)
         {
             throw new InvalidOperationException("Neither KeyManagementService nor AttestationService is available for encryption key derivation");
@@ -444,8 +799,8 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
         {
             throw new InvalidOperationException("Unable to retrieve enclave information for encryption key derivation");
         }
-        using var sha256 = SHA256.Create();
         var keyMaterial = $"config-encryption-{enclaveInfo.MrEnclave}-{enclaveInfo.MrSigner}";
+        using var sha256 = SHA256.Create();
         var hash = sha256.ComputeHash(Encoding.UTF8.GetBytes(keyMaterial));
         _cachedEncryptionKey = Convert.ToBase64String(hash);
         return _cachedEncryptionKey;
@@ -496,11 +851,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 await Task.Delay(10); // Simulate storage operation
             }
 
-            Logger.LogDebug("Persisted configuration {Key} to storage", entry.Key);
+            _configurationPersisted(Logger, entry.Key, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to persist configuration {Key}", entry.Key);
+            _configurationPersistFailed(Logger, entry.Key, ex);
             throw;
         }
     }
@@ -524,11 +879,11 @@ public partial class ConfigurationService : EnclaveBlockchainServiceBase, IConfi
                 await Task.Delay(10); // Simulate storage operation
             }
 
-            Logger.LogDebug("Removed configuration {Key} from storage", key);
+            _configurationRemovedFromStorage(Logger, key, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to remove configuration {Key} from storage", key);
+            _configurationRemovalFromStorageFailed(Logger, key, ex);
             throw;
         }
     }

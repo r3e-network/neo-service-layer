@@ -4,6 +4,9 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.Resilience;
 
@@ -16,7 +19,7 @@ public class ResilienceService : ServiceBase, IResilienceService
     private readonly ConcurrentDictionary<string, CircuitBreakerState> _circuitBreakers = new();
     private readonly ConcurrentDictionary<string, RetryState> _retryStates = new();
     private readonly Timer _maintenanceTimer;
-    
+
     // Default configuration
     private readonly TimeSpan _circuitBreakerTimeout = TimeSpan.FromMinutes(1);
     private readonly int _circuitBreakerFailureThreshold = 5;
@@ -27,12 +30,12 @@ public class ResilienceService : ServiceBase, IResilienceService
     {
         // Add resilience capability
         AddCapability<IResilienceService>();
-        
+
         // Set metadata
         SetMetadata("CircuitBreakerThreshold", _circuitBreakerFailureThreshold);
         SetMetadata("DefaultRetryCount", 3);
         SetMetadata("DefaultBackoffMs", 1000);
-        
+
         // Initialize maintenance timer
         _maintenanceTimer = new Timer(MaintenanceCallback, null, TimeSpan.FromMinutes(1), TimeSpan.FromMinutes(1));
     }
@@ -45,44 +48,44 @@ public class ResilienceService : ServiceBase, IResilienceService
 
         var policy = retryPolicy ?? new RetryPolicy();
         var operationId = Guid.NewGuid().ToString();
-        
+
         for (int attempt = 0; attempt <= policy.MaxRetries; attempt++)
         {
             try
             {
-                Logger.LogDebug("Executing operation attempt {Attempt}/{MaxRetries} for {OperationId}", 
+                Logger.LogDebug("Executing operation attempt {Attempt}/{MaxRetries} for {OperationId}",
                     attempt + 1, policy.MaxRetries + 1, operationId);
-                
+
                 var result = await operation();
-                
+
                 if (attempt > 0)
                 {
-                    Logger.LogInformation("Operation succeeded after {Attempts} attempts for {OperationId}", 
+                    Logger.LogInformation("Operation succeeded after {Attempts} attempts for {OperationId}",
                         attempt + 1, operationId);
                 }
-                
+
                 return result;
             }
             catch (Exception ex)
             {
                 if (attempt == policy.MaxRetries)
                 {
-                    Logger.LogError(ex, "Operation failed after {MaxRetries} retries for {OperationId}", 
+                    Logger.LogError(ex, "Operation failed after {MaxRetries} retries for {OperationId}",
                         policy.MaxRetries + 1, operationId);
                     throw new ResilienceException($"Operation failed after {policy.MaxRetries + 1} attempts", ex);
                 }
 
                 if (!ShouldRetry(ex, policy))
                 {
-                    Logger.LogWarning("Operation will not be retried due to exception type: {ExceptionType} for {OperationId}", 
+                    Logger.LogWarning("Operation will not be retried due to exception type: {ExceptionType} for {OperationId}",
                         ex.GetType().Name, operationId);
                     throw;
                 }
 
                 var delay = CalculateDelay(attempt, policy);
-                Logger.LogWarning(ex, "Operation failed (attempt {Attempt}), retrying in {Delay}ms for {OperationId}", 
+                Logger.LogWarning(ex, "Operation failed (attempt {Attempt}), retrying in {Delay}ms for {OperationId}",
                     attempt + 1, delay.TotalMilliseconds, operationId);
-                
+
                 await Task.Delay(delay);
             }
         }
@@ -95,7 +98,7 @@ public class ResilienceService : ServiceBase, IResilienceService
     {
         if (string.IsNullOrWhiteSpace(circuitName))
             throw new ArgumentException("Circuit name cannot be null or empty", nameof(circuitName));
-        
+
         if (operation == null)
             throw new ArgumentNullException(nameof(operation));
 
@@ -137,7 +140,7 @@ public class ResilienceService : ServiceBase, IResilienceService
         try
         {
             var result = await operation();
-            
+
             // Success - reset circuit if needed
             if (circuitState.State == CircuitState.HalfOpen)
             {
@@ -149,14 +152,14 @@ public class ResilienceService : ServiceBase, IResilienceService
             {
                 circuitState.FailureCount = Math.Max(0, circuitState.FailureCount - 1);
             }
-            
+
             return result;
         }
         catch (Exception ex)
         {
             circuitState.FailureCount++;
             circuitState.LastFailureTime = DateTime.UtcNow;
-            
+
             if (circuitState.State == CircuitState.HalfOpen)
             {
                 // Failed test - reopen circuit
@@ -167,13 +170,13 @@ public class ResilienceService : ServiceBase, IResilienceService
             {
                 // Open circuit
                 circuitState.State = CircuitState.Open;
-                Logger.LogWarning("Circuit breaker {CircuitName} opened after {FailureCount} failures", 
+                Logger.LogWarning("Circuit breaker {CircuitName} opened after {FailureCount} failures",
                     circuitName, circuitState.FailureCount);
             }
-            
-            Logger.LogError(ex, "Operation failed in circuit breaker {CircuitName}, failure count: {FailureCount}", 
+
+            Logger.LogError(ex, "Operation failed in circuit breaker {CircuitName}, failure count: {FailureCount}",
                 circuitName, circuitState.FailureCount);
-            
+
             throw;
         }
     }
@@ -184,8 +187,7 @@ public class ResilienceService : ServiceBase, IResilienceService
         if (operation == null)
             throw new ArgumentNullException(nameof(operation));
 
-        using var cts = new CancellationTokenSource(timeout);
-        
+
         try
         {
             return await operation().ConfigureAwait(false);
@@ -202,7 +204,7 @@ public class ResilienceService : ServiceBase, IResilienceService
     {
         if (string.IsNullOrWhiteSpace(bulkheadName))
             throw new ArgumentException("Bulkhead name cannot be null or empty", nameof(bulkheadName));
-        
+
         if (operation == null)
             throw new ArgumentNullException(nameof(operation));
 
@@ -269,14 +271,14 @@ public class ResilienceService : ServiceBase, IResilienceService
         try
         {
             Logger.LogInformation("Initializing resilience service...");
-            
+
             // Test basic functionality
             await ExecuteWithRetryAsync(async () =>
             {
                 await Task.CompletedTask;
                 return true;
             }, new RetryPolicy { MaxRetries = 1 });
-            
+
             Logger.LogInformation("Resilience service initialized successfully");
             return true;
         }
@@ -299,9 +301,9 @@ public class ResilienceService : ServiceBase, IResilienceService
     protected override async Task<bool> OnStopAsync()
     {
         Logger.LogInformation("Resilience service stopping...");
-        
+
         _maintenanceTimer?.Dispose();
-        
+
         Logger.LogInformation("Resilience service stopped");
         await Task.CompletedTask;
         return true;
@@ -321,7 +323,7 @@ public class ResilienceService : ServiceBase, IResilienceService
 
             if (openCircuits > _circuitBreakers.Count / 2)
             {
-                Logger.LogWarning("More than half of circuit breakers are open: {OpenCircuits}/{TotalCircuits}", 
+                Logger.LogWarning("More than half of circuit breakers are open: {OpenCircuits}/{TotalCircuits}",
                     openCircuits, _circuitBreakers.Count);
                 return ServiceHealth.Degraded;
             }
@@ -377,7 +379,7 @@ public class ResilienceService : ServiceBase, IResilienceService
             // Clean up old retry states
             var cutoffTime = DateTime.UtcNow.AddMinutes(-10);
             var keysToRemove = new List<string>();
-            
+
             foreach (var kvp in _retryStates)
             {
                 if (kvp.Value.LastAttempt < cutoffTime)
@@ -385,7 +387,7 @@ public class ResilienceService : ServiceBase, IResilienceService
                     keysToRemove.Add(kvp.Key);
                 }
             }
-            
+
             foreach (var key in keysToRemove)
             {
                 _retryStates.TryRemove(key, out _);
@@ -394,7 +396,7 @@ public class ResilienceService : ServiceBase, IResilienceService
             // Log circuit breaker states
             var openCircuits = 0;
             var halfOpenCircuits = 0;
-            
+
             foreach (var kvp in _circuitBreakers)
             {
                 switch (kvp.Value.State)
@@ -430,14 +432,14 @@ public class ResilienceService : ServiceBase, IResilienceService
         if (disposing)
         {
             _maintenanceTimer?.Dispose();
-            
+
             foreach (var semaphore in _semaphores.Values)
             {
                 semaphore?.Dispose();
             }
             _semaphores.Clear();
         }
-        
+
         base.Dispose(disposing);
     }
 }

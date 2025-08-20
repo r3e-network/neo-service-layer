@@ -1,6 +1,11 @@
-﻿using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -112,7 +117,7 @@ public partial class PredictionService
             {"optimistic", 0.8}, {"confident", 0.7}, {"breakthrough", 0.9}, {"innovation", 0.8},
             {"revolutionary", 0.9}, {"promising", 0.7}, {"bright", 0.6}, {"stellar", 0.9},
             {"outstanding", 0.9}, {"excellent", 0.8}, {"amazing", 0.8}, {"fantastic", 0.9},
-            
+
             // General positive terms
             {"good", 0.6}, {"great", 0.7}, {"wonderful", 0.8}, {"positive", 0.7}, {"love", 0.8},
             {"like", 0.5}, {"happy", 0.7}, {"joy", 0.8}, {"success", 0.8}, {"win", 0.7}
@@ -126,7 +131,7 @@ public partial class PredictionService
             {"unstable", 0.4}, {"risky", 0.3}, {"dangerous", 0.8}, {"loss", 0.5},
             {"fail", 0.6}, {"down", 0.3}, {"decrease", 0.4}, {"weak", 0.4},
             {"selling", 0.3}, {"pressure", 0.2}, {"pessimistic", 0.5},
-            
+
             // General negative terms
             {"bad", 0.6}, {"terrible", 0.8}, {"awful", 0.8}, {"horrible", 0.8}, {"negative", 0.4},
             {"hate", 0.8}, {"dislike", 0.6}, {"sad", 0.6}, {"fear", 0.5}, {"worried", 0.4},
@@ -477,8 +482,8 @@ public partial class PredictionService
             Negative = adjustedNegative,
             Neutral = adjustedNeutral,
             Compound = compound,
-            Overall = dominantSentiment == "positive" ? SentimentType.Positive :
-                     dominantSentiment == "negative" ? SentimentType.Negative : SentimentType.Neutral
+            Overall = dominantSentiment == "positive" ? Models.SentimentType.Positive :
+                     dominantSentiment == "negative" ? Models.SentimentType.Negative : Models.SentimentType.Neutral
         };
     }
 
@@ -495,7 +500,7 @@ public partial class PredictionService
                 Negative = 0.33,
                 Neutral = 0.34,
                 Compound = 0.0,
-                Overall = SentimentType.Neutral
+                Overall = Models.SentimentType.Neutral
             };
         }
 
@@ -504,8 +509,8 @@ public partial class PredictionService
         var avgNeutral = sentiments.Average(s => s.Neutral);
         var avgCompound = sentiments.Average(s => s.Compound);
 
-        var dominantSentiment = avgPositive > avgNegative && avgPositive > avgNeutral ? SentimentType.Positive :
-                               avgNegative > avgNeutral ? SentimentType.Negative : SentimentType.Neutral;
+        var dominantSentiment = avgPositive > avgNegative && avgPositive > avgNeutral ? Models.SentimentType.Positive :
+                               avgNegative > avgNeutral ? Models.SentimentType.Negative : Models.SentimentType.Neutral;
 
         return new Models.SentimentScore
         {

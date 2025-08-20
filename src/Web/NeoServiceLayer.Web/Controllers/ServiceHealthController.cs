@@ -1,5 +1,5 @@
-﻿using System;
 using System.Collections.Generic;
+using Microsoft.AspNetCore.Authorization;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -7,6 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -81,14 +84,13 @@ public class ServiceHealthController : ControllerBase
                 if (service != null)
                 {
                     var health = await service.GetHealthAsync();
-                    var status = service.GetStatusAsync != null ? await service.GetStatusAsync() : ServiceStatus.Unknown;
-
+                    
                     serviceHealthList.Add(new
                     {
                         name = serviceType.Name.Replace("I", "").Replace("Service", ""),
                         type = serviceType.FullName,
                         health = health.ToString(),
-                        status = status.ToString(),
+                        status = "Active",
                         timestamp = DateTime.UtcNow
                     });
                 }

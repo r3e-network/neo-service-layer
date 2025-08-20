@@ -1,8 +1,15 @@
-﻿using System.Security;
 using Azure.Identity;
 using Azure.Security.KeyVault.Secrets;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security;
+
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -11,7 +18,7 @@ namespace NeoServiceLayer.Services.SecretsManagement;
 /// </summary>
 public class AzureKeyVaultProvider : IExternalSecretProvider
 {
-    private readonly ILogger<AzureKeyVaultProvider> _logger;
+    private readonly ILogger<AzureKeyVaultProvider> Logger;
     private SecretClient? _secretClient;
     private string? _keyVaultUrl;
 
@@ -21,7 +28,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
     /// <param name="logger">The logger.</param>
     public AzureKeyVaultProvider(ILogger<AzureKeyVaultProvider> logger)
     {
-        _logger = logger;
+        Logger = logger;
     }
 
     /// <inheritdoc/>
@@ -33,7 +40,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
     /// <inheritdoc/>
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing Azure Key Vault provider");
+        Logger.LogInformation("Initializing Azure Key Vault provider");
         return Task.CompletedTask;
     }
 
@@ -42,7 +49,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
     {
         try
         {
-            _logger.LogInformation("Configuring Azure Key Vault provider");
+            Logger.LogInformation("Configuring Azure Key Vault provider");
 
             if (!configuration.TryGetValue("KeyVaultUrl", out _keyVaultUrl) || string.IsNullOrEmpty(_keyVaultUrl))
             {
@@ -70,12 +77,12 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
             _secretClient = new SecretClient(new Uri(_keyVaultUrl), credential);
 
-            _logger.LogInformation("Azure Key Vault provider configured successfully");
+            Logger.LogInformation("Azure Key Vault provider configured successfully");
             return Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error configuring Azure Key Vault provider");
+            Logger.LogError(ex, "Error configuring Azure Key Vault provider");
             throw;
         }
     }
@@ -87,7 +94,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Storing secret {SecretId} in Azure Key Vault", secretId);
+            Logger.LogDebug("Storing secret {SecretId} in Azure Key Vault", secretId);
 
             var secretValue = SecureStringToString(value);
             var secret = new KeyVaultSecret(SanitizeSecretName(secretId), secretValue);
@@ -99,11 +106,11 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
             await _secretClient!.SetSecretAsync(secret, cancellationToken);
 
-            _logger.LogDebug("Successfully stored secret {SecretId} in Azure Key Vault", secretId);
+            Logger.LogDebug("Successfully stored secret {SecretId} in Azure Key Vault", secretId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error storing secret {SecretId} in Azure Key Vault", secretId);
+            Logger.LogError(ex, "Error storing secret {SecretId} in Azure Key Vault", secretId);
             throw;
         }
     }
@@ -115,7 +122,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Retrieving secret {SecretId} from Azure Key Vault", secretId);
+            Logger.LogDebug("Retrieving secret {SecretId} from Azure Key Vault", secretId);
 
             var response = await _secretClient!.GetSecretAsync(SanitizeSecretName(secretId), cancellationToken: cancellationToken);
 
@@ -128,12 +135,12 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
         }
         catch (Azure.RequestFailedException ex) when (ex.Status == 404)
         {
-            _logger.LogDebug("Secret {SecretId} not found in Azure Key Vault", secretId);
+            Logger.LogDebug("Secret {SecretId} not found in Azure Key Vault", secretId);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving secret {SecretId} from Azure Key Vault", secretId);
+            Logger.LogError(ex, "Error retrieving secret {SecretId} from Azure Key Vault", secretId);
             throw;
         }
     }
@@ -145,7 +152,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Listing secrets from Azure Key Vault");
+            Logger.LogDebug("Listing secrets from Azure Key Vault");
 
             var secrets = new List<SecretMetadata>();
             var secretProperties = _secretClient!.GetPropertiesOfSecretsAsync(cancellationToken);
@@ -172,12 +179,12 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
                 secrets.Add(metadata);
             }
 
-            _logger.LogDebug("Listed {Count} secrets from Azure Key Vault", secrets.Count);
+            Logger.LogDebug("Listed {Count} secrets from Azure Key Vault", secrets.Count);
             return secrets;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error listing secrets from Azure Key Vault");
+            Logger.LogError(ex, "Error listing secrets from Azure Key Vault");
             throw;
         }
     }
@@ -189,22 +196,22 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Deleting secret {SecretId} from Azure Key Vault", secretId);
+            Logger.LogDebug("Deleting secret {SecretId} from Azure Key Vault", secretId);
 
             var operation = await _secretClient!.StartDeleteSecretAsync(SanitizeSecretName(secretId), cancellationToken);
             await operation.WaitForCompletionAsync(cancellationToken);
 
-            _logger.LogDebug("Successfully deleted secret {SecretId} from Azure Key Vault", secretId);
+            Logger.LogDebug("Successfully deleted secret {SecretId} from Azure Key Vault", secretId);
             return true;
         }
         catch (Azure.RequestFailedException ex) when (ex.Status == 404)
         {
-            _logger.LogDebug("Secret {SecretId} not found in Azure Key Vault for deletion", secretId);
+            Logger.LogDebug("Secret {SecretId} not found in Azure Key Vault for deletion", secretId);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting secret {SecretId} from Azure Key Vault", secretId);
+            Logger.LogError(ex, "Error deleting secret {SecretId} from Azure Key Vault", secretId);
             throw;
         }
     }
@@ -216,7 +223,7 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Testing connection to Azure Key Vault");
+            Logger.LogDebug("Testing connection to Azure Key Vault");
 
             // Try to list secrets to test connectivity
             var secrets = _secretClient!.GetPropertiesOfSecretsAsync(cancellationToken);
@@ -233,12 +240,12 @@ public class AzureKeyVaultProvider : IExternalSecretProvider
                 await enumerator.DisposeAsync();
             }
 
-            _logger.LogDebug("Azure Key Vault connection test successful");
+            Logger.LogDebug("Azure Key Vault connection test successful");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Azure Key Vault connection test failed");
+            Logger.LogError(ex, "Azure Key Vault connection test failed");
             return false;
         }
     }

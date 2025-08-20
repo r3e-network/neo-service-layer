@@ -43,10 +43,11 @@
     <PackageReference Include="System.Diagnostics.PerformanceCounter" />
     <PackageReference Include="Moq" />
     <PackageReference Include="FluentAssertions" />
+    <PackageReference Include="coverlet.collector" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Infrastructure/NeoServiceLayer.Infrastructure.Caching/NeoServiceLayer.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Caching/NeoServiceLayer.Infrastructure.Caching.csproj" />
   </ItemGroup>
 
   <ItemGroup>

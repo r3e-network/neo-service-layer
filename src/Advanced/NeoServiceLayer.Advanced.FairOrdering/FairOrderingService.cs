@@ -1,22 +1,28 @@
-﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Core;
+using CoreConfig = NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
+using ServiceConfig = NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using CoreModels = NeoServiceLayer.Core.Models;
-using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
 /// <summary>
 /// Implementation of the Fair Ordering Service that provides transaction fairness and MEV protection capabilities.
 /// </summary>
-public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOrderingService
+public partial class FairOrderingService : ServiceFramework.EnclaveBlockchainServiceBase, IFairOrderingService
 {
-    private readonly ConcurrentDictionary<string, FairOrderingModels.OrderingPool> _orderingPools = new();
-    private readonly ConcurrentQueue<FairOrderingModels.FairOrderingResult> _recentResults = new();
+    private readonly ConcurrentDictionary<string, OrderingPool> _orderingPools = new();
+    private readonly ConcurrentQueue<FairOrderingResult> _recentResults = new();
     private readonly object _poolsLock = new();
     private readonly Timer _processingTimer;
     private readonly IPersistentStorageProvider? _storageProvider;
@@ -28,7 +34,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// <param name="configuration">The service configuration.</param>
     /// <param name="storageProvider">The storage provider.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
-    public FairOrderingService(ILogger<FairOrderingService> logger, IServiceConfiguration? configuration = null, IPersistentStorageProvider? storageProvider = null, IEnclaveManager? enclaveManager = null)
+    public FairOrderingService(ILogger<FairOrderingService> logger, ServiceConfig.IServiceConfiguration? configuration = null, IPersistentStorageProvider? storageProvider = null, IEnclaveManager? enclaveManager = null)
         : base("FairOrdering", "Advanced fair transaction ordering service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         _storageProvider = storageProvider;
@@ -45,7 +51,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// <summary>
     /// Gets the service configuration.
     /// </summary>
-    protected IServiceConfiguration? Configuration { get; }
+    protected ServiceConfig.IServiceConfiguration? Configuration { get; }
 
     /// <summary>
     /// Gets the storage provider.
@@ -53,7 +59,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     protected IPersistentStorageProvider? StorageProvider => _storageProvider;
 
     /// <inheritdoc/>
-    public async Task<string> CreateOrderingPoolAsync(FairOrderingModels.OrderingPoolConfig config, BlockchainType blockchainType)
+    public async Task<string> CreateOrderingPoolAsync(OrderingPoolConfig config, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(config);
 
@@ -66,7 +72,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubmitFairTransactionAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
+    public async Task<string> SubmitFairTransactionAsync(Models.FairTransactionRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -79,7 +85,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
+    public async Task<FairnessRiskAnalysisResult> AnalyzeFairnessRiskAsync(Models.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -92,7 +98,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubmitTransactionAsync(FairOrderingModels.TransactionSubmission submission, BlockchainType blockchainType)
+    public async Task<string> SubmitTransactionAsync(TransactionSubmission submission, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(submission);
 
@@ -109,7 +115,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             var pool = _orderingPools.Values.FirstOrDefault(p => p.Status == PoolStatus.Active);
             if (pool == null)
             {
-                var defaultPoolId = await CreateOrderingPoolAsync(new FairOrderingModels.OrderingPoolConfig
+                var defaultPoolId = await CreateOrderingPoolAsync(new OrderingPoolConfig
                 {
                     Name = "Default Pool",
                     Description = "Default ordering pool"
@@ -117,7 +123,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
                 pool = _orderingPools[defaultPoolId];
             }
 
-            var pendingTransaction = new FairOrderingModels.PendingTransaction
+            var pendingTransaction = new PendingTransaction
             {
                 Id = submissionId,
                 Hash = ComputeTransactionHash(submission.TransactionData),
@@ -147,7 +153,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingModels.FairOrderingResult> GetFairOrderingResultAsync(string transactionId, BlockchainType blockchainType)
+    public async Task<FairOrderingResult> GetFairOrderingResultAsync(string transactionId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(transactionId);
 
@@ -174,7 +180,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingModels.MevProtectionResult> AnalyzeMevRiskAsync(FairOrderingModels.MevAnalysisRequest request, BlockchainType blockchainType)
+    public async Task<MevProtectionResult> AnalyzeMevRiskAsync(MevAnalysisRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -196,7 +202,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
                 var mevRisk = await AnalyzeMevRiskInEnclaveAsync(request);
                 var protectionStrategies = await GenerateProtectionStrategiesAsync(mevRisk);
 
-                var result = new FairOrderingModels.MevProtectionResult
+                var result = new MevProtectionResult
                 {
                     AnalysisId = analysisId,
                     TransactionHash = request.TransactionHash,
@@ -217,7 +223,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             {
                 Logger.LogError(ex, "Failed to analyze MEV risk {AnalysisId}", analysisId);
 
-                return new FairOrderingModels.MevProtectionResult
+                return new MevProtectionResult
                 {
                     AnalysisId = analysisId,
                     TransactionHash = request.TransactionHash,
@@ -230,7 +236,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<FairOrderingModels.FairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType)
+    public async Task<FairnessMetrics> GetFairnessMetricsAsync(string poolId, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(poolId);
 
@@ -243,7 +249,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
         {
             var pool = GetOrderingPool(poolId);
 
-            return new FairOrderingModels.FairnessMetrics
+            return new FairnessMetrics
             {
                 PoolId = poolId,
                 TotalTransactionsProcessed = pool.ProcessedBatches.Sum(b => b.TransactionCount),
@@ -257,7 +263,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<FairOrderingModels.OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType)
+    public async Task<IEnumerable<OrderingPool>> GetOrderingPoolsAsync(BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -274,7 +280,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     }
 
     /// <inheritdoc/>
-    public async Task<bool> UpdatePoolConfigAsync(string poolId, FairOrderingModels.OrderingPoolConfig config, BlockchainType blockchainType)
+    public async Task<bool> UpdatePoolConfigAsync(string poolId, OrderingPoolConfig config, BlockchainType blockchainType)
     {
         ArgumentException.ThrowIfNullOrEmpty(poolId);
         ArgumentNullException.ThrowIfNull(config);
@@ -421,7 +427,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     {
         try
         {
-            var poolsToProcess = new List<FairOrderingModels.OrderingPool>();
+            var poolsToProcess = new List<OrderingPool>();
 
             lock (_poolsLock)
             {
@@ -446,7 +452,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// Processes a batch of transactions for an ordering pool.
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
-    private async Task ProcessPoolBatchAsync(FairOrderingModels.OrderingPool pool)
+    private async Task ProcessPoolBatchAsync(OrderingPool pool)
     {
         try
         {
@@ -454,7 +460,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
                 pool.Id, pool.PendingTransactions.Count);
 
             var batchId = Guid.NewGuid().ToString();
-            var transactionsToProcess = new List<FairOrderingModels.PendingTransaction>();
+            var transactionsToProcess = new List<PendingTransaction>();
 
             lock (_poolsLock)
             {
@@ -467,7 +473,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             var orderedTransactions = await OrderTransactionsInEnclaveAsync(pool, transactionsToProcess);
 
             // Create processed batch
-            var processedBatch = new FairOrderingModels.ProcessedBatch
+            var processedBatch = new ProcessedBatch
             {
                 BatchId = batchId,
                 PoolId = pool.Id,
@@ -480,7 +486,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
             // Record ordering results
             foreach (var transaction in orderedTransactions)
             {
-                var result = new FairOrderingModels.FairOrderingResult
+                var result = new FairOrderingResult
                 {
                     TransactionId = transaction.Id,
                     PoolId = pool.Id,
@@ -530,7 +536,7 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// </summary>
     /// <param name="poolId">The pool ID.</param>
     /// <returns>The ordering pool.</returns>
-    private FairOrderingModels.OrderingPool GetOrderingPool(string poolId)
+    private OrderingPool GetOrderingPool(string poolId)
     {
         lock (_poolsLock)
         {
@@ -548,15 +554,15 @@ public partial class FairOrderingService : EnclaveBlockchainServiceBase, IFairOr
     /// </summary>
     /// <param name="score">The risk score (0-1).</param>
     /// <returns>The risk level.</returns>
-    private FairOrderingModels.RiskLevel CalculateRiskLevel(double score)
+    private RiskLevel CalculateRiskLevel(double score)
     {
         return score switch
         {
-            >= 0.8 => FairOrderingModels.RiskLevel.Critical,
-            >= 0.6 => FairOrderingModels.RiskLevel.High,
-            >= 0.4 => FairOrderingModels.RiskLevel.Medium,
-            >= 0.2 => FairOrderingModels.RiskLevel.Low,
-            _ => FairOrderingModels.RiskLevel.Minimal
+            >= 0.8 => RiskLevel.Critical,
+            >= 0.6 => RiskLevel.High,
+            >= 0.4 => RiskLevel.Medium,
+            >= 0.2 => RiskLevel.Low,
+            _ => RiskLevel.Minimal
         };
     }
 

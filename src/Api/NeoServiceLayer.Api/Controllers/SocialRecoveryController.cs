@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Numerics;
@@ -7,7 +6,12 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Api.Models;
 using NeoServiceLayer.Services.SocialRecovery;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Controllers
 {
@@ -61,7 +65,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error enrolling guardian");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to enroll guardian", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to enroll guardian", Message = ex.Message });
             }
         }
 
@@ -100,7 +104,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error initiating recovery");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to initiate recovery", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to initiate recovery", Message = ex.Message });
             }
         }
 
@@ -130,7 +134,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error confirming recovery {RecoveryId}", recoveryId);
-                return StatusCode(500, new ErrorResponse { Error = "Failed to confirm recovery", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to confirm recovery", Message = ex.Message });
             }
         }
 
@@ -165,7 +169,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error establishing trust");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to establish trust", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to establish trust", Message = ex.Message });
             }
         }
 
@@ -194,7 +198,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting guardian info");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get guardian info", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get guardian info", Message = ex.Message });
             }
         }
 
@@ -223,7 +227,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting recovery info");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get recovery info", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get recovery info", Message = ex.Message });
             }
         }
 
@@ -243,7 +247,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting strategies");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get strategies", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get strategies", Message = ex.Message });
             }
         }
 
@@ -264,7 +268,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting network stats");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get network stats", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get network stats", Message = ex.Message });
             }
         }
 
@@ -299,7 +303,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error adding auth factor");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to add auth factor", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to add auth factor", Message = ex.Message });
             }
         }
 
@@ -339,7 +343,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error configuring recovery");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to configure recovery", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to configure recovery", Message = ex.Message });
             }
         }
 
@@ -361,7 +365,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting active recoveries");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get active recoveries", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get active recoveries", Message = ex.Message });
             }
         }
 
@@ -383,7 +387,7 @@ namespace NeoServiceLayer.Api.Controllers
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error getting trust relationships");
-                return StatusCode(500, new ErrorResponse { Error = "Failed to get trust relationships", Details = ex.Message });
+                return StatusCode(500, new ErrorResponse { Error = "Failed to get trust relationships", Message = ex.Message });
             }
         }
     }
@@ -474,10 +478,5 @@ namespace NeoServiceLayer.Api.Controllers
         public string Blockchain { get; set; } = "neo-n3";
     }
 
-    public class ErrorResponse
-    {
-        public string Error { get; set; }
-        public string Details { get; set; }
-    }
     #endregion
 }

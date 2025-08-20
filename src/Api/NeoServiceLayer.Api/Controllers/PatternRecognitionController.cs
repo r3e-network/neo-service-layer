@@ -1,12 +1,17 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
-using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
 using PatternModels = NeoServiceLayer.AI.PatternRecognition.Models;
+using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -400,7 +405,7 @@ public class PatternRecognitionController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("fraud-detection/history/{blockchainType}")]
     [Authorize(Roles = "Admin,KeyManager,ServiceUser")]
-    [ProducesResponseType(typeof(PaginatedResponse<PatternModels.FraudDetectionResult>), 200)]
+    [ProducesResponseType(typeof(PaginatedResponse<NeoServiceLayer.AI.PatternRecognition.Models.FraudDetectionResult>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> GetFraudDetectionHistory(

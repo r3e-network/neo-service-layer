@@ -26,9 +26,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Oracle\NeoServiceLayer.Services.Oracle.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.Core\NeoServiceLayer.Core.csproj" />
-    <ProjectReference Include="..\..\..\src\Core\NeoServiceLayer.ServiceFramework\NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Oracle/NeoServiceLayer.Services.Oracle.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Caching/NeoServiceLayer.Infrastructure.Caching.csproj" />
   </ItemGroup>
+  <ItemGroup>
 
+    <PackageReference Include="FluentAssertions" />
+  </ItemGroup>
 </Project>

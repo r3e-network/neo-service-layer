@@ -1,7 +1,12 @@
-﻿using System;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Configuration
 {
@@ -24,40 +29,38 @@ namespace NeoServiceLayer.Core.Configuration
         /// </summary>
         public static IHost ValidateRequiredConfiguration(this IHost host)
         {
-            using (var scope = host.Services.CreateScope())
+            using var scope = host.Services.CreateScope();
+            var config = scope.ServiceProvider.GetRequiredService<ISecureConfigurationProvider>();
+            var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+
+            // Only validate in production
+            if (!environment.IsProduction())
+                return host;
+
+            // Define required configuration keys for production
+            var requiredKeys = new[]
             {
-                var config = scope.ServiceProvider.GetRequiredService<ISecureConfigurationProvider>();
-                var environment = scope.ServiceProvider.GetRequiredService<IHostEnvironment>();
+                "JWT_SECRET_KEY",
+                "NEO_N3_RPC_URL",
+                "NEO_X_RPC_URL"
+            };
 
-                // Only validate in production
-                if (!environment.IsProduction())
-                    return host;
-
-                // Define required configuration keys for production
-                var requiredKeys = new[]
+            foreach (var key in requiredKeys)
+            {
+                var value = Environment.GetEnvironmentVariable(key);
+                if (string.IsNullOrEmpty(value))
                 {
-                    "JWT_SECRET_KEY",
-                    "NEO_N3_RPC_URL",
-                    "NEO_X_RPC_URL"
-                };
+                    throw new InvalidOperationException(
+                        $"Required environment variable '{key}' is not set. " +
+                        $"Please configure all required values for production deployment.");
+                }
 
-                foreach (var key in requiredKeys)
+                // Check for common placeholder patterns
+                if (IsPlaceholder(value))
                 {
-                    var value = Environment.GetEnvironmentVariable(key);
-                    if (string.IsNullOrEmpty(value))
-                    {
-                        throw new InvalidOperationException(
-                            $"Required environment variable '{key}' is not set. " +
-                            $"Please configure all required values for production deployment.");
-                    }
-
-                    // Check for common placeholder patterns
-                    if (IsPlaceholder(value))
-                    {
-                        throw new InvalidOperationException(
-                            $"Environment variable '{key}' contains a placeholder value: '{value}'. " +
-                            $"Please set the actual production value.");
-                    }
+                    throw new InvalidOperationException(
+                        $"Environment variable '{key}' contains a placeholder value: '{value}'. " +
+                        $"Please set the actual production value.");
                 }
             }
 

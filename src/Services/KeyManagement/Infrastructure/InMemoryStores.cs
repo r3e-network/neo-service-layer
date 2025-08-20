@@ -7,6 +7,8 @@ using System.Threading.Tasks;
 using NeoServiceLayer.Services.KeyManagement.Queries;
 using NeoServiceLayer.Services.KeyManagement.QueryHandlers;
 using NeoServiceLayer.Services.KeyManagement.ReadModels;
+using NeoServiceLayer.ServiceFramework;
+
 
 namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 {
@@ -53,36 +55,36 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
         public Task<IEnumerable<KeyReadModel>> GetActiveKeysAsync(int? limit, CancellationToken cancellationToken = default)
         {
             var query = _models.Values.Where(m => m.Status == "Active");
-            
+
             if (limit.HasValue)
                 query = query.Take(limit.Value);
-            
+
             return Task.FromResult(query.AsEnumerable());
         }
 
         public Task<IEnumerable<KeyReadModel>> GetExpiringKeysAsync(DateTime before, CancellationToken cancellationToken = default)
         {
-            var results = _models.Values.Where(m => 
-                m.ExpiresAt.HasValue && 
+            var results = _models.Values.Where(m =>
+                m.ExpiresAt.HasValue &&
                 m.ExpiresAt.Value <= before &&
                 m.Status != "Revoked");
-            
+
             return Task.FromResult(results);
         }
 
         public Task<IEnumerable<KeyReadModel>> GetByUserAsync(string userId, CancellationToken cancellationToken = default)
         {
-            var results = _models.Values.Where(m => 
-                m.AuthorizedUsers.Contains(userId) || 
+            var results = _models.Values.Where(m =>
+                m.AuthorizedUsers.Contains(userId) ||
                 m.CreatedBy == userId);
-            
+
             return Task.FromResult(results);
         }
 
         public Task<KeyUsageStatistics> GetUsageStatisticsAsync(
-            string keyId, 
-            DateTime from, 
-            DateTime to, 
+            string keyId,
+            DateTime from,
+            DateTime to,
             CancellationToken cancellationToken = default)
         {
             if (!_statistics.TryGetValue(keyId, out var stats))
@@ -117,7 +119,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Infrastructure
 
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                query = query.Where(m => 
+                query = query.Where(m =>
                     m.KeyId.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     m.KeyType.Contains(searchTerm, StringComparison.OrdinalIgnoreCase) ||
                     m.Algorithm.Contains(searchTerm, StringComparison.OrdinalIgnoreCase));

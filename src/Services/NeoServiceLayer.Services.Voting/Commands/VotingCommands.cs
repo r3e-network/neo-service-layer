@@ -1,104 +1,297 @@
-﻿using System;
 using System.Collections.Generic;
 using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Services.Voting.Domain.Aggregates;
 using NeoServiceLayer.Services.Voting.Domain.ValueObjects;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting.Commands
 {
     // Proposal management commands
-    public record CreateProposalCommand(
-        string Title,
-        string Description,
-        ProposalType Type,
-        VotingRules Rules,
-        List<VoteOption> Options,
-        Guid CreatedBy,
-        DateTime VotingStartsAt,
-        DateTime VotingEndsAt) : ICommand<Guid>;
+    public class CreateProposalCommand : CommandBase<Guid>
+    {
+        public string Title { get; }
+        public string Description { get; }
+        public ProposalType Type { get; }
+        public VotingRules Rules { get; }
+        public List<VoteOption> Options { get; }
+        public Guid CreatedBy { get; }
+        public DateTime VotingStartsAt { get; }
+        public DateTime VotingEndsAt { get; }
 
-    public record StartVotingCommand(Guid ProposalId) : ICommand;
+        public CreateProposalCommand(string title, string description, ProposalType type, VotingRules rules, 
+            List<VoteOption> options, Guid createdBy, DateTime votingStartsAt, DateTime votingEndsAt, 
+            string initiatedBy, Guid? correlationId = null) : base(initiatedBy, correlationId)
+        {
+            Title = title;
+            Description = description;
+            Type = type;
+            Rules = rules;
+            Options = options;
+            CreatedBy = createdBy;
+            VotingStartsAt = votingStartsAt;
+            VotingEndsAt = votingEndsAt;
+        }
+    }
 
-    public record EndVotingCommand(Guid ProposalId) : ICommand<VotingResult>;
+    public class StartVotingCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
 
-    public record CancelProposalCommand(
-        Guid ProposalId,
-        string Reason) : ICommand;
+        public StartVotingCommand(Guid proposalId, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+        }
+    }
 
-    public record ExtendVotingPeriodCommand(
-        Guid ProposalId,
-        DateTime NewEndTime) : ICommand;
+    public class EndVotingCommand : CommandBase<VotingResult>
+    {
+        public Guid ProposalId { get; }
+
+        public EndVotingCommand(Guid proposalId, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+        }
+    }
+
+    public class CancelProposalCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public string Reason { get; }
+
+        public CancelProposalCommand(Guid proposalId, string reason, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            Reason = reason;
+        }
+    }
+
+    public class ExtendVotingPeriodCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public DateTime NewEndTime { get; }
+
+        public ExtendVotingPeriodCommand(Guid proposalId, DateTime newEndTime, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            NewEndTime = newEndTime;
+        }
+    }
 
     // Voting commands
-    public record CastVoteCommand(
-        Guid ProposalId,
-        Guid VoterId,
-        Guid OptionId,
-        decimal Weight = 1.0m) : ICommand;
+    public class CastVoteCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid VoterId { get; }
+        public Guid OptionId { get; }
+        public decimal Weight { get; }
 
-    public record ChangeVoteCommand(
-        Guid ProposalId,
-        Guid VoterId,
-        Guid NewOptionId,
-        decimal Weight = 1.0m) : ICommand;
+        public CastVoteCommand(Guid proposalId, Guid voterId, Guid optionId, decimal weight, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            VoterId = voterId;
+            OptionId = optionId;
+            Weight = weight;
+        }
+    }
 
-    public record WithdrawVoteCommand(
-        Guid ProposalId,
-        Guid VoterId) : ICommand;
+    public class ChangeVoteCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid VoterId { get; }
+        public Guid NewOptionId { get; }
+        public decimal Weight { get; }
 
-    public record DelegateVoteCommand(
-        Guid ProposalId,
-        Guid DelegatorId,
-        Guid DelegateId,
-        decimal Weight = 1.0m) : ICommand;
+        public ChangeVoteCommand(Guid proposalId, Guid voterId, Guid newOptionId, decimal weight, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            VoterId = voterId;
+            NewOptionId = newOptionId;
+            Weight = weight;
+        }
+    }
 
-    public record RevokeDelegationCommand(
-        Guid ProposalId,
-        Guid DelegatorId,
-        Guid DelegateId) : ICommand;
+    public class WithdrawVoteCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid VoterId { get; }
+
+        public WithdrawVoteCommand(Guid proposalId, Guid voterId, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            VoterId = voterId;
+        }
+    }
+
+    public class DelegateVoteCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid DelegatorId { get; }
+        public Guid DelegateId { get; }
+        public decimal Weight { get; }
+
+        public DelegateVoteCommand(Guid proposalId, Guid delegatorId, Guid delegateId, decimal weight, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            DelegatorId = delegatorId;
+            DelegateId = delegateId;
+            Weight = weight;
+        }
+    }
+
+    public class RevokeDelegationCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid DelegatorId { get; }
+        public Guid DelegateId { get; }
+
+        public RevokeDelegationCommand(Guid proposalId, Guid delegatorId, Guid delegateId, string initiatedBy, Guid? correlationId = null) 
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            DelegatorId = delegatorId;
+            DelegateId = delegateId;
+        }
+    }
 
     // Batch voting commands
-    public record CastMultipleVotesCommand(
-        Guid ProposalId,
-        List<VoteInput> Votes) : ICommand<int>;
+    public class CastMultipleVotesCommand : CommandBase<int>
+    {
+        public Guid ProposalId { get; }
+        public List<VoteInput> Votes { get; }
 
-    public record VoteInput(
-        Guid VoterId,
-        Guid OptionId,
-        decimal Weight = 1.0m);
+        public CastMultipleVotesCommand(Guid proposalId, List<VoteInput> votes, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            Votes = votes;
+        }
+    }
+
+    public class VoteInput
+    {
+        public Guid VoterId { get; }
+        public Guid OptionId { get; }
+        public decimal Weight { get; }
+
+        public VoteInput(Guid voterId, Guid optionId, decimal weight = 1.0m)
+        {
+            VoterId = voterId;
+            OptionId = optionId;
+            Weight = weight;
+        }
+    }
 
     // Administrative commands
-    public record InvalidateVoteCommand(
-        Guid ProposalId,
-        Guid VoterId,
-        string Reason) : ICommand;
+    public class InvalidateVoteCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid VoterId { get; }
+        public string Reason { get; }
 
-    public record RecalculateResultsCommand(Guid ProposalId) : ICommand<VotingResult>;
+        public InvalidateVoteCommand(Guid proposalId, Guid voterId, string reason, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            VoterId = voterId;
+            Reason = reason;
+        }
+    }
 
-    public record AuditProposalCommand(
-        Guid ProposalId,
-        Guid AuditorId,
-        string AuditType,
-        Dictionary<string, object> AuditData) : ICommand;
+    public class RecalculateResultsCommand : CommandBase<VotingResult>
+    {
+        public Guid ProposalId { get; }
+
+        public RecalculateResultsCommand(Guid proposalId, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+        }
+    }
+
+    public class AuditProposalCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid AuditorId { get; }
+        public string AuditType { get; }
+        public Dictionary<string, object> AuditData { get; }
+
+        public AuditProposalCommand(Guid proposalId, Guid auditorId, string auditType, Dictionary<string, object> auditData, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            AuditorId = auditorId;
+            AuditType = auditType;
+            AuditData = auditData;
+        }
+    }
 
     // Notification commands
-    public record SendVotingReminderCommand(
-        Guid ProposalId,
-        List<Guid> RecipientIds) : ICommand;
+    public class SendVotingReminderCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public List<Guid> RecipientIds { get; }
 
-    public record AddProposalCommentCommand(
-        Guid ProposalId,
-        Guid AuthorId,
-        string Comment) : ICommand<Guid>;
+        public SendVotingReminderCommand(Guid proposalId, List<Guid> recipientIds, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            RecipientIds = recipientIds;
+        }
+    }
+
+    public class AddProposalCommentCommand : CommandBase<Guid>
+    {
+        public Guid ProposalId { get; }
+        public Guid AuthorId { get; }
+        public string Comment { get; }
+
+        public AddProposalCommentCommand(Guid proposalId, Guid authorId, string comment, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            AuthorId = authorId;
+            Comment = comment;
+        }
+    }
 
     // Query support commands
-    public record RecordProposalViewCommand(
-        Guid ProposalId,
-        Guid ViewerId) : ICommand;
+    public class RecordProposalViewCommand : CommandBase
+    {
+        public Guid ProposalId { get; }
+        public Guid ViewerId { get; }
 
-    public record VerifyVoteCommand(
-        Guid ProposalId,
-        Guid VoterId) : ICommand<VoteVerificationResult>;
+        public RecordProposalViewCommand(Guid proposalId, Guid viewerId, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            ViewerId = viewerId;
+        }
+    }
+
+    public class VerifyVoteCommand : CommandBase<VoteVerificationResult>
+    {
+        public Guid ProposalId { get; }
+        public Guid VoterId { get; }
+
+        public VerifyVoteCommand(Guid proposalId, Guid voterId, string initiatedBy, Guid? correlationId = null)
+            : base(initiatedBy, correlationId)
+        {
+            ProposalId = proposalId;
+            VoterId = voterId;
+        }
+    }
 
     // Command results
     public record VoteVerificationResult(

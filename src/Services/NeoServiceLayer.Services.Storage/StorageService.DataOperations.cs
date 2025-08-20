@@ -1,7 +1,15 @@
-﻿using System.Security.Cryptography;
+using System.IO;
+using System.IO.Compression;
+using System.Security.Cryptography;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Storage;
 
@@ -98,12 +106,12 @@ public partial class StorageService
                 }
                 catch (JsonException ex)
                 {
-                    Logger.LogError(ex, "Failed to parse storage result as JSON. Result: '{StorageResult}'", storageResult);
+                    _dataStorageFailed(Logger, key, data?.Length ?? 0, ex);
 
                     // For testing purposes, if JSON parsing fails, assume success if result contains "success"
                     if (storageResult?.Contains("success", StringComparison.OrdinalIgnoreCase) == true)
                     {
-                        Logger.LogWarning("Assuming storage success based on result content for testing");
+                        _dataNotFoundWarning(Logger, key, null);
                     }
                     else
                     {
@@ -150,8 +158,7 @@ public partial class StorageService
             RecordSuccess();
             UpdateMetric("TotalStoredBytes", _metadataCache.Values.Sum(m => m.SizeBytes));
 
-            Logger.LogInformation("Securely stored data with key {Key} in enclave - Size: {Size} bytes, Encrypted: {Encrypted}, Compressed: {Compressed}",
-                key, data.Length, isEncrypted, isCompressed);
+            _dataStoredSuccessfully(Logger, key, data.Length, null);
 
             return metadata;
         });
@@ -208,20 +215,20 @@ public partial class StorageService
             // Perform data integrity verification on the final decrypted/decompressed data
             if (!string.IsNullOrEmpty(metadata.ContentHash))
             {
-                using var sha256 = SHA256.Create();
-                var computedHash = Convert.ToHexString(sha256.ComputeHash(retrievedData));
-                if (computedHash != metadata.ContentHash)
+                using (var sha256 = SHA256.Create())
                 {
-                    Logger.LogWarning("Data integrity check failed for key {Key}. Expected: {Expected}, Computed: {Computed}",
-                        key, metadata.ContentHash, computedHash);
-                    throw new InvalidDataException($"Data integrity verification failed for key {key}");
+                    var computedHash = Convert.ToHexString(sha256.ComputeHash(retrievedData));
+                    if (computedHash != metadata.ContentHash)
+                    {
+                        _dataNotFoundForRetrieval(Logger, key, null);
+                        throw new InvalidDataException($"Data integrity verification failed for key {key}");
+                    }
                 }
             }
 
             RecordSuccess();
 
-            Logger.LogDebug("Securely retrieved data with key {Key} from enclave - Size: {Size} bytes, Encrypted: {Encrypted}",
-                key, retrievedData.Length, metadata.IsEncrypted);
+            _dataRetrievedSuccessfully(Logger, key, null);
 
             return retrievedData;
         });
@@ -302,7 +309,7 @@ public partial class StorageService
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Enclave encryption failed, falling back to local encryption for key {KeyId}", keyId);
+            _dataRetrievalFailed(Logger, keyId, ex);
             // Fallback to local encryption if enclave encryption fails
             return await EncryptDataAsync(data, keyId, algorithm);
         }
@@ -316,7 +323,7 @@ public partial class StorageService
     private static byte[] CompressData(byte[] data)
     {
         using var output = new MemoryStream();
-        using (var gzip = new System.IO.Compression.GZipStream(output, System.IO.Compression.CompressionMode.Compress))
+        using (var gzip = new GZipStream(output, CompressionMode.Compress))
         {
             gzip.Write(data, 0, data.Length);
         }
@@ -331,9 +338,11 @@ public partial class StorageService
     private static byte[] DecompressData(byte[] compressedData)
     {
         using var input = new MemoryStream(compressedData);
-        using var gzip = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress);
         using var output = new MemoryStream();
-        gzip.CopyTo(output);
+        using (var gzip = new GZipStream(input, CompressionMode.Decompress))
+        {
+            gzip.CopyTo(output);
+        }
         return output.ToArray();
     }
 
@@ -352,13 +361,11 @@ public partial class StorageService
         aes.Key = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(keyId));
         aes.GenerateIV();
 
-        using var encryptor = aes.CreateEncryptor();
         using var msEncrypt = new MemoryStream();
-
         // Prepend IV to encrypted data
         msEncrypt.Write(aes.IV, 0, aes.IV.Length);
 
-        using (var csEncrypt = new CryptoStream(msEncrypt, encryptor, CryptoStreamMode.Write))
+        using (var csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(), CryptoStreamMode.Write))
         {
             csEncrypt.Write(data, 0, data.Length);
         }
@@ -392,12 +399,12 @@ public partial class StorageService
         var encryptedContent = new byte[encryptedData.Length - 16];
         Array.Copy(encryptedData, 16, encryptedContent, 0, encryptedContent.Length);
 
-        using var decryptor = aes.CreateDecryptor();
-        using var msDecrypt = new MemoryStream(encryptedContent);
-        using var csDecrypt = new CryptoStream(msDecrypt, decryptor, CryptoStreamMode.Read);
+        using var msEncrypted = new MemoryStream(encryptedContent);
         using var msPlain = new MemoryStream();
-
-        csDecrypt.CopyTo(msPlain);
+        using (var csDecrypt = new CryptoStream(msEncrypted, aes.CreateDecryptor(), CryptoStreamMode.Read))
+        {
+            csDecrypt.CopyTo(msPlain);
+        }
         return Task.FromResult(msPlain.ToArray());
     }
 }

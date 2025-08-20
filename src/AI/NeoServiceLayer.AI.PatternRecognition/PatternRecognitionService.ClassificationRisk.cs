@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -9,8 +15,13 @@ namespace NeoServiceLayer.AI.PatternRecognition;
 /// </summary>
 public partial class PatternRecognitionService
 {
+    // This method is commented out to avoid conflicts with the Core interface implementation
+    // The Core.Models version in the main PatternRecognitionService.cs file should be used instead
+    /*
     /// <inheritdoc/>
     public async Task<Models.ClassificationResult> ClassifyDataAsync(Models.ClassificationRequest request, BlockchainType blockchainType)
+    {*/
+    private async Task<Models.ClassificationResult> ClassifyDataInternalAsync(Models.ClassificationRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -36,14 +47,18 @@ public partial class PatternRecognitionService
 
                 var result = new Models.ClassificationResult
                 {
-                    ClassificationId = classificationId,
-                    ModelId = request.ModelId,
-                    InputData = request.InputData,
-                    Classification = classification,
+                    Category = classification,
                     Confidence = confidence,
-                    ClassifiedAt = DateTime.UtcNow,
-                    Success = true,
-                    Metadata = request.Metadata
+                    Probabilities = new Dictionary<string, double> { [classification] = confidence },
+                    Timestamp = DateTime.UtcNow,
+                    Metadata = new Dictionary<string, object>
+                    {
+                        ["ClassificationId"] = classificationId,
+                        ["ModelId"] = request.ModelId,
+                        ["InputData"] = request.InputData,
+                        ["Success"] = true,
+                        ["OriginalMetadata"] = request.Metadata
+                    }
                 };
 
                 Logger.LogInformation("Data classification {ClassificationId}: {Classification} with confidence {Confidence:P2} on {Blockchain}",
@@ -62,12 +77,13 @@ public partial class PatternRecognitionService
                     InputData = request.InputData,
                     Success = false,
                     ErrorMessage = ex.Message,
-                    ClassifiedAt = DateTime.UtcNow,
+                    // ClassifiedAt is a read-only property based on Timestamp
                     Metadata = request.Metadata
                 };
             }
         });
     }
+    //*/
 
     /// <inheritdoc/>
     public async Task<Models.RiskAssessmentResult> AssessRiskAsync(Models.RiskAssessmentRequest request, BlockchainType blockchainType)
@@ -114,9 +130,9 @@ public partial class PatternRecognitionService
                     EntityType = request.EntityType,
                     RiskScore = riskScore,
                     RiskLevel = riskLevel,
-                    RiskFactors = riskFactors,
+                    RiskFactors = riskFactors.Keys.ToList(),
                     RiskBreakdown = new Dictionary<string, double>(riskFactors), // Copy risk factors to breakdown
-                    MitigatingFactors = mitigatingFactors,
+                    MitigatingFactors = mitigatingFactors.ToDictionary(mf => mf.Key, mf => mf.Value > 0.5),
                     Recommendations = recommendations,
                     AssessedAt = DateTime.UtcNow,
                     Success = true,
@@ -170,10 +186,34 @@ public partial class PatternRecognitionService
                 batchId, requestList.Count);
 
             var results = new List<Models.ClassificationResult>();
-            var tasks = requestList.Select(request => ClassifyDataAsync(request, blockchainType));
+            var tasks = requestList.Select(request => 
+            {
+                // Convert local model to Core model
+                var coreRequest = new Core.Models.ClassificationRequest
+                {
+                    Data = request.Data,
+                    Algorithm = request.Algorithm,
+                    Parameters = request.Parameters
+                };
+                return ClassifyDataAsync(coreRequest, blockchainType);
+            });
 
-            var classificationResults = await Task.WhenAll(tasks);
-            results.AddRange(classificationResults);
+            var coreResults = await Task.WhenAll(tasks);
+            
+            // Convert Core results back to local models
+            foreach (var coreResult in coreResults)
+            {
+                results.Add(new Models.ClassificationResult
+                {
+                    Success = coreResult.Success,
+                    Classification = coreResult.Classification,
+                    Confidence = coreResult.Confidence,
+                    RiskLevel = coreResult.RiskLevel,
+                    Factors = coreResult.Factors,
+                    ProcessingTime = coreResult.ProcessingTime,
+                    ErrorMessage = coreResult.ErrorMessage
+                });
+            }
 
             var successCount = results.Count(r => r.Success);
             var failureCount = results.Count - successCount;

@@ -23,8 +23,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Services/NeoServiceLayer.Services.Configuration/NeoServiceLayer.Services.Configuration.csproj" />
-    <ProjectReference Include="../../../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Configuration/NeoServiceLayer.Services.Configuration.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../../TestInfrastructure/NeoServiceLayer.TestInfrastructure.csproj" />
   </ItemGroup>
 

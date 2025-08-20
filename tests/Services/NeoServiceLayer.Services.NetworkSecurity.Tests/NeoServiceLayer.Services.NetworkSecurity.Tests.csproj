@@ -24,8 +24,8 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.NetworkSecurity\NeoServiceLayer.Services.NetworkSecurity.csproj" />
-    <ProjectReference Include="..\..\TestInfrastructure\NeoServiceLayer.TestInfrastructure.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.NetworkSecurity/NeoServiceLayer.Services.NetworkSecurity.csproj" />
+    <ProjectReference Include="../../TestInfrastructure/NeoServiceLayer.TestInfrastructure.csproj" />
   </ItemGroup>
 
 </Project>

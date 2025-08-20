@@ -1,10 +1,21 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Neo.N3;
+using System.Text.Json;
 using WireMock.RequestBuilders;
 using WireMock.ResponseBuilders;
 using WireMock.Server;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Neo.N3.Tests;
 
@@ -222,7 +233,7 @@ public class NeoN3ClientTests : IDisposable
         // Assert
         result.Should().NotBeNull();
         result.Hash.Should().Be(txHash);
-        result.Sender.Should().Be(((dynamic)expectedTx).sender);
+        result.From.Should().Be(((dynamic)expectedTx).sender);
         result.Value.Should().Be(100.5m);
         VerifyLoggerCalled(LogLevel.Debug, $"Getting transaction with hash {txHash}");
     }
@@ -382,8 +393,8 @@ public class NeoN3ClientTests : IDisposable
         return new Transaction
         {
             Hash = "0x0000000000000000000000000000000000000000000000000000000000000000",
-            Sender = "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB",
-            Recipient = "NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP",
+            From = "NiNmXL8FjEUEs1nfX9uHFBNaenxDHJtmuB",
+            To = "NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP",
             Value = 100.5m,
             Data = "test transaction data",
             Timestamp = DateTime.UtcNow,

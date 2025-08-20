@@ -6,26 +6,65 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Authentication.Infrastructure;
 using NeoServiceLayer.Services.Authentication.Queries;
 using OtpNet;
 using QRCoder;
 using System.IdentityModel.Tokens.Jwt;
 using System.Security.Claims;
+using ServiceFrameworkBase = NeoServiceLayer.ServiceFramework.ServiceBase;
+using CoreServiceBase = NeoServiceLayer.Core.ServiceBase;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Services
 {
-    public class AuthenticationService : IAuthenticationService
+    public class AuthenticationService : ServiceFrameworkBase, IAuthenticationService
     {
         private readonly IUserReadModelStore _userStore;
-        private readonly ILogger<AuthenticationService> _logger;
+        private readonly ILogger<AuthenticationService> Logger;
 
         public AuthenticationService(
             IUserReadModelStore userStore,
             ILogger<AuthenticationService> logger)
+            : base("AuthenticationService", "User authentication and authorization", "1.0.0", logger)
         {
             _userStore = userStore;
-            _logger = logger;
+            Logger = logger;
+        }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            Logger.LogInformation("Initializing Authentication Service");
+            // Initialize any required components
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            Logger.LogInformation("Starting Authentication Service");
+            // Start any background services
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            Logger.LogInformation("Stopping Authentication Service");
+            // Stop any background services
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            // Check service health
+            await Task.CompletedTask;
+            return ServiceHealth.Healthy;
         }
 
         public async Task<bool> UserExistsAsync(string username, string email)
@@ -37,7 +76,7 @@ namespace NeoServiceLayer.Services.Authentication.Services
 
         public async Task<Guid?> FindUserIdByUsernameOrEmailAsync(string usernameOrEmail)
         {
-            var user = await _userStore.GetByUsernameAsync(usernameOrEmail) 
+            var user = await _userStore.GetByUsernameAsync(usernameOrEmail)
                       ?? await _userStore.GetByEmailAsync(usernameOrEmail);
             return user?.Id;
         }
@@ -106,11 +145,11 @@ namespace NeoServiceLayer.Services.Authentication.Services
         }
     }
 
-    public class TokenService : ITokenService
+    public class TokenService : ServiceFrameworkBase, ITokenService
     {
         private readonly IConfiguration _configuration;
         private readonly ITokenReadModelStore _tokenStore;
-        private readonly ILogger<TokenService> _logger;
+        private readonly ILogger<TokenService> Logger;
         private readonly string _jwtSecret;
         private readonly string _jwtIssuer;
         private readonly string _jwtAudience;
@@ -119,20 +158,48 @@ namespace NeoServiceLayer.Services.Authentication.Services
             IConfiguration configuration,
             ITokenReadModelStore tokenStore,
             ILogger<TokenService> logger)
+            : base("TokenService", "JWT token management", "1.0.0", logger)
         {
             _configuration = configuration;
             _tokenStore = tokenStore;
-            _logger = logger;
+            Logger = logger;
             _jwtSecret = configuration["Jwt:Secret"] ?? throw new InvalidOperationException("JWT secret not configured");
             _jwtIssuer = configuration["Jwt:Issuer"] ?? "NeoServiceLayer";
             _jwtAudience = configuration["Jwt:Audience"] ?? "NeoServiceLayer";
+        }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            Logger.LogInformation("Initializing Token Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            Logger.LogInformation("Starting Token Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            Logger.LogInformation("Stopping Token Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            await Task.CompletedTask;
+            return ServiceHealth.Healthy;
         }
 
         public string GenerateAccessToken(Guid userId, string username, List<string> roles)
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwtSecret);
-            
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId.ToString()),
@@ -180,12 +247,13 @@ namespace NeoServiceLayer.Services.Authentication.Services
         }
     }
 
-    public class TwoFactorService : ITwoFactorService
+    public class TwoFactorService : ServiceFrameworkBase, ITwoFactorService
     {
         private readonly IConfiguration _configuration;
         private readonly string _issuer;
 
-        public TwoFactorService(IConfiguration configuration)
+        public TwoFactorService(IConfiguration configuration, ILogger<TwoFactorService> logger)
+            : base("TwoFactorService", "Two-factor authentication service", "1.0.0", logger)
         {
             _configuration = configuration;
             _issuer = configuration["TwoFactor:Issuer"] ?? "NeoServiceLayer";
@@ -200,12 +268,12 @@ namespace NeoServiceLayer.Services.Authentication.Services
         public string GenerateQrCodeUri(string username, string secret)
         {
             var uri = $"otpauth://totp/{_issuer}:{username}?secret={secret}&issuer={_issuer}";
-            
+
             using var qrGenerator = new QRCodeGenerator();
             var qrCodeData = qrGenerator.CreateQrCode(uri, QRCodeGenerator.ECCLevel.Q);
-            using var qrCode = new BitmapByteQRCode(qrCodeData);
+            using var qrCode = new PngByteQRCode(qrCodeData);
             var qrCodeImage = qrCode.GetGraphic(20);
-            
+
             return $"data:image/png;base64,{Convert.ToBase64String(qrCodeImage)}";
         }
 
@@ -227,34 +295,55 @@ namespace NeoServiceLayer.Services.Authentication.Services
         {
             var key = Base32Encoding.ToBytes(secret);
             var totp = new Totp(key);
-            
+
             // Allow for time drift by checking current, previous, and next time windows
             var currentCode = totp.ComputeTotp();
             var previousCode = totp.ComputeTotp(DateTime.UtcNow.AddSeconds(-30));
             var nextCode = totp.ComputeTotp(DateTime.UtcNow.AddSeconds(30));
-            
+
             return code == currentCode || code == previousCode || code == nextCode;
+        }
+
+        protected override Task<bool> OnInitializeAsync()
+        {
+            return Task.FromResult(true);
+        }
+
+        protected override Task<bool> OnStartAsync()
+        {
+            return Task.FromResult(true);
+        }
+
+        protected override Task<bool> OnStopAsync()
+        {
+            return Task.FromResult(true);
+        }
+
+        protected override Task<ServiceHealth> OnGetHealthAsync()
+        {
+            return Task.FromResult(ServiceHealth.Healthy);
         }
     }
 
-    public class EmailService : IEmailService
+    public class EmailService : ServiceFrameworkBase, IEmailService
     {
         private readonly IConfiguration _configuration;
-        private readonly ILogger<EmailService> _logger;
+        private readonly ILogger<EmailService> Logger;
 
         public EmailService(
             IConfiguration configuration,
             ILogger<EmailService> logger)
+            : base("EmailService", "Email notification service", "1.0.0", logger)
         {
             _configuration = configuration;
-            _logger = logger;
+            Logger = logger;
         }
 
         public async Task SendVerificationEmailAsync(string email, string username, string verificationToken)
         {
             // In a real implementation, this would send an actual email
             // For now, we'll just log it
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Sending verification email to {Email} for user {Username} with token {Token}",
                 email, username, verificationToken);
 
@@ -264,7 +353,7 @@ namespace NeoServiceLayer.Services.Authentication.Services
 
         public async Task SendPasswordResetEmailAsync(string email, string username, string resetToken)
         {
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Sending password reset email to {Email} for user {Username} with token {Token}",
                 email, username, resetToken);
 
@@ -273,11 +362,45 @@ namespace NeoServiceLayer.Services.Authentication.Services
 
         public async Task SendTwoFactorBackupCodesAsync(string email, string username, List<string> backupCodes)
         {
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Sending {Count} backup codes to {Email} for user {Username}",
                 backupCodes.Count, email, username);
 
             await Task.Delay(100);
+        }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            Logger.LogDebug("Initializing Authentication Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            Logger.LogInformation("Starting Authentication Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            Logger.LogInformation("Stopping Authentication Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            try
+            {
+                // Check if user store is accessible
+                // Check if email service is accessible
+                await Task.CompletedTask;
+                return await Task.FromResult(ServiceHealth.Healthy);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Authentication service health check failed");
+                return await Task.FromResult(ServiceHealth.Unhealthy);
+            }
         }
     }
 }

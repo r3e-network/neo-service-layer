@@ -1,8 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.Core.SGX;
+using System.Text.Json;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Core.SGX;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -18,13 +25,14 @@ public partial class ZeroKnowledgeService
     /// <param name="publicInputs">The public inputs.</param>
     /// <param name="privateInputs">The private inputs (witness).</param>
     /// <returns>The proof data with privacy guarantees.</returns>
-    private new async Task<string> GenerateProofInEnclaveAsync(
+    private async Task<string> GenerateProofInEnclaveAsync(
         ZkCircuit circuit, Dictionary<string, object> publicInputs, Dictionary<string, object> privateInputs)
     {
         if (_enclaveManager == null)
         {
             // Fallback to mock implementation if enclave not available
-            return await base.GenerateProofInEnclaveAsync(circuit, publicInputs, privateInputs);
+            await Task.Delay(200); // Simulate proof generation
+            return $"proof_{circuit.CircuitId}_{DateTime.UtcNow.Ticks}";
         }
 
         // Prepare proof data for privacy-preserving generation
@@ -98,19 +106,42 @@ public partial class ZeroKnowledgeService
     /// <param name="proofData">The proof data.</param>
     /// <param name="publicInputs">The public inputs.</param>
     /// <returns>True if the proof is valid.</returns>
-    private new async Task<bool> VerifyProofInEnclaveAsync(
+    private async Task<bool> VerifyProofInEnclaveAsync(
         ZkCircuit circuit, byte[] proofData, Dictionary<string, object> publicInputs)
     {
         if (_enclaveManager == null)
         {
             // Fallback to mock implementation if enclave not available
-            return await base.VerifyProofInEnclaveAsync(circuit, proofData, publicInputs);
+            await Task.Delay(100); // Simulate verification
+            return proofData.Length > 0;
         }
 
         try
         {
+            // Validate proof data
+            if (proofData == null || proofData.Length == 0)
+            {
+                Logger.LogWarning("Proof data is null or empty");
+                return false;
+            }
+
+            // Check for invalid data (like 0x00 bytes)
+            if (proofData.All(b => b == 0))
+            {
+                Logger.LogWarning("Proof data contains only null bytes");
+                return false;
+            }
+
             // Parse proof data
             var proofString = System.Text.Encoding.UTF8.GetString(proofData);
+            
+            // Handle empty or whitespace-only JSON
+            if (string.IsNullOrWhiteSpace(proofString))
+            {
+                Logger.LogWarning("Proof JSON is null or whitespace");
+                return false;
+            }
+
             var proof = JsonSerializer.Deserialize<JsonElement>(proofString);
 
             var publicInputsData = new
@@ -119,7 +150,7 @@ public partial class ZeroKnowledgeService
                 {
                     type = circuit.CircuitType,
                     publicData = JsonSerializer.Serialize(publicInputs),
-                    constraints = circuit.Constraints?.Length ?? 0
+                    constraints = circuit.Constraints?.Count ?? 0
                 }
             };
 
@@ -163,6 +194,16 @@ public partial class ZeroKnowledgeService
                 verificationResult.GetProperty("proofId").GetString(), isValid);
 
             return isValid;
+        }
+        catch (JsonException jsonEx)
+        {
+            Logger.LogError(jsonEx, "JSON deserialization error verifying proof in enclave");
+            return false;
+        }
+        catch (ArgumentException argEx)
+        {
+            Logger.LogError(argEx, "Invalid argument error verifying proof in enclave");
+            return false;
         }
         catch (Exception ex)
         {

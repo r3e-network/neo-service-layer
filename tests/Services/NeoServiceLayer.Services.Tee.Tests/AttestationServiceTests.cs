@@ -4,6 +4,15 @@ using System.Net;
 using System.Text;
 using System.Text.Json;
 using Xunit;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Tee.Tests
 {
@@ -707,7 +716,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
         private byte[] GenerateIntelTestSignature(byte[] data)
         {
             // Simulate Intel signature generation
-            using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes("intel_test_key"));
             return hmac.ComputeHash(data);
         }
 
@@ -1124,7 +1132,6 @@ namespace NeoServiceLayer.Services.Tee.Tests
             await Task.Delay(1); // Simulate verification work
             
             // Simulate signature verification
-            using var hmac = new System.Security.Cryptography.HMACSHA256(Encoding.UTF8.GetBytes("intel_test_key"));
             var expectedSignature = hmac.ComputeHash(data);
             
             return signature.SequenceEqual(expectedSignature);

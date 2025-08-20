@@ -1,4 +1,9 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Web.Models;
 
@@ -46,7 +51,8 @@ public class ServiceHealthStatus
 /// <summary>
 /// Represents detailed status information for a service.
 /// </summary>
-public class ServiceStatus
+// Commented out - duplicate definition exists in DashboardModels.cs
+/* public class ServiceStatus
 {
     /// <summary>
     /// Gets or sets the service name.
@@ -122,7 +128,7 @@ public class ServiceStatus
     /// Gets or sets the service configuration.
     /// </summary>
     public Dictionary<string, object> Configuration { get; set; } = new();
-}
+} */
 
 /// <summary>
 /// Represents performance metrics for a service.

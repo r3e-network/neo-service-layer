@@ -1,4 +1,4 @@
-﻿namespace NeoServiceLayer.Services.Automation;
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Request model for creating a new automation.
@@ -8,12 +8,12 @@ public class CreateAutomationRequest
     /// <summary>
     /// Gets or sets the name of the automation.
     /// </summary>
-    public required string Name { get; set; }
+    public string Name { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the description of the automation.
     /// </summary>
-    public string? Description { get; set; }
+    public string Description { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the type of trigger for the automation.
@@ -23,7 +23,7 @@ public class CreateAutomationRequest
     /// <summary>
     /// Gets or sets the trigger configuration (JSON serialized).
     /// </summary>
-    public required string TriggerConfiguration { get; set; }
+    public string TriggerConfiguration { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the type of action for the automation.
@@ -33,46 +33,26 @@ public class CreateAutomationRequest
     /// <summary>
     /// Gets or sets the action configuration (JSON serialized).
     /// </summary>
-    public required string ActionConfiguration { get; set; }
+    public string ActionConfiguration { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets whether the automation is active.
     /// </summary>
-    public bool IsActive { get; set; }
+    public bool IsActive { get; set; } = true;
 
     /// <summary>
     /// Gets or sets the owner address.
     /// </summary>
-    public string? OwnerAddress { get; set; }
+    public string OwnerAddress { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the expiration date of the automation.
     /// </summary>
+    public DateTime? ExpirationDate { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the automation expires.
+    /// </summary>
     public DateTime? ExpiresAt { get; set; }
 }
 
-/// <summary>
-/// Response model for create automation operation.
-/// </summary>
-public class CreateAutomationResponse
-{
-    /// <summary>
-    /// Gets or sets whether the operation was successful.
-    /// </summary>
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// Gets or sets the automation ID.
-    /// </summary>
-    public string? AutomationId { get; set; }
-
-    /// <summary>
-    /// Gets or sets the creation timestamp.
-    /// </summary>
-    public DateTime CreatedAt { get; set; }
-
-    /// <summary>
-    /// Gets or sets the error message if the operation failed.
-    /// </summary>
-    public string? ErrorMessage { get; set; }
-}

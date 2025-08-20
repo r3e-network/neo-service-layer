@@ -1,27 +1,32 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Services.ProofOfReserve.Models;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve.Tests;
 
 public class ProofOfReserveServiceTests : TestBase
 {
     private readonly Mock<ILogger<ProofOfReserveService>> _loggerMock;
-    private readonly Mock<IServiceConfiguration> _configurationMock;
     private readonly ProofOfReserveService _service;
 
     public ProofOfReserveServiceTests()
     {
         _loggerMock = new Mock<ILogger<ProofOfReserveService>>();
-        _configurationMock = new Mock<IServiceConfiguration>();
 
-        // ProofOfReserveService now accepts IEnclaveManager
-        _service = new ProofOfReserveService(_loggerMock.Object, _configurationMock.Object, MockEnclaveManager.Object);
+        // ProofOfReserveService accepts optional parameters, pass null for unavailable dependencies
+        _service = new ProofOfReserveService(_loggerMock.Object);
 
         // Initialize the service synchronously for tests
         _service.InitializeAsync().GetAwaiter().GetResult();
@@ -152,7 +157,7 @@ public class ProofOfReserveServiceTests : TestBase
         result.AssetId.Should().Be(assetId);
         result.AssetSymbol.Should().Be("TEST");
         result.ReserveRatio.Should().BeGreaterOrEqualTo(0);
-        result.Health.Should().BeOneOf(ReserveHealthStatus.Healthy, ReserveHealthStatus.Warning, ReserveHealthStatus.Critical, ReserveHealthStatus.Undercollateralized);
+        result.Health.Should().BeOneOf(ReserveHealthStatusEnum.Healthy, ReserveHealthStatusEnum.Warning, ReserveHealthStatusEnum.Critical, ReserveHealthStatusEnum.Undercollateralized);
         VerifyLoggerCalled(_loggerMock, LogLevel.Debug);
     }
 
@@ -177,8 +182,14 @@ public class ProofOfReserveServiceTests : TestBase
             AssetId = assetId,
             ReserveAddresses = new[] { GenerateTestAddress(blockchainType) },
             ReserveBalances = new[] { 1500000m },
-            UpdateReason = "Monthly reserve audit",
-            AuditSource = "Test"
+            ReserveAmount = 1500000m,
+            LiabilityAmount = 1000000m,
+            AuditorSignature = "TestAuditorSignature",
+            AuditData = new Dictionary<string, object> 
+            { 
+                ["reason"] = "Monthly reserve audit",
+                ["source"] = "Test"
+            }
         };
 
         // Act

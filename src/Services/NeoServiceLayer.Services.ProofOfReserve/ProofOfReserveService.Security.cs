@@ -1,5 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -417,8 +424,8 @@ public partial class ProofOfReserveService
 
         // Remove potentially dangerous characters
         var sanitized = input
-            .Replace("<", "&lt;")
-            .Replace(">", "&gt;")
+            .Replace("<", "<")
+            .Replace(">", ">")
             .Replace("\"", "&quot;")
             .Replace("'", "&#x27;")
             .Replace("/", "&#x2F;");

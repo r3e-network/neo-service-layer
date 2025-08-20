@@ -1,0 +1,299 @@
+name: Test Coverage Gates
+
+on:
+  push:
+    branches: [ main, master, develop ]
+  pull_request:
+    branches: [ main, master, develop ]
+  schedule:
+    # Run daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      update_baseline:
+        description: 'Update coverage baseline'
+        type: boolean
+        default: false
+
+env:
+  DOTNET_VERSION: '9.0.x'
+  COVERAGE_LINE_THRESHOLD: 80
+  COVERAGE_BRANCH_THRESHOLD: 70
+  COVERAGE_METHOD_THRESHOLD: 75
+
+jobs:
+  test-and-coverage:
+    name: Run Tests with Coverage Gates
+    runs-on: ubuntu-latest
+    
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+      checks: write
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0  # Full history for better blame info
+    
+    - name: 🔧 Setup .NET
+      uses: actions/setup-dotnet@v4
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+    
+    - name: 📦 Cache NuGet Packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: 📥 Restore Dependencies
+      run: dotnet restore NeoServiceLayer.sln
+    
+    - name: 🏗️ Build Solution
+      run: dotnet build NeoServiceLayer.sln --configuration Release --no-restore
+    
+    - name: 🧪 Run Tests with Coverage
+      id: test
+      run: |
+        dotnet test NeoServiceLayer.sln \
+          --configuration Release \
+          --no-build \
+          --collect:"XPlat Code Coverage" \
+          --results-directory ./TestResults \
+          --logger "trx;LogFileName=test-results.trx" \
+          --logger "console;verbosity=normal" \
+          --logger "html;LogFileName=test-results.html" \
+          /p:CollectCoverage=true \
+          /p:CoverletOutputFormat="opencover,cobertura,json,lcov" \
+          /p:CoverletOutput=./TestResults/coverage \
+          /p:ExcludeByAttribute="Obsolete,GeneratedCodeAttribute,CompilerGeneratedAttribute" \
+          /p:ExcludeByFile="**/Migrations/*.cs,**/Program.cs" \
+          /p:Threshold=0 \
+          /p:ThresholdType=line \
+          /p:ThresholdStat=total
+    
+    - name: 📊 Generate Coverage Report
+      uses: danielpalme/ReportGenerator-GitHub-Action@5.2.0
+      with:
+        reports: './TestResults/**/coverage.cobertura.xml'
+        targetdir: './CoverageReport'
+        reporttypes: 'Html;Cobertura;MarkdownSummary;Badges;JsonSummary'
+        sourcedirs: './src'
+        historydir: './CoverageHistory'
+        title: 'Neo Service Layer Coverage Report'
+        tag: '${{ github.run_number }}_${{ github.run_id }}'
+    
+    - name: 📈 Parse Coverage Metrics
+      id: coverage
+      run: |
+        # Parse coverage from JSON summary
+        if [ -f "./CoverageReport/Summary.json" ]; then
+          LINE_COVERAGE=$(jq '.summary.linecoverage' ./CoverageReport/Summary.json)
+          BRANCH_COVERAGE=$(jq '.summary.branchcoverage' ./CoverageReport/Summary.json)
+          METHOD_COVERAGE=$(jq '.summary.methodcoverage' ./CoverageReport/Summary.json)
+        else
+          # Fallback to parsing from Cobertura
+          LINE_COVERAGE=$(grep -oP 'line-rate="\K[^"]*' ./TestResults/coverage.cobertura.xml | head -1)
+          LINE_COVERAGE=$(echo "$LINE_COVERAGE * 100" | bc)
+          BRANCH_COVERAGE=$(grep -oP 'branch-rate="\K[^"]*' ./TestResults/coverage.cobertura.xml | head -1)
+          BRANCH_COVERAGE=$(echo "$BRANCH_COVERAGE * 100" | bc)
+          METHOD_COVERAGE=$LINE_COVERAGE  # Approximate if not available
+        fi
+        
+        echo "line_coverage=${LINE_COVERAGE}" >> $GITHUB_OUTPUT
+        echo "branch_coverage=${BRANCH_COVERAGE}" >> $GITHUB_OUTPUT
+        echo "method_coverage=${METHOD_COVERAGE}" >> $GITHUB_OUTPUT
+        
+        # Generate summary
+        echo "## 📊 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "| Metric | Coverage | Threshold | Status |" >> $GITHUB_STEP_SUMMARY
+        echo "|--------|----------|-----------|--------|" >> $GITHUB_STEP_SUMMARY
+        
+        # Check line coverage
+        if (( $(echo "$LINE_COVERAGE >= $COVERAGE_LINE_THRESHOLD" | bc -l) )); then
+          echo "| Line | ${LINE_COVERAGE}% | ${COVERAGE_LINE_THRESHOLD}% | ✅ |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Line | ${LINE_COVERAGE}% | ${COVERAGE_LINE_THRESHOLD}% | ❌ |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check branch coverage
+        if (( $(echo "$BRANCH_COVERAGE >= $COVERAGE_BRANCH_THRESHOLD" | bc -l) )); then
+          echo "| Branch | ${BRANCH_COVERAGE}% | ${COVERAGE_BRANCH_THRESHOLD}% | ✅ |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Branch | ${BRANCH_COVERAGE}% | ${COVERAGE_BRANCH_THRESHOLD}% | ❌ |" >> $GITHUB_STEP_SUMMARY
+        fi
+        
+        # Check method coverage
+        if (( $(echo "$METHOD_COVERAGE >= $COVERAGE_METHOD_THRESHOLD" | bc -l) )); then
+          echo "| Method | ${METHOD_COVERAGE}% | ${COVERAGE_METHOD_THRESHOLD}% | ✅ |" >> $GITHUB_STEP_SUMMARY
+        else
+          echo "| Method | ${METHOD_COVERAGE}% | ${COVERAGE_METHOD_THRESHOLD}% | ❌ |" >> $GITHUB_STEP_SUMMARY
+        fi
+    
+    - name: 🚦 Check Coverage Gates
+      id: gates
+      run: |
+        GATES_PASSED=true
+        
+        if (( $(echo "${{ steps.coverage.outputs.line_coverage }} < $COVERAGE_LINE_THRESHOLD" | bc -l) )); then
+          echo "::error::Line coverage (${{ steps.coverage.outputs.line_coverage }}%) is below threshold ($COVERAGE_LINE_THRESHOLD%)"
+          GATES_PASSED=false
+        fi
+        
+        if (( $(echo "${{ steps.coverage.outputs.branch_coverage }} < $COVERAGE_BRANCH_THRESHOLD" | bc -l) )); then
+          echo "::error::Branch coverage (${{ steps.coverage.outputs.branch_coverage }}%) is below threshold ($COVERAGE_BRANCH_THRESHOLD%)"
+          GATES_PASSED=false
+        fi
+        
+        if (( $(echo "${{ steps.coverage.outputs.method_coverage }} < $COVERAGE_METHOD_THRESHOLD" | bc -l) )); then
+          echo "::error::Method coverage (${{ steps.coverage.outputs.method_coverage }}%) is below threshold ($COVERAGE_METHOD_THRESHOLD%)"
+          GATES_PASSED=false
+        fi
+        
+        if [ "$GATES_PASSED" = false ]; then
+          echo "gates_passed=false" >> $GITHUB_OUTPUT
+          echo "::warning::Coverage gates failed. Please improve test coverage."
+        else
+          echo "gates_passed=true" >> $GITHUB_OUTPUT
+          echo "::notice::All coverage gates passed!"
+        fi
+    
+    - name: 📝 Upload Coverage Report
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-report
+        path: ./CoverageReport
+        retention-days: 30
+    
+    - name: 📝 Upload Test Results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: test-results
+        path: |
+          ./TestResults/**/*.trx
+          ./TestResults/**/*.html
+        retention-days: 30
+    
+    - name: 📊 Publish Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v2
+      if: always()
+      with:
+        trx_files: "./TestResults/**/*.trx"
+        check_name: "Test Results"
+        comment_title: "Test Results"
+    
+    - name: 💬 PR Comment with Coverage
+      uses: 5monkeys/cobertura-action@v13
+      if: github.event_name == 'pull_request'
+      with:
+        path: './TestResults/coverage.cobertura.xml'
+        minimum_coverage: 80
+        fail_below_threshold: false
+        show_line: true
+        show_branch: true
+        show_missing: true
+        show_class_names: true
+        only_changed_files: true
+    
+    - name: 📦 Cache Coverage History
+      uses: actions/cache@v3
+      with:
+        path: ./CoverageHistory
+        key: ${{ runner.os }}-coverage-history-${{ github.sha }}
+        restore-keys: |
+          ${{ runner.os }}-coverage-history-
+    
+    - name: 📈 Update Coverage Badge
+      if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+      run: |
+        # Create coverage badge JSON
+        echo '{
+          "schemaVersion": 1,
+          "label": "coverage",
+          "message": "${{ steps.coverage.outputs.line_coverage }}%",
+          "color": "${{ steps.coverage.outputs.line_coverage >= 80 && 'brightgreen' || steps.coverage.outputs.line_coverage >= 60 && 'yellow' || 'red' }}"
+        }' > coverage-badge.json
+    
+    - name: 🏁 Final Status Check
+      if: steps.gates.outputs.gates_passed == 'false' && github.event_name == 'pull_request'
+      run: |
+        echo "::error::Coverage gates failed. PR cannot be merged until coverage improves."
+        exit 1
+
+  coverage-trend:
+    name: Track Coverage Trend
+    runs-on: ubuntu-latest
+    needs: test-and-coverage
+    if: github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master'
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 📥 Download Coverage Report
+      uses: actions/download-artifact@v3
+      with:
+        name: coverage-report
+        path: ./CoverageReport
+    
+    - name: 📊 Update Coverage Trends
+      run: |
+        # Create or update coverage trends file
+        TRENDS_FILE="coverage-trends.json"
+        
+        if [ ! -f "$TRENDS_FILE" ]; then
+          echo '{"trends": []}' > "$TRENDS_FILE"
+        fi
+        
+        # Add current run to trends
+        TIMESTAMP=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+        LINE_COV=$(jq '.summary.linecoverage' ./CoverageReport/Summary.json)
+        BRANCH_COV=$(jq '.summary.branchcoverage' ./CoverageReport/Summary.json)
+        METHOD_COV=$(jq '.summary.methodcoverage' ./CoverageReport/Summary.json)
+        
+        jq --arg ts "$TIMESTAMP" \
+           --arg line "$LINE_COV" \
+           --arg branch "$BRANCH_COV" \
+           --arg method "$METHOD_COV" \
+           --arg sha "${{ github.sha }}" \
+           '.trends += [{
+             "timestamp": $ts,
+             "sha": $sha,
+             "line": ($line | tonumber),
+             "branch": ($branch | tonumber),
+             "method": ($method | tonumber)
+           }] | .trends = (.trends | .[-20:])' \
+           "$TRENDS_FILE" > tmp.json && mv tmp.json "$TRENDS_FILE"
+    
+    - name: 💾 Commit Coverage Trends
+      run: |
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add coverage-trends.json
+        git diff --staged --quiet || git commit -m "Update coverage trends [skip ci]"
+        git push || echo "No changes to push"
+
+  security-scan:
+    name: Security Vulnerability Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: 📥 Checkout Code
+      uses: actions/checkout@v4
+    
+    - name: 🔒 Run Security Scan
+      run: |
+        dotnet list package --vulnerable --include-transitive
+        
+        # Check for high/critical vulnerabilities
+        if dotnet list package --vulnerable --include-transitive | grep -E "(High|Critical)"; then
+          echo "::error::High or Critical vulnerabilities found in dependencies"
+          exit 1
+        fi

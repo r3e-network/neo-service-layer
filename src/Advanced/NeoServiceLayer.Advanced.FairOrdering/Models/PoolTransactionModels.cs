@@ -1,5 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Models;
 
@@ -410,50 +415,5 @@ public class ExecutionDetails
     public decimal? ActualSlippage { get; set; }
 }
 
-/// <summary>
-/// Represents the ordering status of a transaction.
-/// </summary>
-public enum OrderingStatus
-{
-    /// <summary>
-    /// Transaction is pending in the pool.
-    /// </summary>
-    Pending,
-
-    /// <summary>
-    /// Transaction is being ordered.
-    /// </summary>
-    Ordering,
-
-    /// <summary>
-    /// Transaction has been ordered and is ready for execution.
-    /// </summary>
-    Ordered,
-
-    /// <summary>
-    /// Transaction is being executed.
-    /// </summary>
-    Executing,
-
-    /// <summary>
-    /// Transaction has been executed successfully.
-    /// </summary>
-    Executed,
-
-    /// <summary>
-    /// Transaction failed during execution.
-    /// </summary>
-    Failed,
-
-    /// <summary>
-    /// Transaction was cancelled.
-    /// </summary>
-    Cancelled,
-
-    /// <summary>
-    /// Transaction expired before execution.
-    /// </summary>
-    Expired
-}
 
 

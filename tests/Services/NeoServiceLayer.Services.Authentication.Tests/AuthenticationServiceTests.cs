@@ -6,7 +6,14 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.Services.Authentication;
+using NeoServiceLayer.Services.Authentication.Models;
+using NeoServiceLayer.Services.Authentication.Repositories;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Tests
 {
@@ -296,7 +303,7 @@ namespace NeoServiceLayer.Services.Authentication.Tests
 
         private (string hash, string salt) HashPassword(string password)
         {
-            using var hmac = new System.Security.Cryptography.HMACSHA512();
+            using var hmac = new System.Security.Cryptography.HMACSHA256();
             var salt = Convert.ToBase64String(hmac.Key);
             var hash = Convert.ToBase64String(hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(password)));
             return (hash, salt);

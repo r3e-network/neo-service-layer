@@ -1,5 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3.SyntaxAnalyzer;
 
@@ -385,21 +389,198 @@ public enum LiteralType
 }
 
 /// <summary>
-/// Other node types would be defined similarly...
+/// Additional AST node implementations.
 /// </summary>
-public class UsingNode : AstNode { }
-public class PropertyNode : AstNode { }
-public class EventNode : AstNode { }
-public class ConstructorNode : AstNode { }
-public class BlockNode : StatementNode { }
-public class ExpressionStatementNode : StatementNode { }
-public class IfStatementNode : StatementNode { }
-public class WhileStatementNode : StatementNode { }
-public class ForStatementNode : StatementNode { }
-public class ReturnStatementNode : StatementNode { }
-public class VariableDeclarationNode : StatementNode { }
-public class BinaryExpressionNode : ExpressionNode { }
-public class UnaryExpressionNode : ExpressionNode { }
-public class MethodCallNode : ExpressionNode { }
-public class ParameterNode : AstNode { }
-public class AttributeNode : AstNode { }
+public class PropertyNode : AstNode
+{
+    public override AstNodeType NodeType => AstNodeType.Property;
+    public string Name { get; set; } = string.Empty;
+    public TypeNode Type { get; set; } = null!;
+    public AccessModifier AccessModifier { get; set; } = AccessModifier.Public;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitProperty(this);
+    public override IAstNode Clone() => new PropertyNode { Name = Name, Type = (TypeNode)Type.Clone(), AccessModifier = AccessModifier, Location = Location };
+}
+
+public class EventNode : AstNode
+{
+    public override AstNodeType NodeType => AstNodeType.Event;
+    public string Name { get; set; } = string.Empty;
+    public TypeNode Type { get; set; } = null!;
+    public AccessModifier AccessModifier { get; set; } = AccessModifier.Public;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitEvent(this);
+    public override IAstNode Clone() => new EventNode { Name = Name, Type = (TypeNode)Type.Clone(), AccessModifier = AccessModifier, Location = Location };
+}
+
+public class ConstructorNode : AstNode
+{
+    public override AstNodeType NodeType => AstNodeType.Constructor;
+    public List<ParameterNode> Parameters { get; } = new();
+    public BlockNode? Body { get; set; }
+    public AccessModifier AccessModifier { get; set; } = AccessModifier.Public;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitConstructor(this);
+    public override IAstNode Clone() => new ConstructorNode { AccessModifier = AccessModifier, Location = Location };
+}
+
+public class BlockNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.Block;
+    public List<StatementNode> Statements { get; } = new();
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitBlock(this);
+    public override IAstNode Clone() => new BlockNode { Location = Location };
+}
+
+public class ExpressionStatementNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.ExpressionStatement;
+    public ExpressionNode Expression { get; set; } = null!;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitExpressionStatement(this);
+    public override IAstNode Clone() => new ExpressionStatementNode { Expression = (ExpressionNode)Expression.Clone(), Location = Location };
+}
+
+public class IfStatementNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.IfStatement;
+    public ExpressionNode Condition { get; set; } = null!;
+    public StatementNode ThenStatement { get; set; } = null!;
+    public StatementNode? ElseStatement { get; set; }
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitIfStatement(this);
+    public override IAstNode Clone() => new IfStatementNode 
+    { 
+        Condition = (ExpressionNode)Condition.Clone(), 
+        ThenStatement = (StatementNode)ThenStatement.Clone(),
+        ElseStatement = ElseStatement?.Clone() as StatementNode,
+        Location = Location 
+    };
+}
+
+public class WhileStatementNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.WhileStatement;
+    public ExpressionNode Condition { get; set; } = null!;
+    public StatementNode Body { get; set; } = null!;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitWhileStatement(this);
+    public override IAstNode Clone() => new WhileStatementNode 
+    { 
+        Condition = (ExpressionNode)Condition.Clone(), 
+        Body = (StatementNode)Body.Clone(), 
+        Location = Location 
+    };
+}
+
+public class ForStatementNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.ForStatement;
+    public StatementNode? Initializer { get; set; }
+    public ExpressionNode? Condition { get; set; }
+    public ExpressionNode? Iterator { get; set; }
+    public StatementNode Body { get; set; } = null!;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitForStatement(this);
+    public override IAstNode Clone() => new ForStatementNode 
+    { 
+        Initializer = Initializer?.Clone() as StatementNode,
+        Condition = Condition?.Clone() as ExpressionNode,
+        Iterator = Iterator?.Clone() as ExpressionNode,
+        Body = (StatementNode)Body.Clone(), 
+        Location = Location 
+    };
+}
+
+public class ReturnStatementNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.ReturnStatement;
+    public ExpressionNode? Value { get; set; }
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitReturnStatement(this);
+    public override IAstNode Clone() => new ReturnStatementNode 
+    { 
+        Value = Value?.Clone() as ExpressionNode, 
+        Location = Location 
+    };
+}
+
+public class VariableDeclarationNode : StatementNode
+{
+    public override AstNodeType NodeType => AstNodeType.VariableDeclaration;
+    public TypeNode Type { get; set; } = null!;
+    public string Name { get; set; } = string.Empty;
+    public ExpressionNode? Initializer { get; set; }
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitVariableDeclaration(this);
+    public override IAstNode Clone() => new VariableDeclarationNode 
+    { 
+        Type = (TypeNode)Type.Clone(),
+        Name = Name,
+        Initializer = Initializer?.Clone() as ExpressionNode,
+        Location = Location 
+    };
+}
+
+public class BinaryExpressionNode : ExpressionNode
+{
+    public override AstNodeType NodeType => AstNodeType.BinaryExpression;
+    public ExpressionNode Left { get; set; } = null!;
+    public ExpressionNode Right { get; set; } = null!;
+    public string Operator { get; set; } = string.Empty;
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitBinaryExpression(this);
+    public override IAstNode Clone() => new BinaryExpressionNode 
+    { 
+        Left = (ExpressionNode)Left.Clone(),
+        Right = (ExpressionNode)Right.Clone(),
+        Operator = Operator,
+        Location = Location 
+    };
+}
+
+public class UnaryExpressionNode : ExpressionNode
+{
+    public override AstNodeType NodeType => AstNodeType.UnaryExpression;
+    public ExpressionNode Operand { get; set; } = null!;
+    public string Operator { get; set; } = string.Empty;
+    public bool IsPostfix { get; set; }
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitUnaryExpression(this);
+    public override IAstNode Clone() => new UnaryExpressionNode 
+    { 
+        Operand = (ExpressionNode)Operand.Clone(),
+        Operator = Operator,
+        IsPostfix = IsPostfix,
+        Location = Location 
+    };
+}
+
+public class MethodCallNode : ExpressionNode
+{
+    public override AstNodeType NodeType => AstNodeType.MethodCall;
+    public ExpressionNode? Target { get; set; }
+    public string MethodName { get; set; } = string.Empty;
+    public List<ExpressionNode> Arguments { get; } = new();
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitMethodCall(this);
+    public override IAstNode Clone() => new MethodCallNode 
+    { 
+        Target = Target?.Clone() as ExpressionNode,
+        MethodName = MethodName,
+        Location = Location 
+    };
+}
+
+public class ParameterNode : AstNode
+{
+    public override AstNodeType NodeType => AstNodeType.Parameter;
+    public TypeNode Type { get; set; } = null!;
+    public string Name { get; set; } = string.Empty;
+    public ExpressionNode? DefaultValue { get; set; }
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitParameter(this);
+    public override IAstNode Clone() => new ParameterNode 
+    { 
+        Type = (TypeNode)Type.Clone(),
+        Name = Name,
+        DefaultValue = DefaultValue?.Clone() as ExpressionNode,
+        Location = Location 
+    };
+}
+
+public class AttributeNode : AstNode
+{
+    public override AstNodeType NodeType => AstNodeType.Attribute;
+    public string Name { get; set; } = string.Empty;
+    public List<ExpressionNode> Arguments { get; } = new();
+    public override T Accept<T>(IAstVisitor<T> visitor) => throw new NotImplementedException("AttributeNode visitor not implemented");
+    public override IAstNode Clone() => new AttributeNode { Name = Name, Location = Location };
+}

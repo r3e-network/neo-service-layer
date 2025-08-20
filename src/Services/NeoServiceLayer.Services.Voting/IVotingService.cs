@@ -1,4 +1,12 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Voting.Models;
+using VotingResultDomain = NeoServiceLayer.Services.Voting.Domain.ValueObjects.VotingResult;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting;
 
@@ -16,12 +24,12 @@ public interface IVotingService : IEnclaveService, IBlockchainService
     /// <summary>
     /// Executes voting using a specific strategy with enhanced options.
     /// </summary>
-    Task<VotingResult> ExecuteVotingAsync(string strategyId, string voterAddress, ExecutionOptions options, BlockchainType blockchainType);
+    Task<Models.VotingResult> ExecuteVotingAsync(string strategyId, string voterAddress, ExecutionOptions options, BlockchainType blockchainType);
 
     /// <summary>
     /// Gets the result of a voting execution with detailed metrics.
     /// </summary>
-    Task<VotingResult> GetVotingResultAsync(string executionId, BlockchainType blockchainType);
+    Task<Models.VotingResult> GetVotingResultAsync(string executionId, BlockchainType blockchainType);
 
     /// <summary>
     /// Gets voting strategies for an owner.
@@ -111,4 +119,55 @@ public interface IVotingService : IEnclaveService, IBlockchainService
     /// Gets real-time alerts for voting and node monitoring.
     /// </summary>
     Task<IEnumerable<VotingAlert>> GetActiveAlertsAsync(BlockchainType blockchainType);
+    
+    // Proposal and Voting Eligibility
+    /// <summary>
+    /// Checks if a user is eligible to create a proposal.
+    /// </summary>
+    Task<bool> IsEligibleToCreateProposalAsync(Guid userId);
+    
+    /// <summary>
+    /// Checks if a user is eligible to vote on a proposal.
+    /// </summary>
+    Task<bool> IsEligibleToVoteAsync(Guid voterId, Guid proposalId);
+    
+    /// <summary>
+    /// Gets the voting weight for a user on a specific proposal.
+    /// </summary>
+    Task<decimal> GetVoterWeightAsync(Guid voterId, Guid proposalId);
+    
+    /// <summary>
+    /// Records a vote delegation.
+    /// </summary>
+    Task RecordDelegationAsync(Guid delegatorId, Guid delegateId, Guid proposalId, decimal weight);
+    
+    /// <summary>
+    /// Revokes a vote delegation.
+    /// </summary>
+    Task RevokeDelegationAsync(Guid proposalId, Guid delegatorId, Guid delegateId);
+    
+    /// <summary>
+    /// Records a vote invalidation.
+    /// </summary>
+    Task RecordVoteInvalidationAsync(Guid proposalId, Guid voterId, string reason);
+    
+    /// <summary>
+    /// Records an audit event.
+    /// </summary>
+    Task RecordAuditAsync(Guid proposalId, Guid auditorId, string auditType, Dictionary<string, object> auditData);
+    
+    /// <summary>
+    /// Adds a comment to a proposal.
+    /// </summary>
+    Task<Guid> AddCommentAsync(Guid proposalId, Guid authorId, string comment);
+    
+    /// <summary>
+    /// Records a proposal view.
+    /// </summary>
+    Task RecordViewAsync(Guid proposalId, Guid viewerId);
+    
+    /// <summary>
+    /// Generates a vote verification hash.
+    /// </summary>
+    string GenerateVoteVerificationHash(Guid proposalId, Guid voterId, string optionId, DateTime castAt);
 }

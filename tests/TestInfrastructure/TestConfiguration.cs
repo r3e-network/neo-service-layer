@@ -1,9 +1,15 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-// No alias needed - will use fully qualified names
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
+// No alias needed - will use fully qualified names
 
 namespace NeoServiceLayer.TestInfrastructure;
 
@@ -15,7 +21,7 @@ public static class TestConfiguration
     /// <summary>
     /// Creates a test configuration with default values.
     /// </summary>
-    public static IConfiguration CreateTestConfiguration()
+    public static Microsoft.Extensions.Configuration.IConfiguration CreateTestConfiguration()
     {
         var configData = new Dictionary<string, string>
         {
@@ -46,7 +52,6 @@ public static class TestConfiguration
         // Add logging
         services.AddLogging(builder =>
         {
-            builder.AddConsole();
             builder.SetMinimumLevel(LogLevel.Warning);
         });
 

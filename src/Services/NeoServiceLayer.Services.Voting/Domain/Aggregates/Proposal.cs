@@ -1,9 +1,14 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using NeoServiceLayer.Core.Aggregates;
+using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Services.Voting.Domain.Events;
 using NeoServiceLayer.Services.Voting.Domain.ValueObjects;
+using NeoServiceLayer.ServiceFramework;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
 {
@@ -34,9 +39,32 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                                     DateTime.UtcNow <= VotingEndsAt;
 
         // For Event Sourcing reconstruction
-        private Proposal() : base(Guid.Empty)
+        private Proposal() : base()
         {
+            Title = string.Empty;
+            Description = string.Empty;
         }
+
+    private void Apply(object domainEvent)
+    {
+        // Apply domain event to aggregate
+        if (domainEvent == null) throw new ArgumentNullException(nameof(domainEvent));
+        
+        // Handle specific event types
+        switch (domainEvent)
+        {
+            case ProposalCreatedEvent created:
+                Id = created.ProposalId.ToString();
+                Title = created.Title;
+                break;
+            case VoteCastEvent vote:
+                // Update vote counts
+                break;
+            default:
+                // Log unknown event type
+                break;
+        }
+    }
 
         // Factory method for creating new proposals
         public static Proposal Create(
@@ -98,7 +126,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             if (DateTime.UtcNow < VotingStartsAt)
                 throw new InvalidOperationException("Cannot start voting before scheduled start time");
 
-            RaiseEvent(new VotingStartedEvent(Id, DateTime.UtcNow));
+            RaiseEvent(new VotingStartedEvent(Guid.Parse(Id), DateTime.UtcNow));
         }
 
         public void CastVote(Guid voterId, Guid optionId, decimal weight = 1.0m)
@@ -118,7 +146,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
 
                 var existingVote = _votes[voterId];
                 RaiseEvent(new VoteChangedEvent(
-                    Id,
+                    Guid.Parse(Id),
                     voterId,
                     existingVote.OptionId,
                     optionId,
@@ -132,7 +160,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                     throw new InvalidOperationException($"Vote weight must be at least {Rules.MinimumVoteWeight}");
 
                 RaiseEvent(new VoteCastEvent(
-                    Id,
+                    Guid.Parse(Id),
                     voterId,
                     optionId,
                     weight,
@@ -151,7 +179,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             if (!_votes.ContainsKey(voterId))
                 throw new InvalidOperationException("No vote found to withdraw");
 
-            RaiseEvent(new VoteWithdrawnEvent(Id, voterId, DateTime.UtcNow));
+            RaiseEvent(new VoteWithdrawnEvent(Guid.Parse(Id), voterId, DateTime.UtcNow));
         }
 
         public void EndVoting()
@@ -162,14 +190,14 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             // Calculate results
             var result = CalculateResult();
 
-            RaiseEvent(new VotingEndedEvent(Id, result, DateTime.UtcNow));
+            RaiseEvent(new VotingEndedEvent(Guid.Parse(Id), result, DateTime.UtcNow));
 
             // Determine winner if applicable
             if (result.WinningOptionId.HasValue)
             {
                 var winningOption = _options.First(o => o.Id == result.WinningOptionId.Value);
                 RaiseEvent(new ProposalApprovedEvent(
-                    Id,
+                    Guid.Parse(Id),
                     result.WinningOptionId.Value,
                     winningOption.Name,
                     result.WinningVoteCount,
@@ -178,7 +206,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             else
             {
                 RaiseEvent(new ProposalRejectedEvent(
-                    Id,
+                    Guid.Parse(Id),
                     "No option reached required threshold",
                     DateTime.UtcNow));
             }
@@ -189,7 +217,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
             if (Status == ProposalStatus.Completed || Status == ProposalStatus.Cancelled)
                 throw new InvalidOperationException($"Cannot cancel proposal - status is {Status}");
 
-            RaiseEvent(new ProposalCancelledEvent(Id, reason, DateTime.UtcNow));
+            RaiseEvent(new ProposalCancelledEvent(Guid.Parse(Id), reason, DateTime.UtcNow));
         }
 
         public void ExtendVotingPeriod(DateTime newEndTime)
@@ -204,7 +232,7 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                 throw new ArgumentException("New end time must be in the future");
 
             RaiseEvent(new VotingPeriodExtendedEvent(
-                Id,
+                Guid.Parse(Id),
                 VotingEndsAt,
                 newEndTime,
                 DateTime.UtcNow));
@@ -286,12 +314,12 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
         }
 
         // Event handlers
-        protected override void When(object @event)
+        private void When(object @event)
         {
             switch (@event)
             {
                 case ProposalCreatedEvent e:
-                    Id = e.ProposalId;
+                    Id = e.ProposalId.ToString();
                     Title = e.Title;
                     Description = e.Description;
                     Type = e.Type;
@@ -336,11 +364,47 @@ namespace NeoServiceLayer.Services.Voting.Domain.Aggregates
                     VotingEndsAt = e.NewEndTime;
                     break;
 
-                case ProposalApprovedEvent e:
-                case ProposalRejectedEvent e:
+                case ProposalApprovedEvent approved:
+                case ProposalRejectedEvent rejected:
                     // These are informational events, no state change needed
                     break;
             }
+        }
+
+        protected override void RegisterEventHandlers()
+        {
+            // Register event handlers for domain events
+            // This method is called during aggregate initialization
+        }
+
+        protected override void ValidateInvariants()
+        {
+            // Validate business rules and invariants
+            if (string.IsNullOrWhiteSpace(Title))
+                throw new InvalidOperationException("Proposal title cannot be empty");
+
+            if (VotingStartsAt >= VotingEndsAt)
+                throw new InvalidOperationException("Voting start time must be before end time");
+
+            if (_options.Count < 2)
+                throw new InvalidOperationException("Proposal must have at least 2 voting options");
+
+            if (Type == ProposalType.SuperMajority && Rules.SuperMajorityThreshold <= 50)
+                throw new InvalidOperationException("Super majority threshold must be greater than 50%");
+        }
+
+        /// <summary>
+        /// Loads a proposal from event history.
+        /// </summary>
+        public static Proposal LoadFromHistory(IEnumerable<IDomainEvent> events)
+        {
+            var proposal = new Proposal();
+            foreach (var domainEvent in events)
+            {
+                proposal.Apply(domainEvent);
+            }
+            proposal.MarkEventsAsCommitted();
+            return proposal;
         }
     }
 

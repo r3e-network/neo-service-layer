@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
@@ -6,7 +5,11 @@ using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.ServiceFramework.Extensions;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Web.Extensions;
 
@@ -28,8 +31,8 @@ public static class ServiceRegistrationExtensions
 
         // Add blockchain client factory - register concrete then interface
         services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
-        services.AddSingleton<IBlockchainClientFactory>(provider =>
-            (IBlockchainClientFactory)provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.IBlockchainClientFactory>(provider =>
+            provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
 
         // Core Services (4)
         services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
@@ -94,7 +97,8 @@ public static class ServiceRegistrationExtensions
         });
 
         // Add permission-aware services extension
-        services.AddPermissionAwareServices();
+        // Permission-aware services are already configured through the middleware
+        // services.AddPermissionAwareServices();
 
         return services;
     }
@@ -155,6 +159,16 @@ public static class ServiceRegistrationExtensions
         {
             return _overrides.Remove(key);
         }
+        
+        public bool Exists(string key)
+        {
+            return ContainsKey(key);
+        }
+        
+        public bool Remove(string key)
+        {
+            return RemoveKey(key);
+        }
 
         public IEnumerable<string> GetAllKeys()
         {
@@ -163,10 +177,10 @@ public static class ServiceRegistrationExtensions
             return configKeys.Union(overrideKeys).Distinct();
         }
 
-        public IServiceConfiguration? GetSection(string sectionName)
+        public IConfigurationSection? GetSection(string sectionName)
         {
             var section = _configuration.GetSection(sectionName);
-            return section.Exists() ? new ServiceConfiguration(section) : null;
+            return section.Exists() ? section : null;
         }
 
         public string GetConnectionString(string name)

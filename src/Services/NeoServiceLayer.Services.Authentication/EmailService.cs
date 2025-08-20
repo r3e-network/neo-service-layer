@@ -6,6 +6,9 @@ using Microsoft.Extensions.Logging;
 using System.Net.Mail;
 using System.Net;
 using System.Text;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -15,6 +18,8 @@ namespace NeoServiceLayer.Services.Authentication
     public interface IEmailService
     {
         Task SendVerificationEmailAsync(string email, string verificationToken);
+        Task SendEmailVerificationAsync(Guid userId, string email); // Compatibility method
+        Task SendEmailVerificationAsync(string email, string username, string verificationToken); // Overload for AuthenticationController
         Task SendPasswordResetEmailAsync(string email, string resetToken);
         Task SendMfaCodeEmailAsync(string email, string code);
         Task SendAccountLockedEmailAsync(string email, string reason);
@@ -60,7 +65,7 @@ namespace NeoServiceLayer.Services.Authentication
         {
             var subject = "Verify Your Email Address";
             var verificationUrl = $"{_baseUrl}/api/v1/authentication/verify-email?token={Uri.EscapeDataString(verificationToken)}";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -97,15 +102,28 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
+
             _logger.LogInformation("Verification email sent to {Email}", email);
+        }
+
+        public async Task SendEmailVerificationAsync(Guid userId, string email)
+        {
+            // Compatibility method - generate a token and call the main method
+            var verificationToken = Guid.NewGuid().ToString();
+            await SendVerificationEmailAsync(email, verificationToken);
+        }
+
+        public async Task SendEmailVerificationAsync(string email, string username, string verificationToken)
+        {
+            // Overload for AuthenticationController - just call the main method
+            await SendVerificationEmailAsync(email, verificationToken);
         }
 
         public async Task SendPasswordResetEmailAsync(string email, string resetToken)
         {
             var subject = "Reset Your Password";
             var resetUrl = $"{_baseUrl}/api/v1/authentication/reset-password?token={Uri.EscapeDataString(resetToken)}";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -144,17 +162,17 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
-            await _securityLogger.LogSecurityEventAsync("PasswordResetEmailSent", null, 
+
+            await _securityLogger.LogSecurityEventAsync("PasswordResetEmailSent", null,
                 new Dictionary<string, object> { ["Email"] = email });
-            
+
             _logger.LogInformation("Password reset email sent to {Email}", email);
         }
 
         public async Task SendMfaCodeEmailAsync(string email, string code)
         {
             var subject = "Your Two-Factor Authentication Code";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -186,14 +204,14 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
+
             _logger.LogInformation("MFA code email sent to {Email}", email);
         }
 
         public async Task SendAccountLockedEmailAsync(string email, string reason)
         {
             var subject = "Account Security Alert - Account Locked";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -233,17 +251,17 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
-            await _securityLogger.LogSecurityEventAsync("AccountLockedEmailSent", null, 
+
+            await _securityLogger.LogSecurityEventAsync("AccountLockedEmailSent", null,
                 new Dictionary<string, object> { ["Email"] = email, ["Reason"] = reason });
-            
+
             _logger.LogWarning("Account locked email sent to {Email} for reason: {Reason}", email, reason);
         }
 
         public async Task SendPasswordChangedNotificationAsync(string email)
         {
             var subject = "Your Password Has Been Changed";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -283,14 +301,14 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
+
             _logger.LogInformation("Password changed notification sent to {Email}", email);
         }
 
         public async Task SendNewLoginAlertAsync(string email, string ipAddress, string userAgent, DateTime loginTime)
         {
             var subject = "New Login to Your Account";
-            
+
             var body = $@"
                 <html>
                 <head>
@@ -331,7 +349,7 @@ namespace NeoServiceLayer.Services.Authentication
                 </html>";
 
             await SendEmailAsync(email, subject, body, true);
-            
+
             _logger.LogInformation("New login alert sent to {Email} from IP {IpAddress}", email, ipAddress);
         }
 
@@ -341,7 +359,7 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 // In production, use a proper email service like SendGrid, AWS SES, etc.
                 // This is a basic SMTP implementation for demonstration
-                
+
                 if (string.IsNullOrEmpty(_smtpHost) || _smtpHost == "localhost")
                 {
                     // Log email content for development/testing
@@ -372,7 +390,7 @@ namespace NeoServiceLayer.Services.Authentication
                 message.To.Add(new MailAddress(to));
 
                 await client.SendMailAsync(message);
-                
+
                 _logger.LogInformation("Email sent successfully to {To}", to);
             }
             catch (Exception ex)

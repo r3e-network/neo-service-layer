@@ -1,4 +1,3 @@
-﻿using System.Diagnostics;
 using System.Net.Http;
 using System.Text.Json;
 using FluentAssertions;
@@ -18,6 +17,13 @@ using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -38,7 +44,7 @@ public class PerformanceIntegrationTests : IDisposable
         var services = new ServiceCollection();
 
         services.AddLogging(builder => builder.AddConsole().SetMinimumLevel(LogLevel.Information));
-        services.AddSingleton<NeoServiceLayer.Infrastructure.IBlockchainClientFactory, MockBlockchainClientFactory>();
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.IBlockchainClientFactory, MockBlockchainClientFactory>();
         services.AddSingleton<IEnclaveWrapper, TestEnclaveWrapper>();
         services.AddSingleton<IEnclaveManager, EnclaveManager>();
         services.AddSingleton<IServiceConfiguration, MockServiceConfiguration>();

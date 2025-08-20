@@ -1,7 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -106,7 +110,7 @@ public partial class PatternRecognitionService
                 {
                     DataPointIndex = i,
                     AnomalyType = anomalyType,
-                    Severity = severity,
+                    Severity = ConvertSeverityToString(severity),
                     Description = $"Statistical anomaly: value {value:F3}, z-score {zScore:F3}",
                     Confidence = confidence
                 });
@@ -172,6 +176,18 @@ public partial class PatternRecognitionService
         var medianDistance = Math.Abs(value - stats.Median) / (stats.Max - stats.Min);
 
         return Math.Min((normalizedZScore + medianDistance) / 2.0, 1.0);
+    }
+
+    private string ConvertSeverityToString(double severity)
+    {
+        return severity switch
+        {
+            >= 0.8 => "Critical",
+            >= 0.6 => "High", 
+            >= 0.4 => "Medium",
+            >= 0.2 => "Low",
+            _ => "Minimal"
+        };
     }
 
     /// <summary>

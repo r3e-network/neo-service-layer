@@ -12,6 +12,7 @@ extern "C" {
     fn occlum_generate_ecdsa_keypair(private_key: *mut u8, public_key: *mut u8) -> i32;
     fn occlum_sha256(data: *const u8, data_len: usize, hash: *mut u8) -> i32;
     fn occlum_ripemd160(data: *const u8, data_len: usize, hash: *mut u8) -> i32;
+    #[allow(dead_code)]
     fn occlum_generate_neo_address(public_key: *const u8, address: *mut u8, address_len: *mut usize) -> i32;
 }
 

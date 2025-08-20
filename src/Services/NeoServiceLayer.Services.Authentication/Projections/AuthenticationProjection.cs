@@ -6,15 +6,19 @@ using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Services.Authentication.Domain.Events;
 using NeoServiceLayer.Services.Authentication.Infrastructure;
 using NeoServiceLayer.Services.Authentication.Queries;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Projections
 {
-    public class AuthenticationProjection : IEventHandler
+    public class AuthenticationProjection
     {
         private readonly IUserReadModelStore _userStore;
         private readonly ISessionReadModelStore _sessionStore;
         private readonly ITokenReadModelStore _tokenStore;
-        private readonly ILogger<AuthenticationProjection> _logger;
+        private readonly ILogger<AuthenticationProjection> Logger;
         private long _position = 0;
 
         public AuthenticationProjection(
@@ -26,12 +30,12 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             _userStore = userStore;
             _sessionStore = sessionStore;
             _tokenStore = tokenStore;
-            _logger = logger;
+            Logger = logger;
         }
 
         public long Position => _position;
 
-        public async Task HandleAsync(object @event, EventMetadata metadata)
+        public async Task HandleAsync(object @event)
         {
             try
             {
@@ -118,15 +122,16 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                         break;
 
                     default:
-                        _logger.LogWarning("Unknown event type: {EventType}", @event.GetType().Name);
+                        Logger.LogWarning("Unknown event type: {EventType}", @event.GetType().Name);
                         break;
                 }
 
-                _position = metadata.Position;
+                // Update position tracking (position should be passed in or tracked differently)
+                _position++;
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error handling event {EventType}", @event.GetType().Name);
+                Logger.LogError(ex, "Error handling event {EventType}", @event.GetType().Name);
                 throw;
             }
         }
@@ -149,7 +154,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             };
 
             await _userStore.SaveAsync(user);
-            _logger.LogInformation("Created user projection for {UserId}", e.UserId);
+            Logger.LogInformation("Created user projection for {UserId}", e.UserId);
         }
 
         private async Task HandleUserDeleted(UserDeletedEvent e)
@@ -159,7 +164,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.Status = "Deleted";
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Marked user {UserId} as deleted", e.UserId);
+                Logger.LogInformation("Marked user {UserId} as deleted", e.UserId);
             }
         }
 
@@ -170,7 +175,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.Status = "Suspended";
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Marked user {UserId} as suspended", e.UserId);
+                Logger.LogInformation("Marked user {UserId} as suspended", e.UserId);
             }
         }
 
@@ -183,7 +188,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                 user.FailedLoginAttempts = 0;
                 user.LockedUntil = null;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Reactivated user {UserId}", e.UserId);
+                Logger.LogInformation("Reactivated user {UserId}", e.UserId);
             }
         }
 
@@ -194,7 +199,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.EmailVerified = true;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Marked email as verified for user {UserId}", e.UserId);
+                Logger.LogInformation("Marked email as verified for user {UserId}", e.UserId);
             }
         }
 
@@ -207,7 +212,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                 user.LastLoginAt = e.LoginTime;
                 user.FailedLoginAttempts = 0;
                 user.LockedUntil = null;
-                
+
                 // Add successful login attempt
                 user.RecentLoginAttempts.Add(new LoginAttemptReadModel
                 {
@@ -215,7 +220,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                     Success = true,
                     AttemptTime = e.LoginTime
                 });
-                
+
                 // Keep only last 10 attempts
                 if (user.RecentLoginAttempts.Count > 10)
                 {
@@ -224,7 +229,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                         .Take(10)
                         .ToList();
                 }
-                
+
                 await _userStore.SaveAsync(user);
             }
 
@@ -241,7 +246,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             };
 
             await _sessionStore.SaveAsync(session);
-            _logger.LogInformation("Created session {SessionId} for user {UserId}", e.SessionId, e.UserId);
+            Logger.LogInformation("Created session {SessionId} for user {UserId}", e.SessionId, e.UserId);
         }
 
         private async Task HandleUserLoggedOut(UserLoggedOutEvent e)
@@ -251,7 +256,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 session.LoggedOutAt = e.LogoutTime;
                 await _sessionStore.SaveAsync(session);
-                _logger.LogInformation("Marked session {SessionId} as logged out", e.SessionId);
+                Logger.LogInformation("Marked session {SessionId} as logged out", e.SessionId);
             }
         }
 
@@ -261,7 +266,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             if (user != null)
             {
                 user.FailedLoginAttempts = e.FailedAttemptCount;
-                
+
                 // Add failed login attempt
                 user.RecentLoginAttempts.Add(new LoginAttemptReadModel
                 {
@@ -270,7 +275,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                     AttemptTime = e.AttemptTime,
                     FailureReason = e.Reason
                 });
-                
+
                 // Keep only last 10 attempts
                 if (user.RecentLoginAttempts.Count > 10)
                 {
@@ -279,9 +284,9 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                         .Take(10)
                         .ToList();
                 }
-                
+
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Recorded failed login for user {UserId}", e.UserId);
+                Logger.LogInformation("Recorded failed login for user {UserId}", e.UserId);
             }
         }
 
@@ -292,7 +297,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.LockedUntil = e.LockedUntil;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Locked user {UserId} until {LockedUntil}", e.UserId, e.LockedUntil);
+                Logger.LogInformation("Locked user {UserId} until {LockedUntil}", e.UserId, e.LockedUntil);
             }
         }
 
@@ -303,7 +308,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.LastPasswordChangeAt = e.ChangedAt;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Updated password change time for user {UserId}", e.UserId);
+                Logger.LogInformation("Updated password change time for user {UserId}", e.UserId);
             }
         }
 
@@ -314,14 +319,14 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.LastPasswordChangeAt = e.CompletedAt;
                 await _userStore.SaveAsync(user);
-                
+
                 // Logout all sessions
                 await _sessionStore.LogoutAllSessionsAsync(e.UserId, e.CompletedAt);
-                
+
                 // Revoke all tokens
                 await _tokenStore.RevokeAllTokensAsync(e.UserId, e.CompletedAt, "Password reset");
-                
-                _logger.LogInformation("Completed password reset for user {UserId}", e.UserId);
+
+                Logger.LogInformation("Completed password reset for user {UserId}", e.UserId);
             }
         }
 
@@ -332,7 +337,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.TwoFactorEnabled = true;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Enabled two-factor for user {UserId}", e.UserId);
+                Logger.LogInformation("Enabled two-factor for user {UserId}", e.UserId);
             }
         }
 
@@ -343,7 +348,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.TwoFactorEnabled = false;
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Disabled two-factor for user {UserId}", e.UserId);
+                Logger.LogInformation("Disabled two-factor for user {UserId}", e.UserId);
             }
         }
 
@@ -360,7 +365,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             };
 
             await _tokenStore.SaveAsync(token);
-            _logger.LogInformation("Issued refresh token {TokenId} for user {UserId}", e.TokenId, e.UserId);
+            Logger.LogInformation("Issued refresh token {TokenId} for user {UserId}", e.TokenId, e.UserId);
         }
 
         private async Task HandleRefreshTokenRevoked(RefreshTokenRevokedEvent e)
@@ -371,7 +376,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                 token.RevokedAt = e.RevokedAt;
                 token.RevokedReason = e.Reason;
                 await _tokenStore.SaveAsync(token);
-                _logger.LogInformation("Revoked refresh token {TokenId}", e.TokenId);
+                Logger.LogInformation("Revoked refresh token {TokenId}", e.TokenId);
             }
         }
 
@@ -384,7 +389,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                 {
                     user.Roles.Add(e.Role);
                     await _userStore.SaveAsync(user);
-                    _logger.LogInformation("Assigned role {Role} to user {UserId}", e.Role, e.UserId);
+                    Logger.LogInformation("Assigned role {Role} to user {UserId}", e.Role, e.UserId);
                 }
             }
         }
@@ -396,7 +401,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.Roles.Remove(e.Role);
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Removed role {Role} from user {UserId}", e.Role, e.UserId);
+                Logger.LogInformation("Removed role {Role} from user {UserId}", e.Role, e.UserId);
             }
         }
 
@@ -409,7 +414,7 @@ namespace NeoServiceLayer.Services.Authentication.Projections
                 {
                     user.Permissions.Add(e.Permission);
                     await _userStore.SaveAsync(user);
-                    _logger.LogInformation("Granted permission {Permission} to user {UserId}", e.Permission, e.UserId);
+                    Logger.LogInformation("Granted permission {Permission} to user {UserId}", e.Permission, e.UserId);
                 }
             }
         }
@@ -421,23 +426,23 @@ namespace NeoServiceLayer.Services.Authentication.Projections
             {
                 user.Permissions.Remove(e.Permission);
                 await _userStore.SaveAsync(user);
-                _logger.LogInformation("Revoked permission {Permission} from user {UserId}", e.Permission, e.UserId);
+                Logger.LogInformation("Revoked permission {Permission} from user {UserId}", e.Permission, e.UserId);
             }
         }
 
         public async Task RebuildAsync()
         {
-            _logger.LogInformation("Rebuilding authentication projections from position 0");
-            
+            Logger.LogInformation("Rebuilding authentication projections from position 0");
+
             // Clear all read models
             await _userStore.ClearAsync();
             await _sessionStore.ClearAsync();
             await _tokenStore.ClearAsync();
-            
+
             _position = 0;
-            
+
             // Projection rebuild will be triggered by replaying all events
-            _logger.LogInformation("Authentication projections cleared and ready for rebuild");
+            Logger.LogInformation("Authentication projections cleared and ready for rebuild");
         }
     }
 }

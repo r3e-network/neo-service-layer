@@ -1,10 +1,20 @@
-﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Configuration;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Configuration;
-using NeoServiceLayer.Neo.N3;
-using NeoServiceLayer.Neo.X;
+using NeoServiceLayer.Core.Models;
+// Temporarily disabled - complex blockchain dependencies
+// using NeoServiceLayer.Neo.N3;
+// using NeoServiceLayer.Neo.X;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Blockchain;
 
@@ -36,7 +46,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         // Try to get ServiceEndpoints if available
         try
         {
-            _endpoints = serviceProvider.GetService<ServiceEndpoints>();
+            _endpoints = serviceProvider.GetService(typeof(ServiceEndpoints)) as ServiceEndpoints;
         }
         catch
         {
@@ -54,8 +64,8 @@ public class BlockchainClientFactory : IBlockchainClientFactory
 
             return blockchainType switch
             {
-                BlockchainType.NeoN3 => CreateNeoN3Client(),
-                BlockchainType.NeoX => CreateNeoXClient(),
+                BlockchainType.NeoN3 => throw new NotImplementedException("Neo N3 client temporarily disabled"),
+                BlockchainType.NeoX => throw new NotImplementedException("Neo X client temporarily disabled"),
                 _ => throw new NotSupportedException($"Blockchain type {blockchainType} is not supported")
             };
         }
@@ -72,53 +82,29 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
     }
 
+    /*
     /// <summary>
     /// Creates a Neo N3 blockchain client.
     /// </summary>
     /// <returns>The Neo N3 blockchain client.</returns>
     private IBlockchainClient CreateNeoN3Client()
     {
-        var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<NeoN3Client>>();
-        var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoN3ClientAdapter>>();
-        // Use ServiceEndpoints if available, otherwise fall back to configuration
-        var rpcUrl = !string.IsNullOrEmpty(_endpoints?.NeoN3RpcUrl)
-            ? _endpoints.NeoN3RpcUrl
-            : _configuration.NeoN3?.RpcUrl ?? "http://localhost:20332";
-
-        // Create the Neo N3 client directly
-        var neoN3Client = new NeoN3Client(logger, httpClient, rpcUrl);
-
-        // Wrap it in the adapter
-        var adapter = new NeoN3ClientAdapter(adapterLogger, neoN3Client);
-
-        _logger.LogInformation("Created Neo N3 client with RPC URL: {RpcUrl}", rpcUrl);
-        return adapter;
+        // Temporarily disabled - complex blockchain dependencies
+        throw new NotImplementedException("Neo N3 client temporarily disabled");
     }
+    */
 
+    /*
     /// <summary>
     /// Creates a Neo X blockchain client.
     /// </summary>
     /// <returns>The Neo X blockchain client.</returns>
     private IBlockchainClient CreateNeoXClient()
     {
-        var httpClient = _serviceProvider.GetRequiredService<HttpClient>();
-        var logger = _serviceProvider.GetRequiredService<ILogger<NeoXClient>>();
-        var adapterLogger = _serviceProvider.GetRequiredService<ILogger<NeoXClientAdapter>>();
-        // Use ServiceEndpoints if available, otherwise fall back to configuration
-        var rpcUrl = !string.IsNullOrEmpty(_endpoints?.NeoXRpcUrl)
-            ? _endpoints.NeoXRpcUrl
-            : _configuration.NeoX?.RpcUrl ?? "http://localhost:8545";
-
-        // Create the Neo X client directly
-        var neoXClient = new NeoXClient(logger, httpClient, rpcUrl);
-
-        // Wrap it in the adapter
-        var adapter = new NeoXClientAdapter(adapterLogger, neoXClient);
-
-        _logger.LogInformation("Created Neo X client with RPC URL: {RpcUrl}", rpcUrl);
-        return adapter;
+        // Temporarily disabled - complex blockchain dependencies
+        throw new NotImplementedException("Neo X client temporarily disabled");
     }
+    */
 }
 
 /// <summary>
@@ -204,6 +190,7 @@ public class NeoXConfiguration
     public string GasPriceStrategy { get; set; } = "standard";
 }
 
+/*
 /// <summary>
 /// Adapter for the Neo N3 client.
 /// </summary>
@@ -477,3 +464,4 @@ public class NeoXClientAdapter : IBlockchainClient
         return _client.UnsubscribeFromTransactionsAsync(subscriptionId);
     }
 }
+*/

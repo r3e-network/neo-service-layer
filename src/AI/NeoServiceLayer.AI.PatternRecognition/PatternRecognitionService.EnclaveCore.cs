@@ -1,8 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Models;
+using System.Text.Json;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using CoreModels = NeoServiceLayer.Core.Models;
+using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 
@@ -30,7 +37,7 @@ internal class InferenceResult
 /// <summary>
 /// Represents training dataset for model training.
 /// </summary>
-internal class TrainingDataSet
+internal class InternalTrainingDataSet
 {
     public double[][] TrainingFeatures { get; set; } = Array.Empty<double[]>();
     public object[] TrainingLabels { get; set; } = Array.Empty<object>();
@@ -40,7 +47,7 @@ internal class TrainingDataSet
 /// <summary>
 /// Represents training result from model training.
 /// </summary>
-internal class TrainingResult
+internal class InternalTrainingResult
 {
     public byte[] ModelWeights { get; set; } = Array.Empty<byte>();
     public double TrainingLoss { get; set; }
@@ -68,7 +75,7 @@ internal class EvaluationResult
 public partial class PatternRecognitionService
 {
     // Enclave-specific AI model operations
-    protected async Task<AIModel> LoadModelInEnclaveAsync(string modelId, AIModelType modelType)
+    protected async Task<AIModels.AIModel> LoadModelInEnclaveAsync(string modelId, CoreModels.AIModelType modelType)
     {
         // Load actual AI model from secure storage
         var modelData = await _enclaveManager!.StorageRetrieveDataAsync($"model_{modelId}", GetModelEncryptionKey(), CancellationToken.None);
@@ -86,10 +93,10 @@ public partial class PatternRecognitionService
         }
 
         // Initialize model based on type
-        var model = new AIModel
+        var model = new AIModels.AIModel
         {
             ModelId = modelId,
-            Type = modelType,
+            Type = (AIModels.AIModelType)modelType,
             LoadedAt = DateTime.UtcNow,
             IsLoaded = true,
             Accuracy = modelInfo.Accuracy,
@@ -97,8 +104,19 @@ public partial class PatternRecognitionService
             Parameters = modelInfo.Parameters
         };
 
-        // Load model weights into memory for inference
-        await LoadModelWeightsAsync(model, modelInfo.WeightsData);
+        // Convert to Core model and load weights into memory for inference
+        var coreModel = new CoreModels.AIModel
+        {
+            Id = model.Id,
+            Name = model.Name,
+            Type = (CoreModels.AIModelType)(int)model.Type,
+            Version = model.Version,
+            LoadedAt = model.LoadedAt,
+            IsLoaded = model.IsLoaded,
+            Accuracy = model.Accuracy ?? 0,
+            Parameters = model.Parameters
+        };
+        await LoadModelWeightsAsync(coreModel, modelInfo.WeightsData);
 
         Logger.LogInformation("Loaded AI model {ModelId} of type {ModelType} with accuracy {Accuracy:F3}",
             modelId, modelType, model.Accuracy);
@@ -116,15 +134,15 @@ public partial class PatternRecognitionService
         }
 
         // Validate and preprocess inputs
-        var preprocessedInputs = await PreprocessInputsAsync(inputs, model.Type);
+        var preprocessedInputs = await PreprocessInputsAsync(inputs, (AIModels.AIModelType)(int)model.Type);
 
         // Run actual inference based on model type
         var result = model.Type switch
         {
-            AIModelType.Classification => await RunClassificationInferenceAsync(model, preprocessedInputs),
-            AIModelType.Regression => await RunRegressionInferenceAsync(model, preprocessedInputs),
-            AIModelType.NeuralNetwork => await RunNeuralNetworkInferenceAsync(model, preprocessedInputs),
-            AIModelType.DecisionTree => await RunDecisionTreeInferenceAsync(model, preprocessedInputs),
+            CoreModels.AIModelType.Classification => await RunClassificationInferenceAsync(model, preprocessedInputs),
+            CoreModels.AIModelType.Regression => await RunRegressionInferenceAsync(model, preprocessedInputs),
+            CoreModels.AIModelType.NeuralNetwork => await RunNeuralNetworkInferenceAsync(model, preprocessedInputs),
+            CoreModels.AIModelType.DecisionTree => await RunDecisionTreeInferenceAsync(model, preprocessedInputs),
             _ => throw new NotSupportedException($"Model type {model.Type} is not supported")
         };
 
@@ -142,7 +160,7 @@ public partial class PatternRecognitionService
         };
     }
 
-    protected async Task<AIModel> TrainModelInEnclaveAsync(AIModelDefinition definition)
+    protected async Task<AIModels.AIModel> TrainModelInEnclaveAsync(CoreModels.AIModelDefinition definition)
     {
         // Validate training data
         if (definition.TrainingData == null || !definition.TrainingData.Any())
@@ -150,19 +168,37 @@ public partial class PatternRecognitionService
             throw new ArgumentException("Training data is required for model training");
         }
 
+        // Convert Core.Models.AIModelType to local Models.AIModelType
+        var localModelType = (AIModels.AIModelType)((int)definition.Type);
+        
         // Prepare training dataset
-        var trainingSet = await PrepareTrainingDataAsync(definition.TrainingData, definition.Type);
+        var trainingSet = await PrepareTrainingDataAsync(definition.TrainingData, localModelType);
 
+        // Convert to local model definition for architecture initialization
+        var localDefinition = new AIModels.AIModelDefinition
+        {
+            Id = definition.Id,
+            Name = definition.Name,
+            Type = localModelType,
+            Version = definition.Version,
+            Parameters = definition.Parameters,
+            InputFeatures = definition.InputFeatures,
+            OutputFeatures = definition.OutputFeatures,
+            TrainingData = definition.TrainingData != null ? 
+                System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(definition.TrainingData) : 
+                Array.Empty<byte>()
+        };
+        
         // Initialize model architecture
-        var model = await InitializeModelArchitectureAsync(definition);
+        var model = await InitializeModelArchitectureAsync(localDefinition);
 
         // Train model using appropriate algorithm
         var trainingResult = definition.Type switch
         {
-            AIModelType.Classification => await TrainClassificationModelAsync(model, trainingSet, definition.TrainingParameters),
-            AIModelType.Regression => await TrainRegressionModelAsync(model, trainingSet, definition.TrainingParameters),
-            AIModelType.NeuralNetwork => await TrainNeuralNetworkAsync(model, trainingSet, definition.TrainingParameters),
-            AIModelType.DecisionTree => await TrainDecisionTreeAsync(model, trainingSet, definition.TrainingParameters),
+            CoreModels.AIModelType.Classification => await TrainClassificationModelAsync(model, trainingSet, definition.TrainingParameters),
+            CoreModels.AIModelType.Regression => await TrainRegressionModelAsync(model, trainingSet, definition.TrainingParameters),
+            CoreModels.AIModelType.NeuralNetwork => await TrainNeuralNetworkAsync(model, trainingSet, definition.TrainingParameters),
+            CoreModels.AIModelType.DecisionTree => await TrainDecisionTreeAsync(model, trainingSet, definition.TrainingParameters),
             _ => throw new NotSupportedException($"Training for model type {definition.Type} is not supported")
         };
 
@@ -181,7 +217,19 @@ public partial class PatternRecognitionService
         Logger.LogInformation("Trained model {ModelId} of type {ModelType} with accuracy {Accuracy:F3}",
             model.ModelId, definition.Type, model.Accuracy);
 
-        return model;
+        // Convert back to local model
+        var localModel = new AIModels.AIModel
+        {
+            Id = model.Id,
+            Name = model.Name,
+            Type = (AIModels.AIModelType)(int)model.Type,
+            Version = model.Version,
+            LoadedAt = model.LoadedAt,
+            IsLoaded = model.IsLoaded,
+            Accuracy = model.Accuracy,
+            Parameters = model.Parameters ?? new Dictionary<string, object>()
+        };
+        return localModel;
     }
 
     protected async Task UnloadModelInEnclaveAsync(string modelId)
@@ -198,7 +246,7 @@ public partial class PatternRecognitionService
         Logger.LogDebug("Unloaded model {ModelId} from enclave memory", modelId);
     }
 
-    protected async Task<AIModelMetrics> EvaluateModelInEnclaveAsync(string modelId, Dictionary<string, object> testData)
+    protected async Task<CoreModels.AIModelMetrics> EvaluateModelInEnclaveAsync(string modelId, Dictionary<string, object> testData)
     {
         // Perform actual model evaluation using validation dataset
         var model = await GetLoadedModelAsync(modelId);
@@ -210,16 +258,15 @@ public partial class PatternRecognitionService
         // Run evaluation on test data
         var evaluationResults = await RunModelEvaluationAsync(model, testData);
 
-        return new AIModelMetrics
+        return new CoreModels.AIModelMetrics
         {
             ModelId = modelId,
             Accuracy = evaluationResults.Accuracy,
             Precision = evaluationResults.Precision,
             Recall = evaluationResults.Recall,
-            F1Score = evaluationResults.F1Score,
-            EvaluatedAt = DateTime.UtcNow,
-            TestDataSize = testData.Count,
-            ConfusionMatrix = evaluationResults.ConfusionMatrix
+            F1Score = evaluationResults.F1Score
+            // Additional metrics stored separately
+            // AdditionalMetrics removed from Core.Models.AIModelMetrics
         };
     }
 
@@ -238,7 +285,7 @@ public partial class PatternRecognitionService
     /// </summary>
     /// <param name="model">The model to load weights for.</param>
     /// <param name="weightsData">The weights data.</param>
-    private async Task LoadModelWeightsAsync(AIModel model, byte[] weightsData)
+    private async Task LoadModelWeightsAsync(CoreModels.AIModel model, byte[] weightsData)
     {
         // Load model weights into memory for fast inference
         await Task.Delay(100); // Simulate loading time
@@ -253,16 +300,16 @@ public partial class PatternRecognitionService
     /// </summary>
     /// <param name="modelId">The model ID.</param>
     /// <returns>The loaded model or null if not found.</returns>
-    private async Task<AIModel?> GetLoadedModelAsync(string modelId)
+    private async Task<CoreModels.AIModel?> GetLoadedModelAsync(string modelId)
     {
         // In production, this would retrieve from in-memory model cache
         await Task.Delay(10);
 
         // For demo, return a mock model
-        return new AIModel
+        return new CoreModels.AIModel
         {
             ModelId = modelId,
-            Type = AIModelType.Classification,
+            Type = CoreModels.AIModelType.Classification,
             IsLoaded = true,
             LoadedAt = DateTime.UtcNow,
             Accuracy = 0.95
@@ -295,7 +342,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to use.</param>
     /// <param name="inputs">The preprocessed inputs.</param>
     /// <returns>The inference result.</returns>
-    private async Task<InferenceResult> RunClassificationInferenceAsync(AIModel model, Dictionary<string, object> inputs)
+    private async Task<InferenceResult> RunClassificationInferenceAsync(CoreModels.AIModel model, Dictionary<string, object> inputs)
     {
         await Task.Delay(100); // Simulate inference time
 
@@ -326,7 +373,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to use.</param>
     /// <param name="inputs">The preprocessed inputs.</param>
     /// <returns>The inference result.</returns>
-    private async Task<InferenceResult> RunRegressionInferenceAsync(AIModel model, Dictionary<string, object> inputs)
+    private async Task<InferenceResult> RunRegressionInferenceAsync(CoreModels.AIModel model, Dictionary<string, object> inputs)
     {
         await Task.Delay(80); // Simulate inference time
 
@@ -352,7 +399,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to use.</param>
     /// <param name="inputs">The preprocessed inputs.</param>
     /// <returns>The inference result.</returns>
-    private async Task<InferenceResult> RunNeuralNetworkInferenceAsync(AIModel model, Dictionary<string, object> inputs)
+    private async Task<InferenceResult> RunNeuralNetworkInferenceAsync(CoreModels.AIModel model, Dictionary<string, object> inputs)
     {
         await Task.Delay(150); // Simulate inference time
 
@@ -378,7 +425,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to use.</param>
     /// <param name="inputs">The preprocessed inputs.</param>
     /// <returns>The inference result.</returns>
-    private async Task<InferenceResult> RunDecisionTreeInferenceAsync(AIModel model, Dictionary<string, object> inputs)
+    private async Task<InferenceResult> RunDecisionTreeInferenceAsync(CoreModels.AIModel model, Dictionary<string, object> inputs)
     {
         await Task.Delay(50); // Simulate inference time
 
@@ -409,11 +456,11 @@ public partial class PatternRecognitionService
         // Preprocess input data for the model
         var preprocessedData = await PreprocessInputsAsync(inputData, AIModelType.Classification);
 
-        // Run classification inference  
-        var aiModel = new AIModel
+        // Run classification inference
+        var aiModel = new CoreModels.AIModel
         {
             ModelId = model.Id ?? model.ModelId,
-            Type = AIModelType.Classification,
+            Type = CoreModels.AIModelType.Classification,
             Accuracy = model.Accuracy
         };
         var inferenceResult = await RunClassificationInferenceAsync(aiModel, preprocessedData);
@@ -463,7 +510,7 @@ public partial class PatternRecognitionService
         var riskFactorsDict = new Dictionary<string, double>();
 
         // Use the updated logic from the main service
-        // Amount-based risk  
+        // Amount-based risk
         if (request.Amount > 50000)
             riskFactorsDict["Amount Risk"] = 0.9;
         else if (request.Amount > 20000)
@@ -525,7 +572,7 @@ public partial class PatternRecognitionService
         var riskFactors = new Dictionary<string, double>();
 
         // Use the updated logic that matches the CalculateRiskScoreInEnclaveAsync method
-        // Amount-based risk  
+        // Amount-based risk
         if (request.Amount > 50000)
             riskFactors["Amount Risk"] = 0.9;
         else if (request.Amount > 20000)
@@ -607,7 +654,7 @@ public partial class PatternRecognitionService
     /// <param name="trainingData">The raw training data.</param>
     /// <param name="modelType">The model type.</param>
     /// <returns>Prepared training dataset.</returns>
-    private async Task<TrainingDataSet> PrepareTrainingDataAsync(Dictionary<string, object> trainingData, AIModelType modelType)
+    private async Task<InternalTrainingDataSet> PrepareTrainingDataAsync(Dictionary<string, object> trainingData, AIModelType modelType)
     {
         await Task.Delay(200); // Simulate data preparation time
 
@@ -629,7 +676,7 @@ public partial class PatternRecognitionService
         // Split into training and validation sets
         var splitIndex = (int)(features.Count * 0.8);
 
-        return new TrainingDataSet
+        return new InternalTrainingDataSet
         {
             TrainingFeatures = features.Take(splitIndex).ToArray(),
             TrainingLabels = labels.Take(splitIndex).ToArray(),
@@ -646,15 +693,15 @@ public partial class PatternRecognitionService
     /// </summary>
     /// <param name="definition">The model definition.</param>
     /// <returns>Initialized model.</returns>
-    private async Task<AIModel> InitializeModelArchitectureAsync(AIModelDefinition definition)
+    private async Task<CoreModels.AIModel> InitializeModelArchitectureAsync(AIModels.AIModelDefinition definition)
     {
         await Task.Delay(150); // Simulate architecture initialization time
 
-        return new AIModel
+        return new CoreModels.AIModel
         {
             Id = Guid.NewGuid().ToString(),
             Name = definition.Name,
-            Type = definition.Type,
+            Type = (CoreModels.AIModelType)(int)definition.Type,
             Version = definition.Version,
             CreatedAt = DateTime.UtcNow,
             IsActive = true,
@@ -671,7 +718,7 @@ public partial class PatternRecognitionService
     /// <param name="trainingSet">The training dataset.</param>
     /// <param name="trainingParameters">Training parameters.</param>
     /// <returns>Training result.</returns>
-    private async Task<TrainingResult> TrainClassificationModelAsync(AIModel model, TrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
+    private async Task<InternalTrainingResult> TrainClassificationModelAsync(CoreModels.AIModel model, InternalTrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
     {
         await Task.Delay(1000); // Simulate training time
 
@@ -685,9 +732,9 @@ public partial class PatternRecognitionService
             await Task.Delay(100); // Simulate epoch training time
         }
 
-        return new TrainingResult
+        return new InternalTrainingResult
         {
-            ModelWeights = GenerateModelWeights(model.Type),
+            ModelWeights = GenerateModelWeights((AIModels.AIModelType)(int)model.Type),
             TrainingLoss = Random.Shared.NextDouble() * 0.1 + 0.05, // 0.05-0.15
             ValidationLoss = Random.Shared.NextDouble() * 0.1 + 0.08, // 0.08-0.18
             Epochs = epochs,
@@ -702,16 +749,16 @@ public partial class PatternRecognitionService
     /// <param name="trainingSet">The training dataset.</param>
     /// <param name="trainingParameters">Training parameters.</param>
     /// <returns>Training result.</returns>
-    private async Task<TrainingResult> TrainRegressionModelAsync(AIModel model, TrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
+    private async Task<InternalTrainingResult> TrainRegressionModelAsync(CoreModels.AIModel model, InternalTrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
     {
         await Task.Delay(800); // Simulate training time
 
         // In production, this would perform actual regression model training
         var iterations = trainingParameters.TryGetValue("iterations", out var iterObj) && int.TryParse(iterObj.ToString(), out var i) ? i : 1000;
 
-        return new TrainingResult
+        return new InternalTrainingResult
         {
-            ModelWeights = GenerateModelWeights(model.Type),
+            ModelWeights = GenerateModelWeights((AIModels.AIModelType)(int)model.Type),
             TrainingLoss = Random.Shared.NextDouble() * 0.05 + 0.02, // 0.02-0.07
             ValidationLoss = Random.Shared.NextDouble() * 0.05 + 0.03, // 0.03-0.08
             Epochs = iterations,
@@ -726,7 +773,7 @@ public partial class PatternRecognitionService
     /// <param name="trainingSet">The training dataset.</param>
     /// <param name="trainingParameters">Training parameters.</param>
     /// <returns>Training result.</returns>
-    private async Task<TrainingResult> TrainNeuralNetworkAsync(AIModel model, TrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
+    private async Task<InternalTrainingResult> TrainNeuralNetworkAsync(CoreModels.AIModel model, InternalTrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
     {
         await Task.Delay(1500); // Simulate training time
 
@@ -734,9 +781,9 @@ public partial class PatternRecognitionService
         var epochs = trainingParameters.TryGetValue("epochs", out var epochsObj) && int.TryParse(epochsObj.ToString(), out var e) ? e : 200;
         var batchSize = trainingParameters.TryGetValue("batch_size", out var batchObj) && int.TryParse(batchObj.ToString(), out var b) ? b : 32;
 
-        return new TrainingResult
+        return new InternalTrainingResult
         {
-            ModelWeights = GenerateModelWeights(model.Type),
+            ModelWeights = GenerateModelWeights((AIModels.AIModelType)(int)model.Type),
             TrainingLoss = Random.Shared.NextDouble() * 0.2 + 0.1, // 0.1-0.3
             ValidationLoss = Random.Shared.NextDouble() * 0.2 + 0.15, // 0.15-0.35
             Epochs = epochs,
@@ -751,16 +798,16 @@ public partial class PatternRecognitionService
     /// <param name="trainingSet">The training dataset.</param>
     /// <param name="trainingParameters">Training parameters.</param>
     /// <returns>Training result.</returns>
-    private async Task<TrainingResult> TrainDecisionTreeAsync(AIModel model, TrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
+    private async Task<InternalTrainingResult> TrainDecisionTreeAsync(CoreModels.AIModel model, InternalTrainingDataSet trainingSet, Dictionary<string, object> trainingParameters)
     {
         await Task.Delay(300); // Simulate training time
 
         // In production, this would perform actual decision tree training
         var maxDepth = trainingParameters.TryGetValue("max_depth", out var depthObj) && int.TryParse(depthObj.ToString(), out var d) ? d : 10;
 
-        return new TrainingResult
+        return new InternalTrainingResult
         {
-            ModelWeights = GenerateModelWeights(model.Type),
+            ModelWeights = GenerateModelWeights((AIModels.AIModelType)(int)model.Type),
             TrainingLoss = Random.Shared.NextDouble() * 0.1 + 0.05, // 0.05-0.15
             ValidationLoss = Random.Shared.NextDouble() * 0.1 + 0.08, // 0.08-0.18
             Epochs = 1, // Decision trees don't use epochs
@@ -773,7 +820,7 @@ public partial class PatternRecognitionService
     /// </summary>
     /// <param name="modelType">The model type.</param>
     /// <returns>Generated model weights.</returns>
-    private byte[] GenerateModelWeights(AIModelType modelType)
+    private byte[] GenerateModelWeights(AIModels.AIModelType modelType)
     {
         // In production, this would return actual trained model weights
         var weightSize = modelType switch
@@ -796,7 +843,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to evaluate.</param>
     /// <param name="testData">The test data.</param>
     /// <returns>Evaluation result.</returns>
-    private async Task<EvaluationResult> EvaluateModelAsync(AIModel model, Dictionary<string, object> testData)
+    private async Task<EvaluationResult> EvaluateModelAsync(CoreModels.AIModel model, Dictionary<string, object> testData)
     {
         await Task.Delay(500); // Simulate evaluation time
 
@@ -836,7 +883,7 @@ public partial class PatternRecognitionService
     /// </summary>
     /// <param name="model">The trained model.</param>
     /// <param name="modelWeights">The model weights.</param>
-    private async Task StoreTrainedModelAsync(AIModel model, byte[] modelWeights)
+    private async Task StoreTrainedModelAsync(CoreModels.AIModel model, byte[] modelWeights)
     {
         await Task.Delay(200); // Simulate storage time
 
@@ -898,7 +945,7 @@ public partial class PatternRecognitionService
     /// <param name="model">The model to evaluate.</param>
     /// <param name="testData">The test data.</param>
     /// <returns>Evaluation result.</returns>
-    private async Task<EvaluationResult> RunModelEvaluationAsync(AIModel model, Dictionary<string, object> testData)
+    private async Task<EvaluationResult> RunModelEvaluationAsync(CoreModels.AIModel model, Dictionary<string, object> testData)
     {
         await Task.Delay(400); // Simulate evaluation time
 
@@ -954,6 +1001,27 @@ public partial class PatternRecognitionService
     }
 
     /// <summary>
+    /// Converts PatternRecognitionType to PatternType.
+    /// </summary>
+    private PatternType ConvertToPatternType(PatternRecognitionType recognitionType)
+    {
+        return recognitionType switch
+        {
+            PatternRecognitionType.FraudDetection => PatternType.Fraud,
+            PatternRecognitionType.AnomalyDetection => PatternType.Anomaly,
+            PatternRecognitionType.BehaviorAnalysis => PatternType.Behavioral,
+            PatternRecognitionType.BehavioralAnalysis => PatternType.Behavioral,
+            PatternRecognitionType.TrendAnalysis => PatternType.Trend,
+            PatternRecognitionType.SequenceAnalysis => PatternType.Sequence,
+            PatternRecognitionType.SequencePattern => PatternType.Sequence,
+            PatternRecognitionType.NetworkAnalysis => PatternType.Network,
+            PatternRecognitionType.TemporalPattern => PatternType.Seasonal,
+            PatternRecognitionType.StatisticalPattern => PatternType.Trend,
+            _ => PatternType.Unknown
+        };
+    }
+
+    /// <summary>
     /// Calculates confidence score for detected patterns.
     /// </summary>
     /// <param name="model">The pattern model used.</param>
@@ -1002,10 +1070,10 @@ public partial class PatternRecognitionService
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = "High Value Transaction",
-                Type = PatternRecognitionType.FraudDetection,
+                Type = ConvertToPatternType(PatternRecognitionType.FraudDetection),
                 MatchScore = Math.Min(1.0, (double)amount / 100000),
                 Confidence = 0.8,
-                Features = new Dictionary<string, object> { ["amount"] = amount },
+                Features = new List<string> { $"amount:{amount}" },
                 DetectedAt = DateTime.UtcNow
             });
         }
@@ -1021,10 +1089,10 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "Unusual Time Pattern",
-                    Type = PatternRecognitionType.FraudDetection,
+                    Type = ConvertToPatternType(PatternRecognitionType.FraudDetection),
                     MatchScore = 0.7,
                     Confidence = 0.6,
-                    Features = new Dictionary<string, object> { ["hour"] = hour },
+                    Features = new List<string> { $"hour:{hour}" },
                     DetectedAt = DateTime.UtcNow
                 });
             }
@@ -1063,13 +1131,13 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "layering",
-                    Type = PatternRecognitionType.FraudDetection,
+                    Type = ConvertToPatternType(PatternRecognitionType.FraudDetection),
                     MatchScore = 0.85,
                     Confidence = 0.9,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["small_transaction_count"] = smallTransactions,
-                        ["total_transactions"] = dataList.Count
+                        $"small_transaction_count:{smallTransactions}",
+                        $"total_transactions:{dataList.Count}"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1082,13 +1150,13 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "structuring",
-                    Type = PatternRecognitionType.FraudDetection,
+                    Type = ConvertToPatternType(PatternRecognitionType.FraudDetection),
                     MatchScore = Math.Min(1.0, suspiciousTypes / 5.0),
                     Confidence = 0.85,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["suspicious_count"] = suspiciousTypes,
-                        ["total_transactions"] = dataList.Count
+                        $"suspicious_count:{suspiciousTypes}",
+                        $"total_transactions:{dataList.Count}"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1124,14 +1192,14 @@ public partial class PatternRecognitionService
                     {
                         Id = Guid.NewGuid().ToString(),
                         Name = "Statistical Outlier",
-                        Type = PatternRecognitionType.AnomalyDetection,
+                        Type = ConvertToPatternType(PatternRecognitionType.AnomalyDetection),
                         MatchScore = Math.Min(1.0, zScore / 3.0),
                         Confidence = 0.75,
-                        Features = new Dictionary<string, object>
+                        Features = new List<string>
                         {
-                            ["value"] = value,
-                            ["z_score"] = zScore,
-                            ["index"] = index
+                            $"value:{value}",
+                            $"z_score:{zScore}",
+                            $"index:{index}"
                         },
                         DetectedAt = DateTime.UtcNow
                     });
@@ -1165,13 +1233,13 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "Large Dataset Behavioral Pattern",
-                    Type = PatternRecognitionType.BehavioralAnalysis,
+                    Type = ConvertToPatternType(PatternRecognitionType.BehavioralAnalysis),
                     MatchScore = Math.Min(1.0, dataList.Count / 10000.0),
                     Confidence = 0.8,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["data_points_analyzed"] = dataList.Count,
-                        ["pattern_type"] = "large_dataset_behavior"
+                        $"data_points_analyzed:{dataList.Count}",
+                        "pattern_type:large_dataset_behavior"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1198,13 +1266,13 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "High Frequency Pattern in Dataset",
-                    Type = PatternRecognitionType.BehavioralAnalysis,
+                    Type = ConvertToPatternType(PatternRecognitionType.BehavioralAnalysis),
                     MatchScore = (double)highFrequencyCount / dataList.Count,
                     Confidence = 0.75,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["high_frequency_transactions"] = highFrequencyCount,
-                        ["total_transactions"] = dataList.Count
+                        $"high_frequency_transactions:{highFrequencyCount}",
+                        $"total_transactions:{dataList.Count}"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1219,10 +1287,10 @@ public partial class PatternRecognitionService
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = "High Frequency Behavior",
-                Type = PatternRecognitionType.BehavioralAnalysis,
+                Type = ConvertToPatternType(PatternRecognitionType.BehavioralAnalysis),
                 MatchScore = Math.Min(1.0, count / 100.0),
                 Confidence = 0.7,
-                Features = new Dictionary<string, object> { ["transaction_count"] = count },
+                Features = new List<string> { $"transaction_count:{count}" },
                 DetectedAt = DateTime.UtcNow
             });
         }
@@ -1249,10 +1317,10 @@ public partial class PatternRecognitionService
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = "Dense Network Cluster",
-                Type = PatternRecognitionType.NetworkAnalysis,
+                Type = ConvertToPatternType(PatternRecognitionType.NetworkAnalysis),
                 MatchScore = Math.Min(1.0, connections.Length / 20.0),
                 Confidence = 0.65,
-                Features = new Dictionary<string, object> { ["connection_count"] = connections.Length },
+                Features = new List<string> { $"connection_count:{connections.Length}" },
                 DetectedAt = DateTime.UtcNow
             });
         }
@@ -1287,14 +1355,14 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "hub_concentration",
-                    Type = PatternRecognitionType.NetworkAnalysis,
+                    Type = ConvertToPatternType(PatternRecognitionType.NetworkAnalysis),
                     MatchScore = (double)hubCount / dataList.Count,
                     Confidence = 0.75,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["hub_count"] = hubCount,
-                        ["total_nodes"] = dataList.Count,
-                        ["hub_ratio"] = (double)hubCount / dataList.Count
+                        $"hub_count:{hubCount}",
+                        $"total_nodes:{dataList.Count}",
+                        $"hub_ratio:{(double)hubCount / dataList.Count}"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1370,15 +1438,15 @@ public partial class PatternRecognitionService
                     {
                         Id = Guid.NewGuid().ToString(),
                         Name = "unusual_timing",
-                        Type = PatternRecognitionType.TemporalPattern,
+                        Type = ConvertToPatternType(PatternRecognitionType.TemporalPattern),
                         MatchScore = Math.Min(1.0, Math.Max(totalUnusualHours / 20.0, maxHourlyActivity / 40.0)),
                         Confidence = 0.8,
-                        Features = new Dictionary<string, object>
+                        Features = new List<string>
                         {
-                            ["night_transactions"] = nightHours,
-                            ["late_night_transactions"] = lateNightHours,
-                            ["max_hourly_activity"] = maxHourlyActivity,
-                            ["total_transactions"] = timestamps.Count
+                            $"night_transactions:{nightHours}",
+                            $"late_night_transactions:{lateNightHours}",
+                            $"max_hourly_activity:{maxHourlyActivity}",
+                            $"total_transactions:{timestamps.Count}"
                         },
                         DetectedAt = DateTime.UtcNow
                     });
@@ -1397,14 +1465,14 @@ public partial class PatternRecognitionService
                         {
                             Id = Guid.NewGuid().ToString(),
                             Name = "burst_activity",
-                            Type = PatternRecognitionType.TemporalPattern,
+                            Type = ConvertToPatternType(PatternRecognitionType.TemporalPattern),
                             MatchScore = 0.9,
                             Confidence = 0.85,
-                            Features = new Dictionary<string, object>
+                            Features = new List<string>
                             {
-                                ["burst_start"] = windowStart,
-                                ["burst_duration_minutes"] = (windowEnd - windowStart).TotalMinutes,
-                                ["transactions_in_burst"] = 10
+                                $"burst_start:{windowStart}",
+                                $"burst_duration_minutes:{(windowEnd - windowStart).TotalMinutes}",
+                                $"transactions_in_burst:10"
                             },
                             DetectedAt = DateTime.UtcNow
                         });
@@ -1434,13 +1502,13 @@ public partial class PatternRecognitionService
                 {
                     Id = Guid.NewGuid().ToString(),
                     Name = "Regular Temporal Pattern",
-                    Type = PatternRecognitionType.TemporalPattern,
+                    Type = ConvertToPatternType(PatternRecognitionType.TemporalPattern),
                     MatchScore = 0.8,
                     Confidence = 0.75,
-                    Features = new Dictionary<string, object>
+                    Features = new List<string>
                     {
-                        ["interval_minutes"] = avgInterval.TotalMinutes,
-                        ["event_count"] = timestampArray.Length
+                        $"interval_minutes:{avgInterval.TotalMinutes}",
+                        $"event_count:{timestampArray.Length}"
                     },
                     DetectedAt = DateTime.UtcNow
                 });
@@ -1468,10 +1536,10 @@ public partial class PatternRecognitionService
             {
                 Id = Guid.NewGuid().ToString(),
                 Name = "High Data Volume",
-                Type = PatternRecognitionType.StatisticalPattern,
+                Type = ConvertToPatternType(PatternRecognitionType.StatisticalPattern),
                 MatchScore = Math.Min(1.0, inputData.Count / 20.0),
                 Confidence = 0.5,
-                Features = new Dictionary<string, object> { ["field_count"] = inputData.Count },
+                Features = new List<string> { $"field_count:{inputData.Count}" },
                 DetectedAt = DateTime.UtcNow
             });
         }

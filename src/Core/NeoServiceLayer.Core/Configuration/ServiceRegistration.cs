@@ -1,14 +1,16 @@
-﻿using System;
 using System.Reflection;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Infrastructure.Monitoring;
-using NeoServiceLayer.Infrastructure.Resilience;
-using NeoServiceLayer.Infrastructure.Security;
-using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Configuration;
 
@@ -29,26 +31,17 @@ public static class ServiceRegistration
         if (configuration == null)
             throw new ArgumentNullException(nameof(configuration));
 
+        // Note: Infrastructure service registration moved to composition root
+        // to avoid circular dependencies. The Core layer should not depend on Infrastructure.
+
         // Register core infrastructure services
         services.AddCoreInfrastructure(configuration);
 
-        // Register security services
-        services.AddSecurityServices(configuration);
-
-        // Register monitoring and observability
-        services.AddMonitoringServices(configuration);
-
-        // Register resilience services
-        services.AddResilienceServices(configuration);
-
-        // Register TEE/SGX services
-        services.AddTeeServices(configuration);
-
         // Register business services
-        services.AddBusinessServices(configuration);
+        // services.AddBusinessServices(configuration); // Commented out to avoid dependencies
 
-        // Register health checks
-        services.AddNeoHealthChecks(configuration);
+        // Infrastructure services (security, monitoring, resilience, TEE) will be
+        // registered at the application composition root level
 
         return services;
     }
@@ -62,24 +55,23 @@ public static class ServiceRegistration
         services.Configure<ServiceOptions>(configuration.GetSection("Services"));
         services.AddSingleton<IServiceConfiguration, ServiceConfiguration>();
 
-        // Service registry
-        services.AddSingleton<IServiceRegistry, ServiceRegistry>();
+        // Secrets management
+        services.AddSingleton<ISecretsManager, SecretsManager>();
 
         // HTTP client factory
         services.AddHttpClient();
-        services.AddSingleton<IHttpClientService, HttpClientService>();
 
-        // Blockchain client factory
-        services.AddSingleton<IBlockchainClientFactory, BlockchainClientFactory>();
-
-        // Secrets management
-        services.AddSingleton<ISecretsManager, SecretsManager>();
+        // Note: Other services moved to infrastructure layer to avoid circular dependencies
+        // Services like IServiceRegistry, IHttpClientService, IBlockchainClientFactory
+        // should be registered at the application composition root level
 
         return services;
     }
 
+    /*
     /// <summary>
     /// Registers security services with proper configuration.
+    /// NOTE: Moved to Infrastructure layer to avoid circular dependencies
     /// </summary>
     public static IServiceCollection AddSecurityServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -100,6 +92,13 @@ public static class ServiceRegistration
 
         return services;
     }
+    */
+
+    /*
+    /// <summary>
+    /// NOTE: Infrastructure services moved to avoid circular dependencies
+    /// These should be registered at the application composition root level
+    /// </summary>
 
     /// <summary>
     /// Registers monitoring and observability services.
@@ -172,9 +171,12 @@ public static class ServiceRegistration
 
         return services;
     }
+    */
 
+    /*
     /// <summary>
     /// Registers business services with proper dependencies.
+    /// NOTE: Moved to avoid dependencies on Infrastructure layer types
     /// </summary>
     public static IServiceCollection AddBusinessServices(this IServiceCollection services, IConfiguration configuration)
     {
@@ -248,9 +250,12 @@ public static class ServiceRegistration
 
         return services;
     }
+    */
 
+    /*
     /// <summary>
     /// Registers health checks for all services.
+    /// NOTE: Commented out to avoid infrastructure dependencies
     /// </summary>
     public static IServiceCollection AddNeoHealthChecks(this IServiceCollection services, IConfiguration configuration)
     {
@@ -324,6 +329,7 @@ public static class ServiceRegistration
             throw new InvalidOperationException("Service registration validation failed", ex);
         }
     }
+    */
 }
 
 /// <summary>

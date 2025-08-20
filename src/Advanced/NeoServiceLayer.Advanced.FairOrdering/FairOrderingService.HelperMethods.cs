@@ -1,7 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Core;
-using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
@@ -23,20 +28,20 @@ public partial class FairOrderingService
                 {
                     Name = "Standard Fair Pool",
                     Description = "Standard fair ordering pool for general transactions",
-                    OrderingAlgorithm = FairOrderingModels.OrderingAlgorithm.FairQueue,
+                    OrderingAlgorithm = OrderingAlgorithm.FairQueue,
                     BatchSize = 100,
                     BatchTimeout = TimeSpan.FromSeconds(5),
-                    FairnessLevel = FairOrderingModels.FairnessLevel.Standard,
+                    FairnessLevel = FairnessLevel.Standard,
                     MevProtectionEnabled = true
                 },
                 new OrderingPoolConfig
                 {
                     Name = "High Priority Pool",
                     Description = "High priority pool for time-sensitive transactions",
-                    OrderingAlgorithm = FairOrderingModels.OrderingAlgorithm.PriorityFair,
+                    OrderingAlgorithm = OrderingAlgorithm.PriorityFair,
                     BatchSize = 50,
                     BatchTimeout = TimeSpan.FromSeconds(2),
-                    FairnessLevel = FairOrderingModels.FairnessLevel.High,
+                    FairnessLevel = FairnessLevel.High,
                     MevProtectionEnabled = true
                 }
             };
@@ -76,7 +81,7 @@ public partial class FairOrderingService
             {
                 var key = $"fair_transaction_{transaction.TransactionId}";
                 var data = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(transaction);
-                await StorageProvider.StoreAsync(key, data);
+                await StorageProvider.StoreDataAsync(key, data);
             }
 
             Logger.LogDebug("Stored fair transaction {TransactionId}", transaction.TransactionId);
@@ -92,7 +97,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Gas analysis result.</returns>
-    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsAsync(FairOrderingModels.TransactionAnalysisRequest request)
+    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsAsync(Models.TransactionAnalysisRequest request)
     {
         await Task.Delay(50); // Simulate analysis
 
@@ -110,7 +115,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Timing analysis result.</returns>
-    private (bool IsSuspicious, string Reason) AnalyzeTransactionTiming(FairOrderingModels.TransactionAnalysisRequest request)
+    private (bool IsSuspicious, string Reason) AnalyzeTransactionTiming(Models.TransactionAnalysisRequest request)
     {
         // Simple heuristic: transactions submitted at exact intervals might be suspicious
         var now = DateTime.UtcNow;
@@ -140,7 +145,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Contract analysis result.</returns>
-    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionAsync(FairOrderingModels.TransactionAnalysisRequest request)
+    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionAsync(Models.TransactionAnalysisRequest request)
     {
         await Task.Delay(100); // Simulate analysis
 
@@ -207,7 +212,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The MEV analysis request.</param>
     /// <returns>MEV risk analysis result.</returns>
-    private async Task<(double RiskScore, List<string> DetectedThreats)> AnalyzeMevRiskInEnclaveAsync(FairOrderingModels.MevAnalysisRequest request)
+    private async Task<(double RiskScore, List<string> DetectedThreats)> AnalyzeMevRiskInEnclaveAsync(MevAnalysisRequest request)
     {
         await Task.Delay(200); // Simulate enclave analysis
 
@@ -306,29 +311,29 @@ public partial class FairOrderingService
     /// <param name="pool">The ordering pool.</param>
     /// <param name="transactions">Transactions to order.</param>
     /// <returns>Ordered transactions.</returns>
-    private async Task<List<FairOrderingModels.PendingTransaction>> OrderTransactionsInEnclaveAsync(
-        FairOrderingModels.OrderingPool pool,
-        List<FairOrderingModels.PendingTransaction> transactions)
+    private async Task<List<PendingTransaction>> OrderTransactionsInEnclaveAsync(
+        OrderingPool pool,
+        List<PendingTransaction> transactions)
     {
         await Task.Delay(100); // Simulate enclave ordering
 
-        var orderedTransactions = new List<FairOrderingModels.PendingTransaction>(transactions);
+        var orderedTransactions = new List<PendingTransaction>(transactions);
 
         // Apply ordering algorithm
         switch (pool.OrderingAlgorithm)
         {
-            case FairOrderingModels.OrderingAlgorithm.FairQueue:
+            case OrderingAlgorithm.FairQueue:
                 orderedTransactions = orderedTransactions.OrderBy(t => t.SubmittedAt).ToList();
                 break;
 
-            case FairOrderingModels.OrderingAlgorithm.PriorityFair:
+            case OrderingAlgorithm.PriorityFair:
                 orderedTransactions = orderedTransactions
                     .OrderByDescending(t => t.Priority)
                     .ThenBy(t => t.SubmittedAt)
                     .ToList();
                 break;
 
-            case FairOrderingModels.OrderingAlgorithm.RandomFair:
+            case OrderingAlgorithm.Random:
                 var random = new Random();
                 orderedTransactions = orderedTransactions.OrderBy(t => random.Next()).ToList();
                 break;
@@ -354,7 +359,7 @@ public partial class FairOrderingService
     /// <param name="finalPosition">Final position in ordering.</param>
     /// <param name="totalTransactions">Total transactions in batch.</param>
     /// <returns>Fairness score.</returns>
-    private double CalculateTransactionFairnessScore(FairOrderingModels.PendingTransaction transaction, int finalPosition, int totalTransactions)
+    private double CalculateTransactionFairnessScore(PendingTransaction transaction, int finalPosition, int totalTransactions)
     {
         // Simple fairness metric based on position and timing
         var timeFairness = 1.0 - (DateTime.UtcNow - transaction.SubmittedAt).TotalSeconds / 300.0; // 5 minute window
@@ -368,7 +373,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="transactions">Ordered transactions.</param>
     /// <returns>Batch fairness score.</returns>
-    private double CalculateBatchFairnessScore(List<FairOrderingModels.PendingTransaction> transactions)
+    private double CalculateBatchFairnessScore(List<PendingTransaction> transactions)
     {
         if (transactions.Count == 0) return 1.0;
 
@@ -380,7 +385,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
     /// <returns>Average processing time.</returns>
-    private TimeSpan CalculateAverageProcessingTime(FairOrderingModels.OrderingPool pool)
+    private TimeSpan CalculateAverageProcessingTime(OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0)
             return TimeSpan.Zero;
@@ -397,7 +402,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
     /// <returns>Fairness score.</returns>
-    private double CalculateFairnessScore(FairOrderingModels.OrderingPool pool)
+    private double CalculateFairnessScore(OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0)
             return 1.0;
@@ -410,7 +415,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
     /// <returns>MEV protection effectiveness.</returns>
-    private double CalculateMevProtectionEffectiveness(FairOrderingModels.OrderingPool pool)
+    private double CalculateMevProtectionEffectiveness(OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0)
             return 1.0;
@@ -423,7 +428,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="pool">The ordering pool.</param>
     /// <returns>Ordering efficiency.</returns>
-    private double CalculateOrderingEfficiency(FairOrderingModels.OrderingPool pool)
+    private double CalculateOrderingEfficiency(OrderingPool pool)
     {
         if (pool.ProcessedBatches.Count == 0)
             return 1.0;

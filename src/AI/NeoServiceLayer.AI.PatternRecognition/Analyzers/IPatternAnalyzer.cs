@@ -1,42 +1,26 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Linq;
+using System.Threading;
+using System;
+using NeoServiceLayer.AI.PatternRecognition.Models;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 {
-    /// <summary>
-    /// Interface for pattern analysis implementations.
-    /// </summary>
-    public interface IPatternAnalyzer
-    {
-        /// <summary>
-        /// Gets the pattern type this analyzer supports.
-        /// </summary>
-        PatternType SupportedType { get; }
-
-        /// <summary>
-        /// Analyzes data for patterns.
-        /// </summary>
-        Task<PatternAnalysisResult> AnalyzeAsync(PatternAnalysisRequest request);
-
-        /// <summary>
-        /// Trains the analyzer with historical data.
-        /// </summary>
-        Task<TrainingResult> TrainAsync(TrainingData data);
-
-        /// <summary>
-        /// Gets the confidence threshold for this analyzer.
-        /// </summary>
-        double ConfidenceThreshold { get; }
-    }
+    // IPatternAnalyzer is now defined in Models namespace
+    // Using the Models.IPatternAnalyzer type instead of redefining
 
     /// <summary>
     /// Base class for pattern analyzers.
     /// </summary>
-    public abstract class PatternAnalyzerBase : IPatternAnalyzer
+    public abstract class PatternAnalyzerBase : Models.IPatternAnalyzer
     {
         protected readonly ILogger _logger;
+        
+        // Provide a Logger property for derived classes
+        protected ILogger Logger => _logger;
 
         protected PatternAnalyzerBase(ILogger logger)
         {

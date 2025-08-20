@@ -1,122 +1,335 @@
 using System;
 using System.Collections.Generic;
 using NeoServiceLayer.Core.Events;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Domain.Events
 {
     // User lifecycle events
-    public record UserCreatedEvent(
-        Guid UserId,
-        string Username,
-        string Email,
-        string PasswordHash,
-        List<string> InitialRoles,
-        DateTime CreatedAt) : DomainEvent;
+    public class UserCreatedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Username { get; }
+        public string Email { get; }
+        public string PasswordHash { get; }
+        public List<string> InitialRoles { get; }
+        public DateTime CreatedAt { get; }
 
-    public record UserDeletedEvent(
-        Guid UserId,
-        DateTime DeletedAt) : DomainEvent;
+        public UserCreatedEvent(Guid userId, string username, string email, string passwordHash, List<string> initialRoles, DateTime createdAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Username = username;
+            Email = email;
+            PasswordHash = passwordHash;
+            InitialRoles = initialRoles;
+            CreatedAt = createdAt;
+        }
+    }
 
-    public record UserSuspendedEvent(
-        Guid UserId,
-        string Reason,
-        DateTime SuspendedAt) : DomainEvent;
+    public class UserDeletedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public DateTime DeletedAt { get; }
 
-    public record UserReactivatedEvent(
-        Guid UserId,
-        DateTime ReactivatedAt) : DomainEvent;
+        public UserDeletedEvent(Guid userId, DateTime deletedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            DeletedAt = deletedAt;
+        }
+    }
+
+    public class UserSuspendedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Reason { get; }
+        public DateTime SuspendedAt { get; }
+
+        public UserSuspendedEvent(Guid userId, string reason, DateTime suspendedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Reason = reason;
+            SuspendedAt = suspendedAt;
+        }
+    }
+
+    public class UserReactivatedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public DateTime ReactivatedAt { get; }
+
+        public UserReactivatedEvent(Guid userId, DateTime reactivatedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            ReactivatedAt = reactivatedAt;
+        }
+    }
 
     // Email verification events
-    public record EmailVerifiedEvent(
-        Guid UserId,
-        DateTime VerifiedAt) : DomainEvent;
+    public class EmailVerifiedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public DateTime VerifiedAt { get; }
+
+        public EmailVerifiedEvent(Guid userId, DateTime verifiedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            VerifiedAt = verifiedAt;
+        }
+    }
 
     // Authentication events
-    public record UserLoggedInEvent(
-        Guid UserId,
-        Guid SessionId,
-        string IpAddress,
-        string UserAgent,
-        string? DeviceId,
-        DateTime LoginTime) : DomainEvent;
+    public class UserLoggedInEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public Guid SessionId { get; }
+        public string IpAddress { get; }
+        public string UserAgent { get; }
+        public string? DeviceId { get; }
+        public DateTime LoginTime { get; }
 
-    public record UserLoggedOutEvent(
-        Guid UserId,
-        Guid SessionId,
-        DateTime LogoutTime) : DomainEvent;
+        public UserLoggedInEvent(Guid userId, Guid sessionId, string ipAddress, string userAgent, string? deviceId, DateTime loginTime)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            SessionId = sessionId;
+            IpAddress = ipAddress;
+            UserAgent = userAgent;
+            DeviceId = deviceId;
+            LoginTime = loginTime;
+        }
+    }
 
-    public record LoginFailedEvent(
-        Guid UserId,
-        string IpAddress,
-        string Reason,
-        int FailedAttemptCount,
-        DateTime AttemptTime) : DomainEvent;
+    public class UserLoggedOutEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public Guid SessionId { get; }
+        public DateTime LogoutTime { get; }
 
-    public record AccountLockedEvent(
-        Guid UserId,
-        DateTime LockedUntil,
-        string Reason) : DomainEvent;
+        public UserLoggedOutEvent(Guid userId, Guid sessionId, DateTime logoutTime)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            SessionId = sessionId;
+            LogoutTime = logoutTime;
+        }
+    }
+
+    public class LoginFailedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string IpAddress { get; }
+        public string Reason { get; }
+        public int FailedAttemptCount { get; }
+        public DateTime AttemptTime { get; }
+
+        public LoginFailedEvent(Guid userId, string ipAddress, string reason, int failedAttemptCount, DateTime attemptTime)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            IpAddress = ipAddress;
+            Reason = reason;
+            FailedAttemptCount = failedAttemptCount;
+            AttemptTime = attemptTime;
+        }
+    }
+
+    public class AccountLockedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public DateTime LockedUntil { get; }
+        public string Reason { get; }
+
+        public AccountLockedEvent(Guid userId, DateTime lockedUntil, string reason)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            LockedUntil = lockedUntil;
+            Reason = reason;
+        }
+    }
 
     // Password events
-    public record PasswordChangedEvent(
-        Guid UserId,
-        string NewPasswordHash,
-        DateTime ChangedAt) : DomainEvent;
+    public class PasswordChangedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string NewPasswordHash { get; }
+        public DateTime ChangedAt { get; }
 
-    public record PasswordResetInitiatedEvent(
-        Guid UserId,
-        string ResetToken,
-        DateTime ExpiresAt,
-        DateTime InitiatedAt) : DomainEvent;
+        public PasswordChangedEvent(Guid userId, string newPasswordHash, DateTime changedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            NewPasswordHash = newPasswordHash;
+            ChangedAt = changedAt;
+        }
+    }
 
-    public record PasswordResetCompletedEvent(
-        Guid UserId,
-        string NewPasswordHash,
-        DateTime CompletedAt) : DomainEvent;
+    public class PasswordResetInitiatedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string ResetToken { get; }
+        public DateTime ExpiresAt { get; }
+        public DateTime InitiatedAt { get; }
+
+        public PasswordResetInitiatedEvent(Guid userId, string resetToken, DateTime expiresAt, DateTime initiatedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            ResetToken = resetToken;
+            ExpiresAt = expiresAt;
+            InitiatedAt = initiatedAt;
+        }
+    }
+
+    public class PasswordResetCompletedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string NewPasswordHash { get; }
+        public DateTime CompletedAt { get; }
+
+        public PasswordResetCompletedEvent(Guid userId, string newPasswordHash, DateTime completedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            NewPasswordHash = newPasswordHash;
+            CompletedAt = completedAt;
+        }
+    }
 
     // Two-factor authentication events
-    public record TwoFactorEnabledEvent(
-        Guid UserId,
-        string TotpSecret,
-        DateTime EnabledAt) : DomainEvent;
+    public class TwoFactorEnabledEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string TotpSecret { get; }
+        public DateTime EnabledAt { get; }
 
-    public record TwoFactorDisabledEvent(
-        Guid UserId,
-        DateTime DisabledAt) : DomainEvent;
+        public TwoFactorEnabledEvent(Guid userId, string totpSecret, DateTime enabledAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            TotpSecret = totpSecret;
+            EnabledAt = enabledAt;
+        }
+    }
+
+    public class TwoFactorDisabledEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public DateTime DisabledAt { get; }
+
+        public TwoFactorDisabledEvent(Guid userId, DateTime disabledAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            DisabledAt = disabledAt;
+        }
+    }
 
     // Token events
-    public record RefreshTokenIssuedEvent(
-        Guid UserId,
-        Guid TokenId,
-        string Token,
-        DateTime IssuedAt,
-        DateTime ExpiresAt,
-        string? DeviceId) : DomainEvent;
+    public class RefreshTokenIssuedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public Guid TokenId { get; }
+        public string Token { get; }
+        public DateTime IssuedAt { get; }
+        public DateTime ExpiresAt { get; }
+        public string? DeviceId { get; }
 
-    public record RefreshTokenRevokedEvent(
-        Guid UserId,
-        Guid TokenId,
-        DateTime RevokedAt,
-        string Reason) : DomainEvent;
+        public RefreshTokenIssuedEvent(Guid userId, Guid tokenId, string token, DateTime issuedAt, DateTime expiresAt, string? deviceId)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            TokenId = tokenId;
+            Token = token;
+            IssuedAt = issuedAt;
+            ExpiresAt = expiresAt;
+            DeviceId = deviceId;
+        }
+    }
+
+    public class RefreshTokenRevokedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public Guid TokenId { get; }
+        public DateTime RevokedAt { get; }
+        public string Reason { get; }
+
+        public RefreshTokenRevokedEvent(Guid userId, Guid tokenId, DateTime revokedAt, string reason)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            TokenId = tokenId;
+            RevokedAt = revokedAt;
+            Reason = reason;
+        }
+    }
 
     // Role and permission events
-    public record RoleAssignedEvent(
-        Guid UserId,
-        string Role,
-        DateTime AssignedAt) : DomainEvent;
+    public class RoleAssignedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Role { get; }
+        public DateTime AssignedAt { get; }
 
-    public record RoleRemovedEvent(
-        Guid UserId,
-        string Role,
-        DateTime RemovedAt) : DomainEvent;
+        public RoleAssignedEvent(Guid userId, string role, DateTime assignedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Role = role;
+            AssignedAt = assignedAt;
+        }
+    }
 
-    public record PermissionGrantedEvent(
-        Guid UserId,
-        string Permission,
-        DateTime GrantedAt) : DomainEvent;
+    public class RoleRemovedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Role { get; }
+        public DateTime RemovedAt { get; }
 
-    public record PermissionRevokedEvent(
-        Guid UserId,
-        string Permission,
-        DateTime RevokedAt) : DomainEvent;
+        public RoleRemovedEvent(Guid userId, string role, DateTime removedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Role = role;
+            RemovedAt = removedAt;
+        }
+    }
+
+    public class PermissionGrantedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Permission { get; }
+        public DateTime GrantedAt { get; }
+
+        public PermissionGrantedEvent(Guid userId, string permission, DateTime grantedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Permission = permission;
+            GrantedAt = grantedAt;
+        }
+    }
+
+    public class PermissionRevokedEvent : DomainEventBase
+    {
+        public Guid UserId { get; }
+        public string Permission { get; }
+        public DateTime RevokedAt { get; }
+
+        public PermissionRevokedEvent(Guid userId, string permission, DateTime revokedAt)
+            : base(userId.ToString(), nameof(Domain.Aggregates.User), 0, "System")
+        {
+            UserId = userId;
+            Permission = permission;
+            RevokedAt = revokedAt;
+        }
+    }
 }

@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
 
-namespace NeoServiceLayer.AI.PatternRecognition;
+
+namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
 /// <summary>
 /// Model performance metrics.
@@ -99,7 +105,7 @@ public class BatchRiskAssessmentResult
     public int TotalRequests { get; set; }
     public int SuccessfulAssessments { get; set; }
     public int FailedAssessments { get; set; }
-    public List<Models.RiskAssessmentResult> Results { get; set; } = new();
+    public List<RiskAssessmentResult> Results { get; set; } = new();
     public DateTime ProcessedAt { get; set; }
     public bool Success { get; set; }
     public string? ErrorMessage { get; set; }
@@ -159,3 +165,8 @@ public class HistoricalAnalysis
     public double GeographicalRisk { get; set; }
     public Dictionary<string, object> TemporalPatterns { get; set; } = new();
 }
+
+/// <summary>
+/// Risk assessment result for pattern analysis.
+/// </summary>
+

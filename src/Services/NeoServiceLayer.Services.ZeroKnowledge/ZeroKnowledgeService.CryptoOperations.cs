@@ -1,5 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security.Cryptography;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -12,7 +19,6 @@ public partial class ZeroKnowledgeService
     protected Task GenerateKeyInEnclaveAsync(CryptoKeyInfo keyInfo)
     {
         // Generate actual cryptographic keys using secure random number generation
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
 
         // Generate private key (32 bytes for secp256k1)
         var privateKeyBytes = new byte[32];
@@ -48,11 +54,9 @@ public partial class ZeroKnowledgeService
         var privateKeyBytes = Convert.FromHexString(privateKeyHex);
 
         // Create ECDSA signature
-        using var ecdsa = System.Security.Cryptography.ECDsa.Create();
         ecdsa.ImportECPrivateKey(privateKeyBytes, out _);
 
         // Sign the data hash
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var dataHash = sha256.ComputeHash(data);
         var signature = ecdsa.SignHash(dataHash);
 
@@ -75,11 +79,9 @@ public partial class ZeroKnowledgeService
             var publicKeyBytes = Convert.FromHexString(publicKeyHex);
 
             // Verify ECDSA signature
-            using var ecdsa = System.Security.Cryptography.ECDsa.Create();
             ecdsa.ImportECPrivateKey(publicKeyBytes, out _);
 
             // Verify against data hash
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var dataHash = sha256.ComputeHash(data);
             var isValid = ecdsa.VerifyHash(dataHash, signature);
 
@@ -102,17 +104,15 @@ public partial class ZeroKnowledgeService
             throw new InvalidOperationException($"Encryption key not found for keyId: {keyId}");
         }
 
-        using var aes = System.Security.Cryptography.Aes.Create();
-        aes.Key = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(encryptionKey));
+        using var aes = Aes.Create();
+        aes.Key = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(encryptionKey));
         aes.GenerateIV();
 
-        using var encryptor = aes.CreateEncryptor();
         using var msEncrypt = new MemoryStream();
-
         // Prepend IV to encrypted data
         msEncrypt.Write(aes.IV, 0, aes.IV.Length);
 
-        using (var csEncrypt = new System.Security.Cryptography.CryptoStream(msEncrypt, encryptor, System.Security.Cryptography.CryptoStreamMode.Write))
+        using (var csEncrypt = new CryptoStream(msEncrypt, aes.CreateEncryptor(), CryptoStreamMode.Write))
         {
             csEncrypt.Write(data, 0, data.Length);
         }
@@ -137,8 +137,8 @@ public partial class ZeroKnowledgeService
             throw new ArgumentException("Encrypted data is too short to contain IV");
         }
 
-        using var aes = System.Security.Cryptography.Aes.Create();
-        aes.Key = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(encryptionKey));
+        using var aes = Aes.Create();
+        aes.Key = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(encryptionKey));
 
         // Extract IV from the beginning of encrypted data
         var iv = new byte[16];
@@ -149,12 +149,11 @@ public partial class ZeroKnowledgeService
         var encryptedContent = new byte[encryptedData.Length - 16];
         Array.Copy(encryptedData, 16, encryptedContent, 0, encryptedContent.Length);
 
-        using var decryptor = aes.CreateDecryptor();
-        using var msDecrypt = new MemoryStream(encryptedContent);
-        using var csDecrypt = new System.Security.Cryptography.CryptoStream(msDecrypt, decryptor, System.Security.Cryptography.CryptoStreamMode.Read);
         using var msPlain = new MemoryStream();
-
-        csDecrypt.CopyTo(msPlain);
+        using (var csDecrypt = new CryptoStream(new MemoryStream(encryptedContent), aes.CreateDecryptor(), CryptoStreamMode.Read))
+        {
+            csDecrypt.CopyTo(msPlain);
+        }
         var decryptedData = msPlain.ToArray();
 
         Logger.LogDebug("Decrypted data for keyId {KeyId}, encrypted length {EncryptedLength}, decrypted length {DecryptedLength}",
@@ -180,7 +179,6 @@ public partial class ZeroKnowledgeService
     {
         // In production, this would use actual ECC point multiplication
         // For demo, we'll generate a deterministic public key
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hash = sha256.ComputeHash(privateKeyBytes);
 
         // Create a 33-byte compressed public key (0x02/0x03 prefix + 32 bytes)

@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
@@ -9,6 +8,7 @@ using System.Threading.Tasks;
 using System.Transactions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Integration.Tests.Transactions
 {
@@ -712,7 +712,7 @@ namespace NeoServiceLayer.Integration.Tests.Transactions
             };
         }
 
-        private TransactionContext StartTransactionWithIsolation(IsolationLevel level)
+        private TransactionContext StartTransactionWithIsolation(System.Data.IsolationLevel level)
         {
             return new TransactionContext
             {
@@ -774,16 +774,16 @@ namespace NeoServiceLayer.Integration.Tests.Transactions
             };
         }
 
-        private bool ValidateIsolationBehavior(IsolationLevel level, IsolationLevelTestResult result)
+        private bool ValidateIsolationBehavior(System.Data.IsolationLevel level, IsolationLevelTestResult result)
         {
             switch (level)
             {
-                case IsolationLevel.ReadCommitted:
+                case System.Data.IsolationLevel.ReadCommitted:
                     return result.DirtyReadTest?.Prevented == true;
-                case IsolationLevel.RepeatableRead:
+                case System.Data.IsolationLevel.RepeatableRead:
                     return result.DirtyReadTest?.Prevented == true &&
                            result.NonRepeatableReadTest?.Prevented == true;
-                case IsolationLevel.Serializable:
+                case System.Data.IsolationLevel.Serializable:
                     return result.DirtyReadTest?.Prevented == true &&
                            result.NonRepeatableReadTest?.Prevented == true &&
                            result.PhantomReadTest?.Prevented == true;

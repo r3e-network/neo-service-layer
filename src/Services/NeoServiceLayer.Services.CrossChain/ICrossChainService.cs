@@ -1,4 +1,16 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.CrossChain.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
+using ServiceCrossChainMessage = NeoServiceLayer.Services.CrossChain.Models.CrossChainMessage;
+using ServiceCrossChainMessageRequest = NeoServiceLayer.Services.CrossChain.Models.CrossChainMessageRequest;
+using ServiceCrossChainMessageStatus = NeoServiceLayer.Services.CrossChain.Models.CrossChainMessageStatus;
+using ServiceCrossChainRoute = NeoServiceLayer.Services.CrossChain.Models.CrossChainRoute;
+using ServiceCrossChainOperation = NeoServiceLayer.Services.CrossChain.Models.CrossChainOperation;
 
 namespace NeoServiceLayer.Services.CrossChain;
 
@@ -10,17 +22,17 @@ public interface ICrossChainService : IEnclaveService, IBlockchainService
     /// <summary>
     /// Sends a cross-chain message between blockchains.
     /// </summary>
-    Task<string> SendMessageAsync(CrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
+    Task<string> SendMessageAsync(ServiceCrossChainMessageRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
 
     /// <summary>
     /// Transfers tokens between blockchains.
     /// </summary>
-    Task<string> TransferTokensAsync(CrossChainTransferRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
+    Task<string> TransferTokensAsync(CoreModels.CrossChainTransferRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
 
     /// <summary>
     /// Executes a remote call on another blockchain.
     /// </summary>
-    Task<string> ExecuteRemoteCallAsync(RemoteCallRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
+    Task<string> ExecuteRemoteCallAsync(CoreModels.RemoteCallRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
 
     /// <summary>
     /// Gets the status of a cross-chain message.
@@ -55,5 +67,20 @@ public interface ICrossChainService : IEnclaveService, IBlockchainService
     /// <summary>
     /// Registers a token mapping between blockchains.
     /// </summary>
-    Task<bool> RegisterTokenMappingAsync(TokenMapping mapping, BlockchainType blockchainType);
+    Task<bool> RegisterTokenMappingAsync(CoreModels.TokenMapping mapping, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Gets transaction history for an address.
+    /// </summary>
+    Task<IEnumerable<CrossChainTransaction>> GetTransactionHistoryAsync(string address, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Executes a contract call on another blockchain.
+    /// </summary>
+    Task<CrossChainExecutionResult> ExecuteContractCallAsync(CrossChainContractCallRequest request, BlockchainType sourceBlockchain, BlockchainType targetBlockchain);
+
+    /// <summary>
+    /// Verifies a message proof.
+    /// </summary>
+    Task<bool> VerifyMessageProofAsync(CrossChainMessageProof proof, BlockchainType blockchainType);
 }

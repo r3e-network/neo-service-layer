@@ -1,6 +1,12 @@
-﻿using Bogus;
+using Bogus;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.TestInfrastructure.TestDataBuilders;
 
@@ -76,8 +82,8 @@ public class BlockchainTestDataBuilder
         return new Transaction
         {
             Hash = hash ?? GenerateTransactionHash(),
-            Sender = GenerateAddress(blockchainType),
-            Recipient = GenerateAddress(blockchainType),
+            From = GenerateAddress(blockchainType),
+            To = GenerateAddress(blockchainType),
             Value = value ?? GenerateRealisticAmount(),
             Data = GenerateTransactionData(),
             BlockHash = GenerateBlockHash(),
@@ -201,20 +207,18 @@ public class BlockchainTestDataBuilder
     /// <summary>
     /// Generates contract event data for testing.
     /// </summary>
-    public ContractEvent GenerateContractEvent(
+    public TestContractEvent GenerateContractEvent(
         string? contractAddress = null,
         string? eventName = null,
         Dictionary<string, object>? parameters = null)
     {
-        return new ContractEvent
+        return new TestContractEvent
         {
             ContractAddress = contractAddress ?? GenerateNeoXAddress(),
             EventName = eventName ?? _faker.PickRandom("Transfer", "Approval", "Mint", "Burn", "Swap"),
-            EventData = GenerateEventData(),
             Parameters = parameters ?? GenerateEventParameters(),
             TransactionHash = GenerateTransactionHash(),
-            BlockHash = GenerateBlockHash(),
-            BlockHeight = _faker.Random.Long(1, 10000000),
+            BlockNumber = _faker.Random.Long(1, 10000000),
             Timestamp = _faker.Date.RecentOffset(7).DateTime
         };
     }

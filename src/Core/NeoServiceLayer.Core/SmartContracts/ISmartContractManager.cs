@@ -1,4 +1,11 @@
-﻿using System.Numerics;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Numerics;
+
+
 
 namespace NeoServiceLayer.Core.SmartContracts;
 
@@ -269,6 +276,11 @@ public class ContractDeploymentOptions
     public long? GasLimit { get; set; }
 
     /// <summary>
+    /// Gets or sets the deployer address.
+    /// </summary>
+    public string? DeployerAddress { get; set; }
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, string> Metadata { get; set; } = new();
@@ -303,6 +315,11 @@ public class ContractInvocationOptions
     /// Gets or sets the timeout for waiting for confirmation.
     /// </summary>
     public TimeSpan Timeout { get; set; } = TimeSpan.FromMinutes(5);
+
+    /// <summary>
+    /// Gets or sets the sender address for the invocation.
+    /// </summary>
+    public string? SenderAddress { get; set; }
 }
 
 /// <summary>

@@ -1,5 +1,9 @@
-﻿using System;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -63,4 +67,39 @@ public class EnclaveInfo
     /// Gets or sets the last attestation time.
     /// </summary>
     public DateTime? LastAttestationTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the enclave type.
+    /// </summary>
+    public string EnclaveType { get; set; } = "SGX";
+
+    /// <summary>
+    /// Gets or sets the enclave version.
+    /// </summary>
+    public string Version { get; set; } = "1.0.0";
+
+    /// <summary>
+    /// Gets or sets the maximum data size supported.
+    /// </summary>
+    public long MaxDataSize { get; set; } = 100 * 1024 * 1024; // 100MB
+
+    /// <summary>
+    /// Gets or sets the maximum execution time in milliseconds.
+    /// </summary>
+    public int MaxExecutionTime { get; set; } = 30000; // 30 seconds
+
+    /// <summary>
+    /// Gets or sets whether the enclave is initialized.
+    /// </summary>
+    public bool IsInitialized { get; set; }
+
+    /// <summary>
+    /// Gets or sets the enclave capabilities.
+    /// </summary>
+    public string[] Capabilities { get; set; } = Array.Empty<string>();
+
+    /// <summary>
+    /// Gets or sets the attestation status.
+    /// </summary>
+    public string AttestationStatus { get; set; } = "NotAttested";
 }

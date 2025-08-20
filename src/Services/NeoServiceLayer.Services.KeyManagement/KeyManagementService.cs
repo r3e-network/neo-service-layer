@@ -1,18 +1,26 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.ServiceFramework;
+using ServiceFrameworkConfig = NeoServiceLayer.ServiceFramework.IServiceConfiguration;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.KeyManagement;
 
 /// <summary>
 /// Implementation of the Key Management service.
 /// </summary>
-public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyManagementService
+public partial class KeyManagementService : ServiceFramework.EnclaveBlockchainServiceBase, IKeyManagementService
 {
     private new readonly IEnclaveManager _enclaveManager;
-    private readonly IServiceConfiguration _configuration;
+    private readonly ServiceFrameworkConfig _configuration;
     private readonly Dictionary<string, KeyMetadata> _keyCache = new();
     private int _requestCount;
     private int _successCount;
@@ -27,7 +35,7 @@ public partial class KeyManagementService : EnclaveBlockchainServiceBase, IKeyMa
     /// <param name="logger">The logger.</param>
     public KeyManagementService(
         IEnclaveManager enclaveManager,
-        IServiceConfiguration configuration,
+        ServiceFrameworkConfig configuration,
         ILogger<KeyManagementService> logger)
         : base("KeyManagement", "Trusted Key Management Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
     {

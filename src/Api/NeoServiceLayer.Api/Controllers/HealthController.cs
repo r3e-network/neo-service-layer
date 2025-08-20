@@ -1,9 +1,15 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -57,7 +63,7 @@ public class HealthController : BaseApiController
             duration = result.TotalDuration.TotalMilliseconds
         };
 
-        return result.Status == HealthStatus.Healthy
+        return result.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
             ? Ok(response)
             : StatusCode(503, response);
     }
@@ -96,7 +102,7 @@ public class HealthController : BaseApiController
             checks = healthChecks
         };
 
-        return result.Status == HealthStatus.Healthy
+        return result.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
             ? Ok(response)
             : StatusCode(503, response);
     }
@@ -134,11 +140,11 @@ public class HealthController : BaseApiController
 
         var response = new
         {
-            status = result.Status == HealthStatus.Healthy ? "ready" : "not_ready",
+            status = result.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy ? "ready" : "not_ready",
             timestamp = DateTimeOffset.UtcNow
         };
 
-        return result.Status == HealthStatus.Healthy
+        return result.Status == Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Healthy
             ? Ok(response)
             : StatusCode(503, response);
     }

@@ -2,6 +2,9 @@ using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoServiceLayer.Services.Authentication.Queries;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Infrastructure
 {
@@ -16,6 +19,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
         Task<List<UserReadModel>> GetUsersWithRoleAsync(string role);
         Task<List<UserReadModel>> GetUsersWithPermissionAsync(string permission);
         Task<UserStatistics> GetStatisticsAsync();
+        Task<List<UserReadModel>> GetAllAsync(); // Added for compatibility
         Task SaveAsync(UserReadModel user);
         Task DeleteAsync(Guid userId);
         Task ClearAsync();

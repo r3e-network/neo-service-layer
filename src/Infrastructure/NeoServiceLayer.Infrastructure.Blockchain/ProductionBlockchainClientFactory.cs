@@ -1,9 +1,15 @@
-﻿using System.Net.Http;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
 
-namespace NeoServiceLayer.Infrastructure;
+
+namespace NeoServiceLayer.Infrastructure.Blockchain;
 
 /// <summary>
 /// Production implementation of the blockchain client factory for Neo N3 and Neo X networks.

@@ -1,17 +1,23 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.SmartContracts.NeoN3;
 using NeoServiceLayer.Services.SmartContracts.NeoX;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Services.SmartContracts;
 
 /// <summary>
 /// Unified smart contracts service that manages both Neo N3 and Neo X smart contract operations.
 /// </summary>
-public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmartContractsService
+public partial class SmartContractsService : ServiceFramework.EnclaveBlockchainServiceBase, ISmartContractsService
 {
     private readonly IServiceConfiguration _configuration;
     private new readonly IEnclaveManager _enclaveManager;
@@ -502,7 +508,7 @@ public partial class SmartContractsService : EnclaveBlockchainServiceBase, ISmar
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
+    public async Task<IEnumerable<NeoServiceLayer.Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         BlockchainType blockchainType,
         string contractHash,
         string? eventName = null,

@@ -1,18 +1,35 @@
-﻿using System.Net;
 using System.Text;
 using FluentAssertions;
 using Moq;
 using Moq.Protected;
 using NeoServiceLayer.Core.Http;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Core.Tests.Http;
 
 /// <summary>
 /// Extended tests for HttpClientService to improve coverage of disposal patterns, timeout management, and error scenarios.
 /// </summary>
-public class HttpClientServiceExtendedTests
+public class HttpClientServiceExtendedTests : IDisposable
 {
+    private readonly HttpClient _httpClient;
+    private readonly HttpClientService _service;
+
+    public HttpClientServiceExtendedTests()
+    {
+        _httpClient = new HttpClient();
+        _service = new HttpClientService(_httpClient);
+    }
+
     #region Constructor and Initialization Tests
 
     [Fact]
@@ -31,7 +48,7 @@ public class HttpClientServiceExtendedTests
         using var service = new HttpClientService();
 
         // Assert
-        service.Timeout.Should().Be(TimeSpan.FromSeconds(30));
+        _service.Timeout.Should().Be(TimeSpan.FromSeconds(30));
     }
 
     [Fact]
@@ -46,7 +63,7 @@ public class HttpClientServiceExtendedTests
         using var service = new HttpClientService(httpClient);
 
         // Assert
-        service.Timeout.Should().Be(TimeSpan.FromMinutes(5));
+        _service.Timeout.Should().Be(TimeSpan.FromMinutes(5));
     }
 
     #endregion
@@ -60,10 +77,10 @@ public class HttpClientServiceExtendedTests
         var httpClient = new HttpClient();
         var expectedTimeout = TimeSpan.FromSeconds(45);
         httpClient.Timeout = expectedTimeout;
-        using var service = new HttpClientService(httpClient);
 
         // Act
-        var actualTimeout = service.Timeout;
+        using var service = new HttpClientService(httpClient);
+        var actualTimeout = _service.Timeout;
 
         // Assert
         actualTimeout.Should().Be(expectedTimeout);
@@ -74,15 +91,14 @@ public class HttpClientServiceExtendedTests
     {
         // Arrange
         var httpClient = new HttpClient();
-        using var service = new HttpClientService(httpClient);
         var newTimeout = TimeSpan.FromMinutes(2);
 
         // Act
-        service.Timeout = newTimeout;
+        _service.Timeout = newTimeout;
 
         // Assert
-        service.Timeout.Should().Be(newTimeout);
-        httpClient.Timeout.Should().Be(newTimeout);
+        _service.Timeout.Should().Be(newTimeout);
+        _httpClient.Timeout.Should().Be(newTimeout);
     }
 
     [Fact]
@@ -91,10 +107,10 @@ public class HttpClientServiceExtendedTests
         // Arrange
         var httpClient = new HttpClient();
         var service = new HttpClientService(httpClient);
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = () => service.Timeout;
+        var action = () => _service.Timeout;
         action.Should().Throw<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -105,10 +121,10 @@ public class HttpClientServiceExtendedTests
         // Arrange
         var httpClient = new HttpClient();
         var service = new HttpClientService(httpClient);
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = () => service.Timeout = TimeSpan.FromSeconds(30);
+        var action = () => _service.Timeout = TimeSpan.FromSeconds(30);
         action.Should().Throw<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -123,10 +139,10 @@ public class HttpClientServiceExtendedTests
         // Arrange
         var httpClient = new HttpClient();
         var service = new HttpClientService(httpClient);
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = async () => await service.GetAsync("https://example.com");
+        var action = async () => await _service.GetAsync("https://example.com");
         await action.Should().ThrowAsync<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -138,10 +154,10 @@ public class HttpClientServiceExtendedTests
         var httpClient = new HttpClient();
         var service = new HttpClientService(httpClient);
         var uri = new Uri("https://example.com");
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = async () => await service.GetAsync(uri);
+        var action = async () => await _service.GetAsync(uri);
         await action.Should().ThrowAsync<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -161,11 +177,11 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
+        var httpClient = new HttpClient(mockHandler.Object);
+        var service = new HttpClientService(httpClient);
 
         // Act
-        var response = await service.GetAsync("https://example.com", cancellationToken);
+        var response = await _service.GetAsync("https://example.com", cancellationToken);
 
         // Assert
         response.Should().Be(expectedResponse);
@@ -192,11 +208,11 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
+        var httpClient = new HttpClient(mockHandler.Object);
+        var service = new HttpClientService(httpClient);
 
         // Act
-        var response = await service.GetAsync(uri, cancellationToken);
+        var response = await _service.GetAsync(uri, cancellationToken);
 
         // Assert
         response.Should().Be(expectedResponse);
@@ -218,10 +234,10 @@ public class HttpClientServiceExtendedTests
         var httpClient = new HttpClient();
         var service = new HttpClientService(httpClient);
         var content = new StringContent("test", Encoding.UTF8, "application/json");
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = async () => await service.PostAsync("https://example.com", content);
+        var action = async () => await _service.PostAsync("https://example.com", content);
         await action.Should().ThrowAsync<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -234,10 +250,10 @@ public class HttpClientServiceExtendedTests
         var service = new HttpClientService(httpClient);
         var content = new StringContent("test", Encoding.UTF8, "application/json");
         var uri = new Uri("https://example.com");
-        service.Dispose();
+        _service.Dispose();
 
         // Act & Assert
-        var action = async () => await service.PostAsync(uri, content);
+        var action = async () => await _service.PostAsync(uri, content);
         await action.Should().ThrowAsync<ObjectDisposedException>()
             .WithMessage("*HttpClientService*");
     }
@@ -258,11 +274,9 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
 
         // Act
-        var response = await service.PostAsync("https://example.com", content, cancellationToken);
+        var response = await _service.PostAsync("https://example.com", content, cancellationToken);
 
         // Assert
         response.Should().Be(expectedResponse);
@@ -290,11 +304,9 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
 
         // Act
-        var response = await service.PostAsync(uri, content, cancellationToken);
+        var response = await _service.PostAsync(uri, content, cancellationToken);
 
         // Assert
         response.Should().Be(expectedResponse);
@@ -317,11 +329,11 @@ public class HttpClientServiceExtendedTests
         var service = new HttpClientService();
 
         // Act
-        service.Dispose();
+        _service.Dispose();
 
         // Assert
         // Subsequent operations should throw ObjectDisposedException
-        var action = () => service.Timeout;
+        var action = () => _service.Timeout;
         action.Should().Throw<ObjectDisposedException>();
     }
 
@@ -335,9 +347,9 @@ public class HttpClientServiceExtendedTests
         // Act & Assert
         var action = () =>
         {
-            service.Dispose();
-            service.Dispose(); // Second call should not throw
-            service.Dispose(); // Third call should not throw
+            _service.Dispose();
+            _service.Dispose(); // Second call should not throw
+            _service.Dispose(); // Third call should not throw
         };
 
         action.Should().NotThrow();
@@ -351,10 +363,9 @@ public class HttpClientServiceExtendedTests
         // by verifying that disposal completes without throwing
 
         // Arrange
-        using var service = new HttpClientService();
 
         // Act & Assert
-        var action = () => service.Dispose();
+        var action = () => _service.Dispose();
         action.Should().NotThrow();
     }
 
@@ -363,12 +374,12 @@ public class HttpClientServiceExtendedTests
     {
         // Arrange & Act
         var service = new HttpClientService();
-        service.Dispose();
+        _service.Dispose();
 
         // Assert
         // The fact that we can dispose and the test completes without hanging
         // verifies that GC.SuppressFinalize is working correctly
-        service.Should().NotBeNull();
+        _service.Should().NotBeNull();
     }
 
     #endregion
@@ -392,11 +403,9 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ReturnsAsync(expectedResponse);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
 
         // Act
-        var response = await service.GetAsync("https://api.example.com/data");
+        var response = await _service.GetAsync("https://api.example.com/data");
 
         // Assert
         response.Should().Be(expectedResponse);
@@ -450,11 +459,9 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ThrowsAsync(expectedException);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
 
         // Act & Assert
-        var action = async () => await service.GetAsync("https://invalid-url.com");
+        var action = async () => await _service.GetAsync("https://invalid-url.com");
         await action.Should().ThrowAsync<HttpRequestException>()
             .WithMessage("Network error");
     }
@@ -474,12 +481,10 @@ public class HttpClientServiceExtendedTests
                 ItExpr.IsAny<CancellationToken>())
             .ThrowsAsync(expectedException);
 
-        using var httpClient = new HttpClient(mockHandler.Object);
-        using var service = new HttpClientService(httpClient);
         var content = new StringContent("test");
 
         // Act & Assert
-        var action = async () => await service.PostAsync("https://example.com", content, cancellationToken);
+        var action = async () => await _service.PostAsync("https://example.com", content, cancellationToken);
         await action.Should().ThrowAsync<TaskCanceledException>()
             .WithMessage("Request was cancelled");
     }
@@ -492,42 +497,49 @@ public class HttpClientServiceExtendedTests
     public void Timeout_SetToInfinite_ShouldWork()
     {
         // Arrange
-        using var service = new HttpClientService();
         var infiniteTimeout = System.Threading.Timeout.InfiniteTimeSpan;
 
         // Act
-        service.Timeout = infiniteTimeout;
+        _service.Timeout = infiniteTimeout;
 
         // Assert
-        service.Timeout.Should().Be(infiniteTimeout);
+        _service.Timeout.Should().Be(infiniteTimeout);
     }
 
     [Fact]
     public void Timeout_SetToVerySmall_ShouldWork()
     {
         // Arrange
-        using var service = new HttpClientService();
         var smallTimeout = TimeSpan.FromMilliseconds(1);
 
         // Act
-        service.Timeout = smallTimeout;
+        _service.Timeout = smallTimeout;
 
         // Assert
-        service.Timeout.Should().Be(smallTimeout);
+        _service.Timeout.Should().Be(smallTimeout);
     }
 
     [Fact]
     public async Task GetAsync_WithEmptyString_ShouldDelegateToHttpClient()
     {
         // Arrange
-        using var httpClient = new HttpClient();
-        using var service = new HttpClientService(httpClient);
 
         // Act & Assert
         // This should throw InvalidOperationException from HttpClient for invalid URIs, confirming delegation
-        var action = async () => await service.GetAsync("");
+        var action = async () => await _service.GetAsync("");
         await action.Should().ThrowAsync<InvalidOperationException>()
             .WithMessage("An invalid request URI was provided*");
+    }
+
+    #endregion
+
+    #region Test Cleanup
+
+    public void Dispose()
+    {
+        _service?.Dispose();
+        _httpClient?.Dispose();
+        GC.SuppressFinalize(this);
     }
 
     #endregion

@@ -1,5 +1,14 @@
-﻿using System.Threading.Tasks;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using ProofRequest = NeoServiceLayer.Services.ZeroKnowledge.Models.GenerateProofRequest;
+using ServiceProofResult = NeoServiceLayer.Services.ZeroKnowledge.Models.ProofResult;
+using ProofVerification = NeoServiceLayer.Core.Models.ProofVerification;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -14,7 +23,15 @@ public interface IZeroKnowledgeService : IEnclaveService, IBlockchainService
     /// <param name="request">The proof generation request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The proof result.</returns>
-    Task<ProofResult> GenerateProofAsync(ProofRequest request, BlockchainType blockchainType);
+    Task<ServiceProofResult> GenerateProofAsync(ProofRequest request, BlockchainType blockchainType);
+
+    /// <summary>
+    /// Generates a zero-knowledge proof using Core ProofRequest.
+    /// </summary>
+    /// <param name="request">The core proof request.</param>
+    /// <param name="blockchainType">The blockchain type.</param>
+    /// <returns>The proof result.</returns>
+    Task<ServiceProofResult> GenerateProofAsync(NeoServiceLayer.Core.Models.ProofRequest request, BlockchainType blockchainType);
 
     /// <summary>
     /// Verifies a zero-knowledge proof.

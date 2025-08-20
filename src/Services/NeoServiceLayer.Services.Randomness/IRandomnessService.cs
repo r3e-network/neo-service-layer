@@ -1,4 +1,10 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
+
 
 namespace NeoServiceLayer.Services.Randomness;
 
@@ -136,4 +142,50 @@ public class RandomnessRequest
     /// Gets or sets the signature of the result.
     /// </summary>
     public string Signature { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Represents a verifiable random result.
+/// </summary>
+public class VerifiableRandomResult
+{
+    /// <summary>
+    /// Gets or sets the request ID.
+    /// </summary>
+    public string RequestId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the random value generated.
+    /// </summary>
+    public int Value { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cryptographic proof of randomness.
+    /// </summary>
+    public string Proof { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the seed used for generation.
+    /// </summary>
+    public string Seed { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the timestamp of generation.
+    /// </summary>
+    public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the blockchain type.
+    /// </summary>
+    public BlockchainType BlockchainType { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block height at which the randomness was generated.
+    /// </summary>
+    public long BlockHeight { get; set; }
+
+    /// <summary>
+    /// Gets or sets the block hash at which the randomness was generated.
+    /// </summary>
+    public string BlockHash { get; set; } = string.Empty;
 }

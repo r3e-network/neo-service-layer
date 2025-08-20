@@ -1,11 +1,17 @@
-﻿using System;
+using System;
 using System.Text;
 using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Tee.Enclave;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
@@ -54,17 +60,23 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             // Check if SGX SDK is available
             _sgxAvailable = CheckSGXAvailability();
 
+            // Use the existing loggerFactory instead of creating a new one
+            var occlumLogger = loggerFactory.CreateLogger<OcclumEnclaveWrapper>();
+            var prodLogger = loggerFactory.CreateLogger<ProductionSGXEnclaveWrapper>();
+            
             if (_sgxAvailable)
             {
                 _output.WriteLine("Using ProductionSGXEnclaveWrapper for real SGX SDK testing");
                 // Use the real ProductionSGXEnclaveWrapper which uses OcclumEnclaveWrapper
-                _enclave = new ProductionSGXEnclaveWrapper(_logger);
+                var occlumWrapper = new OcclumEnclaveWrapper(occlumLogger);
+                _enclave = new ProductionSGXEnclaveWrapper(occlumWrapper, prodLogger);
             }
             else
             {
                 _output.WriteLine("⚠️ SGX SDK not available, using ProductionSGXEnclaveWrapper anyway for testing");
                 // Use ProductionSGXEnclaveWrapper anyway - it should handle missing SGX gracefully
-                _enclave = new ProductionSGXEnclaveWrapper(_logger);
+                var occlumWrapper = new OcclumEnclaveWrapper(occlumLogger);
+                _enclave = new ProductionSGXEnclaveWrapper(occlumWrapper, prodLogger);
             }
         }
 

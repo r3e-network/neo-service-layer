@@ -1,27 +1,34 @@
-﻿using System.Text;
+extern alias EnclaveStorageAlias;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.ServiceFramework;
-using NeoServiceLayer.Services.EnclaveStorage;
-using NeoServiceLayer.Services.EnclaveStorage.Models;
+using EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage;
+using EnclaveModels = EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text;
 
 namespace NeoServiceLayer.Services.EnclaveStorage.Tests
 {
     public class EnclaveStorageServiceTests
     {
         private readonly Mock<ILogger<EnclaveStorageService>> _mockLogger;
-        private readonly Mock<IServiceConfiguration> _mockConfiguration;
+        private readonly Mock<NeoServiceLayer.Core.Configuration.IServiceConfiguration> _mockConfiguration;
         private readonly Mock<IEnclaveManager> _mockEnclaveManager;
         private readonly EnclaveStorageService _service;
 
         public EnclaveStorageServiceTests()
         {
             _mockLogger = new Mock<ILogger<EnclaveStorageService>>();
-            _mockConfiguration = new Mock<IServiceConfiguration>();
+            _mockConfiguration = new Mock<NeoServiceLayer.Core.Configuration.IServiceConfiguration>();
             _mockEnclaveManager = new Mock<IEnclaveManager>();
 
             _mockConfiguration.Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<long>()))
@@ -72,11 +79,11 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Tests
         public async Task SealDataAsync_ShouldValidateParameters()
         {
             // Arrange
-            var request = new SealDataRequest
+            var request = new EnclaveModels.SealDataRequest
             {
                 Key = "",
                 Data = new byte[] { 1, 2, 3, 4, 5 },
-                Policy = new SealingPolicy { Type = SealingPolicyType.MrEnclave }
+                Policy = new EnclaveModels.SealingPolicy { Type = EnclaveModels.SealingPolicyType.MrEnclave }
             };
 
             // Act & Assert
@@ -88,11 +95,11 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Tests
         public async Task SealDataAsync_ShouldValidateDataNotEmpty()
         {
             // Arrange
-            var request = new SealDataRequest
+            var request = new EnclaveModels.SealDataRequest
             {
                 Key = "test-key",
                 Data = Array.Empty<byte>(),
-                Policy = new SealingPolicy { Type = SealingPolicyType.MrEnclave }
+                Policy = new EnclaveModels.SealingPolicy { Type = EnclaveModels.SealingPolicyType.MrEnclave }
             };
 
             // Act & Assert
@@ -125,11 +132,11 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Tests
         {
             // Arrange
             var testData = Encoding.UTF8.GetBytes("test data content");
-            var sealRequest = new SealDataRequest
+            var sealRequest = new EnclaveModels.SealDataRequest
             {
                 Key = "test-key",
                 Data = testData,
-                Policy = new SealingPolicy { Type = SealingPolicyType.MrEnclave, ExpirationHours = 24 }
+                Policy = new EnclaveModels.SealingPolicy { Type = EnclaveModels.SealingPolicyType.MrEnclave, ExpirationHours = 24 }
             };
 
             // Act
@@ -157,7 +164,7 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Tests
         public async Task BackupSealedDataAsync_ShouldNotThrowWithValidRequest()
         {
             // Arrange
-            var request = new BackupRequest
+            var request = new EnclaveModels.BackupRequest
             {
                 BackupLocation = "/backup/test",
                 IncludeMetadata = true
@@ -176,7 +183,7 @@ namespace NeoServiceLayer.Services.EnclaveStorage.Tests
         public async Task ListSealedItemsAsync_ShouldNotThrow()
         {
             // Arrange
-            var request = new ListSealedItemsRequest
+            var request = new EnclaveModels.ListSealedItemsRequest
             {
                 Service = "TestService",
                 PageSize = 10

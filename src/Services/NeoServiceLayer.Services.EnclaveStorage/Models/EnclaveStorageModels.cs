@@ -1,5 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.EnclaveStorage.Models;
 
@@ -85,6 +89,11 @@ public class SealDataResult
     /// Gets or sets the expiration time.
     /// </summary>
     public DateTime ExpiresAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if the operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 }
 
 /// <summary>
@@ -121,6 +130,11 @@ public class UnsealDataResult
     /// Gets or sets the remaining reads allowed.
     /// </summary>
     public int? RemainingReads { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if the operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 }
 
 /// <summary>
@@ -245,6 +259,11 @@ public class DeleteSealedDataResult
     /// Gets or sets the deletion timestamp.
     /// </summary>
     public DateTime Timestamp { get; set; }
+
+    /// <summary>
+    /// Gets or sets the error message if the operation failed.
+    /// </summary>
+    public string? ErrorMessage { get; set; }
 }
 
 /// <summary>

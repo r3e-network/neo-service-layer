@@ -1,8 +1,13 @@
-﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Monitoring.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -25,13 +30,13 @@ public partial class MonitoringService
     {
         if (_persistentStorage == null)
         {
-            Logger.LogWarning("Persistent storage not available for monitoring service");
+            _persistentStorageNotAvailable(Logger, null);
             return;
         }
 
         try
         {
-            Logger.LogInformation("Loading persistent monitoring data...");
+            _loadingPersistentMetrics(Logger, null);
 
             // Load active alerts
             var alertKeys = await _persistentStorage.ListKeysAsync(ALERT_PREFIX);
@@ -47,7 +52,7 @@ public partial class MonitoringService
                     }
                 }
             }
-            Logger.LogInformation("Loaded {Count} active alerts from persistent storage", _activeAlerts.Count);
+            _persistentMetricsLoaded(Logger, _activeAlerts.Count, null);
 
             // Load recent health status (last hour)
             var healthKeys = await _persistentStorage.ListKeysAsync(HEALTH_PREFIX);
@@ -65,7 +70,7 @@ public partial class MonitoringService
                     }
                 }
             }
-            Logger.LogInformation("Loaded {Count} service health statuses from persistent storage", _serviceHealthCache.Count);
+            _persistentMetricsLoaded(Logger, _serviceHealthCache.Count, null);
 
             // Load monitoring sessions
             var sessionKeys = await _persistentStorage.ListKeysAsync(SESSION_PREFIX);
@@ -81,11 +86,11 @@ public partial class MonitoringService
                     }
                 }
             }
-            Logger.LogInformation("Loaded {Count} monitoring sessions from persistent storage", _monitoringSessions.Count);
+            _persistentMetricsLoaded(Logger, _monitoringSessions.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading persistent monitoring data");
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -107,7 +112,7 @@ public partial class MonitoringService
                 Encrypt = false,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(7), // Keep metrics for 7 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Metric",
                     ["Service"] = serviceName,
@@ -118,7 +123,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting metric for service {Service}", serviceName);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -139,7 +144,7 @@ public partial class MonitoringService
                 Encrypt = false,
                 Compress = true,
                 TimeToLive = TimeSpan.FromHours(24), // Keep health history for 24 hours
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "HealthStatus",
                     ["Service"] = healthStatus.ServiceName,
@@ -150,14 +155,14 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting health status for service {Service}", healthStatus.ServiceName);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
     /// <summary>
     /// Persists alert to storage.
     /// </summary>
-    private async Task PersistAlertAsync(Alert alert)
+    private async Task PersistAlertAsync(Models.Alert alert)
     {
         if (_persistentStorage == null) return;
 
@@ -171,7 +176,7 @@ public partial class MonitoringService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = alert.IsActive ? null : TimeSpan.FromDays(30), // Keep resolved alerts for 30 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Alert",
                     ["Severity"] = alert.Severity.ToString(),
@@ -183,7 +188,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting alert {Id}", alert.Id);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -200,7 +205,7 @@ public partial class MonitoringService
             var data = await _persistentStorage.RetrieveAsync(key);
             if (data != null)
             {
-                var alert = JsonSerializer.Deserialize<Alert>(data);
+                var alert = JsonSerializer.Deserialize<Models.Alert>(data);
                 if (alert != null)
                 {
                     alert.IsActive = isActive;
@@ -211,7 +216,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating persisted alert {Id}", alertId);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -232,7 +237,7 @@ public partial class MonitoringService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = session.IsActive ? null : TimeSpan.FromDays(7), // Keep ended sessions for 7 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Session",
                     ["Active"] = session.IsActive.ToString(),
@@ -242,7 +247,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting monitoring session {Id}", session.SessionId);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -278,7 +283,7 @@ public partial class MonitoringService
                 Encrypt = false,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(90), // Keep aggregated data for 90 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AggregatedMetrics",
                     ["Period"] = "hourly",
@@ -288,7 +293,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting aggregated metrics");
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 
@@ -330,7 +335,7 @@ public partial class MonitoringService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error retrieving historical metrics for service {Service}", serviceName);
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
 
         return metrics.OrderBy(m => m.Timestamp).ToList();
@@ -365,11 +370,11 @@ public partial class MonitoringService
                 }
             }
 
-            Logger.LogInformation("Completed cleanup of old monitoring data");
+            _storingMetricsToPersistentStorage(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during monitoring data cleanup");
+            _storeMetricsToPersistentStorageFailed(Logger, ex);
         }
     }
 

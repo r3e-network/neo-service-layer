@@ -1,9 +1,12 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core;
 
@@ -54,6 +57,20 @@ public abstract class ServiceBase : IService, IDisposable
 
     /// <inheritdoc/>
     public IServiceProvider? ServiceProvider { get; set; }
+
+    /// <inheritdoc/>
+    public bool IsRunning => Status == ServiceStatus.Running;
+
+    /// <inheritdoc/>
+    public virtual IEnumerable<object> Dependencies { get; protected set; } = new List<object>();
+
+    /// <inheritdoc/>
+    public virtual IEnumerable<Type> Capabilities => _capabilities.Keys;
+
+    /// <inheritdoc/>
+    public virtual IDictionary<string, string> Metadata => _metadata.ToDictionary(
+        kvp => kvp.Key,
+        kvp => kvp.Value?.ToString() ?? string.Empty);
 
     /// <summary>
     /// Gets the logger instance.
@@ -210,6 +227,84 @@ public abstract class ServiceBase : IService, IDisposable
         return _metadata.AsReadOnly();
     }
 
+    /// <inheritdoc/>
+    public virtual async Task<IDictionary<string, object>> GetMetricsAsync()
+    {
+        var metrics = new Dictionary<string, object>
+        {
+            ["service_id"] = ServiceId,
+            ["name"] = Name,
+            ["version"] = Version,
+            ["status"] = Status.ToString(),
+            ["is_running"] = IsRunning,
+            ["created_at"] = CreatedAt,
+            ["last_activity"] = LastActivity,
+            ["uptime_seconds"] = LastActivity.HasValue ? (DateTime.UtcNow - CreatedAt).TotalSeconds : 0
+        };
+
+        try
+        {
+            var customMetrics = await OnGetMetricsAsync();
+            foreach (var metric in customMetrics)
+            {
+                metrics[metric.Key] = metric.Value;
+            }
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error getting custom metrics for service {ServiceName}", Name);
+            metrics["metrics_error"] = ex.Message;
+        }
+
+        return metrics;
+    }
+
+    /// <inheritdoc/>
+    public virtual async Task<bool> ValidateDependenciesAsync(IEnumerable<IService> availableServices)
+    {
+        try
+        {
+            var available = availableServices.ToList();
+            var validationTasks = Dependencies
+                .OfType<Type>()
+                .Select(depType => ValidateDependencyAsync(depType, available));
+
+            var results = await Task.WhenAll(validationTasks);
+            var isValid = results.All(r => r);
+
+            if (!isValid)
+            {
+                Logger.LogWarning("Service {ServiceName} has unresolved dependencies", Name);
+            }
+
+            return isValid;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error validating dependencies for service {ServiceName}", Name);
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Validates a single dependency.
+    /// </summary>
+    /// <param name="dependencyType">The dependency type.</param>
+    /// <param name="availableServices">The available services.</param>
+    /// <returns>True if the dependency is satisfied.</returns>
+    protected virtual Task<bool> ValidateDependencyAsync(Type dependencyType, IList<IService> availableServices)
+    {
+        var isAvailable = availableServices.Any(s => dependencyType.IsAssignableFrom(s.GetType()));
+
+        if (!isAvailable)
+        {
+            Logger.LogWarning("Dependency {DependencyType} not found for service {ServiceName}",
+                dependencyType.Name, Name);
+        }
+
+        return Task.FromResult(isAvailable);
+    }
+
     /// <summary>
     /// Adds a capability to the service.
     /// </summary>
@@ -217,7 +312,7 @@ public abstract class ServiceBase : IService, IDisposable
     /// <param name="implementation">Optional implementation. If null, uses 'this' as implementation.</param>
     protected virtual void AddCapability<T>(T? implementation = null) where T : class
     {
-        _capabilities[typeof(T)] = implementation ?? this;
+        _capabilities[typeof(T)] = implementation ?? (object)this;
     }
 
     /// <summary>
@@ -257,6 +352,16 @@ public abstract class ServiceBase : IService, IDisposable
     /// </summary>
     /// <returns>The current health status of the service.</returns>
     protected abstract Task<ServiceHealth> OnGetHealthAsync();
+
+    /// <summary>
+    /// Called when custom metrics should be retrieved.
+    /// Override this method to provide service-specific metrics.
+    /// </summary>
+    /// <returns>A dictionary of custom metrics for the service.</returns>
+    protected virtual Task<IDictionary<string, object>> OnGetMetricsAsync()
+    {
+        return Task.FromResult<IDictionary<string, object>>(new Dictionary<string, object>());
+    }
 
     /// <inheritdoc/>
     public void Dispose()

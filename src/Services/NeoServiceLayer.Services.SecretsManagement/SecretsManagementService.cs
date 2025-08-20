@@ -1,18 +1,224 @@
-﻿using System.Security;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security;
+
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
 /// <summary>
 /// Implementation of the Secrets Management service.
 /// </summary>
-public partial class SecretsManagementService : EnclaveBlockchainServiceBase, ISecretsManagementService, ISecretsManager
+public partial class SecretsManagementService : ServiceFramework.EnclaveBlockchainServiceBase, ISecretsManagementService, ISecretsManager
 {
+    #region LoggerMessage Delegates
+
+    private static readonly Action<ILogger, Exception?> _serviceinitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5001, "ServiceInitializing"),
+            "Initializing Secrets Management Service...");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception?> _externalProviderInitialized =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Information, new EventId(5002, "ExternalProviderInitialized"),
+            "Initialized external provider: {ProviderType}");
+
+    private static readonly Action<ILogger, Exception?> _serviceInitialized =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5003, "ServiceInitialized"),
+            "Secrets Management Service initialized successfully");
+
+    private static readonly Action<ILogger, Exception> _initializationError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5004, "InitializationError"),
+            "Error initializing Secrets Management Service");
+
+    private static readonly Action<ILogger, Exception?> _enclaveInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5005, "EnclaveInitializing"),
+            "Initializing Secrets Management Service enclave...");
+
+    private static readonly Action<ILogger, Exception> _enclaveInitializationError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5006, "EnclaveInitializationError"),
+            "Error initializing Secrets Management Service enclave");
+
+    private static readonly Action<ILogger, Exception?> _serviceStarting =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5007, "ServiceStarting"),
+            "Starting Secrets Management Service...");
+
+    private static readonly Action<ILogger, Exception> _serviceStartError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5008, "ServiceStartError"),
+            "Error starting Secrets Management Service");
+
+    private static readonly Action<ILogger, Exception?> _serviceStopping =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5009, "ServiceStopping"),
+            "Stopping Secrets Management Service...");
+
+    private static readonly Action<ILogger, Exception> _serviceStopError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5010, "ServiceStopError"),
+            "Error stopping Secrets Management Service");
+
+    private static readonly Action<ILogger, string, Exception?> _secretStoring =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5011, "SecretStoring"),
+            "Storing secret {SecretId} securely within enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _secretStored =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5012, "SecretStored"),
+            "Successfully stored secret {SecretId} in enclave");
+
+    private static readonly Action<ILogger, string, string, Exception?> _secretRetrieving =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(5013, "SecretRetrieving"),
+            "Retrieving secret {SecretId} version {Version} from enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _secretRetrieved =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(5014, "SecretRetrieved"),
+            "Successfully retrieved secret {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _secretRetrievalError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5015, "SecretRetrievalError"),
+            "Error retrieving secret {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _secretMetadataRetrievalError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5016, "SecretMetadataRetrievalError"),
+            "Error retrieving secret metadata for {SecretId}");
+
+    private static readonly Action<ILogger, Exception> _secretListError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5017, "SecretListError"),
+            "Error listing secrets");
+
+    private static readonly Action<ILogger, string, Exception?> _secretUpdating =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5018, "SecretUpdating"),
+            "Updating secret {SecretId} securely within enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _secretUpdated =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5019, "SecretUpdated"),
+            "Successfully updated secret {SecretId} in enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _secretDeleting =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5020, "SecretDeleting"),
+            "Deleting secret {SecretId} from enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _secretDeleted =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5021, "SecretDeleted"),
+            "Successfully deleted secret {SecretId} from enclave");
+
+    private static readonly Action<ILogger, string, Exception> _secretDeletionError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5022, "SecretDeletionError"),
+            "Error deleting secret {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception?> _secretRotating =
+        LoggerMessage.Define<string>(LogLevel.Information, new EventId(5023, "SecretRotating"),
+            "Rotating secret {SecretId} securely within enclave");
+
+    private static readonly Action<ILogger, string, int, Exception?> _secretRotated =
+        LoggerMessage.Define<string, int>(LogLevel.Information, new EventId(5024, "SecretRotated"),
+            "Successfully rotated secret {SecretId} to version {Version} in enclave");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception?> _externalProviderConfiguring =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Information, new EventId(5025, "ExternalProviderConfiguring"),
+            "Configuring external provider {ProviderType}");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception?> _externalProviderNotRegistered =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Warning, new EventId(5026, "ExternalProviderNotRegistered"),
+            "External provider {ProviderType} not registered");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception?> _externalProviderConfigured =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Information, new EventId(5027, "ExternalProviderConfigured"),
+            "Successfully configured external provider {ProviderType}");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception> _externalProviderConfigurationError =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Error, new EventId(5028, "ExternalProviderConfigurationError"),
+            "Error configuring external provider {ProviderType}");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, SyncDirection, Exception?> _externalProviderSynchronizing =
+        LoggerMessage.Define<ExternalSecretProviderType, SyncDirection>(LogLevel.Information, new EventId(5029, "ExternalProviderSynchronizing"),
+            "Synchronizing with external provider {ProviderType}, direction: {Direction}");
+
+    private static readonly Action<ILogger, int, ExternalSecretProviderType, Exception?> _externalProviderSynchronized =
+        LoggerMessage.Define<int, ExternalSecretProviderType>(LogLevel.Information, new EventId(5030, "ExternalProviderSynchronized"),
+            "Successfully synchronized {Count} secrets with external provider {ProviderType}");
+
+    private static readonly Action<ILogger, ExternalSecretProviderType, Exception> _externalProviderSynchronizationError =
+        LoggerMessage.Define<ExternalSecretProviderType>(LogLevel.Error, new EventId(5031, "ExternalProviderSynchronizationError"),
+            "Error synchronizing with external provider {ProviderType}");
+
+    private static readonly Action<ILogger, int, Exception?> _secretCacheRefreshed =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(5032, "SecretCacheRefreshed"),
+            "Secret cache refreshed. {SecretCount} secrets loaded.");
+
+    private static readonly Action<ILogger, Exception> _secretCacheRefreshError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5033, "SecretCacheRefreshError"),
+            "Error refreshing secret cache");
+
+    private static readonly Action<ILogger, string, Exception> _lastAccessedUpdateError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5034, "LastAccessedUpdateError"),
+            "Error updating last accessed timestamp for secret {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _externalSecretSyncError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5035, "ExternalSecretSyncError"),
+            "Error syncing secret {SecretId} from external provider");
+
+    private static readonly Action<ILogger, string, Exception> _externalSecretPushError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5036, "ExternalSecretPushError"),
+            "Error syncing secret {SecretId} to external provider");
+
+    // Persistent storage LoggerMessage delegates
+    private static readonly Action<ILogger, Exception?> _persistentStorageUnavailable =
+        LoggerMessage.Define(LogLevel.Warning, new EventId(5037, "PersistentStorageUnavailable"),
+            "Persistent storage not available for secrets management service");
+
+    private static readonly Action<ILogger, Exception?> _loadingPersistentSecrets =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5038, "LoadingPersistentSecrets"),
+            "Loading persistent secret metadata...");
+
+    private static readonly Action<ILogger, int, Exception?> _persistentSecretsLoaded =
+        LoggerMessage.Define<int>(LogLevel.Information, new EventId(5039, "PersistentSecretsLoaded"),
+            "Loaded {Count} secret metadata entries from persistent storage");
+
+    private static readonly Action<ILogger, Exception> _persistentSecretsLoadError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5040, "PersistentSecretsLoadError"),
+            "Error loading persistent secret metadata");
+
+    private static readonly Action<ILogger, string, Exception> _secretMetadataPersistError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5041, "SecretMetadataPersistError"),
+            "Error persisting secret metadata for {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _secretMetadataRemovalError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5042, "SecretMetadataRemovalError"),
+            "Error removing persisted secret metadata for {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _secretIndexUpdateError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5043, "SecretIndexUpdateError"),
+            "Error updating secret indexes for {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _secretIndexRemovalError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5044, "SecretIndexRemovalError"),
+            "Error removing secret indexes for {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _auditLogPersistError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5045, "AuditLogPersistError"),
+            "Error persisting audit log for secret {SecretId}");
+
+    private static readonly Action<ILogger, string, Exception> _auditHistoryRetrievalError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(5046, "AuditHistoryRetrievalError"),
+            "Error retrieving audit history for secret {SecretId}");
+
+    private static readonly Action<ILogger, Exception> _statisticsPersistError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5047, "StatisticsPersistError"),
+            "Error persisting secret statistics");
+
+    private static readonly Action<ILogger, Exception?> _cleanupCompleted =
+        LoggerMessage.Define(LogLevel.Information, new EventId(5048, "CleanupCompleted"),
+            "Completed cleanup of old secrets data");
+
+    private static readonly Action<ILogger, Exception> _cleanupError =
+        LoggerMessage.Define(LogLevel.Error, new EventId(5049, "CleanupError"),
+            "Error during secrets data cleanup");
+
+    #endregion
     private new readonly IEnclaveManager _enclaveManager;
     private readonly IServiceConfiguration _configuration;
     private readonly Dictionary<string, SecretMetadata> _secretCache = new();
@@ -75,24 +281,24 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Initializing Secrets Management Service...");
+            _serviceinitializing(Logger, null);
 
             // Initialize external providers
             foreach (var provider in _externalProviders.Values)
             {
                 await provider.InitializeAsync();
-                Logger.LogInformation("Initialized external provider: {ProviderType}", provider.ProviderType);
+                _externalProviderInitialized(Logger, provider.ProviderType, null);
             }
 
             // Load existing secrets metadata from the enclave
             await RefreshSecretCacheAsync();
 
-            Logger.LogInformation("Secrets Management Service initialized successfully");
+            _serviceInitialized(Logger, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing Secrets Management Service");
+            _initializationError(Logger, ex);
             return false;
         }
     }
@@ -102,13 +308,13 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Initializing Secrets Management Service enclave...");
+            _enclaveInitializing(Logger, null);
             await _enclaveManager.InitializeEnclaveAsync();
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error initializing Secrets Management Service enclave");
+            _enclaveInitializationError(Logger, ex);
             return false;
         }
     }
@@ -118,13 +324,13 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Starting Secrets Management Service...");
+            _serviceStarting(Logger, null);
             await RefreshSecretCacheAsync();
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error starting Secrets Management Service");
+            _serviceStartError(Logger, ex);
             return false;
         }
     }
@@ -134,13 +340,13 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Stopping Secrets Management Service...");
+            _serviceStopping(Logger, null);
             _secretCache.Clear();
             return Task.FromResult(true);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error stopping Secrets Management Service");
+            _serviceStopError(Logger, ex);
             return Task.FromResult(false);
         }
     }
@@ -168,7 +374,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogInformation("Storing secret {SecretId} securely within enclave", secretId);
+            _secretStoring(Logger, secretId, null);
 
             options ??= new StoreSecretOptions();
 
@@ -218,7 +424,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             UpdateMetric("TotalSecretsStored", _secretCache.Count);
 
-            Logger.LogInformation("Successfully stored secret {SecretId} in enclave", secretId);
+            _secretStored(Logger, secretId, null);
 
             return storedMetadata;
         });
@@ -247,7 +453,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Retrieving secret {SecretId} version {Version} from enclave", secretId, version?.ToString() ?? "latest");
+            _secretRetrieving(Logger, secretId, version?.ToString() ?? "latest", null);
 
             // Prepare the request
             var request = new
@@ -280,7 +486,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogDebug("Successfully retrieved secret {SecretId}", secretId);
+            _secretRetrieved(Logger, secretId, null);
 
             return new Secret
             {
@@ -293,7 +499,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error retrieving secret {SecretId}", secretId);
+            _secretRetrievalError(Logger, secretId, ex);
             throw;
         }
     }
@@ -365,7 +571,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error retrieving secret metadata for {SecretId}", secretId);
+            _secretMetadataRetrievalError(Logger, secretId, ex);
             throw;
         }
     }
@@ -419,7 +625,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error listing secrets");
+            _secretListError(Logger, ex);
             throw;
         }
     }
@@ -447,7 +653,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogInformation("Updating secret {SecretId} securely within enclave", secretId);
+            _secretUpdating(Logger, secretId, null);
 
             // Get existing secret metadata
             var existingMetadata = await GetSecretMetadataAsync(secretId, null, blockchainType, cancellationToken);
@@ -486,7 +692,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogInformation("Successfully updated secret {SecretId} in enclave", secretId);
+            _secretUpdated(Logger, secretId, null);
 
             return updatedMetadata;
         });
@@ -515,7 +721,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogInformation("Deleting secret {SecretId} from enclave", secretId);
+            _secretDeleting(Logger, secretId, null);
 
             var request = new
             {
@@ -539,7 +745,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            Logger.LogInformation("Successfully deleted secret {SecretId} from enclave", secretId);
+            _secretDeleted(Logger, secretId, null);
 
             return deleted;
         }
@@ -548,7 +754,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error deleting secret {SecretId}", secretId);
+            _secretDeletionError(Logger, secretId, ex);
             throw;
         }
     }
@@ -576,7 +782,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogInformation("Rotating secret {SecretId} securely within enclave", secretId);
+            _secretRotating(Logger, secretId, null);
 
             // Get existing secret metadata
             var existingMetadata = await GetSecretMetadataAsync(secretId, null, blockchainType, cancellationToken);
@@ -625,7 +831,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             UpdateMetric("TotalSecretsRotated", (_successCount).ToString());
 
-            Logger.LogInformation("Successfully rotated secret {SecretId} to version {Version} in enclave", secretId, rotatedMetadata.Version);
+            _secretRotated(Logger, secretId, rotatedMetadata.Version, null);
 
             return rotatedMetadata;
         });
@@ -636,22 +842,22 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Configuring external provider {ProviderType}", providerType);
+            _externalProviderConfiguring(Logger, providerType, null);
 
             if (!_externalProviders.TryGetValue(providerType, out var provider))
             {
-                Logger.LogWarning("External provider {ProviderType} not registered", providerType);
+                _externalProviderNotRegistered(Logger, providerType, null);
                 return false;
             }
 
             await provider.ConfigureAsync(configuration, cancellationToken);
 
-            Logger.LogInformation("Successfully configured external provider {ProviderType}", providerType);
+            _externalProviderConfigured(Logger, providerType, null);
             return true;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error configuring external provider {ProviderType}", providerType);
+            _externalProviderConfigurationError(Logger, providerType, ex);
             throw;
         }
     }
@@ -661,7 +867,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
     {
         try
         {
-            Logger.LogInformation("Synchronizing with external provider {ProviderType}, direction: {Direction}", providerType, direction);
+            _externalProviderSynchronizing(Logger, providerType, direction, null);
 
             if (!_externalProviders.TryGetValue(providerType, out var provider))
             {
@@ -680,12 +886,12 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
                 syncCount += await SyncToExternalProvider(provider, secretIds, cancellationToken);
             }
 
-            Logger.LogInformation("Successfully synchronized {Count} secrets with external provider {ProviderType}", syncCount, providerType);
+            _externalProviderSynchronized(Logger, syncCount, providerType, null);
             return syncCount;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error synchronizing with external provider {ProviderType}", providerType);
+            _externalProviderSynchronizationError(Logger, providerType, ex);
             throw;
         }
     }
@@ -811,11 +1017,11 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
                 }
             }
 
-            Logger.LogInformation("Secret cache refreshed. {SecretCount} secrets loaded.", _secretCache.Count);
+            _secretCacheRefreshed(Logger, _secretCache.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error refreshing secret cache");
+            _secretCacheRefreshError(Logger, ex);
         }
     }
 
@@ -843,7 +1049,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating last accessed timestamp for secret {SecretId}", secretId);
+            _lastAccessedUpdateError(Logger, secretId, ex);
         }
     }
 
@@ -878,7 +1084,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error syncing secret {SecretId} from external provider", externalSecret.SecretId);
+                _externalSecretSyncError(Logger, externalSecret.SecretId, ex);
             }
         }
 
@@ -910,7 +1116,7 @@ public partial class SecretsManagementService : EnclaveBlockchainServiceBase, IS
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Error syncing secret {SecretId} to external provider", localSecret.SecretId);
+                _externalSecretPushError(Logger, localSecret.SecretId, ex);
             }
         }
 

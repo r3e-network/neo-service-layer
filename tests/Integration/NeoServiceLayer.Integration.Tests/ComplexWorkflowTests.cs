@@ -1,10 +1,12 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Integration.Tests.Framework;
 using Xunit;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Integration.Tests
 {
@@ -207,7 +209,7 @@ namespace NeoServiceLayer.Integration.Tests
                         {
                             ["contractHash"] = "CrossChainLockContract",
                             ["method"] = "lockTokens",
-                            ["parameters"] = new[] { "{transferId}", 100.0 }
+                            ["parameters"] = new object[] { "{transferId}", 100.0 }
                         },
                         ResultKey = "lockTransactionHash"
                     },
@@ -236,7 +238,7 @@ namespace NeoServiceLayer.Integration.Tests
                         {
                             ["contractHash"] = "CrossChainReleaseContract",
                             ["method"] = "releaseTokens",
-                            ["parameters"] = new[] { "{transferId}", "0x1234567890abcdef", 100.0 }
+                            ["parameters"] = new object[] { "{transferId}", "0x1234567890abcdef", 100.0 }
                         },
                         ResultKey = "releaseTransactionHash"
                     },

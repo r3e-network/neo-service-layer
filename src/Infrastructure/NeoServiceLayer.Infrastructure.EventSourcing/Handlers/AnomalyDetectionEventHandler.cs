@@ -4,17 +4,20 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Core.Events.ObservabilityEvents;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
 {
     /// <summary>
     /// Handles anomaly detected events for predictive monitoring and auto-healing
     /// </summary>
-    public class AnomalyDetectionEventHandler : IEventHandlerWithRetry&lt;AnomalyDetectedEvent&gt;
+    public class AnomalyDetectionEventHandler : IEventHandlerWithRetry<AnomalyDetectedEvent>
     {
-        private readonly ILogger&lt;AnomalyDetectionEventHandler&gt; _logger;
+        private readonly ILogger<AnomalyDetectionEventHandler> _logger;
 
-        public AnomalyDetectionEventHandler(ILogger&lt;AnomalyDetectionEventHandler&gt; logger)
+        public AnomalyDetectionEventHandler(ILogger<AnomalyDetectionEventHandler> logger)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
@@ -22,7 +25,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
         public async Task HandleAsync(AnomalyDetectedEvent domainEvent, CancellationToken cancellationToken = default)
         {
             var severity = GetSeverityFromMetadata(domainEvent);
-            
+
             _logger.LogInformation(
                 "Anomaly detected in {ServiceName}: {AnomalyType} for metric {MetricName}. " +
                 "Current: {CurrentValue}, Expected: {ExpectedValue}, Deviation: {DeviationScore} " +
@@ -57,7 +60,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             await UpdateAnomalyPatternsAsync(domainEvent, cancellationToken);
         }
 
-        public async Task&lt;bool&gt; HandleFailureAsync(
+        public async Task<bool> HandleFailureAsync(
             AnomalyDetectedEvent domainEvent,
             Exception exception,
             int attemptNumber,
@@ -69,7 +72,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
 
             // Critical anomalies always get retried
             var severity = GetSeverityFromMetadata(domainEvent);
-            var shouldRetry = (severity == "critical" && attemptNumber &lt; 5) || attemptNumber &lt; 3;
+            var shouldRetry = (severity == "critical" && attemptNumber < 5) || attemptNumber < 3;
 
             return await Task.FromResult(shouldRetry);
         }
@@ -87,7 +90,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 3. Scale resources if needed
             // 4. Alert on-call engineers
             // 5. Execute emergency runbooks
-            
+
             await TriggerAutoHealingAsync(domainEvent, cancellationToken);
             await NotifyIncidentResponseAsync(domainEvent, cancellationToken);
         }
@@ -104,7 +107,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 2. Increase monitoring frequency
             // 3. Prepare auto-healing standby
             // 4. Notify operations team
-            
+
             await PrepareAutoHealingAsync(domainEvent, cancellationToken);
             await NotifyOperationsAsync(domainEvent, cancellationToken);
         }
@@ -120,7 +123,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 1. Increase monitoring sensitivity
             // 2. Add to watchlist
             // 3. Trigger preventive measures
-            
+
             await EnhanceMonitoringAsync(domainEvent, cancellationToken);
         }
 
@@ -135,7 +138,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 1. Log for trend analysis
             // 2. Update baseline models
             // 3. Feed into ML training data
-            
+
             await LogForPatternAnalysisAsync(domainEvent, cancellationToken);
         }
 
@@ -144,11 +147,11 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // Auto-healing logic based on anomaly type
             var action = domainEvent.AnomalyType.ToLowerInvariant() switch
             {
-                var t when t.Contains("response_time") =&gt; "Scale up instances",
-                var t when t.Contains("error_rate") =&gt; "Restart unhealthy instances",
-                var t when t.Contains("memory") =&gt; "Increase memory allocation",
-                var t when t.Contains("cpu") =&gt; "Scale horizontally",
-                _ =&gt; "Generic recovery procedure"
+                var t when t.Contains("response_time") => "Scale up instances",
+                var t when t.Contains("error_rate") => "Restart unhealthy instances",
+                var t when t.Contains("memory") => "Increase memory allocation",
+                var t when t.Contains("cpu") => "Scale horizontally",
+                _ => "Generic recovery procedure"
             };
 
             _logger.LogInformation(
@@ -205,14 +208,14 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing.Handlers
             // 1. Update ML model training data
             // 2. Refine detection algorithms
             // 3. Update pattern recognition
-            
+
             await Task.Delay(10, cancellationToken); // Simulate ML update
         }
 
         private static string GetSeverityFromMetadata(AnomalyDetectedEvent domainEvent)
         {
-            return domainEvent.Metadata.TryGetValue("severity", out var severity) 
-                ? severity.ToString() ?? "unknown" 
+            return domainEvent.Metadata.TryGetValue("severity", out var severity)
+                ? severity.ToString() ?? "unknown"
                 : "unknown";
         }
     }

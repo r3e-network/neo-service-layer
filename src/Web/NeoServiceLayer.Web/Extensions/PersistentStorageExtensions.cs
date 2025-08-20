@@ -1,9 +1,14 @@
-﻿using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using StackExchange.Redis;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
 
 namespace NeoServiceLayer.Web.Extensions;
 
@@ -57,20 +62,20 @@ public static class PersistentStorageExtensions
             }
         }
 
-        // Add storage health checks only if storage is configured
-        // TODO: Fix health check registration for Docker environment
-        // var storageConfig = configuration.GetSection("Storage");
-        // if (storageConfig.Exists() && !string.IsNullOrEmpty(storageConfig.GetValue<string>("Provider")))
-        // {
-        //     services.Configure<HealthCheckServiceOptions>(options =>
-        //     {
-        //         options.Registrations.Add(new Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckRegistration(
-        //             "persistent-storage",
-        //             sp => ActivatorUtilities.CreateInstance<PersistentStorageHealthCheck>(sp),
-        //             null,
-        //             new[] { "storage", "ready" }));
-        //     });
-        // }
+        // Configure storage health checks with Docker environment compatibility
+        var storageConfig = configuration.GetSection("Storage");
+        if (storageConfig.Exists() && !string.IsNullOrEmpty(storageConfig.GetValue<string>("Provider")))
+        {
+            var isDockerEnvironment = Environment.GetEnvironmentVariable("DOTNET_RUNNING_IN_CONTAINER") == "true" ||
+                                    Environment.GetEnvironmentVariable("ASPNETCORE_ENVIRONMENT") == "Docker";
+
+            services.AddHealthChecks().AddCheck<PersistentStorageHealthCheck>(
+                "persistent-storage",
+                failureStatus: isDockerEnvironment ?
+                    Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Degraded :
+                    Microsoft.Extensions.Diagnostics.HealthChecks.HealthStatus.Unhealthy,
+                tags: new[] { "storage", "persistence" });
+        }
 
         // Configure service-specific persistent storage
         services.Configure<PersistentStorageOptions>(configuration.GetSection("Storage:PersistenceOptions"));
@@ -358,19 +363,24 @@ public class ServiceConfiguration : IServiceConfiguration
         return _values.Keys;
     }
 
-    public IServiceConfiguration GetSection(string sectionName)
+    public IConfigurationSection GetSection(string sectionName)
     {
-        var section = new ServiceConfiguration();
-        var prefix = sectionName + ":";
-        foreach (var kvp in _values.Where(x => x.Key.StartsWith(prefix)))
-        {
-            section.SetValue(kvp.Key.Substring(prefix.Length), kvp.Value);
-        }
-        return section;
+        // Return null for IConfigurationSection - this is a simplified implementation
+        return null!;
     }
 
     public string GetConnectionString(string name)
     {
         return GetValue($"ConnectionStrings:{name}", string.Empty);
+    }
+    
+    public bool Exists(string key)
+    {
+        return ContainsKey(key);
+    }
+    
+    public bool Remove(string key)
+    {
+        return RemoveKey(key);
     }
 }

@@ -1,7 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events
 {
@@ -24,7 +26,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="domainEvents">The events to publish</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Task representing the async operation</returns>
-        Task PublishBatchAsync(IEnumerable&lt; IDomainEvent&gt; domainEvents, CancellationToken cancellationToken = default);
+        Task PublishBatchAsync(IEnumerable<IDomainEvent> domainEvents, CancellationToken cancellationToken = default);
 
         /// <summary>
         /// Subscribes to events of a specific type
@@ -32,15 +34,15 @@ namespace NeoServiceLayer.Core.Events
         /// <typeparam name="TEvent">Type of event to subscribe to</typeparam>
         /// <param name="handler">Event handler</param>
         /// <returns>Subscription that can be disposed to unsubscribe</returns>
-        IEventSubscription Subscribe&lt;TEvent&gt;(IEventHandler&lt;TEvent&gt; handler) where TEvent : class, IDomainEvent;
-        
+        IEventSubscription Subscribe<TEvent>(IEventHandler<TEvent> handler) where TEvent : class, IDomainEvent;
+
         /// <summary>
         /// Subscribes to all events with a pattern filter
         /// </summary>
         /// <param name="eventTypePattern">Event type pattern (supports wildcards)</param>
         /// <param name="handler">Generic event handler</param>
         /// <returns>Subscription that can be disposed to unsubscribe</returns>
-        IEventSubscription Subscribe(string eventTypePattern, IEventHandler&lt; IDomainEvent&gt; handler);
+        IEventSubscription Subscribe(string eventTypePattern, IEventHandler<IDomainEvent> handler);
     }
 
     /// <summary>

@@ -1,10 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Services.Backup.Models;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Backup;
 
@@ -712,7 +717,6 @@ public partial class BackupService
             for (int i = 0; i < 10; i++)
             {
                 var hashInput = $"contract_{blockchainType}_{baseTime:yyyyMMdd}_{i}";
-                using var sha256 = System.Security.Cryptography.SHA256.Create();
                 var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(hashInput));
                 var contractHash = "0x" + Convert.ToHexString(hashBytes).ToLowerInvariant().Substring(0, 40);
                 contractHashes.Add(contractHash);
@@ -741,7 +745,6 @@ public partial class BackupService
             await Task.CompletedTask;
 
             // Generate deterministic contract code based on hash
-            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var codeBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes($"code_{contractHash}"));
             return Convert.ToBase64String(codeBytes);
         }

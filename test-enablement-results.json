@@ -1,0 +1,60 @@
+{
+  "enabled_projects": [
+    {
+      "name": "NeoServiceLayer.Performance.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj",
+      "tests": 8
+    }
+  ],
+  "failed_projects": [
+    "NeoServiceLayer.AI.PatternRecognition.Tests",
+    "NeoServiceLayer.AI.Prediction.Tests",
+    "NeoServiceLayer.Advanced.FairOrdering.Tests",
+    "NeoServiceLayer.Api.Controllers.Tests",
+    "NeoServiceLayer.Api.Tests",
+    "NeoServiceLayer.Neo.N3.Tests",
+    "NeoServiceLayer.Neo.X.Tests",
+    "NeoServiceLayer.Core.Tests",
+    "NeoServiceLayer.ServiceFramework.Tests",
+    "NeoServiceLayer.Shared.Tests",
+    "NeoServiceLayer.Infrastructure.Blockchain.Tests",
+    "NeoServiceLayer.Infrastructure.Security.Tests",
+    "NeoServiceLayer.Infrastructure.Tests",
+    "NeoServiceLayer.Authentication.Integration.Tests",
+    "NeoServiceLayer.Integration.Tests",
+    "NeoServiceLayer.Services.AbstractAccount.Tests",
+    "NeoServiceLayer.Services.Authentication.Tests",
+    "NeoServiceLayer.Services.Automation.Tests",
+    "NeoServiceLayer.Services.Backup.Tests",
+    "NeoServiceLayer.Services.Compliance.Tests",
+    "NeoServiceLayer.Services.Compute.Tests",
+    "NeoServiceLayer.Services.Configuration.Tests",
+    "NeoServiceLayer.Services.CrossChain.Tests",
+    "NeoServiceLayer.Services.EnclaveStorage.Tests",
+    "NeoServiceLayer.Services.EventSubscription.Tests",
+    "NeoServiceLayer.Services.Health.Tests",
+    "NeoServiceLayer.Services.KeyManagement.Tests",
+    "NeoServiceLayer.Services.Monitoring.Tests",
+    "NeoServiceLayer.Services.NetworkSecurity.Tests",
+    "NeoServiceLayer.Services.Notification.Tests",
+    "NeoServiceLayer.Services.Oracle.Tests",
+    "NeoServiceLayer.Services.ProofOfReserve.Tests",
+    "NeoServiceLayer.Services.Randomness.Tests",
+    "NeoServiceLayer.Services.SecretsManagement.Tests",
+    "NeoServiceLayer.Services.SmartContracts.NeoN3.Tests",
+    "NeoServiceLayer.Services.SmartContracts.NeoX.Tests",
+    "NeoServiceLayer.Services.SmartContracts.Tests",
+    "NeoServiceLayer.Services.Storage.Tests",
+    "NeoServiceLayer.Services.Tee.Tests",
+    "NeoServiceLayer.Services.Voting.Tests",
+    "NeoServiceLayer.Services.ZeroKnowledge.Tests",
+    "NeoServiceLayer.Tee.Enclave.Tests",
+    "NeoServiceLayer.Tee.Host.Tests"
+  ],
+  "summary": {
+    "total_projects": 44,
+    "enabled": 1,
+    "failed": 43,
+    "total_tests": 8
+  }
+}

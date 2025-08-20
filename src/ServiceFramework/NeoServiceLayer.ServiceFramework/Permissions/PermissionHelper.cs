@@ -6,6 +6,8 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Services.Permissions;
 using NeoServiceLayer.Services.Permissions.Models;
+using System.Threading;
+
 
 namespace NeoServiceLayer.ServiceFramework.Permissions;
 
@@ -22,7 +24,7 @@ public static class PermissionHelper
     /// <param name="includeAdminAccess">Whether to include admin access permissions.</param>
     /// <returns>List of default service permissions.</returns>
     public static List<ServicePermission> CreateDefaultPermissions(
-        string serviceName, 
+        string serviceName,
         string resourcePrefix,
         bool includeAdminAccess = true)
     {
@@ -200,7 +202,7 @@ public static class PermissionHelper
     {
         var permissionService = serviceProvider.GetService<IPermissionService>();
         var logger = serviceProvider.GetService<ILogger<PermissionHelper>>();
-        
+
         if (permissionService == null)
         {
             logger?.LogWarning("Permission service not available, skipping permission setup for {ServiceName}", serviceName);
@@ -221,7 +223,7 @@ public static class PermissionHelper
             var registrationResult = await permissionService.RegisterServiceAsync(registration);
             if (!registrationResult.Success)
             {
-                logger?.LogError("Failed to register service permissions for {ServiceName}: {Error}", 
+                logger?.LogError("Failed to register service permissions for {ServiceName}: {Error}",
                     serviceName, registrationResult.ErrorMessage);
                 return;
             }
@@ -239,7 +241,7 @@ public static class PermissionHelper
                 }
                 else
                 {
-                    logger?.LogWarning("Failed to create role {RoleName} for service {ServiceName}: {Error}", 
+                    logger?.LogWarning("Failed to create role {RoleName} for service {ServiceName}: {Error}",
                         role.Name, serviceName, roleResult.ErrorMessage);
                 }
             }
@@ -259,7 +261,7 @@ public static class PermissionHelper
                 }
                 else
                 {
-                    logger?.LogWarning("Failed to create policy {PolicyName} for service {ServiceName}: {Error}", 
+                    logger?.LogWarning("Failed to create policy {PolicyName} for service {ServiceName}: {Error}",
                         policy.Name, serviceName, policyResult.ErrorMessage);
                 }
             }

@@ -1,4 +1,8 @@
-﻿namespace NeoServiceLayer.AI.PatternRecognition.Models;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+
+namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
 /// <summary>
 /// Extension methods for various types used in pattern recognition.
@@ -10,16 +14,14 @@ public static class Extensions
     /// </summary>
     /// <param name="values">The TimeSpan values.</param>
     /// <returns>The standard deviation in hours.</returns>
-    public static double StandardDeviation(this IEnumerable<TimeSpan> values)
+    public static double CalculateStandardDeviation(this IEnumerable<TimeSpan> values)
     {
-        var timeSpans = values.ToArray();
-        if (timeSpans.Length <= 1) return 0.0;
+        var hoursArray = values.Select(v => v.TotalHours).ToArray();
+        if (hoursArray.Length == 0) return 0.0;
 
-        var hours = timeSpans.Select(ts => ts.TotalHours).ToArray();
-        var average = hours.Average();
-        var sumOfSquares = hours.Sum(h => Math.Pow(h - average, 2));
-
-        return Math.Sqrt(sumOfSquares / (hours.Length - 1));
+        var mean = hoursArray.Average();
+        var sumOfSquareDifferences = hoursArray.Sum(h => Math.Pow(h - mean, 2));
+        return Math.Sqrt(sumOfSquareDifferences / hoursArray.Length);
     }
 
     /// <summary>
@@ -42,7 +44,6 @@ public static class Extensions
     /// <param name="defaultValue">The default value.</param>
     /// <returns>The value if found, otherwise the default value.</returns>
     public static TValue GetValueOrDefault<TKey, TValue>(this Dictionary<TKey, TValue> dictionary, TKey key, TValue defaultValue = default!)
-        where TKey : notnull
     {
         return dictionary.TryGetValue(key, out var value) ? value : defaultValue;
     }
@@ -53,15 +54,11 @@ public static class Extensions
     /// <param name="obj">The object to convert.</param>
     /// <param name="defaultValue">The default value if conversion fails.</param>
     /// <returns>The boolean value.</returns>
-    public static bool SafeGetBoolean(this object? obj, bool defaultValue = false)
+    public static bool SafeGetBool(this object? obj, bool defaultValue = false)
     {
         if (obj == null) return defaultValue;
-
         if (obj is bool boolValue) return boolValue;
-
-        if (bool.TryParse(obj.ToString(), out var parsedBool))
-            return parsedBool;
-
+        if (bool.TryParse(obj.ToString(), out var result)) return result;
         return defaultValue;
     }
 
@@ -74,12 +71,8 @@ public static class Extensions
     public static int SafeGetInt(this object? obj, int defaultValue = 0)
     {
         if (obj == null) return defaultValue;
-
         if (obj is int intValue) return intValue;
-
-        if (int.TryParse(obj.ToString(), out var parsedInt))
-            return parsedInt;
-
+        if (int.TryParse(obj.ToString(), out var result)) return result;
         return defaultValue;
     }
 
@@ -89,15 +82,11 @@ public static class Extensions
     /// <param name="obj">The object to convert.</param>
     /// <param name="defaultValue">The default value if conversion fails.</param>
     /// <returns>The decimal value.</returns>
-    public static decimal SafeGetDecimal(this object? obj, decimal defaultValue = 0)
+    public static decimal SafeGetDecimal(this object? obj, decimal defaultValue = 0m)
     {
         if (obj == null) return defaultValue;
-
         if (obj is decimal decimalValue) return decimalValue;
-
-        if (decimal.TryParse(obj.ToString(), out var parsedDecimal))
-            return parsedDecimal;
-
+        if (decimal.TryParse(obj.ToString(), out var result)) return result;
         return defaultValue;
     }
 
@@ -110,12 +99,8 @@ public static class Extensions
     public static DateTime SafeGetDateTime(this object? obj, DateTime defaultValue = default)
     {
         if (obj == null) return defaultValue;
-
         if (obj is DateTime dateTimeValue) return dateTimeValue;
-
-        if (DateTime.TryParse(obj.ToString(), out var parsedDateTime))
-            return parsedDateTime;
-
+        if (DateTime.TryParse(obj.ToString(), out var result)) return result;
         return defaultValue;
     }
 }

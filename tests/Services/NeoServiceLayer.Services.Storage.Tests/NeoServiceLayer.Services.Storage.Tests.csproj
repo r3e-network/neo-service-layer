@@ -23,7 +23,10 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\src\Services\NeoServiceLayer.Services.Storage\NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Storage/NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="../../../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="../../../src/Infrastructure/NeoServiceLayer.Infrastructure.Caching/NeoServiceLayer.Infrastructure.Caching.csproj" />
+    <ProjectReference Include="../../../src/Infrastructure/NeoServiceLayer.Infrastructure.Security/NeoServiceLayer.Infrastructure.Security.csproj" />
   </ItemGroup>
 
 </Project>

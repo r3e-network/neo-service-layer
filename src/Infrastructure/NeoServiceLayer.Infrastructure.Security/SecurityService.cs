@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
@@ -6,6 +5,12 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.Security;
 
@@ -60,12 +65,12 @@ public class SecurityService : ServiceBase, ISecurityService
     ///     CheckCodeInjection = true,
     ///     MaxInputSize = 1024 * 1024 // 1MB limit
     /// };
-    /// 
+    ///
     /// var result = await securityService.ValidateInputAsync(userInput, options);
-    /// 
+    ///
     /// if (result.HasSecurityThreats)
     /// {
-    ///     logger.LogWarning("Security threats detected: {Threats}", 
+    ///     logger.LogWarning("Security threats detected: {Threats}",
     ///         string.Join(", ", result.ThreatTypes));
     ///     return BadRequest("Input contains security threats");
     /// }
@@ -238,10 +243,10 @@ public class SecurityService : ServiceBase, ISecurityService
             var key = await GetOrCreateEncryptionKeyAsync(keyId, options.KeySize);
 
             // Use AES-GCM for authenticated encryption
-            using var aes = new AesGcm(key);
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            using var aes = new System.Security.Cryptography.AesGcm(key);
 
             var nonce = new byte[12]; // 96-bit nonce for GCM
-            using var rng = RandomNumberGenerator.Create();
             rng.GetBytes(nonce);
 
             var ciphertext = new byte[data.Length];
@@ -303,7 +308,7 @@ public class SecurityService : ServiceBase, ISecurityService
                 };
             }
 
-            using var aes = new AesGcm(key);
+            using var aes = new System.Security.Cryptography.AesGcm(key);
 
             // Extract components
             var nonce = new byte[12];
@@ -580,14 +585,24 @@ public class SecurityService : ServiceBase, ISecurityService
         try
         {
             // Test AES-GCM
-            using var aes = new AesGcm(new byte[32]);
+            var testKey = new byte[32];
+            using var rng = RandomNumberGenerator.Create();
+            rng.GetBytes(testKey);
+            
+            // Test AES-GCM operation
+            var testData = Encoding.UTF8.GetBytes("test");
+            var nonce = new byte[12];
+            rng.GetBytes(nonce);
+            using var aesGcm = new AesGcm(testKey);
+            var ciphertext = new byte[testData.Length];
+            var tag = new byte[16];
+            aesGcm.Encrypt(nonce, testData, ciphertext, tag);
 
             // Test SHA-256
             using var sha = SHA256.Create();
             sha.ComputeHash(Encoding.UTF8.GetBytes("test"));
 
             // Test RNG
-            using var rng = RandomNumberGenerator.Create();
             var testBytes = new byte[16];
             rng.GetBytes(testBytes);
 
@@ -608,8 +623,8 @@ public class SecurityService : ServiceBase, ISecurityService
         }
 
         // Generate new key
-        using var rng = RandomNumberGenerator.Create();
         var key = new byte[keySize / 8]; // Convert bits to bytes
+        using var rng = RandomNumberGenerator.Create();
         rng.GetBytes(key);
 
         _secureKeys.TryAdd(keyId, key);
@@ -629,12 +644,12 @@ public class SecurityService : ServiceBase, ISecurityService
 
     private void SecureWipeKeys()
     {
+        using var rng = RandomNumberGenerator.Create();
         foreach (var kvp in _secureKeys)
         {
             if (kvp.Value != null)
             {
                 // Overwrite with random data
-                using var rng = RandomNumberGenerator.Create();
                 rng.GetBytes(kvp.Value);
                 Array.Clear(kvp.Value, 0, kvp.Value.Length);
             }

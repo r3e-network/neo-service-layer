@@ -1,7 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compute;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -82,7 +89,7 @@ public class ComputeController : BaseApiController
     /// <response code="404">Computation not found.</response>
     [HttpGet("status/{computationId}/{blockchainType}")]
     [Authorize(Roles = "Admin,KeyManager,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ComputationStatus>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<Core.ComputationStatus>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]

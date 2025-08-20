@@ -1,4 +1,10 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
+
 
 namespace NeoServiceLayer.Services.KeyManagement;
 
@@ -130,4 +136,9 @@ public class KeyMetadata
     /// Gets or sets the public key in hexadecimal format.
     /// </summary>
     public string? PublicKeyHex { get; set; }
+
+    /// <summary>
+    /// Gets or sets additional audit information for privacy-preserving operations.
+    /// </summary>
+    public Dictionary<string, object>? AuditInfo { get; set; }
 }

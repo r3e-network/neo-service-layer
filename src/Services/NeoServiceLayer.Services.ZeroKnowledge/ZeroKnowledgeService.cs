@@ -1,20 +1,35 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.ServiceFramework;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using ProofVerification = NeoServiceLayer.Core.Models.ProofVerification;
 using NeoServiceLayer.Tee.Host.Services;
-using CoreModels = NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using ProofRequest = NeoServiceLayer.Services.ZeroKnowledge.Models.GenerateProofRequest;
+using ServiceProofResult = NeoServiceLayer.Services.ZeroKnowledge.Models.ProofResult;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
 /// <summary>
 /// Implementation of the Zero-Knowledge Service that provides privacy-preserving computation capabilities.
 /// </summary>
-public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroKnowledgeService
+public partial class ZeroKnowledgeService : ServiceFramework.EnclaveBlockchainServiceBase, IZeroKnowledgeService
 {
     private readonly Dictionary<string, ZkCircuit> _circuits = new();
     private readonly Dictionary<string, ZkProof> _proofs = new();
     private readonly object _circuitsLock = new();
+    
+    // Cryptographic algorithm instances
+    private readonly System.Security.Cryptography.ECDsa ecdsa = System.Security.Cryptography.ECDsa.Create();
+    private readonly System.Security.Cryptography.SHA256 sha256 = System.Security.Cryptography.SHA256.Create();
+    private readonly System.Security.Cryptography.RandomNumberGenerator rng = System.Security.Cryptography.RandomNumberGenerator.Create();
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ZeroKnowledgeService"/> class.
@@ -22,7 +37,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
-    public ZeroKnowledgeService(ILogger<ZeroKnowledgeService> logger, IEnclaveManager? enclaveManager = null, IServiceConfiguration? configuration = null)
+    public ZeroKnowledgeService(ILogger<ZeroKnowledgeService> logger, IEnclaveManager? enclaveManager = null, CoreConfig? configuration = null)
         : base("ZeroKnowledgeService", "Privacy-preserving computation and zero-knowledge proof service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
@@ -35,10 +50,10 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
     /// <summary>
     /// Gets the service configuration.
     /// </summary>
-    protected IServiceConfiguration? Configuration { get; }
+    protected CoreConfig? Configuration { get; }
 
     /// <inheritdoc/>
-    public async Task<CoreModels.ProofResult> GenerateProofAsync(CoreModels.ProofRequest request, BlockchainType blockchainType)
+    public async Task<ServiceProofResult> GenerateProofAsync(ProofRequest request, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(request);
 
@@ -57,8 +72,11 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                 Logger.LogDebug("Generating ZK proof {ProofId} for circuit {CircuitId}", proofId, request.CircuitId);
 
                 // Generate proof within the enclave for privacy
-                var proofData = await GenerateProofInEnclaveAsync(circuit, request.PublicInputs, request.PrivateInputs);
-                var publicSignals = await ExtractPublicSignalsAsync(request.PublicInputs);
+                var publicInputsAsObject = request.PublicInputs?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value) ?? new Dictionary<string, object>();
+                var privateInputsAsObject = request.PrivateInputs?.ToDictionary(kvp => kvp.Key, kvp => (object)kvp.Value) ?? new Dictionary<string, object>();
+                
+                var proofData = await GenerateProofInEnclaveAsync(circuit, publicInputsAsObject, privateInputsAsObject);
+                var publicSignals = await ExtractPublicSignalsAsync(publicInputsAsObject);
 
                 var proof = new ZkProof
                 {
@@ -68,7 +86,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                     PublicInputs = publicSignals,
                     GeneratedAt = DateTime.UtcNow,
                     IsValid = true,
-                    Metadata = request.Parameters ?? new Dictionary<string, object>()
+                    Metadata = new Dictionary<string, object>()
                 };
 
                 // Store original public inputs for verification
@@ -79,7 +97,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                     _proofs[proofId] = proof;
                 }
 
-                var result = new CoreModels.ProofResult
+                var result = new ServiceProofResult
                 {
                     ProofId = proofId,
                     ProofData = System.Text.Encoding.UTF8.GetBytes(proofData),
@@ -108,7 +126,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
             {
                 Logger.LogError(ex, "Failed to generate ZK proof {ProofId} for circuit {CircuitId}", proofId, request.CircuitId);
 
-                return new CoreModels.ProofResult
+                return new ServiceProofResult
                 {
                     ProofId = proofId,
                     ProofData = Array.Empty<byte>(),
@@ -121,8 +139,34 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
         });
     }
 
+    /// <summary>
+    /// Generates a zero-knowledge proof using Core ProofRequest.
+    /// </summary>
+    public async Task<ServiceProofResult> GenerateProofAsync(NeoServiceLayer.Core.Models.ProofRequest request, BlockchainType blockchainType)
+    {
+        // Convert Core.Models.ProofRequest to GenerateProofRequest
+        var generateRequest = new ProofRequest
+        {
+            CircuitId = request.CircuitId,
+            PublicInputs = ConvertToStringDict(request.PublicInputs),
+            PrivateInputs = ConvertToStringDict(request.PrivateInputs)
+        };
+        
+        return await GenerateProofAsync(generateRequest, blockchainType);
+    }
+    
+    private Dictionary<string, string> ConvertToStringDict(Dictionary<string, object> input)
+    {
+        var result = new Dictionary<string, string>();
+        foreach (var kvp in input)
+        {
+            result[kvp.Key] = kvp.Value?.ToString() ?? string.Empty;
+        }
+        return result;
+    }
+
     /// <inheritdoc/>
-    public async Task<bool> VerifyProofAsync(CoreModels.ProofVerification verification, BlockchainType blockchainType)
+    public async Task<bool> VerifyProofAsync(ProofVerification verification, BlockchainType blockchainType)
     {
         ArgumentNullException.ThrowIfNull(verification);
 
@@ -170,7 +214,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
                 Logger.LogDebug("Privacy-preserving computation completed: ProofId={ProofId}, Valid={Valid}",
                     privacyResult.ProofId, privacyResult.Valid);
 
-                // Execute actual computation 
+                // Execute actual computation
                 var result = await ExecuteComputationInEnclaveAsync(request);
                 var proof = await GenerateComputationProofAsync(request, result);
 
@@ -424,21 +468,21 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
     }
 
     // Make the interface methods explicit to avoid conflicts
-    async Task<ProofResult> IZeroKnowledgeService.GenerateProofAsync(ProofRequest request, BlockchainType blockchainType)
+    async Task<ServiceProofResult> IZeroKnowledgeService.GenerateProofAsync(ProofRequest request, BlockchainType blockchainType)
     {
         // Convert to Core models and call the implementation
-        var coreRequest = new CoreModels.ProofRequest
+        var coreRequest = new ProofRequest
         {
             CircuitId = request.CircuitId,
             PrivateInputs = request.PrivateInputs,
             PublicInputs = request.PublicInputs,
-            Parameters = request.Parameters
+            Metadata = request.Metadata
         };
 
         var coreResult = await GenerateProofAsync(coreRequest, blockchainType);
 
         // Convert back to interface result
-        return new ProofResult
+        return new ServiceProofResult
         {
             ProofId = coreResult.ProofId,
             Proof = System.Text.Encoding.UTF8.GetString(coreResult.ProofData),
@@ -453,57 +497,17 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
     async Task<bool> IZeroKnowledgeService.VerifyProofAsync(ProofVerification verification, BlockchainType blockchainType)
     {
         // Convert to Core models and call the implementation
-        var coreVerification = new CoreModels.ProofVerification
+        var coreVerification = new ProofVerification
         {
             ProofData = System.Text.Encoding.UTF8.GetBytes(verification.Proof),
-            PublicInputs = verification.PublicSignals.ToDictionary(s => s, s => (object)s),
+            PublicInputs = verification.PublicSignals,
             CircuitId = verification.CircuitId
         };
 
         return await VerifyProofAsync(coreVerification, blockchainType);
     }
 
-    // Helper methods for enclave operations
-    private async Task<string> GenerateProofInEnclaveAsync(ZkCircuit circuit, Dictionary<string, object> publicInputs, Dictionary<string, object> privateInputs)
-    {
-        await Task.Delay(200); // Simulate proof generation
-
-        Logger.LogDebug("Generating proof for circuit: CircuitId={CircuitId}, Name={Name}", circuit.CircuitId, circuit.Name);
-
-        // Validate witness values for test_square_circuit
-        if (circuit.CircuitId == "test_square_circuit" || circuit.Name == "test_square_circuit")
-        {
-            Logger.LogDebug("Circuit matches test_square_circuit, validating witnesses");
-
-            if (publicInputs.TryGetValue("public_input", out var publicInput) &&
-                privateInputs.TryGetValue("private_input", out var privateInput))
-            {
-                var publicVal = Convert.ToInt32(publicInput);
-                var privateVal = Convert.ToInt32(privateInput);
-
-                Logger.LogDebug("Validating witnesses: private_input={PrivateVal}, public_input={PublicVal}, private^2={Square}",
-                    privateVal, publicVal, privateVal * privateVal);
-
-                // Check if private_input^2 == public_input
-                if (privateVal * privateVal != publicVal)
-                {
-                    Logger.LogError("Witness validation failed: {PrivateVal}^2 = {Square} != {PublicVal}",
-                        privateVal, privateVal * privateVal, publicVal);
-                    throw new ArgumentException("Invalid witnesses: private_input^2 must equal public_input");
-                }
-            }
-            else
-            {
-                Logger.LogDebug("Missing public_input or private_input in witness data");
-            }
-        }
-        else
-        {
-            Logger.LogDebug("Circuit does not match test_square_circuit, skipping witness validation");
-        }
-
-        return $"proof_{circuit.CircuitId}_{DateTime.UtcNow.Ticks}";
-    }
+    // Helper methods for enclave operations - moved to EnclaveOperations partial class
 
     private async Task<string[]> ExtractPublicSignalsAsync(Dictionary<string, object> publicInputs)
     {
@@ -511,59 +515,7 @@ public partial class ZeroKnowledgeService : EnclaveBlockchainServiceBase, IZeroK
         return publicInputs.Keys.ToArray();
     }
 
-    private async Task<bool> VerifyProofInEnclaveAsync(ZkCircuit circuit, byte[] proofData, Dictionary<string, object> publicInputs)
-    {
-        await Task.Delay(100); // Simulate verification
-
-        // Basic validation - proof data must be present and valid
-        if (proofData.Length == 0)
-        {
-            Logger.LogWarning("Proof verification failed: empty proof data");
-            return false;
-        }
-
-        // Check for obviously invalid proof data (like test invalid data)
-        if (proofData.SequenceEqual(new byte[] { 0x00, 0x01, 0x02, 0x03 }))
-        {
-            Logger.LogWarning("Proof verification failed: invalid proof format");
-            return false;
-        }
-
-        // Basic input validation
-        if (publicInputs.Count == 0)
-        {
-            Logger.LogWarning("Proof verification failed: no public inputs provided");
-            return false;
-        }
-
-        // Find the original proof to validate against tampered inputs
-        var proofString = System.Text.Encoding.UTF8.GetString(proofData);
-        ZkProof? originalProof = null;
-
-        lock (_circuitsLock)
-        {
-            originalProof = _proofs.Values.FirstOrDefault(p => p.ProofData == proofString);
-        }
-
-        if (originalProof != null && originalProof.Metadata.TryGetValue("original_public_inputs", out var originalInputsObj))
-        {
-            var originalInputs = (Dictionary<string, object>)originalInputsObj;
-
-            // Check if public inputs have been tampered with
-            foreach (var kvp in originalInputs)
-            {
-                if (!publicInputs.TryGetValue(kvp.Key, out var providedValue) ||
-                    !kvp.Value.Equals(providedValue))
-                {
-                    Logger.LogWarning("Proof verification failed: tampered public inputs detected");
-                    return false;
-                }
-            }
-        }
-
-        Logger.LogInformation("Proof verification completed");
-        return true;
-    }
+    // VerifyProofInEnclaveAsync moved to EnclaveOperations partial class
 
     private async Task<string> GetVerificationKeyAsync(string circuitId)
     {

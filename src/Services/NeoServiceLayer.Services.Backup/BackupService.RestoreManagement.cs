@@ -1,6 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Backup.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System.IO.Compression;
+using System.IO;
+using Microsoft.Extensions.Logging;
+using System;
+
 
 namespace NeoServiceLayer.Services.Backup;
 
@@ -446,7 +454,6 @@ public partial class BackupService
     private async Task VerifyBackupIntegrityAsync(byte[] backupData, RestoreBackupMetadata metadata)
     {
         // Compute hash of backup data
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var computedHash = Convert.ToBase64String(sha256.ComputeHash(backupData));
 
         if (computedHash != metadata.DataHash)
@@ -499,7 +506,7 @@ public partial class BackupService
     {
         using var input = new MemoryStream(compressedData);
         using var output = new MemoryStream();
-        using (var gzipStream = new System.IO.Compression.GZipStream(input, System.IO.Compression.CompressionMode.Decompress))
+        using (var gzipStream = new GZipStream(input, CompressionMode.Decompress))
         {
             await gzipStream.CopyToAsync(output);
         }
@@ -517,8 +524,9 @@ public partial class BackupService
     private async Task<byte[]> DecompressZipAsync(byte[] compressedData)
     {
         using var input = new MemoryStream(compressedData);
-        using var zip = new System.IO.Compression.ZipArchive(input, System.IO.Compression.ZipArchiveMode.Read);
-
+        using var output = new MemoryStream();
+        using var zip = new ZipArchive(input, ZipArchiveMode.Read);
+        
         // Get the first entry (backup.dat)
         var entry = zip.Entries.FirstOrDefault();
         if (entry == null)
@@ -527,7 +535,6 @@ public partial class BackupService
         }
 
         using var entryStream = entry.Open();
-        using var output = new MemoryStream();
         await entryStream.CopyToAsync(output);
 
         var decompressed = output.ToArray();
@@ -544,7 +551,7 @@ public partial class BackupService
     {
         using var input = new MemoryStream(compressedData);
         using var output = new MemoryStream();
-        using (var deflateStream = new System.IO.Compression.DeflateStream(input, System.IO.Compression.CompressionMode.Decompress))
+        using (var deflateStream = new DeflateStream(input, CompressionMode.Decompress))
         {
             await deflateStream.CopyToAsync(output);
         }
@@ -563,7 +570,7 @@ public partial class BackupService
     {
         using var input = new MemoryStream(compressedData);
         using var output = new MemoryStream();
-        using (var brotliStream = new System.IO.Compression.BrotliStream(input, System.IO.Compression.CompressionMode.Decompress))
+        using (var brotliStream = new BrotliStream(input, CompressionMode.Decompress))
         {
             await brotliStream.CopyToAsync(output);
         }

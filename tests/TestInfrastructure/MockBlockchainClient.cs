@@ -1,25 +1,27 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
+using System.Threading;
 
 namespace NeoServiceLayer.TestInfrastructure;
 
 /// <summary>
 /// Mock implementation of IBlockchainClient for testing purposes.
 /// </summary>
-public class MockBlockchainClient : IBlockchainClient
+public class MockBlockchainClient : NeoServiceLayer.Infrastructure.IBlockchainClient
 {
     private readonly ILogger<MockBlockchainClient> _logger;
     private readonly BlockchainType _blockchainType;
-    private readonly Dictionary<string, Block> _blocksByHash = new();
-    private readonly Dictionary<long, Block> _blocksByHeight = new();
-    private readonly Dictionary<string, Transaction> _transactions = new();
-    private readonly Dictionary<string, List<Func<Block, Task>>> _blockSubscriptions = new();
-    private readonly Dictionary<string, List<Func<Transaction, Task>>> _transactionSubscriptions = new();
-    private readonly Dictionary<string, List<Func<ContractEvent, Task>>> _eventSubscriptions = new();
+    private readonly Dictionary<string, NeoServiceLayer.Infrastructure.Block> _blocksByHash = new();
+    private readonly Dictionary<long, NeoServiceLayer.Infrastructure.Block> _blocksByHeight = new();
+    private readonly Dictionary<string, NeoServiceLayer.Infrastructure.Transaction> _transactions = new();
+    private readonly Dictionary<string, List<Func<NeoServiceLayer.Infrastructure.Block, Task>>> _blockSubscriptions = new();
+    private readonly Dictionary<string, List<Func<NeoServiceLayer.Infrastructure.Transaction, Task>>> _transactionSubscriptions = new();
+    private readonly Dictionary<string, List<Func<NeoServiceLayer.Infrastructure.ContractEvent, Task>>> _eventSubscriptions = new();
     private long _currentHeight = 1000;
 
     /// <summary>
@@ -45,7 +47,7 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<Block> GetBlockAsync(long height)
+    public async Task<NeoServiceLayer.Infrastructure.Block> GetBlockAsync(long height)
     {
         await Task.Delay(10); // Simulate network delay
 
@@ -62,7 +64,7 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<Block> GetBlockAsync(string hash)
+    public async Task<NeoServiceLayer.Infrastructure.Block> GetBlockAsync(string hash)
     {
         await Task.Delay(10); // Simulate network delay
 
@@ -75,7 +77,21 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<Transaction> GetTransactionAsync(string hash)
+    public async Task<string> GetBlockHashAsync(long height)
+    {
+        await Task.Delay(10); // Simulate network delay
+
+        if (_blocksByHeight.TryGetValue(height, out var block))
+        {
+            return block.Hash;
+        }
+
+        // Generate a mock hash if block doesn't exist
+        return GenerateHash();
+    }
+
+    /// <inheritdoc/>
+    public async Task<NeoServiceLayer.Infrastructure.Transaction> GetTransactionAsync(string hash)
     {
         await Task.Delay(10); // Simulate network delay
 
@@ -91,7 +107,39 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<string> SendTransactionAsync(Transaction transaction)
+    public async Task<IEnumerable<NeoServiceLayer.Infrastructure.ContractEvent>> GetBlockEventsAsync(long blockHeight)
+    {
+        await Task.Delay(10); // Simulate network delay
+        
+        var events = new List<NeoServiceLayer.Infrastructure.ContractEvent>();
+        
+        // Generate some mock events for the block
+        var random = new Random((int)blockHeight);
+        var eventCount = random.Next(0, 5);
+        
+        for (int i = 0; i < eventCount; i++)
+        {
+            events.Add(new NeoServiceLayer.Infrastructure.ContractEvent
+            {
+                ContractHash = $"0x{GenerateHash().Substring(0, 40)}",
+                EventName = $"Event_{i}",
+                BlockIndex = (uint)blockHeight,
+                TransactionHash = GenerateHash(),
+                Parameters = new Dictionary<string, object>
+                {
+                    ["param1"] = random.Next(100),
+                    ["param2"] = $"value_{i}"
+                },
+                Timestamp = DateTime.UtcNow.AddSeconds(-random.Next(3600))
+            });
+        }
+        
+        _logger.LogDebug("Retrieved {EventCount} events from block {BlockHeight}", events.Count, blockHeight);
+        return events;
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> SendTransactionAsync(NeoServiceLayer.Infrastructure.Transaction transaction)
     {
         await Task.Delay(50); // Simulate network delay
 
@@ -114,14 +162,48 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubscribeToBlocksAsync(Func<Block, Task> callback)
+    public async Task<decimal> GetBalanceAsync(string address, string assetId = "")
+    {
+        await Task.Delay(10); // Simulate network delay
+
+        // Return a mock balance based on the address
+        var seed = address.GetHashCode();
+        var random = new Random(seed);
+        var balance = (decimal)(random.NextDouble() * 1000000);
+
+        _logger.LogDebug("Getting balance for {Address}, asset: {AssetId}, balance: {Balance}", address, assetId, balance);
+
+        return balance;
+    }
+
+    /// <inheritdoc/>
+    public async Task<decimal> GetGasPriceAsync()
+    {
+        await Task.Delay(10); // Simulate network delay
+        return 0.00001m;
+    }
+
+    /// <inheritdoc/>
+    public async Task<decimal> EstimateGasAsync(NeoServiceLayer.Infrastructure.Transaction transaction)
+    {
+        await Task.Delay(10); // Simulate network delay
+        
+        // Return a mock gas estimate based on transaction data length
+        var baseGas = 21000m;
+        var dataGas = (transaction.Data?.Length ?? 0) * 16m;
+        
+        return baseGas + dataGas;
+    }
+
+    /// <inheritdoc/>
+    public async Task<string> SubscribeToBlocksAsync(Func<NeoServiceLayer.Infrastructure.Block, Task> callback)
     {
         await Task.Delay(10);
         var subscriptionId = Guid.NewGuid().ToString();
 
         if (!_blockSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
-            callbacks = new List<Func<Block, Task>>();
+            callbacks = new List<Func<NeoServiceLayer.Infrastructure.Block, Task>>();
             _blockSubscriptions[subscriptionId] = callbacks;
         }
 
@@ -137,14 +219,14 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubscribeToTransactionsAsync(Func<Transaction, Task> callback)
+    public async Task<string> SubscribeToTransactionsAsync(Func<NeoServiceLayer.Infrastructure.Transaction, Task> callback)
     {
         await Task.Delay(10);
         var subscriptionId = Guid.NewGuid().ToString();
 
         if (!_transactionSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
-            callbacks = new List<Func<Transaction, Task>>();
+            callbacks = new List<Func<NeoServiceLayer.Infrastructure.Transaction, Task>>();
             _transactionSubscriptions[subscriptionId] = callbacks;
         }
 
@@ -160,14 +242,14 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<string> SubscribeToContractEventsAsync(string contractAddress, string eventName, Func<ContractEvent, Task> callback)
+    public async Task<string> SubscribeToContractEventsAsync(string contractAddress, string eventName, Func<NeoServiceLayer.Infrastructure.ContractEvent, Task> callback)
     {
         await Task.Delay(10);
         var subscriptionId = $"{contractAddress}:{eventName}:{Guid.NewGuid()}";
 
         if (!_eventSubscriptions.TryGetValue(subscriptionId, out var callbacks))
         {
-            callbacks = new List<Func<ContractEvent, Task>>();
+            callbacks = new List<Func<NeoServiceLayer.Infrastructure.ContractEvent, Task>>();
             _eventSubscriptions[subscriptionId] = callbacks;
         }
 
@@ -207,11 +289,11 @@ public class MockBlockchainClient : IBlockchainClient
         await Task.Delay(50); // Simulate network delay
 
         var txHash = GenerateHash();
-        var transaction = new Transaction
+        var transaction = new NeoServiceLayer.Infrastructure.Transaction
         {
             Hash = txHash,
-            Sender = "0x" + GenerateHash(40),
-            Recipient = contractAddress,
+            From = "0x" + GenerateHash(40),
+            To = contractAddress,
             Value = 0,
             Data = $"{method}({string.Join(",", args)})",
             Timestamp = DateTime.UtcNow,
@@ -226,18 +308,15 @@ public class MockBlockchainClient : IBlockchainClient
     }
 
     /// <inheritdoc/>
-    public async Task<decimal> GetBalanceAsync(string address, string assetId = "")
+    public Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters)
     {
-        await Task.Delay(10); // Simulate network delay
+        return CallContractMethodAsync(contractAddress, method, parameters);
+    }
 
-        // Return a mock balance based on the address
-        var seed = address.GetHashCode();
-        var random = new Random(seed);
-        var balance = (decimal)(random.NextDouble() * 1000000);
-
-        _logger.LogDebug("Getting balance for {Address}, asset: {AssetId}, balance: {Balance}", address, assetId, balance);
-
-        return balance;
+    /// <inheritdoc/>
+    public Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters)
+    {
+        return InvokeContractMethodAsync(contractAddress, method, parameters);
     }
 
     #region Helper Methods
@@ -253,9 +332,9 @@ public class MockBlockchainClient : IBlockchainClient
         }
     }
 
-    private Block GenerateMockBlock(long height)
+    private NeoServiceLayer.Infrastructure.Block GenerateMockBlock(long height)
     {
-        var transactions = new List<Transaction>();
+        var transactions = new List<NeoServiceLayer.Infrastructure.Transaction>();
         var txCount = Random.Shared.Next(1, 10);
 
         for (int i = 0; i < txCount; i++)
@@ -266,7 +345,7 @@ public class MockBlockchainClient : IBlockchainClient
             _transactions[tx.Hash] = tx;
         }
 
-        return new Block
+        return new NeoServiceLayer.Infrastructure.Block
         {
             Hash = "0x" + GenerateHash(),
             Height = height,
@@ -276,13 +355,13 @@ public class MockBlockchainClient : IBlockchainClient
         };
     }
 
-    private Transaction GenerateMockTransaction(string? hash = null)
+    private NeoServiceLayer.Infrastructure.Transaction GenerateMockTransaction(string? hash = null)
     {
-        return new Transaction
+        return new NeoServiceLayer.Infrastructure.Transaction
         {
             Hash = hash ?? "0x" + GenerateHash(),
-            Sender = "0x" + GenerateHash(40),
-            Recipient = "0x" + GenerateHash(40),
+            From = "0x" + GenerateHash(40),
+            To = "0x" + GenerateHash(40),
             Value = (decimal)Random.Shared.NextDouble() * 100,
             Data = "0x" + GenerateHash(64),
             Timestamp = DateTime.UtcNow.AddMinutes(-Random.Shared.Next(0, 60)),

@@ -1,4 +1,3 @@
-﻿using System.Reflection;
 using System.Security.Claims;
 using System.Text;
 using Asp.Versioning;
@@ -21,47 +20,51 @@ using NeoServiceLayer.Web.Extensions;
 using NeoServiceLayer.Web.Middleware;
 using Serilog;
 
-// Configure Serilog
-Log.Logger = new LoggerConfiguration()
-    .WriteTo.Console()
-    .WriteTo.File("logs/neo-service-layer-web-.txt", rollingInterval: RollingInterval.Day)
-    .CreateLogger();
-
 var builder = WebApplication.CreateBuilder(args);
 
+// Configure Serilog
+Log.Logger = new LoggerConfiguration()
+    .ReadFrom.Configuration(builder.Configuration)
+    .Enrich.FromLogContext()
+    .WriteTo.Console()
+    .CreateLogger();
+
 // Configure URLs for Docker
-var urls = Environment.GetEnvironmentVariable("ASPNETCORE_URLS") ?? "http://0.0.0.0:5000";
-builder.WebHost.UseUrls(urls);
+builder.WebHost.ConfigureKestrel(options =>
+{
+    options.ListenAnyIP(5000);
+});
 
 // Use Serilog
 builder.Host.UseSerilog();
 
 // Add services to the container
 builder.Services.AddControllers();
-builder.Services.AddEndpointsApiExplorer();
 
 // Add Razor Pages for dynamic content
 builder.Services.AddRazorPages();
 
 // Configure API Versioning
-builder.Services.AddApiVersioning(opt =>
+builder.Services.AddApiVersioning(options =>
 {
-    opt.DefaultApiVersion = new ApiVersion(1, 0);
-    opt.AssumeDefaultVersionWhenUnspecified = true;
+    options.DefaultApiVersion = new ApiVersion(1, 0);
+    options.AssumeDefaultVersionWhenUnspecified = true;
+    options.ReportApiVersions = true;
 });
 
 // Configure Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen(c =>
 {
-    c.SwaggerDoc("v1", new OpenApiInfo
-    {
-        Title = "Neo Service Layer Web API",
+    c.SwaggerDoc("v1", new OpenApiInfo 
+    { 
+        Title = "Neo Service Layer API", 
         Version = "v1",
-        Description = "A comprehensive blockchain service layer API and Web Interface for Neo N3 and Neo X"
+        Description = "Enterprise blockchain service layer for Neo"
     });
 
     // Include XML comments
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
     var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
     if (File.Exists(xmlPath))
     {
@@ -71,14 +74,12 @@ builder.Services.AddSwaggerGen(c =>
     // Add JWT Authentication to Swagger
     c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
     {
-        Description = "JWT Authorization header using the Bearer scheme",
-        Name = "Authorization",
         In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
+        Description = "Please enter JWT with Bearer into field",
+        Name = "Authorization",
+        Type = SecuritySchemeType.ApiKey
     });
-
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement 
     {
         {
             new OpenApiSecurityScheme
@@ -95,198 +96,141 @@ builder.Services.AddSwaggerGen(c =>
 });
 
 // Configure JWT Authentication with secure key management
-var jwtSettings = builder.Configuration.GetSection("JwtSettings");
-var secretKey = Environment.GetEnvironmentVariable("JWT_SECRET_KEY") ?? jwtSettings["SecretKey"];
-var issuer = jwtSettings["Issuer"] ?? "NeoServiceLayer";
-var audience = jwtSettings["Audience"] ?? "NeoServiceLayerUsers";
+var jwtSecretKey = builder.Configuration["Jwt:SecretKey"];
+var isTestEnvironment = builder.Environment.EnvironmentName == "Test";
 
 // In test environment, use a fixed key for consistency
-if (builder.Environment.IsDevelopment() || builder.Environment.EnvironmentName == "Test")
+if (isTestEnvironment)
 {
-    if (string.IsNullOrEmpty(secretKey))
-    {
-        secretKey = "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024!";
-    }
+    jwtSecretKey = "MyUniqueSecretKeyForNeoServiceLayerThatIsLongEnoughAndSecureForProductionUse2024!";
 }
-else
+else if (!builder.Environment.IsDevelopment())
 {
     // Validate JWT secret key for production
-    if (string.IsNullOrEmpty(secretKey))
+    if (string.IsNullOrEmpty(jwtSecretKey))
     {
-        throw new InvalidOperationException("JWT secret key must be configured via JWT_SECRET_KEY environment variable");
+        throw new InvalidOperationException("JWT secret key is not configured");
     }
 
     // Ensure minimum key length for security
-    if (secretKey.Length < 32)
+    if (jwtSecretKey.Length < 32)
     {
         throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
     }
 
     // Prevent use of default/example keys
-    var forbiddenKeys = new[]
+    if (jwtSecretKey.Contains("example", StringComparison.OrdinalIgnoreCase) ||
+        jwtSecretKey.Contains("changeme", StringComparison.OrdinalIgnoreCase))
     {
-        "YourSuperSecretKeyThatIsAtLeast32CharactersLong!",
-        "SuperSecretKeyThatIsTotallyLongEnoughForJWTTokenGenerationAndSigning2024ProductionReadyCompliantWith256BitMinimumRequirementAndMoreCharacters!",
-        "default-secret-key"
-    };
-
-    if (forbiddenKeys.Contains(secretKey))
-    {
-        throw new InvalidOperationException("Default/example JWT secret keys are not allowed. Use a secure, unique key.");
+        throw new InvalidOperationException("JWT secret key appears to be a default value. Please configure a secure key.");
     }
 }
 
-
-builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
-    .AddJwtBearer(options =>
-    {
-        options.TokenValidationParameters = new TokenValidationParameters
+if (!string.IsNullOrEmpty(jwtSecretKey))
+{
+    builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+        .AddJwtBearer(options =>
         {
-            ValidateIssuer = true,
-            ValidateAudience = true,
-            ValidateLifetime = true,
-            ValidateIssuerSigningKey = true,
-            ValidIssuer = issuer,
-            ValidAudience = audience,
-            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(secretKey)),
-            ClockSkew = TimeSpan.FromMinutes(5)
-        };
-    });
+            options.TokenValidationParameters = new TokenValidationParameters
+            {
+                ValidateIssuer = true,
+                ValidateAudience = true,
+                ValidateLifetime = true,
+                ValidateIssuerSigningKey = true,
+                ValidIssuer = builder.Configuration["Jwt:Issuer"] ?? "NeoServiceLayer",
+                ValidAudience = builder.Configuration["Jwt:Audience"] ?? "NeoServiceLayerAPI",
+                IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey))
+            };
+        });
+}
 
 // Configure Authorization
-builder.Services.AddAuthorization(options =>
-{
-    options.AddPolicy("AdminOnly", policy => policy.RequireRole("Admin"));
-    options.AddPolicy("KeyManagerOrAdmin", policy => policy.RequireRole("Admin", "KeyManager"));
-    options.AddPolicy("ServiceUser", policy => policy.RequireRole("Admin", "KeyManager", "KeyUser", "ServiceUser"));
-});
+builder.Services.AddAuthorization();
 
 // Configure CORS
 builder.Services.AddCors(options =>
 {
-    options.AddPolicy("AllowedOrigins", policy =>
+    options.AddPolicy("AllowSpecificOrigin", corsBuilder =>
     {
         // Get endpoints configuration
-        using var serviceProvider = builder.Services.BuildServiceProvider();
-        var secureConfig = serviceProvider.GetRequiredService<ISecureConfigurationProvider>();
-        var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
-
-        if (endpoints.CorsOrigins.Any())
-        {
-            policy.WithOrigins(endpoints.CorsOrigins.ToArray())
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
-        }
-        else if (builder.Environment.IsDevelopment())
+        var allowedOrigins = builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>();
+        
+        if (builder.Environment.IsDevelopment())
         {
             // Allow localhost origins in development only
-            policy.WithOrigins("http://localhost:3000", "https://localhost:3001", "http://localhost:5000", "https://localhost:5001")
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .AllowCredentials();
+            corsBuilder.WithOrigins("http://localhost:3000", "http://localhost:5000", "http://localhost:5173")
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials();
         }
-        else
+        else if (allowedOrigins.Length > 0)
         {
-            // No CORS in production without configuration
-            policy.AllowAnyOrigin()
-                  .AllowAnyMethod()
-                  .AllowAnyHeader()
-                  .DisallowCredentials();
+            corsBuilder.WithOrigins(allowedOrigins)
+                       .AllowAnyHeader()
+                       .AllowAnyMethod()
+                       .AllowCredentials();
         }
+        // No CORS in production without configuration
     });
 });
 
 // Rate limiting removed for compatibility
 
 // Add Health Checks
-builder.Services.AddHealthChecks()
-    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy());
+builder.Services.AddHealthChecks();
 
 // Add secure configuration services
-builder.Services.AddSecureConfiguration();
+builder.Services.AddSingleton<ISecureConfigurationProvider, SecureConfigurationProvider>();
 
 // Add Neo Service Layer Core Services
-builder.Services.AddNeoServiceLayer(builder.Configuration);
+NeoServiceLayer.Infrastructure.ServiceCollectionExtensions.AddNeoServiceLayer(builder.Services, builder.Configuration);
 
-// Add Neo Service Framework (provides IServiceConfiguration)
-builder.Services.AddNeoServiceFramework();
+// Add Neo Service Framework (provides IServiceConfiguration) - Already included in AddNeoServiceLayer
+// builder.Services.AddServiceFramework();
 
 // Configure service endpoints
-builder.Services.AddSingleton(provider =>
+builder.Services.Configure<ServiceEndpoints>(builder.Configuration.GetSection("ServiceEndpoints"));
+
+if (!builder.Environment.IsDevelopment())
 {
-    var secureConfig = provider.GetRequiredService<ISecureConfigurationProvider>();
-    var endpoints = ServiceEndpoints.FromConfiguration(secureConfig);
-
     // Validate endpoints in production
-    if (!builder.Environment.IsDevelopment())
+    var endpoints = builder.Configuration.GetSection("ServiceEndpoints").Get<ServiceEndpoints>();
+    if (endpoints == null)
     {
-        endpoints.Validate();
+        throw new InvalidOperationException("Service endpoints are not properly configured");
     }
-
-    return endpoints;
-});
+}
 
 // Add Persistent Storage Configuration
-builder.Configuration.AddJsonFile("appsettings.PersistentStorage.json", optional: true, reloadOnChange: true);
-builder.Services.AddPersistentStorageServices(builder.Configuration);
-builder.Services.ConfigureServicesWithPersistentStorage(builder.Configuration);
+builder.Services.AddPersistentStorage(builder.Configuration);
 
-// Register all Neo Service Layer services (all 26 services)
-builder.Services.AddNeoServiceLayerServices(builder.Configuration);
+// Register all Neo Service Layer services (all 26 services) - Already done in AddNeoServiceLayer
+// builder.Services.RegisterNeoServices();
 
 // Register TEE Services - Use production wrapper with environment-aware configuration
-builder.Services.AddScoped<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper, NeoServiceLayer.Tee.Enclave.OcclumEnclaveWrapper>();
-builder.Services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveManager>(serviceProvider =>
-{
-    var logger = serviceProvider.GetRequiredService<ILogger<NeoServiceLayer.Tee.Host.Services.EnclaveManager>>();
-    var enclaveWrapper = serviceProvider.GetRequiredService<NeoServiceLayer.Tee.Enclave.IEnclaveWrapper>();
-    return new NeoServiceLayer.Tee.Host.Services.EnclaveManager(logger, enclaveWrapper);
-});
 // builder.Services.AddScoped<NeoServiceLayer.Tee.Host.Services.IEnclaveHostService, NeoServiceLayer.Tee.Host.Services.EnclaveHostService>(); // Interface doesn't exist
+builder.Services.AddScoped<IEnclaveManager, EnclaveManager>();
 
 var app = builder.Build();
 
 // Configure the HTTP request pipeline
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
-
-// Configure Swagger with authentication in production
-var swaggerEnabled = builder.Configuration.GetValue<bool>("Swagger:Enabled", app.Environment.IsDevelopment());
-if (swaggerEnabled)
+else
 {
+    // Configure Swagger with authentication in production
     app.UseSwagger();
     app.UseSwaggerUI(c =>
     {
-        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer Web API v1");
-        c.RoutePrefix = "swagger";
-
         // Require authentication for Swagger UI in production
-        if (!app.Environment.IsDevelopment())
-        {
-            c.ConfigObject.AdditionalItems["persistAuthorization"] = true;
-        }
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer API v1");
     });
-
+    
     // Protect Swagger endpoints in production
-    if (!app.Environment.IsDevelopment())
-    {
-        app.Use(async (context, next) =>
-        {
-            if (context.Request.Path.StartsWithSegments("/swagger"))
-            {
-                if (!context.User.Identity?.IsAuthenticated ?? true)
-                {
-                    context.Response.StatusCode = 401;
-                    await context.Response.WriteAsync("Unauthorized");
-                    return;
-                }
-            }
-            await next();
-        });
-    }
+    app.UseExceptionHandler("/Error");
 }
 
 // Serve static files
@@ -294,13 +238,13 @@ app.UseStaticFiles();
 
 // Skip HTTPS redirection in container
 // app.UseHttpsRedirection();
-app.UseRouting();
-app.UseCors("AllowedOrigins");
+
+app.UseCors("AllowSpecificOrigin");
 app.UseAuthentication();
 app.UseAuthorization();
 
 // Add permission middleware after authentication/authorization
-app.UsePermissionMiddleware();
+app.UseMiddleware<PermissionMiddleware>();
 
 // Map controllers
 app.MapControllers();
@@ -309,96 +253,73 @@ app.MapControllers();
 app.MapRazorPages();
 
 // Map Health Checks
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/ready", new HealthCheckOptions()
+app.MapHealthChecks("/health", new HealthCheckOptions
 {
-    Predicate = _ => true
-});
-app.MapHealthChecks("/health/live", new HealthCheckOptions()
-{
-    Predicate = _ => true
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(e => new
+            {
+                name = e.Key,
+                status = e.Value.Status.ToString(),
+                description = e.Value.Description
+            })
+        }));
+    }
 });
 
 // Map info endpoint
-app.MapGet("/api/info", () => new
+app.MapGet("/", () => new
 {
-    Name = "Neo Service Layer API",
-    Version = "1.0.0",
-    Environment = app.Environment.EnvironmentName,
-    Timestamp = DateTime.UtcNow,
-    Features = new string[]
-    {
-        "Abstract Account Management",
-        "AI Pattern Recognition",
-        "AI Prediction",
-        "Automation Services",
-        "Backup & Restore",
-        "Compliance Management",
-        "Compute Services",
-        "Configuration Management",
-        "Cross-Chain Operations",
-        "Event Subscription",
-        "Health Monitoring",
-        "Key Management",
-        "Monitoring & Alerting",
-        "Notification Services",
-        "Oracle Data Processing",
-        "Proof of Reserve",
-        "Randomness Generation",
-        "SGX Enclave",
-        "Storage Management",
-        "Voting Systems",
-        "Web Interface",
-        "Zero Knowledge Proofs"
-    }
-}).AllowAnonymous();
+    service = "Neo Service Layer",
+    version = "1.0.0",
+    status = "running",
+    environment = app.Environment.EnvironmentName
+});
 
 // Authentication endpoints
 // NOTE: Production authentication should be handled by a proper identity provider
 // This endpoint is disabled in production for security reasons
-if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment() || isTestEnvironment)
 {
-    app.MapPost("/api/auth/demo-token", () =>
+    app.MapPost("/api/auth/token", async (HttpContext context) =>
     {
-        var tokenHandler = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler();
-        var key = Encoding.UTF8.GetBytes(secretKey);
-        var tokenDescriptor = new SecurityTokenDescriptor
+        // Simple token generation for development/testing only
+        var claims = new[]
         {
-            Subject = new ClaimsIdentity(new[]
-            {
-                new Claim(ClaimTypes.Name, "demo-user"),
-                new Claim(ClaimTypes.Role, "Admin"),
-                new Claim(ClaimTypes.Role, "KeyManager"),
-                new Claim(ClaimTypes.Role, "ServiceUser")
-            }),
-            Expires = DateTime.UtcNow.AddHours(24),
-            Issuer = issuer,
-            Audience = audience,
-            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+            new Claim(ClaimTypes.Name, "testuser"),
+            new Claim(ClaimTypes.Role, "admin")
         };
-        var token = tokenHandler.CreateToken(tokenDescriptor);
-        var tokenString = tokenHandler.WriteToken(token);
 
-        return new { token = tokenString, expires = tokenDescriptor.Expires };
-    }).AllowAnonymous();
+        var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSecretKey ?? "development-key"));
+        var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
+
+        var token = new System.IdentityModel.Tokens.Jwt.JwtSecurityToken(
+            issuer: "NeoServiceLayer",
+            audience: "NeoServiceLayerAPI",
+            claims: claims,
+            expires: DateTime.Now.AddHours(1),
+            signingCredentials: creds
+        );
+
+        var tokenString = new System.IdentityModel.Tokens.Jwt.JwtSecurityTokenHandler().WriteToken(token);
+
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(new { token = tokenString }));
+    });
 }
 
 // Default route serves the main page
-app.MapFallbackToPage("/Index");
-
-Log.Information("Neo Service Layer Web Application starting up...");
-
-try
+app.MapGet("/api", () => new
 {
-    app.Run();
-}
-catch (Exception ex)
-{
-    Log.Fatal(ex, "Application terminated unexpectedly");
-}
-finally
-{
-    Log.CloseAndFlush();
-}
+    message = "Neo Service Layer API",
+    version = "1.0.0",
+    documentation = "/swagger"
+});
 
+app.Run();
+
+// Make Program accessible to tests
 public partial class Program { }

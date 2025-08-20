@@ -1,7 +1,13 @@
-﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Monitoring.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Diagnostics;
+using System;
+
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -22,7 +28,7 @@ public partial class MonitoringService
         {
             try
             {
-                Logger.LogDebug("Getting system health status for {Blockchain}", blockchainType);
+                _gettingSystemHealth(Logger, blockchainType, null);
 
                 var serviceStatuses = new List<ServiceHealthStatus>();
 
@@ -49,14 +55,13 @@ public partial class MonitoringService
                     }
                 };
 
-                Logger.LogInformation("System health check completed: {OverallStatus} ({HealthyCount}/{TotalCount} services healthy)",
-                    overallStatus, result.Metadata["healthy_services"], result.Metadata["total_services"]);
+                _systemHealthCompleted(Logger, overallStatus, result.Metadata["healthy_services"], result.Metadata["total_services"], null);
 
                 return result;
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to get system health status");
+                _getSystemHealthFailed(Logger, ex);
 
                 return new SystemHealthResult
                 {
@@ -77,7 +82,7 @@ public partial class MonitoringService
     {
         try
         {
-            Logger.LogDebug("Performing periodic health check");
+            _performingPeriodicHealthCheck(Logger, null);
 
             // Get list of known services to monitor
             var knownServices = GetKnownServices();
@@ -92,11 +97,11 @@ public partial class MonitoringService
                 }
             }
 
-            Logger.LogDebug("Health check completed for {ServiceCount} services", knownServices.Length);
+            _healthCheckCompleted(Logger, knownServices.Length, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during periodic health check");
+            _periodicHealthCheckError(Logger, ex);
         }
     }
 
@@ -179,7 +184,7 @@ public partial class MonitoringService
 
         try
         {
-            Logger.LogDebug("Checking health for service {ServiceName}", serviceName);
+            _checkingServiceHealth(Logger, serviceName, null);
 
             // Perform actual health check
             var healthStatus = await PerformDetailedHealthCheckAsync(serviceName);
@@ -190,14 +195,13 @@ public partial class MonitoringService
                 _serviceHealthCache[serviceName] = healthStatus;
             }
 
-            Logger.LogDebug("Health check completed for service {ServiceName}: {Status}",
-                serviceName, healthStatus.Status);
+            _serviceHealthCheckCompleted(Logger, serviceName, healthStatus.Status, null);
 
             return healthStatus;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to check health for service {ServiceName}", serviceName);
+            _checkServiceHealthFailed(Logger, serviceName, ex);
 
             return new ServiceHealthStatus
             {
@@ -259,6 +263,6 @@ public partial class MonitoringService
             _serviceHealthCache.Clear();
         }
 
-        Logger.LogInformation("Health status cache cleared");
+        _healthCacheCleared(Logger, null);
     }
 }

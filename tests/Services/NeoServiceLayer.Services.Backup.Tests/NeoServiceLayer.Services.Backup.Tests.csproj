@@ -23,8 +23,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Services/NeoServiceLayer.Services.Backup/NeoServiceLayer.Services.Backup.csproj" />
-    <ProjectReference Include="../../../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Backup/NeoServiceLayer.Services.Backup.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Storage/NeoServiceLayer.Services.Storage.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../../TestInfrastructure/NeoServiceLayer.TestInfrastructure.csproj" />
   </ItemGroup>
 

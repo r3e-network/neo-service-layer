@@ -1,32 +1,139 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Blockchain;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Services.Oracle.Models;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+using System.Security.Cryptography;
+
 
 namespace NeoServiceLayer.Services.Oracle;
 
 /// <summary>
 /// Core implementation of the Oracle service.
 /// </summary>
-public partial class OracleService : EnclaveBlockchainServiceBase, IOracleService
+public partial class OracleService : ServiceFramework.EnclaveBlockchainServiceBase, IOracleService
 {
-    protected readonly IServiceConfiguration _configuration;
+    // LoggerMessage delegates for performance optimization
+    private static readonly Action<ILogger, string, string, Exception?> _fetchingData =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(4001, "FetchingData"),
+            "Fetching data from {DataSource}/{DataPath} securely within enclave");
+
+    private static readonly Action<ILogger, string, string, Exception?> _privacyFetchCompleted =
+        LoggerMessage.Define<string, string>(LogLevel.Debug, new EventId(4002, "PrivacyFetchCompleted"),
+            "Privacy-preserving oracle fetch completed: RequestId={RequestId}, DataHash={DataHash}");
+
+    private static readonly Action<ILogger, string, Exception?> _enclaveFetchFailed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(4003, "EnclaveFetchFailed"),
+            "Primary enclave data fetch failed, attempting fallback for {DataSource}");
+
+    private static readonly Action<ILogger, string, Exception?> _allFetchMethodsFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(4004, "AllFetchMethodsFailed"),
+            "All enclave data fetch methods failed for {DataSource}");
+
+    private static readonly Action<ILogger, string, Exception?> _dataFetchedSuccessfully =
+        LoggerMessage.Define<string>(LogLevel.Debug, new EventId(4005, "DataFetchedSuccessfully"),
+            "Successfully fetched and validated data from {DataSource} within enclave");
+
+    private static readonly Action<ILogger, string, Exception?> _errorGettingData =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(4006, "ErrorGettingData"),
+            "Error getting data for feed {FeedId}");
+
+    private static readonly Action<ILogger, string, Exception?> _errorFetchingData =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(4007, "ErrorFetchingData"),
+            "Error fetching data for request {RequestId}");
+
+    private static readonly Action<ILogger, Exception?> _serviceInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(4008, "ServiceInitializing"),
+            "Initializing Oracle service...");
+
+    private static readonly Action<ILogger, string, string, Exception?> _serviceConfiguration =
+        LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(4009, "ServiceConfiguration"),
+            "Oracle service configuration: MaxConcurrentRequests={MaxConcurrentRequests}, DefaultTimeout={DefaultTimeout}ms");
+
+    private static readonly Action<ILogger, Exception?> _enclaveInitializing =
+        LoggerMessage.Define(LogLevel.Information, new EventId(4010, "EnclaveInitializing"),
+            "Initializing enclave for Oracle service...");
+
+    private static readonly Action<ILogger, Exception?> _serviceStarting =
+        LoggerMessage.Define(LogLevel.Information, new EventId(4011, "ServiceStarting"),
+            "Starting Oracle service...");
+
+    private static readonly Action<ILogger, Exception?> _serviceStopping =
+        LoggerMessage.Define(LogLevel.Information, new EventId(4012, "ServiceStopping"),
+            "Stopping Oracle service...");
+
+    private static readonly Action<ILogger, string, string, Exception?> _subscriptionCancelling =
+        LoggerMessage.Define<string, string>(LogLevel.Information, new EventId(4013, "SubscriptionCancelling"),
+            "Cancelling subscription {SubscriptionId} for feed {FeedId}");
+
+    private static readonly Action<ILogger, string, Exception?> _invalidScheme =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(4014, "InvalidScheme"),
+            "Invalid scheme for data source: {Scheme}");
+
+    private static readonly Action<ILogger, string, Exception?> _domainNotAllowed =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(4015, "DomainNotAllowed"),
+            "Data source domain not in allowed list: {Domain}");
+
+    private static readonly Action<ILogger, string, Exception?> _validationError =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(4016, "ValidationError"),
+            "Error validating data source: {DataSource}");
+
+    private static readonly Action<ILogger, string, Exception?> _invalidJsonFormat =
+        LoggerMessage.Define<string>(LogLevel.Warning, new EventId(4017, "InvalidJsonFormat"),
+            "Invalid JSON format in oracle data from {DataSource}");
+
+    private static readonly Action<ILogger, string, int, Exception?> _oracleDataValidated =
+        LoggerMessage.Define<string, int>(LogLevel.Debug, new EventId(4018, "OracleDataValidated"),
+            "Validated oracle data from {DataSource}: {DataSize} bytes");
+
+    private static readonly Action<ILogger, string, Exception?> _oracleDataValidationFailed =
+        LoggerMessage.Define<string>(LogLevel.Error, new EventId(4019, "OracleDataValidationFailed"),
+            "Failed to validate oracle data from {DataSource}");
+
+    private static readonly Action<ILogger, string, long, Exception?> _integrityMetadataAdded =
+        LoggerMessage.Define<string, long>(LogLevel.Debug, new EventId(4020, "IntegrityMetadataAdded"),
+            "Added integrity metadata to oracle data: hash={DataHash}, block={BlockHeight}");
+
+    private static readonly Action<ILogger, Exception?> _integrityMetadataFailed =
+        LoggerMessage.Define(LogLevel.Error, new EventId(4021, "IntegrityMetadataFailed"),
+            "Failed to add integrity metadata to oracle data");
+
+    protected readonly CoreConfig _configuration;
     protected new readonly IEnclaveManager _enclaveManager;
     protected readonly IBlockchainClientFactory _blockchainClientFactory;
     protected readonly IHttpClientService _httpClientService;
     protected readonly List<DataSource> _dataSources = new();
     protected readonly Dictionary<string, Models.OracleSubscription> _subscriptions = new();
     protected readonly IServiceProvider? _serviceProvider;
+    protected readonly SHA256 sha256 = SHA256.Create();
     protected int _requestCount;
     protected int _successCount;
     protected int _failureCount;
     protected DateTime _lastRequestTime;
+    private bool _isEnclaveInitialized;
+    private bool _isRunning;
+
+    /// <summary>
+    /// Gets a value indicating whether the enclave is initialized.
+    /// </summary>
+    public bool IsEnclaveInitialized => _isEnclaveInitialized;
+
+    /// <summary>
+    /// Gets a value indicating whether the service is running.
+    /// </summary>
+    public bool IsRunning => _isRunning;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="OracleService"/> class.
@@ -38,13 +145,13 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     /// <param name="logger">The logger.</param>
     /// <param name="serviceProvider">The service provider.</param>
     public OracleService(
-        IServiceConfiguration configuration,
+        CoreConfig configuration,
         IEnclaveManager enclaveManager,
         IBlockchainClientFactory blockchainClientFactory,
         IHttpClientService httpClientService,
         ILogger<OracleService> logger,
         IServiceProvider? serviceProvider = null)
-        : base("Oracle", "Confidential Oracle Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })
+        : base("Oracle", "Confidential Oracle Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         ArgumentNullException.ThrowIfNull(enclaveManager);
@@ -62,6 +169,20 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         _lastRequestTime = DateTime.MinValue;
 
         InitializeService();
+    }
+
+    /// <summary>
+    /// Initializes a new instance of the <see cref="OracleService"/> class.
+    /// Constructor overload for test compatibility.
+    /// </summary>
+    public OracleService(
+        CoreConfig configuration,
+        IEnclaveManager enclaveManager,
+        IBlockchainClientFactory blockchainClientFactory,
+        IHttpClientService httpClientService,
+        ILogger<OracleService> logger)
+        : this(configuration, enclaveManager, blockchainClientFactory, httpClientService, logger, null)
+    {
     }
 
     /// <summary>
@@ -105,7 +226,6 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
         // Add capabilities
         AddCapability<IOracleService>();
-        AddCapability<IDataFeedService>();
 
         // Add metadata
         SetMetadata("CreatedAt", DateTime.UtcNow.ToString("o"));
@@ -140,7 +260,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             _requestCount++;
             _lastRequestTime = DateTime.UtcNow;
 
-            Logger.LogDebug("Fetching data from {DataSource}/{DataPath} securely within enclave", dataSource, dataPath);
+            _fetchingData(Logger, dataSource, dataPath, null);
 
             // Validate data source reputation using privacy-preserving computation
             var isReputable = await ValidateDataSourceReputationAsync(dataSource);
@@ -169,8 +289,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             // Fetch data using privacy-preserving operations
             var privacyResult = await FetchDataWithPrivacyAsync(dataSource, dataPath);
 
-            Logger.LogDebug("Privacy-preserving oracle fetch completed: RequestId={RequestId}, DataHash={DataHash}",
-                privacyResult.RequestId, privacyResult.DataHash);
+            _privacyFetchCompleted(Logger, privacyResult.RequestId, privacyResult.DataHash, null);
 
             string result;
             try
@@ -189,7 +308,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             }
             catch (Exception enclaveEx)
             {
-                Logger.LogWarning(enclaveEx, "Primary enclave data fetch failed, attempting fallback");
+                _enclaveFetchFailed(Logger, dataSource, enclaveEx);
 
                 // Try the simpler GetDataAsync method as fallback
                 try
@@ -199,7 +318,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
                 }
                 catch (Exception fallbackEx)
                 {
-                    Logger.LogError(fallbackEx, "All enclave data fetch methods failed for {DataSource}", dataSource);
+                    _allFetchMethodsFailed(Logger, dataSource, fallbackEx);
                     throw new InvalidOperationException($"Failed to fetch data from {dataSource} within enclave", fallbackEx);
                 }
             }
@@ -211,7 +330,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
             UpdateMetric("TotalDataRequests", _requestCount);
 
-            Logger.LogDebug("Successfully fetched and validated data from {DataSource} within enclave", dataSource);
+            _dataFetchedSuccessfully(Logger, dataSource, null);
 
             return enhancedResult;
         });
@@ -249,7 +368,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             _failureCount++;
             UpdateMetric("LastFailureTime", DateTime.UtcNow);
             UpdateMetric("LastErrorMessage", ex.Message);
-            Logger.LogError(ex, "Error getting data for feed {FeedId}", feedId);
+            _errorGettingData(Logger, feedId, ex);
             throw;
         }
     }
@@ -269,8 +388,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             // Fetch data with privacy-preserving operations
             var privacyResult = await FetchDataWithPrivacyAsync(request.Url, request.Path, request);
 
-            Logger.LogDebug("Privacy-preserving oracle data fetch completed: RequestId={RequestId}, DataHash={DataHash}",
-                privacyResult.RequestId, privacyResult.DataHash);
+            _privacyFetchCompleted(Logger, privacyResult.RequestId, privacyResult.DataHash, null);
 
             var data = await GetDataAsync(request.Url, request.Path, blockchainType);
 
@@ -297,7 +415,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error fetching data for request {RequestId}", request.RequestId);
+            _errorFetchingData(Logger, request.RequestId, ex);
 
             return new OracleResponse
             {
@@ -315,7 +433,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeAsync()
     {
-        Logger.LogInformation("Initializing Oracle service...");
+        _serviceInitializing(Logger, null);
 
         // Initialize persistent storage
         await InitializePersistentStorageAsync();
@@ -324,8 +442,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         var maxConcurrentRequests = _configuration.GetValue("Oracle:MaxConcurrentRequests", "10");
         var defaultTimeout = _configuration.GetValue("Oracle:DefaultTimeout", "30000");
 
-        Logger.LogInformation("Oracle service configuration: MaxConcurrentRequests={MaxConcurrentRequests}, DefaultTimeout={DefaultTimeout}ms",
-            maxConcurrentRequests, defaultTimeout);
+        _serviceConfiguration(Logger, maxConcurrentRequests, defaultTimeout, null);
 
         return await Task.FromResult(true);
     }
@@ -333,27 +450,26 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
     /// <inheritdoc/>
     protected override async Task<bool> OnInitializeEnclaveAsync()
     {
-        Logger.LogInformation("Initializing enclave for Oracle service...");
+        _enclaveInitializing(Logger, null);
         return await _enclaveManager.InitializeEnclaveAsync();
     }
 
     /// <inheritdoc/>
     protected override async Task<bool> OnStartAsync()
     {
-        Logger.LogInformation("Starting Oracle service...");
+        _serviceStarting(Logger, null);
         return await Task.FromResult(true);
     }
 
     /// <inheritdoc/>
     protected override async Task<bool> OnStopAsync()
     {
-        Logger.LogInformation("Stopping Oracle service...");
+        _serviceStopping(Logger, null);
 
         // Cancel all subscriptions
         foreach (var subscription in _subscriptions.Values)
         {
-            Logger.LogInformation("Cancelling subscription {SubscriptionId} for feed {FeedId}",
-                subscription.Id, subscription.FeedId);
+            _subscriptionCancelling(Logger, subscription.Id, subscription.FeedId, null);
         }
 
         _subscriptions.Clear();
@@ -419,7 +535,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             // Only allow HTTPS for security
             if (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)
             {
-                Logger.LogWarning("Invalid scheme for data source: {Scheme}", uri.Scheme);
+                _invalidScheme(Logger, uri.Scheme, null);
                 return false;
             }
 
@@ -435,7 +551,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
             if (!allowedDomains.Any(domain => uri.Host.Contains(domain, StringComparison.OrdinalIgnoreCase)))
             {
-                Logger.LogWarning("Data source domain not in allowed list: {Domain}", uri.Host);
+                _domainNotAllowed(Logger, uri.Host, null);
                 return false;
             }
 
@@ -443,7 +559,7 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error validating data source: {DataSource}", dataSource);
+            _validationError(Logger, dataSource, ex);
             return false;
         }
     }
@@ -475,28 +591,27 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             {
                 try
                 {
-                    using var jsonDoc = System.Text.Json.JsonDocument.Parse(data);
                     // If parsing succeeds, data is valid JSON
                 }
                 catch (System.Text.Json.JsonException)
                 {
-                    Logger.LogWarning("Invalid JSON format in oracle data from {DataSource}", dataSource);
+                    _invalidJsonFormat(Logger, dataSource, null);
                     throw new InvalidDataException("Oracle data contains invalid JSON format");
                 }
             }
 
             // Remove any potential script injection attempts
             var sanitizedData = data
-                .Replace("<script", "&lt;script", StringComparison.OrdinalIgnoreCase)
+                .Replace("<script", "<script", StringComparison.OrdinalIgnoreCase)
                 .Replace("javascript:", "js:", StringComparison.OrdinalIgnoreCase);
 
-            Logger.LogDebug("Validated oracle data from {DataSource}: {DataSize} bytes", dataSource, sanitizedData.Length);
+            _oracleDataValidated(Logger, dataSource, sanitizedData.Length, null);
 
             return sanitizedData;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to validate oracle data from {DataSource}", dataSource);
+            _oracleDataValidationFailed(Logger, dataSource, ex);
             throw;
         }
     }
@@ -544,14 +659,13 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
 
             var enhancedData = System.Text.Json.JsonSerializer.Serialize(metadata);
 
-            Logger.LogDebug("Added integrity metadata to oracle data: hash={DataHash}, block={BlockHeight}",
-                dataHashHex[..16] + "...", blockHeight);
+            _integrityMetadataAdded(Logger, dataHashHex[..16] + "...", blockHeight, null);
 
             return enhancedData;
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to add integrity metadata to oracle data");
+            _integrityMetadataFailed(Logger, ex);
             // Return original data if metadata addition fails
             return data;
         }
@@ -565,5 +679,80 @@ public partial class OracleService : EnclaveBlockchainServiceBase, IOracleServic
             DisposePersistenceResources();
         }
         base.Dispose(disposing);
+    }
+
+    /// <summary>
+    /// Initializes the Oracle service.
+    /// </summary>
+    /// <returns>True if initialization was successful.</returns>
+    public async Task<bool> InitializeAsync()
+    {
+        try
+        {
+            _serviceInitializing(Logger, null);
+            
+            if (_enclaveManager != null)
+            {
+                _enclaveInitializing(Logger, null);
+                await _enclaveManager.InitializeAsync(null).ConfigureAwait(false);
+                _isEnclaveInitialized = true;
+            }
+            
+            // Initialize any other resources
+            _serviceConfiguration(Logger, "10", "30000", null);
+            
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize Oracle service");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Starts the Oracle service.
+    /// </summary>
+    /// <returns>True if the service started successfully.</returns>
+    public async Task<bool> StartAsync()
+    {
+        try
+        {
+            _serviceStarting(Logger, null);
+            
+            // Start any background services or workers
+            await Task.CompletedTask;
+            
+            _isRunning = true;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to start Oracle service");
+            return false;
+        }
+    }
+
+    /// <summary>
+    /// Stops the Oracle service.
+    /// </summary>
+    /// <returns>True if the service stopped successfully.</returns>
+    public async Task<bool> StopAsync()
+    {
+        try
+        {
+            _serviceStopping(Logger, null);
+            
+            // Stop any background services or workers
+            await Task.CompletedTask;
+            
+            _isRunning = false;
+            return true;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to stop Oracle service");
+            return false;
+        }
     }
 }

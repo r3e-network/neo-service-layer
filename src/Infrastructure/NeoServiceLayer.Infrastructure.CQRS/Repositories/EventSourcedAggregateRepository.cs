@@ -5,6 +5,8 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Aggregates;
 using NeoServiceLayer.Core.Events;
+using System.Collections.Generic;
+
 
 namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
 {
@@ -57,9 +59,9 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
                             snapshot.Version,
                             snapshot.CreatedAt,
                             snapshot.Data));
-                        
+
                         fromVersion = snapshot.Version;
-                        
+
                         _logger.LogDebug(
                             "Loaded aggregate {AggregateId} from snapshot at version {Version}",
                             aggregateId, fromVersion);
@@ -69,7 +71,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
                 // Load events after snapshot
                 var events = await _eventStore.GetEventsAsync(aggregateId, fromVersion, cancellationToken);
                 var eventList = events.ToList();
-                
+
                 if (!eventList.Any() && fromVersion == 0)
                 {
                     _logger.LogDebug("Aggregate {AggregateId} not found", aggregateId);
@@ -78,7 +80,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
 
                 // Apply events to aggregate
                 aggregate.LoadFromHistory(eventList);
-                aggregate.Id = aggregateId;
+                aggregate.SetId(aggregateId);
 
                 _logger.LogDebug(
                     "Loaded aggregate {AggregateId} with {EventCount} events, version {Version}",
@@ -94,8 +96,8 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
         }
 
         public async Task<TAggregate?> GetByIdAsync(
-            string aggregateId, 
-            long version, 
+            string aggregateId,
+            long version,
             CancellationToken cancellationToken = default)
         {
             if (string.IsNullOrWhiteSpace(aggregateId))
@@ -111,7 +113,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
                 // Load events up to specified version
                 var events = await _eventStore.GetEventsAsync(aggregateId, 0, cancellationToken);
                 var eventList = events.Where(e => e.AggregateVersion <= version).ToList();
-                
+
                 if (!eventList.Any())
                 {
                     _logger.LogDebug(
@@ -122,7 +124,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
 
                 // Apply events to aggregate
                 aggregate.LoadFromHistory(eventList);
-                aggregate.Id = aggregateId;
+                aggregate.SetId(aggregateId);
 
                 _logger.LogDebug(
                     "Loaded aggregate {AggregateId} at version {Version}",
@@ -132,7 +134,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, 
+                _logger.LogError(ex,
                     "Failed to load aggregate {AggregateId} at version {Version}",
                     aggregateId, version);
                 throw;
@@ -140,8 +142,8 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
         }
 
         public async Task SaveAsync(
-            TAggregate aggregate, 
-            long? expectedVersion = null, 
+            TAggregate aggregate,
+            long? expectedVersion = null,
             CancellationToken cancellationToken = default)
         {
             if (aggregate == null)
@@ -151,7 +153,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
                 throw new InvalidOperationException("Aggregate ID cannot be null or empty");
 
             var uncommittedEvents = aggregate.UncommittedEvents.ToList();
-            
+
             if (!uncommittedEvents.Any())
             {
                 _logger.LogDebug("No uncommitted events to save for aggregate {AggregateId}", aggregate.Id);
@@ -162,7 +164,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
             {
                 // Use expected version if provided, otherwise use current version minus uncommitted events
                 var baseVersion = expectedVersion ?? (aggregate.Version - uncommittedEvents.Count);
-                
+
                 // Append events to event store
                 await _eventStore.AppendEventsAsync(
                     aggregate.Id,
@@ -182,7 +184,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Repositories
                         aggregate.Version,
                         snapshot.Data,
                         cancellationToken);
-                    
+
                     _logger.LogDebug(
                         "Created snapshot for aggregate {AggregateId} at version {Version}",
                         aggregate.Id, aggregate.Version);

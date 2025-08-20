@@ -1,6 +1,12 @@
-﻿using System.Text.Json;
 using NeoServiceLayer.Services.AbstractAccount.Models;
 using NeoServiceLayer.Services.Core.SGX;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.AbstractAccount;
 
@@ -30,7 +36,7 @@ public partial class AbstractAccountService
         var operation = new
         {
             type = "create",
-            gasLimit = request.GasLimit ?? 100000
+            gasLimit = 100000 // Default gas limit
         };
 
         var witnesses = request.InitialGuardians.Select((g, i) => new
@@ -109,7 +115,7 @@ public partial class AbstractAccountService
             toAddress = request.ToAddress,
             value = request.Value,
             data = request.Data,
-            gasLimit = request.GasLimit ?? 100000,
+            gasLimit = request.GasLimit > 0 ? request.GasLimit : 100000,
             useSessionKey = request.UseSessionKey,
             sessionKeyId = request.SessionKeyId
         };

@@ -1,0 +1,572 @@
+using System;
+using System.Collections.Generic;
+using System.Numerics;
+using System.Threading.Tasks;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using Moq;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Services.ZeroKnowledge;
+using Xunit;
+
+namespace NeoServiceLayer.Services.ZeroKnowledge.Tests
+{
+    public class ZeroKnowledgeServiceComprehensiveTests : IDisposable
+    {
+        private readonly Mock<ILogger<ZeroKnowledgeService>> _mockLogger;
+        private readonly Mock<IEnclaveService> _mockEnclaveService;
+        private readonly Mock<IBlockchainClient> _mockBlockchainClient;
+        private readonly ZeroKnowledgeService _service;
+
+        public ZeroKnowledgeServiceComprehensiveTests()
+        {
+            _mockLogger = new Mock<ILogger<ZeroKnowledgeService>>();
+            _mockEnclaveService = new Mock<IEnclaveService>();
+            _mockBlockchainClient = new Mock<IBlockchainClient>();
+
+            _mockEnclaveService.Setup(x => x.IsEnclaveEnabled).Returns(true);
+            _mockEnclaveService.Setup(x => x.SecureComputeAsync(It.IsAny<byte[]>()))
+                .ReturnsAsync((byte[] input) => new byte[32]); // Return mock proof
+
+            _service = new ZeroKnowledgeService(_mockLogger.Object, _mockEnclaveService.Object, _mockBlockchainClient.Object);
+        }
+
+        [Fact]
+        public async Task GenerateProofAsync_WithValidStatement_GeneratesProof()
+        {
+            // Arrange
+            var statement = new ZKStatement
+            {
+                StatementId = Guid.NewGuid().ToString(),
+                Type = ZKProofType.RangeProof,
+                Public = new Dictionary<string, object>
+                {
+                    ["min"] = 0,
+                    ["max"] = 100
+                },
+                Private = new Dictionary<string, object>
+                {
+                    ["value"] = 42
+                }
+            };
+
+            // Act
+            var proof = await _service.GenerateProofAsync(statement);
+
+            // Assert
+            proof.Should().NotBeNull();
+            proof.ProofId.Should().NotBeNullOrEmpty();
+            proof.StatementId.Should().Be(statement.StatementId);
+            proof.ProofType.Should().Be(ZKProofType.RangeProof);
+            proof.ProofData.Should().NotBeNullOrEmpty();
+            proof.CreatedAt.Should().BeCloseTo(DateTime.UtcNow, TimeSpan.FromSeconds(5));
+        }
+
+        [Fact]
+        public async Task VerifyProofAsync_WithValidProof_ReturnsTrue()
+        {
+            // Arrange
+            var statement = new ZKStatement
+            {
+                StatementId = Guid.NewGuid().ToString(),
+                Type = ZKProofType.MembershipProof,
+                Public = new Dictionary<string, object>
+                {
+                    ["set"] = new[] { 1, 2, 3, 4, 5 }
+                },
+                Private = new Dictionary<string, object>
+                {
+                    ["member"] = 3
+                }
+            };
+
+            var proof = await _service.GenerateProofAsync(statement);
+
+            // Act
+            var isValid = await _service.VerifyProofAsync(proof);
+
+            // Assert
+            isValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task VerifyProofAsync_WithInvalidProof_ReturnsFalse()
+        {
+            // Arrange
+            var invalidProof = new ZKProof
+            {
+                ProofId = Guid.NewGuid().ToString(),
+                StatementId = Guid.NewGuid().ToString(),
+                ProofType = ZKProofType.IdentityProof,
+                ProofData = Convert.ToBase64String(new byte[] { 1, 2, 3 }), // Invalid proof data
+                PublicInputs = new Dictionary<string, object>(),
+                CreatedAt = DateTime.UtcNow
+            };
+
+            // Act
+            var isValid = await _service.VerifyProofAsync(invalidProof);
+
+            // Assert
+            isValid.Should().BeFalse();
+        }
+
+        [Fact]
+        public async Task GenerateMerkleProofAsync_WithValidTree_GeneratesProof()
+        {
+            // Arrange
+            var merkleRequest = new MerkleProofRequest
+            {
+                Leaves = new List<string> { "leaf1", "leaf2", "leaf3", "leaf4" },
+                LeafIndex = 1,
+                IncludeSiblings = true
+            };
+
+            // Act
+            var merkleProof = await _service.GenerateMerkleProofAsync(merkleRequest);
+
+            // Assert
+            merkleProof.Should().NotBeNull();
+            merkleProof.Root.Should().NotBeNullOrEmpty();
+            merkleProof.Leaf.Should().Be("leaf2");
+            merkleProof.LeafIndex.Should().Be(1);
+            merkleProof.Siblings.Should().NotBeEmpty();
+            merkleProof.Path.Should().NotBeEmpty();
+        }
+
+        [Fact]
+        public async Task VerifyMerkleProofAsync_WithValidProof_ReturnsTrue()
+        {
+            // Arrange
+            var merkleRequest = new MerkleProofRequest
+            {
+                Leaves = new List<string> { "data1", "data2", "data3", "data4" },
+                LeafIndex = 2
+            };
+            var merkleProof = await _service.GenerateMerkleProofAsync(merkleRequest);
+
+            // Act
+            var isValid = await _service.VerifyMerkleProofAsync(merkleProof);
+
+            // Assert
+            isValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GenerateSchnorrProofAsync_ForKnowledgeOfDiscreteLog_GeneratesProof()
+        {
+            // Arrange
+            var schnorrRequest = new SchnorrProofRequest
+            {
+                Generator = BigInteger.Parse("2"),
+                Prime = BigInteger.Parse("23"),
+                PublicKey = BigInteger.Parse("8"), // 2^3 mod 23
+                Secret = BigInteger.Parse("3"),
+                Challenge = null // Will be generated
+            };
+
+            // Act
+            var schnorrProof = await _service.GenerateSchnorrProofAsync(schnorrRequest);
+
+            // Assert
+            schnorrProof.Should().NotBeNull();
+            schnorrProof.Commitment.Should().NotBe(BigInteger.Zero);
+            schnorrProof.Challenge.Should().NotBe(BigInteger.Zero);
+            schnorrProof.Response.Should().NotBe(BigInteger.Zero);
+            schnorrProof.PublicKey.Should().Be(schnorrRequest.PublicKey);
+        }
+
+        [Fact]
+        public async Task VerifySchnorrProofAsync_WithValidProof_ReturnsTrue()
+        {
+            // Arrange
+            var schnorrRequest = new SchnorrProofRequest
+            {
+                Generator = BigInteger.Parse("2"),
+                Prime = BigInteger.Parse("23"),
+                PublicKey = BigInteger.Parse("8"),
+                Secret = BigInteger.Parse("3")
+            };
+            var schnorrProof = await _service.GenerateSchnorrProofAsync(schnorrRequest);
+
+            // Act
+            var isValid = await _service.VerifySchnorrProofAsync(schnorrProof, schnorrRequest.Generator, schnorrRequest.Prime);
+
+            // Assert
+            isValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GenerateBulletproofAsync_ForRangeProof_GeneratesCompactProof()
+        {
+            // Arrange
+            var bulletproofRequest = new BulletproofRequest
+            {
+                Value = 42,
+                Min = 0,
+                Max = 100,
+                BitLength = 8,
+                BlindingFactor = BigInteger.Parse("123456789")
+            };
+
+            // Act
+            var bulletproof = await _service.GenerateBulletproofAsync(bulletproofRequest);
+
+            // Assert
+            bulletproof.Should().NotBeNull();
+            bulletproof.ProofSize.Should().BeLessThan(1024); // Compact proof
+            bulletproof.Commitment.Should().NotBeNullOrEmpty();
+            bulletproof.ProofData.Should().NotBeNullOrEmpty();
+            bulletproof.RangeMin.Should().Be(0);
+            bulletproof.RangeMax.Should().Be(100);
+        }
+
+        [Fact]
+        public async Task BatchVerifyProofsAsync_WithMultipleProofs_VerifiesEfficiently()
+        {
+            // Arrange
+            var proofs = new List<ZKProof>();
+            for (int i = 0; i < 5; i++)
+            {
+                var statement = new ZKStatement
+                {
+                    StatementId = Guid.NewGuid().ToString(),
+                    Type = ZKProofType.RangeProof,
+                    Public = new Dictionary<string, object> { ["max"] = 100 },
+                    Private = new Dictionary<string, object> { ["value"] = i * 10 }
+                };
+                proofs.Add(await _service.GenerateProofAsync(statement));
+            }
+
+            // Act
+            var results = await _service.BatchVerifyProofsAsync(proofs);
+
+            // Assert
+            results.Should().NotBeNull();
+            results.AllValid.Should().BeTrue();
+            results.IndividualResults.Should().HaveCount(5);
+            results.IndividualResults.Should().OnlyContain(r => r.IsValid);
+            results.VerificationTime.Should().BeLessThan(TimeSpan.FromSeconds(1));
+        }
+
+        [Fact]
+        public async Task GenerateZKSNARKAsync_WithCircuit_GeneratesSuccinctProof()
+        {
+            // Arrange
+            var snarkRequest = new ZKSNARKRequest
+            {
+                CircuitId = "simple_multiplication",
+                PublicInputs = new[] { BigInteger.Parse("6") },
+                WitnessInputs = new[] { BigInteger.Parse("2"), BigInteger.Parse("3") },
+                ProvingKey = Convert.ToBase64String(new byte[64])
+            };
+
+            // Act
+            var snark = await _service.GenerateZKSNARKAsync(snarkRequest);
+
+            // Assert
+            snark.Should().NotBeNull();
+            snark.Proof.Should().NotBeNullOrEmpty();
+            snark.ProofSize.Should().BeLessThan(300); // Succinct
+            snark.CircuitId.Should().Be("simple_multiplication");
+            snark.VerificationKey.Should().NotBeNullOrEmpty();
+        }
+
+        [Fact]
+        public async Task GenerateZKSTARKAsync_WithoutTrustedSetup_GeneratesProof()
+        {
+            // Arrange
+            var starkRequest = new ZKSTARKRequest
+            {
+                ComputationId = "fibonacci_sequence",
+                PublicOutput = BigInteger.Parse("55"), // 10th Fibonacci number
+                PrivateComputation = "fib(10)",
+                SecurityLevel = 128
+            };
+
+            // Act
+            var stark = await _service.GenerateZKSTARKAsync(starkRequest);
+
+            // Assert
+            stark.Should().NotBeNull();
+            stark.Proof.Should().NotBeNullOrEmpty();
+            stark.NoTrustedSetup.Should().BeTrue();
+            stark.PostQuantumSecure.Should().BeTrue();
+            stark.ComputationId.Should().Be("fibonacci_sequence");
+        }
+
+        [Fact]
+        public async Task GenerateCommitmentAsync_WithValue_GeneratesHidingCommitment()
+        {
+            // Arrange
+            var commitmentRequest = new CommitmentRequest
+            {
+                Value = "secret_value",
+                CommitmentType = CommitmentType.Pedersen,
+                BlindingFactor = BigInteger.Parse("987654321")
+            };
+
+            // Act
+            var commitment = await _service.GenerateCommitmentAsync(commitmentRequest);
+
+            // Assert
+            commitment.Should().NotBeNull();
+            commitment.CommitmentValue.Should().NotBeNullOrEmpty();
+            commitment.OpeningValue.Should().NotBeNullOrEmpty();
+            commitment.IsBinding.Should().BeTrue();
+            commitment.IsHiding.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task VerifyCommitmentAsync_WithValidOpening_ReturnsTrue()
+        {
+            // Arrange
+            var commitmentRequest = new CommitmentRequest
+            {
+                Value = "committed_data",
+                CommitmentType = CommitmentType.SHA256
+            };
+            var commitment = await _service.GenerateCommitmentAsync(commitmentRequest);
+
+            // Act
+            var isValid = await _service.VerifyCommitmentAsync(
+                commitment.CommitmentValue,
+                "committed_data",
+                commitment.OpeningValue);
+
+            // Assert
+            isValid.Should().BeTrue();
+        }
+
+        [Fact]
+        public async Task GenerateRingSignatureAsync_WithRingMembers_GeneratesAnonymousSignature()
+        {
+            // Arrange
+            var ringRequest = new RingSignatureRequest
+            {
+                Message = "anonymous_message",
+                RingPublicKeys = new List<string>
+                {
+                    "pubkey1", "pubkey2", "pubkey3", "pubkey4", "pubkey5"
+                },
+                SignerIndex = 2,
+                SignerPrivateKey = "privkey3"
+            };
+
+            // Act
+            var ringSignature = await _service.GenerateRingSignatureAsync(ringRequest);
+
+            // Assert
+            ringSignature.Should().NotBeNull();
+            ringSignature.Signature.Should().NotBeNullOrEmpty();
+            ringSignature.RingSize.Should().Be(5);
+            ringSignature.IsAnonymous.Should().BeTrue();
+            ringSignature.Message.Should().Be("anonymous_message");
+        }
+
+        [Fact]
+        public async Task GetProofMetricsAsync_ReturnsDetailedMetrics()
+        {
+            // Arrange
+            // Generate some proofs to populate metrics
+            for (int i = 0; i < 3; i++)
+            {
+                var statement = new ZKStatement
+                {
+                    StatementId = Guid.NewGuid().ToString(),
+                    Type = ZKProofType.IdentityProof,
+                    Public = new Dictionary<string, object>(),
+                    Private = new Dictionary<string, object>()
+                };
+                await _service.GenerateProofAsync(statement);
+            }
+
+            // Act
+            var metrics = await _service.GetProofMetricsAsync();
+
+            // Assert
+            metrics.Should().NotBeNull();
+            metrics.TotalProofsGenerated.Should().BeGreaterOrEqualTo(3);
+            metrics.TotalProofsVerified.Should().BeGreaterOrEqualTo(0);
+            metrics.AverageGenerationTime.Should().BeGreaterThan(TimeSpan.Zero);
+            metrics.ProofTypeDistribution.Should().NotBeEmpty();
+            metrics.SuccessRate.Should().BeGreaterThan(0);
+        }
+
+        public void Dispose()
+        {
+            _service?.Dispose();
+        }
+    }
+
+    // Test models
+    public class ZKStatement
+    {
+        public string StatementId { get; set; }
+        public ZKProofType Type { get; set; }
+        public Dictionary<string, object> Public { get; set; }
+        public Dictionary<string, object> Private { get; set; }
+    }
+
+    public class ZKProof
+    {
+        public string ProofId { get; set; }
+        public string StatementId { get; set; }
+        public ZKProofType ProofType { get; set; }
+        public string ProofData { get; set; }
+        public Dictionary<string, object> PublicInputs { get; set; }
+        public DateTime CreatedAt { get; set; }
+    }
+
+    public enum ZKProofType
+    {
+        RangeProof,
+        MembershipProof,
+        IdentityProof,
+        OwnershipProof,
+        ComputationProof
+    }
+
+    public class MerkleProofRequest
+    {
+        public List<string> Leaves { get; set; }
+        public int LeafIndex { get; set; }
+        public bool IncludeSiblings { get; set; }
+    }
+
+    public class MerkleProof
+    {
+        public string Root { get; set; }
+        public string Leaf { get; set; }
+        public int LeafIndex { get; set; }
+        public List<string> Siblings { get; set; }
+        public List<bool> Path { get; set; }
+    }
+
+    public class SchnorrProofRequest
+    {
+        public BigInteger Generator { get; set; }
+        public BigInteger Prime { get; set; }
+        public BigInteger PublicKey { get; set; }
+        public BigInteger Secret { get; set; }
+        public BigInteger? Challenge { get; set; }
+    }
+
+    public class SchnorrProof
+    {
+        public BigInteger Commitment { get; set; }
+        public BigInteger Challenge { get; set; }
+        public BigInteger Response { get; set; }
+        public BigInteger PublicKey { get; set; }
+    }
+
+    public class BulletproofRequest
+    {
+        public long Value { get; set; }
+        public long Min { get; set; }
+        public long Max { get; set; }
+        public int BitLength { get; set; }
+        public BigInteger BlindingFactor { get; set; }
+    }
+
+    public class Bulletproof
+    {
+        public int ProofSize { get; set; }
+        public string Commitment { get; set; }
+        public string ProofData { get; set; }
+        public long RangeMin { get; set; }
+        public long RangeMax { get; set; }
+    }
+
+    public class BatchVerificationResult
+    {
+        public bool AllValid { get; set; }
+        public List<IndividualResult> IndividualResults { get; set; }
+        public TimeSpan VerificationTime { get; set; }
+    }
+
+    public class IndividualResult
+    {
+        public string ProofId { get; set; }
+        public bool IsValid { get; set; }
+    }
+
+    public class ZKSNARKRequest
+    {
+        public string CircuitId { get; set; }
+        public BigInteger[] PublicInputs { get; set; }
+        public BigInteger[] WitnessInputs { get; set; }
+        public string ProvingKey { get; set; }
+    }
+
+    public class ZKSNARK
+    {
+        public string Proof { get; set; }
+        public int ProofSize { get; set; }
+        public string CircuitId { get; set; }
+        public string VerificationKey { get; set; }
+    }
+
+    public class ZKSTARKRequest
+    {
+        public string ComputationId { get; set; }
+        public BigInteger PublicOutput { get; set; }
+        public string PrivateComputation { get; set; }
+        public int SecurityLevel { get; set; }
+    }
+
+    public class ZKSTARK
+    {
+        public string Proof { get; set; }
+        public bool NoTrustedSetup { get; set; }
+        public bool PostQuantumSecure { get; set; }
+        public string ComputationId { get; set; }
+    }
+
+    public class CommitmentRequest
+    {
+        public string Value { get; set; }
+        public CommitmentType CommitmentType { get; set; }
+        public BigInteger? BlindingFactor { get; set; }
+    }
+
+    public enum CommitmentType
+    {
+        Pedersen,
+        SHA256,
+        KZG
+    }
+
+    public class Commitment
+    {
+        public string CommitmentValue { get; set; }
+        public string OpeningValue { get; set; }
+        public bool IsBinding { get; set; }
+        public bool IsHiding { get; set; }
+    }
+
+    public class RingSignatureRequest
+    {
+        public string Message { get; set; }
+        public List<string> RingPublicKeys { get; set; }
+        public int SignerIndex { get; set; }
+        public string SignerPrivateKey { get; set; }
+    }
+
+    public class RingSignature
+    {
+        public string Signature { get; set; }
+        public int RingSize { get; set; }
+        public bool IsAnonymous { get; set; }
+        public string Message { get; set; }
+    }
+
+    public class ProofMetrics
+    {
+        public int TotalProofsGenerated { get; set; }
+        public int TotalProofsVerified { get; set; }
+        public TimeSpan AverageGenerationTime { get; set; }
+        public Dictionary<ZKProofType, int> ProofTypeDistribution { get; set; }
+        public double SuccessRate { get; set; }
+    }
+}

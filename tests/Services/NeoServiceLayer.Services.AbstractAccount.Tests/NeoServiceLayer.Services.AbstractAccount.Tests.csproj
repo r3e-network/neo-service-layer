@@ -23,9 +23,13 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="../../../src/Services/NeoServiceLayer.Services.AbstractAccount/NeoServiceLayer.Services.AbstractAccount.csproj" />
-    <ProjectReference Include="../../../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.AbstractAccount/NeoServiceLayer.Services.AbstractAccount.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../../TestInfrastructure/NeoServiceLayer.TestInfrastructure.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj">
+      <Aliases>EnclaveStorageAlias</Aliases>
+    </ProjectReference>
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
   </ItemGroup>
 
 </Project>

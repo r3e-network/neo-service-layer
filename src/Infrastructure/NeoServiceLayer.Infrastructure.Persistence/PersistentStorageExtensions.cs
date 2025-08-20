@@ -1,5 +1,14 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
+
+
 
 namespace NeoServiceLayer.Infrastructure.Persistence;
 
@@ -8,6 +17,38 @@ namespace NeoServiceLayer.Infrastructure.Persistence;
 /// </summary>
 public static class PersistentStorageExtensions
 {
+    /// <summary>
+    /// Simple store operation that calls the underlying StoreDataAsync method.
+    /// </summary>
+    public static async Task<bool> StoreAsync(
+        this IPersistentStorageProvider storage,
+        string key,
+        byte[] data,
+        StorageOptions? options = null)
+    {
+        return await storage.StoreDataAsync(key, data, options).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Simple retrieve operation that calls the underlying RetrieveDataAsync method.
+    /// </summary>
+    public static async Task<byte[]?> RetrieveAsync(
+        this IPersistentStorageProvider storage,
+        string key)
+    {
+        return await storage.RetrieveDataAsync(key).ConfigureAwait(false);
+    }
+
+    /// <summary>
+    /// Simple delete operation that calls the underlying DeleteDataAsync method.
+    /// </summary>
+    public static async Task<bool> DeleteAsync(
+        this IPersistentStorageProvider storage,
+        string key)
+    {
+        return await storage.DeleteDataAsync(key).ConfigureAwait(false);
+    }
+
     /// <summary>
     /// Performs an atomic operation using transactions if supported.
     /// </summary>
@@ -18,22 +59,24 @@ public static class PersistentStorageExtensions
     {
         if (storage.SupportsTransactions)
         {
-            using var transaction = await storage.BeginTransactionAsync();
+            using var transaction = await storage.BeginTransactionAsync().ConfigureAwait(false);
             try
             {
-                var result = await operation(transaction);
-                await transaction.CommitAsync();
+                var result = await operation(transaction).ConfigureAwait(false);
+                if (transaction != null)
+                    await transaction.CommitAsync().ConfigureAwait(false);
                 return result;
             }
             catch
             {
-                await transaction.RollbackAsync();
+                if (transaction != null)
+                    await transaction.RollbackAsync().ConfigureAwait(false);
                 throw;
             }
         }
         else
         {
-            return await operation(null);
+            return await operation(null).ConfigureAwait(false);
         }
     }
 
@@ -50,7 +93,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            await storage.StoreAsync(key, data, options);
+            await storage.StoreDataAsync(key, data, options).ConfigureAwait(false);
             logger?.LogDebug("Successfully stored {OperationName} data at key {Key}",
                 operationName ?? "persistent", key);
             return true;
@@ -74,7 +117,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var data = await storage.RetrieveAsync(key);
+            var data = await storage.RetrieveDataAsync(key).ConfigureAwait(false);
             if (data != null)
             {
                 logger?.LogDebug("Successfully retrieved {OperationName} data from key {Key}",
@@ -104,7 +147,7 @@ public static class PersistentStorageExtensions
         try
         {
             var data = JsonSerializer.SerializeToUtf8Bytes(obj);
-            return await storage.StoreWithLoggingAsync(key, data, options, logger, operationName);
+            return await storage.StoreWithLoggingAsync(key, data, options, logger, operationName).ConfigureAwait(false);
         }
         catch (Exception ex)
         {
@@ -125,7 +168,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var data = await storage.RetrieveWithLoggingAsync(key, logger, operationName);
+            var data = await storage.RetrieveWithLoggingAsync(key, logger, operationName).ConfigureAwait(false);
             if (data != null)
             {
                 return JsonSerializer.Deserialize<T>(data);
@@ -152,7 +195,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var existingData = await storage.RetrieveAsync(indexKey);
+            var existingData = await storage.RetrieveDataAsync(indexKey).ConfigureAwait(false);
 
             HashSet<string> items;
             if (existingData != null)
@@ -169,11 +212,11 @@ public static class PersistentStorageExtensions
             if (changed)
             {
                 var data = JsonSerializer.SerializeToUtf8Bytes(items);
-                await storage.StoreAsync(indexKey, data, new StorageOptions
+                await storage.StoreDataAsync(indexKey, data, new StorageOptions
                 {
                     Encrypt = false,
                     Compress = true
-                });
+                }).ConfigureAwait(false);
 
                 logger?.LogDebug("{Action} item {ItemId} in index {IndexKey}",
                     add ? "Added" : "Removed", itemId, indexKey);
@@ -201,7 +244,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var keys = await storage.ListKeysAsync(pattern);
+            var keys = await storage.ListKeysAsync(pattern).ConfigureAwait(false);
             var cutoffDate = DateTime.UtcNow - maxAge;
             int deletedCount = 0;
 
@@ -233,7 +276,7 @@ public static class PersistentStorageExtensions
 
                 if (timestamp.HasValue && timestamp.Value < cutoffDate)
                 {
-                    await storage.DeleteAsync(key);
+                    await storage.DeleteDataAsync(key).ConfigureAwait(false);
                     deletedCount++;
                 }
             }
@@ -262,7 +305,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var validationResult = await storage.ValidateIntegrityAsync();
+            var validationResult = await storage.ValidateAsync().ConfigureAwait(false);
 
             if (validationResult.IsValid)
             {
@@ -301,7 +344,7 @@ public static class PersistentStorageExtensions
             logger?.LogInformation("Starting backup of service data with prefix {Prefix} to {Path}",
                 servicePrefix, backupPath);
 
-            var success = await storage.BackupAsync(backupPath);
+            var success = await storage.BackupAsync(backupPath).ConfigureAwait(false);
 
             if (success)
             {
@@ -333,7 +376,7 @@ public static class PersistentStorageExtensions
         {
             logger?.LogInformation("Starting restore of service data from {Path}", backupPath);
 
-            var success = await storage.RestoreAsync(backupPath);
+            var success = await storage.RestoreAsync(backupPath).ConfigureAwait(false);
 
             if (success)
             {
@@ -364,7 +407,7 @@ public static class PersistentStorageExtensions
         {
             logger?.LogInformation("Starting storage compaction");
 
-            var success = await storage.CompactAsync();
+            var success = await storage.CompactAsync().ConfigureAwait(false);
 
             if (success)
             {
@@ -394,7 +437,7 @@ public static class PersistentStorageExtensions
     {
         try
         {
-            var stats = await storage.GetStatisticsAsync();
+            var stats = await storage.GetStatisticsAsync().ConfigureAwait(false);
 
             logger?.LogDebug("Retrieved storage statistics: TotalSize={TotalSize}",
                 stats.TotalSize);

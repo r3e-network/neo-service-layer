@@ -1,8 +1,15 @@
-﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -11,7 +18,7 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 /// </summary>
 public class ProofOfReserveSecurityHelper : IDisposable
 {
-    private readonly ILogger<ProofOfReserveSecurityHelper> _logger;
+    private readonly ILogger<ProofOfReserveSecurityHelper> Logger;
     private readonly ConcurrentDictionary<string, RateLimitBucket> _rateLimitBuckets = new();
     private readonly ConcurrentDictionary<string, CsrfToken> _csrfTokens = new();
     private readonly ConcurrentDictionary<string, SecuritySession> _activeSessions = new();
@@ -53,12 +60,12 @@ public class ProofOfReserveSecurityHelper : IDisposable
     /// <param name="logger">The logger.</param>
     public ProofOfReserveSecurityHelper(ILogger<ProofOfReserveSecurityHelper> logger)
     {
-        _logger = logger;
+        Logger = logger;
 
         // Setup cleanup timer to run every 5 minutes
         _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
-        _logger.LogDebug("Proof of Reserve security helper initialized");
+        Logger.LogDebug("Proof of Reserve security helper initialized");
     }
 
     /// <summary>
@@ -88,7 +95,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["Window"] = config.TimeWindow.TotalMinutes
             });
 
-            _logger.LogWarning("Rate limit exceeded for client {ClientId} on operation {Operation}", clientId, operation);
+            Logger.LogWarning("Rate limit exceeded for client {ClientId} on operation {Operation}", clientId, operation);
         }
 
         return isAllowed;
@@ -129,7 +136,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
 
         _csrfTokens[token] = csrfToken;
 
-        _logger.LogDebug("Generated CSRF token for session {SessionId}", sessionId);
+        Logger.LogDebug("Generated CSRF token for session {SessionId}", sessionId);
         return token;
     }
 
@@ -154,14 +161,14 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["SessionId"] = sessionId
             });
 
-            _logger.LogWarning("Invalid CSRF token provided by client {ClientId}", clientId);
+            Logger.LogWarning("Invalid CSRF token provided by client {ClientId}", clientId);
             return false;
         }
 
         if (csrfToken.ExpiresAt < DateTime.UtcNow)
         {
             _csrfTokens.TryRemove(token, out _);
-            _logger.LogWarning("Expired CSRF token provided by client {ClientId}", clientId);
+            Logger.LogWarning("Expired CSRF token provided by client {ClientId}", clientId);
             return false;
         }
 
@@ -175,11 +182,11 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["ActualClientId"] = csrfToken.ClientId
             });
 
-            _logger.LogWarning("CSRF token session/client mismatch for client {ClientId}", clientId);
+            Logger.LogWarning("CSRF token session/client mismatch for client {ClientId}", clientId);
             return false;
         }
 
-        _logger.LogDebug("CSRF token validated successfully for session {SessionId}", sessionId);
+        Logger.LogDebug("CSRF token validated successfully for session {SessionId}", sessionId);
         return true;
     }
 
@@ -210,7 +217,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
 
         _activeSessions[sessionId] = session;
 
-        _logger.LogInformation("Created security session {SessionId} for client {ClientId}", sessionId, clientId);
+        Logger.LogInformation("Created security session {SessionId} for client {ClientId}", sessionId, clientId);
         return sessionId;
     }
 
@@ -235,7 +242,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["IpAddress"] = ipAddress
             });
 
-            _logger.LogWarning("Invalid session {SessionId} for client {ClientId}", sessionId, clientId);
+            Logger.LogWarning("Invalid session {SessionId} for client {ClientId}", sessionId, clientId);
             return false;
         }
 
@@ -248,7 +255,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["ExpiresAt"] = session.ExpiresAt
             });
 
-            _logger.LogWarning("Expired session {SessionId} for client {ClientId}", sessionId, clientId);
+            Logger.LogWarning("Expired session {SessionId} for client {ClientId}", sessionId, clientId);
             return false;
         }
 
@@ -261,7 +268,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["ActualClientId"] = session.ClientId
             });
 
-            _logger.LogWarning("Session client mismatch for session {SessionId}", sessionId);
+            Logger.LogWarning("Session client mismatch for session {SessionId}", sessionId);
             return false;
         }
 
@@ -276,7 +283,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["Activity"] = "IP address change"
             });
 
-            _logger.LogWarning("IP address change detected for session {SessionId}: {OriginalIp} -> {CurrentIp}",
+            Logger.LogWarning("IP address change detected for session {SessionId}: {OriginalIp} -> {CurrentIp}",
                 sessionId, session.IpAddress, ipAddress);
 
             // For now, allow but log. In production, you might want to invalidate the session
@@ -285,7 +292,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
         // Update last activity
         session.LastActivity = DateTime.UtcNow;
 
-        _logger.LogDebug("Session {SessionId} validated successfully", sessionId);
+        Logger.LogDebug("Session {SessionId} validated successfully", sessionId);
         return true;
     }
 
@@ -301,7 +308,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
         if (_activeSessions.TryRemove(sessionId, out var session))
         {
             session.IsActive = false;
-            _logger.LogInformation("Invalidated session {SessionId}: {Reason}", sessionId, reason);
+            Logger.LogInformation("Invalidated session {SessionId}: {Reason}", sessionId, reason);
         }
     }
 
@@ -324,7 +331,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["AttemptCount"] = authAttempts.Count
             });
 
-            _logger.LogWarning("IP address {IpAddress} blocked due to brute force attempts", ipAddress);
+            Logger.LogWarning("IP address {IpAddress} blocked due to brute force attempts", ipAddress);
             return true;
         }
 
@@ -338,7 +345,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
                 ["ViolationCount"] = rateLimitViolations
             });
 
-            _logger.LogWarning("IP address {IpAddress} blocked due to rate limit violations", ipAddress);
+            Logger.LogWarning("IP address {IpAddress} blocked due to rate limit violations", ipAddress);
             return true;
         }
 
@@ -386,7 +393,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
             });
         }
 
-        _logger.LogDebug("Authentication attempt recorded: Client {ClientId}, Success {Success}", clientId, success);
+        Logger.LogDebug("Authentication attempt recorded: Client {ClientId}, Success {Success}", clientId, success);
     }
 
     /// <summary>
@@ -409,12 +416,12 @@ public class ProofOfReserveSecurityHelper : IDisposable
             var expectedSignature = ComputeRequestSignature(requestBody, publicKey);
             var isValid = signature == expectedSignature;
 
-            _logger.LogDebug("Request signature validation: {IsValid}", isValid);
+            Logger.LogDebug("Request signature validation: {IsValid}", isValid);
             return isValid;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error validating request signature");
+            Logger.LogError(ex, "Error validating request signature");
             return false;
         }
     }
@@ -447,7 +454,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
     private string GenerateSecureNonce()
     {
         var nonce = new byte[32];
-        using var rng = RandomNumberGenerator.Create();
+        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         rng.GetBytes(nonce);
         return Convert.ToBase64String(nonce);
     }
@@ -528,7 +535,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
             }
         }
 
-        _logger.LogInformation("Security event recorded: {EventType} for client {ClientId}", eventType, clientId);
+        Logger.LogInformation("Security event recorded: {EventType} for client {ClientId}", eventType, clientId);
     }
 
     /// <summary>
@@ -580,12 +587,12 @@ public class ProofOfReserveSecurityHelper : IDisposable
 
             if (removedCount > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} expired security entries", removedCount);
+                Logger.LogDebug("Cleaned up {Count} expired security entries", removedCount);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during security cleanup");
+            Logger.LogError(ex, "Error during security cleanup");
         }
     }
 
@@ -598,7 +605,7 @@ public class ProofOfReserveSecurityHelper : IDisposable
         _rateLimitBuckets.Clear();
         _csrfTokens.Clear();
         _activeSessions.Clear();
-        _logger.LogDebug("Proof of Reserve security helper disposed");
+        Logger.LogDebug("Proof of Reserve security helper disposed");
     }
 }
 

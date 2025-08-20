@@ -11,6 +11,11 @@ using Moq;
 using NeoServiceLayer.Infrastructure.Observability.Logging;
 using NeoServiceLayer.Services.Authentication;
 using Xunit;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Text.Json;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Tests
 {

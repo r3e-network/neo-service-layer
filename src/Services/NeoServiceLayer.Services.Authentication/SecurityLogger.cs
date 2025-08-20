@@ -3,6 +3,9 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Observability.Logging;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -51,7 +54,7 @@ namespace NeoServiceLayer.Services.Authentication
             }
 
             _structuredLogger?.LogOperation($"SecurityEvent:{eventType}", properties);
-            
+
             _logger.LogInformation(
                 "Security Event: {EventType} for User: {UserId} at {Timestamp}",
                 eventType, userId, DateTime.UtcNow);
@@ -62,7 +65,7 @@ namespace NeoServiceLayer.Services.Authentication
         public async Task LogAuthenticationEventAsync(string userId, bool success, string method, string ipAddress)
         {
             var eventType = success ? "AuthenticationSuccess" : "AuthenticationFailure";
-            
+
             await LogSecurityEventAsync(eventType, userId, new Dictionary<string, object>
             {
                 ["Method"] = method,
@@ -81,7 +84,7 @@ namespace NeoServiceLayer.Services.Authentication
         public async Task LogAuthorizationEventAsync(string userId, string resource, string action, bool granted)
         {
             var eventType = granted ? "AuthorizationGranted" : "AuthorizationDenied";
-            
+
             await LogSecurityEventAsync(eventType, userId, new Dictionary<string, object>
             {
                 ["Resource"] = resource,

@@ -1,7 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Voting.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Voting.Storage;
 
@@ -11,7 +19,7 @@ namespace NeoServiceLayer.Services.Voting.Storage;
 public class VotingStorageHelper
 {
     private readonly IStorageService _storageService;
-    private readonly ILogger<VotingStorageHelper> _logger;
+    private readonly ILogger<VotingStorageHelper> Logger;
 
     // Storage keys
     private const string StrategiesStorageKey = "voting:strategies";
@@ -26,7 +34,7 @@ public class VotingStorageHelper
     public VotingStorageHelper(IStorageService storageService, ILogger<VotingStorageHelper> logger)
     {
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -47,7 +55,7 @@ public class VotingStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load voting strategies from storage");
+            Logger.LogWarning(ex, "Could not load voting strategies from storage");
         }
 
         return new Dictionary<string, VotingStrategy>();
@@ -71,7 +79,7 @@ public class VotingStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load voting results from storage");
+            Logger.LogWarning(ex, "Could not load voting results from storage");
         }
 
         return new Dictionary<string, VotingResult>();
@@ -81,7 +89,7 @@ public class VotingStorageHelper
     /// Loads candidates from storage.
     /// </summary>
     /// <returns>Dictionary of candidates.</returns>
-    public async Task<Dictionary<string, CandidateInfo>> LoadCandidatesAsync()
+    public async Task<Dictionary<string, Candidate>> LoadCandidatesAsync()
     {
         try
         {
@@ -89,16 +97,16 @@ public class VotingStorageHelper
             if (data != null && data.Length > 0)
             {
                 var json = System.Text.Encoding.UTF8.GetString(data);
-                var candidates = JsonSerializer.Deserialize<Dictionary<string, CandidateInfo>>(json);
-                return candidates ?? new Dictionary<string, CandidateInfo>();
+                var candidates = JsonSerializer.Deserialize<Dictionary<string, Candidate>>(json);
+                return candidates ?? new Dictionary<string, Candidate>();
             }
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load candidates from storage");
+            Logger.LogWarning(ex, "Could not load candidates from storage");
         }
 
-        return new Dictionary<string, CandidateInfo>();
+        return new Dictionary<string, Candidate>();
     }
 
     /// <summary>
@@ -122,7 +130,7 @@ public class VotingStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting voting strategies");
+            Logger.LogError(ex, "Error persisting voting strategies");
         }
     }
 
@@ -147,7 +155,7 @@ public class VotingStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting voting results");
+            Logger.LogError(ex, "Error persisting voting results");
         }
     }
 
@@ -155,7 +163,7 @@ public class VotingStorageHelper
     /// Persists candidates to storage.
     /// </summary>
     /// <param name="candidates">The candidates to persist.</param>
-    public async Task PersistCandidatesAsync(Dictionary<string, CandidateInfo> candidates)
+    public async Task PersistCandidatesAsync(Dictionary<string, Candidate> candidates)
     {
         try
         {
@@ -172,7 +180,7 @@ public class VotingStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting candidates");
+            Logger.LogError(ex, "Error persisting candidates");
         }
     }
 }

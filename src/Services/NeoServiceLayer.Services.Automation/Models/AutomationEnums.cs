@@ -1,4 +1,4 @@
-﻿namespace NeoServiceLayer.Services.Automation;
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents the status of an automation job.
@@ -38,7 +38,12 @@ public enum AutomationJobStatus
     /// <summary>
     /// Job has expired and will not execute.
     /// </summary>
-    Expired = 6
+    Expired = 6,
+
+    /// <summary>
+    /// Job not found.
+    /// </summary>
+    NotFound = 7
 }
 
 /// <summary>
@@ -49,12 +54,22 @@ public enum AutomationExecutionStatus
     /// <summary>
     /// Execution is currently in progress.
     /// </summary>
-    Executing = 0,
+    InProgress = 0,
+    
+    /// <summary>
+    /// Execution is currently executing (alias for InProgress).
+    /// </summary>
+    Executing = InProgress,
 
     /// <summary>
     /// Execution completed successfully.
     /// </summary>
-    Completed = 1,
+    Success = 1,
+    
+    /// <summary>
+    /// Execution completed (alias for Success).
+    /// </summary>
+    Completed = Success,
 
     /// <summary>
     /// Execution failed with an error.
@@ -69,7 +84,7 @@ public enum AutomationExecutionStatus
     /// <summary>
     /// Execution timed out.
     /// </summary>
-    TimedOut = 4,
+    Timeout = 4,
 
     /// <summary>
     /// Execution is waiting for retry.
@@ -90,7 +105,7 @@ public enum AutomationTriggerType
     /// <summary>
     /// Time-based trigger using cron schedule.
     /// </summary>
-    Time = 0,
+    Cron = 0,
 
     /// <summary>
     /// Event-based trigger responding to blockchain events.
@@ -130,7 +145,12 @@ public enum AutomationTriggerType
     /// <summary>
     /// Schedule trigger that executes based on a defined schedule.
     /// </summary>
-    Schedule = 8
+    Schedule = 8,
+
+    /// <summary>
+    /// Time trigger that executes at specific times.
+    /// </summary>
+    Time = 9
 }
 
 /// <summary>
@@ -146,17 +166,17 @@ public enum AutomationActionType
     /// <summary>
     /// HTTP webhook action that sends HTTP requests.
     /// </summary>
-    HttpWebhook = 1,
+    Webhook = 1,
 
     /// <summary>
     /// Email notification action.
     /// </summary>
-    EmailNotification = 2,
+    Email = 2,
 
     /// <summary>
     /// SMS notification action.
     /// </summary>
-    SmsNotification = 3,
+    Sms = 3,
 
     /// <summary>
     /// Database update action.
@@ -166,12 +186,12 @@ public enum AutomationActionType
     /// <summary>
     /// File system operation action.
     /// </summary>
-    FileSystemOperation = 5,
+    FileOperation = 5,
 
     /// <summary>
     /// Custom script execution action.
     /// </summary>
-    CustomScript = 6,
+    Script = 6,
 
     /// <summary>
     /// Multi-action that executes multiple actions in sequence.
@@ -186,5 +206,51 @@ public enum AutomationActionType
     /// <summary>
     /// NFT minting action.
     /// </summary>
-    NftMint = 9
+    NftMint = 9,
+
+    /// <summary>
+    /// HTTP webhook action.
+    /// </summary>
+    HttpWebhook = 10
+}
+
+/// <summary>
+/// Represents the type of condition for automation.
+/// </summary>
+public enum AutomationConditionType
+{
+    /// <summary>
+    /// Time-based condition.
+    /// </summary>
+    Time = 0,
+
+    /// <summary>
+    /// Blockchain condition (block height, transaction, etc.).
+    /// </summary>
+    Blockchain = 1,
+
+    /// <summary>
+    /// Price condition based on market data.
+    /// </summary>
+    Price = 2,
+
+    /// <summary>
+    /// Oracle data condition.
+    /// </summary>
+    Oracle = 3,
+
+    /// <summary>
+    /// Custom logic condition.
+    /// </summary>
+    Custom = 4,
+
+    /// <summary>
+    /// Token balance condition.
+    /// </summary>
+    Balance = 5,
+
+    /// <summary>
+    /// Smart contract state condition.
+    /// </summary>
+    ContractState = 6
 }

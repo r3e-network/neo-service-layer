@@ -1,9 +1,16 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.ZeroKnowledge;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -27,12 +34,12 @@ public class ZeroKnowledgeController : ControllerBase
         try
         {
             // Convert to Core model
-            var coreRequest = new NeoServiceLayer.Core.ProofRequest
+            var coreRequest = new NeoServiceLayer.Core.Models.ProofRequest
             {
                 CircuitId = request.CircuitId,
                 PrivateInputs = request.PrivateInputs.ToDictionary(x => x.Key, x => (object)x.Value),
                 PublicInputs = request.PublicInputs.ToDictionary(x => x.Key, x => (object)x.Value),
-                ProofSystem = "groth16", // Use ProofSystem instead of ProofType
+                ProofType = NeoServiceLayer.Core.Models.ProofType.SNARK,
                 Parameters = new Dictionary<string, object>()
             };
 
@@ -52,12 +59,14 @@ public class ZeroKnowledgeController : ControllerBase
         try
         {
             // Convert to Core model
-            var coreRequest = new NeoServiceLayer.Core.ProofVerification
+            var coreRequest = new NeoServiceLayer.Core.Models.ProofVerification
             {
-                Proof = request.ProofData, // Use Proof instead of ProofData
-                PublicSignals = request.PublicInputs.Select(x => x.Value.ToString() ?? "").ToArray(), // Use PublicSignals instead of PublicInputs
+                Proof = request.ProofData,
+                ProofData = Convert.FromBase64String(request.ProofData),
+                PublicInputs = request.PublicInputs.ToDictionary(x => x.Key, x => (object)x.Value),
+                PublicSignals = request.PublicInputs.ToDictionary(x => x.Key, x => (object)x.Value),
                 CircuitId = request.CircuitId,
-                VerificationKey = "default-key" // Provide default VerificationKey
+                Parameters = new Dictionary<string, object>()
             };
 
             var result = await _zeroKnowledgeService.VerifyProofAsync(coreRequest, BlockchainType.NeoN3);

@@ -5,12 +5,15 @@ using System.Linq;
 using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
+using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using NeoServiceLayer.Infrastructure.Observability.Logging;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -41,20 +44,20 @@ namespace NeoServiceLayer.Services.Authentication
             _structuredLogger = structuredLoggerFactory?.CreateLogger("TokenService");
             _configuration = configuration;
             _cache = cache;
-            
-            _jwtSecret = configuration["Authentication:JwtSecret"] 
+
+            _jwtSecret = configuration["Authentication:JwtSecret"]
                 ?? throw new InvalidOperationException("JWT secret not configured");
-            
+
             if (_jwtSecret.Length < 32)
             {
                 throw new InvalidOperationException("JWT secret must be at least 32 characters");
             }
-            
+
             _issuer = configuration["Authentication:Issuer"] ?? "NeoServiceLayer";
             _audience = configuration["Authentication:Audience"] ?? "NeoServiceLayer";
             _accessTokenExpiryMinutes = configuration.GetValue<int>("Authentication:AccessTokenExpiryMinutes", 15);
             _refreshTokenExpiryDays = configuration.GetValue<int>("Authentication:RefreshTokenExpiryDays", 30);
-            
+
             _tokenHandler = new JwtSecurityTokenHandler();
             _tokenValidationParameters = new TokenValidationParameters
             {
@@ -80,7 +83,7 @@ namespace NeoServiceLayer.Services.Authentication
 
             var accessToken = GenerateAccessToken(userId, roles, additionalClaims);
             var refreshToken = await GenerateRefreshTokenAsync(userId);
-            
+
             var tokenPair = new TokenPair
             {
                 AccessToken = accessToken.Token,
@@ -88,7 +91,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AccessTokenExpiry = accessToken.ExpiresAt,
                 RefreshTokenExpiry = DateTime.UtcNow.AddDays(_refreshTokenExpiryDays)
             };
-            
+
             // Store refresh token in cache
             var cacheKey = $"refresh_token:{refreshToken}";
             var cacheValue = new RefreshTokenData
@@ -97,13 +100,13 @@ namespace NeoServiceLayer.Services.Authentication
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = tokenPair.RefreshTokenExpiry
             };
-            
+
             await _cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(cacheValue),
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpiration = tokenPair.RefreshTokenExpiry
                 });
-            
+
             _logger.LogInformation("Token pair generated for user {UserId}", userId);
             return tokenPair;
         }
@@ -115,22 +118,22 @@ namespace NeoServiceLayer.Services.Authentication
             // Retrieve refresh token from cache
             var cacheKey = $"refresh_token:{refreshToken}";
             var cachedData = await _cache.GetStringAsync(cacheKey);
-            
+
             if (string.IsNullOrEmpty(cachedData))
             {
                 _logger.LogWarning("Invalid or expired refresh token");
                 throw new SecurityTokenException("Invalid or expired refresh token");
             }
-            
+
             var tokenData = System.Text.Json.JsonSerializer.Deserialize<RefreshTokenData>(cachedData);
-            
+
             // Check if token is expired
             if (tokenData.ExpiresAt < DateTime.UtcNow)
             {
                 await _cache.RemoveAsync(cacheKey);
                 throw new SecurityTokenException("Refresh token expired");
             }
-            
+
             // Check if token has been used (one-time use)
             if (tokenData.Used)
             {
@@ -139,7 +142,7 @@ namespace NeoServiceLayer.Services.Authentication
                 await RevokeAllUserTokensAsync(tokenData.UserId);
                 throw new SecurityTokenException("Refresh token has already been used");
             }
-            
+
             // Mark token as used
             tokenData.Used = true;
             tokenData.UsedAt = DateTime.UtcNow;
@@ -148,10 +151,10 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             // Get user roles (would typically fetch from database)
             var roles = await GetUserRolesAsync(tokenData.UserId);
-            
+
             // Generate new token pair
             return await GenerateTokenPairAsync(tokenData.UserId, roles);
         }
@@ -165,17 +168,17 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     return false;
                 }
-                
+
                 // Validate token structure and signature
                 var principal = _tokenHandler.ValidateToken(token, _tokenValidationParameters, out var validatedToken);
-                
+
                 // Additional validation
                 var jwtToken = validatedToken as JwtSecurityToken;
                 if (jwtToken == null || !jwtToken.Header.Alg.Equals(SecurityAlgorithms.HmacSha256, StringComparison.InvariantCultureIgnoreCase))
                 {
                     return false;
                 }
-                
+
                 return true;
             }
             catch (Exception ex)
@@ -194,7 +197,7 @@ namespace NeoServiceLayer.Services.Authentication
                 // Parse token to get expiration
                 var jwtToken = _tokenHandler.ReadJwtToken(token);
                 var exp = jwtToken.ValidTo;
-                
+
                 // Add to blacklist with expiration
                 var cacheKey = $"blacklist:{token}";
                 await _cache.SetStringAsync(cacheKey, "revoked",
@@ -202,7 +205,7 @@ namespace NeoServiceLayer.Services.Authentication
                     {
                         AbsoluteExpiration = exp
                     });
-                
+
                 _logger.LogInformation("Token revoked successfully");
             }
             catch (Exception ex)
@@ -250,7 +253,7 @@ namespace NeoServiceLayer.Services.Authentication
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_jwtSecret));
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var expiresAt = DateTime.UtcNow.AddMinutes(_accessTokenExpiryMinutes);
-            
+
             var claims = new List<Claim>
             {
                 new Claim(ClaimTypes.NameIdentifier, userId),
@@ -259,7 +262,7 @@ namespace NeoServiceLayer.Services.Authentication
                 new Claim(JwtRegisteredClaimNames.Iat, new DateTimeOffset(DateTime.UtcNow).ToUnixTimeSeconds().ToString(), ClaimValueTypes.Integer64),
                 new Claim("session_id", Guid.NewGuid().ToString())
             };
-            
+
             // Add roles
             if (roles != null)
             {
@@ -268,7 +271,7 @@ namespace NeoServiceLayer.Services.Authentication
                     claims.Add(new Claim(ClaimTypes.Role, role));
                 }
             }
-            
+
             // Add additional claims
             if (additionalClaims != null)
             {
@@ -277,7 +280,7 @@ namespace NeoServiceLayer.Services.Authentication
                     claims.Add(new Claim(claim.Key, claim.Value));
                 }
             }
-            
+
             var token = new JwtSecurityToken(
                 issuer: _issuer,
                 audience: _audience,
@@ -285,7 +288,7 @@ namespace NeoServiceLayer.Services.Authentication
                 expires: expiresAt,
                 signingCredentials: credentials
             );
-            
+
             return (_tokenHandler.WriteToken(token), expiresAt);
         }
 
@@ -297,22 +300,22 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 rng.GetBytes(randomBytes);
             }
-            
+
             var refreshToken = Convert.ToBase64String(randomBytes)
                 .Replace("+", "-")
                 .Replace("/", "_")
                 .Replace("=", "");
-            
+
             // Ensure uniqueness
             var cacheKey = $"refresh_token:{refreshToken}";
             var exists = await _cache.GetStringAsync(cacheKey);
-            
+
             if (!string.IsNullOrEmpty(exists))
             {
                 // Rare case of collision, regenerate
                 return await GenerateRefreshTokenAsync(userId);
             }
-            
+
             return refreshToken;
         }
 
@@ -321,7 +324,7 @@ namespace NeoServiceLayer.Services.Authentication
             // In a production system, this would invalidate all tokens for a user
             // This could be done by maintaining a per-user token version/generation number
             _logger.LogWarning("Revoking all tokens for user {UserId} due to security concern", userId);
-            
+
             // Add user to temporary blacklist
             var cacheKey = $"user_blacklist:{userId}";
             await _cache.SetStringAsync(cacheKey, DateTime.UtcNow.ToString(),
@@ -329,6 +332,45 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     SlidingExpiration = TimeSpan.FromMinutes(30)
                 });
+        }
+
+        public string GenerateAccessToken(Guid userId, string username, List<string> roles)
+        {
+            var result = GenerateAccessToken(userId.ToString(), roles?.ToArray() ?? Array.Empty<string>(), null);
+            return result.Token;
+        }
+
+        public string GenerateRefreshToken()
+        {
+            var randomBytes = new byte[64];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(randomBytes);
+            }
+            return Convert.ToBase64String(randomBytes)
+                .Replace("+", "-")
+                .Replace("/", "_")
+                .Replace("=", "");
+        }
+
+        public async Task<(Guid userId, Guid tokenId)> ValidateRefreshTokenAsync(string refreshToken)
+        {
+            // This is a simplified implementation - in production, you'd validate against database
+            var cacheKey = $"refresh_token:{refreshToken}";
+            var cachedData = await _cache.GetStringAsync(cacheKey);
+            
+            if (string.IsNullOrEmpty(cachedData))
+            {
+                throw new SecurityTokenException("Invalid refresh token");
+            }
+            
+            var tokenData = System.Text.Json.JsonSerializer.Deserialize<RefreshTokenData>(cachedData);
+            if (tokenData.ExpiresAt < DateTime.UtcNow)
+            {
+                throw new SecurityTokenException("Refresh token expired");
+            }
+            
+            return (Guid.Parse(tokenData.UserId), Guid.NewGuid()); // tokenId would come from database in real implementation
         }
 
         private async Task<string[]> GetUserRolesAsync(string userId)
@@ -360,5 +402,10 @@ namespace NeoServiceLayer.Services.Authentication
         Task<bool> IsTokenBlacklistedAsync(string token);
         ClaimsPrincipal ValidateAndGetPrincipal(string token);
         string GetUserIdFromToken(string token);
+        
+        // Additional methods expected by command handlers
+        string GenerateAccessToken(Guid userId, string username, List<string> roles);
+        string GenerateRefreshToken();
+        Task<(Guid userId, Guid tokenId)> ValidateRefreshTokenAsync(string refreshToken);
     }
 }

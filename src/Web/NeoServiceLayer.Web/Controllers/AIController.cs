@@ -1,8 +1,15 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -123,11 +130,17 @@ public class AIController : BaseApiController
             // Use pattern recognition service if available
             if (_patternRecognitionService != null)
             {
+                // Convert data points to dictionary
+                var dataDict = request.DataPoints.ToDictionary(
+                    p => p.Timestamp.ToString("yyyy-MM-dd HH:mm:ss"),
+                    p => (object)p.Value);
+                
                 var anomalyRequest = new Core.AnomalyDetectionRequest
                 {
-                    Data = request.DataPoints.Select(p => new double[] { p.Value }).ToArray(),
-                    FeatureNames = new[] { "value" },
-                    ModelId = request.PatternType ?? "general"
+                    DataSource = request.AnalysisType,
+                    DataPoints = dataDict,
+                    TimeRange = request.DataPoints.Max(p => p.Timestamp),
+                    Threshold = 0.5
                 };
 
                 var patterns = await _patternRecognitionService.DetectAnomaliesAsync(
@@ -136,12 +149,12 @@ public class AIController : BaseApiController
 
                 var result = new PatternAnalysisResult
                 {
-                    DetectedPatterns = patterns.IsAnomaly.Select((isAnomaly, i) => isAnomaly ? $"Anomaly_{i}" : $"Normal_{i}").ToArray(),
-                    Confidence = patterns.AnomalyScores.DefaultIfEmpty(0.0).Average(),
-                    AnomaliesDetected = patterns.AnomalyCount,
-                    TrendStrength = patterns.AnomalyScores.DefaultIfEmpty(0.0).Max(),
+                    DetectedPatterns = patterns.IsAnomaly ? new[] { patterns.AnomalyType } : new[] { "Normal" },
+                    Confidence = patterns.AnomalyScore,
+                    AnomaliesDetected = patterns.IsAnomaly ? 1 : 0,
+                    TrendStrength = patterns.AnomalyScore,
                     AnalyzedInEnclave = request.UseEnclave,
-                    Timestamp = patterns.DetectionTime
+                    Timestamp = DateTime.UtcNow
                 };
 
                 Logger.LogInformation("Analyzed pattern using {AnalysisType} for user {UserId}",

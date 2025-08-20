@@ -3,6 +3,10 @@ using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Permissions.Models;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Permissions;
 
@@ -34,21 +38,21 @@ public interface IPermissionService : IService
     /// </summary>
     /// <param name="request">The grant permission request.</param>
     /// <returns>Grant result.</returns>
-    Task<PermissionResult> GrantPermissionAsync(GrantPermissionRequest request);
+    Task<Models.PermissionResult> GrantPermissionAsync(GrantPermissionRequest request);
 
     /// <summary>
     /// Revokes a permission from a user.
     /// </summary>
     /// <param name="request">The revoke permission request.</param>
     /// <returns>Revoke result.</returns>
-    Task<PermissionResult> RevokePermissionAsync(RevokePermissionRequest request);
+    Task<Models.PermissionResult> RevokePermissionAsync(RevokePermissionRequest request);
 
     /// <summary>
     /// Creates a new role.
     /// </summary>
     /// <param name="role">The role to create.</param>
     /// <returns>Creation result.</returns>
-    Task<RoleResult> CreateRoleAsync(Role role);
+    Task<RoleResult> CreateRoleAsync(Models.Role role);
 
     /// <summary>
     /// Updates an existing role.

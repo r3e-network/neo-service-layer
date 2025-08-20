@@ -8,6 +8,9 @@ using NeoServiceLayer.Infrastructure.CQRS.Projections;
 using NeoServiceLayer.Services.KeyManagement.Events;
 using NeoServiceLayer.Services.KeyManagement.QueryHandlers;
 using NeoServiceLayer.Services.KeyManagement.ReadModels;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+
 
 namespace NeoServiceLayer.Services.KeyManagement.Projections
 {
@@ -17,7 +20,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
     public class KeyManagementProjection : ProjectionBase
     {
         private readonly IKeyReadModelStore _store;
-        private readonly ILogger<KeyManagementProjection> _logger;
+        private readonly ILogger<KeyManagementProjection> Logger;
         private long _currentPosition;
 
         public KeyManagementProjection(
@@ -26,7 +29,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             : base("KeyManagementProjection")
         {
             _store = store ?? throw new ArgumentNullException(nameof(store));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public override async Task HandleAsync(
@@ -73,7 +76,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
                         break;
 
                     default:
-                        _logger.LogWarning(
+                        Logger.LogWarning(
                             "Unhandled event type {EventType} in projection",
                             domainEvent.GetType().Name);
                         break;
@@ -84,7 +87,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
+                Logger.LogError(ex,
                     "Failed to handle event {EventType} for aggregate {AggregateId}",
                     domainEvent.GetType().Name, domainEvent.AggregateId);
                 throw;
@@ -113,7 +116,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.SaveAsync(model, cancellationToken);
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Created read model for key {KeyId} of type {KeyType}",
                 e.KeyId, e.KeyType);
         }
@@ -123,7 +126,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -133,7 +136,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogInformation("Activated key {KeyId} in read model", e.KeyId);
+            Logger.LogInformation("Activated key {KeyId} in read model", e.KeyId);
         }
 
         private async Task HandleKeyRevoked(KeyRevokedEvent e, CancellationToken cancellationToken)
@@ -141,7 +144,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -152,7 +155,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Revoked key {KeyId} in read model with reason: {Reason}",
                 e.KeyId, e.Reason);
         }
@@ -162,7 +165,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -172,7 +175,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogInformation("Rotated key {KeyId} in read model", e.KeyId);
+            Logger.LogInformation("Rotated key {KeyId} in read model", e.KeyId);
         }
 
         private async Task HandleKeyUsed(KeyUsedEvent e, CancellationToken cancellationToken)
@@ -180,7 +183,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -190,7 +193,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogDebug(
+            Logger.LogDebug(
                 "Updated usage count for key {KeyId} to {UsageCount}",
                 e.KeyId, model.UsageCount);
         }
@@ -200,7 +203,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -211,7 +214,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
                 await _store.UpdateAsync(model, cancellationToken);
             }
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Granted access to key {KeyId} for user {UserId} in read model",
                 e.KeyId, e.UserId);
         }
@@ -221,7 +224,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -230,7 +233,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogInformation(
+            Logger.LogInformation(
                 "Revoked access to key {KeyId} for user {UserId} in read model",
                 e.KeyId, e.UserId);
         }
@@ -240,7 +243,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             var model = await _store.GetByIdAsync(e.KeyId, cancellationToken);
             if (model == null)
             {
-                _logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
+                Logger.LogWarning("Read model not found for key {KeyId}", e.KeyId);
                 return;
             }
 
@@ -253,7 +256,7 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
 
             await _store.UpdateAsync(model, cancellationToken);
 
-            _logger.LogDebug(
+            Logger.LogDebug(
                 "Updated metadata key {Key} for key {KeyId} in read model",
                 e.Key, e.KeyId);
         }
@@ -276,8 +279,8 @@ namespace NeoServiceLayer.Services.KeyManagement.Projections
             // In a real implementation, this would clear the read model store
             _currentPosition = 0;
             await Task.CompletedTask;
-            
-            _logger.LogInformation("Reset projection {ProjectionName}", ProjectionName);
+
+            Logger.LogInformation("Reset projection {ProjectionName}", ProjectionName);
         }
 
         protected override Type[] GetHandledEventTypes()

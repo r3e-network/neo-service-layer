@@ -1,4 +1,10 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.Core.Models;
 
@@ -35,6 +41,15 @@ public class ProofRequest
     /// Gets or sets the proof type.
     /// </summary>
     public ProofType ProofType { get; set; } = ProofType.SNARK;
+    
+    /// <summary>
+    /// Gets or sets the proof system (alias for ProofType).
+    /// </summary>
+    public ProofType ProofSystem 
+    { 
+        get => ProofType;
+        set => ProofType = value;
+    }
 }
 
 /// <summary>
@@ -88,6 +103,17 @@ public class ProofResult
 /// </summary>
 public class ProofVerification
 {
+    /// <summary>
+    /// Gets or sets the proof data to verify.
+    /// </summary>
+    [Required]
+    public string Proof { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the public signals for verification.
+    /// </summary>
+    public Dictionary<string, object> PublicSignals { get; set; } = new();
+
     /// <summary>
     /// Gets or sets the proof data to verify.
     /// </summary>
@@ -291,6 +317,26 @@ public class CryptoKeyInfo
     /// Gets or sets the key metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the key algorithm.
+    /// </summary>
+    public string Algorithm { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets the key size.
+    /// </summary>
+    public int KeySize { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the key purpose.
+    /// </summary>
+    public string Purpose { get; set; } = string.Empty;
+    
+    /// <summary>
+    /// Gets or sets when the key expires.
+    /// </summary>
+    public DateTime? ExpiresAt { get; set; }
 }
 
 /// <summary>

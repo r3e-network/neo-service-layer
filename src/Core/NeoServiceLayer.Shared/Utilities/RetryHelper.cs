@@ -1,5 +1,13 @@
-﻿using System.Net.Sockets;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using System.Diagnostics.CodeAnalysis;
+
 
 namespace NeoServiceLayer.Shared.Utilities;
 
@@ -18,6 +26,9 @@ public static class RetryHelper
     /// <param name="backoffMultiplier">Multiplier for exponential backoff.</param>
     /// <param name="retryCondition">Condition to determine if retry should occur.</param>
     /// <param name="logger">Optional logger for retry attempts.</param>
+    /// <param name="onRetry">Optional callback invoked on each retry.</param>
+    /// <param name="retryDelay">Optional specific delay between retries (overrides baseDelay).</param>
+    /// <param name="exceptionFilter">Optional filter for exceptions that should trigger retries.</param>
     /// <returns>A task representing the operation.</returns>
     public static async Task ExecuteAsync(
         Func<Task> action,
@@ -26,7 +37,10 @@ public static class RetryHelper
         TimeSpan? maxDelay = null,
         double backoffMultiplier = 2.0,
         Func<Exception, bool>? retryCondition = null,
-        ILogger? logger = null)
+        ILogger? logger = null,
+        Action<Exception, int, TimeSpan>? onRetry = null,
+        TimeSpan? retryDelay = null,
+        Func<Exception, bool>? exceptionFilter = null)
     {
         Guard.NotNull(action);
 
@@ -34,7 +48,7 @@ public static class RetryHelper
         {
             await action();
             return true;
-        }, maxRetries, baseDelay, maxDelay, backoffMultiplier, retryCondition, logger);
+        }, maxRetries, retryDelay ?? baseDelay, maxDelay, backoffMultiplier, exceptionFilter ?? retryCondition, logger, onRetry, retryDelay, exceptionFilter);
     }
 
     /// <summary>
@@ -48,9 +62,73 @@ public static class RetryHelper
     /// <param name="backoffMultiplier">Multiplier for exponential backoff.</param>
     /// <param name="retryCondition">Condition to determine if retry should occur.</param>
     /// <param name="logger">Optional logger for retry attempts.</param>
+    /// <param name="onRetry">Optional callback invoked on each retry.</param>
+    /// <param name="retryDelay">Optional specific delay between retries (overrides baseDelay).</param>
+    /// <param name="exceptionFilter">Optional filter for exceptions that should trigger retries.</param>
     /// <returns>The result of the function.</returns>
     public static async Task<T> ExecuteAsync<T>(
         Func<Task<T>> func,
+        int maxRetries = 3,
+        TimeSpan? baseDelay = null,
+        TimeSpan? maxDelay = null,
+        double backoffMultiplier = 2.0,
+        Func<Exception, bool>? retryCondition = null,
+        ILogger? logger = null,
+        Action<Exception, int, TimeSpan>? onRetry = null,
+        TimeSpan? retryDelay = null,
+        Func<Exception, bool>? exceptionFilter = null)
+    {
+        Guard.NotNull(func);
+        Guard.GreaterThanOrEqual(maxRetries, 0);
+        Guard.GreaterThan(backoffMultiplier, 1.0);
+
+        var effectiveDelay = retryDelay ?? baseDelay ?? TimeSpan.FromSeconds(1);
+        maxDelay ??= TimeSpan.FromMinutes(5);
+        var effectiveCondition = exceptionFilter ?? retryCondition ?? IsTransientException;
+
+        var attempt = 0;
+        Exception? lastException = null;
+
+        while (attempt <= maxRetries)
+        {
+            try
+            {
+                return await func();
+            }
+            catch (Exception ex) when (attempt < maxRetries && effectiveCondition(ex))
+            {
+                lastException = ex;
+                attempt++;
+
+                var delay = retryDelay ?? CalculateDelay(attempt, effectiveDelay, maxDelay.Value, backoffMultiplier);
+
+                logger?.LogWarning(ex, "Attempt {Attempt} failed. Retrying in {Delay}ms. Error: {Error}",
+                    attempt, delay.TotalMilliseconds, ex.Message);
+
+                onRetry?.Invoke(ex, attempt, delay);
+
+                await Task.Delay(delay);
+            }
+        }
+
+        // If we get here, all retries have been exhausted
+        throw lastException ?? new InvalidOperationException("Retry operation failed without exception.");
+    }
+
+    /// <summary>
+    /// Executes a synchronous function with retry logic.
+    /// </summary>
+    /// <typeparam name="T">The return type of the function.</typeparam>
+    /// <param name="func">The function to execute.</param>
+    /// <param name="maxRetries">Maximum number of retries.</param>
+    /// <param name="baseDelay">Base delay between retries.</param>
+    /// <param name="maxDelay">Maximum delay between retries.</param>
+    /// <param name="backoffMultiplier">Multiplier for exponential backoff.</param>
+    /// <param name="retryCondition">Condition to determine if retry should occur.</param>
+    /// <param name="logger">Optional logger for retry attempts.</param>
+    /// <returns>The result of the function.</returns>
+    public static T ExecuteWithRetry<T>(
+        Func<T> func,
         int maxRetries = 3,
         TimeSpan? baseDelay = null,
         TimeSpan? maxDelay = null,
@@ -73,7 +151,7 @@ public static class RetryHelper
         {
             try
             {
-                return await func();
+                return func();
             }
             catch (Exception ex) when (attempt < maxRetries && retryCondition(ex))
             {
@@ -85,12 +163,40 @@ public static class RetryHelper
                 logger?.LogWarning(ex, "Attempt {Attempt} failed. Retrying in {Delay}ms. Error: {Error}",
                     attempt, delay.TotalMilliseconds, ex.Message);
 
-                await Task.Delay(delay);
+                Thread.Sleep(delay);
             }
         }
 
         // If we get here, all retries have been exhausted
         throw lastException ?? new InvalidOperationException("Retry operation failed without exception.");
+    }
+
+    /// <summary>
+    /// Executes a synchronous action with retry logic.
+    /// </summary>
+    /// <param name="action">The action to execute.</param>
+    /// <param name="maxRetries">Maximum number of retries.</param>
+    /// <param name="baseDelay">Base delay between retries.</param>
+    /// <param name="maxDelay">Maximum delay between retries.</param>
+    /// <param name="backoffMultiplier">Multiplier for exponential backoff.</param>
+    /// <param name="retryCondition">Condition to determine if retry should occur.</param>
+    /// <param name="logger">Optional logger for retry attempts.</param>
+    public static void ExecuteWithRetry(
+        Action action,
+        int maxRetries = 3,
+        TimeSpan? baseDelay = null,
+        TimeSpan? maxDelay = null,
+        double backoffMultiplier = 2.0,
+        Func<Exception, bool>? retryCondition = null,
+        ILogger? logger = null)
+    {
+        Guard.NotNull(action);
+
+        ExecuteWithRetry(() =>
+        {
+            action();
+            return true;
+        }, maxRetries, baseDelay, maxDelay, backoffMultiplier, retryCondition, logger);
     }
 
     /// <summary>

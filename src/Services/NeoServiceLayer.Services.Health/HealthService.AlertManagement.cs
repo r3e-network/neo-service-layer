@@ -1,5 +1,13 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Health.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Services.Health;
 
@@ -40,19 +48,19 @@ public partial class HealthService
         var alerts = new List<HealthAlert>();
 
         // Check response time threshold
-        if (healthReport.ResponseTime > threshold.MaxResponseTime)
+        if (healthReport.ResponseTime.TotalMilliseconds > threshold.MaxResponseTime)
         {
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighResponseTime",
-                Message = $"Node response time ({healthReport.ResponseTime.TotalMilliseconds:F0}ms) exceeds threshold ({threshold.MaxResponseTime.TotalMilliseconds:F0}ms)",
+                Severity = AlertSeverity.Warning,
+                AlertType = AlertType.Performance,
+                Message = $"Node response time ({healthReport.ResponseTime.TotalMilliseconds:F0}ms) exceeds threshold ({threshold.MaxResponseTime:F0}ms)",
                 Details = new Dictionary<string, object>
                 {
                     ["ActualResponseTime"] = healthReport.ResponseTime.TotalMilliseconds,
-                    ["ThresholdResponseTime"] = threshold.MaxResponseTime.TotalMilliseconds
+                    ["ThresholdResponseTime"] = threshold.MaxResponseTime
                 }
             });
         }
@@ -64,8 +72,8 @@ public partial class HealthService
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Error,
-                AlertType = "LowUptime",
+                Severity = AlertSeverity.Critical,
+                AlertType = AlertType.Performance,
                 Message = $"Node uptime ({healthReport.UptimePercentage:F1}%) below threshold ({threshold.MinUptimePercentage:F1}%)",
                 Details = new Dictionary<string, object>
                 {
@@ -76,14 +84,14 @@ public partial class HealthService
         }
 
         // Check if node is offline
-        if (healthReport.Status == NodeStatus.Offline)
+        if (healthReport.Status == HealthStatus.Unhealthy)
         {
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Critical,
-                AlertType = "NodeOffline",
+                Severity = AlertSeverity.Critical,
+                AlertType = AlertType.Connectivity,
                 Message = "Node is offline and not responding",
                 Details = new Dictionary<string, object>
                 {
@@ -95,18 +103,19 @@ public partial class HealthService
 
         // Check memory usage if available (using custom thresholds)
         if (threshold.CustomThresholds.TryGetValue("MaxMemoryUsage", out var maxMemoryUsage) &&
-            healthReport.Metrics?.MemoryUsage > maxMemoryUsage)
+            healthReport.Metrics?.Any() == true && healthReport.Metrics.First().MemoryUsage > maxMemoryUsage)
         {
+            var memoryUsage = healthReport.Metrics.First().MemoryUsage;
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighMemoryUsage",
-                Message = $"Node memory usage ({healthReport.Metrics.MemoryUsage / 1_000_000:F0}MB) exceeds threshold ({maxMemoryUsage / 1_000_000:F0}MB)",
+                Severity = AlertSeverity.Warning,
+                AlertType = AlertType.Resource,
+                Message = $"Node memory usage ({memoryUsage / 1_000_000:F0}MB) exceeds threshold ({maxMemoryUsage / 1_000_000:F0}MB)",
                 Details = new Dictionary<string, object>
                 {
-                    ["ActualMemoryUsage"] = healthReport.Metrics.MemoryUsage,
+                    ["ActualMemoryUsage"] = memoryUsage,
                     ["ThresholdMemoryUsage"] = maxMemoryUsage
                 }
             });
@@ -114,18 +123,19 @@ public partial class HealthService
 
         // Check CPU usage if available (using custom thresholds)
         if (threshold.CustomThresholds.TryGetValue("MaxCpuUsage", out var maxCpuUsage) &&
-            healthReport.Metrics?.CpuUsage > maxCpuUsage)
+            healthReport.Metrics?.Any() == true && healthReport.Metrics.First().CpuUsage > maxCpuUsage)
         {
+            var cpuUsage = healthReport.Metrics.First().CpuUsage;
             alerts.Add(new HealthAlert
             {
                 Id = Guid.NewGuid().ToString(),
                 NodeAddress = healthReport.NodeAddress,
-                Severity = HealthAlertSeverity.Warning,
-                AlertType = "HighCpuUsage",
-                Message = $"Node CPU usage ({healthReport.Metrics.CpuUsage:F1}%) exceeds threshold ({maxCpuUsage:F1}%)",
+                Severity = AlertSeverity.Warning,
+                AlertType = AlertType.Resource,
+                Message = $"Node CPU usage ({cpuUsage:F1}%) exceeds threshold ({maxCpuUsage:F1}%)",
                 Details = new Dictionary<string, object>
                 {
-                    ["ActualCpuUsage"] = healthReport.Metrics.CpuUsage,
+                    ["ActualCpuUsage"] = cpuUsage,
                     ["ThresholdCpuUsage"] = maxCpuUsage
                 }
             });
@@ -145,7 +155,7 @@ public partial class HealthService
 
                 if (existingAlert == null)
                 {
-                    alert.CreatedAt = DateTime.UtcNow;
+                    alert.TriggeredAt = DateTime.UtcNow;
                     _activeAlerts[alert.Id] = alert;
                     Logger.LogWarning("Health alert created: {AlertType} for node {NodeAddress} - {Message}",
                         alert.AlertType, alert.NodeAddress, alert.Message);
@@ -176,7 +186,7 @@ public partial class HealthService
         {
             if (_activeAlerts.TryGetValue(alertId, out var alert) && !alert.IsResolved)
             {
-                alert.IsResolved = true;
+                // Mark as resolved by setting ResolvedAt
                 alert.ResolvedAt = DateTime.UtcNow;
                 // Store resolved by information in Details
                 alert.Details["ResolvedBy"] = resolvedBy;
@@ -212,7 +222,7 @@ public partial class HealthService
 
             foreach (var alert in nodeAlerts)
             {
-                alert.IsResolved = true;
+                // Mark as resolved by setting ResolvedAt
                 alert.ResolvedAt = DateTime.UtcNow;
                 // Store resolved by information in Details
                 alert.Details["ResolvedBy"] = resolvedBy;
@@ -239,7 +249,7 @@ public partial class HealthService
     {
         lock (_alertsLock)
         {
-            return _activeAlerts.Values.Where(a => a.Severity == severity && !a.IsResolved).ToList();
+            return _activeAlerts.Values.Where(a => (int)a.Severity == (int)severity && !a.IsResolved).ToList();
         }
     }
 
@@ -310,9 +320,9 @@ public partial class HealthService
             var activeAlerts = _activeAlerts.Values.Count(a => !a.IsResolved);
             var resolvedAlerts = totalAlerts - activeAlerts;
 
-            var criticalAlerts = _activeAlerts.Values.Count(a => a.Severity == HealthAlertSeverity.Critical && !a.IsResolved);
-            var errorAlerts = _activeAlerts.Values.Count(a => a.Severity == HealthAlertSeverity.Error && !a.IsResolved);
-            var warningAlerts = _activeAlerts.Values.Count(a => a.Severity == HealthAlertSeverity.Warning && !a.IsResolved);
+            var criticalAlerts = _activeAlerts.Values.Count(a => a.Severity == AlertSeverity.Critical && !a.IsResolved);
+            var errorAlerts = _activeAlerts.Values.Count(a => a.Severity == AlertSeverity.Warning && !a.IsResolved);
+            var warningAlerts = _activeAlerts.Values.Count(a => a.Severity == AlertSeverity.Warning && !a.IsResolved);
 
             return new AlertStatistics
             {

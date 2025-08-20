@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -84,7 +90,7 @@ public partial class ProofOfReserveService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "MonitoredAsset",
                     ["AssetId"] = asset.AssetId,
@@ -214,7 +220,7 @@ public partial class ProofOfReserveService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(90), // Keep snapshots for 90 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ReserveSnapshot",
                     ["AssetId"] = assetId,
@@ -342,7 +348,7 @@ public partial class ProofOfReserveService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ReserveAlertConfig",
                     ["AssetId"] = alertConfig.AssetId,
@@ -418,7 +424,7 @@ public partial class ProofOfReserveService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ReserveSubscription",
                     ["AssetId"] = assetId,
@@ -452,7 +458,7 @@ public partial class ProofOfReserveService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(365), // Keep verification records for 1 year
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "VerificationRecord",
                     ["AssetId"] = assetId,
@@ -495,7 +501,7 @@ public partial class ProofOfReserveService
             {
                 Encrypt = false,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Statistics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O")
@@ -565,7 +571,7 @@ public partial class ProofOfReserveService
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
                 if (metadata != null && metadata.CustomMetadata.TryGetValue("Timestamp", out var timestampStr))
                 {
-                    if (DateTime.TryParse(timestampStr, out var timestamp) && timestamp < cutoffDate)
+                    if (DateTime.TryParse(timestampStr?.ToString(), out var timestamp) && timestamp < cutoffDate)
                     {
                         await _persistentStorage.DeleteAsync(key);
                     }
@@ -580,7 +586,7 @@ public partial class ProofOfReserveService
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
                 if (metadata != null && metadata.CustomMetadata.TryGetValue("IsActive", out var isActiveStr))
                 {
-                    if (!bool.TryParse(isActiveStr, out var isActive) || !isActive)
+                    if (!bool.TryParse(isActiveStr?.ToString(), out var isActive) || !isActive)
                     {
                         await _persistentStorage.DeleteAsync(key);
                     }

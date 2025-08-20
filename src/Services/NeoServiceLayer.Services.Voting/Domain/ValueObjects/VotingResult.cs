@@ -1,6 +1,10 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using NeoServiceLayer.ServiceFramework;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
 {
@@ -13,6 +17,17 @@ namespace NeoServiceLayer.Services.Voting.Domain.ValueObjects
         public decimal WinningVoteCount { get; }
         public bool QuorumMet { get; }
         public decimal ParticipationRate { get; }
+        
+        // Additional properties for compatibility
+        public string ExecutionId { get; set; } = Guid.NewGuid().ToString();
+        public string StrategyId { get; set; } = string.Empty;
+        public string VoterAddress { get; set; } = string.Empty;
+        public DateTime ExecutedAt { get; set; } = DateTime.UtcNow;
+        public bool Success { get; set; } = true;
+        public List<string> SelectedCandidates { get; set; } = new();
+        public string TransactionHash { get; set; } = string.Empty;
+        public Dictionary<string, object> ExecutionDetails { get; set; } = new();
+        public string ErrorMessage { get; set; } = string.Empty;
 
         public VotingResult(
             int totalVoters,

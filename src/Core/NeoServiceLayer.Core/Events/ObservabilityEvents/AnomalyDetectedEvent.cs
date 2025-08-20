@@ -1,5 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events.ObservabilityEvents
 {
@@ -19,23 +23,23 @@ namespace NeoServiceLayer.Core.Events.ObservabilityEvents
             double expectedValue,
             double deviationScore,
             string detectionAlgorithm,
-            Dictionary&lt; string, object&gt; additionalContext,
+            Dictionary<string, object> additionalContext,
             Guid? causationId = null,
             Guid? correlationId = null)
             : base(aggregateId, "ObservabilityService", aggregateVersion, initiatedBy, causationId, correlationId)
         {
             AnomalyType = anomalyType ?? throw new ArgumentNullException(nameof(anomalyType));
-        ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
-        MetricName = metricName ?? throw new ArgumentNullException(nameof(metricName));
-        CurrentValue = currentValue;
+            ServiceName = serviceName ?? throw new ArgumentNullException(nameof(serviceName));
+            MetricName = metricName ?? throw new ArgumentNullException(nameof(metricName));
+            CurrentValue = currentValue;
             ExpectedValue = expectedValue;
             DeviationScore = deviationScore;
             DetectionAlgorithm = detectionAlgorithm ?? throw new ArgumentNullException(nameof(detectionAlgorithm));
-        AdditionalContext = additionalContext ?? new Dictionary&lt;string, object&gt;();
+            AdditionalContext = additionalContext ?? new Dictionary<string, object>();
 
             AddMetadata("severity", GetSeverityLevel(deviationScore));
-        AddMetadata("impact_category", GetImpactCategory(anomalyType));
-        AddMetadata("requires_investigation", deviationScore &gt; 2.0);
+            AddMetadata("impact_category", GetImpactCategory(anomalyType));
+            AddMetadata("requires_investigation", deviationScore > 2.0);
         }
 
         /// <summary>
@@ -76,31 +80,31 @@ namespace NeoServiceLayer.Core.Events.ObservabilityEvents
         /// <summary>
         /// Additional context information
         /// </summary>
-        public Dictionary&lt;string, object&gt; AdditionalContext { get; }
+        public Dictionary<string, object> AdditionalContext { get; }
 
-private static string GetSeverityLevel(double deviationScore)
-{
-    return Math.Abs(deviationScore) switch
-    {
-        &gt;= 4.0 = &gt; "critical",
-        &gt;= 3.0 = &gt; "high",
-        &gt;= 2.0 = &gt; "medium",
-        &gt;= 1.0 = &gt; "low",
-        _ = &gt; "info"
+        private static string GetSeverityLevel(double deviationScore)
+        {
+            return Math.Abs(deviationScore) switch
+            {
+                >= 4.0 => "critical",
+                >= 3.0 => "high",
+                >= 2.0 => "medium",
+                >= 1.0 => "low",
+                _ => "info"
             };
-}
+        }
 
-private static string GetImpactCategory(string anomalyType)
-{
-    return anomalyType.ToLowerInvariant() switch
-    {
-        var t when t.Contains("response_time") => "performance",
-        var t when t.Contains("error_rate") => "reliability",
-        var t when t.Contains("throughput") => "capacity",
-        var t when t.Contains("memory") => "resource",
-        var t when t.Contains("cpu") => "resource",
-        _ => "operational"
-    };
-}
+        private static string GetImpactCategory(string anomalyType)
+        {
+            return anomalyType.ToLowerInvariant() switch
+            {
+                var t when t.Contains("response_time") => "performance",
+                var t when t.Contains("error_rate") => "reliability",
+                var t when t.Contains("throughput") => "capacity",
+                var t when t.Contains("memory") => "resource",
+                var t when t.Contains("cpu") => "resource",
+                _ => "operational"
+            };
+        }
     }
 }

@@ -1,7 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Configuration;
 
@@ -25,13 +31,13 @@ public partial class ConfigurationService
     {
         if (_persistentStorage == null)
         {
-            Logger.LogWarning("Persistent storage not available for configuration service");
+            _persistentStorageNotAvailable(Logger, null);
             return;
         }
 
         try
         {
-            Logger.LogInformation("Loading persistent configurations...");
+            _loadingPersistentConfigurations(Logger, null);
 
             // Load configurations
             var configKeys = await _persistentStorage.ListKeysAsync(CONFIG_PREFIX);
@@ -50,14 +56,14 @@ public partial class ConfigurationService
                     }
                 }
             }
-            Logger.LogInformation("Loaded {Count} configurations from persistent storage", _configurations.Count);
+            _persistentConfigurationsLoaded(Logger, _configurations.Count, null);
 
             // Load subscriptions
             await LoadPersistentSubscriptionsAsync();
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading persistent configurations");
+            _loadPersistentConfigurationsFailed(Logger, ex);
         }
     }
 
@@ -77,7 +83,7 @@ public partial class ConfigurationService
             {
                 Encrypt = entry.EncryptValue,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ConfigurationEntry",
                     ["Key"] = entry.Key,
@@ -96,7 +102,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting configuration {Key}", entry.Key);
+            _persistConfigurationEntryFailed(Logger, entry.Key, ex);
         }
     }
 
@@ -117,7 +123,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing persisted configuration {Key}", configKey);
+            _removePersistedConfigurationFailed(Logger, configKey, ex);
         }
     }
 
@@ -163,7 +169,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error updating configuration indexes for {Key}", entry.Key);
+            _updateConfigurationIndexesFailed(Logger, entry.Key, ex);
         }
     }
 
@@ -186,7 +192,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing configuration indexes for {Key}", configKey);
+            _removeConfigurationIndexesFailed(Logger, configKey, ex);
         }
     }
 
@@ -217,7 +223,7 @@ public partial class ConfigurationService
                 Encrypt = entry.EncryptValue,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(90), // Keep history for 90 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ConfigurationHistory",
                     ["Key"] = entry.Key,
@@ -228,7 +234,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error adding configuration history for {Key}", entry.Key);
+            _addConfigurationHistoryFailed(Logger, entry.Key, ex);
         }
     }
 
@@ -259,11 +265,11 @@ public partial class ConfigurationService
                 }
             }
 
-            Logger.LogInformation("Loaded {Count} active subscriptions from persistent storage", _subscriptions.Count);
+            _persistentSubscriptionsLoaded(Logger, _subscriptions.Count, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error loading persistent subscriptions");
+            _loadPersistentSubscriptionsFailed(Logger, ex);
         }
     }
 
@@ -283,7 +289,7 @@ public partial class ConfigurationService
             {
                 Encrypt = true,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ConfigurationSubscription",
                     ["SubscriptionId"] = subscription.SubscriptionId,
@@ -296,7 +302,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting subscription {SubscriptionId}", subscription.SubscriptionId);
+            _persistSubscriptionFailed(Logger, subscription.SubscriptionId, ex);
         }
     }
 
@@ -314,7 +320,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error removing persisted subscription {SubscriptionId}", subscriptionId);
+            _removePersistedSubscriptionFailed(Logger, subscriptionId, ex);
         }
     }
 
@@ -335,7 +341,7 @@ public partial class ConfigurationService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(365), // Keep audit logs for 1 year
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "ConfigurationAudit",
                     ["Action"] = auditEntry.Action,
@@ -347,7 +353,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting audit entry for {Key}", auditEntry.ConfigurationKey);
+            _persistAuditEntryFailed(Logger, auditEntry.ConfigurationKey, ex);
         }
     }
 
@@ -367,7 +373,7 @@ public partial class ConfigurationService
             {
                 Encrypt = false,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Statistics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O"),
@@ -378,7 +384,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting configuration statistics");
+            _persistStatisticsFailed(Logger, ex);
         }
     }
 
@@ -398,9 +404,9 @@ public partial class ConfigurationService
             foreach (var key in historyKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
-                if (metadata != null && metadata.CustomMetadata.TryGetValue("ChangedAt", out var changedAtStr))
+                if (metadata != null && metadata.CustomMetadata.TryGetValue("ChangedAt", out var changedAtObj))
                 {
-                    if (DateTime.TryParse(changedAtStr, out var changedAt) && changedAt < cutoffDate)
+                    if (DateTime.TryParse(changedAtObj?.ToString(), out var changedAt) && changedAt < cutoffDate)
                     {
                         await _persistentStorage.DeleteAsync(key);
                     }
@@ -413,20 +419,20 @@ public partial class ConfigurationService
             foreach (var key in subscriptionKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
-                if (metadata != null && metadata.CustomMetadata.TryGetValue("IsActive", out var isActiveStr))
+                if (metadata != null && metadata.CustomMetadata.TryGetValue("IsActive", out var isActiveObj))
                 {
-                    if (!bool.TryParse(isActiveStr, out var isActive) || !isActive)
+                    if (!bool.TryParse(isActiveObj?.ToString(), out var isActive) || !isActive)
                     {
                         await _persistentStorage.DeleteAsync(key);
                     }
                 }
             }
 
-            Logger.LogInformation("Completed cleanup of old configuration data");
+            _cleanupCompleted(Logger, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error during configuration data cleanup");
+            _cleanupFailed(Logger, ex);
         }
     }
 
@@ -459,7 +465,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error retrieving configuration history for {Key}", configKey);
+            _getConfigurationHistoryFailed(Logger, configKey, ex);
         }
 
         return history;

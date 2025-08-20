@@ -1,4 +1,10 @@
-﻿using System.Security;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security;
+using System.Threading;
+using System.Threading.Tasks;
+
 
 namespace NeoServiceLayer.Core;
 
@@ -175,10 +181,10 @@ public class Secret
     /// </summary>
     public required SecretMetadata Metadata { get; set; }
 
-    /// <summary>
-    /// Gets or sets the secret value.
-    /// </summary>
-    public required SecureString Value { get; set; }
+/// <summary>
+/// Gets or sets the secret value.
+/// </summary>
+public required SecureString Value { get; set; }
 }
 
 /// <summary>

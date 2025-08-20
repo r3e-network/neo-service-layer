@@ -12,6 +12,8 @@ using NeoServiceLayer.Core.Events;
 using System.Collections.Concurrent;
 using Polly;
 using Polly.Extensions.Http;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing
 {
@@ -20,30 +22,30 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
     /// </summary>
     public class RabbitMqEventBus : IEventBus, IDisposable
     {
-        private readonly ILogger&lt;RabbitMqEventBus&gt; _logger;
+        private readonly ILogger<RabbitMqEventBus> _logger;
         private readonly EventBusConfiguration _configuration;
         private readonly IConnection _connection;
         private readonly IModel _channel;
         private readonly JsonSerializerOptions _jsonOptions;
-        private readonly ConcurrentDictionary&lt;Guid, EventSubscriptionInternal&gt; _subscriptions;
+        private readonly ConcurrentDictionary<Guid, EventSubscriptionInternal> _subscriptions;
         private readonly AsyncPolicy _retryPolicy;
         private bool _disposed;
 
         public RabbitMqEventBus(
-            ILogger&lt;RabbitMqEventBus&gt; logger,
-            IOptions&lt;EventBusConfiguration&gt; configuration)
+            ILogger<RabbitMqEventBus> logger,
+            IOptions<EventBusConfiguration> configuration)
         {
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _configuration = configuration?.Value ?? throw new ArgumentNullException(nameof(configuration));
-            
+
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
                 WriteIndented = false
             };
-            
-            _subscriptions = new ConcurrentDictionary&lt;Guid, EventSubscriptionInternal&gt;();
-            
+
+            _subscriptions = new ConcurrentDictionary<Guid, EventSubscriptionInternal>();
+
             // Create connection and channel
             var factory = new ConnectionFactory
             {
@@ -56,23 +58,23 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                 NetworkRecoveryInterval = TimeSpan.FromSeconds(10),
                 RequestedHeartbeat = TimeSpan.FromSeconds(60)
             };
-            
+
             _connection = factory.CreateConnection($"NEO-EventBus-{Environment.MachineName}");
             _channel = _connection.CreateModel();
-            
+
             // Setup retry policy
             _retryPolicy = Policy
-                .Handle&lt;Exception&gt;()
+                .Handle<Exception>()
                 .WaitAndRetryAsync(
                     retryCount: 3,
-                    sleepDurationProvider: retryAttempt =&gt; TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                    onRetry: (outcome, timespan, retryCount, context) =&gt;
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (outcome, timespan, retryCount, context) =>
                     {
                         _logger.LogWarning(
                             "Retry {RetryCount} for event bus operation after {Delay}ms. Error: {Error}",
-                            retryCount, timespan.TotalMilliseconds, outcome.Exception?.Message);
+                            retryCount, timespan.TotalMilliseconds, outcome?.Message);
                     });
-            
+
             InitializeExchangesAndQueues();
         }
 
@@ -81,7 +83,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             if (domainEvent == null)
                 throw new ArgumentNullException(nameof(domainEvent));
 
-            await _retryPolicy.ExecuteAsync(async () =&gt;
+            await _retryPolicy.ExecuteAsync(async () =>
             {
                 var eventMessage = new EventMessage
                 {
@@ -95,7 +97,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                     CorrelationId = domainEvent.CorrelationId,
                     InitiatedBy = domainEvent.InitiatedBy,
                     Data = JsonSerializer.Serialize(domainEvent, _jsonOptions),
-                    Metadata = domainEvent.Metadata
+                    Metadata = domainEvent.Metadata as Dictionary<string, object> ?? new Dictionary<string, object>(domainEvent.Metadata)
                 };
 
                 var messageBody = JsonSerializer.SerializeToUtf8Bytes(eventMessage, _jsonOptions);
@@ -107,7 +109,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                 properties.Type = domainEvent.EventType;
                 properties.Timestamp = new AmqpTimestamp(((DateTimeOffset)domainEvent.OccurredAt).ToUnixTimeSeconds());
                 properties.CorrelationId = domainEvent.CorrelationId?.ToString();
-                properties.Headers = new Dictionary&lt;string, object&gt;
+                properties.Headers = new Dictionary<string, object>
                 {
                     ["aggregate_id"] = domainEvent.AggregateId,
                     ["aggregate_type"] = domainEvent.AggregateType,
@@ -130,7 +132,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         }
 
         public async Task PublishBatchAsync(
-            IEnumerable&lt;IDomainEvent&gt; domainEvents, 
+            IEnumerable<IDomainEvent> domainEvents,
             CancellationToken cancellationToken = default)
         {
             if (domainEvents == null)
@@ -139,7 +141,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             var batch = _channel.CreateBasicPublishBatch();
             var eventCount = 0;
 
-            await _retryPolicy.ExecuteAsync(async () =&gt;
+            await _retryPolicy.ExecuteAsync(async () =>
             {
                 foreach (var domainEvent in domainEvents)
                 {
@@ -155,7 +157,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                         CorrelationId = domainEvent.CorrelationId,
                         InitiatedBy = domainEvent.InitiatedBy,
                         Data = JsonSerializer.Serialize(domainEvent, _jsonOptions),
-                        Metadata = domainEvent.Metadata
+                        Metadata = domainEvent.Metadata as Dictionary<string, object> ?? new Dictionary<string, object>(domainEvent.Metadata)
                     };
 
                     var messageBody = JsonSerializer.SerializeToUtf8Bytes(eventMessage, _jsonOptions);
@@ -186,18 +188,18 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             });
         }
 
-        public IEventSubscription Subscribe&lt;TEvent&gt;(IEventHandler&lt;TEvent&gt; handler) 
+        public IEventSubscription Subscribe<TEvent>(IEventHandler<TEvent> handler)
             where TEvent : class, IDomainEvent
         {
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
             var eventType = typeof(TEvent).Name;
-            return SubscribeInternal(eventType, async (message, cancellationToken) =&gt;
+            return SubscribeInternal(eventType, async (message, cancellationToken) =>
             {
                 if (message.EventType == eventType)
                 {
-                    var domainEvent = JsonSerializer.Deserialize&lt;TEvent&gt;(message.Data, _jsonOptions);
+                    var domainEvent = JsonSerializer.Deserialize<TEvent>(message.Data, _jsonOptions);
                     if (domainEvent != null)
                     {
                         await handler.HandleAsync(domainEvent, cancellationToken);
@@ -206,15 +208,15 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             });
         }
 
-        public IEventSubscription Subscribe(string eventTypePattern, IEventHandler&lt;IDomainEvent&gt; handler)
+        public IEventSubscription Subscribe(string eventTypePattern, IEventHandler<IDomainEvent> handler)
         {
             if (string.IsNullOrWhiteSpace(eventTypePattern))
                 throw new ArgumentException("Event type pattern cannot be null or empty", nameof(eventTypePattern));
-            
+
             if (handler == null)
                 throw new ArgumentNullException(nameof(handler));
 
-            return SubscribeInternal(eventTypePattern, async (message, cancellationToken) =&gt;
+            return SubscribeInternal(eventTypePattern, async (message, cancellationToken) =>
             {
                 // Simple pattern matching - in production, use more sophisticated matching
                 if (IsPatternMatch(message.EventType, eventTypePattern))
@@ -226,8 +228,8 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         }
 
         private IEventSubscription SubscribeInternal(
-            string eventTypePattern, 
-            Func&lt;EventMessage, CancellationToken, Task&gt; messageHandler)
+            string eventTypePattern,
+            Func<EventMessage, CancellationToken, Task> messageHandler)
         {
             var subscriptionId = Guid.NewGuid();
             var queueName = $"neo_events_{subscriptionId}";
@@ -249,18 +251,18 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
 
             // Create consumer
             var consumer = new AsyncEventingBasicConsumer(_channel);
-            consumer.Received += async (model, ea) =&gt;
+            consumer.Received += async (model, ea) =>
             {
                 try
                 {
                     var messageBody = ea.Body.ToArray();
-                    var eventMessage = JsonSerializer.Deserialize&lt;EventMessage&gt;(messageBody, _jsonOptions);
-                    
+                    var eventMessage = JsonSerializer.Deserialize<EventMessage>(messageBody, _jsonOptions);
+
                     if (eventMessage != null)
                     {
                         await messageHandler(eventMessage, CancellationToken.None);
                     }
-                    
+
                     _channel.BasicAck(ea.DeliveryTag, false);
                 }
                 catch (Exception ex)
@@ -280,7 +282,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                 eventTypePattern,
                 queueName,
                 consumerTag,
-                () =&gt; CleanupSubscription(subscriptionId, queueName, consumerTag));
+                () => CleanupSubscription(subscriptionId, queueName, consumerTag));
 
             _subscriptions.TryAdd(subscriptionId, subscription);
 
@@ -327,7 +329,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
 
         private string GetRoutingKey(string eventType)
         {
-            // Convert EventType to routing key format (e.g., KeyGeneratedEvent -&gt; key.generated.event)
+            // Convert EventType to routing key format (e.g., KeyGeneratedEvent -> key.generated.event)
             return eventType.Replace("Event", "").ToLowerInvariant();
         }
 
@@ -336,10 +338,10 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             // Simple wildcard matching - in production, use more sophisticated pattern matching
             if (pattern == "*")
                 return true;
-            
+
             if (pattern.EndsWith("*"))
                 return eventType.StartsWith(pattern[..^1], StringComparison.OrdinalIgnoreCase);
-            
+
             return eventType.Equals(pattern, StringComparison.OrdinalIgnoreCase);
         }
 
@@ -356,7 +358,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
                 message.CorrelationId,
                 message.InitiatedBy,
                 message.Data,
-                message.Metadata ?? new Dictionary&lt;string, object&gt;());
+                message.Metadata ?? new Dictionary<string, object>());
         }
 
         public void Dispose()
@@ -371,7 +373,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             {
                 subscription.Dispose();
             }
-            
+
             _subscriptions.Clear();
 
             _channel?.Dispose();
@@ -409,7 +411,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         public string QueueName { get; }
         public string ConsumerTag { get; }
         public DateTime CreatedAt { get; }
-        public bool IsActive =&gt; !_disposed;
+        public bool IsActive => !_disposed;
 
         public void Dispose()
         {
@@ -436,7 +438,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         public Guid? CorrelationId { get; set; }
         public string InitiatedBy { get; set; } = string.Empty;
         public string Data { get; set; } = string.Empty;
-        public Dictionary&lt;string, object&gt;? Metadata { get; set; }
+        public Dictionary<string, object>? Metadata { get; set; }
     }
 
     /// <summary>
@@ -455,7 +457,7 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             Guid? correlationId,
             string initiatedBy,
             string serializedData,
-            IDictionary&lt;string, object&gt; metadata)
+            IDictionary<string, object> metadata)
         {
             EventId = eventId;
             OccurredAt = occurredAt;
@@ -480,6 +482,6 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         public Guid? CorrelationId { get; }
         public string InitiatedBy { get; }
         public string SerializedData { get; }
-        public IDictionary&lt;string, object&gt; Metadata { get; }
+        public IDictionary<string, object> Metadata { get; }
     }
 }

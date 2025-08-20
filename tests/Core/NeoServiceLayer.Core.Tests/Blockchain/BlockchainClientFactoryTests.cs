@@ -1,7 +1,16 @@
-﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using InfraBlockchain = NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure;
+using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+using Moq;
+using Microsoft.Extensions.DependencyInjection;
+
 
 namespace NeoServiceLayer.Core.Tests.Blockchain;
 
@@ -374,8 +383,14 @@ public class BlockchainClientFactoryTests
         public Task<bool> UnsubscribeFromTransactionsAsync(string subscriptionId) => Task.FromResult(true);
         public Task<string> SubscribeToContractEventsAsync(string contractAddress, string eventName, Func<ContractEvent, Task> callback) => Task.FromResult("sub3");
         public Task<bool> UnsubscribeFromContractEventsAsync(string subscriptionId) => Task.FromResult(true);
+        public Task<string> GetBlockHashAsync(long height) => Task.FromResult("0x123hash");
+        public Task<decimal> GetGasPriceAsync() => Task.FromResult(1.5m);
+        public Task<decimal> EstimateGasAsync(Transaction transaction) => Task.FromResult(100m);
+        public Task<string> CallContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("result");
         public Task<string> CallContractMethodAsync(string contractAddress, string method, params object[] args) => Task.FromResult("result");
         public Task<string> InvokeContractMethodAsync(string contractAddress, string method, params object[] args) => Task.FromResult("0x456");
+        public Task<string> InvokeContractAsync(string contractAddress, string method, params object[] parameters) => Task.FromResult("0x789");
+        public Task<IEnumerable<ContractEvent>> GetBlockEventsAsync(long height) => Task.FromResult<IEnumerable<ContractEvent>>(new List<ContractEvent>());
     }
 
     #endregion

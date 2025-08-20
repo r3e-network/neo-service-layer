@@ -13,6 +13,7 @@ extern "C" {
 const SGX_SUCCESS: c_uint = 0x00000000;
 const SGX_ERROR_INVALID_PARAMETER: c_uint = 0x00000002;
 const SGX_ERROR_OUT_OF_MEMORY: c_uint = 0x00000003;
+#[allow(dead_code)]
 const SGX_ERROR_UNEXPECTED: c_uint = 0x00001001;
 const ORACLE_ERROR_NETWORK_FAILURE: c_int = -2001;
 const ORACLE_ERROR_INVALID_URL: c_int = -2002;

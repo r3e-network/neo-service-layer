@@ -1,7 +1,14 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Health;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -171,10 +178,20 @@ public class HealthController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _healthService.RegisterNodeForMonitoringAsync(request, blockchain);
+            
+            // Convert to service model
+            var serviceRequest = new NeoServiceLayer.Services.Health.Models.NodeRegistrationRequest
+            {
+                NodeId = request.NodeId,
+                NodeName = request.NodeName,
+                NodeAddress = request.NodeUrl,
+                Metadata = request.Metadata
+            };
+            
+            var result = await _healthService.RegisterNodeForMonitoringAsync(serviceRequest, blockchain);
 
             Logger.LogInformation("Registered node {NodeAddress} for monitoring on {BlockchainType} by user {UserId}",
-                request.NodeAddress, blockchainType, GetCurrentUserId());
+                request.NodeUrl, blockchainType, GetCurrentUserId());
 
             return Ok(CreateResponse(result, "Node registered for monitoring successfully"));
         }
@@ -341,4 +358,13 @@ public class HealthController : BaseApiController
             return HandleException(ex, "GetNetworkMetrics");
         }
     }
+}
+
+// Temporary stub class for missing model
+public class NodeRegistrationRequest
+{
+    public string NodeId { get; set; }
+    public string NodeName { get; set; }
+    public string NodeUrl { get; set; }
+    public Dictionary<string, object> Metadata { get; set; }
 }

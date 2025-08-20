@@ -1,4 +1,4 @@
-﻿namespace NeoServiceLayer.Services.Automation;
+namespace NeoServiceLayer.Services.Automation.Models;
 
 /// <summary>
 /// Represents the execution of an automation job.
@@ -8,7 +8,16 @@ public class AutomationExecution
     /// <summary>
     /// Gets or sets the unique identifier for this execution.
     /// </summary>
-    public string Id { get; set; } = string.Empty;
+    public string ExecutionId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the ID (alias for ExecutionId).
+    /// </summary>
+    public string Id
+    {
+        get => ExecutionId;
+        set => ExecutionId = value;
+    }
 
     /// <summary>
     /// Gets or sets the job ID that was executed.
@@ -18,7 +27,12 @@ public class AutomationExecution
     /// <summary>
     /// Gets or sets when the execution started.
     /// </summary>
-    public DateTime ExecutedAt { get; set; }
+    public DateTime StartedAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets when the execution completed.
+    /// </summary>
+    public DateTime? ExecutedAt { get; set; }
 
     /// <summary>
     /// Gets or sets the execution status.
@@ -48,12 +62,12 @@ public class AutomationExecution
     /// <summary>
     /// Gets or sets the gas used for the execution.
     /// </summary>
-    public decimal? GasUsed { get; set; }
+    public long? GasUsed { get; set; }
 
     /// <summary>
     /// Gets or sets the execution time duration.
     /// </summary>
-    public TimeSpan ExecutionTime { get; set; }
+    public TimeSpan Duration { get; set; }
 
     /// <summary>
     /// Gets or sets the retry attempt number.
@@ -63,10 +77,15 @@ public class AutomationExecution
     /// <summary>
     /// Gets or sets whether this execution triggered additional jobs.
     /// </summary>
-    public bool TriggeredJobs { get; set; }
+    public bool TriggeredAdditionalJobs { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata for the execution.
     /// </summary>
     public Dictionary<string, object>? Metadata { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total execution time.
+    /// </summary>
+    public TimeSpan? ExecutionTime { get; set; }
 }

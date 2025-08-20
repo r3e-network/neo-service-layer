@@ -1,4 +1,3 @@
-﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -10,11 +9,17 @@ using NeoServiceLayer.Services.KeyManagement;
 using NeoServiceLayer.Services.Oracle;
 using NeoServiceLayer.Services.Randomness;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
-using PatternRecognitionSvc = NeoServiceLayer.AI.PatternRecognition;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -29,7 +34,7 @@ public class CrossServiceIntegrationTests : IDisposable
     private readonly IKeyManagementService _keyManagementService;
     private readonly IComputeService _computeService;
     private readonly IStorageService _storageService;
-    private readonly PatternRecognitionSvc.IPatternRecognitionService _aiService;
+    private readonly NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService _aiService;
     private readonly IAbstractAccountService _abstractAccountService;
     private readonly ILogger<CrossServiceIntegrationTests> _logger;
 
@@ -50,7 +55,7 @@ public class CrossServiceIntegrationTests : IDisposable
         services.AddSingleton<IKeyManagementService, KeyManagementService>();
         services.AddSingleton<IComputeService, ComputeService>();
         services.AddSingleton<IStorageService, StorageService>();
-        services.AddSingleton<PatternRecognitionSvc.IPatternRecognitionService, PatternRecognitionSvc.PatternRecognitionService>();
+        services.AddSingleton<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService, PatternRecognitionService>();
         services.AddSingleton<IAbstractAccountService, AbstractAccountService>();
 
         _serviceProvider = services.BuildServiceProvider();
@@ -61,7 +66,7 @@ public class CrossServiceIntegrationTests : IDisposable
         _keyManagementService = _serviceProvider.GetRequiredService<IKeyManagementService>();
         _computeService = _serviceProvider.GetRequiredService<IComputeService>();
         _storageService = _serviceProvider.GetRequiredService<IStorageService>();
-        _aiService = _serviceProvider.GetRequiredService<PatternRecognitionSvc.IPatternRecognitionService>();
+        _aiService = _serviceProvider.GetRequiredService<NeoServiceLayer.AI.PatternRecognition.IPatternRecognitionService>();
         _abstractAccountService = _serviceProvider.GetRequiredService<IAbstractAccountService>();
         _logger = _serviceProvider.GetRequiredService<ILogger<CrossServiceIntegrationTests>>();
 

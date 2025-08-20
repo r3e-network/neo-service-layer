@@ -1,9 +1,19 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
+using NeoServiceLayer.Infrastructure.Blockchain;
+using NeoServiceLayer.Infrastructure;
+using Microsoft.Extensions.Logging;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Oracle.Configuration;
 
@@ -15,7 +25,7 @@ public class OracleServiceOptions
     /// <summary>
     /// Gets or sets the service configuration.
     /// </summary>
-    public IServiceConfiguration? Configuration { get; set; }
+    public CoreConfig? Configuration { get; set; }
 
     /// <summary>
     /// Gets or sets the maximum number of data sources.
@@ -150,7 +160,7 @@ public class OracleServiceBuilder
     /// </summary>
     /// <param name="configuration">The service configuration.</param>
     /// <returns>The builder instance.</returns>
-    public OracleServiceBuilder WithConfiguration(IServiceConfiguration configuration)
+    public OracleServiceBuilder WithConfiguration(CoreConfig configuration)
     {
         ArgumentNullException.ThrowIfNull(configuration);
         _options.Configuration = configuration;

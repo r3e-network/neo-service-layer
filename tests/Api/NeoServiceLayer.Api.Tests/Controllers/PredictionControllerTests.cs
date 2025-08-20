@@ -1,4 +1,3 @@
-﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -8,6 +7,13 @@ using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security.Claims;
+
 
 namespace NeoServiceLayer.Api.Tests.Controllers;
 

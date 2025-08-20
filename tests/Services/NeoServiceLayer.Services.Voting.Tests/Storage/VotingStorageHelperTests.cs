@@ -1,11 +1,18 @@
-﻿using System.Text.Json;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Services.Voting.Storage;
+using NeoServiceLayer.Services.Voting.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Voting.Tests.Storage;
 
@@ -35,7 +42,7 @@ public class VotingStorageHelperTests
             {
                 Id = "strategy1",
                 Name = "Test Strategy",
-                StrategyType = VotingStrategyType.StabilityFocused,
+                Type = VotingStrategyType.StabilityFocused,
                 IsActive = true,
                 Rules = new VotingRules
                 {
@@ -68,7 +75,7 @@ public class VotingStorageHelperTests
             {
                 Id = "strategy1",
                 Name = "Test Strategy",
-                StrategyType = VotingStrategyType.StabilityFocused,
+                Type = VotingStrategyType.StabilityFocused,
                 IsActive = true,
                 Rules = new VotingRules
                 {
@@ -110,9 +117,9 @@ public class VotingStorageHelperTests
     public async Task PersistCandidatesAsync_ValidCandidates_SavesSuccessfully()
     {
         // Arrange
-        var candidates = new Dictionary<string, CandidateInfo>
+        var candidates = new Dictionary<string, Candidate>
         {
-            ["test-public-key"] = new CandidateInfo
+            ["test-public-key"] = new Candidate
             {
                 PublicKey = "test-public-key",
                 Name = "Test Candidate",
@@ -144,9 +151,9 @@ public class VotingStorageHelperTests
     public async Task LoadCandidatesAsync_ExistingData_ReturnsCandidates()
     {
         // Arrange
-        var candidates = new Dictionary<string, CandidateInfo>
+        var candidates = new Dictionary<string, Candidate>
         {
-            ["test-public-key"] = new CandidateInfo
+            ["test-public-key"] = new Candidate
             {
                 PublicKey = "test-public-key",
                 Name = "Test Candidate",

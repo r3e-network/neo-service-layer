@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -27,9 +33,26 @@ public abstract class EnclaveBlockchainServiceBase : EnclaveServiceBase, IBlockc
     /// <inheritdoc/>
     public IEnumerable<BlockchainType> SupportedBlockchains { get; }
 
+    /// <summary>
+    /// Gets the service name (alias for Name property).
+    /// </summary>
+    protected string ServiceName => Name;
+
     /// <inheritdoc/>
     public bool SupportsBlockchain(BlockchainType blockchainType)
     {
         return SupportedBlockchains.Contains(blockchainType);
+    }
+
+    /// <summary>
+    /// Validates that the blockchain type is supported by this service.
+    /// </summary>
+    /// <param name="blockchainType">The blockchain type to validate.</param>
+    protected void ValidateBlockchainType(BlockchainType blockchainType)
+    {
+        if (!SupportsBlockchain(blockchainType))
+        {
+            throw new NotSupportedException($"Blockchain type {blockchainType} is not supported by {Name}");
+        }
     }
 }

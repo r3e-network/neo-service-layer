@@ -1,19 +1,24 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.Services.Automation.Models;
+using System.Text.Json;
+using ServiceFrameworkBase = NeoServiceLayer.ServiceFramework.ServiceBase;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Automation.Services
 {
     /// <summary>
     /// Service for managing automation job lifecycle.
     /// </summary>
-    public class JobManagementService : IJobManagementService
+    public class JobManagementService : ServiceFrameworkBase, IJobManagementService
     {
-        private readonly ILogger<JobManagementService> _logger;
+        private new readonly ILogger<JobManagementService> Logger;
         private readonly IPersistentStorageProvider? _persistentStorage;
         private readonly Dictionary<string, AutomationJob> _jobs;
         private readonly Dictionary<string, List<AutomationExecution>> _executionHistory;
@@ -22,8 +27,10 @@ namespace NeoServiceLayer.Services.Automation.Services
         public JobManagementService(
             ILogger<JobManagementService> logger,
             IPersistentStorageProvider? persistentStorage = null)
-        {
-            _logger = logger;
+
+        : base("JobManagementService", "1.0.0", "JobManagementService service", logger)
+    {
+            Logger = logger;
             _persistentStorage = persistentStorage;
             _jobs = new Dictionary<string, AutomationJob>();
             _executionHistory = new Dictionary<string, List<AutomationExecution>>();
@@ -45,31 +52,28 @@ namespace NeoServiceLayer.Services.Automation.Services
                 Parameters = new Dictionary<string, object>(),
                 Trigger = new AutomationTrigger
                 {
-                    Type = request.TriggerType,
-                    Schedule = request.TriggerType == AutomationTriggerType.Schedule
-                        ? request.TriggerConfiguration : null,
-                    EventType = request.TriggerType == AutomationTriggerType.Event
-                        ? request.TriggerConfiguration : null,
-                    Configuration = new Dictionary<string, object>()
+                    Type = request.Trigger.Type,
+                    Schedule = request.Trigger.Type == AutomationTriggerType.Schedule
+                        ? request.Trigger.Schedule : null,
+                    EventType = request.Trigger.Type == AutomationTriggerType.Event
+                        ? request.Trigger.EventType : null,
+                    Configuration = request.Trigger.Configuration ?? new Dictionary<string, object>()
                 },
                 Conditions = Array.Empty<AutomationCondition>(),
                 Status = AutomationJobStatus.Created,
                 CreatedAt = DateTime.UtcNow,
-                IsEnabled = request.IsActive,
+                IsEnabled = request.IsEnabled,
                 ExpiresAt = request.ExpiresAt,
                 BlockchainType = blockchainType
             };
 
-            // Parse action configuration
-            if (request.ActionConfiguration != null)
-            {
-                job.TargetContract = request.ActionConfiguration.GetValueOrDefault("contract", string.Empty);
-                job.TargetMethod = request.ActionConfiguration.GetValueOrDefault("method", string.Empty);
-                job.Parameters = request.ActionConfiguration.GetValueOrDefault("parameters", new Dictionary<string, object>());
-            }
+            // Set action configuration from request
+            job.TargetContract = request.TargetContract;
+            job.TargetMethod = request.TargetMethod;
+            job.Parameters = request.Parameters;
 
-            // Parse conditions
-            if (request.ConditionConfiguration != null)
+            // Set conditions from request
+            job.Conditions = request.Conditions;
             {
                 job.Conditions = ParseConditions(request.ConditionConfiguration);
             }
@@ -86,7 +90,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Created automation job {JobId} for blockchain {Blockchain}",
+            Logger.LogInformation("Created automation job {JobId} for blockchain {Blockchain}",
                 automationId, blockchainType);
 
             return automationId;
@@ -146,7 +150,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Cancelled automation job {JobId}", jobId);
+            Logger.LogInformation("Cancelled automation job {JobId}", jobId);
             return true;
         }
 
@@ -182,7 +186,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Paused automation job {JobId}", jobId);
+            Logger.LogInformation("Paused automation job {JobId}", jobId);
             return true;
         }
 
@@ -218,7 +222,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Resumed automation job {JobId}", jobId);
+            Logger.LogInformation("Resumed automation job {JobId}", jobId);
             return true;
         }
 
@@ -280,7 +284,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 await StoreJobAsync(job).ConfigureAwait(false);
             }
 
-            _logger.LogInformation("Updated automation job {JobId}", jobId);
+            Logger.LogInformation("Updated automation job {JobId}", jobId);
             return true;
         }
 
@@ -311,7 +315,7 @@ namespace NeoServiceLayer.Services.Automation.Services
             var data = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(job);
 
             await _persistentStorage.StoreAsync(key, data).ConfigureAwait(false);
-            _logger.LogDebug("Persisted job {JobId} to storage", job.Id);
+            Logger.LogDebug("Persisted job {JobId} to storage", job.Id);
         }
 
         public async Task<AutomationJob?> LoadJobAsync(string jobId)
@@ -326,7 +330,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 return null;
 
             var job = System.Text.Json.JsonSerializer.Deserialize<AutomationJob>(data);
-            _logger.LogDebug("Loaded job {JobId} from storage", jobId);
+            Logger.LogDebug("Loaded job {JobId} from storage", jobId);
 
             return job;
         }
@@ -346,7 +350,7 @@ namespace NeoServiceLayer.Services.Automation.Services
                 }
             }
 
-            _logger.LogInformation("Cleaned up {Count} old executions older than {Cutoff}",
+            Logger.LogInformation("Cleaned up {Count} old executions older than {Cutoff}",
                 cleanedCount, cutoffDate);
 
             await Task.CompletedTask.ConfigureAwait(false);
@@ -364,10 +368,10 @@ namespace NeoServiceLayer.Services.Automation.Services
                     var condition = new AutomationCondition
                     {
                         Type = Enum.Parse<AutomationConditionType>(
-                            conditionDict.GetValueOrDefault("type", "Custom")),
-                        Field = conditionDict.GetValueOrDefault("field", string.Empty),
-                        Operator = conditionDict.GetValueOrDefault("operator", "equals"),
-                        Value = conditionDict.GetValueOrDefault("value", string.Empty),
+                            conditionDict.GetValueOrDefault("type", "Custom")?.ToString() ?? "Custom"),
+                        Field = conditionDict.GetValueOrDefault("field", string.Empty)?.ToString() ?? string.Empty,
+                        Operator = conditionDict.GetValueOrDefault("operator", "equals")?.ToString() ?? "equals",
+                        Value = conditionDict.GetValueOrDefault("value", string.Empty)?.ToString() ?? string.Empty,
                         Configuration = conditionDict
                     };
                     conditions.Add(condition);
@@ -375,6 +379,40 @@ namespace NeoServiceLayer.Services.Automation.Services
             }
 
             return conditions.ToArray();
+        }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            Logger.LogDebug("Initializing Job Management Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            Logger.LogInformation("Starting Job Management Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            Logger.LogInformation("Stopping Job Management Service");
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            try
+            {
+                // Check if jobs dictionary is accessible
+                var jobCount = _jobs.Count;
+                Logger.LogDebug("Job Management Service health check: {JobCount} jobs managed", jobCount);
+                return await Task.FromResult(ServiceHealth.Healthy);
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Job Management Service health check failed");
+                return await Task.FromResult(ServiceHealth.Unhealthy);
+            }
         }
     }
 }

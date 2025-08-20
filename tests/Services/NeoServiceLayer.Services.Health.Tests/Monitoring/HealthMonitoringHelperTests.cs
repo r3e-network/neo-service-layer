@@ -1,9 +1,16 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Health.Models;
 using NeoServiceLayer.Services.Health.Monitoring;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.Health.Tests.Monitoring;
 
@@ -47,18 +54,18 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(10),
-            Status = NodeStatus.Online,
+            Status = HealthStatus.Healthy,
             UptimePercentage = 99.0,
-            Metrics = new HealthMetrics
+            Metrics = new List<HealthMetrics> { new HealthMetrics
             {
                 MemoryUsage = 1000000,
                 CpuUsage = 50.0
-            }
+            }}
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0
         };
 
@@ -67,8 +74,8 @@ public class HealthMonitoringHelperTests
 
         // Assert
         alerts.Should().NotBeEmpty();
-        alerts.Should().Contain(a => a.AlertType == "HighResponseTime");
-        alerts.First(a => a.AlertType == "HighResponseTime").Severity.Should().Be(HealthAlertSeverity.Warning);
+        alerts.Should().Contain(a => a.AlertType == AlertType.Performance);
+        alerts.First(a => a.AlertType == AlertType.Performance).Severity.Should().Be(AlertSeverity.Warning);
     }
 
     [Fact]
@@ -79,14 +86,14 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(2),
-            Status = NodeStatus.Online,
+            Status = HealthStatus.Healthy,
             UptimePercentage = 90.0,
-            Metrics = new HealthMetrics()
+            Metrics = new List<HealthMetrics> { new HealthMetrics() }
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0
         };
 
@@ -95,8 +102,8 @@ public class HealthMonitoringHelperTests
 
         // Assert
         alerts.Should().NotBeEmpty();
-        alerts.Should().Contain(a => a.AlertType == "LowUptime");
-        alerts.First(a => a.AlertType == "LowUptime").Severity.Should().Be(HealthAlertSeverity.Error);
+        alerts.Should().Contain(a => a.AlertType == AlertType.Performance);
+        alerts.First(a => a.AlertType == AlertType.Performance).Severity.Should().Be(AlertSeverity.Critical);
     }
 
     [Fact]
@@ -107,14 +114,14 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(2),
-            Status = NodeStatus.Offline,
+            Status = HealthStatus.Unhealthy,
             UptimePercentage = 99.0,
-            Metrics = new HealthMetrics()
+            Metrics = new List<HealthMetrics> { new HealthMetrics() }
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0
         };
 
@@ -123,8 +130,8 @@ public class HealthMonitoringHelperTests
 
         // Assert
         alerts.Should().NotBeEmpty();
-        alerts.Should().Contain(a => a.AlertType == "NodeOffline");
-        alerts.First(a => a.AlertType == "NodeOffline").Severity.Should().Be(HealthAlertSeverity.Critical);
+        alerts.Should().Contain(a => a.AlertType == AlertType.Connectivity);
+        alerts.First(a => a.AlertType == AlertType.Connectivity).Severity.Should().Be(AlertSeverity.Critical);
     }
 
     [Fact]
@@ -135,18 +142,18 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(2),
-            Status = NodeStatus.Online,
+            Status = HealthStatus.Healthy,
             UptimePercentage = 99.0,
-            Metrics = new HealthMetrics
+            Metrics = new List<HealthMetrics> { new HealthMetrics
             {
                 MemoryUsage = 10_000_000_000, // 10GB
                 CpuUsage = 50.0
-            }
+            }}
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0,
             CustomThresholds = new Dictionary<string, double>
             {
@@ -159,8 +166,8 @@ public class HealthMonitoringHelperTests
 
         // Assert
         alerts.Should().NotBeEmpty();
-        alerts.Should().Contain(a => a.AlertType == "HighMemoryUsage");
-        alerts.First(a => a.AlertType == "HighMemoryUsage").Severity.Should().Be(HealthAlertSeverity.Warning);
+        alerts.Should().Contain(a => a.AlertType == AlertType.Resource);
+        alerts.First(a => a.AlertType == AlertType.Resource).Severity.Should().Be(AlertSeverity.Warning);
     }
 
     [Fact]
@@ -171,18 +178,18 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(2),
-            Status = NodeStatus.Online,
+            Status = HealthStatus.Healthy,
             UptimePercentage = 99.0,
-            Metrics = new HealthMetrics
+            Metrics = new List<HealthMetrics> { new HealthMetrics
             {
                 MemoryUsage = 1_000_000,
                 CpuUsage = 90.0
-            }
+            }}
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0,
             CustomThresholds = new Dictionary<string, double>
             {
@@ -195,8 +202,8 @@ public class HealthMonitoringHelperTests
 
         // Assert
         alerts.Should().NotBeEmpty();
-        alerts.Should().Contain(a => a.AlertType == "HighCpuUsage");
-        alerts.First(a => a.AlertType == "HighCpuUsage").Severity.Should().Be(HealthAlertSeverity.Warning);
+        alerts.Should().Contain(a => a.AlertType == AlertType.Resource);
+        alerts.First(a => a.AlertType == AlertType.Resource).Severity.Should().Be(AlertSeverity.Warning);
     }
 
     [Fact]
@@ -207,18 +214,18 @@ public class HealthMonitoringHelperTests
         {
             NodeAddress = "test-node",
             ResponseTime = TimeSpan.FromSeconds(2),
-            Status = NodeStatus.Online,
+            Status = HealthStatus.Healthy,
             UptimePercentage = 99.0,
-            Metrics = new HealthMetrics
+            Metrics = new List<HealthMetrics> { new HealthMetrics
             {
                 MemoryUsage = 1_000_000,
                 CpuUsage = 50.0
-            }
+            }}
         };
 
         var threshold = new HealthThreshold
         {
-            MaxResponseTime = TimeSpan.FromSeconds(5),
+            MaxResponseTime = 5000,
             MinUptimePercentage = 95.0,
             CustomThresholds = new Dictionary<string, double>
             {
@@ -256,13 +263,13 @@ public class HealthMonitoringHelperTests
             ["node1"] = new NodeHealthReport
             {
                 NodeAddress = "node1",
-                Status = NodeStatus.Online,
+                Status = HealthStatus.Healthy,
                 UptimePercentage = 99.0
             },
             ["node2"] = new NodeHealthReport
             {
                 NodeAddress = "node2",
-                Status = NodeStatus.Online,
+                Status = HealthStatus.Healthy,
                 UptimePercentage = 98.0
             }
         };
@@ -284,13 +291,13 @@ public class HealthMonitoringHelperTests
             ["node1"] = new NodeHealthReport
             {
                 NodeAddress = "node1",
-                Status = NodeStatus.Online,
+                Status = HealthStatus.Healthy,
                 UptimePercentage = 99.0
             },
             ["node2"] = new NodeHealthReport
             {
                 NodeAddress = "node2",
-                Status = NodeStatus.Offline,
+                Status = HealthStatus.Unhealthy,
                 UptimePercentage = 80.0
             }
         };

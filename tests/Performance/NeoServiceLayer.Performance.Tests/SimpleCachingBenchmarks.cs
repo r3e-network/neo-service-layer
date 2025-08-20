@@ -1,9 +1,15 @@
-﻿using BenchmarkDotNet.Attributes;
+using BenchmarkDotNet.Attributes;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Caching;
 using NeoServiceLayer.Performance.Tests.Infrastructure;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Performance.Tests
 {
@@ -16,7 +22,7 @@ namespace NeoServiceLayer.Performance.Tests
     public class SimpleCachingBenchmarks
     {
         private ICacheService _memoryCache = null!;
-        private SimpleSampleCacheData[] _testData = null!;
+        private string[] _testData = null!;
         private string[] _cacheKeys = null!;
         private IServiceProvider _serviceProvider = null!;
 
@@ -58,12 +64,12 @@ namespace NeoServiceLayer.Performance.Tests
             _memoryCache = _serviceProvider.GetRequiredService<ICacheService>();
 
             // Generate test data
-            _testData = new SimpleSampleCacheData[ItemCount];
+            _testData = new string[ItemCount];
             _cacheKeys = new string[ItemCount];
 
             for (int i = 0; i < ItemCount; i++)
             {
-                _testData[i] = SimpleSampleCacheData.Generate(ItemSize);
+                _testData[i] = SimpleSampleCacheData.GenerateData(ItemSize);
                 _cacheKeys[i] = $"benchmark:item:{i}";
             }
         }
@@ -103,7 +109,7 @@ namespace NeoServiceLayer.Performance.Tests
             // Benchmark GET operations
             for (int i = 0; i < ItemCount; i++)
             {
-                var result = await _memoryCache.GetAsync<SimpleSampleCacheData>(_cacheKeys[i]).ConfigureAwait(false);
+                var result = await _memoryCache.GetAsync<string>(_cacheKeys[i]).ConfigureAwait(false);
                 if (result == null)
                     throw new InvalidOperationException($"Cache miss for key: {_cacheKeys[i]}");
             }
@@ -115,7 +121,7 @@ namespace NeoServiceLayer.Performance.Tests
         [Benchmark]
         public async Task MemoryCache_BatchOperations()
         {
-            var items = new Dictionary<string, SimpleSampleCacheData>();
+            var items = new Dictionary<string, string>();
             for (int i = 0; i < ItemCount; i++)
             {
                 items[_cacheKeys[i]] = _testData[i];
@@ -127,7 +133,7 @@ namespace NeoServiceLayer.Performance.Tests
                 throw new InvalidOperationException("Batch SET operation failed");
 
             // Get all items
-            var retrieved = await _memoryCache.GetManyAsync<SimpleSampleCacheData>(_cacheKeys).ConfigureAwait(false);
+            var retrieved = await _memoryCache.GetManyAsync<string>(_cacheKeys).ConfigureAwait(false);
             if (retrieved.Count != ItemCount)
                 throw new InvalidOperationException($"Expected {ItemCount} results, got {retrieved.Count}");
         }
@@ -147,7 +153,7 @@ namespace NeoServiceLayer.Performance.Tests
             // Perform some operations to generate statistics
             for (int i = 0; i < Math.Min(50, ItemCount); i++)
             {
-                await _memoryCache.GetAsync<SimpleSampleCacheData>(_cacheKeys[i]).ConfigureAwait(false);
+                await _memoryCache.GetAsync<string>(_cacheKeys[i]).ConfigureAwait(false);
             }
 
             // Benchmark statistics retrieval
@@ -176,7 +182,7 @@ namespace NeoServiceLayer.Performance.Tests
             for (int i = 0; i < ItemCount / 4; i++) // Quarter of items for concurrent access
             {
                 var keyIndex = random.Next(ItemCount);
-                tasks.Add(_memoryCache.GetAsync<SimpleSampleCacheData>(_cacheKeys[keyIndex]));
+                tasks.Add(_memoryCache.GetAsync<string>(_cacheKeys[keyIndex]));
             }
 
             await Task.WhenAll(tasks).ConfigureAwait(false);

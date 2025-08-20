@@ -1,10 +1,17 @@
-﻿using System.Collections.Concurrent;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -14,7 +21,7 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 public class ProofOfReserveCacheHelper : IDisposable
 {
     private readonly IMemoryCache _memoryCache;
-    private readonly ILogger<ProofOfReserveCacheHelper> _logger;
+    private readonly ILogger<ProofOfReserveCacheHelper> Logger;
     private readonly ConcurrentDictionary<string, SemaphoreSlim> _cacheLocks = new();
     private readonly Timer _cleanupTimer;
     private readonly object _statsLock = new();
@@ -62,12 +69,12 @@ public class ProofOfReserveCacheHelper : IDisposable
         ILogger<ProofOfReserveCacheHelper> logger)
     {
         _memoryCache = memoryCache;
-        _logger = logger;
+        Logger = logger;
 
         // Setup cleanup timer to run every 5 minutes
         _cleanupTimer = new Timer(CleanupExpiredEntries, null, TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
 
-        _logger.LogDebug("Proof of Reserve cache helper initialized");
+        Logger.LogDebug("Proof of Reserve cache helper initialized");
     }
 
     /// <summary>
@@ -90,7 +97,7 @@ public class ProofOfReserveCacheHelper : IDisposable
 
         if (!enableCaching)
         {
-            _logger.LogDebug("Caching disabled, executing factory for key: {Key}", key);
+            Logger.LogDebug("Caching disabled, executing factory for key: {Key}", key);
             return await factory();
         }
 
@@ -98,7 +105,7 @@ public class ProofOfReserveCacheHelper : IDisposable
         if (_memoryCache.TryGetValue(key, out T? cachedValue) && cachedValue != null)
         {
             RecordCacheHit(key);
-            _logger.LogDebug("Cache hit for key: {Key}", key);
+            Logger.LogDebug("Cache hit for key: {Key}", key);
             return cachedValue;
         }
 
@@ -112,12 +119,12 @@ public class ProofOfReserveCacheHelper : IDisposable
             if (_memoryCache.TryGetValue(key, out cachedValue) && cachedValue != null)
             {
                 RecordCacheHit(key);
-                _logger.LogDebug("Cache hit after lock for key: {Key}", key);
+                Logger.LogDebug("Cache hit after lock for key: {Key}", key);
                 return cachedValue;
             }
 
             // Execute factory method
-            _logger.LogDebug("Cache miss, executing factory for key: {Key}", key);
+            Logger.LogDebug("Cache miss, executing factory for key: {Key}", key);
             var startTime = DateTime.UtcNow;
 
             try
@@ -139,7 +146,7 @@ public class ProofOfReserveCacheHelper : IDisposable
                 _memoryCache.Set(key, value, cacheEntryOptions);
 
                 RecordCacheMiss(key, duration);
-                _logger.LogDebug("Cached value for key: {Key}, expiration: {Expiration}, size: {Size}",
+                Logger.LogDebug("Cached value for key: {Key}, expiration: {Expiration}, size: {Size}",
                     key, expiration, cacheEntryOptions.Size);
 
                 return value;
@@ -170,12 +177,12 @@ public class ProofOfReserveCacheHelper : IDisposable
         if (_memoryCache.TryGetValue(key, out T? value))
         {
             RecordCacheHit(key);
-            _logger.LogDebug("Cache hit for key: {Key}", key);
+            Logger.LogDebug("Cache hit for key: {Key}", key);
             return value;
         }
 
         RecordCacheMiss(key, TimeSpan.Zero);
-        _logger.LogDebug("Cache miss for key: {Key}", key);
+        Logger.LogDebug("Cache miss for key: {Key}", key);
         return default;
     }
 
@@ -202,7 +209,7 @@ public class ProofOfReserveCacheHelper : IDisposable
 
         _memoryCache.Set(key, value, cacheEntryOptions);
 
-        _logger.LogDebug("Set cache value for key: {Key}, expiration: {Expiration}, size: {Size}",
+        Logger.LogDebug("Set cache value for key: {Key}, expiration: {Expiration}, size: {Size}",
             key, expiration, cacheEntryOptions.Size);
     }
 
@@ -215,7 +222,7 @@ public class ProofOfReserveCacheHelper : IDisposable
         ArgumentException.ThrowIfNullOrEmpty(key);
 
         _memoryCache.Remove(key);
-        _logger.LogDebug("Removed cache entry for key: {Key}", key);
+        Logger.LogDebug("Removed cache entry for key: {Key}", key);
     }
 
     /// <summary>
@@ -230,7 +237,7 @@ public class ProofOfReserveCacheHelper : IDisposable
         // In a production environment, you might want to use IDistributedCache
         // or maintain a separate index of cache keys
 
-        _logger.LogWarning("RemoveByPattern not fully implemented for MemoryCache: {Pattern}", pattern);
+        Logger.LogWarning("RemoveByPattern not fully implemented for MemoryCache: {Pattern}", pattern);
     }
 
     /// <summary>
@@ -255,7 +262,7 @@ public class ProofOfReserveCacheHelper : IDisposable
             Remove(key);
         }
 
-        _logger.LogInformation("Invalidated cache for asset: {AssetId}", assetId);
+        Logger.LogInformation("Invalidated cache for asset: {AssetId}", assetId);
     }
 
     /// <summary>
@@ -292,7 +299,7 @@ public class ProofOfReserveCacheHelper : IDisposable
             };
         }
 
-        _logger.LogInformation("Cache statistics reset");
+        Logger.LogInformation("Cache statistics reset");
     }
 
     /// <summary>
@@ -374,7 +381,7 @@ public class ProofOfReserveCacheHelper : IDisposable
     /// <returns>The hash as hex string.</returns>
     private static string ComputeHash(string input)
     {
-        using var sha256 = SHA256.Create();
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var hashBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(input));
         return Convert.ToHexString(hashBytes);
     }
@@ -422,7 +429,7 @@ public class ProofOfReserveCacheHelper : IDisposable
             _statistics.TotalExecutionTime += executionTime;
         }
 
-        _logger.LogError(exception, "Cache error for key: {Key}", key);
+        Logger.LogError(exception, "Cache error for key: {Key}", key);
     }
 
     /// <summary>
@@ -434,7 +441,7 @@ public class ProofOfReserveCacheHelper : IDisposable
     /// <param name="state">The callback state.</param>
     private void OnCacheEntryEvicted(object key, object? value, EvictionReason reason, object? state)
     {
-        _logger.LogDebug("Cache entry evicted: {Key}, reason: {Reason}", key, reason);
+        Logger.LogDebug("Cache entry evicted: {Key}, reason: {Reason}", key, reason);
     }
 
     /// <summary>
@@ -465,12 +472,12 @@ public class ProofOfReserveCacheHelper : IDisposable
 
             if (keysToRemove.Count > 0)
             {
-                _logger.LogDebug("Cleaned up {Count} unused cache locks", keysToRemove.Count);
+                Logger.LogDebug("Cleaned up {Count} unused cache locks", keysToRemove.Count);
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during cache cleanup");
+            Logger.LogError(ex, "Error during cache cleanup");
         }
     }
 
@@ -487,7 +494,7 @@ public class ProofOfReserveCacheHelper : IDisposable
         }
         _cacheLocks.Clear();
 
-        _logger.LogDebug("Proof of Reserve cache helper disposed");
+        Logger.LogDebug("Proof of Reserve cache helper disposed");
     }
 }
 

@@ -1,8 +1,14 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.ZeroKnowledge.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
 
@@ -64,7 +70,7 @@ public partial class ZeroKnowledgeService
                     CircuitId = circuitId,
                     Name = definition.Name,
                     Description = definition.Description,
-                    Type = definition.Type,
+                    CircuitType = definition.Type,
                     CompiledData = compiledData,
                     VerificationKey = GenerateVerificationKey(),
                     ProvingKey = GenerateProvingKey(),
@@ -384,7 +390,6 @@ public partial class ZeroKnowledgeService
     /// <returns>The random key.</returns>
     private byte[] GenerateRandomKey(int lengthBytes)
     {
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         var key = new byte[lengthBytes];
         rng.GetBytes(key);
         return key;
@@ -397,7 +402,6 @@ public partial class ZeroKnowledgeService
     /// <returns>The circuit hash.</returns>
     private string ComputeCircuitHash(R1CS r1cs)
     {
-        using var sha256 = System.Security.Cryptography.SHA256.Create();
         var data = System.Text.Encoding.UTF8.GetBytes($"{r1cs.NumVariables}:{r1cs.NumConstraints}");
         var hash = sha256.ComputeHash(data);
         return Convert.ToHexString(hash).ToLowerInvariant();
@@ -528,7 +532,6 @@ public partial class ZeroKnowledgeService
         var row = new double[constraint.Variables.Count + 1]; // +1 for constant term
 
         // Fill with random coefficients for demo
-        using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
         var bytes = new byte[8];
 
         for (int i = 0; i < row.Length; i++)

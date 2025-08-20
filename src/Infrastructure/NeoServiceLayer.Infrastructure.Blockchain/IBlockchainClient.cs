@@ -1,4 +1,13 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Core;
+using Block = NeoServiceLayer.Infrastructure.Block;
+using Transaction = NeoServiceLayer.Infrastructure.Transaction;
+using ContractEvent = NeoServiceLayer.Infrastructure.ContractEvent;
+
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -73,6 +82,13 @@ public interface IBlockchainClient
     /// <param name="transaction">The transaction.</param>
     /// <returns>The estimated gas.</returns>
     Task<decimal> EstimateGasAsync(Transaction transaction);
+
+    /// <summary>
+    /// Gets events from a specific block.
+    /// </summary>
+    /// <param name="blockHeight">The block height.</param>
+    /// <returns>The list of events in the block.</returns>
+    Task<IEnumerable<ContractEvent>> GetBlockEventsAsync(long blockHeight);
 
     /// <summary>
     /// Subscribes to new blocks.

@@ -58,6 +58,7 @@ pub struct CryptoService {
     rng: SystemRandom,
     secp256k1: Secp256k1<secp256k1::All>,
     key_store: Arc<RwLock<KeyStore>>,
+    #[allow(dead_code)]
     supported_algorithms: Vec<CryptoAlgorithm>,
 }
 

@@ -1,13 +1,37 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Oracle.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Oracle;
 
 /// <summary>
 /// Interface for the Oracle service.
 /// </summary>
-public interface IOracleService : IEnclaveService, IBlockchainService, IDataFeedService
+public interface IOracleService : IEnclaveService, IBlockchainService
 {
+    /// <summary>
+    /// Initializes the Oracle service.
+    /// </summary>
+    /// <returns>True if initialization was successful.</returns>
+    Task<bool> InitializeAsync();
+
+    /// <summary>
+    /// Starts the Oracle service.
+    /// </summary>
+    /// <returns>True if the service started successfully.</returns>
+    Task<bool> StartAsync();
+
+    /// <summary>
+    /// Stops the Oracle service.
+    /// </summary>
+    /// <returns>True if the service stopped successfully.</returns>
+    Task<bool> StopAsync();
+
     /// <summary>
     /// Fetches data from an external source.
     /// </summary>

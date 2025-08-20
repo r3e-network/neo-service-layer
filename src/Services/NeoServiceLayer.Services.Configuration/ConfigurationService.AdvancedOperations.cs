@@ -1,7 +1,14 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Configuration;
 
@@ -29,10 +36,10 @@ public partial class ConfigurationService
             var validationErrors = new List<ValidationError>();
 
             if (string.IsNullOrWhiteSpace(request.Key))
-                validationErrors.Add(new ValidationError { ErrorMessage = "Configuration key cannot be empty" });
+                validationErrors.Add(new ValidationError { Message = "Configuration key cannot be empty" });
 
             if (request.Key.Length > 255)
-                validationErrors.Add(new ValidationError { ErrorMessage = "Configuration key cannot exceed 255 characters" });
+                validationErrors.Add(new ValidationError { Message = "Configuration key cannot exceed 255 characters" });
 
             return new ConfigurationValidationResult
             {
@@ -263,7 +270,7 @@ public partial class ConfigurationService
                 {
                     Key = request.Key,
                     Value = "current_value",
-                    Version = 2,
+                    Version = "2",
                     ChangedAt = DateTime.UtcNow.AddHours(-1),
                     ChangedBy = "System",
                     ChangeType = "Update"
@@ -272,7 +279,7 @@ public partial class ConfigurationService
                 {
                     Key = request.Key,
                     Value = "previous_value",
-                    Version = 1,
+                    Version = "1",
                     ChangedAt = DateTime.UtcNow.AddDays(-1),
                     ChangedBy = "Admin",
                     ChangeType = "Create"

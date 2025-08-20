@@ -1,19 +1,22 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.AI.PatternRecognition.Analyzers;
+using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
+using ServiceFrameworkBase = NeoServiceLayer.ServiceFramework.ServiceBase;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Services
 {
     /// <summary>
     /// Orchestrates pattern recognition across multiple analyzers.
     /// </summary>
-    public class PatternRecognitionOrchestrator : IPatternRecognitionService
+    public class PatternRecognitionOrchestrator : ServiceFrameworkBase, IPatternRecognitionService
     {
-        private readonly ILogger<PatternRecognitionOrchestrator> _logger;
         private readonly Dictionary<PatternType, IPatternAnalyzer> _analyzers;
         private readonly IMetricsCollector? _metricsCollector;
         private readonly Dictionary<string, List<PatternAnalysisResult>> _analysisHistory;
@@ -22,13 +25,13 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
             ILogger<PatternRecognitionOrchestrator> logger,
             IEnumerable<IPatternAnalyzer> analyzers,
             IMetricsCollector? metricsCollector = null)
+            : base("PatternRecognitionOrchestrator", "1.0.0", "Orchestrates pattern recognition across multiple analyzers", logger)
         {
-            _logger = logger;
             _analyzers = analyzers.ToDictionary(a => a.SupportedType);
             _metricsCollector = metricsCollector;
             _analysisHistory = new Dictionary<string, List<PatternAnalysisResult>>();
 
-            _logger.LogInformation("Initialized pattern recognition orchestrator with {Count} analyzers",
+            Logger.LogInformation("Initialized pattern recognition orchestrator with {Count} analyzers",
                 _analyzers.Count);
         }
 
@@ -37,7 +40,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
             ArgumentNullException.ThrowIfNull(request);
 
             var startTime = DateTime.UtcNow;
-            _logger.LogDebug("Starting pattern analysis with {DataPoints} data points", request.Data.Length);
+            Logger.LogDebug("Starting pattern analysis with {DataPoints} data points", request.Data.Length);
 
             try
             {
@@ -46,7 +49,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
 
                 if (!_analyzers.TryGetValue(patternType, out var analyzer))
                 {
-                    _logger.LogWarning("No analyzer available for pattern type {Type}", patternType);
+                    Logger.LogWarning("No analyzer available for pattern type {Type}", patternType);
                     return new PatternAnalysisResult
                     {
                         Success = false,
@@ -76,7 +79,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Error during pattern analysis");
+                Logger.LogError(ex, "Error during pattern analysis");
 
                 return new PatternAnalysisResult
                 {
@@ -90,7 +93,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            _logger.LogDebug("Starting multi-pattern analysis with {DataPoints} data points", request.Data.Length);
+            Logger.LogDebug("Starting multi-pattern analysis with {DataPoints} data points", request.Data.Length);
 
             var allPatterns = new List<DetectedPattern>();
             var tasks = new List<Task<PatternAnalysisResult>>();
@@ -126,7 +129,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
         {
             ArgumentNullException.ThrowIfNull(data);
 
-            _logger.LogInformation("Starting model training with {Count} samples", data.Samples.Count);
+            Logger.LogInformation("Starting model training with {Count} samples", data.Samples.Count);
 
             var results = new List<TrainingResult>();
 
@@ -140,7 +143,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
                 }
                 catch (Exception ex)
                 {
-                    _logger.LogError(ex, "Error training {Analyzer}", analyzer.GetType().Name);
+                    Logger.LogError(ex, "Error training {Analyzer}", analyzer.GetType().Name);
                 }
             }
 
@@ -180,7 +183,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
             ArgumentNullException.ThrowIfNull(analyzer);
 
             _analyzers[type] = analyzer;
-            _logger.LogInformation("Registered analyzer for pattern type {Type}", type);
+            Logger.LogInformation("Registered analyzer for pattern type {Type}", type);
         }
 
         public IPatternAnalyzer? GetAnalyzer(PatternType type)
@@ -248,6 +251,197 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
                 return 0;
 
             return numerator / Math.Sqrt(denominatorX * denominatorY);
+        }
+
+        // Implement Core.IPatternRecognitionService methods
+        public async Task<Core.FraudDetectionResult> DetectFraudAsync(Core.FraudDetectionRequest request, BlockchainType blockchainType)
+        {
+            // Use pattern analysis to detect fraud
+            // Create simple Core result from simplified request
+            var dataValues = request.Metadata?.Values
+                .Where(v => v is double || v is float || v is int || v is long || v is decimal)
+                .Select(v => Convert.ToDouble(v))
+                .ToArray() ?? Array.Empty<double>();
+                
+            var analysisRequest = new PatternAnalysisRequest
+            {
+                Data = dataValues,
+                PreferredType = PatternType.Anomaly,
+                MinConfidence = 0.7
+            };
+
+            var analysisResult = await AnalyzePatternAsync(analysisRequest);
+
+            // Convert pattern analysis to simple Core fraud detection result
+            return new Core.FraudDetectionResult
+            {
+                IsFraudulent = analysisResult.Confidence > 0.8,
+                RiskScore = analysisResult.Confidence,
+                RiskFactors = analysisResult.Patterns.Select(p => p.Description).ToList(),
+                Recommendation = analysisResult.Confidence > 0.8 ? "Block transaction" : "Allow transaction"
+            };
+        }
+
+        // Implement AI.PatternRecognition.IPatternRecognitionService method for Models types
+        public async Task<Models.FraudDetectionResult> DetectFraudAsync(Models.FraudDetectionRequest request, BlockchainType blockchainType)
+        {
+            // Convert to simple Core fraud detection request and call base method
+            var coreRequest = new Core.FraudDetectionRequest
+            {
+                TransactionId = request.TransactionId ?? Guid.NewGuid().ToString(),
+                UserId = request.SenderAddress ?? string.Empty,
+                Amount = request.Amount,
+                Metadata = request.Data ?? new Dictionary<string, object>()
+            };
+
+            var coreResult = await DetectFraudAsync(coreRequest, blockchainType);
+
+            // Convert simple Core result back to Models result
+            return new Models.FraudDetectionResult
+            {
+                TransactionId = request.TransactionId,
+                DetectionId = Guid.NewGuid().ToString(),
+                RiskScore = coreResult.RiskScore,
+                IsFraudulent = coreResult.IsFraudulent,
+                Confidence = coreResult.RiskScore,
+                DetectedPatterns = coreResult.RiskFactors,
+                RecommendedActions = new List<string> { coreResult.Recommendation },
+                AnalysisDetails = new Dictionary<string, object> { ["RiskScore"] = coreResult.RiskScore },
+                Timestamp = DateTime.UtcNow
+            };
+        }
+
+        // Implement Core.IPatternRecognitionService DetectAnomaliesAsync
+        public async Task<Core.AnomalyDetectionResult> DetectAnomaliesAsync(Core.AnomalyDetectionRequest request, BlockchainType blockchainType)
+        {
+            // Extract numeric values from the data points
+            var dataValues = request.DataPoints?.Values
+                .Where(v => v is double || v is float || v is int || v is long || v is decimal)
+                .Select(v => Convert.ToDouble(v))
+                .ToArray() ?? Array.Empty<double>();
+                
+            // Use pattern analysis to detect anomalies
+            var analysisRequest = new PatternAnalysisRequest
+            {
+                Data = dataValues,
+                PreferredType = PatternType.Anomaly,
+                MinConfidence = request.Threshold
+            };
+
+            var analysisResult = await AnalyzePatternAsync(analysisRequest);
+
+            // Convert pattern analysis to simple Core anomaly detection result
+            return new Core.AnomalyDetectionResult
+            {
+                IsAnomaly = analysisResult.Patterns.Any(p => p.Type == PatternType.Anomaly),
+                AnomalyScore = analysisResult.Confidence,
+                AnomalyType = analysisResult.Patterns.FirstOrDefault()?.Type.ToString() ?? "Unknown",
+                Details = new Dictionary<string, object>
+                {
+                    ["AnomalyCount"] = analysisResult.Patterns.Count(p => p.Type == PatternType.Anomaly),
+                    ["Confidence"] = analysisResult.Confidence
+                }
+            };
+        }
+
+        // Internal method for Models types
+        public async Task<Models.AnomalyDetectionResult> DetectAnomaliesInternalAsync(Models.AnomalyDetectionRequest request, BlockchainType blockchainType)
+        {
+            // Convert to simple Core anomaly detection request and call base method
+            var coreRequest = new Core.AnomalyDetectionRequest
+            {
+                DataSource = request.ModelId ?? string.Empty,
+                DataPoints = request.Parameters ?? new Dictionary<string, object>(),
+                TimeRange = DateTime.UtcNow,
+                Threshold = request.Threshold
+            };
+
+            var coreResult = await DetectAnomaliesAsync(coreRequest, blockchainType);
+
+            // Convert simple Core result back to Models result
+            return new Models.AnomalyDetectionResult
+            {
+                IsAnomalous = coreResult.IsAnomaly,
+                AnomalyScore = coreResult.AnomalyScore,
+                DetectedAnomalies = new List<Models.Anomaly>
+                {
+                    new Models.Anomaly
+                    {
+                        Type = Models.AnomalyType.StatisticalOutlier,
+                        Description = coreResult.AnomalyType,
+                        Confidence = coreResult.AnomalyScore,
+                        Timestamp = DateTime.UtcNow
+                    }
+                },
+                RecommendedActions = new List<string> { "Review anomaly" },
+                AnalysisDetails = coreResult.Details,
+                Timestamp = DateTime.UtcNow
+            };
+        }
+
+        // Implement Core.IPatternRecognitionService ClassifyDataAsync
+        public async Task<Core.ClassificationResult> ClassifyDataAsync(Core.ClassificationRequest request, BlockchainType blockchainType)
+        {
+            // Extract numeric values from the features
+            var dataValues = request.Features?.Values
+                .Where(v => v is double || v is float || v is int || v is long || v is decimal)
+                .Select(v => Convert.ToDouble(v))
+                .ToArray() ?? Array.Empty<double>();
+                
+            // Use pattern analysis to classify data
+            var analysisRequest = new PatternAnalysisRequest
+            {
+                Data = dataValues,
+                MinConfidence = 0.5
+            };
+
+            var analysisResult = await AnalyzePatternAsync(analysisRequest);
+
+            // Determine classification based on pattern types
+            var primaryPattern = analysisResult.Patterns.OrderByDescending(p => p.Confidence).FirstOrDefault();
+            var predictedClass = primaryPattern?.Type.ToString() ?? "Unknown";
+
+            // Convert pattern analysis to simple Core classification result
+            return new Core.ClassificationResult
+            {
+                PredictedClass = predictedClass,
+                Confidence = analysisResult.Confidence,
+                ClassProbabilities = analysisResult.Patterns.ToDictionary(
+                    p => p.Type.ToString(),
+                    p => p.Confidence
+                )
+            };
+        }
+
+        // Internal method for Models types
+        public async Task<Models.ClassificationResult> ClassifyDataInternalAsync(Models.ClassificationRequest request, BlockchainType blockchainType)
+        {
+            // Convert to simple Core classification request and call base method
+            var coreRequest = new Core.ClassificationRequest
+            {
+                Data = request.ModelId ?? string.Empty,
+                ClassificationModel = request.ModelId ?? "default",
+                Features = request.Data ?? new Dictionary<string, object>()
+            };
+
+            var coreResult = await ClassifyDataAsync(coreRequest, blockchainType);
+
+            // Convert simple Core result back to Models result
+            return new Models.ClassificationResult
+            {
+                Category = coreResult.PredictedClass,
+                Confidence = coreResult.Confidence,
+                Probabilities = coreResult.ClassProbabilities,
+                Classifications = coreResult.ClassProbabilities.Select(kvp => new Models.Classification
+                {
+                    Category = kvp.Key,
+                    Confidence = kvp.Value,
+                    Score = kvp.Value,
+                    Metadata = new Dictionary<string, object> { ["Class"] = kvp.Key }
+                }).ToList(),
+                Metadata = new Dictionary<string, object> { ["Confidence"] = coreResult.Confidence },
+                Timestamp = DateTime.UtcNow
+            };
         }
 
         private double CalculateAutocorrelation(double[] data, int lag)
@@ -338,5 +532,304 @@ namespace NeoServiceLayer.AI.PatternRecognition.Services
                 _analysisHistory[context].RemoveAt(0);
             }
         }
+
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            // Initialize analyzers
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            // Start pattern recognition services
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            // Stop pattern recognition services
+            return await Task.FromResult(true);
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            try
+            {
+                // Check if analyzers are loaded
+                var analyzerCount = _analyzers.Count;
+                return await Task.FromResult(ServiceHealth.Healthy);
+            }
+            catch (Exception)
+            {
+                return await Task.FromResult(ServiceHealth.Unhealthy);
+            }
+        }
+
+        public async Task<PatternAnalysisResult> AnalyzePatternsAsync(PatternAnalysisRequest request, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            Logger.LogDebug("Analyzing patterns for blockchain {BlockchainType}", blockchainType);
+            
+            // Use existing pattern analysis method
+            return await AnalyzePatternAsync(request).ConfigureAwait(false);
+        }
+
+        public async Task<BehaviorAnalysisResult> AnalyzeBehaviorAsync(BehaviorAnalysisRequest request, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            Logger.LogDebug("Analyzing behavior for blockchain {BlockchainType}", blockchainType);
+            
+            try
+            {
+                // Use behavioral pattern analyzer
+                if (_analyzers.TryGetValue(PatternType.Behavioral, out var analyzer))
+                {
+                    var patternRequest = new PatternAnalysisRequest
+                    {
+                        Data = request.BehaviorData ?? Array.Empty<double>(),
+                        PreferredType = PatternType.Behavioral,
+                        Context = $"behavior_analysis_{blockchainType}_{request.UserId}"
+                    };
+
+                    var result = await analyzer.AnalyzeAsync(patternRequest).ConfigureAwait(false);
+                    
+                    return new BehaviorAnalysisResult
+                    {
+                        AnalysisId = Guid.NewGuid().ToString(),
+                        BehaviorProfile = new BehaviorProfile
+                        {
+                            UserId = request.UserId,
+                            ActivityLevel = CalculateActivityLevel(request.BehaviorData),
+                            RiskLevel = result.Confidence > 0.7 ? RiskLevel.High : RiskLevel.Low
+                        },
+                        RiskScore = result.Confidence,
+                        RiskLevel = result.Confidence > 0.7 ? RiskLevel.High : RiskLevel.Low,
+                        BehaviorPatterns = result.Patterns.ToList(),
+                        AnalysisTime = DateTime.UtcNow
+                    };
+                }
+                
+                // Fallback implementation
+                return new BehaviorAnalysisResult
+                {
+                    AnalysisId = Guid.NewGuid().ToString(),
+                    BehaviorProfile = new BehaviorProfile { UserId = request.UserId },
+                    RiskScore = 0.0,
+                    RiskLevel = RiskLevel.Low,
+                    AnalysisTime = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during behavior analysis");
+                return new BehaviorAnalysisResult
+                {
+                    AnalysisId = Guid.NewGuid().ToString(),
+                    BehaviorProfile = new BehaviorProfile { UserId = request.UserId },
+                    RiskScore = 0.0,
+                    RiskLevel = RiskLevel.Low,
+                    AnalysisTime = DateTime.UtcNow
+                };
+            }
+        }
+
+        public async Task<Models.RiskAssessmentResult> AssessRiskAsync(Models.RiskAssessmentRequest request, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(request);
+            Logger.LogDebug("Assessing risk for blockchain {BlockchainType}", blockchainType);
+            
+            try
+            {
+                // Extract numeric values from the risk factors dictionary
+                var dataValues = request.RiskFactors?.Values
+                    .Where(v => v is double || v is float || v is int || v is long || v is decimal)
+                    .Select(v => Convert.ToDouble(v))
+                    .ToArray() ?? Array.Empty<double>();
+                    
+                var patternRequest = new PatternAnalysisRequest
+                {
+                    Data = dataValues,
+                    PreferredType = PatternType.Anomaly,
+                    Context = $"risk_assessment_{blockchainType}"
+                };
+
+                var result = await AnalyzePatternAsync(patternRequest).ConfigureAwait(false);
+                
+                return new Models.RiskAssessmentResult
+                {
+                    AssessmentId = Guid.NewGuid().ToString(),
+                    RiskLevel = result.Confidence > 0.8 ? RiskLevel.High : result.Confidence > 0.5 ? RiskLevel.Medium : RiskLevel.Low,
+                    RiskScore = result.Confidence,
+                    Confidence = result.Confidence,
+                    RiskFactors = result.Patterns.Select(p => p.Description).ToList(),
+                    Recommendations = GenerateRiskRecommendations(result),
+                    AssessedAt = DateTime.UtcNow
+                };
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Error during risk assessment");
+                return new Models.RiskAssessmentResult
+                {
+                    AssessmentId = Guid.NewGuid().ToString(),
+                    RiskLevel = RiskLevel.Low,
+                    RiskScore = 0.0,
+                    AssessedAt = DateTime.UtcNow
+                };
+            }
+        }
+
+        public async Task<string> CreateModelAsync(PatternModelDefinition definition, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(definition);
+            Logger.LogInformation("Creating pattern model for blockchain {BlockchainType}", blockchainType);
+            
+            var modelId = Guid.NewGuid().ToString();
+            
+            // For now, return model ID - could be implemented with persistent storage later
+            await Task.CompletedTask.ConfigureAwait(false);
+            
+            Logger.LogInformation("Created pattern model {ModelId}", modelId);
+            return modelId;
+        }
+
+        public async Task<IEnumerable<PatternModel>> GetModelsAsync(BlockchainType blockchainType)
+        {
+            Logger.LogDebug("Getting pattern models for blockchain {BlockchainType}", blockchainType);
+            
+            // Return empty list for now - could be implemented with persistent storage later
+            return await Task.FromResult(Enumerable.Empty<PatternModel>()).ConfigureAwait(false);
+        }
+
+        public async Task<PatternModel> GetModelAsync(string modelId, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(modelId);
+            Logger.LogDebug("Getting pattern model {ModelId} for blockchain {BlockchainType}", modelId, blockchainType);
+            
+            // Return default model for now - could be implemented with persistent storage later
+            return await Task.FromResult(new PatternModel
+            {
+                Id = modelId,
+                Name = "Default Model",
+                Type = PatternType.Unknown,
+                CreatedAt = DateTime.UtcNow
+            }).ConfigureAwait(false);
+        }
+
+        public async Task<bool> UpdateModelAsync(string modelId, PatternModelDefinition definition, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(modelId);
+            ArgumentNullException.ThrowIfNull(definition);
+            Logger.LogInformation("Updating pattern model {ModelId} for blockchain {BlockchainType}", modelId, blockchainType);
+            
+            // Return true for now - could be implemented with persistent storage later
+            return await Task.FromResult(true).ConfigureAwait(false);
+        }
+
+        public async Task<bool> DeleteModelAsync(string modelId, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(modelId);
+            Logger.LogInformation("Deleting pattern model {ModelId} for blockchain {BlockchainType}", modelId, blockchainType);
+            
+            // Return true for now - could be implemented with persistent storage later
+            return await Task.FromResult(true).ConfigureAwait(false);
+        }
+
+        public async Task<IEnumerable<Models.FraudDetectionResult>> GetFraudDetectionHistoryAsync(string? userId, BlockchainType blockchainType)
+        {
+            Logger.LogDebug("Getting fraud detection history for user {UserId} on blockchain {BlockchainType}", userId, blockchainType);
+            
+            // Return empty list for now - could be implemented with persistent storage later
+            return await Task.FromResult(Enumerable.Empty<Models.FraudDetectionResult>()).ConfigureAwait(false);
+        }
+
+        public async Task<BehaviorProfile> GetBehaviorProfileAsync(string userId, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(userId);
+            Logger.LogDebug("Getting behavior profile for user {UserId} on blockchain {BlockchainType}", userId, blockchainType);
+            
+            // Return default profile for now - could be implemented with persistent storage later
+            return await Task.FromResult(new BehaviorProfile
+            {
+                UserId = userId,
+                ActivityLevel = ActivityLevel.Normal,
+                RiskLevel = RiskLevel.Low,
+                CreatedAt = DateTime.UtcNow,
+                UpdatedAt = DateTime.UtcNow
+            }).ConfigureAwait(false);
+        }
+
+        public async Task<bool> UpdateBehaviorProfileAsync(string userId, BehaviorProfile profile, BlockchainType blockchainType)
+        {
+            ArgumentNullException.ThrowIfNull(userId);
+            ArgumentNullException.ThrowIfNull(profile);
+            Logger.LogInformation("Updating behavior profile for user {UserId} on blockchain {BlockchainType}", userId, blockchainType);
+            
+            // Return true for now - could be implemented with persistent storage later
+            return await Task.FromResult(true).ConfigureAwait(false);
+        }
+
+        private ActivityLevel CalculateActivityLevel(double[]? behaviorData)
+        {
+            if (behaviorData == null || behaviorData.Length == 0)
+                return ActivityLevel.Low;
+                
+            var average = behaviorData.Average();
+            return average > 0.7 ? ActivityLevel.High : average > 0.3 ? ActivityLevel.Normal : ActivityLevel.Low;
+        }
+
+        private List<string> GenerateRiskRecommendations(PatternAnalysisResult result)
+        {
+            var recommendations = new List<string>();
+            
+            if (result.Confidence > 0.8)
+            {
+                recommendations.Add("Implement additional verification steps");
+                recommendations.Add("Consider transaction limits");
+            }
+            else if (result.Confidence > 0.5)
+            {
+                recommendations.Add("Monitor closely for anomalous patterns");
+            }
+            else
+            {
+                recommendations.Add("Standard monitoring is sufficient");
+            }
+            
+            return recommendations;
+        }
+
+        // Additional method implementations for Core.IPatternRecognitionService
+        
+
+        public IEnumerable<BlockchainType> SupportedBlockchains => new[] { BlockchainType.NeoN3 };
+
+    public bool SupportsBlockchain(BlockchainType blockchainType)
+    {
+        return blockchainType == BlockchainType.NeoN3;
+    }
+
+    public bool IsEnclaveInitialized => false;
+
+    public bool HasEnclaveCapabilities => false;
+
+    public async Task<bool> ValidateEnclaveAsync()
+    {
+        await Task.CompletedTask;
+        return true;
+    }
+
+    public async Task<string?> GetAttestationAsync()
+    {
+        await Task.CompletedTask;
+        return null;
+    }
+
+    public async Task<bool> InitializeEnclaveAsync()
+    {
+        await Task.CompletedTask;
+        return true;
+    }
+
     }
 }

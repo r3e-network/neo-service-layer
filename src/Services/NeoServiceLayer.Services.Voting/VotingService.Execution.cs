@@ -1,5 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using NeoServiceLayer.Services.Voting.Models;
+
 
 namespace NeoServiceLayer.Services.Voting;
 
@@ -164,18 +171,15 @@ public partial class VotingService
     /// <param name="strategy">The voting strategy.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>Eligible candidates.</returns>
-    private async Task<IEnumerable<CandidateInfo>> GetEligibleCandidatesAsync(VotingStrategy strategy, BlockchainType blockchainType)
+    private async Task<IEnumerable<Candidate>> GetEligibleCandidatesAsync(VotingStrategy strategy, BlockchainType blockchainType)
     {
         var allCandidates = await GetCandidatesAsync(blockchainType);
 
-        return strategy.StrategyType switch
+        return strategy.Type switch
         {
-            VotingStrategyType.Manual => allCandidates.Where(c => c.IsActive),
-            VotingStrategyType.Automatic => allCandidates.OrderByDescending(c => c.VotesReceived).Take(21),
-            VotingStrategyType.Conditional => GetConditionalCandidates(allCandidates, strategy),
-            VotingStrategyType.ProfitOptimized => allCandidates.OrderByDescending(c => c.ExpectedReward),
-            VotingStrategyType.StabilityFocused => allCandidates.Where(c => c.IsActive && c.UptimePercentage >= 98.0),
-            VotingStrategyType.Custom => GetCustomCandidates(allCandidates, strategy),
+            VotingStrategyType.SimpleMajority => allCandidates.Where(c => c.IsActive).Take(21),
+            VotingStrategyType.SuperMajority => allCandidates.OrderByDescending(c => c.VotesReceived).Take(14),
+            VotingStrategyType.Unanimous => allCandidates.Where(c => c.IsActive),
             _ => allCandidates.Where(c => c.IsActive)
         };
     }
@@ -186,7 +190,7 @@ public partial class VotingService
     /// <param name="candidates">The candidates to filter.</param>
     /// <param name="rules">The voting rules.</param>
     /// <returns>Selected candidates.</returns>
-    private IEnumerable<CandidateInfo> ApplyVotingRules(IEnumerable<CandidateInfo> candidates, VotingRules rules)
+    private IEnumerable<Candidate> ApplyVotingRules(IEnumerable<Candidate> candidates, VotingRules rules)
     {
         var filteredCandidates = candidates.AsEnumerable();
 
@@ -222,9 +226,9 @@ public partial class VotingService
     /// <param name="allCandidates">All available candidates.</param>
     /// <param name="strategy">The voting strategy.</param>
     /// <returns>Conditional candidates.</returns>
-    private IEnumerable<CandidateInfo> GetConditionalCandidates(IEnumerable<CandidateInfo> allCandidates, VotingStrategy strategy)
+    private IEnumerable<Candidate> GetConditionalCandidates(IEnumerable<Candidate> allCandidates, VotingStrategy strategy)
     {
-        var result = new List<CandidateInfo>();
+        var result = new List<Candidate>();
         var candidateDict = allCandidates.ToDictionary(c => c.Address);
 
         // First, try preferred candidates
@@ -278,7 +282,7 @@ public partial class VotingService
     /// <param name="allCandidates">All available candidates.</param>
     /// <param name="strategy">The voting strategy.</param>
     /// <returns>Custom candidates.</returns>
-    private IEnumerable<CandidateInfo> GetCustomCandidates(IEnumerable<CandidateInfo> allCandidates, VotingStrategy strategy)
+    private IEnumerable<Candidate> GetCustomCandidates(IEnumerable<Candidate> allCandidates, VotingStrategy strategy)
     {
         // Apply custom logic based on strategy parameters
         var candidates = allCandidates.Where(c => c.IsActive);

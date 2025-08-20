@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
-using CoreModels = NeoServiceLayer.Core.Models;
+using NeoServiceLayer.Core.Models;
+using NeoServiceLayer.AI.PatternRecognition.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition;
 

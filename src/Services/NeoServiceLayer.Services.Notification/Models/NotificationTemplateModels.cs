@@ -1,4 +1,9 @@
-﻿using System.Linq;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Notification.Models;
 
@@ -10,12 +15,27 @@ public class NotificationTemplate
     /// <summary>
     /// Gets or sets the template ID.
     /// </summary>
-    public string TemplateId { get; set; } = string.Empty;
+    public string Id { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template ID (alias for Id).
+    /// </summary>
+    public string TemplateId { get => Id; set => Id = value; }
 
     /// <summary>
     /// Gets or sets the template name.
     /// </summary>
-    public string TemplateName { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the template name (alias for Name).
+    /// </summary>
+    public string TemplateName { get => Name; set => Name = value; }
+
+    /// <summary>
+    /// Gets or sets the notification channel.
+    /// </summary>
+    public NotificationChannel Channel { get; set; }
 
     /// <summary>
     /// Gets or sets the template subject.
@@ -68,71 +88,6 @@ public class NotificationTemplate
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
-/// <summary>
-/// Create template request.
-/// </summary>
-public class CreateTemplateRequest
-{
-    /// <summary>
-    /// Gets or sets the template name.
-    /// </summary>
-    public string TemplateName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the template name (alias for TemplateName).
-    /// </summary>
-    public string Name { get => TemplateName; set => TemplateName = value; }
-
-    /// <summary>
-    /// Gets or sets the template subject.
-    /// </summary>
-    public string Subject { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the subject template (alias for Subject).
-    /// </summary>
-    public string SubjectTemplate { get => Subject; set => Subject = value; }
-
-    /// <summary>
-    /// Gets or sets the template body.
-    /// </summary>
-    public string Body { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the body template (alias for Body).
-    /// </summary>
-    public string BodyTemplate { get => Body; set => Body = value; }
-
-    /// <summary>
-    /// Gets or sets the template variables.
-    /// </summary>
-    public string[] Variables { get; set; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Gets or sets the supported channels.
-    /// </summary>
-    public NotificationChannel[] SupportedChannels { get; set; } = Array.Empty<NotificationChannel>();
-
-    /// <summary>
-    /// Gets or sets the notification channel.
-    /// </summary>
-    public NotificationChannel Channel { get; set; }
-
-    /// <summary>
-    /// Gets or sets the template category.
-    /// </summary>
-    public string Category { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the template description.
-    /// </summary>
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
 
 /// <summary>
 /// Template result.
@@ -283,219 +238,8 @@ public class NotificationHistoryResult
     public Dictionary<string, object> Metadata { get; set; } = new();
 }
 
-/// <summary>
-/// Update template request.
-/// </summary>
-public class UpdateTemplateRequest
-{
-    /// <summary>
-    /// Gets or sets the template name.
-    /// </summary>
-    public string? TemplateName { get; set; }
 
-    /// <summary>
-    /// Gets or sets the template name (alias for TemplateName).
-    /// </summary>
-    public string? Name { get => TemplateName; set => TemplateName = value; }
 
-    /// <summary>
-    /// Gets or sets the template subject.
-    /// </summary>
-    public string? Subject { get; set; }
-
-    /// <summary>
-    /// Gets or sets the subject template (alias for Subject).
-    /// </summary>
-    public string? SubjectTemplate { get => Subject; set => Subject = value; }
-
-    /// <summary>
-    /// Gets or sets the template body.
-    /// </summary>
-    public string? Body { get; set; }
-
-    /// <summary>
-    /// Gets or sets the body template (alias for Body).
-    /// </summary>
-    public string? BodyTemplate { get => Body; set => Body = value; }
-
-    /// <summary>
-    /// Gets or sets the template variables.
-    /// </summary>
-    public string[]? Variables { get; set; }
-
-    /// <summary>
-    /// Gets or sets the supported channels.
-    /// </summary>
-    public NotificationChannel[]? SupportedChannels { get; set; }
-
-    /// <summary>
-    /// Gets or sets the template category.
-    /// </summary>
-    public string? Category { get; set; }
-
-    /// <summary>
-    /// Gets or sets whether the template is active.
-    /// </summary>
-    public bool? IsActive { get; set; }
-
-    /// <summary>
-    /// Gets or sets the template description.
-    /// </summary>
-    public string? Description { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
-
-/// <summary>
-/// Get history request.
-/// </summary>
-public class GetHistoryRequest : NotificationHistoryRequest
-{
-    /// <summary>
-    /// Gets or sets the page size.
-    /// </summary>
-    public int PageSize { get; set; } = 20;
-
-    /// <summary>
-    /// Gets or sets the start date.
-    /// </summary>
-    public DateTime? StartDate { get; set; }
-
-    /// <summary>
-    /// Gets or sets the end date.
-    /// </summary>
-    public DateTime? EndDate { get; set; }
-}
-
-/// <summary>
-/// Notification history.
-/// </summary>
-public class NotificationHistory : NotificationHistoryResult
-{
-    /// <summary>
-    /// Gets or sets the notifications.
-    /// </summary>
-    public NotificationResult[] Notifications { get; set; } = Array.Empty<NotificationResult>();
-
-    /// <summary>
-    /// Gets or sets the page size.
-    /// </summary>
-    public int PageSize { get; set; } = 20;
-}
-
-/// <summary>
-/// Broadcast request.
-/// </summary>
-public class BroadcastRequest
-{
-    /// <summary>
-    /// Gets or sets the notification content.
-    /// </summary>
-    public string Content { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the message (alias for Content).
-    /// </summary>
-    public string Message { get => Content; set => Content = value; }
-
-    /// <summary>
-    /// Gets or sets the subject.
-    /// </summary>
-    public string Subject { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the target channels.
-    /// </summary>
-    public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
-
-    /// <summary>
-    /// Gets or sets the channel (first channel in Channels array).
-    /// </summary>
-    public NotificationChannel Channel
-    {
-        get => Channels.FirstOrDefault();
-        set => Channels = new[] { value };
-    }
-
-    /// <summary>
-    /// Gets or sets the target categories.
-    /// </summary>
-    public string[] Categories { get; set; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Gets or sets the priority.
-    /// </summary>
-    public NotificationPriority Priority { get; set; } = NotificationPriority.Normal;
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
-
-/// <summary>
-/// Broadcast result.
-/// </summary>
-public class BroadcastResult
-{
-    /// <summary>
-    /// Gets or sets the broadcast ID.
-    /// </summary>
-    public string BroadcastId { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets whether the broadcast was successful.
-    /// </summary>
-    public bool Success { get; set; }
-
-    /// <summary>
-    /// Gets or sets the number of notifications sent.
-    /// </summary>
-    public int NotificationsSent { get; set; }
-
-    /// <summary>
-    /// Gets or sets the total recipients.
-    /// </summary>
-    public int TotalRecipients { get; set; }
-
-    /// <summary>
-    /// Gets or sets the success count.
-    /// </summary>
-    public int SuccessCount { get; set; }
-
-    /// <summary>
-    /// Gets or sets the failure count.
-    /// </summary>
-    public int FailureCount { get; set; }
-
-    /// <summary>
-    /// Gets or sets the channel used.
-    /// </summary>
-    public NotificationChannel Channel { get; set; }
-
-    /// <summary>
-    /// Gets or sets the sent timestamp.
-    /// </summary>
-    public DateTime SentAt { get; set; }
-
-    /// <summary>
-    /// Gets or sets the error message if the broadcast failed.
-    /// </summary>
-    public string? ErrorMessage { get; set; }
-
-    /// <summary>
-    /// Gets or sets the broadcast timestamp.
-    /// </summary>
-    public DateTime BroadcastAt { get; set; }
-
-    /// <summary>
-    /// Gets or sets additional metadata.
-    /// </summary>
-    public Dictionary<string, object> Metadata { get; set; } = new();
-}
 
 /// <summary>
 /// Notification history entry.

@@ -7,6 +7,10 @@ using NeoServiceLayer.Infrastructure.CQRS.Repositories;
 using NeoServiceLayer.Services.KeyManagement.Commands;
 using NeoServiceLayer.Services.KeyManagement.Domain;
 using NeoServiceLayer.Services.KeyManagement.Infrastructure;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 {
@@ -14,7 +18,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
         private readonly ICryptographicService _cryptoService;
-        private readonly ILogger<GenerateKeyCommandHandler> _logger;
+        private readonly ILogger<GenerateKeyCommandHandler> Logger;
 
         public GenerateKeyCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
@@ -23,16 +27,16 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _cryptoService = cryptoService ?? throw new ArgumentNullException(nameof(cryptoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<string> HandleAsync(
-            GenerateKeyCommand command, 
+            GenerateKeyCommand command,
             CancellationToken cancellationToken = default)
         {
             try
             {
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Generating {Algorithm} key of size {KeySize} for {KeyType}",
                     command.Algorithm, command.KeySize, command.KeyType);
 
@@ -58,7 +62,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
                 // Save the aggregate
                 await _repository.SaveAsync(key, null, cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Generated key {KeyId} of type {KeyType} with algorithm {Algorithm}",
                     keyId, command.KeyType, command.Algorithm);
 
@@ -66,7 +70,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex,
+                Logger.LogError(ex,
                     "Failed to generate key of type {KeyType} with algorithm {Algorithm}",
                     command.KeyType, command.Algorithm);
                 throw;
@@ -77,18 +81,18 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     public class ActivateKeyCommandHandler : ICommandHandler<ActivateKeyCommand>
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
-        private readonly ILogger<ActivateKeyCommandHandler> _logger;
+        private readonly ILogger<ActivateKeyCommandHandler> Logger;
 
         public ActivateKeyCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
             ILogger<ActivateKeyCommandHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task HandleAsync(
-            ActivateKeyCommand command, 
+            ActivateKeyCommand command,
             CancellationToken cancellationToken = default)
         {
             try
@@ -101,13 +105,13 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Activated key {KeyId} by {InitiatedBy}",
                     command.KeyId, command.InitiatedBy);
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to activate key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to activate key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -116,14 +120,14 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     public class RevokeKeyCommandHandler : ICommandHandler<RevokeKeyCommand>
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
-        private readonly ILogger<RevokeKeyCommandHandler> _logger;
+        private readonly ILogger<RevokeKeyCommandHandler> Logger;
 
         public RevokeKeyCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
             ILogger<RevokeKeyCommandHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task HandleAsync(
@@ -140,13 +144,13 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Revoked key {KeyId} by {InitiatedBy} with reason: {Reason}",
                     command.KeyId, command.InitiatedBy, command.Reason);
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to revoke key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to revoke key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -156,7 +160,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
         private readonly ICryptographicService _cryptoService;
-        private readonly ILogger<RotateKeyCommandHandler> _logger;
+        private readonly ILogger<RotateKeyCommandHandler> Logger;
 
         public RotateKeyCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
@@ -165,7 +169,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _cryptoService = cryptoService ?? throw new ArgumentNullException(nameof(cryptoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<string> HandleAsync(
@@ -191,7 +195,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Rotated key {KeyId} by {InitiatedBy}",
                     command.KeyId, command.InitiatedBy);
 
@@ -199,7 +203,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to rotate key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to rotate key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -209,7 +213,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
         private readonly ICryptographicService _cryptoService;
-        private readonly ILogger<SignDataCommandHandler> _logger;
+        private readonly ILogger<SignDataCommandHandler> Logger;
 
         public SignDataCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
@@ -218,7 +222,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _cryptoService = cryptoService ?? throw new ArgumentNullException(nameof(cryptoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<string> HandleAsync(
@@ -242,7 +246,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Signed data with key {KeyId} by {InitiatedBy}",
                     command.KeyId, command.InitiatedBy);
 
@@ -250,7 +254,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to sign data with key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to sign data with key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -260,7 +264,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
         private readonly ICryptographicService _cryptoService;
-        private readonly ILogger<VerifySignatureCommandHandler> _logger;
+        private readonly ILogger<VerifySignatureCommandHandler> Logger;
 
         public VerifySignatureCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
@@ -269,7 +273,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
             _cryptoService = cryptoService ?? throw new ArgumentNullException(nameof(cryptoService));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task<bool> HandleAsync(
@@ -294,7 +298,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Verified signature with key {KeyId} by {InitiatedBy}, result: {IsValid}",
                     command.KeyId, command.InitiatedBy, isValid);
 
@@ -302,7 +306,7 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to verify signature with key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to verify signature with key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -311,14 +315,14 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     public class GrantKeyAccessCommandHandler : ICommandHandler<GrantKeyAccessCommand>
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
-        private readonly ILogger<GrantKeyAccessCommandHandler> _logger;
+        private readonly ILogger<GrantKeyAccessCommandHandler> Logger;
 
         public GrantKeyAccessCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
             ILogger<GrantKeyAccessCommandHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task HandleAsync(
@@ -335,13 +339,13 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Granted access to key {KeyId} for user {UserId} by {InitiatedBy}",
                     command.KeyId, command.UserId, command.InitiatedBy);
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to grant access to key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to grant access to key {KeyId}", command.KeyId);
                 throw;
             }
         }
@@ -350,14 +354,14 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
     public class RevokeKeyAccessCommandHandler : ICommandHandler<RevokeKeyAccessCommand>
     {
         private readonly IAggregateRepository<CryptographicKey> _repository;
-        private readonly ILogger<RevokeKeyAccessCommandHandler> _logger;
+        private readonly ILogger<RevokeKeyAccessCommandHandler> Logger;
 
         public RevokeKeyAccessCommandHandler(
             IAggregateRepository<CryptographicKey> repository,
             ILogger<RevokeKeyAccessCommandHandler> logger)
         {
             _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-            _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+            Logger = logger ?? throw new ArgumentNullException(nameof(logger));
         }
 
         public async Task HandleAsync(
@@ -374,13 +378,13 @@ namespace NeoServiceLayer.Services.KeyManagement.CommandHandlers
 
                 await _repository.SaveAsync(key, cancellationToken: cancellationToken);
 
-                _logger.LogInformation(
+                Logger.LogInformation(
                     "Revoked access to key {KeyId} for user {UserId} by {InitiatedBy}",
                     command.KeyId, command.UserId, command.InitiatedBy);
             }
             catch (Exception ex) when (ex is not KeyNotFoundException)
             {
-                _logger.LogError(ex, "Failed to revoke access to key {KeyId}", command.KeyId);
+                Logger.LogError(ex, "Failed to revoke access to key {KeyId}", command.KeyId);
                 throw;
             }
         }

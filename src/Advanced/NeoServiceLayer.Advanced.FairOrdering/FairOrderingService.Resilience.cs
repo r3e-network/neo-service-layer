@@ -1,8 +1,14 @@
-﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Advanced.FairOrdering.Models;
 using NeoServiceLayer.Core;
-using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering;
 
@@ -98,7 +104,7 @@ public partial class FairOrderingService
     /// <param name="request">The fair transaction request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The transaction ID.</returns>
-    private async Task<string> SubmitFairTransactionWithResilienceAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
+    private async Task<string> SubmitFairTransactionWithResilienceAsync(Models.FairTransactionRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"SubmitTransaction_{blockchainType}", 5, TimeSpan.FromMinutes(1));
 
@@ -124,7 +130,7 @@ public partial class FairOrderingService
     /// <param name="request">The fair transaction request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The transaction ID.</returns>
-    private async Task<string> SubmitFairTransactionInternalAsync(FairOrderingModels.FairTransactionRequest request, BlockchainType blockchainType)
+    private async Task<string> SubmitFairTransactionInternalAsync(Models.FairTransactionRequest request, BlockchainType blockchainType)
     {
         return await ExecuteInEnclaveAsync(async () =>
         {
@@ -177,7 +183,7 @@ public partial class FairOrderingService
     /// <param name="request">The transaction analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The fairness analysis result.</returns>
-    private async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
+    private async Task<FairnessRiskAnalysisResult> AnalyzeFairnessRiskWithResilienceAsync(Models.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         var circuitBreaker = GetOrCreateCircuitBreaker($"FairnessAnalysis_{blockchainType}", 3, TimeSpan.FromMinutes(2));
 
@@ -203,7 +209,7 @@ public partial class FairOrderingService
     /// <param name="request">The transaction analysis request.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The fairness analysis result.</returns>
-    private async Task<FairOrderingModels.FairnessRiskAnalysisResult> AnalyzeFairnessRiskInternalAsync(FairOrderingModels.TransactionAnalysisRequest request, BlockchainType blockchainType)
+    private async Task<FairnessRiskAnalysisResult> AnalyzeFairnessRiskInternalAsync(Models.TransactionAnalysisRequest request, BlockchainType blockchainType)
     {
         return await ExecuteInEnclaveAsync(async () =>
         {
@@ -276,7 +282,7 @@ public partial class FairOrderingService
                 // Calculate protection fee based on risk and value
                 decimal protectionFee = CalculateProtectionFee(request.Value, estimatedMev, riskLevel);
 
-                var result = new FairOrderingModels.FairnessRiskAnalysisResult
+                var result = new FairnessRiskAnalysisResult
                 {
                     RiskLevel = riskLevel,
                     EstimatedMEV = estimatedMev,
@@ -295,7 +301,7 @@ public partial class FairOrderingService
             {
                 Logger.LogError(ex, "Failed to analyze fairness risk {AnalysisId}", analysisId);
 
-                return new FairOrderingModels.FairnessRiskAnalysisResult
+                return new FairnessRiskAnalysisResult
                 {
                     RiskLevel = "Error",
                     EstimatedMEV = 0.0m,
@@ -325,7 +331,7 @@ public partial class FairOrderingService
                     {
                         var key = $"fair_transaction_{transaction.TransactionId}";
                         var data = System.Text.Json.JsonSerializer.SerializeToUtf8Bytes(transaction);
-                        await StorageProvider.StoreAsync(key, data);
+                        await StorageProvider.StoreDataAsync(key, data);
                     }
 
                     Logger.LogDebug("Stored fair transaction {TransactionId}", transaction.TransactionId);
@@ -349,7 +355,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Gas analysis result.</returns>
-    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request)
+    private async Task<(bool IsHighPriority, decimal EstimatedMevExposure)> AnalyzeGasPatternsWithResilienceAsync(Models.TransactionAnalysisRequest request)
     {
         return await ResilienceHelper.ExecuteWithRetryAsync(
             async () => await AnalyzeGasPatternsAsync(request),
@@ -364,7 +370,7 @@ public partial class FairOrderingService
     /// </summary>
     /// <param name="request">The transaction analysis request.</param>
     /// <returns>Contract analysis result.</returns>
-    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionWithResilienceAsync(FairOrderingModels.TransactionAnalysisRequest request)
+    private async Task<(bool HasMevRisk, List<string> RiskFactors, decimal EstimatedMev, string RiskLevel, List<string> Recommendations)> AnalyzeContractInteractionWithResilienceAsync(Models.TransactionAnalysisRequest request)
     {
         return await ResilienceHelper.ExecuteWithRetryAsync(
             async () => await AnalyzeContractInteractionAsync(request),

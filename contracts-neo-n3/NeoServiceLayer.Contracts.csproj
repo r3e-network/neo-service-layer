@@ -48,80 +48,80 @@
 
   <ItemGroup>
     <!-- Core Infrastructure Contracts -->
-    <Compile Include="src\Core\ServiceRegistry.cs" />
-    <Compile Include="src\Core\IServiceContract.cs" />
+    <Compile Include="src/Core/ServiceRegistry.cs" />
+    <Compile Include="src/Core/IServiceContract.cs" />
     
     <!-- Fully Implemented Service Contracts (9 Services) -->
-    <Compile Include="src\Services\RandomnessContract.cs" />
-    <Compile Include="src\Services\OracleContract.cs" />
-    <Compile Include="src\Services\AbstractAccountContract.cs" />
-    <Compile Include="src\Services\StorageContract.cs" />
-    <Compile Include="src\Services\ComputeContract.cs" />
-    <Compile Include="src\Services\CrossChainContract.cs" />
-    <Compile Include="src\Services\MonitoringContract.cs" />
-    <Compile Include="src\Services\VotingContract.cs" />
-    <Compile Include="src\Services\ComplianceContract.cs" />
+    <Compile Include="src/Services/RandomnessContract.cs" />
+    <Compile Include="src/Services/OracleContract.cs" />
+    <Compile Include="src/Services/AbstractAccountContract.cs" />
+    <Compile Include="src/Services/StorageContract.cs" />
+    <Compile Include="src/Services/ComputeContract.cs" />
+    <Compile Include="src/Services/CrossChainContract.cs" />
+    <Compile Include="src/Services/MonitoringContract.cs" />
+    <Compile Include="src/Services/VotingContract.cs" />
+    <Compile Include="src/Services/ComplianceContract.cs" />
     
     <!-- Test Framework -->
-    <Compile Include="tests\ContractTestFramework.cs" />
+    <Compile Include="tests/ContractTestFramework.cs" />
     
     <!-- Additional Service Contracts (Architecture ready for implementation) -->
     <!-- Account & Identity Services -->
-    <!-- <Compile Include="src\Services\KeyManagementContract.cs" /> -->
+    <!-- <Compile Include="src/Services/KeyManagementContract.cs" /> -->
     
     <!-- Security & Compliance Services -->
-    <!-- <Compile Include="src\Services\SecretsManagementContract.cs" /> -->
-    <!-- <Compile Include="src\Services\ZeroKnowledgeContract.cs" /> -->
+    <!-- <Compile Include="src/Services/SecretsManagementContract.cs" /> -->
+    <!-- <Compile Include="src/Services/ZeroKnowledgeContract.cs" /> -->
     
     <!-- Data & Oracle Services -->
-    <!-- <Compile Include="src\Services\BackupContract.cs" /> -->
+    <!-- <Compile Include="src/Services/BackupContract.cs" /> -->
     
     <!-- Automation & Monitoring Services -->
-    <!-- <Compile Include="src\Services\AutomationContract.cs" /> -->
-    <!-- <Compile Include="src\Services\HealthContract.cs" /> -->
-    <!-- <Compile Include="src\Services\NotificationContract.cs" /> -->
+    <!-- <Compile Include="src/Services/AutomationContract.cs" /> -->
+    <!-- <Compile Include="src/Services/HealthContract.cs" /> -->
+    <!-- <Compile Include="src/Services/NotificationContract.cs" /> -->
     
     <!-- Advanced Services -->
-    <!-- <Compile Include="src\Services\ProofOfReserveContract.cs" /> -->
+    <!-- <Compile Include="src/Services/ProofOfReserveContract.cs" /> -->
     
     <!-- AI Service Contracts -->
-    <!-- <Compile Include="src\AI\PatternRecognitionContract.cs" /> -->
-    <!-- <Compile Include="src\AI\PredictionContract.cs" /> -->
+    <!-- <Compile Include="src/AI/PatternRecognitionContract.cs" /> -->
+    <!-- <Compile Include="src/AI/PredictionContract.cs" /> -->
     
     <!-- Configuration & Events -->
-    <!-- <Compile Include="src\Services\ConfigurationContract.cs" /> -->
-    <!-- <Compile Include="src\Services\EventSubscriptionContract.cs" /> -->
+    <!-- <Compile Include="src/Services/ConfigurationContract.cs" /> -->
+    <!-- <Compile Include="src/Services/EventSubscriptionContract.cs" /> -->
     
     <!-- Security Contracts -->
-    <!-- <Compile Include="src\Security\AccessControlContract.cs" /> -->
-    <!-- <Compile Include="src\Security\AuditContract.cs" /> -->
+    <!-- <Compile Include="src/Security/AccessControlContract.cs" /> -->
+    <!-- <Compile Include="src/Security/AuditContract.cs" /> -->
     
     <!-- Infrastructure Contracts -->
-    <!-- <Compile Include="src\Infrastructure\EventAggregatorContract.cs" /> -->
-    <!-- <Compile Include="src\Infrastructure\ServiceProxyContract.cs" /> -->
+    <!-- <Compile Include="src/Infrastructure/EventAggregatorContract.cs" /> -->
+    <!-- <Compile Include="src/Infrastructure/ServiceProxyContract.cs" /> -->
   </ItemGroup>
 
   <ItemGroup>
-    <Folder Include="src\Core\" />
-    <Folder Include="src\Services\" />
-    <Folder Include="src\Security\" />
-    <Folder Include="src\AI\" />
-    <Folder Include="src\Infrastructure\" />
-    <Folder Include="tests\" />
-    <Folder Include="scripts\" />
-    <Folder Include="docs\" />
-    <Folder Include="examples\" />
-    <Folder Include="deployment\" />
+    <Folder Include="src/Core/" />
+    <Folder Include="src/Services/" />
+    <Folder Include="src/Security/" />
+    <Folder Include="src/AI/" />
+    <Folder Include="src/Infrastructure/" />
+    <Folder Include="tests/" />
+    <Folder Include="scripts/" />
+    <Folder Include="docs/" />
+    <Folder Include="examples/" />
+    <Folder Include="deployment/" />
   </ItemGroup>
 
   <ItemGroup>
-    <None Include="README.md" Pack="true" PackagePath="\" />
-    <None Include="docs\IMPLEMENTATION_GUIDE.md" />
+    <None Include="README.md" Pack="true" PackagePath="/" />
+    <None Include="docs/IMPLEMENTATION_GUIDE.md" />
     <None Include="DEPLOYMENT_SUMMARY.md" />
     <None Include="COMPLETE_SYSTEM_SUMMARY.md" />
-    <None Include="scripts\deploy.sh" />
-    <None Include="scripts\test.sh" />
-    <None Include="scripts\build.sh" />
+    <None Include="scripts/deploy.sh" />
+    <None Include="scripts/test.sh" />
+    <None Include="scripts/build.sh" />
   </ItemGroup>
 
   <Target Name="PostBuild" AfterTargets="PostBuildEvent">
@@ -149,7 +149,7 @@
     <Message Text="🚀 Deploying contracts..." Importance="high" />
     <Exec Command="chmod +x scripts/deploy.sh" Condition="'$(OS)' != 'Windows_NT'" />
     <Exec Command="./scripts/deploy.sh deploy" Condition="'$(OS)' != 'Windows_NT'" />
-    <Exec Command="scripts\deploy.bat deploy" Condition="'$(OS)' == 'Windows_NT'" />
+    <Exec Command="scripts/deploy.bat deploy" Condition="'$(OS)' == 'Windows_NT'" />
   </Target>
 
   <Target Name="Coverage" DependsOnTargets="Test">

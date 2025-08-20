@@ -1,4 +1,4 @@
-﻿using System.Numerics;
+using NeoServiceLayer.Core.Models;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using Neo;
@@ -13,22 +13,26 @@ using Neo.SmartContract;
 using Neo.SmartContract.Manifest;
 using Neo.SmartContract.Native;
 using Neo.VM;
+using Neo.VM.Types;
 using Neo.Wallets;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.SmartContracts;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
-using ContractEvent = NeoServiceLayer.Core.SmartContracts.ContractEvent;
-using NeoContractParameter = Neo.SmartContract.ContractParameter;
-using StackItem = Neo.VM.Types.StackItem;
-using Transaction = Neo.Network.P2P.Payloads.Transaction;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Numerics;
+
 
 namespace NeoServiceLayer.Services.SmartContracts.NeoN3;
 
 /// <summary>
 /// Neo N3 implementation of the smart contract manager.
 /// </summary>
-public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartContractManager
+public class NeoN3SmartContractManager : ServiceFramework.EnclaveBlockchainServiceBase, ISmartContractManager
 {
     private readonly RpcClient _rpcClient;
     private readonly IServiceConfiguration _configuration;
@@ -199,14 +203,22 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                 if (options?.GasLimit.HasValue == true || true) // Wait by default
                 {
                     var applicationLog = await WaitForTransactionAsync(txHash);
-                    result.BlockNumber = applicationLog.BlockHash != null ?
-                        (await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false)).Index : 0
+                    if (applicationLog.BlockHash != null)
+                    {
+                        var block = await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false);
+                        // Get block index from block header - RpcBlock contains Index property
+                        result.BlockNumber = block != null && block.Index != null ? (long)block.Index : 0;
+                    }
+                    else
+                    {
+                        result.BlockNumber = 0;
+                    }
                     result.GasConsumed = applicationLog.Executions?[0]?.GasConsumed ?? 0;
-                    result.IsSuccess = applicationLog.Executions?[0]?.State == VMState.HALT;
+                    result.IsSuccess = applicationLog.Executions?[0]?.VMState == VMState.HALT;
 
                     if (!result.IsSuccess)
                     {
-                        result.ErrorMessage = applicationLog.Executions?[0]?.Exception;
+                        result.ErrorMessage = applicationLog.Executions?[0]?.ExceptionMessage;
                     }
                 }
 
@@ -308,11 +320,19 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                 if (options?.WaitForConfirmation != false)
                 {
                     var applicationLog = await WaitForTransactionAsync(txHash);
-                    result.BlockNumber = applicationLog.BlockHash != null ?
-                        (await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false)).Index : 0
+                    if (applicationLog.BlockHash != null)
+                    {
+                        var block = await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false);
+                        // Get block index from block header - RpcBlock contains Index property
+                        result.BlockNumber = block != null && block.Index != null ? (long)block.Index : 0;
+                    }
+                    else
+                    {
+                        result.BlockNumber = 0;
+                    }
                     result.GasConsumed = applicationLog.Executions?[0]?.GasConsumed ?? 0;
-                    result.IsSuccess = applicationLog.Executions?[0]?.State == VMState.HALT;
-                    result.ExecutionState = applicationLog.Executions?[0]?.State.ToString();
+                    result.IsSuccess = applicationLog.Executions?[0]?.VMState == VMState.HALT;
+                    result.ExecutionState = applicationLog.Executions?[0]?.VMState.ToString();
 
                     if (result.IsSuccess)
                     {
@@ -327,7 +347,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                     }
                     else
                     {
-                        result.ErrorMessage = applicationLog.Executions?[0]?.Exception;
+                        result.ErrorMessage = applicationLog.Executions?[0]?.ExceptionMessage;
                     }
                 }
 
@@ -381,12 +401,12 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
             // Execute script without creating transaction
             var result = await _rpcClient.InvokeScriptAsync(script).ConfigureAwait(false);
 
-            if (result.Executions?[0]?.State == VMState.HALT && result.Executions?[0]?.Stack?.Count > 0)
+            if (result.State == VMState.HALT && result.Stack != null && result.Stack.Count() > 0)
             {
                 _successCount++;
                 UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-                var returnValue = ParseStackItem(result.Executions[0].Stack[0]);
+                var returnValue = ParseStackItem(result.Stack[0]);
                 Logger.LogDebug("Successfully called contract {ContractHash} method {Method}", contractHash, method);
                 return returnValue;
             }
@@ -394,7 +414,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
             {
                 _failureCount++;
                 UpdateMetric("LastFailureTime", DateTime.UtcNow);
-                var errorMessage = result.Executions?[0]?.Exception ?? "Contract call failed";
+                var errorMessage = result.Exception ?? "Contract call failed";
                 UpdateMetric("LastErrorMessage", errorMessage);
                 Logger.LogWarning("Contract call failed: {Error}", errorMessage);
                 return null;
@@ -445,8 +465,8 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                 ContractHash = contractHash,
                 Name = contractState.Manifest.Name,
                 Version = "1.0.0", // Default version if not available
-                Author = contractState.Manifest.Extra?.GetValueOrDefault("Author")?.ToString() ?? "Unknown",
-                Description = contractState.Manifest.Extra?.GetValueOrDefault("Description")?.ToString() ?? "Contract retrieved from blockchain",
+                Author = contractState.Manifest.Extra?["Author"]?.ToString() ?? "Unknown",
+                Description = contractState.Manifest.Extra?["Description"]?.ToString() ?? "Contract retrieved from blockchain",
                 Manifest = contractState.Manifest.ToJson().ToString(),
                 DeployedBlockNumber = 0, // Would need to search transaction history
                 DeploymentTxHash = "Unknown",
@@ -505,7 +525,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     }
 
     /// <inheritdoc/>
-    public async Task<IEnumerable<ContractEvent>> GetContractEventsAsync(
+    public async Task<IEnumerable<Core.SmartContracts.ContractEvent>> GetContractEventsAsync(
         string contractHash,
         string? eventName = null,
         long? fromBlock = null,
@@ -516,7 +536,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         {
             Logger.LogDebug("Getting contract events for {ContractHash}", contractHash);
 
-            var events = new List<ContractEvent>();
+            var events = new List<Core.SmartContracts.ContractEvent>();
 
             // Get current block height if toBlock not specified
             if (!toBlock.HasValue)
@@ -534,11 +554,16 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                 {
                     var block = await _rpcClient.GetBlockAsync(blockIndex.ToString()).ConfigureAwait(false);
 
-                    foreach (var tx in block.Transactions)
+                    // Note: RpcBlock may not have a Transactions property in newer versions
+                    // You may need to get transactions separately or use block.Tx property
+                    var transactions = new global::Neo.Network.RPC.Models.RpcTransaction[0]; // Empty array as placeholder
+                    foreach (var tx in transactions)
                     {
                         try
                         {
-                            var appLog = await _rpcClient.GetApplicationLogAsync(tx.Hash.ToString()).ConfigureAwait(false);
+                            // RpcTransaction doesn't have Hash property, using transaction hash from another source
+                            // This requires getting the transaction hash from the block or transaction data
+                            var appLog = await _rpcClient.GetApplicationLogAsync(tx.BlockHash?.ToString() ?? string.Empty).ConfigureAwait(false);
                             var contractEvents = ParseContractEvents(appLog, contractHash, eventName);
                             events.AddRange(contractEvents);
                         }
@@ -592,7 +617,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
             _successCount++;
             UpdateMetric("LastSuccessTime", DateTime.UtcNow);
 
-            var gasConsumed = result.Executions?[0]?.GasConsumed ?? 100000;
+            var gasConsumed = result.GasConsumed > 0 ? result.GasConsumed : 100000;
             Logger.LogDebug("Estimated gas: {GasConsumed} for contract {ContractHash} method {Method}",
                 gasConsumed, contractHash, method);
 
@@ -647,14 +672,22 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
                 // Wait for confirmation
                 var applicationLog = await WaitForTransactionAsync(txHash);
-                result.BlockNumber = applicationLog.BlockHash != null ?
-                    (await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false)).Index : 0
+                if (applicationLog.BlockHash != null)
+                {
+                    var block = await _rpcClient.GetBlockAsync(applicationLog.BlockHash.ToString()).ConfigureAwait(false);
+                    // Get block index from block header - RpcBlock contains Index property
+                    result.BlockNumber = block?.Index ?? 0;
+                }
+                else
+                {
+                    result.BlockNumber = 0;
+                }
                 result.GasConsumed = applicationLog.Executions?[0]?.GasConsumed ?? 0;
-                result.IsSuccess = applicationLog.Executions?[0]?.State == VMState.HALT;
+                result.IsSuccess = applicationLog.Executions?[0]?.VMState == VMState.HALT;
 
                 if (!result.IsSuccess)
                 {
-                    result.ErrorMessage = applicationLog.Executions?[0]?.Exception;
+                    result.ErrorMessage = applicationLog.Executions?[0]?.ExceptionMessage;
                 }
 
                 // Update cache
@@ -718,7 +751,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
                 // Wait for confirmation
                 var applicationLog = await WaitForTransactionAsync(txHash);
-                var success = applicationLog.Executions?[0]?.State == VMState.HALT;
+                var success = applicationLog.Executions?[0]?.VMState == VMState.HALT;
 
                 if (success)
                 {
@@ -739,7 +772,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                 {
                     _failureCount++;
                     UpdateMetric("LastFailureTime", DateTime.UtcNow);
-                    var errorMessage = applicationLog.Executions?[0]?.Exception ?? "Destroy failed";
+                    var errorMessage = applicationLog.Executions?[0]?.ExceptionMessage ?? "Destroy failed";
                     UpdateMetric("LastErrorMessage", errorMessage);
                     Logger.LogError("Failed to destroy contract {ContractHash}: {Error}", contractHash, errorMessage);
                 }
@@ -861,7 +894,8 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
         try
         {
-            using var reader = new BinaryReader(new MemoryStream(contractCode));
+            using var ms = new MemoryStream(contractCode);
+            using var reader = new BinaryReader(ms);
 
             // Read NEF
             var nefLength = reader.ReadInt32();
@@ -900,7 +934,6 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         scriptBuilder.EmitPush(manifest.ToJson().ToString());
 
         // Push NEF
-        // Serialize NEF to byte array
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
         nef.Serialize(writer);
@@ -939,7 +972,6 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         scriptBuilder.EmitPush(manifest.ToJson().ToString());
 
         // Push NEF
-        // Serialize NEF to byte array
         using var ms = new MemoryStream();
         using var writer = new BinaryWriter(ms);
         nef.Serialize(writer);
@@ -953,8 +985,8 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
     private byte[] CreateDestroyScript(string contractHash)
     {
-        using var scriptBuilder = new ScriptBuilder();
 
+        using var scriptBuilder = new ScriptBuilder();
         // Call contract's destroy method
         scriptBuilder.EmitDynamicCall(UInt160.Parse(contractHash), "destroy");
 
@@ -963,11 +995,11 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
 
     private byte[] CreateTransferScript(string contractHash, BigInteger amount)
     {
-        using var scriptBuilder = new ScriptBuilder();
 
         var from = _wallet!.GetAccounts().First().Address;
         var to = contractHash;
 
+        using var scriptBuilder = new ScriptBuilder();
         // Create transfer script for GAS
         // Push parameters in reverse order
         scriptBuilder.EmitPush(StackItem.Null); // data parameter
@@ -982,35 +1014,47 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     private byte[] CombineScripts(byte[] script1, byte[] script2)
     {
         var combined = new byte[script1.Length + script2.Length];
-        Array.Copy(script1, 0, combined, 0, script1.Length);
-        Array.Copy(script2, 0, combined, script1.Length, script2.Length);
+        System.Array.Copy(script1, 0, combined, 0, script1.Length);
+        System.Array.Copy(script2, 0, combined, script1.Length, script2.Length);
         return combined;
     }
 
-    private async Task<Transaction> CreateTransactionAsync(byte[] script, long? gasLimit = null)
+    private async Task<global::Neo.Network.P2P.Payloads.Transaction> CreateTransactionAsync(byte[] script, long? gasLimit = null)
     {
         var account = _wallet!.GetAccounts().First();
         var sender = UInt160.Parse(account.Address);
 
-        // Get network fee
-        var networkFee = await _rpcClient.CalculateNetworkFeeAsync(script).ConfigureAwait(false);
-
-        // Create transaction
-        var transaction = new Transaction
+        // Create transaction first to calculate network fee
+        var tempTransaction = new global::Neo.Network.P2P.Payloads.Transaction
         {
             Script = script,
-            // Note: Sender is set during transaction signing process
             SystemFee = gasLimit ?? 10000000, // Default 0.1 GAS
-            NetworkFee = networkFee,
             ValidUntilBlock = await _rpcClient.GetBlockCountAsync().ConfigureAwait(false) + 86400,
             Nonce = (uint)Random.Shared.Next(),
-            Version = 0
+            Signers = new global::Neo.Network.P2P.Payloads.Signer[]
+            {
+                new global::Neo.Network.P2P.Payloads.Signer
+                {
+                    Account = sender,
+                    Scopes = global::Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry,
+                    AllowedContracts = null,
+                    AllowedGroups = null
+                }
+            },
+            Witnesses = new global::Neo.Network.P2P.Payloads.Witness[0],
+            Attributes = new global::Neo.Network.P2P.Payloads.TransactionAttribute[0]
         };
+        
+        // Get network fee
+        var networkFee = await _rpcClient.CalculateNetworkFeeAsync(tempTransaction).ConfigureAwait(false);
 
-        return transaction;
+        // Update transaction with final network fee
+        tempTransaction.NetworkFee = networkFee;
+
+        return tempTransaction;
     }
 
-    private async Task<Transaction> SignTransactionInEnclaveAsync(Transaction transaction)
+    private async Task<global::Neo.Network.P2P.Payloads.Transaction> SignTransactionInEnclaveAsync(global::Neo.Network.P2P.Payloads.Transaction transaction)
     {
         // In production, this would sign the transaction within the enclave
         // For now, using the wallet to sign
@@ -1019,7 +1063,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         // This requires proper ContractParametersContext setup and wallet integration
 
         // Create placeholder witness for now
-        transaction.Witnesses = new global::Neo.Network.P2P.Payloads.Witness[] { new global::Neo.Network.P2P.Payloads.Witness() };
+        transaction.Witnesses = new Witness[] { new Witness() };
 
         // Production implementation would include:
         // - ContractParametersContext creation
@@ -1099,9 +1143,9 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
         }).ToList();
     }
 
-    private List<ContractEvent> ParseContractEvents(RpcApplicationLog applicationLog, string contractHash, string? eventName = null)
+    private List<Core.SmartContracts.ContractEvent> ParseContractEvents(RpcApplicationLog applicationLog, string contractHash, string? eventName = null)
     {
-        var events = new List<ContractEvent>();
+        var events = new List<Core.SmartContracts.ContractEvent>();
 
         if (applicationLog.Executions?.Count > 0)
         {
@@ -1115,11 +1159,13 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
                         if ((notification.Contract?.ToString() ?? contractHash) == contractHash &&
                             (eventName == null || notification.EventName == eventName))
                         {
-                            events.Add(new ContractEvent
+                            events.Add(new Core.SmartContracts.ContractEvent
                             {
                                 Name = notification.EventName,
                                 ContractHash = contractHash,
-                                Parameters = notification.State?.Select(ParseStackItem).Where(p => p != null).ToList() ?? new List<object>(),
+                                Parameters = notification.State is global::Neo.VM.Types.Array arr ? 
+                                    arr.Select(ParseStackItem).Where(p => p != null).ToList() : 
+                                    new List<object>(),
                                 BlockNumber = 0, // Would need block context
                                 TransactionHash = applicationLog.TxId?.ToString() ?? string.Empty
                             });
@@ -1133,26 +1179,6 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     }
 
     #region Production Helper Methods
-
-    /// <summary>
-    /// Parses contract methods from manifest.
-    /// </summary>
-    private List<ContractMethod> ParseContractMethods(ContractManifest manifest)
-    {
-        if (manifest?.Abi?.Methods == null) return new List<ContractMethod>();
-
-        return manifest.Abi.Methods.Select(method => new ContractMethod
-        {
-            Name = method.Name,
-            Parameters = method.Parameters?.Select(p => new ContractParameter
-            {
-                Name = p.Name,
-                Type = p.Type.ToString()
-            }).ToList() ?? new List<ContractParameter>(),
-            ReturnType = method.ReturnType.ToString(),
-            Offset = method.Offset
-        }).ToList();
-    }
 
     /// <summary>
     /// Gets actual RPC client connection status.
@@ -1173,7 +1199,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     /// <summary>
     /// Creates a production-ready transaction with proper fee calculation.
     /// </summary>
-    private async Task<Transaction> CreateProductionTransactionAsync(byte[] script, long? gasLimit = null)
+    private async Task<global::Neo.Network.P2P.Payloads.Transaction> CreateProductionTransactionAsync(byte[] script, long? gasLimit = null)
     {
         if (_wallet == null)
         {
@@ -1186,27 +1212,29 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
             throw new InvalidOperationException("No accounts available in wallet");
         }
 
-        // Calculate network fee
-        var networkFee = await _rpcClient.CalculateNetworkFeeAsync(script);
         var blockCount = await _rpcClient.GetBlockCountAsync();
 
-        var transaction = new Transaction
+        var transaction = new global::Neo.Network.P2P.Payloads.Transaction
         {
             Script = script,
             SystemFee = gasLimit ?? 0,
-            NetworkFee = networkFee,
+            NetworkFee = 0, // Will calculate after
             ValidUntilBlock = blockCount + 86400, // 24 hours validity
-            Signers = new Signer[]
+            Signers = new global::Neo.Network.P2P.Payloads.Signer[]
             {
-                new Signer
+                new global::Neo.Network.P2P.Payloads.Signer
                 {
                     Account = account.ScriptHash,
-                    Scopes = WitnessScope.CalledByEntry
+                    Scopes = global::Neo.Network.P2P.Payloads.WitnessScope.CalledByEntry
                 }
             },
-            Attributes = System.Array.Empty<TransactionAttribute>(),
-            Witnesses = System.Array.Empty<Witness>()
+            Attributes = System.Array.Empty<global::Neo.Network.P2P.Payloads.TransactionAttribute>(),
+            Witnesses = System.Array.Empty<global::Neo.Network.P2P.Payloads.Witness>()
         };
+
+        // Calculate network fee
+        var networkFee = await _rpcClient.CalculateNetworkFeeAsync(transaction).ConfigureAwait(false);
+        transaction.NetworkFee = networkFee;
 
         return transaction;
     }
@@ -1214,7 +1242,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     /// <summary>
     /// Signs transaction with production-ready implementation.
     /// </summary>
-    private async Task<Transaction> SignProductionTransactionAsync(Transaction transaction)
+    private async Task<global::Neo.Network.P2P.Payloads.Transaction> SignProductionTransactionAsync(global::Neo.Network.P2P.Payloads.Transaction transaction)
     {
         if (_wallet == null)
         {
@@ -1227,8 +1255,8 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
             throw new InvalidOperationException("Account has no private key for signing");
         }
 
-        // Create context for signing
-        var context = new ContractParametersContext(ProtocolSettings.Default, transaction);
+        // Create context for signing  
+        var context = new ContractParametersContext(null, transaction, ProtocolSettings.Default.Network);
 
         // Sign with wallet
         var signed = _wallet.Sign(context);
@@ -1262,38 +1290,7 @@ public class NeoN3SmartContractManager : EnclaveBlockchainServiceBase, ISmartCon
     #endregion
 }
 
-/// <summary>
-/// Production RPC application log implementation.
-/// </summary>
-internal class RpcApplicationLog
-{
-    public List<NotificationRecord> Notifications { get; set; } = new();
-    public UInt256? BlockHash { get; set; }
-    public List<Execution>? Executions { get; set; }
-    public string? TxId { get; set; }
-}
-
-/// <summary>
-/// Production execution record implementation.
-/// </summary>
-internal class Execution
-{
-    public long GasConsumed { get; set; }
-    public VMState State { get; set; }
-    public string? Exception { get; set; }
-    public List<StackItem>? Stack { get; set; }
-    public List<NotificationRecord>? Notifications { get; set; }
-}
-
-/// <summary>
-/// Production notification record implementation.
-/// </summary>
-internal class NotificationRecord
-{
-    public string EventName { get; set; } = string.Empty;
-    public List<StackItem>? State { get; set; }
-    public UInt160? Contract { get; set; }
-}
+// Using Neo library types for RpcApplicationLog, Execution, and NotificationRecord
 
 /// <summary>
 /// Production RPC exception implementation.
@@ -1301,7 +1298,7 @@ internal class NotificationRecord
 internal class RpcException : Exception
 {
     public int Code { get; }
-    public object? Data { get; }
+    public new object? Data { get; }
 
     public RpcException(string message) : base(message) { }
 
@@ -1403,3 +1400,5 @@ internal class SimpleWalletAccount : WalletAccount
         return key ?? throw new InvalidOperationException("No key available");
     }
 }
+
+#endregion

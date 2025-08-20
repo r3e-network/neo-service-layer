@@ -1,9 +1,16 @@
-﻿using System.Security;
 using System.Text.Json;
 using Amazon.SecretsManager;
 using Amazon.SecretsManager.Model;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security;
+
 
 namespace NeoServiceLayer.Services.SecretsManagement;
 
@@ -12,7 +19,7 @@ namespace NeoServiceLayer.Services.SecretsManagement;
 /// </summary>
 public class AwsSecretsManagerProvider : IExternalSecretProvider
 {
-    private readonly ILogger<AwsSecretsManagerProvider> _logger;
+    private readonly ILogger<AwsSecretsManagerProvider> Logger;
     private AmazonSecretsManagerClient? _client;
 
     /// <summary>
@@ -21,7 +28,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
     /// <param name="logger">The logger.</param>
     public AwsSecretsManagerProvider(ILogger<AwsSecretsManagerProvider> logger)
     {
-        _logger = logger;
+        Logger = logger;
     }
 
     /// <inheritdoc/>
@@ -33,7 +40,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
     /// <inheritdoc/>
     public Task InitializeAsync(CancellationToken cancellationToken = default)
     {
-        _logger.LogInformation("Initializing AWS Secrets Manager provider");
+        Logger.LogInformation("Initializing AWS Secrets Manager provider");
         return Task.CompletedTask;
     }
 
@@ -42,7 +49,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
     {
         try
         {
-            _logger.LogInformation("Configuring AWS Secrets Manager provider");
+            Logger.LogInformation("Configuring AWS Secrets Manager provider");
 
             var config = new AmazonSecretsManagerConfig();
 
@@ -59,12 +66,12 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
             // Create client - credentials will be resolved from environment/role/profile
             _client = new AmazonSecretsManagerClient(config);
 
-            _logger.LogInformation("AWS Secrets Manager provider configured successfully");
+            Logger.LogInformation("AWS Secrets Manager provider configured successfully");
             return Task.CompletedTask;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error configuring AWS Secrets Manager provider");
+            Logger.LogError(ex, "Error configuring AWS Secrets Manager provider");
             throw;
         }
     }
@@ -76,7 +83,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Storing secret {SecretId} in AWS Secrets Manager", secretId);
+            Logger.LogDebug("Storing secret {SecretId} in AWS Secrets Manager", secretId);
 
             var secretValue = SecureStringToString(value);
 
@@ -114,11 +121,11 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
                 await _client!.CreateSecretAsync(createRequest, cancellationToken);
             }
 
-            _logger.LogDebug("Successfully stored secret {SecretId} in AWS Secrets Manager", secretId);
+            Logger.LogDebug("Successfully stored secret {SecretId} in AWS Secrets Manager", secretId);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error storing secret {SecretId} in AWS Secrets Manager", secretId);
+            Logger.LogError(ex, "Error storing secret {SecretId} in AWS Secrets Manager", secretId);
             throw;
         }
     }
@@ -130,7 +137,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Retrieving secret {SecretId} from AWS Secrets Manager", secretId);
+            Logger.LogDebug("Retrieving secret {SecretId} from AWS Secrets Manager", secretId);
 
             var request = new GetSecretValueRequest
             {
@@ -148,12 +155,12 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
         }
         catch (ResourceNotFoundException)
         {
-            _logger.LogDebug("Secret {SecretId} not found in AWS Secrets Manager", secretId);
+            Logger.LogDebug("Secret {SecretId} not found in AWS Secrets Manager", secretId);
             return null;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving secret {SecretId} from AWS Secrets Manager", secretId);
+            Logger.LogError(ex, "Error retrieving secret {SecretId} from AWS Secrets Manager", secretId);
             throw;
         }
     }
@@ -165,7 +172,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Listing secrets from AWS Secrets Manager");
+            Logger.LogDebug("Listing secrets from AWS Secrets Manager");
 
             var secrets = new List<SecretMetadata>();
             var request = new ListSecretsRequest
@@ -204,12 +211,12 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
             }
             while (!string.IsNullOrEmpty(response.NextToken));
 
-            _logger.LogDebug("Listed {Count} secrets from AWS Secrets Manager", secrets.Count);
+            Logger.LogDebug("Listed {Count} secrets from AWS Secrets Manager", secrets.Count);
             return secrets;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error listing secrets from AWS Secrets Manager");
+            Logger.LogError(ex, "Error listing secrets from AWS Secrets Manager");
             throw;
         }
     }
@@ -221,7 +228,7 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Deleting secret {SecretId} from AWS Secrets Manager", secretId);
+            Logger.LogDebug("Deleting secret {SecretId} from AWS Secrets Manager", secretId);
 
             var request = new DeleteSecretRequest
             {
@@ -231,17 +238,17 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
             await _client!.DeleteSecretAsync(request, cancellationToken);
 
-            _logger.LogDebug("Successfully deleted secret {SecretId} from AWS Secrets Manager", secretId);
+            Logger.LogDebug("Successfully deleted secret {SecretId} from AWS Secrets Manager", secretId);
             return true;
         }
         catch (ResourceNotFoundException)
         {
-            _logger.LogDebug("Secret {SecretId} not found in AWS Secrets Manager for deletion", secretId);
+            Logger.LogDebug("Secret {SecretId} not found in AWS Secrets Manager for deletion", secretId);
             return false;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error deleting secret {SecretId} from AWS Secrets Manager", secretId);
+            Logger.LogError(ex, "Error deleting secret {SecretId} from AWS Secrets Manager", secretId);
             throw;
         }
     }
@@ -253,18 +260,18 @@ public class AwsSecretsManagerProvider : IExternalSecretProvider
 
         try
         {
-            _logger.LogDebug("Testing connection to AWS Secrets Manager");
+            Logger.LogDebug("Testing connection to AWS Secrets Manager");
 
             // Try to list secrets to test connectivity
             var request = new ListSecretsRequest { MaxResults = 1 };
             await _client!.ListSecretsAsync(request, cancellationToken);
 
-            _logger.LogDebug("AWS Secrets Manager connection test successful");
+            Logger.LogDebug("AWS Secrets Manager connection test successful");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "AWS Secrets Manager connection test failed");
+            Logger.LogError(ex, "AWS Secrets Manager connection test failed");
             return false;
         }
     }

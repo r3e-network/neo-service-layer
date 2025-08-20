@@ -1,9 +1,15 @@
-﻿using System.Runtime.CompilerServices;
 using System.Security;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Runtime.CompilerServices;
+
 
 namespace NeoServiceLayer.ServiceFramework.Security;
 
@@ -259,7 +265,7 @@ public abstract class SecurityAwareServiceBase : ServiceBase
             Logger.LogError(ex, "Authorization failed for operation: {Operation}", operationDescription);
             throw;
         }
-        catch (SecurityException ex)
+        catch (Infrastructure.Security.SecurityException ex)
         {
             LogSecurityEvent(SecurityEventType.SecurityViolation,
                 $"Security violation in {operationDescription}: {ex.Message}", clientId);

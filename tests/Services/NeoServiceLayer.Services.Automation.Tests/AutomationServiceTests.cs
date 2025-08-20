@@ -1,22 +1,33 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Services.Automation.Models;
+using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.Automation.Tests;
 
 public class AutomationServiceTests : TestBase
 {
     private readonly Mock<ILogger<AutomationService>> _loggerMock;
+    private readonly Mock<IEnclaveManager> _enclaveManagerMock;
     private readonly AutomationService _service;
 
     public AutomationServiceTests()
     {
         _loggerMock = new Mock<ILogger<AutomationService>>();
-        _service = new AutomationService(_loggerMock.Object, MockEnclaveManager.Object);
+        _enclaveManagerMock = new Mock<IEnclaveManager>();
+        _enclaveManagerMock.Setup(x => x.IsInitialized).Returns(true);
+        _service = new AutomationService(_loggerMock.Object, _enclaveManagerMock.Object);
 
         // Initialize the service synchronously for tests
         _service.InitializeAsync().GetAwaiter().GetResult();
@@ -195,7 +206,7 @@ public class AutomationServiceTests : TestBase
         var createResult = await _service.CreateAutomationAsync(createRequest, blockchainType);
         var automationId = createResult.AutomationId;
 
-        var context = new ExecutionContext
+        var context = new NeoServiceLayer.Services.Automation.Models.ExecutionContext
         {
             UserId = "test-user",
             Parameters = new Dictionary<string, object> { { "amount", 100 } }

@@ -1,8 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.CrossChain;
 using NeoServiceLayer.Services.CrossChain.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -101,7 +108,17 @@ public class CrossChainController : BaseApiController
 
             var source = ParseBlockchainType(sourceBlockchain);
             var target = ParseBlockchainType(targetBlockchain);
-            var transferId = await _crossChainService.TransferTokensAsync(request, source, target);
+            
+            // Convert to Core model
+            var coreRequest = new NeoServiceLayer.Core.Models.CrossChainTransferRequest
+            {
+                Sender = request.FromAddress,
+                DestinationAddress = request.ToAddress,
+                Amount = request.Amount,
+                TokenAddress = request.TokenAddress
+            };
+            
+            var transferId = await _crossChainService.TransferTokensAsync(coreRequest, source, target);
 
             Logger.LogInformation("Initiated cross-chain transfer {TransferId} from {SourceBlockchain} to {TargetBlockchain} by user {UserId}",
                 transferId, sourceBlockchain, targetBlockchain, GetCurrentUserId());
@@ -145,7 +162,16 @@ public class CrossChainController : BaseApiController
 
             var source = ParseBlockchainType(sourceBlockchain);
             var target = ParseBlockchainType(targetBlockchain);
-            var callId = await _crossChainService.ExecuteRemoteCallAsync(request, source, target);
+            
+            // Convert to Core model
+            var coreRequest = new NeoServiceLayer.Core.Models.RemoteCallRequest
+            {
+                ContractAddress = request.ContractAddress,
+                MethodName = request.MethodName,
+                Parameters = request.Parameters
+            };
+            
+            var callId = await _crossChainService.ExecuteRemoteCallAsync(coreRequest, source, target);
 
             Logger.LogInformation("Executed remote call {CallId} from {SourceBlockchain} to {TargetBlockchain} by user {UserId}",
                 callId, sourceBlockchain, targetBlockchain, GetCurrentUserId());
@@ -410,11 +436,21 @@ public class CrossChainController : BaseApiController
             }
 
             var blockchain = ParseBlockchainType(blockchainType);
-            var result = await _crossChainService.RegisterTokenMappingAsync(mapping, blockchain);
+            
+            // Convert to Core model
+            var coreMapping = new NeoServiceLayer.Core.Models.TokenMapping
+            {
+                SourceTokenAddress = mapping.SourceToken,
+                DestinationTokenAddress = mapping.TargetToken,
+                SourceChain = blockchain,
+                DestinationChain = blockchain
+            };
+            
+            var result = await _crossChainService.RegisterTokenMappingAsync(coreMapping, blockchain);
 
             Logger.LogInformation("Registered token mapping from {SourceToken} to {DestinationToken} on {BlockchainType} by user {UserId}",
                 mapping.SourceToken ?? "Unknown",
-                mapping.DestinationToken ?? "Unknown",
+                mapping.TargetToken ?? "Unknown",
                 blockchainType, GetCurrentUserId());
 
             return Ok(CreateResponse(result, "Token mapping registered successfully"));
@@ -496,4 +532,28 @@ public class CrossChainController : BaseApiController
             return HandleException(ex, "GetTransactionHistory");
         }
     }
+}
+
+// Temporary stub classes for missing models
+public class CrossChainTransferRequest
+{
+    public string FromAddress { get; set; }
+    public string ToAddress { get; set; }
+    public decimal Amount { get; set; }
+    public string TokenAddress { get; set; }
+}
+
+public class RemoteCallRequest
+{
+    public string ContractAddress { get; set; }
+    public string MethodName { get; set; }
+    public object[] Parameters { get; set; }
+}
+
+public class TokenMapping
+{
+    public string SourceToken { get; set; }
+    public string TargetToken { get; set; }
+    public string SourceChain { get; set; }
+    public string TargetChain { get; set; }
 }

@@ -1,9 +1,18 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using AutomationSvc = NeoServiceLayer.Services.Automation;
+using NeoServiceLayer.Services.Automation.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -51,14 +60,14 @@ public class AutomationController : ControllerBase
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            // Map the request to CreateAutomationRequest  
-            var automationRequest = new NeoServiceLayer.Services.Automation.CreateAutomationRequest
+            // Map the request to CreateAutomationRequest
+            var automationRequest = new CreateAutomationRequest
             {
                 Name = request.JobType + "_" + request.ContractAddress,
                 Description = $"Automation job for {request.MethodName} on {request.ContractAddress}",
-                TriggerType = AutomationSvc.AutomationTriggerType.Schedule,
+                TriggerType = AutomationTriggerType.Schedule,
                 TriggerConfiguration = System.Text.Json.JsonSerializer.Serialize(request.Schedule),
-                ActionType = AutomationSvc.AutomationActionType.SmartContract,
+                ActionType = AutomationActionType.SmartContract,
                 ActionConfiguration = System.Text.Json.JsonSerializer.Serialize(new
                 {
                     ContractAddress = request.ContractAddress,
@@ -120,7 +129,7 @@ public class AutomationController : ControllerBase
                 JobId = jobId,
                 Status = result.ToString(),
                 LastExecutionTime = null,  // Not available from status enum alone
-                NextExecutionTime = null,  // Not available from status enum alone  
+                NextExecutionTime = null,  // Not available from status enum alone
                 ExecutionCount = 0,        // Not available from status enum alone
                 LastError = null           // Not available from status enum alone
             };
@@ -319,7 +328,7 @@ public class AutomationController : ControllerBase
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            var updateRequest = new NeoServiceLayer.Services.Automation.AutomationJobUpdate
+            var updateRequest = new NeoServiceLayer.Services.Automation.Models.AutomationJobUpdate
             {
                 Name = request.JobType ?? "Updated Job",
                 Description = "Updated automation job",
@@ -379,7 +388,7 @@ public class AutomationController : ControllerBase
             {
                 ExecutionId = execution.Id,
                 JobId = execution.JobId,
-                ExecutionTime = execution.ExecutedAt,
+                ExecutionTime = execution.ExecutedAt ?? DateTime.UtcNow,
                 Status = execution.Status.ToString(),
                 TransactionHash = execution.TransactionHash,
                 GasUsed = (long?)(execution.GasUsed ?? 0),

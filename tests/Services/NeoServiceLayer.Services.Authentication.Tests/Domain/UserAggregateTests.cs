@@ -4,6 +4,10 @@ using FluentAssertions;
 using NeoServiceLayer.Services.Authentication.Domain.Aggregates;
 using NeoServiceLayer.Services.Authentication.Domain.Events;
 using Xunit;
+using System.Collections.Generic;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Tests.Domain
 {
@@ -61,7 +65,7 @@ namespace NeoServiceLayer.Services.Authentication.Tests.Domain
 
             // Act & Assert
             var act = () => user.VerifyEmail("invalid-token");
-            act.Should().Throw<InvalidOperationException>()
+            act.Should().Throw<InvalidOperationException>();
                 .WithMessage("Invalid verification token");
         }
 
@@ -96,7 +100,7 @@ namespace NeoServiceLayer.Services.Authentication.Tests.Domain
 
             // Act & Assert
             var act = () => user.Login("192.168.1.1", "Mozilla", null);
-            act.Should().Throw<InvalidOperationException>()
+            act.Should().Throw<InvalidOperationException>();
                 .WithMessage("Cannot login - user status is Suspended");
         }
 
@@ -193,7 +197,7 @@ namespace NeoServiceLayer.Services.Authentication.Tests.Domain
 
             // Act & Assert
             var act = () => user.AssignRole(role);
-            act.Should().Throw<InvalidOperationException>()
+            act.Should().Throw<InvalidOperationException>();
                 .WithMessage($"Role {role} already assigned");
         }
 

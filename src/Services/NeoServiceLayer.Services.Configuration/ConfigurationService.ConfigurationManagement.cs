@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration.Models;
+using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Configuration;
 
@@ -28,7 +34,7 @@ public partial class ConfigurationService
         {
             try
             {
-                Logger.LogInformation("Setting configuration {Key} on {Blockchain} with enclave security", request.Key, blockchainType);
+                _settingConfiguration(Logger, request.Key, blockchainType, null);
 
                 // Validate configuration within the enclave
                 await ValidateConfigurationInEnclaveAsync(request);
@@ -43,7 +49,7 @@ public partial class ConfigurationService
                     CreatedAt = DateTime.UtcNow,
                     UpdatedAt = DateTime.UtcNow,
                     Version = 1,
-                    BlockchainType = blockchainType
+                    BlockchainType = blockchainType.ToString()
                 };
 
                 lock (_configLock)
@@ -63,7 +69,7 @@ public partial class ConfigurationService
                 // Notify subscribers
                 await NotifySubscribersAsync(request.Key, entry);
 
-                Logger.LogInformation("Configuration {Key} set successfully with version {Version}", request.Key, entry.Version);
+                _configurationSetSuccessfully(Logger, request.Key, entry.Version, null);
 
                 return new ConfigurationSetResult
                 {
@@ -75,7 +81,7 @@ public partial class ConfigurationService
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to set configuration {Key}", request.Key);
+                _configurationSetFailed(Logger, request.Key, ex);
                 return new ConfigurationSetResult
                 {
                     Key = request.Key,
@@ -98,7 +104,7 @@ public partial class ConfigurationService
 
         try
         {
-            Logger.LogDebug("Getting configuration {Key} on {Blockchain}", request.Key, blockchainType);
+            _gettingConfiguration(Logger, request.Key, blockchainType, null);
 
             await Task.Delay(1); // Simulate async configuration retrieval
             lock (_configLock)
@@ -118,7 +124,7 @@ public partial class ConfigurationService
                 }
             }
 
-            Logger.LogWarning("Configuration {Key} not found on {Blockchain}", request.Key, blockchainType);
+            _configurationNotFound(Logger, request.Key, blockchainType, null);
 
             return new ConfigurationResult
             {
@@ -131,7 +137,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get configuration {Key}", request.Key);
+            _getConfigurationFailed(Logger, request.Key, ex);
 
             return new ConfigurationResult
             {
@@ -155,7 +161,7 @@ public partial class ConfigurationService
 
         try
         {
-            Logger.LogInformation("Deleting configuration {Key} on {Blockchain}", request.Key, blockchainType);
+            _deletingConfiguration(Logger, request.Key, blockchainType, null);
 
             ConfigurationEntry? removedEntry = null;
 
@@ -175,7 +181,7 @@ public partial class ConfigurationService
                 // Notify subscribers
                 await NotifySubscribersOfDeletionAsync(request.Key);
 
-                Logger.LogInformation("Configuration {Key} deleted successfully", request.Key);
+                _configurationDeletedSuccessfully(Logger, request.Key, null);
                 return new ConfigurationDeleteResult
                 {
                     Key = request.Key,
@@ -185,7 +191,7 @@ public partial class ConfigurationService
             }
             else
             {
-                Logger.LogWarning("Configuration {Key} not found for deletion", request.Key);
+                _configurationNotFoundForDeletion(Logger, request.Key, null);
                 return new ConfigurationDeleteResult
                 {
                     Key = request.Key,
@@ -196,7 +202,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to delete configuration {Key}", request.Key);
+            _deleteConfigurationFailed(Logger, request.Key, ex);
             return new ConfigurationDeleteResult
             {
                 Key = request.Key,
@@ -218,8 +224,7 @@ public partial class ConfigurationService
 
         try
         {
-            Logger.LogDebug("Listing configurations with prefix {Prefix} on {Blockchain}",
-                request.KeyPrefix ?? "all", blockchainType);
+            _listingConfigurations(Logger, request.KeyPrefix ?? "all", blockchainType, null);
 
             await Task.Delay(1); // Simulate async configuration listing
             List<ConfigurationEntry> configurations;
@@ -242,7 +247,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to list configurations");
+            _listConfigurationsFailed(Logger, ex);
             return new ConfigurationListResult
             {
                 Success = false,
@@ -271,8 +276,7 @@ public partial class ConfigurationService
 
         try
         {
-            Logger.LogInformation("Processing batch configuration update {BatchId} with {RequestCount} requests",
-                batchId, requestList.Count);
+            _batchConfigurationProcessing(Logger, batchId, requestList.Count, null);
 
             var results = new List<ConfigurationSetResult>();
             var successCount = 0;
@@ -321,7 +325,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to process batch configuration update {BatchId}", batchId);
+            _batchConfigurationFailed(Logger, batchId, ex);
 
             return new BatchConfigurationResult
             {
@@ -351,7 +355,7 @@ public partial class ConfigurationService
 
         try
         {
-            Logger.LogDebug("Getting configurations by pattern {Pattern} on {Blockchain}", pattern, blockchainType);
+            _gettingConfigurationsByPattern(Logger, pattern, blockchainType, null);
 
             await Task.Delay(1); // Simulate async pattern matching
             List<ConfigurationEntry> matchingConfigs;
@@ -373,7 +377,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to get configurations by pattern {Pattern}", pattern);
+            _getConfigurationsByPatternFailed(Logger, pattern, ex);
             return new ConfigurationListResult
             {
                 Success = false,
@@ -409,11 +413,11 @@ public partial class ConfigurationService
                 throw new ArgumentException($"Configuration value validation failed for key {request.Key}");
             }
 
-            Logger.LogDebug("Configuration {Key} validated successfully in enclave", request.Key);
+            _configurationValidationSuccess(Logger, request.Key, null);
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Configuration validation failed for key {Key}", request.Key);
+            _configurationValidationFailed(Logger, request.Key, ex);
             throw;
         }
     }
@@ -434,7 +438,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Failed to encrypt configuration value");
+            _configurationEncryptionFailed(Logger, ex);
             throw;
         }
     }
@@ -481,7 +485,7 @@ public partial class ConfigurationService
         }
         catch (Exception ex)
         {
-            Logger.LogWarning(ex, "Failed to convert value {Value} to type {ValueType}, returning original value", value, valueType);
+            _configurationConversionWarning(Logger, value, valueType, ex);
             return value;
         }
     }

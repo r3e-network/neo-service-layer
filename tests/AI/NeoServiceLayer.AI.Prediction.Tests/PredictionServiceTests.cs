@@ -1,16 +1,22 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.Prediction;
+using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
-using CoreModels = NeoServiceLayer.Core.Models;
-using IConfigurationSection = Microsoft.Extensions.Configuration.IConfigurationSection;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.AI.Prediction.Tests;
 
@@ -90,10 +96,17 @@ public class PredictionServiceTests : IDisposable
 
     private void SetupStorageProvider()
     {
-        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
+        // Mock the underlying interface methods, not the extension methods
+        _mockStorageProvider.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<StorageOptions>()))
                           .ReturnsAsync(true);
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.IsAny<string>()))
                           .ReturnsAsync((byte[]?)null);
+        _mockStorageProvider.Setup(x => x.DeleteDataAsync(It.IsAny<string>()))
+                          .ReturnsAsync(true);
+        _mockStorageProvider.Setup(x => x.ExistsAsync(It.IsAny<string>()))
+                          .ReturnsAsync(false);
+        _mockStorageProvider.Setup(x => x.ListKeysAsync(It.IsAny<string>(), It.IsAny<int>()))
+                          .ReturnsAsync(Array.Empty<string>());
     }
 
     #region Service Lifecycle Tests
@@ -171,7 +184,7 @@ public class PredictionServiceTests : IDisposable
 
         var actualModelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
 
-        var request = new CoreModels.PredictionRequest
+        var request = new Core.Models.PredictionRequest
         {
             ModelId = actualModelId, // Use the actual created model ID
             InputData = new Dictionary<string, object>
@@ -197,7 +210,7 @@ public class PredictionServiceTests : IDisposable
     {
         // Arrange
         const string nonExistentModelId = "model_nonexistent";
-        var request = new CoreModels.PredictionRequest
+        var request = new Core.Models.PredictionRequest
         {
             ModelId = nonExistentModelId,
             InputData = new Dictionary<string, object>
@@ -233,7 +246,7 @@ public class PredictionServiceTests : IDisposable
 
         var modelId = await _service.CreateModelAsync(modelDef, BlockchainType.NeoN3);
 
-        var request = new CoreModels.PredictionRequest
+        var request = new Core.Models.PredictionRequest
         {
             ModelId = modelId,
             InputData = new Dictionary<string, object>
@@ -274,7 +287,7 @@ public class PredictionServiceTests : IDisposable
         nullException.ParamName.Should().Be("request");
 
         // Act & Assert - Empty input data
-        var emptyRequest = new CoreModels.PredictionRequest
+        var emptyRequest = new Core.Models.PredictionRequest
         {
             ModelId = modelId,
             InputData = new Dictionary<string, object>()
@@ -324,14 +337,14 @@ public class PredictionServiceTests : IDisposable
         var inputFeatures = new double[] { 1.0, 2.0, 3.0, 4.0, 5.0 };
 
         const int requestCount = 100;
-        var tasks = new List<Task<CoreModels.PredictionResult>>();
+        var tasks = new List<Task<PredictionResult>>();
 
         // Act
         var stopwatch = System.Diagnostics.Stopwatch.StartNew();
 
         for (int i = 0; i < requestCount; i++)
         {
-            var request = new CoreModels.PredictionRequest
+            var request = new Core.Models.PredictionRequest
             {
                 ModelId = modelId,
                 InputData = new Dictionary<string, object>
@@ -366,9 +379,9 @@ public class PredictionServiceTests : IDisposable
             .Setup(x => x.GetValue(It.IsAny<string>(), It.IsAny<string>()))
             .Returns((string key, string defaultValue) => defaultValue);
 
-        _mockServiceConfiguration
-            .Setup(x => x.ContainsKey(It.IsAny<string>()))
-            .Returns(true);
+        // Setup configuration sections
+        var mockSection = new Mock<IConfigurationSection>();
+        mockSection.Setup(x => x.Value).Returns("test_value");
 
         // Setup IPersistentStorageProvider mock
         _mockStorageProvider

@@ -8,6 +8,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.CQRS;
 using System.Text.Json;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.CQRS
 {
@@ -34,7 +38,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             _cache = cache ?? throw new ArgumentNullException(nameof(cache));
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             _handlerRegistry = new ConcurrentDictionary<Type, Type>();
-            
+
             _jsonOptions = new JsonSerializerOptions
             {
                 PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
@@ -51,7 +55,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
 
             var stopwatch = Stopwatch.StartNew();
             var queryType = query.GetType();
-            
+
             try
             {
                 _logger.LogInformation(
@@ -85,20 +89,20 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 using var timeoutCts = query.TimeoutSeconds.HasValue
                     ? new CancellationTokenSource(TimeSpan.FromSeconds(query.TimeoutSeconds.Value))
                     : null;
-                
+
                 using var linkedCts = timeoutCts != null
                     ? CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, timeoutCts.Token)
                     : null;
-                
+
                 var effectiveCancellationToken = linkedCts?.Token ?? cancellationToken;
 
                 // Execute query
                 TResult result;
+                using var scope = _serviceProvider.CreateScope();
                 try
                 {
-                    using var scope = _serviceProvider.CreateScope();
                     var handler = scope.ServiceProvider.GetService(handlerType);
-                    
+
                     if (handler == null)
                     {
                         throw new HandlerNotFoundException(
@@ -125,10 +129,10 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                     // Get result from task
                     var taskType = task.GetType();
                     var resultProperty = taskType.GetProperty("Result");
-                    
+
                     // Await the task
                     await (Task)task;
-                    
+
                     result = (TResult)resultProperty?.GetValue(task)!;
                 }
                 catch (OperationCanceledException) when (timeoutCts?.Token.IsCancellationRequested == true)
@@ -144,7 +148,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 }
 
                 _metrics.RecordQuerySuccess(queryType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogInformation(
                     "Query {QueryType} with ID {QueryId} executed successfully in {ElapsedMs}ms",
                     queryType.Name, query.QueryId, stopwatch.ElapsedMilliseconds);
@@ -154,11 +158,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             catch (Exception ex)
             {
                 _metrics.RecordQueryFailure(queryType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogError(ex,
                     "Failed to execute query {QueryType} with ID {QueryId}",
                     queryType.Name, query.QueryId);
-                
+
                 throw;
             }
         }
@@ -168,12 +172,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             if (!typeof(IQuery<>).MakeGenericType(resultType).IsAssignableFrom(queryType))
             {
                 throw new ArgumentException(
-                    $"Type {queryType.Name} does not implement IQuery<{resultType.Name}>", 
+                    $"Type {queryType.Name} does not implement IQuery<{resultType.Name}>",
                     nameof(queryType));
             }
 
             _handlerRegistry[queryType] = handlerType;
-            
+
             _logger.LogDebug(
                 "Registered handler {HandlerType} for query {QueryType}",
                 handlerType.Name, queryType.Name);
@@ -198,7 +202,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
         {
             var validatorType = typeof(IQueryValidator<>).MakeGenericType(query.GetType());
             var validator = serviceProvider.GetService(validatorType);
-            
+
             if (validator != null)
             {
                 var validateMethod = validatorType.GetMethod("ValidateAsync");
@@ -206,7 +210,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 {
                     var validationTask = (Task<ValidationResult>?)validateMethod.Invoke(
                         validator, new object[] { query, cancellationToken });
-                    
+
                     if (validationTask != null)
                     {
                         var validationResult = await validationTask;
@@ -227,7 +231,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             {
                 var cacheKey = GenerateCacheKey(query);
                 var cachedData = await _cache.GetStringAsync(cacheKey, cancellationToken);
-                
+
                 if (!string.IsNullOrEmpty(cachedData))
                 {
                     return JsonSerializer.Deserialize<TResult>(cachedData, _jsonOptions);
@@ -237,7 +241,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             {
                 _logger.LogWarning(ex, "Failed to retrieve query result from cache");
             }
-            
+
             return default;
         }
 
@@ -250,13 +254,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             {
                 var cacheKey = GenerateCacheKey(query);
                 var serializedData = JsonSerializer.Serialize(result, _jsonOptions);
-                
+
                 var cacheOptions = new DistributedCacheEntryOptions
                 {
                     SlidingExpiration = TimeSpan.FromMinutes(5),
                     AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(30)
                 };
-                
+
                 await _cache.SetStringAsync(cacheKey, serializedData, cacheOptions, cancellationToken);
             }
             catch (Exception ex)
@@ -271,7 +275,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             var queryData = JsonSerializer.Serialize(query, _jsonOptions);
             var hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(queryData));
             var hashString = Convert.ToBase64String(hash);
-            
+
             return $"query:{queryType.Name}:{hashString}";
         }
     }

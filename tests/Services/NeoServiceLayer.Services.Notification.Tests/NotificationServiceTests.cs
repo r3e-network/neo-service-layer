@@ -1,4 +1,4 @@
-﻿using System.Net;
+using System.Net;
 using System.Net.Http;
 using FluentAssertions;
 using Microsoft.Extensions.Configuration;
@@ -7,12 +7,18 @@ using Microsoft.Extensions.Options;
 using Moq;
 using Moq.Protected;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Core.Models;
+using CoreModels = NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Services.Notification;
 using NeoServiceLayer.Services.Notification.Models;
 using NeoServiceLayer.TestInfrastructure;
 using Xunit;
 using static NeoServiceLayer.Services.Notification.Models.NotificationChannel;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Notification.Tests;
 
@@ -398,7 +404,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         {
             Recipient = "user@example.com",
             Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction", "block" }
+            EventTypes = new List<string> { "transaction", "block" }
         };
 
         // Act
@@ -424,7 +430,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         {
             Recipient = "user@example.com",
             Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            EventTypes = new List<string> { "transaction" }
         };
         var subscribeResult = await _service.SubscribeAsync(request, blockchainType);
 
@@ -474,13 +480,13 @@ public class NotificationServiceTests : TestBase, IDisposable
         {
             Recipient = recipient,
             Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            EventTypes = new List<string> { "transaction" }
         };
         var request2 = new SubscribeRequest
         {
             Recipient = recipient,
             Channel = NotificationChannel.Webhook,
-            EventTypes = new[] { "block" }
+            EventTypes = new List<string> { "block" }
         };
 
         await _service.SubscribeAsync(request1, blockchainType);
@@ -574,7 +580,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         {
             Recipient = "user@example.com",
             Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            EventTypes = new List<string> { "transaction" }
         };
 
         // Act & Assert
@@ -593,7 +599,7 @@ public class NotificationServiceTests : TestBase, IDisposable
         {
             Recipient = "user@example.com",
             Channel = NotificationChannel.Email,
-            EventTypes = new[] { "transaction" }
+            EventTypes = new List<string> { "transaction" }
         };
 
         // Act & Assert
@@ -686,7 +692,7 @@ public class NotificationServiceTests : TestBase, IDisposable
             {
                 Recipient = $"user{i}@example.com",
                 Channel = NotificationChannel.Email,
-                EventTypes = new[] { "transaction" }
+                EventTypes = new List<string> { "transaction" }
             };
             tasks.Add(_service.SubscribeAsync(request, BlockchainType.NeoN3));
         }

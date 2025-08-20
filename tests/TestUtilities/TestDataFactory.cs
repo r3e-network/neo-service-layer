@@ -5,6 +5,9 @@ using Microsoft.Extensions.Logging;
 using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.TestUtilities
 {
@@ -98,7 +101,6 @@ namespace NeoServiceLayer.TestUtilities
         /// </summary>
         public TestKeyPair CreateKeyPair(string keyType = "secp256r1", string? userId = null)
         {
-            using var ecdsa = ECDsa.Create();
             var privateKey = Convert.ToBase64String(ecdsa.ExportECPrivateKey());
             var publicKey = Convert.ToBase64String(ecdsa.ExportSubjectPublicKeyInfo());
 
@@ -433,7 +435,6 @@ namespace NeoServiceLayer.TestUtilities
 
         private string GeneratePasswordHash(string password)
         {
-            using var sha256 = SHA256.Create();
             var hashedBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(password + "test_salt"));
             return Convert.ToBase64String(hashedBytes);
         }
@@ -463,7 +464,6 @@ namespace NeoServiceLayer.TestUtilities
         private string GenerateSignature(string data, string privateKey)
         {
             // Simplified signature generation for testing
-            using var sha256 = SHA256.Create();
             var dataHash = sha256.ComputeHash(Encoding.UTF8.GetBytes(data + privateKey));
             return Convert.ToBase64String(dataHash);
         }

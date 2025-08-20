@@ -1,9 +1,16 @@
-﻿using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Voting.Strategies;
+using NeoServiceLayer.Services.Voting.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.Voting.Tests.Strategies;
 
@@ -25,17 +32,17 @@ public class VotingStrategyHelperTests
     public void GetEligibleCandidates_OnlyActiveStrategy_ReturnsActiveCandidates()
     {
         // Arrange
-        var candidates = new List<CandidateInfo>
+        var candidates = new List<Candidate>
         {
-            new CandidateInfo { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, Rank = 1, UptimePercentage = 99.5 },
-            new CandidateInfo { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, Rank = 2, UptimePercentage = 99.0 },
-            new CandidateInfo { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, Rank = 3, UptimePercentage = 98.5 },
-            new CandidateInfo { PublicKey = "key4", Name = "Candidate 4", IsActive = true, VotesReceived = 700, Rank = 4, UptimePercentage = 97.0 }
+            new Candidate { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, Rank = 1, UptimePercentage = 99.5 },
+            new Candidate { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, Rank = 2, UptimePercentage = 99.0 },
+            new Candidate { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, Rank = 3, UptimePercentage = 98.5 },
+            new Candidate { PublicKey = "key4", Name = "Candidate 4", IsActive = true, VotesReceived = 700, Rank = 4, UptimePercentage = 97.0 }
         };
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.StabilityFocused,
+            Type = VotingStrategyType.StabilityFocused,
             Rules = new VotingRules
             {
                 MaxCandidates = 21
@@ -47,7 +54,7 @@ public class VotingStrategyHelperTests
 
         // Assert
         result.Should().NotBeNull();
-        result.Should().HaveCount(2); // Only active candidates with high uptime (key1 and key3)
+        result.Should().HaveCount(2); // Only active candidates with high uptime (key1 and key3);
         result.All(c => c.IsActive && c.UptimePercentage >= 98.0).Should().BeTrue();
     }
 
@@ -55,10 +62,10 @@ public class VotingStrategyHelperTests
     public void GetEligibleCandidates_Top21Strategy_ReturnsTop21()
     {
         // Arrange
-        var candidates = new List<CandidateInfo>();
+        var candidates = new List<Candidate>();
         for (int i = 1; i <= 30; i++)
         {
-            candidates.Add(new CandidateInfo
+            candidates.Add(new Candidate
             {
                 PublicKey = $"key{i}",
                 Name = $"Candidate {i}",
@@ -70,7 +77,7 @@ public class VotingStrategyHelperTests
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.Automatic,
+            Type = VotingStrategyType.Automatic,
             Rules = new VotingRules
             {
                 MaxCandidates = 21
@@ -92,11 +99,11 @@ public class VotingStrategyHelperTests
     public void ApplyVotingRules_OnlyActiveNodes_ReturnsActiveCandidates()
     {
         // Arrange
-        var candidates = new List<CandidateInfo>
+        var candidates = new List<Candidate>
         {
-            new CandidateInfo { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, UptimePercentage = 99.0 },
-            new CandidateInfo { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, UptimePercentage = 98.0 },
-            new CandidateInfo { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, UptimePercentage = 97.0 }
+            new Candidate { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, UptimePercentage = 99.0 },
+            new Candidate { PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900, UptimePercentage = 98.0 },
+            new Candidate { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800, UptimePercentage = 97.0 }
         };
 
         var rules = new VotingRules
@@ -121,18 +128,18 @@ public class VotingStrategyHelperTests
     public void GetConditionalCandidates_ValidCandidates_ReturnsConditionalCandidates()
     {
         // Arrange
-        var candidates = new List<CandidateInfo>
+        var candidates = new List<Candidate>
         {
-            new CandidateInfo { Address = "addr1", PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000 },
-            new CandidateInfo { Address = "addr2", PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900 },
-            new CandidateInfo { Address = "addr3", PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800 }
+            new Candidate { Address = "addr1", PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000 },
+            new Candidate { Address = "addr2", PublicKey = "key2", Name = "Candidate 2", IsActive = false, VotesReceived = 900 },
+            new Candidate { Address = "addr3", PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 800 }
         };
 
         var strategy = new VotingStrategy
         {
-            StrategyType = VotingStrategyType.Conditional,
-            PreferredCandidates = new[] { "addr1", "addr3" },
-            FallbackCandidates = new[] { "addr2" },
+            Type = VotingStrategyType.Conditional,
+            PreferredCandidates = new List<string> { "addr1", "addr3" },
+            FallbackCandidates = new List<string> { "addr2" },
             Rules = new VotingRules
             {
                 MaxCandidates = 21
@@ -152,10 +159,10 @@ public class VotingStrategyHelperTests
     public void GetBalancedCandidates_ValidCandidates_ReturnsBalancedSelection()
     {
         // Arrange
-        var candidates = new List<CandidateInfo>();
+        var candidates = new List<Candidate>();
         for (int i = 1; i <= 20; i++)
         {
-            candidates.Add(new CandidateInfo
+            candidates.Add(new Candidate
             {
                 PublicKey = $"key{i}",
                 Name = $"Candidate {i}",
@@ -181,11 +188,11 @@ public class VotingStrategyHelperTests
     public void CalculateRiskAssessment_ValidCandidates_ReturnsRiskAssessment()
     {
         // Arrange
-        var candidates = new CandidateInfo[]
+        var candidates = new Candidate[]
         {
-            new CandidateInfo { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, UptimePercentage = 99.0, ExpectedReward = 100 },
-            new CandidateInfo { PublicKey = "key2", Name = "Candidate 2", IsActive = true, VotesReceived = 500, UptimePercentage = 97.0, ExpectedReward = 80 },
-            new CandidateInfo { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 100, UptimePercentage = 95.0, ExpectedReward = 60 }
+            new Candidate { PublicKey = "key1", Name = "Candidate 1", IsActive = true, VotesReceived = 1000, UptimePercentage = 99.0, ExpectedReward = 100 },
+            new Candidate { PublicKey = "key2", Name = "Candidate 2", IsActive = true, VotesReceived = 500, UptimePercentage = 97.0, ExpectedReward = 80 },
+            new Candidate { PublicKey = "key3", Name = "Candidate 3", IsActive = true, VotesReceived = 100, UptimePercentage = 95.0, ExpectedReward = 60 }
         };
 
         // Act
@@ -217,10 +224,10 @@ public class VotingStrategyHelperTests
     public void CalculateConfidenceScore_ValidCandidates_ReturnsScore()
     {
         // Arrange
-        var candidates = new CandidateInfo[]
+        var candidates = new Candidate[]
         {
-            new CandidateInfo { PublicKey = "key1", IsActive = true, UptimePercentage = 99.0, IsConsensusNode = true },
-            new CandidateInfo { PublicKey = "key2", IsActive = true, UptimePercentage = 97.0, IsConsensusNode = true }
+            new Candidate { PublicKey = "key1", IsActive = true, UptimePercentage = 99.0, IsConsensusNode = true },
+            new Candidate { PublicKey = "key2", IsActive = true, UptimePercentage = 97.0, IsConsensusNode = true }
         };
 
         var preferences = new VotingPreferences

@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.AI.Prediction.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
+using Models = NeoServiceLayer.AI.Prediction.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.Prediction;
 
@@ -103,7 +109,7 @@ public partial class PredictionService
     /// <summary>
     /// Calculates model complexity factor for uncertainty adjustment.
     /// </summary>
-    private double CalculateComplexityFactor(PredictionModel model)
+    private double CalculateComplexityFactor(Models.PredictionModel model)
     {
         // Simple complexity estimation based on model characteristics
         var baseComplexity = model.PredictionType switch

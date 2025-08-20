@@ -1,7 +1,14 @@
-﻿using System.ComponentModel.DataAnnotations;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -11,7 +18,7 @@ namespace NeoServiceLayer.Services.ProofOfReserve;
 public class ProofOfReserveConfigurationService : IDisposable
 {
     private readonly IConfiguration _configuration;
-    private readonly ILogger<ProofOfReserveConfigurationService> _logger;
+    private readonly ILogger<ProofOfReserveConfigurationService> Logger;
     private readonly IDisposable? _configurationChangeToken;
     private ProofOfReserveConfiguration _currentConfiguration;
     private readonly object _configurationLock = new();
@@ -27,7 +34,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         ILogger<ProofOfReserveConfigurationService> logger)
     {
         _configuration = configuration;
-        _logger = logger;
+        Logger = logger;
 
         // Load initial configuration
         _currentConfiguration = LoadConfiguration();
@@ -38,7 +45,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         // Set up hot reload
         _configurationChangeToken = _configuration.GetReloadToken().RegisterChangeCallback(OnConfigurationChanged, null);
 
-        _logger.LogInformation("Proof of Reserve configuration service initialized");
+        Logger.LogInformation("Proof of Reserve configuration service initialized");
     }
 
     /// <summary>
@@ -102,15 +109,15 @@ public class ProofOfReserveConfigurationService : IDisposable
 
         if (!isValid)
         {
-            _logger.LogWarning("Configuration validation failed with {ErrorCount} errors", validationResults.Count);
+            Logger.LogWarning("Configuration validation failed with {ErrorCount} errors", validationResults.Count);
             foreach (var result in validationResults)
             {
-                _logger.LogWarning("Configuration validation error: {Error}", result.ErrorMessage);
+                Logger.LogWarning("Configuration validation error: {Error}", result.ErrorMessage);
             }
         }
         else
         {
-            _logger.LogDebug("Configuration validation passed");
+            Logger.LogDebug("Configuration validation passed");
         }
 
         return new ConfigurationValidationResult
@@ -129,24 +136,24 @@ public class ProofOfReserveConfigurationService : IDisposable
     {
         try
         {
-            _logger.LogInformation("Manually reloading Proof of Reserve configuration");
+            Logger.LogInformation("Manually reloading Proof of Reserve configuration");
 
             var newConfiguration = LoadConfiguration();
             var validationResult = ValidateConfiguration(newConfiguration);
 
             if (!validationResult.IsValid)
             {
-                _logger.LogError("Configuration reload failed due to validation errors");
+                Logger.LogError("Configuration reload failed due to validation errors");
                 return false;
             }
 
             UpdateConfiguration(newConfiguration);
-            _logger.LogInformation("Configuration reloaded successfully");
+            Logger.LogInformation("Configuration reloaded successfully");
             return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to reload configuration");
+            Logger.LogError(ex, "Failed to reload configuration");
             return false;
         }
     }
@@ -191,7 +198,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to get configuration value for path: {Path}", path);
+            Logger.LogWarning(ex, "Failed to get configuration value for path: {Path}", path);
             return defaultValue;
         }
     }
@@ -252,7 +259,7 @@ public class ProofOfReserveConfigurationService : IDisposable
                             break;
 
                         default:
-                            _logger.LogWarning("Unknown runtime setting: {Setting}", update.Key);
+                            Logger.LogWarning("Unknown runtime setting: {Setting}", update.Key);
                             break;
                     }
                 }
@@ -263,12 +270,12 @@ public class ProofOfReserveConfigurationService : IDisposable
                     if (validationResult.IsValid)
                     {
                         NotifyConfigurationChanged(config);
-                        _logger.LogInformation("Runtime settings updated successfully");
+                        Logger.LogInformation("Runtime settings updated successfully");
                         return true;
                     }
                     else
                     {
-                        _logger.LogError("Runtime settings update failed validation");
+                        Logger.LogError("Runtime settings update failed validation");
                         return false;
                     }
                 }
@@ -278,7 +285,7 @@ public class ProofOfReserveConfigurationService : IDisposable
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to update runtime settings");
+            Logger.LogError(ex, "Failed to update runtime settings");
             return false;
         }
     }
@@ -294,11 +301,11 @@ public class ProofOfReserveConfigurationService : IDisposable
         try
         {
             _configuration.GetSection(ProofOfReserveConfiguration.SectionName).Bind(configuration);
-            _logger.LogDebug("Configuration loaded from section: {SectionName}", ProofOfReserveConfiguration.SectionName);
+            Logger.LogDebug("Configuration loaded from section: {SectionName}", ProofOfReserveConfiguration.SectionName);
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Failed to bind configuration section, using defaults");
+            Logger.LogWarning(ex, "Failed to bind configuration section, using defaults");
         }
 
         return configuration;
@@ -312,7 +319,7 @@ public class ProofOfReserveConfigurationService : IDisposable
     {
         try
         {
-            _logger.LogInformation("Configuration change detected, reloading...");
+            Logger.LogInformation("Configuration change detected, reloading...");
 
             var newConfiguration = LoadConfiguration();
             var validationResult = ValidateConfiguration(newConfiguration);
@@ -320,16 +327,16 @@ public class ProofOfReserveConfigurationService : IDisposable
             if (validationResult.IsValid)
             {
                 UpdateConfiguration(newConfiguration);
-                _logger.LogInformation("Configuration hot reload completed successfully");
+                Logger.LogInformation("Configuration hot reload completed successfully");
             }
             else
             {
-                _logger.LogError("Configuration hot reload failed validation, keeping current configuration");
+                Logger.LogError("Configuration hot reload failed validation, keeping current configuration");
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error during configuration hot reload");
+            Logger.LogError(ex, "Error during configuration hot reload");
         }
     }
 
@@ -367,14 +374,14 @@ public class ProofOfReserveConfigurationService : IDisposable
                     }
                     catch (Exception ex)
                     {
-                        _logger.LogError(ex, "Error in configuration change callback");
+                        Logger.LogError(ex, "Error in configuration change callback");
                     }
                 }
             }
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error notifying configuration changes");
+            Logger.LogError(ex, "Error notifying configuration changes");
         }
     }
 

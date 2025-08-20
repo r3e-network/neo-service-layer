@@ -7,6 +7,9 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Cryptography.KeyDerivation;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Logging;
+using System.Threading;
+using NeoServiceLayer.Services.Authentication.Models;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -15,17 +18,22 @@ namespace NeoServiceLayer.Services.Authentication
     /// </summary>
     public interface IUserRepository
     {
-        Task<User> GetByIdAsync(string userId);
-        Task<User> GetByUsernameAsync(string username);
-        Task<User> GetByEmailAsync(string email);
-        Task<User> CreateAsync(User user);
-        Task<bool> UpdateAsync(User user);
+        Task<Models.User> GetByIdAsync(string userId);
+        Task<Models.User> GetByUsernameAsync(string username);
+        Task<Models.User> GetByEmailAsync(string email);
+        Task<Models.User> CreateAsync(Models.User user);
+        Task<bool> UpdateAsync(Models.User user);
         Task<bool> DeleteAsync(string userId);
         Task<bool> ValidatePasswordAsync(string userId, string password);
         Task<bool> ChangePasswordAsync(string userId, string newPassword);
         Task<IEnumerable<string>> GetUserRolesAsync(string userId);
         Task<bool> AddUserToRoleAsync(string userId, string role);
         Task<bool> RemoveUserFromRoleAsync(string userId, string role);
+        
+        // Additional methods for AuthenticationService compatibility
+        Task<bool> UpdatePasswordAsync(string userId, string passwordHash, string salt);
+        Task<MfaSettings> GetMfaSettingsAsync(string userId);
+        Task<bool> UpdateMfaSettingsAsync(Guid userId, MfaSettings settings);
         Task RecordLoginAttemptAsync(string userId, bool success, string ipAddress, string userAgent);
         Task<IEnumerable<LoginAttempt>> GetRecentLoginAttemptsAsync(string userId, int count);
     }
@@ -38,7 +46,7 @@ namespace NeoServiceLayer.Services.Authentication
     {
         private readonly ILogger<InMemoryUserRepository> _logger;
         private readonly IDistributedCache _cache;
-        private readonly Dictionary<string, User> _users;
+        private readonly Dictionary<string, Models.User> _users;
         private readonly Dictionary<string, List<string>> _userRoles;
         private readonly Dictionary<string, List<LoginAttempt>> _loginAttempts;
 
@@ -48,69 +56,69 @@ namespace NeoServiceLayer.Services.Authentication
         {
             _logger = logger;
             _cache = cache;
-            _users = new Dictionary<string, User>();
+            _users = new Dictionary<string, Models.User>();
             _userRoles = new Dictionary<string, List<string>>();
             _loginAttempts = new Dictionary<string, List<LoginAttempt>>();
-            
+
             // Seed with test users
             SeedTestUsers();
         }
 
-        public async Task<User> GetByIdAsync(string userId)
+        public async Task<Models.User> GetByIdAsync(string userId)
         {
             await Task.CompletedTask;
             return _users.TryGetValue(userId, out var user) ? user : null;
         }
 
-        public async Task<User> GetByUsernameAsync(string username)
+        public async Task<Models.User> GetByUsernameAsync(string username)
         {
             await Task.CompletedTask;
             return _users.Values.FirstOrDefault(u => u.Username.Equals(username, StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<User> GetByEmailAsync(string email)
+        public async Task<Models.User> GetByEmailAsync(string email)
         {
             await Task.CompletedTask;
             return _users.Values.FirstOrDefault(u => u.Email.Equals(email, StringComparison.OrdinalIgnoreCase));
         }
 
-        public async Task<User> CreateAsync(User user)
+        public async Task<Models.User> CreateAsync(Models.User user)
         {
-            if (string.IsNullOrEmpty(user.Id))
+            if (user.Id == Guid.Empty)
             {
-                user.Id = Guid.NewGuid().ToString();
+                user.Id = Guid.NewGuid();
             }
-            
+
             user.CreatedAt = DateTime.UtcNow;
             user.UpdatedAt = DateTime.UtcNow;
-            
+
             // Hash password if provided
             if (!string.IsNullOrEmpty(user.PasswordHash))
             {
                 user.PasswordHash = HashPassword(user.PasswordHash);
             }
-            
-            _users[user.Id] = user;
-            _userRoles[user.Id] = new List<string> { "user" }; // Default role
-            
+
+            _users[user.Id.ToString()] = user;
+            _userRoles[user.Id.ToString()] = new List<string> { "user" }; // Default role
+
             _logger.LogInformation("User {UserId} created", user.Id);
-            
+
             await Task.CompletedTask;
             return user;
         }
 
-        public async Task<bool> UpdateAsync(User user)
+        public async Task<bool> UpdateAsync(Models.User user)
         {
-            if (!_users.ContainsKey(user.Id))
+            if (!_users.ContainsKey(user.Id.ToString()))
             {
                 return false;
             }
-            
+
             user.UpdatedAt = DateTime.UtcNow;
-            _users[user.Id] = user;
-            
+            _users[user.Id.ToString()] = user;
+
             _logger.LogInformation("User {UserId} updated", user.Id);
-            
+
             await Task.CompletedTask;
             return true;
         }
@@ -124,7 +132,7 @@ namespace NeoServiceLayer.Services.Authentication
                 _loginAttempts.Remove(userId);
                 _logger.LogInformation("User {UserId} deleted", userId);
             }
-            
+
             await Task.CompletedTask;
             return removed;
         }
@@ -136,7 +144,7 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 return false;
             }
-            
+
             return VerifyPassword(password, user.PasswordHash);
         }
 
@@ -147,11 +155,11 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 return false;
             }
-            
+
             user.PasswordHash = HashPassword(newPassword);
             user.LastPasswordChangeAt = DateTime.UtcNow;
             user.UpdatedAt = DateTime.UtcNow;
-            
+
             _logger.LogInformation("Password changed for user {UserId}", userId);
             return true;
         }
@@ -168,13 +176,13 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 _userRoles[userId] = new List<string>();
             }
-            
+
             if (!_userRoles[userId].Contains(role))
             {
                 _userRoles[userId].Add(role);
                 _logger.LogInformation("User {UserId} added to role {Role}", userId, role);
             }
-            
+
             await Task.CompletedTask;
             return true;
         }
@@ -186,7 +194,7 @@ namespace NeoServiceLayer.Services.Authentication
                 roles.Remove(role);
                 _logger.LogInformation("User {UserId} removed from role {Role}", userId, role);
             }
-            
+
             await Task.CompletedTask;
             return true;
         }
@@ -197,7 +205,7 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 _loginAttempts[userId] = new List<LoginAttempt>();
             }
-            
+
             var attempt = new LoginAttempt
             {
                 AttemptedAt = DateTime.UtcNow,
@@ -206,27 +214,27 @@ namespace NeoServiceLayer.Services.Authentication
                 UserAgent = userAgent,
                 FailureReason = success ? null : "Invalid credentials"
             };
-            
+
             _loginAttempts[userId].Insert(0, attempt);
-            
+
             // Keep only last 100 attempts
             if (_loginAttempts[userId].Count > 100)
             {
                 _loginAttempts[userId] = _loginAttempts[userId].Take(100).ToList();
             }
-            
+
             await Task.CompletedTask;
         }
 
         public async Task<IEnumerable<LoginAttempt>> GetRecentLoginAttemptsAsync(string userId, int count)
         {
             await Task.CompletedTask;
-            
+
             if (_loginAttempts.TryGetValue(userId, out var attempts))
             {
                 return attempts.Take(count);
             }
-            
+
             return new List<LoginAttempt>();
         }
 
@@ -238,14 +246,14 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 rng.GetBytes(salt);
             }
-            
+
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password: password,
                 salt: salt,
                 prf: KeyDerivationPrf.HMACSHA256,
                 iterationCount: 100000,
                 numBytesRequested: 256 / 8));
-            
+
             // Combine salt and hash for storage
             return $"{Convert.ToBase64String(salt)}.{hashed}";
         }
@@ -256,64 +264,105 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 return false;
             }
-            
+
             var parts = hashedPassword.Split('.');
             if (parts.Length != 2)
             {
                 return false;
             }
-            
+
             var salt = Convert.FromBase64String(parts[0]);
             var hash = parts[1];
-            
+
             string hashed = Convert.ToBase64String(KeyDerivation.Pbkdf2(
                 password: password,
                 salt: salt,
                 prf: KeyDerivationPrf.HMACSHA256,
                 iterationCount: 100000,
                 numBytesRequested: 256 / 8));
-            
+
             return hash == hashed;
         }
 
         private void SeedTestUsers()
         {
             // Create admin user
-            var adminUser = new User
+            var adminUser = new Models.User
             {
-                Id = "admin-001",
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000001"),
                 Username = "admin",
                 Email = "admin@neoservicelayer.com",
-                FirstName = "System",
-                LastName = "Administrator",
                 PasswordHash = "AdminPass123!",
+                PasswordSalt = "salt123",
                 EmailVerified = true,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             CreateAsync(adminUser).Wait();
-            AddUserToRoleAsync(adminUser.Id, "admin").Wait();
-            AddUserToRoleAsync(adminUser.Id, "user").Wait();
-            
+            AddUserToRoleAsync(adminUser.Id.ToString(), "admin").Wait();
+            AddUserToRoleAsync(adminUser.Id.ToString(), "user").Wait();
+
             // Create test user
-            var testUser = new User
+            var testUser = new Models.User
             {
-                Id = "user-001",
+                Id = Guid.Parse("00000000-0000-0000-0000-000000000002"),
                 Username = "testuser",
                 Email = "test@neoservicelayer.com",
-                FirstName = "Test",
-                LastName = "User",
                 PasswordHash = "TestPass123!",
+                PasswordSalt = "salt456",
                 EmailVerified = true,
                 IsActive = true,
                 CreatedAt = DateTime.UtcNow,
                 UpdatedAt = DateTime.UtcNow
             };
             CreateAsync(testUser).Wait();
-            
+
             _logger.LogInformation("Test users seeded successfully");
         }
+
+        public async Task<bool> UpdatePasswordAsync(string userId, string passwordHash, string salt)
+        {
+            await Task.CompletedTask;
+            if (_users.TryGetValue(userId, out var user))
+            {
+                user.PasswordHash = passwordHash;
+                user.LastPasswordChangeAt = DateTime.UtcNow;
+                return true;
+            }
+            return false;
+        }
+
+        public async Task<MfaSettings> GetMfaSettingsAsync(string userId)
+        {
+            await Task.CompletedTask;
+            if (_users.TryGetValue(userId, out var user))
+            {
+                return new MfaSettings
+                {
+                    Enabled = user.MfaEnabled,
+                    Type = Enum.TryParse<MfaType>(user.MfaType, out var mfaType) ? mfaType : MfaType.Totp,
+                    Secret = user.MfaSecret
+                };
+            }
+            return new MfaSettings();
+        }
+
+        public async Task<bool> UpdateMfaSettingsAsync(Guid userId, MfaSettings settings)
+        {
+            await Task.CompletedTask;
+            var userIdStr = userId.ToString();
+            if (_users.TryGetValue(userIdStr, out var user))
+            {
+                user.MfaEnabled = settings.Enabled;
+                user.MfaType = settings.Type.ToString();
+                user.MfaSecret = settings.Secret;
+                return true;
+            }
+            return false;
+        }
+
+        // RecordLoginAttemptAsync and GetRecentLoginAttemptsAsync already defined above
     }
 
     /// <summary>

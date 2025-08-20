@@ -2,6 +2,12 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core.Events;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure.EventSourcing
 {
@@ -21,27 +27,27 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             IConfiguration configuration)
         {
             // Configure options
-            services.Configure&lt;EventStoreConfiguration&gt;(
+            services.Configure<EventStoreConfiguration>(
                 configuration.GetSection(EventStoreConfiguration.SectionName));
-            
-            services.Configure&lt;EventBusConfiguration&gt;(
+
+            services.Configure<EventBusConfiguration>(
                 configuration.GetSection(EventBusConfiguration.SectionName));
-            
-            services.Configure&lt;EventProcessingConfiguration&gt;(
+
+            services.Configure<EventProcessingConfiguration>(
                 configuration.GetSection(EventProcessingConfiguration.SectionName));
 
             // Validate configuration
-            services.AddSingleton&lt;IValidateOptions&lt;EventStoreConfiguration&gt;, EventStoreConfigurationValidator&gt;();
-            services.AddSingleton&lt;IValidateOptions&lt;EventBusConfiguration&gt;, EventBusConfigurationValidator&gt;();
-            services.AddSingleton&lt;IValidateOptions&lt;EventProcessingConfiguration&gt;, EventProcessingConfigurationValidator&gt;();
+            services.AddSingleton<IValidateOptions<EventStoreConfiguration>, EventStoreConfigurationValidator>();
+            services.AddSingleton<IValidateOptions<EventBusConfiguration>, EventBusConfigurationValidator>();
+            services.AddSingleton<IValidateOptions<EventProcessingConfiguration>, EventProcessingConfigurationValidator>();
 
             // Register core services
-            services.AddSingleton&lt;IEventStore, PostgreSqlEventStore&gt;();
-            services.AddSingleton&lt;IEventBus, RabbitMqEventBus&gt;();
-            services.AddHostedService&lt;EventProcessingEngine&gt;();
+            services.AddSingleton<IEventStore, PostgreSqlEventStore>();
+            services.AddSingleton<IEventBus, RabbitMqEventBus>();
+            services.AddHostedService<EventProcessingEngine>();
 
             // Register event sourcing initializer
-            services.AddHostedService&lt;EventSourcingInitializer&gt;();
+            services.AddHostedService<EventSourcingInitializer>();
 
             return services;
         }
@@ -53,12 +59,12 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
         /// <typeparam name="THandler">Handler type</typeparam>
         /// <param name="services">Service collection</param>
         /// <returns>Service collection for chaining</returns>
-        public static IServiceCollection AddEventHandler&lt;TEvent, THandler&gt;(this IServiceCollection services)
+        public static IServiceCollection AddEventHandler<TEvent, THandler>(this IServiceCollection services)
             where TEvent : class, IDomainEvent
-            where THandler : class, IEventHandler&lt;TEvent&gt;
+            where THandler : class, IEventHandler<TEvent>
         {
-            services.AddTransient&lt;IEventHandler&lt;TEvent&gt;, THandler&gt;();
-            services.AddTransient&lt;THandler&gt;();
+            services.AddTransient<IEventHandler<TEvent>, THandler>();
+            services.AddTransient<THandler>();
 
             return services;
         }
@@ -74,15 +80,15 @@ namespace NeoServiceLayer.Infrastructure.EventSourcing
             System.Reflection.Assembly assembly)
         {
             var handlerTypes = assembly.GetTypes()
-                .Where(t =&gt; t.IsClass && !t.IsAbstract)
-                .Where(t =&gt; t.GetInterfaces()
-                    .Any(i =&gt; i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler&lt;&gt;)))
+                .Where(t => t.IsClass && !t.IsAbstract)
+                .Where(t => t.GetInterfaces()
+                    .Any(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>)))
                 .ToList();
 
             foreach (var handlerType in handlerTypes)
             {
                 var interfaceTypes = handlerType.GetInterfaces()
-                    .Where(i =&gt; i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler&lt;&gt;));
+                    .Where(i => i.IsGenericType && i.GetGenericTypeDefinition() == typeof(IEventHandler<>));
 
                 foreach (var interfaceType in interfaceTypes)
                 {

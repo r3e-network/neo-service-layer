@@ -1,7 +1,9 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using System.Linq;
+using System;
+
 
 namespace NeoServiceLayer.Core.Events
 {
@@ -21,7 +23,7 @@ namespace NeoServiceLayer.Core.Events
         Task AppendEventsAsync(
             string aggregateId,
             long expectedVersion,
-            IEnumerable&lt; IDomainEvent&gt; events, 
+            IEnumerable<IDomainEvent> events,
             CancellationToken cancellationToken = default);
 
         /// <summary>
@@ -31,7 +33,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="fromVersion">Starting version (inclusive)</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Events for the aggregate</returns>
-        Task&lt;IEnumerable&lt;IDomainEvent&gt;&gt; GetEventsAsync(
+        Task<IEnumerable<IDomainEvent>> GetEventsAsync(
             string aggregateId,
             long fromVersion = 0,
             CancellationToken cancellationToken = default);
@@ -44,7 +46,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="toTimestamp">Ending timestamp</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Events matching the criteria</returns>
-        Task&lt;IEnumerable&lt;IDomainEvent&gt;&gt; GetEventsByTypeAsync(
+        Task<IEnumerable<IDomainEvent>> GetEventsByTypeAsync(
             string eventType,
             DateTime? fromTimestamp = null,
             DateTime? toTimestamp = null,
@@ -56,7 +58,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="correlationId">Correlation identifier</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Events with matching correlation ID</returns>
-        Task&lt;IEnumerable&lt;IDomainEvent&gt;&gt; GetEventsByCorrelationAsync(
+        Task<IEnumerable<IDomainEvent>> GetEventsByCorrelationAsync(
             Guid correlationId,
             CancellationToken cancellationToken = default);
 
@@ -66,7 +68,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="aggregateId">Aggregate identifier</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Current version of the aggregate, or 0 if not found</returns>
-        Task&lt;long&gt; GetAggregateVersionAsync(
+        Task<long> GetAggregateVersionAsync(
             string aggregateId,
             CancellationToken cancellationToken = default);
 
@@ -90,7 +92,7 @@ namespace NeoServiceLayer.Core.Events
         /// <param name="aggregateId">Aggregate identifier</param>
         /// <param name="cancellationToken">Cancellation token</param>
         /// <returns>Snapshot if available, null otherwise</returns>
-        Task&lt;EventSnapshot?&gt; GetLatestSnapshotAsync(
+        Task<EventSnapshot?> GetLatestSnapshotAsync(
             string aggregateId,
             CancellationToken cancellationToken = default);
     }

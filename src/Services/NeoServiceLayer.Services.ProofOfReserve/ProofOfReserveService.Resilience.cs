@@ -1,7 +1,15 @@
-﻿using System.Collections.Concurrent;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.ProofOfReserve.Models;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -74,7 +82,7 @@ public partial class ProofOfReserveService
                 AssetSymbol = request.AssetSymbol,
                 AssetName = request.AssetName,
                 AssetType = request.AssetSymbol, // Use symbol as type string
-                Health = ReserveHealthStatus.Unknown,
+                Health = ReserveHealthStatusEnum.Unknown,
                 CurrentReserveRatio = request.MinReserveRatio, // Initialize with minimum required ratio for compliance
                 MinReserveRatio = request.MinReserveRatio,
                 CreatedAt = DateTime.UtcNow,
@@ -92,7 +100,7 @@ public partial class ProofOfReserveService
                 TotalReserves = request.TotalSupply * request.MinReserveRatio, // Initialize with compliant reserves
                 ReserveAmount = request.TotalSupply * request.MinReserveRatio,
                 ReserveRatio = request.MinReserveRatio,
-                Health = ReserveHealthStatus.Healthy,
+                Health = Core.ReserveHealthStatusEnum.Healthy,
                 VerificationStatus = Models.VerificationStatus.Completed,
                 ReserveAddresses = Array.Empty<string>(),
                 ReserveBalances = Array.Empty<decimal>()
@@ -414,7 +422,7 @@ public partial class ProofOfReserveService
 
             // Check for alerts with resilience
             await ProofOfReserveResilienceHelper.ExecuteWithRetryAsync(
-                () => CheckAlertsAsync(assetId, ConvertModelsSnapshotToCoreSnapshot(snapshot)),
+                () => CheckAlertsAsync(assetId, snapshot),
                 Logger,
                 maxRetries: 2,
                 operationName: "CheckAlerts");

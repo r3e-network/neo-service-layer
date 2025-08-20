@@ -1,6 +1,12 @@
-﻿using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Configuration;
 
@@ -143,7 +149,7 @@ public partial class ConfigurationService
 
             return new ConfigurationSubscriptionListResult
             {
-                Subscriptions = activeSubscriptions.ToArray(),
+                Subscriptions = activeSubscriptions,
                 TotalCount = activeSubscriptions.Count,
                 Success = true
             };

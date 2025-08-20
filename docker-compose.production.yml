@@ -1,0 +1,61 @@
+version: '3.8'
+
+services:
+  neo-service-layer:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: neo-service-layer
+    ports:
+      - "5000:5000"
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Server=postgres;Database=neoservice;User Id=neoservice;Password=${DB_PASSWORD:?DB_PASSWORD required}
+      - Redis__ConnectionString=redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:?JWT_SECRET_KEY required}
+      - Neo__N3__RpcUrl=${NEO_N3_RPC:-http://seed1.neo.org:10332}
+      - Neo__X__RpcUrl=${NEO_X_RPC:-http://neox.example.com:10332}
+    depends_on:
+      - postgres
+      - redis
+    networks:
+      - neo-network
+    volumes:
+      - ./logs:/app/logs
+      - ./data:/app/data
+    restart: unless-stopped
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    environment:
+      - POSTGRES_DB=neoservice
+      - POSTGRES_USER=neoservice
+      - POSTGRES_PASSWORD=${DB_PASSWORD:?DB_PASSWORD required}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    networks:
+      - neo-network
+    restart: unless-stopped
+
+  redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - neo-network
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+
+networks:
+  neo-network:
+    driver: bridge
+
+volumes:
+  postgres_data:
+  redis_data:

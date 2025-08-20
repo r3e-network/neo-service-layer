@@ -1,6 +1,11 @@
-﻿using System.Security.Cryptography;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve;
 
@@ -160,7 +165,7 @@ public partial class ProofOfReserveService
         {
             await Task.CompletedTask;
 
-            using var sha256 = SHA256.Create();
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
             return sha256.ComputeHash(data);
         }
         catch (Exception ex)
@@ -182,7 +187,7 @@ public partial class ProofOfReserveService
             await Task.CompletedTask;
 
             // Sign the proof hash using the enclave's cryptographic capabilities
-            using var sha256 = SHA256.Create();
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var signatureData = sha256.ComputeHash(proofHash.Concat(System.Text.Encoding.UTF8.GetBytes("PROOF_SIGNATURE")).ToArray());
 
             Logger.LogDebug("Generated proof signature");
@@ -208,7 +213,7 @@ public partial class ProofOfReserveService
             await Task.CompletedTask;
 
             // Verify the signature using the enclave's public key cryptographic verification
-            using var sha256 = SHA256.Create();
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var expectedSignature = sha256.ComputeHash(proofHash.Concat(System.Text.Encoding.UTF8.GetBytes("PROOF_SIGNATURE")).ToArray());
 
             var isValid = signature.SequenceEqual(expectedSignature);
@@ -237,7 +242,7 @@ public partial class ProofOfReserveService
             await Task.CompletedTask;
 
             // Verify the audit signature using the auditor's registered public key
-            using var sha256 = SHA256.Create();
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
             var expectedSignature = sha256.ComputeHash(auditHash.Concat(System.Text.Encoding.UTF8.GetBytes("AUDIT_SIGNATURE")).ToArray());
 
             var isValid = signature.SequenceEqual(expectedSignature);

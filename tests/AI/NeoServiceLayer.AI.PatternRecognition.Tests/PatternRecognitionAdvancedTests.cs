@@ -1,4 +1,3 @@
-﻿using System.Text.Json;
 using AutoFixture;
 using FluentAssertions;
 using FluentAssertions.Extensions;
@@ -6,17 +5,25 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.AI.PatternRecognition;
 using NeoServiceLayer.AI.PatternRecognition.Models;
+using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Models;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
+using CoreConfiguration = NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Enclave;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Tee.Host.Tests;
 using Xunit;
-using AIModels = NeoServiceLayer.AI.PatternRecognition.Models;
-using CoreModels = NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Tests;
 
@@ -28,7 +35,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
 {
     private readonly IFixture _fixture;
     private readonly Mock<ILogger<PatternRecognitionService>> _mockLogger;
-    private readonly Mock<IServiceConfiguration> _mockConfiguration;
+    private readonly Mock<CoreConfiguration.IServiceConfiguration> _mockConfiguration;
     private readonly Mock<IPersistentStorageProvider> _mockStorageProvider;
     private readonly Mock<IStorageService> _mockStorageService;
     private readonly IEnclaveManager _enclaveManager;
@@ -38,7 +45,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
     {
         _fixture = new Fixture();
         _mockLogger = new Mock<ILogger<PatternRecognitionService>>();
-        _mockConfiguration = new Mock<IServiceConfiguration>();
+        _mockConfiguration = new Mock<CoreConfiguration.IServiceConfiguration>();
         _mockStorageProvider = new Mock<IPersistentStorageProvider>();
         _mockStorageService = new Mock<IStorageService>();
 
@@ -166,7 +173,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         result.Should().NotBeNull();
         result.BehaviorScore.Should().BeLessThan(0.3);
         result.DeviationFromProfile.Should().BeLessThan(0.2);
-        result.BehaviorPatterns.Should().Contain(p => p.Contains("consistent"));
+        result.BehaviorPatterns.Should().Contain(p => p.Description.Contains("consistent") || p.Name.Contains("consistent"));
         result.Recommendations.Should().NotBeEmpty();
     }
 
@@ -378,7 +385,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         modelId.Should().StartWith("model_");
 
         // Verify model was stored
-        _mockStorageProvider.Verify(x => x.StoreAsync(
+        _mockStorageProvider.Verify(x => x.StoreDataAsync(
             It.Is<string>(key => key.Contains("model") && key.Contains(modelId)),
             It.IsAny<byte[]>(),
             It.IsAny<NeoServiceLayer.Infrastructure.Persistence.StorageOptions>()), Times.Once);
@@ -419,7 +426,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
         // Assert
         result.Should().BeTrue();
-        _mockStorageProvider.Verify(x => x.StoreAsync(
+        _mockStorageProvider.Verify(x => x.StoreDataAsync(
             It.Is<string>(key => key.Contains(modelId)),
             It.IsAny<byte[]>(),
             It.IsAny<NeoServiceLayer.Infrastructure.Persistence.StorageOptions>()), Times.Once);
@@ -437,7 +444,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
         // Assert
         result.Should().BeTrue();
-        _mockStorageProvider.Verify(x => x.DeleteAsync(
+        _mockStorageProvider.Verify(x => x.DeleteDataAsync(
             It.Is<string>(key => key.Contains(modelId))), Times.Once);
     }
 
@@ -531,7 +538,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         {
             h.UserId.Should().Be(userId);
             h.FraudScore.Should().BeInRange(0.0, 1.0);
-            h.RiskLevel.Should().BeDefined();
+            h.RiskLevel.Should().NotBeNullOrEmpty();
         });
     }
 
@@ -631,12 +638,12 @@ public class PatternRecognitionAdvancedTests : IDisposable
 
     private void SetupStorageProvider()
     {
-        _mockStorageProvider.Setup(x => x.StoreAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<NeoServiceLayer.Infrastructure.Persistence.StorageOptions>()))
+        _mockStorageProvider.Setup(x => x.StoreDataAsync(It.IsAny<string>(), It.IsAny<byte[]>(), It.IsAny<NeoServiceLayer.Infrastructure.Persistence.StorageOptions>()))
                           .ReturnsAsync(true);
-        _mockStorageProvider.Setup(x => x.DeleteAsync(It.IsAny<string>()))
+        _mockStorageProvider.Setup(x => x.DeleteDataAsync(It.IsAny<string>()))
                           .ReturnsAsync(true);
-        // Default setup for RetrieveAsync to return null for unspecified keys
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.IsAny<string>()))
+        // Default setup for RetrieveDataAsync to return null for unspecified keys
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.IsAny<string>()))
                           .ReturnsAsync((byte[])null);
     }
 
@@ -842,14 +849,14 @@ public class PatternRecognitionAdvancedTests : IDisposable
         var profile = new BehaviorProfile
         {
             UserId = userId,
-            AverageTransactionAmount = normalBehavior ? 1000m : 500m,
+            AverageTransactionAmount = normalBehavior ? 1000.0 : 500.0,
             TransactionFrequency = normalBehavior ? 5 : 2,
             TypicalTimePattern = "business_hours",
             RiskTolerance = normalBehavior ? 0.3 : 0.8
         };
 
         var profileData = JsonSerializer.SerializeToUtf8Bytes(profile);
-        _mockStorageProvider.Setup(x => x.RetrieveAsync($"behavior_profile_{userId}"))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync($"behavior_profile_{userId}"))
                           .ReturnsAsync(profileData);
     }
 
@@ -876,7 +883,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         for (int i = 0; i < models.Length; i++)
         {
             var modelData = JsonSerializer.SerializeToUtf8Bytes(models[i]);
-            _mockStorageProvider.Setup(x => x.RetrieveAsync(modelKeys[i]))
+            _mockStorageProvider.Setup(x => x.RetrieveDataAsync(modelKeys[i]))
                               .ReturnsAsync(modelData);
         }
     }
@@ -894,7 +901,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         var modelData = JsonSerializer.SerializeToUtf8Bytes(model);
         var key = $"pattern_models_NeoN3_{modelId}";
 
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(key))
                           .ReturnsAsync(modelData);
         _mockStorageProvider.Setup(x => x.ExistsAsync(key))
                           .ReturnsAsync(true);
@@ -944,10 +951,10 @@ public class PatternRecognitionAdvancedTests : IDisposable
                 TransactionId = $"tx_{i}",
                 UserId = userId,
                 FraudScore = 0.2 + (i * 0.05),
-                RiskLevel = i < 5 ? AIModels.RiskLevel.Low : AIModels.RiskLevel.Medium,
+                RiskLevel = i < 5 ? "Low" : "Medium",
                 DetectedAt = DateTime.UtcNow.AddHours(-i),
                 IsFraudulent = false,
-                RiskFactors = new Dictionary<string, double> { ["normal_pattern"] = 0.1 },
+                RiskFactors = new List<string> { "normal_pattern" },
                 Metadata = new Dictionary<string, object>()
             };
             history.Add(result);
@@ -963,7 +970,7 @@ public class PatternRecognitionAdvancedTests : IDisposable
         {
             var key = $"fraud_history_{BlockchainType.NeoN3}_{userId}_{index}";
             var data = JsonSerializer.SerializeToUtf8Bytes(item);
-            _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
+            _mockStorageProvider.Setup(x => x.RetrieveDataAsync(key))
                               .ReturnsAsync(data);
         }
     }
@@ -974,11 +981,11 @@ public class PatternRecognitionAdvancedTests : IDisposable
         {
             UserId = userId,
             TransactionFrequency = 15,
-            AverageTransactionAmount = 1000m,
+            AverageTransactionAmount = 1000.0,
             EntityType = "regular",
             RiskLevel = AIModels.RiskLevel.Low,
             UnusualTimePatterns = false,
-            LastUpdated = DateTime.UtcNow.AddDays(-2),
+            UpdatedAt = DateTime.UtcNow.AddDays(-2),
             RiskTolerance = 0.3,
             TransactionPatterns = new Dictionary<string, object>
             {
@@ -1008,11 +1015,11 @@ public class PatternRecognitionAdvancedTests : IDisposable
         _mockStorageProvider.Invocations.Clear();
 
         // Setup the specific key to return the profile data
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(key))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(key))
                           .ReturnsAsync(data);
 
         // Re-setup the default for other keys
-        _mockStorageProvider.Setup(x => x.RetrieveAsync(It.Is<string>(k => k != key)))
+        _mockStorageProvider.Setup(x => x.RetrieveDataAsync(It.Is<string>(k => k != key)))
                           .ReturnsAsync((byte[])null);
     }
 

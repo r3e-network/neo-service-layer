@@ -1,9 +1,16 @@
-﻿using Asp.Versioning;
+using Asp.Versioning;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Compute;
 using NeoServiceLayer.Services.Compute.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Api.Controllers;
 
@@ -76,7 +83,7 @@ public class ComputeController : BaseApiController
     /// <response code="200">Computation status retrieved successfully.</response>
     /// <response code="404">Computation not found.</response>
     [HttpGet("{blockchainType}/computations/{computationId}/status")]
-    [ProducesResponseType(typeof(ApiResponse<ComputationStatus>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Services.Compute.ComputationStatus>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
     public async Task<IActionResult> GetComputationStatus(
         [FromRoute] string computationId,

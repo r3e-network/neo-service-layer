@@ -1,4 +1,3 @@
-﻿using AutoFixture;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -9,7 +8,12 @@ using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Tee.Host.Services;
 using Xunit;
-using FairOrderingModels = NeoServiceLayer.Advanced.FairOrdering.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Advanced.FairOrdering.Tests;
 
@@ -128,7 +132,7 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task AnalyzeFairnessRiskAsync_HighValueTransaction_DetectsRisk()
     {
         // Arrange
-        var request = new FairOrderingModels.TransactionAnalysisRequest
+        var request = new Advanced.FairOrdering.Models.TransactionAnalysisRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -156,7 +160,7 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task AnalyzeFairnessRiskAsync_SuspiciousGasPattern_DetectsFrontRunning()
     {
         // Arrange
-        var request = new FairOrderingModels.TransactionAnalysisRequest
+        var request = new Advanced.FairOrdering.Models.TransactionAnalysisRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -208,7 +212,7 @@ public class FairOrderingAdvancedTests : IDisposable
         result.Should().NotBeNull();
         result.Success.Should().BeTrue();
         result.MevRiskScore.Should().BeGreaterThan(0.5);
-        result.RiskLevel.Should().BeOneOf(FairOrderingModels.RiskLevel.Medium, FairOrderingModels.RiskLevel.High);
+        result.RiskLevel.Should().BeOneOf(RiskLevel.Medium, RiskLevel.High);
         result.DetectedThreats.Should().NotBeEmpty();
         result.DetectedThreats.Should().Contain(t => t.Contains("arbitrage") || t.Contains("sandwich"));
         result.ProtectionStrategies.Should().NotBeEmpty();
@@ -222,14 +226,14 @@ public class FairOrderingAdvancedTests : IDisposable
     public async Task SubmitFairTransactionAsync_WithProtection_ProcessesCorrectly()
     {
         // Arrange
-        var request = new FairOrderingModels.FairTransactionRequest
+        var request = new Advanced.FairOrdering.Models.FairTransactionRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
             Value = 50000m,
             Data = "0xa9059cbb",
             GasLimit = 100000,
-            ProtectionLevel = ProtectionLevel.High,
+            ProtectionLevel = ProtectionLevel.Advanced,
             MaxSlippage = 0.005m,
             ExecuteAfter = DateTime.UtcNow.AddSeconds(5),
             ExecuteBefore = DateTime.UtcNow.AddMinutes(10)
@@ -253,7 +257,7 @@ public class FairOrderingAdvancedTests : IDisposable
         int protectionLevelValue)
     {
         // Arrange
-        var request = new FairOrderingModels.FairTransactionRequest
+        var request = new Advanced.FairOrdering.Models.FairTransactionRequest
         {
             From = "0x742D35Cc6634C0532925A3b8D4E6E497C8c9CD7E",
             To = "0x1234567890abcdef1234567890abcdef12345678",
@@ -393,7 +397,7 @@ public class FairOrderingAdvancedTests : IDisposable
         // Arrange
         const int analysisCount = 50;
         var requests = Enumerable.Range(0, analysisCount)
-            .Select(i => new FairOrderingModels.TransactionAnalysisRequest
+            .Select(i => new Models.TransactionAnalysisRequest
             {
                 From = $"0x{i:D40}",
                 To = "0x1234567890abcdef1234567890abcdef12345678",

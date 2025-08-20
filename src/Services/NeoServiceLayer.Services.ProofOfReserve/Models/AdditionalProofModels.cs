@@ -1,7 +1,97 @@
-﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.ProofOfReserve.Models;
+
+/// <summary>
+/// Request to register an asset for proof of reserve monitoring
+/// </summary>
+public class AssetRegistrationRequest
+{
+    public string AssetId { get; set; } = string.Empty;
+    public string AssetName { get; set; } = string.Empty;
+    public string AssetSymbol { get; set; } = string.Empty;
+    public string AssetType { get; set; } = string.Empty;
+    public string Owner { get; set; } = string.Empty;
+    public string WalletAddress { get; set; } = string.Empty;
+    public decimal MinimumReserveRatio { get; set; }
+    public decimal MinReserveRatio  // Alias for MinimumReserveRatio
+    {
+        get => MinimumReserveRatio;
+        set => MinimumReserveRatio = value;
+    }
+    public decimal TotalSupply { get; set; }
+    public Dictionary<string, object> Metadata { get; set; } = new();
+    public string[] ReserveAddresses { get; set; } = Array.Empty<string>();
+}
+
+/// <summary>
+/// Request to update reserve data for an asset
+/// </summary>
+public class ReserveUpdateRequest
+{
+    public string AssetId { get; set; } = string.Empty;
+    public decimal ReserveAmount { get; set; }
+    public decimal LiabilityAmount { get; set; }
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+    public Dictionary<string, object> ValidationData { get; set; } = new();
+    public string? AuditorSignature { get; set; }
+    public Dictionary<string, object>? AuditData { get; set; }
+    public string[] ReserveAddresses { get; set; } = Array.Empty<string>();
+    public decimal[] ReserveBalances { get; set; } = Array.Empty<decimal>();
+    
+    /// <summary>
+    /// Gets or sets the source of the audit information.
+    /// </summary>
+    public string? AuditSource { get; set; }
+    
+    /// <summary>
+    /// Gets or sets the timestamp when the audit was performed.
+    /// </summary>
+    public DateTime? AuditTimestamp { get; set; }
+}
+
+
+/// <summary>
+/// Status information for reserves
+/// </summary>
+public class ReserveStatusInfo
+{
+    public string AssetId { get; set; } = string.Empty;
+    public string AssetSymbol { get; set; } = string.Empty;
+    public decimal CurrentReserve { get; set; }
+    public decimal CurrentLiability { get; set; }
+    public decimal TotalSupply { get; set; }
+    public decimal TotalReserves { get; set; }
+    public decimal ReserveRatio { get; set; }
+    public NeoServiceLayer.Core.ReserveHealthStatus Health { get; set; } = new();
+    public NeoServiceLayer.Core.ReserveHealthStatus HealthStatus { get; set; } = new();
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+    public DateTime LastAudit { get; set; }
+    public string[] ReserveBreakdown { get; set; } = Array.Empty<string>();
+    public bool IsCompliant { get; set; }
+    public string ComplianceNotes { get; set; } = string.Empty;
+}
+
+/// <summary>
+/// Types of reserve alerts
+/// </summary>
+public enum ReserveAlertType
+{
+    Warning,
+    Critical,
+    LowReserve,
+    LowReserveRatio,
+    ComplianceViolation,
+    AuditOverdue,
+    HighVolatility,
+    SystemError,
+    ValidationFailure
+}
 
 /// <summary>
 /// Request to create a proof of reserve

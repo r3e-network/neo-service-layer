@@ -1,5 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
@@ -15,7 +21,7 @@ internal class TestLogger<T> : ILogger<T>
         _output = output;
     }
 
-    public IDisposable BeginScope<TState>(TState state) => new NoOpDisposable();
+    public IDisposable BeginScope<TState>(TState state) where TState : notnull => new NoOpDisposable();
 
     public bool IsEnabled(LogLevel logLevel) => logLevel >= LogLevel.Information;
 

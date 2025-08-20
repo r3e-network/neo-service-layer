@@ -1,4 +1,10 @@
 using System;
+using NeoServiceLayer.ServiceFramework;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication.Domain.ValueObjects
 {
@@ -15,6 +21,7 @@ namespace NeoServiceLayer.Services.Authentication.Domain.ValueObjects
         public bool IsExpired => DateTime.UtcNow > ExpiresAt;
         public bool IsRevoked => RevokedAt.HasValue;
         public bool IsValid => !IsExpired && !IsRevoked;
+        public bool IsActive => IsValid; // Alias for compatibility
 
         public RefreshToken(
             Guid id,

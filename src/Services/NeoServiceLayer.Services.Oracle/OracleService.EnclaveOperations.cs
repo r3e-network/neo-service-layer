@@ -1,8 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
-using NeoServiceLayer.Services.Core.SGX;
+using System.Text.Json;
 using NeoServiceLayer.Services.Oracle.Models;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Core.SGX;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Oracle;
 
@@ -55,7 +62,7 @@ public partial class OracleService
         {
             feedId = request?.FeedId ?? "direct",
             parameters = request?.Parameters ?? new Dictionary<string, object>(),
-            blockchain = request?.BlockchainType?.ToString() ?? "NeoN3"
+            blockchain = request?.BlockchainType.ToString() ?? "NeoN3"
         };
 
         var operation = "fetch";
@@ -168,10 +175,10 @@ public partial class OracleService
         if (_enclaveManager == null)
         {
             // Fallback if enclave not available
-            var results = new List<BatchOracleResult>();
+            var results = new List<InternalBatchOracleResult>();
             foreach (var request in requests)
             {
-                results.Add(new BatchOracleResult
+                results.Add(new InternalBatchOracleResult
                 {
                     RequestId = request.RequestId,
                     DataHash = HashData(request.Url + request.Path),
@@ -298,15 +305,15 @@ public partial class OracleService
     /// <summary>
     /// Extracts batch results from JSON.
     /// </summary>
-    private List<BatchOracleResult> ExtractBatchResults(JsonElement resultsElement)
+    private List<InternalBatchOracleResult> ExtractBatchResults(JsonElement resultsElement)
     {
-        var results = new List<BatchOracleResult>();
+        var results = new List<InternalBatchOracleResult>();
 
         if (resultsElement.ValueKind == JsonValueKind.Array)
         {
             foreach (var resultElement in resultsElement.EnumerateArray())
             {
-                results.Add(new BatchOracleResult
+                results.Add(new InternalBatchOracleResult
                 {
                     RequestId = resultElement.GetProperty("requestId").GetString() ?? "",
                     DataHash = resultElement.GetProperty("dataHash").GetString() ?? "",
@@ -321,7 +328,7 @@ public partial class OracleService
     /// <summary>
     /// Generates aggregate proof for batch results.
     /// </summary>
-    private AggregateProof GenerateAggregateProof(List<BatchOracleResult> results)
+    private AggregateProof GenerateAggregateProof(List<InternalBatchOracleResult> results)
     {
         var hashes = results.Select(r => r.DataHash).ToArray();
         var aggregateHash = HashData(string.Join("-", hashes));
@@ -380,15 +387,15 @@ public partial class OracleService
     private class PrivacyBatchOracleResult
     {
         public string BatchId { get; set; } = "";
-        public List<BatchOracleResult> Results { get; set; } = new();
+        public List<InternalBatchOracleResult> Results { get; set; } = new();
         public AggregateProof AggregateProof { get; set; } = new();
         public bool Success { get; set; }
     }
 
     /// <summary>
-    /// Batch oracle result.
+    /// Internal batch oracle result.
     /// </summary>
-    private class BatchOracleResult
+    private class InternalBatchOracleResult
     {
         public string RequestId { get; set; } = "";
         public string DataHash { get; set; } = "";

@@ -1,4 +1,9 @@
-﻿namespace NeoServiceLayer.Services.Configuration.Models;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
+using System;
+using NeoServiceLayer.Core;
+
+namespace NeoServiceLayer.Services.Configuration.Models;
 
 /// <summary>
 /// Schema type enumeration.
@@ -27,19 +32,21 @@ public enum SchemaType
 }
 
 /// <summary>
-/// Create schema request.
+/// Create configuration schema request.
 /// </summary>
-public class CreateSchemaRequest
+public class CreateConfigurationSchemaRequest
 {
     /// <summary>
     /// Gets or sets the schema name.
     /// </summary>
+    [Required]
+    [StringLength(256)]
     public string SchemaName { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the schema description.
     /// </summary>
-    public string Description { get; set; } = string.Empty;
+    public string? Description { get; set; }
 
     /// <summary>
     /// Gets or sets the schema version.
@@ -49,12 +56,13 @@ public class CreateSchemaRequest
     /// <summary>
     /// Gets or sets the schema definition.
     /// </summary>
+    [Required]
     public SchemaDefinition Definition { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the applicable scopes.
     /// </summary>
-    public ConfigurationScope[] ApplicableScopes { get; set; } = Array.Empty<ConfigurationScope>();
+    public List<ConfigurationScope> ApplicableScopes { get; set; } = new();
 
     /// <summary>
     /// Gets or sets additional metadata.
@@ -75,12 +83,13 @@ public class SchemaDefinition
     /// <summary>
     /// Gets or sets the schema content.
     /// </summary>
-    public string SchemaContent { get; set; } = string.Empty;
+    [Required]
+    public object SchemaContent { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the validation rules.
     /// </summary>
-    public ValidationRule[] ValidationRules { get; set; } = Array.Empty<ValidationRule>();
+    public List<ValidationRule> ValidationRules { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the default values.
@@ -94,9 +103,37 @@ public class SchemaDefinition
 }
 
 /// <summary>
-/// Configuration schema result.
+/// Validation rule.
 /// </summary>
-public class ConfigurationSchemaResult
+public class ValidationRule
+{
+    /// <summary>
+    /// Gets or sets the rule name.
+    /// </summary>
+    [Required]
+    public string RuleName { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the rule expression.
+    /// </summary>
+    [Required]
+    public string Expression { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the error message.
+    /// </summary>
+    public string ErrorMessage { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets whether this rule is required.
+    /// </summary>
+    public bool IsRequired { get; set; } = false;
+}
+
+/// <summary>
+/// Configuration schema response.
+/// </summary>
+public class ConfigurationSchemaResponse
 {
     /// <summary>
     /// Gets or sets the schema ID.
@@ -116,12 +153,12 @@ public class ConfigurationSchemaResult
     /// <summary>
     /// Gets or sets the error message if the operation failed.
     /// </summary>
-    public string? ErrorMessage { get; set; }
+    public string? Message { get; set; }
 
     /// <summary>
     /// Gets or sets the creation timestamp.
     /// </summary>
-    public DateTime CreatedAt { get; set; }
+    public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Gets or sets additional metadata.

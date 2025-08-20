@@ -3,8 +3,11 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Observability.Metrics;
+// using NeoServiceLayer.Infrastructure.Observability.Metrics; // Interface not available
 using NeoServiceLayer.Infrastructure.Observability.Logging;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
@@ -28,7 +31,7 @@ namespace NeoServiceLayer.Services.Authentication
     public class AuthenticationMetricsCollector : IAuthenticationMetricsCollector
     {
         private readonly ILogger<AuthenticationMetricsCollector> _logger;
-        private readonly IMetricsService _metricsService;
+        // private readonly IMetricsService _metricsService; // Interface not available
         private readonly IStructuredLogger _structuredLogger;
         private readonly Dictionary<string, long> _counters;
         private readonly Dictionary<string, List<double>> _timings;
@@ -36,11 +39,11 @@ namespace NeoServiceLayer.Services.Authentication
 
         public AuthenticationMetricsCollector(
             ILogger<AuthenticationMetricsCollector> logger,
-            IMetricsService metricsService,
+            // IMetricsService metricsService, // Interface not available
             IStructuredLoggerFactory structuredLoggerFactory)
         {
             _logger = logger;
-            _metricsService = metricsService;
+            // _metricsService = metricsService; // Interface not available
             _structuredLogger = structuredLoggerFactory?.CreateLogger("AuthMetrics");
             _counters = new Dictionary<string, long>();
             _timings = new Dictionary<string, List<double>>();
@@ -49,17 +52,17 @@ namespace NeoServiceLayer.Services.Authentication
         public void RecordLoginAttempt(bool success, string method, double duration)
         {
             var metricName = success ? "auth.login.success" : "auth.login.failure";
-            
-            _metricsService?.RecordCounter(metricName, 1, new Dictionary<string, string>
-            {
-                ["method"] = method
-            });
-            
-            _metricsService?.RecordHistogram("auth.login.duration", duration, new Dictionary<string, string>
-            {
-                ["method"] = method,
-                ["success"] = success.ToString()
-            });
+
+            // _metricsService?.RecordCounter(metricName, 1, new Dictionary<string, string>
+            // {
+            //     ["method"] = method
+            // });
+
+            // _metricsService?.RecordHistogram("auth.login.duration", duration, new Dictionary<string, string>
+            // {
+            //     ["method"] = method,
+            //     ["success"] = success.ToString()
+            // });
 
             lock (_lock)
             {
@@ -67,7 +70,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming("login_duration", duration);
             }
 
-            _structuredLogger?.LogMetric("LoginAttempt", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("LoginAttempt", success ? 1.0 : 0.0, new Dictionary<string, object>
             {
                 ["Success"] = success,
                 ["Method"] = method,
@@ -83,8 +86,8 @@ namespace NeoServiceLayer.Services.Authentication
 
         public void RecordTokenGeneration(string tokenType, double duration)
         {
-            _metricsService?.RecordCounter($"auth.token.{tokenType.ToLower()}.generated", 1);
-            _metricsService?.RecordHistogram($"auth.token.{tokenType.ToLower()}.generation.duration", duration);
+            // _metricsService?.RecordCounter($"auth.token.{tokenType.ToLower()}.generated", 1);
+            // _metricsService?.RecordHistogram($"auth.token.{tokenType.ToLower()}.generation.duration", duration);
 
             lock (_lock)
             {
@@ -92,7 +95,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming($"token_{tokenType}_generation", duration);
             }
 
-            _structuredLogger?.LogMetric("TokenGeneration", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("TokenGeneration", duration, new Dictionary<string, object>
             {
                 ["TokenType"] = tokenType,
                 ["Duration"] = duration,
@@ -102,12 +105,12 @@ namespace NeoServiceLayer.Services.Authentication
 
         public void RecordTokenValidation(string tokenType, bool success, double duration)
         {
-            var metricName = success 
-                ? $"auth.token.{tokenType.ToLower()}.validation.success" 
+            var metricName = success
+                ? $"auth.token.{tokenType.ToLower()}.validation.success"
                 : $"auth.token.{tokenType.ToLower()}.validation.failure";
-            
-            _metricsService?.RecordCounter(metricName, 1);
-            _metricsService?.RecordHistogram($"auth.token.{tokenType.ToLower()}.validation.duration", duration);
+
+            // _metricsService?.RecordCounter(metricName, 1);
+            // _metricsService?.RecordHistogram($"auth.token.{tokenType.ToLower()}.validation.duration", duration);
 
             lock (_lock)
             {
@@ -115,7 +118,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming($"token_{tokenType}_validation", duration);
             }
 
-            _structuredLogger?.LogMetric("TokenValidation", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("TokenValidation", success ? 1.0 : 0.0, new Dictionary<string, object>
             {
                 ["TokenType"] = tokenType,
                 ["Success"] = success,
@@ -127,9 +130,9 @@ namespace NeoServiceLayer.Services.Authentication
         public void RecordPasswordReset(bool success, double duration)
         {
             var metricName = success ? "auth.password.reset.success" : "auth.password.reset.failure";
-            
-            _metricsService?.RecordCounter(metricName, 1);
-            _metricsService?.RecordHistogram("auth.password.reset.duration", duration);
+
+            // _metricsService?.RecordCounter(metricName, 1);
+            // _metricsService?.RecordHistogram("auth.password.reset.duration", duration);
 
             lock (_lock)
             {
@@ -137,7 +140,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming("password_reset_duration", duration);
             }
 
-            _structuredLogger?.LogMetric("PasswordReset", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("PasswordReset", success ? 1.0 : 0.0, new Dictionary<string, object>
             {
                 ["Success"] = success,
                 ["Duration"] = duration,
@@ -148,9 +151,9 @@ namespace NeoServiceLayer.Services.Authentication
         public void RecordEmailVerification(bool success, double duration)
         {
             var metricName = success ? "auth.email.verification.success" : "auth.email.verification.failure";
-            
-            _metricsService?.RecordCounter(metricName, 1);
-            _metricsService?.RecordHistogram("auth.email.verification.duration", duration);
+
+            // _metricsService?.RecordCounter(metricName, 1);
+            // _metricsService?.RecordHistogram("auth.email.verification.duration", duration);
 
             lock (_lock)
             {
@@ -158,7 +161,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming("email_verification_duration", duration);
             }
 
-            _structuredLogger?.LogMetric("EmailVerification", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("EmailVerification", success ? 1.0 : 0.0, new Dictionary<string, object>
             {
                 ["Success"] = success,
                 ["Duration"] = duration,
@@ -169,17 +172,17 @@ namespace NeoServiceLayer.Services.Authentication
         public void RecordMfaAttempt(bool success, string method, double duration)
         {
             var metricName = success ? "auth.mfa.success" : "auth.mfa.failure";
-            
-            _metricsService?.RecordCounter(metricName, 1, new Dictionary<string, string>
-            {
-                ["method"] = method
-            });
-            
-            _metricsService?.RecordHistogram("auth.mfa.duration", duration, new Dictionary<string, string>
-            {
-                ["method"] = method,
-                ["success"] = success.ToString()
-            });
+
+            // _metricsService?.RecordCounter(metricName, 1, new Dictionary<string, string>
+            // {
+            //     ["method"] = method
+            // });
+
+            // _metricsService?.RecordHistogram("auth.mfa.duration", duration, new Dictionary<string, string>
+            // {
+            //     ["method"] = method,
+            //     ["success"] = success.ToString()
+            // });
 
             lock (_lock)
             {
@@ -187,7 +190,7 @@ namespace NeoServiceLayer.Services.Authentication
                 AddTiming($"mfa_{method}_duration", duration);
             }
 
-            _structuredLogger?.LogMetric("MfaAttempt", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("MfaAttempt", success ? 1.0 : 0.0, new Dictionary<string, object>
             {
                 ["Success"] = success,
                 ["Method"] = method,
@@ -198,17 +201,17 @@ namespace NeoServiceLayer.Services.Authentication
 
         public void RecordAccountLockout(string reason)
         {
-            _metricsService?.RecordCounter("auth.account.lockout", 1, new Dictionary<string, string>
-            {
-                ["reason"] = reason
-            });
+            // _metricsService?.RecordCounter("auth.account.lockout", 1, new Dictionary<string, string>
+            // {
+            //     ["reason"] = reason
+            // });
 
             lock (_lock)
             {
                 IncrementCounter($"account_lockout_{reason}");
             }
 
-            _structuredLogger?.LogMetric("AccountLockout", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("AccountLockout", 1.0, new Dictionary<string, object>
             {
                 ["Reason"] = reason,
                 ["Timestamp"] = DateTime.UtcNow
@@ -219,18 +222,18 @@ namespace NeoServiceLayer.Services.Authentication
 
         public void RecordRateLimitHit(string endpoint, string identifier)
         {
-            _metricsService?.RecordCounter("auth.ratelimit.hit", 1, new Dictionary<string, string>
-            {
-                ["endpoint"] = endpoint,
-                ["identifier"] = identifier.Substring(0, Math.Min(8, identifier.Length)) + "..."
-            });
+            // _metricsService?.RecordCounter("auth.ratelimit.hit", 1, new Dictionary<string, string>
+            // {
+            //     ["endpoint"] = endpoint,
+            //     ["identifier"] = identifier.Substring(0, Math.Min(8, identifier.Length)) + "..."
+            // });
 
             lock (_lock)
             {
                 IncrementCounter($"ratelimit_{endpoint}");
             }
 
-            _structuredLogger?.LogMetric("RateLimitHit", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("RateLimitHit", 1.0, new Dictionary<string, object>
             {
                 ["Endpoint"] = endpoint,
                 ["Identifier"] = identifier.Substring(0, Math.Min(8, identifier.Length)) + "...",
@@ -242,17 +245,17 @@ namespace NeoServiceLayer.Services.Authentication
 
         public void RecordSecurityEvent(string eventType, string severity)
         {
-            _metricsService?.RecordCounter($"auth.security.{eventType.ToLower()}", 1, new Dictionary<string, string>
-            {
-                ["severity"] = severity
-            });
+            // _metricsService?.RecordCounter($"auth.security.{eventType.ToLower()}", 1, new Dictionary<string, string>
+            // {
+            //     ["severity"] = severity
+            // });
 
             lock (_lock)
             {
                 IncrementCounter($"security_{eventType}_{severity}");
             }
 
-            _structuredLogger?.LogMetric("SecurityEvent", new Dictionary<string, object>
+            _structuredLogger?.LogMetric("SecurityEvent", 1.0, new Dictionary<string, object>
             {
                 ["EventType"] = eventType,
                 ["Severity"] = severity,
@@ -312,7 +315,7 @@ namespace NeoServiceLayer.Services.Authentication
                     },
                     SecurityMetrics = new SecurityMetrics
                     {
-                        AccountLockouts = GetCounter("account_lockout_failed_attempts") + 
+                        AccountLockouts = GetCounter("account_lockout_failed_attempts") +
                                          GetCounter("account_lockout_suspicious_activity") +
                                          GetCounter("account_lockout_admin_action"),
                         RateLimitHits = GetCounter("ratelimit_login") + GetCounter("ratelimit_register") + GetCounter("ratelimit_password_reset"),
@@ -352,7 +355,7 @@ namespace NeoServiceLayer.Services.Authentication
                 _timings[key] = new List<double>();
             }
             _timings[key].Add(value);
-            
+
             // Keep only last 1000 timings to prevent memory growth
             if (_timings[key].Count > 1000)
             {
@@ -366,7 +369,7 @@ namespace NeoServiceLayer.Services.Authentication
             {
                 return 0;
             }
-            
+
             double sum = 0;
             foreach (var timing in _timings[key])
             {

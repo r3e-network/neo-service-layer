@@ -1,8 +1,13 @@
-﻿using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -176,7 +181,7 @@ public static class EnclaveSecurityHelpers
                     (function() {{
                         const crypto = require('crypto');
                         const randomBytes = crypto.randomBytes({length});
-                        
+
                         switch ('{format.ToLowerInvariant()}') {{
                             case 'hex':
                                 return randomBytes.toString('hex');
@@ -268,9 +273,9 @@ public static class EnclaveSecurityHelpers
                         (function() {{
                             const input = atob('{encodedInput}');
                             return input
-                                .replace(/&/g, '&amp;')
-                                .replace(/</g, '&lt;')
-                                .replace(/>/g, '&gt;')
+                                .replace(/&/g, '&')
+                                .replace(/</g, '<')
+                                .replace(/>/g, '>')
                                 .replace(/'/g, '&#39;')
                                 .replace(/\x22/g, '&quot;');
                         }})()",

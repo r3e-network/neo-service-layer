@@ -1,13 +1,21 @@
-﻿using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
+using NeoServiceLayer.Infrastructure.Blockchain;
 using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Core.Configuration;
+using CoreIServiceConfiguration = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Tee.Host.Services;
-using IBlockchainClient = NeoServiceLayer.Infrastructure.IBlockchainClient;
+using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 // Use Infrastructure namespace for IBlockchainClientFactory and IBlockchainClient
-using IBlockchainClientFactory = NeoServiceLayer.Infrastructure.IBlockchainClientFactory;
 
 namespace NeoServiceLayer.Services.Randomness.Tests;
 
@@ -16,7 +24,7 @@ public class RandomnessServiceTests
     private readonly Mock<ILogger<RandomnessService>> _loggerMock;
     private readonly Mock<IEnclaveManager> _enclaveManagerMock;
     private readonly Mock<IBlockchainClientFactory> _blockchainClientFactoryMock;
-    private readonly Mock<IServiceConfiguration> _configurationMock;
+    private readonly Mock<CoreIServiceConfiguration> _configurationMock;
     private readonly Mock<IBlockchainClient> _blockchainClientMock;
     private readonly RandomnessService _service;
 
@@ -25,7 +33,7 @@ public class RandomnessServiceTests
         _loggerMock = new Mock<ILogger<RandomnessService>>();
         _enclaveManagerMock = new Mock<IEnclaveManager>();
         _blockchainClientFactoryMock = new Mock<IBlockchainClientFactory>();
-        _configurationMock = new Mock<IServiceConfiguration>();
+        _configurationMock = new Mock<CoreIServiceConfiguration>();
         _blockchainClientMock = new Mock<IBlockchainClient>();
 
         // Setup configuration mock

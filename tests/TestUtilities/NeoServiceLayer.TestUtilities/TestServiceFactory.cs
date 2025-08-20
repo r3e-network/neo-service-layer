@@ -11,6 +11,9 @@ using NeoServiceLayer.Infrastructure.Security;
 using NeoServiceLayer.Infrastructure.Resilience;
 using NeoServiceLayer.Infrastructure.Monitoring;
 using NeoServiceLayer.Tee.Enclave;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.TestUtilities;
 
@@ -240,7 +243,6 @@ public static class AsyncTestHelpers
     /// </summary>
     public static async Task<T> WithTimeout<T>(Task<T> task, TimeSpan timeout, string operationName = "Operation")
     {
-        using var cts = new CancellationTokenSource(timeout);
         
         try
         {
@@ -257,7 +259,6 @@ public static class AsyncTestHelpers
     /// </summary>
     public static async Task WithTimeout(Task task, TimeSpan timeout, string operationName = "Operation")
     {
-        using var cts = new CancellationTokenSource(timeout);
         
         try
         {
@@ -274,7 +275,6 @@ public static class AsyncTestHelpers
     /// </summary>
     public static async Task<T[]> ConcurrentExecution<T>(IEnumerable<Func<Task<T>>> operations, int maxConcurrency = 10)
     {
-        using var semaphore = new SemaphoreSlim(maxConcurrency, maxConcurrency);
         var tasks = operations.Select(async operation =>
         {
             await semaphore.WaitAsync();

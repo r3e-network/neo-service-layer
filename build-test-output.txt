@@ -1,0 +1,207 @@
+================================================================================
+BUILDING ALL TEST PROJECTS (FIXED)
+================================================================================
+
+Fixing compilation errors...
+  Fixed ApplicationPerformanceMonitoring reference
+
+Restoring NuGet packages...
+  ✅ Package restore successful
+
+Found 44 test projects
+
+[ 1/44] NeoServiceLayer.AI.PatternRecognition.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[ 2/44] NeoServiceLayer.AI.Prediction.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[ 3/44] NeoServiceLayer.Advanced.FairOrdering.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[ 4/44] NeoServiceLayer.Api.Controllers.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[ 5/44] NeoServiceLayer.Api.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[ 6/44] NeoServiceLayer.Neo.N3.Tests
+  ✅ Built successfully
+  ✅ 11 tests passing
+
+[ 7/44] NeoServiceLayer.Neo.X.Tests
+  ✅ Built successfully
+  ✅ 17 tests passing
+
+[ 8/44] NeoServiceLayer.Core.Tests
+  ✅ Built successfully
+  ✅ 239 tests passing
+
+[ 9/44] NeoServiceLayer.ServiceFramework.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[10/44] NeoServiceLayer.Shared.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[11/44] NeoServiceLayer.Infrastructure.Blockchain.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[12/44] NeoServiceLayer.Infrastructure.Security.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[13/44] NeoServiceLayer.Infrastructure.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[14/44] NeoServiceLayer.Authentication.Integration.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[15/44] NeoServiceLayer.Integration.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[16/44] NeoServiceLayer.Performance.Tests
+  ✅ Built successfully
+  ✅ 8 tests passing
+
+[17/44] NeoServiceLayer.Services.AbstractAccount.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[18/44] NeoServiceLayer.Services.Authentication.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[19/44] NeoServiceLayer.Services.Automation.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[20/44] NeoServiceLayer.Services.Backup.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[21/44] NeoServiceLayer.Services.Compliance.Tests
+  ✅ Built successfully
+  ✅ 10 tests passing
+
+[22/44] NeoServiceLayer.Services.Compute.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[23/44] NeoServiceLayer.Services.Configuration.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[24/44] NeoServiceLayer.Services.CrossChain.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[25/44] NeoServiceLayer.Services.EnclaveStorage.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[26/44] NeoServiceLayer.Services.EventSubscription.Tests
+  ✅ Built successfully
+  ✅ 11 tests passing
+
+[27/44] NeoServiceLayer.Services.Health.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[28/44] NeoServiceLayer.Services.KeyManagement.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[29/44] NeoServiceLayer.Services.Monitoring.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[30/44] NeoServiceLayer.Services.NetworkSecurity.Tests
+  ✅ Built successfully
+  ✅ 15 tests passing
+
+[31/44] NeoServiceLayer.Services.Notification.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[32/44] NeoServiceLayer.Services.Oracle.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[33/44] NeoServiceLayer.Services.ProofOfReserve.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[34/44] NeoServiceLayer.Services.Randomness.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[35/44] NeoServiceLayer.Services.SecretsManagement.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[36/44] NeoServiceLayer.Services.SmartContracts.NeoN3.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[37/44] NeoServiceLayer.Services.SmartContracts.NeoX.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[38/44] NeoServiceLayer.Services.SmartContracts.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[39/44] NeoServiceLayer.Services.Storage.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[40/44] NeoServiceLayer.Services.Tee.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[41/44] NeoServiceLayer.Services.Voting.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[42/44] NeoServiceLayer.Services.ZeroKnowledge.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[43/44] NeoServiceLayer.Tee.Enclave.Tests
+  ❌ Build failed
+    Error: Build failed
+
+[44/44] NeoServiceLayer.Tee.Host.Tests
+  ✅ Built successfully
+  ✅ 9 tests passing
+
+================================================================================
+BUILD SUMMARY
+================================================================================
+Total Projects: 44
+Successfully Built: 8 (18.2%)
+Projects with Tests: 8
+Total Tests: 320
+
+⚠️ Some projects still have build issues
+
+Failed to build (36 projects):
+  ❌ NeoServiceLayer.AI.PatternRecognition.Tests
+  ❌ NeoServiceLayer.AI.Prediction.Tests
+  ❌ NeoServiceLayer.Advanced.FairOrdering.Tests
+  ❌ NeoServiceLayer.Api.Controllers.Tests
+  ❌ NeoServiceLayer.Api.Tests
+  ... and 31 more
+
+📄 Results saved to test-build-results-fixed.json

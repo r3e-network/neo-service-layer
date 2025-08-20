@@ -1,4 +1,7 @@
-﻿namespace NeoServiceLayer.Services.Notification.Models;
+using System;
+using System.Collections.Generic;
+
+namespace NeoServiceLayer.Services.Notification.Models;
 
 /// <summary>
 /// Multi-channel notification request.
@@ -8,12 +11,12 @@ public class MultiChannelNotificationRequest
     /// <summary>
     /// Gets or sets the notification channels to use.
     /// </summary>
-    public NotificationChannel[] Channels { get; set; } = Array.Empty<NotificationChannel>();
+    public List<NotificationChannel> Channels { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the recipients for each channel.
     /// </summary>
-    public Dictionary<NotificationChannel, string[]> Recipients { get; set; } = new();
+    public Dictionary<NotificationChannel, List<string>> Recipients { get; set; } = new();
 
     /// <summary>
     /// Gets or sets the notification subject.
@@ -33,7 +36,7 @@ public class MultiChannelNotificationRequest
     /// <summary>
     /// Gets or sets whether to stop on first failure.
     /// </summary>
-    public bool StopOnFailure { get; set; } = false;
+    public bool StopOnFirstFailure { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata.
@@ -54,7 +57,7 @@ public class MultiChannelNotificationResult
     /// <summary>
     /// Gets or sets the individual notification results.
     /// </summary>
-    public NotificationResult[] Results { get; set; } = Array.Empty<NotificationResult>();
+    public List<NotificationResult> Results { get; set; } = new();
 
     /// <summary>
     /// Gets or sets whether all notifications were successful.
@@ -136,7 +139,7 @@ public class ChannelRegistrationResult
     /// <summary>
     /// Gets or sets the registration timestamp.
     /// </summary>
-    public DateTime RegisteredAt { get; set; }
+    public DateTime RegisteredAt { get; set; } = DateTime.UtcNow;
 
     /// <summary>
     /// Gets or sets additional metadata.
@@ -145,24 +148,24 @@ public class ChannelRegistrationResult
 }
 
 /// <summary>
-/// Available channels result.
+/// Subscribe to notifications request.
 /// </summary>
-public class AvailableChannelsResult
+public class SubscribeToNotificationsRequest
 {
     /// <summary>
-    /// Gets or sets the available channels.
+    /// Gets or sets the subscriber identifier.
     /// </summary>
-    public ChannelInfo[] Channels { get; set; } = Array.Empty<ChannelInfo>();
+    public string SubscriberId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets whether the operation was successful.
+    /// Gets or sets the notification types to subscribe to.
     /// </summary>
-    public bool Success { get; set; }
+    public List<string> NotificationTypes { get; set; } = new();
 
     /// <summary>
-    /// Gets or sets the error message if the operation failed.
+    /// Gets or sets the preferred channels.
     /// </summary>
-    public string? ErrorMessage { get; set; }
+    public List<NotificationChannel> Channels { get; set; } = new();
 
     /// <summary>
     /// Gets or sets additional metadata.
@@ -171,44 +174,19 @@ public class AvailableChannelsResult
 }
 
 /// <summary>
-/// Channel information.
+/// Unsubscribe from notifications request.
 /// </summary>
-public class ChannelInfo
+public class UnsubscribeFromNotificationsRequest
 {
     /// <summary>
-    /// Gets or sets the channel ID.
+    /// Gets or sets the subscription ID.
     /// </summary>
-    public string ChannelId { get; set; } = string.Empty;
+    public string SubscriptionId { get; set; } = string.Empty;
 
     /// <summary>
-    /// Gets or sets the channel type.
+    /// Gets or sets the reason for unsubscribing.
     /// </summary>
-    public NotificationChannel ChannelType { get; set; }
-
-    /// <summary>
-    /// Gets or sets the channel name.
-    /// </summary>
-    public string ChannelName { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets whether the channel is enabled.
-    /// </summary>
-    public bool IsEnabled { get; set; }
-
-    /// <summary>
-    /// Gets or sets the channel description.
-    /// </summary>
-    public string Description { get; set; } = string.Empty;
-
-    /// <summary>
-    /// Gets or sets the supported features.
-    /// </summary>
-    public string[] SupportedFeatures { get; set; } = Array.Empty<string>();
-
-    /// <summary>
-    /// Gets or sets the channel configuration.
-    /// </summary>
-    public Dictionary<string, object> Configuration { get; set; } = new();
+    public string? Reason { get; set; }
 
     /// <summary>
     /// Gets or sets additional metadata.

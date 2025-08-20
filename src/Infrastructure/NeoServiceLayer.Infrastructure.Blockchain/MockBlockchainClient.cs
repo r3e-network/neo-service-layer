@@ -1,8 +1,16 @@
-﻿using System.Net.Http;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Net.Http;
+using System.Net.WebSockets;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Infrastructure;
 
@@ -497,6 +505,73 @@ public class NeoBlockchainClient : IBlockchainClient
         }
     }
 
+    /// <inheritdoc/>
+    public async Task<IEnumerable<ContractEvent>> GetBlockEventsAsync(long blockHeight)
+    {
+        _logger.LogInformation("Getting events from block {BlockHeight} on {BlockchainType}", blockHeight, _blockchainType);
+
+        try
+        {
+            var request = new JsonRpcRequest
+            {
+                Id = 1,
+                Method = "getapplicationlog",
+                Params = new object[] { blockHeight }
+            };
+
+            var response = await SendJsonRpcRequestAsync(request);
+            var events = new List<ContractEvent>();
+
+            if (response?.Result != null && response.Result is JsonElement element)
+            {
+                if (element.TryGetProperty("executions", out var executions))
+                {
+                    foreach (var execution in executions.EnumerateArray())
+                    {
+                        if (execution.TryGetProperty("notifications", out var notifications))
+                        {
+                            foreach (var notification in notifications.EnumerateArray())
+                            {
+                                events.Add(ParseContractEventFromJsonElement(notification));
+                            }
+                        }
+                    }
+                }
+            }
+
+            return events;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get events from block {BlockHeight}", blockHeight);
+            return new List<ContractEvent>();
+        }
+    }
+    
+    /// <summary>
+    /// Parses a contract event from JSON element.
+    /// </summary>
+    private ContractEvent ParseContractEventFromJsonElement(JsonElement element)
+    {
+        var contractEvent = new ContractEvent();
+
+        if (element.TryGetProperty("contract", out var contract))
+            contractEvent.ContractHash = contract.GetString() ?? "";
+
+        if (element.TryGetProperty("eventname", out var eventName))
+            contractEvent.EventName = eventName.GetString() ?? "";
+
+        if (element.TryGetProperty("state", out var state))
+        {
+            contractEvent.Parameters = new Dictionary<string, object>
+            {
+                ["state"] = JsonSerializer.Serialize(state)
+            };
+        }
+
+        return contractEvent;
+    }
+
     // Helper methods for production implementation
 
     /// <summary>
@@ -578,7 +653,7 @@ public class NeoBlockchainClient : IBlockchainClient
             transaction.Hash = hash.GetString() ?? "";
 
         if (element.TryGetProperty("sender", out var sender))
-            transaction.Sender = sender.GetString() ?? "";
+            transaction.From = sender.GetString() ?? "";
 
         if (element.TryGetProperty("size", out var size))
             transaction.Data = $"Transaction size: {size.GetInt32()} bytes";

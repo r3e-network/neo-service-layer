@@ -5,18 +5,32 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
+    /// <summary>
+    /// Result of token validation
+    /// </summary>
+    public class TokenValidationResult
+    {
+        public bool IsValid { get; set; }
+        public string? UserId { get; set; }
+        public string? Email { get; set; }
+    }
+
     /// <summary>
     /// Service for managing verification tokens (email verification, password reset, etc.)
     /// </summary>
     public interface IVerificationTokenService
     {
         Task<string> GenerateEmailVerificationTokenAsync(string userId, string email);
-        Task<bool> ValidateEmailVerificationTokenAsync(string token, out string userId, out string email);
+        Task<TokenValidationResult> ValidateEmailVerificationTokenAsync(string token);
         Task<string> GeneratePasswordResetTokenAsync(string userId, string email);
-        Task<bool> ValidatePasswordResetTokenAsync(string token, out string userId, out string email);
+        Task<TokenValidationResult> ValidatePasswordResetTokenAsync(string token);
         Task<string> GenerateMfaTokenAsync(string userId, string method);
         Task<bool> ValidateMfaTokenAsync(string userId, string token, string method);
         Task RevokeTokenAsync(string token);
@@ -40,7 +54,7 @@ namespace NeoServiceLayer.Services.Authentication
             _logger = logger;
             _cache = cache;
             _configuration = configuration;
-            
+
             _emailVerificationExpiryHours = configuration.GetValue<int>("Authentication:EmailVerificationExpiryHours", 24);
             _passwordResetExpiryMinutes = configuration.GetValue<int>("Authentication:PasswordResetExpiryMinutes", 60);
             _mfaTokenExpiryMinutes = configuration.GetValue<int>("Authentication:MfaTokenExpiryMinutes", 5);
@@ -50,7 +64,7 @@ namespace NeoServiceLayer.Services.Authentication
         {
             var token = GenerateSecureToken();
             var cacheKey = $"email_verify:{token}";
-            
+
             var tokenData = new VerificationTokenData
             {
                 UserId = userId,
@@ -59,46 +73,45 @@ namespace NeoServiceLayer.Services.Authentication
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddHours(_emailVerificationExpiryHours)
             };
-            
+
             await _cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(tokenData),
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             _logger.LogInformation("Email verification token generated for user {UserId}", userId);
             return token;
         }
 
-        public async Task<bool> ValidateEmailVerificationTokenAsync(string token, out string userId, out string email)
+        public async Task<TokenValidationResult> ValidateEmailVerificationTokenAsync(string token)
         {
-            userId = null;
-            email = null;
-            
+            var result = new TokenValidationResult { IsValid = false };
+
             var cacheKey = $"email_verify:{token}";
             var cachedData = await _cache.GetStringAsync(cacheKey);
-            
+
             if (string.IsNullOrEmpty(cachedData))
             {
                 _logger.LogWarning("Invalid or expired email verification token");
-                return false;
+                return result;
             }
-            
+
             var tokenData = System.Text.Json.JsonSerializer.Deserialize<VerificationTokenData>(cachedData);
-            
+
             if (tokenData.ExpiresAt < DateTime.UtcNow)
             {
                 await _cache.RemoveAsync(cacheKey);
                 _logger.LogWarning("Expired email verification token for user {UserId}", tokenData.UserId);
-                return false;
+                return result;
             }
-            
+
             if (tokenData.Used)
             {
                 _logger.LogWarning("Email verification token already used for user {UserId}", tokenData.UserId);
-                return false;
+                return result;
             }
-            
+
             // Mark token as used
             tokenData.Used = true;
             tokenData.UsedAt = DateTime.UtcNow;
@@ -107,22 +120,23 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
-            userId = tokenData.UserId;
-            email = tokenData.Email;
-            
-            _logger.LogInformation("Email verification token validated for user {UserId}", userId);
-            return true;
+
+            result.IsValid = true;
+            result.UserId = tokenData.UserId;
+            result.Email = tokenData.Email;
+
+            _logger.LogInformation("Email verification token validated for user {UserId}", result.UserId);
+            return result;
         }
 
         public async Task<string> GeneratePasswordResetTokenAsync(string userId, string email)
         {
             // Revoke any existing password reset tokens for this user
             await RevokeAllUserTokensAsync(userId, "PasswordReset");
-            
+
             var token = GenerateSecureToken();
             var cacheKey = $"password_reset:{token}";
-            
+
             var tokenData = new VerificationTokenData
             {
                 UserId = userId,
@@ -131,13 +145,13 @@ namespace NeoServiceLayer.Services.Authentication
                 CreatedAt = DateTime.UtcNow,
                 ExpiresAt = DateTime.UtcNow.AddMinutes(_passwordResetExpiryMinutes)
             };
-            
+
             await _cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(tokenData),
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             // Also store by user ID for revocation
             var userTokenKey = $"user_tokens:{userId}:password_reset";
             await _cache.SetStringAsync(userTokenKey, token,
@@ -145,40 +159,39 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             _logger.LogInformation("Password reset token generated for user {UserId}", userId);
             return token;
         }
 
-        public async Task<bool> ValidatePasswordResetTokenAsync(string token, out string userId, out string email)
+        public async Task<TokenValidationResult> ValidatePasswordResetTokenAsync(string token)
         {
-            userId = null;
-            email = null;
-            
+            var result = new TokenValidationResult { IsValid = false };
+
             var cacheKey = $"password_reset:{token}";
             var cachedData = await _cache.GetStringAsync(cacheKey);
-            
+
             if (string.IsNullOrEmpty(cachedData))
             {
                 _logger.LogWarning("Invalid or expired password reset token");
-                return false;
+                return result;
             }
-            
+
             var tokenData = System.Text.Json.JsonSerializer.Deserialize<VerificationTokenData>(cachedData);
-            
+
             if (tokenData.ExpiresAt < DateTime.UtcNow)
             {
                 await _cache.RemoveAsync(cacheKey);
                 _logger.LogWarning("Expired password reset token for user {UserId}", tokenData.UserId);
-                return false;
+                return result;
             }
-            
+
             if (tokenData.Used)
             {
                 _logger.LogWarning("Password reset token already used for user {UserId}", tokenData.UserId);
-                return false;
+                return result;
             }
-            
+
             // Mark token as used
             tokenData.Used = true;
             tokenData.UsedAt = DateTime.UtcNow;
@@ -187,12 +200,13 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
-            userId = tokenData.UserId;
-            email = tokenData.Email;
-            
-            _logger.LogInformation("Password reset token validated for user {UserId}", userId);
-            return true;
+
+            result.IsValid = true;
+            result.UserId = tokenData.UserId;
+            result.Email = tokenData.Email;
+
+            _logger.LogInformation("Password reset token validated for user {UserId}", result.UserId);
+            return result;
         }
 
         public async Task<string> GenerateMfaTokenAsync(string userId, string method)
@@ -200,7 +214,7 @@ namespace NeoServiceLayer.Services.Authentication
             // Generate a 6-digit code for MFA
             var code = GenerateMfaCode();
             var cacheKey = $"mfa:{userId}:{method}:{code}";
-            
+
             var tokenData = new MfaTokenData
             {
                 UserId = userId,
@@ -211,13 +225,13 @@ namespace NeoServiceLayer.Services.Authentication
                 Attempts = 0,
                 MaxAttempts = 3
             };
-            
+
             await _cache.SetStringAsync(cacheKey, System.Text.Json.JsonSerializer.Serialize(tokenData),
                 new DistributedCacheEntryOptions
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             _logger.LogInformation("MFA token generated for user {UserId} using method {Method}", userId, method);
             return code;
         }
@@ -226,37 +240,37 @@ namespace NeoServiceLayer.Services.Authentication
         {
             var cacheKey = $"mfa:{userId}:{method}:{token}";
             var cachedData = await _cache.GetStringAsync(cacheKey);
-            
+
             if (string.IsNullOrEmpty(cachedData))
             {
                 _logger.LogWarning("Invalid MFA token for user {UserId}", userId);
                 return false;
             }
-            
+
             var tokenData = System.Text.Json.JsonSerializer.Deserialize<MfaTokenData>(cachedData);
-            
+
             if (tokenData.ExpiresAt < DateTime.UtcNow)
             {
                 await _cache.RemoveAsync(cacheKey);
                 _logger.LogWarning("Expired MFA token for user {UserId}", userId);
                 return false;
             }
-            
+
             if (tokenData.Used)
             {
                 _logger.LogWarning("MFA token already used for user {UserId}", userId);
                 return false;
             }
-            
+
             tokenData.Attempts++;
-            
+
             if (tokenData.Attempts > tokenData.MaxAttempts)
             {
                 await _cache.RemoveAsync(cacheKey);
                 _logger.LogWarning("MFA token max attempts exceeded for user {UserId}", userId);
                 return false;
             }
-            
+
             // Mark token as used on successful validation
             tokenData.Used = true;
             tokenData.UsedAt = DateTime.UtcNow;
@@ -265,10 +279,10 @@ namespace NeoServiceLayer.Services.Authentication
                 {
                     AbsoluteExpiration = tokenData.ExpiresAt
                 });
-            
+
             // Remove the token after successful use
             await _cache.RemoveAsync(cacheKey);
-            
+
             _logger.LogInformation("MFA token validated for user {UserId}", userId);
             return true;
         }
@@ -280,12 +294,12 @@ namespace NeoServiceLayer.Services.Authentication
                 $"email_verify:{token}",
                 $"password_reset:{token}"
             };
-            
+
             foreach (var key in keys)
             {
                 await _cache.RemoveAsync(key);
             }
-            
+
             _logger.LogInformation("Token revoked: {Token}", token.Substring(0, 8) + "...");
         }
 
@@ -295,7 +309,7 @@ namespace NeoServiceLayer.Services.Authentication
             // For now, we'll just revoke known token types
             var userTokenKey = $"user_tokens:{userId}:{tokenType.ToLower()}";
             var token = await _cache.GetStringAsync(userTokenKey);
-            
+
             if (!string.IsNullOrEmpty(token))
             {
                 var tokenKey = tokenType switch
@@ -304,26 +318,26 @@ namespace NeoServiceLayer.Services.Authentication
                     "PasswordReset" => $"password_reset:{token}",
                     _ => null
                 };
-                
+
                 if (tokenKey != null)
                 {
                     await _cache.RemoveAsync(tokenKey);
                 }
-                
+
                 await _cache.RemoveAsync(userTokenKey);
             }
-            
+
             _logger.LogInformation("All {TokenType} tokens revoked for user {UserId}", tokenType, userId);
         }
 
         private string GenerateSecureToken()
         {
             var randomBytes = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
             {
                 rng.GetBytes(randomBytes);
             }
-            
+
             return Convert.ToBase64String(randomBytes)
                 .Replace("+", "-")
                 .Replace("/", "_")
@@ -332,9 +346,11 @@ namespace NeoServiceLayer.Services.Authentication
 
         private string GenerateMfaCode()
         {
-            using var rng = RandomNumberGenerator.Create();
             var bytes = new byte[4];
-            rng.GetBytes(bytes);
+            using (var rng = System.Security.Cryptography.RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
             var value = BitConverter.ToUInt32(bytes, 0);
             return (value % 900000 + 100000).ToString(); // 6-digit code between 100000-999999
         }

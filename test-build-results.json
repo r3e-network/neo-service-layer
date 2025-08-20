@@ -1,0 +1,232 @@
+{
+  "successful": [
+    {
+      "name": "NeoServiceLayer.Performance.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Performance/NeoServiceLayer.Performance.Tests/NeoServiceLayer.Performance.Tests.csproj",
+      "tests": 8
+    }
+  ],
+  "failed": [
+    {
+      "name": "NeoServiceLayer.AI.PatternRecognition.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/AI/NeoServiceLayer.AI.PatternRecognition.Tests/NeoServiceLayer.AI.PatternRecognition.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.AI.Prediction.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/AI/NeoServiceLayer.AI.Prediction.Tests/NeoServiceLayer.AI.Prediction.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Advanced.FairOrdering.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Advanced/NeoServiceLayer.Advanced.FairOrdering.Tests/NeoServiceLayer.Advanced.FairOrdering.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Api.Controllers.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Api/NeoServiceLayer.Api.Controllers.Tests/NeoServiceLayer.Api.Controllers.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Api.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Api/NeoServiceLayer.Api.Tests/NeoServiceLayer.Api.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Neo.N3.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Blockchain/NeoServiceLayer.Neo.N3.Tests/NeoServiceLayer.Neo.N3.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Neo.X.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Blockchain/NeoServiceLayer.Neo.X.Tests/NeoServiceLayer.Neo.X.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Core.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Core/NeoServiceLayer.Core.Tests/NeoServiceLayer.Core.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.ServiceFramework.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Core/NeoServiceLayer.ServiceFramework.Tests/NeoServiceLayer.ServiceFramework.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Shared.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Core/NeoServiceLayer.Shared.Tests/NeoServiceLayer.Shared.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Infrastructure.Blockchain.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain.Tests/NeoServiceLayer.Infrastructure.Blockchain.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Infrastructure.Security.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Infrastructure/NeoServiceLayer.Infrastructure.Security.Tests/NeoServiceLayer.Infrastructure.Security.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Infrastructure.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Infrastructure/NeoServiceLayer.Infrastructure.Tests/NeoServiceLayer.Infrastructure.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Authentication.Integration.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Integration/NeoServiceLayer.Authentication.Integration.Tests/NeoServiceLayer.Authentication.Integration.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Integration.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Integration/NeoServiceLayer.Integration.Tests/NeoServiceLayer.Integration.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.AbstractAccount.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.AbstractAccount.Tests/NeoServiceLayer.Services.AbstractAccount.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Authentication.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Authentication.Tests/NeoServiceLayer.Services.Authentication.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Automation.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Automation.Tests/NeoServiceLayer.Services.Automation.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Backup.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Backup.Tests/NeoServiceLayer.Services.Backup.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Compliance.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Compliance.Tests/NeoServiceLayer.Services.Compliance.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Compute.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Compute.Tests/NeoServiceLayer.Services.Compute.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Configuration.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Configuration.Tests/NeoServiceLayer.Services.Configuration.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.CrossChain.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.CrossChain.Tests/NeoServiceLayer.Services.CrossChain.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.EnclaveStorage.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.EnclaveStorage.Tests/NeoServiceLayer.Services.EnclaveStorage.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.EventSubscription.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.EventSubscription.Tests/NeoServiceLayer.Services.EventSubscription.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Health.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Health.Tests/NeoServiceLayer.Services.Health.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.KeyManagement.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.KeyManagement.Tests/NeoServiceLayer.Services.KeyManagement.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Monitoring.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Monitoring.Tests/NeoServiceLayer.Services.Monitoring.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.NetworkSecurity.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.NetworkSecurity.Tests/NeoServiceLayer.Services.NetworkSecurity.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Notification.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Notification.Tests/NeoServiceLayer.Services.Notification.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Oracle.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Oracle.Tests/NeoServiceLayer.Services.Oracle.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.ProofOfReserve.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.ProofOfReserve.Tests/NeoServiceLayer.Services.ProofOfReserve.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Randomness.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Randomness.Tests/NeoServiceLayer.Services.Randomness.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.SecretsManagement.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.SecretsManagement.Tests/NeoServiceLayer.Services.SecretsManagement.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.SmartContracts.NeoN3.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.SmartContracts.NeoN3.Tests/NeoServiceLayer.Services.SmartContracts.NeoN3.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.SmartContracts.NeoX.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.SmartContracts.NeoX.Tests/NeoServiceLayer.Services.SmartContracts.NeoX.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.SmartContracts.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.SmartContracts.Tests/NeoServiceLayer.Services.SmartContracts.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Storage.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Storage.Tests/NeoServiceLayer.Services.Storage.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Tee.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Tee.Tests/NeoServiceLayer.Services.Tee.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.Voting.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.Voting.Tests/NeoServiceLayer.Services.Voting.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Services.ZeroKnowledge.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Services/NeoServiceLayer.Services.ZeroKnowledge.Tests/NeoServiceLayer.Services.ZeroKnowledge.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Tee.Enclave.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Tee/NeoServiceLayer.Tee.Enclave.Tests/NeoServiceLayer.Tee.Enclave.Tests.csproj",
+      "error": "Unknown error"
+    },
+    {
+      "name": "NeoServiceLayer.Tee.Host.Tests",
+      "path": "/home/ubuntu/neo-service-layer/tests/Tee/NeoServiceLayer.Tee.Host.Tests/NeoServiceLayer.Tee.Host.Tests.csproj",
+      "error": "Unknown error"
+    }
+  ],
+  "summary": {
+    "total_projects": 44,
+    "successful_builds": 1,
+    "failed_builds": 43,
+    "total_tests": 8
+  }
+}

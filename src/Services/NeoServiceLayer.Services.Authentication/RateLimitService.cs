@@ -3,16 +3,38 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Api.Middleware;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Core;
+using ServiceFrameworkBase = NeoServiceLayer.ServiceFramework.ServiceBase;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Services.Authentication
 {
     /// <summary>
     /// Distributed rate limiting service using sliding window algorithm
     /// </summary>
-    public class RateLimitService : IRateLimitService
+    public interface IRateLimitService
     {
-        private readonly ILogger<RateLimitService> _logger;
+        Task<RateLimitResult> CheckRateLimitAsync(string identifier, string resource);
+        Task RecordRequestAsync(string identifier, string resource);
+        Task ResetLimitAsync(string identifier, string resource);
+    }
+
+    public class RateLimitResult
+    {
+        public bool IsAllowed { get; set; }
+        public int Limit { get; set; }
+        public int Remaining { get; set; }
+        public DateTimeOffset ResetAt { get; set; }
+        public int RetryAfter { get; set; }
+    }
+
+    public class RateLimitService : ServiceFrameworkBase, IRateLimitService
+    {
+        private readonly ILogger<RateLimitService> Logger;
         private readonly IDistributedCache _cache;
         private readonly IConfiguration _configuration;
         private readonly RateLimitConfiguration _defaultConfig;
@@ -21,11 +43,13 @@ namespace NeoServiceLayer.Services.Authentication
             ILogger<RateLimitService> logger,
             IDistributedCache cache,
             IConfiguration configuration)
-        {
-            _logger = logger;
+
+        : base("RateLimitService", "Rate limiting service", "1.0.0", logger)
+    {
+            Logger = logger;
             _cache = cache;
             _configuration = configuration;
-            
+
             _defaultConfig = new RateLimitConfiguration
             {
                 RequestsPerMinute = configuration.GetValue<int>("RateLimit:DefaultRequestsPerMinute", 60),
@@ -34,15 +58,42 @@ namespace NeoServiceLayer.Services.Authentication
             };
         }
 
+        protected override async Task<bool> OnInitializeAsync()
+        {
+            Logger.LogInformation("Initializing Rate Limit Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStartAsync()
+        {
+            Logger.LogInformation("Starting Rate Limit Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<bool> OnStopAsync()
+        {
+            Logger.LogInformation("Stopping Rate Limit Service");
+            await Task.CompletedTask;
+            return true;
+        }
+
+        protected override async Task<ServiceHealth> OnGetHealthAsync()
+        {
+            await Task.CompletedTask;
+            return ServiceHealth.Healthy;
+        }
+
         public async Task<RateLimitResult> CheckRateLimitAsync(string identifier, string resource)
         {
             var config = GetRateLimitConfiguration(resource);
             var now = DateTimeOffset.UtcNow;
-            
+
             // Check minute window
             var minuteKey = $"rate:{identifier}:{resource}:minute:{now.Minute}";
             var minuteCount = await GetCountAsync(minuteKey);
-            
+
             if (minuteCount >= config.RequestsPerMinute)
             {
                 var resetAt = now.AddMinutes(1).AddSeconds(-now.Second);
@@ -55,11 +106,11 @@ namespace NeoServiceLayer.Services.Authentication
                     RetryAfter = (int)(resetAt - now).TotalSeconds
                 };
             }
-            
+
             // Check hour window
             var hourKey = $"rate:{identifier}:{resource}:hour:{now.Hour}";
             var hourCount = await GetCountAsync(hourKey);
-            
+
             if (hourCount >= config.RequestsPerHour)
             {
                 var resetAt = now.AddHours(1).AddMinutes(-now.Minute).AddSeconds(-now.Second);
@@ -72,11 +123,11 @@ namespace NeoServiceLayer.Services.Authentication
                     RetryAfter = (int)(resetAt - now).TotalSeconds
                 };
             }
-            
+
             // Check burst protection
             var burstKey = $"rate:{identifier}:{resource}:burst";
             var burstCount = await GetCountAsync(burstKey);
-            
+
             if (burstCount >= config.BurstSize)
             {
                 return new RateLimitResult
@@ -88,10 +139,10 @@ namespace NeoServiceLayer.Services.Authentication
                     RetryAfter = 1
                 };
             }
-            
+
             // Request is allowed
             await RecordRequestAsync(identifier, resource);
-            
+
             return new RateLimitResult
             {
                 IsAllowed = true,
@@ -111,10 +162,10 @@ namespace NeoServiceLayer.Services.Authentication
                 IncrementCountAsync($"rate:{identifier}:{resource}:hour:{now.Hour}", TimeSpan.FromHours(2)),
                 IncrementCountAsync($"rate:{identifier}:{resource}:burst", TimeSpan.FromSeconds(1))
             };
-            
+
             await Task.WhenAll(tasks);
-            
-            _logger.LogDebug("Recorded request for {Identifier} on {Resource}", identifier, resource);
+
+            Logger.LogDebug("Recorded request for {Identifier} on {Resource}", identifier, resource);
         }
 
         public async Task ResetLimitAsync(string identifier, string resource)
@@ -126,13 +177,13 @@ namespace NeoServiceLayer.Services.Authentication
                 $"rate:{identifier}:{resource}:hour:{now.Hour}",
                 $"rate:{identifier}:{resource}:burst"
             };
-            
+
             foreach (var key in keys)
             {
                 await _cache.RemoveAsync(key);
             }
-            
-            _logger.LogInformation("Reset rate limit for {Identifier} on {Resource}", identifier, resource);
+
+            Logger.LogInformation("Reset rate limit for {Identifier} on {Resource}", identifier, resource);
         }
 
         private async Task<int> GetCountAsync(string key)
@@ -148,7 +199,7 @@ namespace NeoServiceLayer.Services.Authentication
                 var value = await _cache.GetStringAsync(key);
                 var count = int.TryParse(value, out var current) ? current : 0;
                 count++;
-                
+
                 await _cache.SetStringAsync(key, count.ToString(),
                     new DistributedCacheEntryOptions
                     {
@@ -157,7 +208,7 @@ namespace NeoServiceLayer.Services.Authentication
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to increment rate limit counter for {Key}", key);
+                Logger.LogError(ex, "Failed to increment rate limit counter for {Key}", key);
             }
         }
 

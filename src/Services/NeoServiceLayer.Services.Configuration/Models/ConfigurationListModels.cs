@@ -1,4 +1,9 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Configuration.Models;
 
@@ -198,7 +203,7 @@ public class ConfigurationEntry
     /// <summary>
     /// Gets or sets the blockchain type.
     /// </summary>
-    public BlockchainType BlockchainType { get; set; }
+    public string BlockchainType { get; set; } = string.Empty;
 
     /// <summary>
     /// Gets or sets the version.

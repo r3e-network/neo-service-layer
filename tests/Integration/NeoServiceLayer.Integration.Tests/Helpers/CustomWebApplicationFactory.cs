@@ -1,5 +1,6 @@
-﻿using Microsoft.AspNetCore.Hosting;
+using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc.Testing;
+using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Moq;
@@ -7,8 +8,15 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.AbstractAccount.Models;
 using NeoServiceLayer.Services.Voting;
+using NeoServiceLayer.Services.Voting.Models;
 using NeoServiceLayer.Tee.Host.Services;
 using NeoServiceLayer.Web;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests.Helpers;
 
@@ -16,13 +24,28 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
 {
     protected override void ConfigureWebHost(IWebHostBuilder builder)
     {
-        builder.UseEnvironment("Test");
+        builder.UseEnvironment("Development");
 
         // Use random available port to avoid conflicts between test runs
         builder.UseUrls("http://localhost:0");
 
         // Configure JWT secret through configuration instead of environment variable
         builder.UseSetting("Jwt:SecretKey", "SuperSecretTestKeyThatIsLongEnoughForTesting123!");
+        
+        // Configure service endpoints for test environment
+        builder.ConfigureAppConfiguration((context, config) =>
+        {
+            config.AddInMemoryCollection(new Dictionary<string, string>
+            {
+                ["ServiceEndpoints:NeoN3RpcUrl"] = "http://localhost:10332",
+                ["ServiceEndpoints:NeoN3WebSocketUrl"] = "ws://localhost:10334",
+                ["ServiceEndpoints:NeoXRpcUrl"] = "http://localhost:10333",
+                ["ServiceEndpoints:NeoXWebSocketUrl"] = "ws://localhost:10335",
+                ["ServiceEndpoints:RedisConnectionString"] = "localhost:6379",
+                ["ServiceEndpoints:JaegerEndpoint"] = "http://localhost:14268",
+                ["ServiceEndpoints:DatabaseConnectionString"] = "Server=localhost;Database=NeoServiceLayerTest;Trusted_Connection=true;"
+            });
+        });
 
         builder.ConfigureServices(services =>
         {
@@ -63,8 +86,8 @@ public class CustomWebApplicationFactory : WebApplicationFactory<Program>
             mockVotingService.Setup(x => x.GetCouncilNodesAsync(It.IsAny<BlockchainType>()))
                 .ReturnsAsync(new List<CouncilNodeInfo>
                 {
-                    new() { Address = "test-address-1", Name = "Test Node 1", IsActive = true, VotesReceived = 1000 },
-                    new() { Address = "test-address-2", Name = "Test Node 2", IsActive = true, VotesReceived = 2000 }
+                    new() { Address = "test-address-1", PublicKey = "pubkey1", Status = NodeStatus.Active, VoteCount = 1000 },
+                    new() { Address = "test-address-2", PublicKey = "pubkey2", Status = NodeStatus.Active, VoteCount = 2000 }
                 });
             services.AddSingleton(mockVotingService.Object);
 

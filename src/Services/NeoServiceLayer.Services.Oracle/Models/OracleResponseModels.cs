@@ -1,4 +1,9 @@
-﻿using NeoServiceLayer.Core;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Oracle.Models;
 
@@ -299,4 +304,70 @@ public class OracleStatusResult
     public DateTime CheckedAt { get; set; }
 }
 
-// Note: OracleRequest, OracleResponse, and OracleBatchResponse are defined in OracleModels.cs 
+/// <summary>
+/// Metadata information about a data feed.
+/// </summary>
+public class DataFeedMetadata
+{
+    /// <summary>
+    /// Gets or sets the feed identifier.
+    /// </summary>
+    public string FeedId { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the feed name.
+    /// </summary>
+    public string Name { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the feed description.
+    /// </summary>
+    public string Description { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the data source URL.
+    /// </summary>
+    public string SourceUrl { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the update frequency in seconds.
+    /// </summary>
+    public int UpdateFrequencySeconds { get; set; }
+
+    /// <summary>
+    /// Gets or sets the data type.
+    /// </summary>
+    public string DataType { get; set; } = string.Empty;
+
+    /// <summary>
+    /// Gets or sets the last update timestamp.
+    /// </summary>
+    public DateTime? LastUpdateAt { get; set; }
+
+    /// <summary>
+    /// Gets or sets the update frequency.
+    /// </summary>
+    public TimeSpan UpdateFrequency { get; set; }
+
+    /// <summary>
+    /// Gets or sets whether the feed is active.
+    /// </summary>
+    public bool IsActive { get; set; } = true;
+
+    /// <summary>
+    /// Gets or sets the last updated timestamp.
+    /// </summary>
+    public DateTime? LastUpdated { get; set; }
+
+    /// <summary>
+    /// Gets or sets the reliability score (0-1).
+    /// </summary>
+    public double ReliabilityScore { get; set; } = 1.0;
+
+    /// <summary>
+    /// Gets or sets additional metadata.
+    /// </summary>
+    public Dictionary<string, object> AdditionalMetadata { get; set; } = new();
+}
+
+// Note: OracleRequest, OracleResponse, and OracleBatchResponse are defined in OracleModels.cs

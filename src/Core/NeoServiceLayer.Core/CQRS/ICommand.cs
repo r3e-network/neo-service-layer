@@ -1,4 +1,9 @@
-﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Core.CQRS
 {
@@ -38,7 +43,7 @@ namespace NeoServiceLayer.Core.CQRS
     /// Command that returns a result
     /// </summary>
     /// <typeparam name="TResult">Type of result returned</typeparam>
-    public interface ICommand&lt;out TResult&gt; : ICommand
+    public interface ICommand<out TResult> : ICommand
     {
     }
 }

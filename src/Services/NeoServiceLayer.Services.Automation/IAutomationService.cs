@@ -1,4 +1,11 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Automation.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -119,7 +126,7 @@ public interface IAutomationService : IService
     /// <param name="context">The execution context.</param>
     /// <param name="blockchainType">The blockchain type.</param>
     /// <returns>The execution result.</returns>
-    Task<ExecutionResult> ExecuteAutomationAsync(string automationId, ExecutionContext context, BlockchainType blockchainType);
+    Task<ExecutionResult> ExecuteAutomationAsync(string automationId, Models.ExecutionContext context, BlockchainType blockchainType);
 
     /// <summary>
     /// Gets the execution history for an automation.

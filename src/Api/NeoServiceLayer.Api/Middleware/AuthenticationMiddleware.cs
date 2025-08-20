@@ -1,4 +1,3 @@
-﻿using System;
 using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
@@ -10,6 +9,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using NeoServiceLayer.Services.Authentication;
+using System.Collections.Generic;
+using System.Net.WebSockets;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Middleware
 {
@@ -291,6 +295,8 @@ namespace NeoServiceLayer.Api.Middleware
         public int Remaining { get; set; }
         public DateTimeOffset ResetAt { get; set; }
         public int RetryAfter { get; set; }
+        public string Message { get; set; } = string.Empty;
+        public DateTimeOffset ResetsAt => ResetAt; // Compatibility property
     }
 
     /// <summary>

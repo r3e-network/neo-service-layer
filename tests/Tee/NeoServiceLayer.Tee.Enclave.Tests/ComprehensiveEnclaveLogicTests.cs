@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
 using System.Text;
@@ -7,6 +6,9 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Xunit;
 using Xunit.Abstractions;
+using System.Collections.Generic;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Tee.Enclave.Tests
 {
@@ -246,421 +248,421 @@ namespace NeoServiceLayer.Tee.Enclave.Tests
             foreach (var (testName, data, encKey, compress) in testCases)
             {
                 var storageKey = $"test-{testName}";
-                var dataBytes = Encoding.UTF8.GetBytes(data);
+        var dataBytes = Encoding.UTF8.GetBytes(data);
 
-                // Act
-                var storeResult = _enclave.StoreData(storageKey, dataBytes, encKey, compress);
-                var retrievedData = _enclave.RetrieveData(storageKey, encKey);
-                var metadata = _enclave.GetStorageMetadata(storageKey);
+        // Act
+        var storeResult = _enclave.StoreData(storageKey, dataBytes, encKey, compress);
+        var retrievedData = _enclave.RetrieveData(storageKey, encKey);
+        var metadata = _enclave.GetStorageMetadata(storageKey);
 
-                // Assert
-                retrievedData.Should().Equal(dataBytes);
-                storeResult.Should().NotBeNullOrEmpty();
-                metadata.Should().NotBeNullOrEmpty();
+        // Assert
+        retrievedData.Should().Equal(dataBytes);
+        storeResult.Should().NotBeNullOrEmpty();
+        metadata.Should().NotBeNullOrEmpty();
 
-                var storeJson = JsonDocument.Parse(storeResult);
-                storeJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+        var storeJson = JsonDocument.Parse(storeResult);
+        storeJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
 
-                _output.WriteLine($"✅ Secure storage works for {testName} data (compressed: {compress})");
+        _output.WriteLine($"✅ Secure storage works for {testName} data (compressed: {compress})");
             }
-        }
+}
 
-        [Fact]
-        public void EnclaveLogic_StorageKeyCollisions_ShouldBeHandledCorrectly()
+[Fact]
+public void EnclaveLogic_StorageKeyCollisions_ShouldBeHandledCorrectly()
+{
+    // Arrange
+    _enclave.Initialize();
+    var key = "collision-test";
+    var data1 = Encoding.UTF8.GetBytes("First data");
+    var data2 = Encoding.UTF8.GetBytes("Second data");
+    var encKey = "encryption-key";
+
+    // Act
+    _enclave.StoreData(key, data1, encKey);
+    var retrieved1 = _enclave.RetrieveData(key, encKey);
+
+    _enclave.StoreData(key, data2, encKey); // Overwrite
+    var retrieved2 = _enclave.RetrieveData(key, encKey);
+
+    // Assert
+    retrieved1.Should().Equal(data1);
+    retrieved2.Should().Equal(data2);
+    retrieved2.Should().NotEqual(data1);
+    _output.WriteLine("✅ Storage key overwriting works correctly");
+}
+
+[Fact]
+public void EnclaveLogic_StorageWithWrongKey_ShouldFail()
+{
+    // Arrange
+    _enclave.Initialize();
+    var storageKey = "protected-data";
+    var data = Encoding.UTF8.GetBytes("Sensitive information");
+    var correctKey = "correct-key";
+    var wrongKey = "wrong-key";
+
+    // Act
+    _enclave.StoreData(storageKey, data, correctKey);
+
+    // Assert
+    var exception = Assert.Throws<UnauthorizedAccessException>(() =>
+        _enclave.RetrieveData(storageKey, wrongKey));
+
+    _output.WriteLine("✅ Storage retrieval with wrong key properly fails");
+}
+
+#endregion
+
+#region JavaScript Execution Logic Tests
+
+[Theory]
+[InlineData("function test() { return 42; }", "{}", "number")]
+[InlineData("function test() { return 'hello'; }", "{}", "string")]
+[InlineData("function test() { return [1,2,3]; }", "{}", "array")]
+[InlineData("function add(a, b) { return a + b; }", """{"a": 5, "b": 7}""", "math")]
+public void EnclaveLogic_JavaScriptExecution_ShouldHandleVariousTypes(
+    string jsCode, string args, string testType)
+{
+    // Arrange
+    _enclave.Initialize();
+
+    // Act
+    var result = _enclave.ExecuteJavaScript(jsCode, args);
+
+    // Assert
+    result.Should().NotBeNullOrEmpty();
+    var resultJson = JsonDocument.Parse(result);
+    resultJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+    _output.WriteLine($"✅ JavaScript execution works for {testType} type");
+}
+
+[Fact]
+public void EnclaveLogic_JavaScriptWithInvalidSyntax_ShouldHandleGracefully()
+{
+    // Arrange
+    _enclave.Initialize();
+    var invalidJs = "function test( { return 42; }"; // Missing closing parenthesis
+
+    // Act
+    var result = _enclave.ExecuteJavaScript(invalidJs, "{}");
+
+    // Assert
+    result.Should().NotBeNullOrEmpty();
+    // Should handle gracefully rather than crash
+    _output.WriteLine("✅ Invalid JavaScript syntax handled gracefully");
+}
+
+#endregion
+
+#region AI/ML Logic Tests
+
+[Fact]
+public void EnclaveLogic_AIModelLifecycle_ShouldWorkEndToEnd()
+{
+    // Arrange
+    _enclave.Initialize();
+    var modelId = "comprehensive-test-model";
+    var trainingData = Enumerable.Range(1, 100).Select(i => (double)i).ToArray();
+    var testInput = new double[] { 50.5, 75.2, 25.8 };
+
+    // Act
+    var trainingResult = _enclave.TrainAIModel(modelId, "linear_regression", trainingData, "{}");
+    var (predictions, metadata) = _enclave.PredictWithAIModel(modelId, testInput);
+
+    // Assert
+    trainingResult.Should().NotBeNullOrEmpty();
+    predictions.Should().NotBeNull();
+    predictions.Length.Should().Be(testInput.Length);
+    metadata.Should().NotBeNullOrEmpty();
+
+    var trainingJson = JsonDocument.Parse(trainingResult);
+    trainingJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+
+    var metadataJson = JsonDocument.Parse(metadata);
+    metadataJson.RootElement.GetProperty("modelId").GetString().Should().Be(modelId);
+
+    _output.WriteLine("✅ Complete AI model lifecycle works correctly");
+}
+
+[Fact]
+public void EnclaveLogic_PredictionWithoutTraining_ShouldFail()
+{
+    // Arrange
+    _enclave.Initialize();
+    var nonExistentModel = "non-existent-model";
+    var input = new double[] { 1.0, 2.0 };
+
+    // Act & Assert
+    var exception = Assert.Throws<KeyNotFoundException>(() =>
+        _enclave.PredictWithAIModel(nonExistentModel, input));
+
+    exception.Message.Should().Contain("not found");
+    _output.WriteLine("✅ Prediction without training properly fails");
+}
+
+#endregion
+
+#region Abstract Account Logic Tests
+
+[Fact]
+public void EnclaveLogic_AbstractAccountWorkflow_ShouldSupportCompleteLifecycle()
+{
+    // Arrange
+    _enclave.Initialize();
+    var accountId = "comprehensive-account";
+    var accountData = """{"type": "test", "security": "high"}""";
+    var guardianData = """{"guardian": "test - guardian", "threshold": 2}""";
+    var transactionData = """{"to": "recipient", "amount": 100, "nonce": 1}""";
+
+    // Act
+    var createResult = _enclave.CreateAbstractAccount(accountId, accountData);
+    var guardianResult = _enclave.AddAbstractAccountGuardian(accountId, guardianData);
+    var signResult = _enclave.SignAbstractAccountTransaction(accountId, transactionData);
+
+    // Assert
+    createResult.Should().NotBeNullOrEmpty();
+    guardianResult.Should().NotBeNullOrEmpty();
+    signResult.Should().NotBeNullOrEmpty();
+
+    var createJson = JsonDocument.Parse(createResult);
+    createJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+
+    var guardianJson = JsonDocument.Parse(guardianResult);
+    guardianJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+
+    var signJson = JsonDocument.Parse(signResult);
+    signJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
+
+    _output.WriteLine("✅ Complete abstract account lifecycle works correctly");
+}
+
+[Fact]
+public void EnclaveLogic_AbstractAccountOperationsOnNonExistentAccount_ShouldFail()
+{
+    // Arrange
+    _enclave.Initialize();
+    var nonExistentAccount = "non-existent-account";
+
+    // Act & Assert
+    var guardianException = Assert.Throws<KeyNotFoundException>(() =>
+        _enclave.AddAbstractAccountGuardian(nonExistentAccount, "{}"));
+
+    var signException = Assert.Throws<KeyNotFoundException>(() =>
+        _enclave.SignAbstractAccountTransaction(nonExistentAccount, "{}"));
+
+    guardianException.Message.Should().Contain("not found");
+    signException.Message.Should().Contain("not found");
+    _output.WriteLine("✅ Operations on non-existent accounts properly fail");
+}
+
+#endregion
+
+#region Performance and Concurrency Tests
+
+[Fact]
+public async Task EnclaveLogic_ConcurrentOperations_ShouldBeThreadSafe()
+{
+    // Arrange
+    _enclave.Initialize();
+    const int concurrentTasks = 50;
+    const int operationsPerTask = 10;
+
+    // Act
+    var tasks = Enumerable.Range(0, concurrentTasks).Select(taskId =>
+        Task.Run(() =>
         {
-            // Arrange
-            _enclave.Initialize();
-            var key = "collision-test";
-            var data1 = Encoding.UTF8.GetBytes("First data");
-            var data2 = Encoding.UTF8.GetBytes("Second data");
-            var encKey = "encryption-key";
-
-            // Act
-            _enclave.StoreData(key, data1, encKey);
-            var retrieved1 = _enclave.RetrieveData(key, encKey);
-
-            _enclave.StoreData(key, data2, encKey); // Overwrite
-            var retrieved2 = _enclave.RetrieveData(key, encKey);
-
-            // Assert
-            retrieved1.Should().Equal(data1);
-            retrieved2.Should().Equal(data2);
-            retrieved2.Should().NotEqual(data1);
-            _output.WriteLine("✅ Storage key overwriting works correctly");
-        }
-
-        [Fact]
-        public void EnclaveLogic_StorageWithWrongKey_ShouldFail()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var storageKey = "protected-data";
-            var data = Encoding.UTF8.GetBytes("Sensitive information");
-            var correctKey = "correct-key";
-            var wrongKey = "wrong-key";
-
-            // Act
-            _enclave.StoreData(storageKey, data, correctKey);
-
-            // Assert
-            var exception = Assert.Throws<UnauthorizedAccessException>(() =>
-                _enclave.RetrieveData(storageKey, wrongKey));
-
-            _output.WriteLine("✅ Storage retrieval with wrong key properly fails");
-        }
-
-        #endregion
-
-        #region JavaScript Execution Logic Tests
-
-        [Theory]
-        [InlineData("function test() { return 42; }", "{}", "number")]
-        [InlineData("function test() { return 'hello'; }", "{}", "string")]
-        [InlineData("function test() { return [1,2,3]; }", "{}", "array")]
-        [InlineData("function add(a, b) { return a + b; }", """{"a": 5, "b": 7}""", "math")]
-        public void EnclaveLogic_JavaScriptExecution_ShouldHandleVariousTypes(
-            string jsCode, string args, string testType)
-        {
-            // Arrange
-            _enclave.Initialize();
-
-            // Act
-            var result = _enclave.ExecuteJavaScript(jsCode, args);
-
-            // Assert
-            result.Should().NotBeNullOrEmpty();
-            var resultJson = JsonDocument.Parse(result);
-            resultJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-            _output.WriteLine($"✅ JavaScript execution works for {testType} type");
-        }
-
-        [Fact]
-        public void EnclaveLogic_JavaScriptWithInvalidSyntax_ShouldHandleGracefully()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var invalidJs = "function test( { return 42; }"; // Missing closing parenthesis
-
-            // Act
-            var result = _enclave.ExecuteJavaScript(invalidJs, "{}");
-
-            // Assert
-            result.Should().NotBeNullOrEmpty();
-            // Should handle gracefully rather than crash
-            _output.WriteLine("✅ Invalid JavaScript syntax handled gracefully");
-        }
-
-        #endregion
-
-        #region AI/ML Logic Tests
-
-        [Fact]
-        public void EnclaveLogic_AIModelLifecycle_ShouldWorkEndToEnd()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var modelId = "comprehensive-test-model";
-            var trainingData = Enumerable.Range(1, 100).Select(i => (double)i).ToArray();
-            var testInput = new double[] { 50.5, 75.2, 25.8 };
-
-            // Act
-            var trainingResult = _enclave.TrainAIModel(modelId, "linear_regression", trainingData, "{}");
-            var (predictions, metadata) = _enclave.PredictWithAIModel(modelId, testInput);
-
-            // Assert
-            trainingResult.Should().NotBeNullOrEmpty();
-            predictions.Should().NotBeNull();
-            predictions.Length.Should().Be(testInput.Length);
-            metadata.Should().NotBeNullOrEmpty();
-
-            var trainingJson = JsonDocument.Parse(trainingResult);
-            trainingJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-
-            var metadataJson = JsonDocument.Parse(metadata);
-            metadataJson.RootElement.GetProperty("modelId").GetString().Should().Be(modelId);
-
-            _output.WriteLine("✅ Complete AI model lifecycle works correctly");
-        }
-
-        [Fact]
-        public void EnclaveLogic_PredictionWithoutTraining_ShouldFail()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var nonExistentModel = "non-existent-model";
-            var input = new double[] { 1.0, 2.0 };
-
-            // Act & Assert
-            var exception = Assert.Throws<KeyNotFoundException>(() =>
-                _enclave.PredictWithAIModel(nonExistentModel, input));
-
-            exception.Message.Should().Contain("not found");
-            _output.WriteLine("✅ Prediction without training properly fails");
-        }
-
-        #endregion
-
-        #region Abstract Account Logic Tests
-
-        [Fact]
-        public void EnclaveLogic_AbstractAccountWorkflow_ShouldSupportCompleteLifecycle()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var accountId = "comprehensive-account";
-            var accountData = """{"type": "test", "security": "high"}""";
-            var guardianData = """{"guardian": "test-guardian", "threshold": 2}""";
-            var transactionData = """{"to": "recipient", "amount": 100, "nonce": 1}""";
-
-            // Act
-            var createResult = _enclave.CreateAbstractAccount(accountId, accountData);
-            var guardianResult = _enclave.AddAbstractAccountGuardian(accountId, guardianData);
-            var signResult = _enclave.SignAbstractAccountTransaction(accountId, transactionData);
-
-            // Assert
-            createResult.Should().NotBeNullOrEmpty();
-            guardianResult.Should().NotBeNullOrEmpty();
-            signResult.Should().NotBeNullOrEmpty();
-
-            var createJson = JsonDocument.Parse(createResult);
-            createJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-
-            var guardianJson = JsonDocument.Parse(guardianResult);
-            guardianJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-
-            var signJson = JsonDocument.Parse(signResult);
-            signJson.RootElement.GetProperty("success").GetBoolean().Should().BeTrue();
-
-            _output.WriteLine("✅ Complete abstract account lifecycle works correctly");
-        }
-
-        [Fact]
-        public void EnclaveLogic_AbstractAccountOperationsOnNonExistentAccount_ShouldFail()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var nonExistentAccount = "non-existent-account";
-
-            // Act & Assert
-            var guardianException = Assert.Throws<KeyNotFoundException>(() =>
-                _enclave.AddAbstractAccountGuardian(nonExistentAccount, "{}"));
-
-            var signException = Assert.Throws<KeyNotFoundException>(() =>
-                _enclave.SignAbstractAccountTransaction(nonExistentAccount, "{}"));
-
-            guardianException.Message.Should().Contain("not found");
-            signException.Message.Should().Contain("not found");
-            _output.WriteLine("✅ Operations on non-existent accounts properly fail");
-        }
-
-        #endregion
-
-        #region Performance and Concurrency Tests
-
-        [Fact]
-        public async Task EnclaveLogic_ConcurrentOperations_ShouldBeThreadSafe()
-        {
-            // Arrange
-            _enclave.Initialize();
-            const int concurrentTasks = 50;
-            const int operationsPerTask = 10;
-
-            // Act
-            var tasks = Enumerable.Range(0, concurrentTasks).Select(taskId =>
-                Task.Run(() =>
+            var results = new List<bool>();
+            for (int i = 0; i < operationsPerTask; i++)
+            {
+                try
                 {
-                    var results = new List<bool>();
-                    for (int i = 0; i < operationsPerTask; i++)
-                    {
-                        try
-                        {
-                            var randomBytes = _enclave.GenerateRandomBytes(32);
-                            var key = _enclave.GenerateRandomBytes(32);
-                            var encrypted = _enclave.Encrypt(randomBytes, key);
-                            var decrypted = _enclave.Decrypt(encrypted, key);
-                            var isValid = decrypted.SequenceEqual(randomBytes);
-                            results.Add(isValid);
-                        }
-                        catch (Exception ex)
-                        {
-                            _output.WriteLine($"Task {taskId} operation {i} failed: {ex.Message}");
-                            results.Add(false);
-                        }
-                    }
-                    return results.All(r => r);
-                }));
-
-            var taskResults = await Task.WhenAll(tasks);
-
-            // Assert
-            taskResults.Should().AllSatisfy(result => result.Should().BeTrue());
-            _output.WriteLine($"✅ {concurrentTasks} concurrent tasks with {operationsPerTask} operations each completed successfully");
-        }
-
-        [Fact]
-        public void EnclaveLogic_LargeDataOperations_ShouldHandleEfficiently()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var sizes = new[] { 1024, 4096, 16384, 65536, 262144 }; // 1KB to 256KB
-
-            foreach (var size in sizes)
-            {
-                var startTime = DateTime.UtcNow;
-
-                // Act
-                var largeData = _enclave.GenerateRandomBytes(size);
-                var key = _enclave.GenerateRandomBytes(32);
-                var encrypted = _enclave.Encrypt(largeData, key);
-                var decrypted = _enclave.Decrypt(encrypted, key);
-
-                var storageKey = $"large-data-{size}";
-                _enclave.StoreData(storageKey, largeData, "large-key");
-                var retrieved = _enclave.RetrieveData(storageKey, "large-key");
-
-                var endTime = DateTime.UtcNow;
-                var duration = endTime - startTime;
-
-                // Assert
-                decrypted.Should().Equal(largeData);
-                retrieved.Should().Equal(largeData);
-                duration.TotalSeconds.Should().BeLessThan(5, $"Operations on {size} bytes should complete within 5 seconds");
-
-                _output.WriteLine($"✅ Large data operations ({size} bytes) completed in {duration.TotalMilliseconds:F2}ms");
+                    var randomBytes = _enclave.GenerateRandomBytes(32);
+                    var key = _enclave.GenerateRandomBytes(32);
+                    var encrypted = _enclave.Encrypt(randomBytes, key);
+                    var decrypted = _enclave.Decrypt(encrypted, key);
+                    var isValid = decrypted.SequenceEqual(randomBytes);
+                    results.Add(isValid);
+                }
+                catch (Exception ex)
+                {
+                    _output.WriteLine($"Task {taskId} operation {i} failed: {ex.Message}");
+                    results.Add(false);
+                }
             }
-        }
+            return results.All(r => r);
+        }));
 
-        #endregion
+    var taskResults = await Task.WhenAll(tasks);
 
-        #region Error Handling and Edge Cases
+    // Assert
+    taskResults.Should().AllSatisfy(result => result.Should().BeTrue());
+    _output.WriteLine($"✅ {concurrentTasks} concurrent tasks with {operationsPerTask} operations each completed successfully");
+}
 
-        [Theory]
-        [InlineData(null!, "test-data")]
-        [InlineData("test-key", null!)]
-        [InlineData("", "test-data")]
-        [InlineData("test-key", "")]
-        public void EnclaveLogic_SecureStorageWithInvalidInputs_ShouldThrowAppropriateExceptions(
-            string? storageKey, string? encryptionKey)
-        {
-            // Arrange
-            _enclave.Initialize();
-            var data = Encoding.UTF8.GetBytes("test data");
+[Fact]
+public void EnclaveLogic_LargeDataOperations_ShouldHandleEfficiently()
+{
+    // Arrange
+    _enclave.Initialize();
+    var sizes = new[] { 1024, 4096, 16384, 65536, 262144 }; // 1KB to 256KB
 
-            // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() =>
-                _enclave.StoreData(storageKey!, data, encryptionKey!));
+    foreach (var size in sizes)
+    {
+        var startTime = DateTime.UtcNow;
 
-            exception.Message.Should().Contain("cannot be null or empty");
-            _output.WriteLine($"✅ Invalid storage inputs properly rejected: key='{storageKey ?? "null"}', encKey='{encryptionKey ?? "null"}'");
-        }
+        // Act
+        var largeData = _enclave.GenerateRandomBytes(size);
+        var key = _enclave.GenerateRandomBytes(32);
+        var encrypted = _enclave.Encrypt(largeData, key);
+        var decrypted = _enclave.Decrypt(encrypted, key);
 
-        [Fact]
-        public void EnclaveLogic_CryptographicOperationsWithNullInputs_ShouldThrowExceptions()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var validData = new byte[] { 1, 2, 3 };
-            var validKey = new byte[] { 4, 5, 6 };
+        var storageKey = $"large-data-{size}";
+        _enclave.StoreData(storageKey, largeData, "large-key");
+        var retrieved = _enclave.RetrieveData(storageKey, "large-key");
 
-            // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => _enclave.Encrypt(null!, validKey));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Encrypt(validData, null!));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Decrypt(null!, validKey));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Decrypt(validData, null!));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Sign(null!, validKey));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Sign(validData, null!));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Verify(null!, validData, validKey));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Verify(validData, null!, validKey));
-            Assert.Throws<ArgumentNullException>(() => _enclave.Verify(validData, validData, null!));
+        var endTime = DateTime.UtcNow;
+        var duration = endTime - startTime;
 
-            _output.WriteLine("✅ Null input validation works correctly for all cryptographic operations");
-        }
+        // Assert
+        decrypted.Should().Equal(largeData);
+        retrieved.Should().Equal(largeData);
+        duration.TotalSeconds.Should().BeLessThan(5, $"Operations on {size} bytes should complete within 5 seconds");
 
-        #endregion
+        _output.WriteLine($"✅ Large data operations ({size} bytes) completed in {duration.TotalMilliseconds:F2}ms");
+    }
+}
 
-        #region SGX-Specific Features Tests
+#endregion
 
-        [Fact]
-        public void EnclaveLogic_AttestationReportStructure_ShouldBeValid()
-        {
-            // Arrange
-            _enclave.Initialize();
+#region Error Handling and Edge Cases
 
-            // Act
-            var attestationReport = _enclave.GetAttestationReport();
+[Theory]
+[InlineData(null!, "test-data")]
+[InlineData("test-key", null!)]
+[InlineData("", "test-data")]
+[InlineData("test-key", "")]
+public void EnclaveLogic_SecureStorageWithInvalidInputs_ShouldThrowAppropriateExceptions(
+    string? storageKey, string? encryptionKey)
+{
+    // Arrange
+    _enclave.Initialize();
+    var data = Encoding.UTF8.GetBytes("test data");
 
-            // Assert
-            attestationReport.Should().NotBeNullOrEmpty();
-            var reportJson = JsonDocument.Parse(attestationReport);
+    // Act & Assert
+    var exception = Assert.Throws<ArgumentException>(() =>
+        _enclave.StoreData(storageKey!, data, encryptionKey!));
 
-            // Verify required SGX report fields
-            reportJson.RootElement.TryGetProperty("version", out _).Should().BeTrue();
-            reportJson.RootElement.TryGetProperty("mr_enclave", out _).Should().BeTrue();
-            reportJson.RootElement.TryGetProperty("mr_signer", out _).Should().BeTrue();
-            reportJson.RootElement.TryGetProperty("simulation_mode", out _).Should().BeTrue();
-            reportJson.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
-            reportJson.RootElement.TryGetProperty("signature", out _).Should().BeTrue();
+    exception.Message.Should().Contain("cannot be null or empty");
+    _output.WriteLine($"✅ Invalid storage inputs properly rejected: key='{storageKey ?? "null"}', encKey='{encryptionKey ?? "null"}'");
+}
 
-            reportJson.RootElement.GetProperty("simulation_mode").GetBoolean().Should().BeTrue();
-            _output.WriteLine("✅ Attestation report has valid SGX structure");
-        }
+[Fact]
+public void EnclaveLogic_CryptographicOperationsWithNullInputs_ShouldThrowExceptions()
+{
+    // Arrange
+    _enclave.Initialize();
+    var validData = new byte[] { 1, 2, 3 };
+    var validKey = new byte[] { 4, 5, 6 };
 
-        [Fact]
-        public void EnclaveLogic_DataSealing_ShouldBeReversible()
-        {
-            // Arrange
-            _enclave.Initialize();
-            var testDataSets = new[]
-            {
+    // Act & Assert
+    Assert.Throws<ArgumentNullException>(() => _enclave.Encrypt(null!, validKey));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Encrypt(validData, null!));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Decrypt(null!, validKey));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Decrypt(validData, null!));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Sign(null!, validKey));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Sign(validData, null!));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Verify(null!, validData, validKey));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Verify(validData, null!, validKey));
+    Assert.Throws<ArgumentNullException>(() => _enclave.Verify(validData, validData, null!));
+
+    _output.WriteLine("✅ Null input validation works correctly for all cryptographic operations");
+}
+
+#endregion
+
+#region SGX-Specific Features Tests
+
+[Fact]
+public void EnclaveLogic_AttestationReportStructure_ShouldBeValid()
+{
+    // Arrange
+    _enclave.Initialize();
+
+    // Act
+    var attestationReport = _enclave.GetAttestationReport();
+
+    // Assert
+    attestationReport.Should().NotBeNullOrEmpty();
+    var reportJson = JsonDocument.Parse(attestationReport);
+
+    // Verify required SGX report fields
+    reportJson.RootElement.TryGetProperty("version", out _).Should().BeTrue();
+    reportJson.RootElement.TryGetProperty("mr_enclave", out _).Should().BeTrue();
+    reportJson.RootElement.TryGetProperty("mr_signer", out _).Should().BeTrue();
+    reportJson.RootElement.TryGetProperty("simulation_mode", out _).Should().BeTrue();
+    reportJson.RootElement.TryGetProperty("timestamp", out _).Should().BeTrue();
+    reportJson.RootElement.TryGetProperty("signature", out _).Should().BeTrue();
+
+    reportJson.RootElement.GetProperty("simulation_mode").GetBoolean().Should().BeTrue();
+    _output.WriteLine("✅ Attestation report has valid SGX structure");
+}
+
+[Fact]
+public void EnclaveLogic_DataSealing_ShouldBeReversible()
+{
+    // Arrange
+    _enclave.Initialize();
+    var testDataSets = new[]
+    {
                 new byte[] { },
                 new byte[] { 0x42 },
                 Encoding.UTF8.GetBytes("Hello, SGX!"),
                 _enclave.GenerateRandomBytes(1024)
             };
 
-            foreach (var originalData in testDataSets)
-            {
-                // Act
-                var sealedData = _enclave.SealData(originalData);
-                var unsealedData = _enclave.UnsealData(sealedData);
+    foreach (var originalData in testDataSets)
+    {
+        // Act
+        var sealedData = _enclave.SealData(originalData);
+        var unsealedData = _enclave.UnsealData(sealedData);
 
-                // Assert
-                unsealedData.Should().Equal(originalData);
-                if (originalData.Length > 0)
-                {
-                    sealedData.Should().NotEqual(originalData);
-                    sealedData.Length.Should().BeGreaterThan(originalData.Length);
-                }
-
-                _output.WriteLine($"✅ Data sealing/unsealing works for {originalData.Length} bytes");
-            }
-        }
-
-        [Fact]
-        public void EnclaveLogic_TrustedTime_ShouldBeMonotonic()
+        // Assert
+        unsealedData.Should().Equal(originalData);
+        if (originalData.Length > 0)
         {
-            // Arrange
-            _enclave.Initialize();
-            var timestamps = new List<long>();
-
-            // Act
-            for (int i = 0; i < 10; i++)
-            {
-                timestamps.Add(_enclave.GetTrustedTime());
-                System.Threading.Thread.Sleep(10); // Small delay
-            }
-
-            // Assert
-            for (int i = 1; i < timestamps.Count; i++)
-            {
-                timestamps[i].Should().BeGreaterThanOrEqualTo(timestamps[i - 1],
-                    "Trusted time should be monotonic");
-            }
-
-            var timeSpan = timestamps.Last() - timestamps.First();
-            timeSpan.Should().BeGreaterThan(0, "Time should advance");
-            _output.WriteLine($"✅ Trusted time is monotonic (advanced {timeSpan}ms over 10 calls)");
+            sealedData.Should().NotEqual(originalData);
+            sealedData.Length.Should().BeGreaterThan(originalData.Length);
         }
+
+        _output.WriteLine($"✅ Data sealing/unsealing works for {originalData.Length} bytes");
+    }
+}
+
+[Fact]
+public void EnclaveLogic_TrustedTime_ShouldBeMonotonic()
+{
+    // Arrange
+    _enclave.Initialize();
+    var timestamps = new List<long>();
+
+    // Act
+    for (int i = 0; i < 10; i++)
+    {
+        timestamps.Add(_enclave.GetTrustedTime());
+        System.Threading.Thread.Sleep(10); // Small delay
+    }
+
+    // Assert
+    for (int i = 1; i < timestamps.Count; i++)
+    {
+        timestamps[i].Should().BeGreaterThanOrEqualTo(timestamps[i - 1],
+            "Trusted time should be monotonic");
+    }
+
+    var timeSpan = timestamps.Last() - timestamps.First();
+    timeSpan.Should().BeGreaterThan(0, "Time should advance");
+    _output.WriteLine($"✅ Trusted time is monotonic (advanced {timeSpan}ms over 10 calls)");
+}
 
         #endregion
     }

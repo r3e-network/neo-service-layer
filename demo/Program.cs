@@ -1,6 +1,11 @@
 using System;
 using System.Security.Cryptography;
 using System.Text;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Demo
 {
@@ -32,7 +37,6 @@ namespace NeoServiceLayer.Demo
             Console.WriteLine("1. PBKDF2 Key Derivation (600,000 iterations - OWASP 2023 recommendation):");
             
             // Use PBKDF2 with 600,000 iterations as implemented in the polished project
-            using (var pbkdf2 = new Rfc2898DeriveBytes(
                 masterPassword, 
                 salt, 
                 600000, // 600k iterations - industry standard for 2023+

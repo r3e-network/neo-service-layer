@@ -1,20 +1,28 @@
-﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.EventSubscription.Models;
 using NeoServiceLayer.Tee.Host.Services;
+using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
+using System.Collections.Concurrent;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.EventSubscription;
 
 /// <summary>
 /// Core implementation of the Event Subscription service.
 /// </summary>
-public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IEventSubscriptionService
+public partial class EventSubscriptionService : ServiceFramework.EnclaveBlockchainServiceBase, IEventSubscriptionService
 {
     private new readonly IEnclaveManager _enclaveManager;
-    private readonly IServiceConfiguration _configuration;
+    private readonly CoreConfig _configuration;
     private readonly Dictionary<string, EventSubscription> _subscriptionCache = new();
     private readonly Dictionary<string, List<EventData>> _eventCache = new();
     private readonly ConcurrentDictionary<string, EventSubscription> _subscriptions = new();
@@ -38,7 +46,7 @@ public partial class EventSubscriptionService : EnclaveBlockchainServiceBase, IE
     /// <param name="serviceProvider">The service provider.</param>
     public EventSubscriptionService(
         IEnclaveManager enclaveManager,
-        IServiceConfiguration configuration,
+        CoreConfig configuration,
         ILogger<EventSubscriptionService> logger,
         IServiceProvider? serviceProvider = null)
         : base("EventSubscription", "Event Subscription Service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX })

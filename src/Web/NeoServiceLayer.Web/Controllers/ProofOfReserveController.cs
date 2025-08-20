@@ -1,7 +1,15 @@
-﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Authorization;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.ProofOfReserve;
+using NeoServiceLayer.Services.ProofOfReserve.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using Microsoft.Extensions.Logging;
+
 
 namespace NeoServiceLayer.Web.Controllers;
 
@@ -124,7 +132,7 @@ public class ProofOfReserveController : BaseApiController
     /// <response code="500">Proof generation failed.</response>
     [HttpPost("generate-proof/{assetId}/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ProofOfReserve>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Services.ProofOfReserve.Models.ProofOfReserve>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]
@@ -246,7 +254,7 @@ public class ProofOfReserveController : BaseApiController
     /// <response code="401">Unauthorized access.</response>
     [HttpGet("registered-assets/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<IEnumerable<MonitoredAsset>>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<IEnumerable<NeoServiceLayer.Services.ProofOfReserve.Models.MonitoredAsset>>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     public async Task<IActionResult> GetRegisteredAssets([FromRoute] string blockchainType)
@@ -286,7 +294,7 @@ public class ProofOfReserveController : BaseApiController
     /// <response code="404">Asset not found.</response>
     [HttpGet("reserve-history/{assetId}/{blockchainType}")]
     [Authorize(Roles = "Admin,ServiceUser")]
-    [ProducesResponseType(typeof(ApiResponse<ReserveSnapshot[]>), 200)]
+    [ProducesResponseType(typeof(ApiResponse<NeoServiceLayer.Services.ProofOfReserve.Models.ReserveSnapshot[]>), 200)]
     [ProducesResponseType(typeof(ApiResponse<object>), 400)]
     [ProducesResponseType(typeof(ApiResponse<object>), 401)]
     [ProducesResponseType(typeof(ApiResponse<object>), 404)]

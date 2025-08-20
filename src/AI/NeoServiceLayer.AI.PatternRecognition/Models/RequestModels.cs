@@ -1,11 +1,19 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Models;
 
+// PatternAnalysisRequest moved to PatternTypes.cs to avoid duplication
+
 /// <summary>
-/// Represents a pattern analysis request.
+/// Represents an extended pattern analysis request with model ID.
 /// </summary>
-public class PatternAnalysisRequest
+public class ExtendedPatternAnalysisRequest
 {
     /// <summary>
     /// Gets or sets the model ID to use for analysis.
@@ -60,6 +68,16 @@ public class AnomalyDetectionRequest
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the detection threshold.
+    /// </summary>
+    public double Threshold { get; set; } = 0.8;
+    
+    /// <summary>
+    /// Gets or sets the data dictionary (for compatibility with Core models).
+    /// </summary>
+    public Dictionary<string, object> Data { get; set; } = new();
 }
 
 /// <summary>
@@ -78,6 +96,15 @@ public class ClassificationRequest
     /// </summary>
     [Required]
     public Dictionary<string, object> InputData { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the data alias for InputData.
+    /// </summary>
+    public Dictionary<string, object> Data 
+    { 
+        get => InputData;
+        set => InputData = value;
+    }
 
     /// <summary>
     /// Gets or sets the classification parameters.
@@ -85,9 +112,19 @@ public class ClassificationRequest
     public Dictionary<string, object> Parameters { get; set; } = new();
 
     /// <summary>
+    /// Gets or sets the algorithm to use.
+    /// </summary>
+    public string Algorithm { get; set; } = string.Empty;
+
+    /// <summary>
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the feature names for the input data.
+    /// </summary>
+    public string[] FeatureNames { get; set; } = Array.Empty<string>();
 }
 
 /// <summary>
@@ -224,6 +261,11 @@ public class BehaviorAnalysisRequest
     /// Gets or sets the analysis period.
     /// </summary>
     public TimeRange AnalysisPeriod { get; set; } = new();
+    
+    /// <summary>
+    /// Gets or sets the behavior data for analysis.
+    /// </summary>
+    public double[]? BehaviorData { get; set; }
 }
 
 /// <summary>
@@ -361,6 +403,30 @@ public class FraudDetectionRequest
         get => RecipientAddress;
         set => RecipientAddress = value;
     }
+    
+    /// <summary>
+    /// Gets or sets the sensitivity level for detection.
+    /// </summary>
+    public DetectionSensitivity Sensitivity { get; set; } = DetectionSensitivity.Standard;
+    
+    /// <summary>
+    /// Gets or sets whether to include historical analysis.
+    /// </summary>
+    public bool IncludeHistoricalAnalysis { get; set; } = false;
+    
+    /// <summary>
+    /// Gets or sets the data (alias for TransactionData).
+    /// </summary>
+    public Dictionary<string, object> Data
+    {
+        get => TransactionData;
+        set => TransactionData = value;
+    }
+    
+    /// <summary>
+    /// Gets or sets the model ID to use for detection.
+    /// </summary>
+    public string ModelId { get; set; } = string.Empty;
 }
 
 /// <summary>

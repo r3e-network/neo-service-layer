@@ -1,7 +1,15 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Storage;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.Services.Health.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Text.Json;
+
 
 namespace NeoServiceLayer.Services.Health.Storage;
 
@@ -11,7 +19,7 @@ namespace NeoServiceLayer.Services.Health.Storage;
 public class HealthStorageHelper
 {
     private readonly IStorageService _storageService;
-    private readonly ILogger<HealthStorageHelper> _logger;
+    private readonly ILogger<HealthStorageHelper> Logger;
 
     // Storage keys
     private const string NodesStorageKey = "health:nodes";
@@ -26,7 +34,7 @@ public class HealthStorageHelper
     public HealthStorageHelper(IStorageService storageService, ILogger<HealthStorageHelper> logger)
     {
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
-        _logger = logger ?? throw new ArgumentNullException(nameof(logger));
+        Logger = logger ?? throw new ArgumentNullException(nameof(logger));
     }
 
     /// <summary>
@@ -47,7 +55,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load monitored nodes from storage");
+            Logger.LogWarning(ex, "Could not load monitored nodes from storage");
         }
 
         return new Dictionary<string, NodeHealthReport>();
@@ -71,7 +79,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load active alerts from storage");
+            Logger.LogWarning(ex, "Could not load active alerts from storage");
         }
 
         return new Dictionary<string, HealthAlert>();
@@ -95,7 +103,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogWarning(ex, "Could not load node thresholds from storage");
+            Logger.LogWarning(ex, "Could not load node thresholds from storage");
         }
 
         return new Dictionary<string, HealthThreshold>();
@@ -122,7 +130,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting monitored nodes");
+            Logger.LogError(ex, "Error persisting monitored nodes");
         }
     }
 
@@ -147,7 +155,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting active alerts");
+            Logger.LogError(ex, "Error persisting active alerts");
         }
     }
 
@@ -172,7 +180,7 @@ public class HealthStorageHelper
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error persisting node thresholds");
+            Logger.LogError(ex, "Error persisting node thresholds");
         }
     }
 }

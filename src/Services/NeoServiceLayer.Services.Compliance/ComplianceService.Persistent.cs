@@ -1,8 +1,13 @@
-﻿using System.Collections.Concurrent;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.Services.Compliance.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Compliance;
 
@@ -419,7 +424,7 @@ public partial class ComplianceService
                     if (data != null)
                     {
                         var violation = JsonSerializer.Deserialize<ComplianceViolation>(data);
-                        if (violation != null && violation.Status == ViolationStatus.Open)
+                        if (violation != null && violation.Status == ViolationStatus.Open.ToString())
                         {
                             _activeViolations[violation.ViolationId] = violation;
                             restoredCount++;

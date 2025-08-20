@@ -1,28 +1,140 @@
-﻿using FluentAssertions;
+extern alias EnclaveStorageAlias;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.AbstractAccount;
 using NeoServiceLayer.Services.AbstractAccount.Models;
 using NeoServiceLayer.TestInfrastructure;
+using NeoServiceLayer.Tee.Host.Services;
+using EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage;
+using EnclaveModels = EnclaveStorageAlias::NeoServiceLayer.Services.EnclaveStorage.Models;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using FluentAssertions;
+
 
 namespace NeoServiceLayer.Services.AbstractAccount.Tests;
 
 public class AbstractAccountServiceTests : TestBase
 {
     private readonly Mock<ILogger<AbstractAccountService>> _loggerMock;
+    private readonly Mock<IEnclaveManager> _enclaveManagerMock;
+    private readonly Mock<IEnclaveStorageService> _enclaveStorageMock;
     private readonly AbstractAccountService _service;
 
     public AbstractAccountServiceTests()
     {
         _loggerMock = new Mock<ILogger<AbstractAccountService>>();
-        _service = new AbstractAccountService(_loggerMock.Object, MockEnclaveManager.Object);
+        _enclaveManagerMock = new Mock<IEnclaveManager>();
+        _enclaveStorageMock = new Mock<IEnclaveStorageService>();
+        
+        // Setup enclave manager
+        SetupEnclaveManager();
+        
+        // Setup enclave storage
+        SetupEnclaveStorage();
+        
+        _service = new AbstractAccountService(_loggerMock.Object, _enclaveManagerMock.Object, _enclaveStorageMock.Object);
 
         // Initialize the service to ensure enclave is ready
         InitializeServiceAsync().GetAwaiter().GetResult();
     }
+    
+    private void SetupEnclaveManager()
+    {
+        // Setup enclave initialization
+        _enclaveManagerMock
+            .Setup(x => x.InitializeAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .Returns(Task.CompletedTask);
+            
+        _enclaveManagerMock
+            .Setup(x => x.InitializeAsync(null, default))
+            .Returns(Task.CompletedTask);
+        
+        _enclaveManagerMock
+            .Setup(x => x.InitializeEnclaveAsync())
+            .ReturnsAsync(true);
+            
+        _enclaveManagerMock
+            .Setup(x => x.IsInitialized)
+            .Returns(true);
+        
+        // Setup ExecuteJavaScriptAsync with two string parameters (template and paramsJson)
+        _enclaveManagerMock
+            .Setup(x => x.ExecuteJavaScriptAsync(It.IsAny<string>(), It.IsAny<string>()))
+            .ReturnsAsync((string template, string paramsJson) => 
+            {
+                // Return success for abstract account operations
+                return "{\"success\": true, \"accountId\": \"test-account-id\", \"address\": \"0xtest123\"}";
+            });
+            
+        // Setup CreateAbstractAccountAsync method
+        _enclaveManagerMock
+            .Setup(x => x.CreateAbstractAccountAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((string accountId, string accountData, CancellationToken ct) =>
+            {
+                // Return a valid account creation response
+                return System.Text.Json.JsonSerializer.Serialize(new
+                {
+                    success = true,
+                    accountAddress = "0xtest123456789",
+                    masterPublicKey = "03c663ba46afa8349f020eb9e8f9e1dc1c8e877b9d239e9110d1fdd7152e7c59dd",
+                    transactionHash = "0xtxhash123456"
+                });
+            });
+            
+        // Setup other abstract account operations
+        _enclaveManagerMock
+            .Setup(x => x.AddGuardianAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"success\": true, \"transactionHash\": \"0xguardian123\"}");
+            
+        _enclaveManagerMock
+            .Setup(x => x.ExecuteTransactionAsync(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync("{\"success\": true, \"transactionHash\": \"0xtransaction123\"}");
+    }
 
+    private void SetupEnclaveStorage()
+    {
+        // Setup enclave storage mock
+        _enclaveStorageMock
+            .Setup(x => x.InitializeAsync())
+            .ReturnsAsync(true);
+            
+        _enclaveStorageMock
+            .Setup(x => x.IsInitialized)
+            .Returns(true);
+            
+        // Setup SealDataAsync
+        _enclaveStorageMock
+            .Setup(x => x.SealDataAsync(It.IsAny<EnclaveModels.SealDataRequest>(), It.IsAny<BlockchainType>()))
+            .ReturnsAsync((EnclaveModels.SealDataRequest request, BlockchainType blockchain) =>
+            {
+                return new EnclaveModels.SealDataResult
+                {
+                    Success = true,
+                    SealedData = new byte[] { 1, 2, 3, 4, 5 },
+                    Metadata = new Dictionary<string, string> { ["sealed"] = "true" }
+                };
+            });
+            
+        // Setup UnsealDataAsync
+        _enclaveStorageMock
+            .Setup(x => x.UnsealDataAsync(It.IsAny<string>(), It.IsAny<BlockchainType>()))
+            .ReturnsAsync((string key, BlockchainType blockchain) =>
+            {
+                return new EnclaveModels.UnsealDataResult
+                {
+                    Success = true,
+                    Data = System.Text.Encoding.UTF8.GetBytes("{}"),
+                    Metadata = new Dictionary<string, string> { ["unsealed"] = "true" }
+                };
+            });
+    }
+    
     private async Task InitializeServiceAsync()
     {
         await _service.InitializeAsync();

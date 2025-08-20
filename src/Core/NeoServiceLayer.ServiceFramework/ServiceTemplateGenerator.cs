@@ -1,4 +1,12 @@
-﻿using System.Text;
+using NeoServiceLayer.Core;
+using NeoServiceLayer.Core.Configuration;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.ServiceFramework;
 
@@ -55,6 +63,7 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
     {
         var sb = new StringBuilder();
         sb.AppendLine("using NeoServiceLayer.Core;");
+        sb.AppendLine("using NeoServiceLayer.Core.Configuration;");
         sb.AppendLine();
         sb.AppendLine($"namespace {@namespace};");
         sb.AppendLine();
@@ -104,6 +113,7 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         var sb = new StringBuilder();
         sb.AppendLine("using Microsoft.Extensions.Logging;");
         sb.AppendLine("using NeoServiceLayer.Core;");
+        sb.AppendLine("using NeoServiceLayer.Core.Configuration;");
         sb.AppendLine("using NeoServiceLayer.ServiceFramework;");
 
         if (includeEnclave)
@@ -873,6 +883,7 @@ public class ServiceTemplateGenerator : IServiceTemplateGenerator
         sb.AppendLine("using Microsoft.Extensions.Logging;");
         sb.AppendLine("using Moq;");
         sb.AppendLine("using NeoServiceLayer.Core;");
+        sb.AppendLine("using NeoServiceLayer.Core.Configuration;");
         sb.AppendLine("using NeoServiceLayer.ServiceFramework;");
 
         if (includeEnclave)

@@ -7,8 +7,11 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Core.Events;
+using NeoServiceLayer.Infrastructure.CQRS.Events;
 using Polly;
-using Polly.CircuitBreaker;
+using System.ComponentModel.DataAnnotations;
+using System.Linq;
+
 
 namespace NeoServiceLayer.Infrastructure.CQRS
 {
@@ -35,37 +38,19 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             _eventBus = eventBus ?? throw new ArgumentNullException(nameof(eventBus));
             _metrics = metrics ?? throw new ArgumentNullException(nameof(metrics));
             _handlerRegistry = new Dictionary<Type, Type>();
-            
-            // Configure resilience policy with circuit breaker and retry
-            _resiliencePolicy = Policy
-                .Handle<Exception>(ex => !(ex is ValidationException))
-                .CircuitBreakerAsync(
-                    handledEventsAllowedBeforeBreaking: 5,
-                    durationOfBreak: TimeSpan.FromSeconds(30),
-                    onBreak: (exception, duration) =>
+
+            // Configure resilience policy with retry (Polly v8 compatible)
+            _resiliencePolicy = Policy.Handle<Exception>(ex => !(ex is ValidationException))
+                .WaitAndRetryAsync(
+                    retryCount: 3,
+                    sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
+                    onRetry: (outcome, timespan, retryCount, context) =>
                     {
-                        _logger.LogError(exception, 
-                            "Circuit breaker opened for {Duration} seconds", duration.TotalSeconds);
-                        _metrics.RecordCircuitBreakerOpen();
-                    },
-                    onReset: () =>
-                    {
-                        _logger.LogInformation("Circuit breaker reset");
-                        _metrics.RecordCircuitBreakerClose();
-                    })
-                .WrapAsync(
-                    Policy
-                        .Handle<Exception>(ex => !(ex is ValidationException))
-                        .WaitAndRetryAsync(
-                            retryCount: 3,
-                            sleepDurationProvider: retryAttempt => TimeSpan.FromSeconds(Math.Pow(2, retryAttempt)),
-                            onRetry: (outcome, timespan, retryCount, context) =>
-                            {
-                                _logger.LogWarning(
-                                    "Retry {RetryCount} after {Delay}ms for command execution",
-                                    retryCount, timespan.TotalMilliseconds);
-                                _metrics.RecordRetry();
-                            }));
+                        _logger.LogWarning(
+                            "Retry {RetryCount} after {Delay}ms for command execution",
+                            retryCount, timespan.TotalMilliseconds);
+                        _metrics.RecordRetry();
+                    });
         }
 
         public async Task SendAsync(ICommand command, CancellationToken cancellationToken = default)
@@ -75,7 +60,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
 
             var stopwatch = Stopwatch.StartNew();
             var commandType = command.GetType();
-            
+
             try
             {
                 _logger.LogInformation(
@@ -91,11 +76,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 }
 
                 // Execute with resilience policy
+                using var scope = _serviceProvider.CreateScope();
                 await _resiliencePolicy.ExecuteAsync(async (ct) =>
                 {
-                    using var scope = _serviceProvider.CreateScope();
                     var handler = scope.ServiceProvider.GetService(handlerType);
-                    
+
                     if (handler == null)
                     {
                         throw new HandlerNotFoundException(
@@ -121,11 +106,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS
 
                     // Publish command executed event
                     await PublishCommandExecutedEventAsync(command, stopwatch.ElapsedMilliseconds, ct);
-                    
+
                 }, cancellationToken);
 
                 _metrics.RecordCommandSuccess(commandType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogInformation(
                     "Command {CommandType} with ID {CommandId} executed successfully in {ElapsedMs}ms",
                     commandType.Name, command.CommandId, stopwatch.ElapsedMilliseconds);
@@ -133,19 +118,19 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             catch (Exception ex)
             {
                 _metrics.RecordCommandFailure(commandType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogError(ex,
                     "Failed to execute command {CommandType} with ID {CommandId}",
                     commandType.Name, command.CommandId);
-                    
+
                 await PublishCommandFailedEventAsync(command, ex, stopwatch.ElapsedMilliseconds, cancellationToken);
-                
+
                 throw;
             }
         }
 
         public async Task<TResult> SendAsync<TResult>(
-            ICommand<TResult> command, 
+            ICommand<TResult> command,
             CancellationToken cancellationToken = default)
         {
             if (command == null)
@@ -153,7 +138,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
 
             var stopwatch = Stopwatch.StartNew();
             var commandType = command.GetType();
-            
+
             try
             {
                 _logger.LogInformation(
@@ -169,11 +154,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 }
 
                 // Execute with resilience policy
+                using var scope = _serviceProvider.CreateScope();
                 var result = await _resiliencePolicy.ExecuteAsync(async (ct) =>
                 {
-                    using var scope = _serviceProvider.CreateScope();
                     var handler = scope.ServiceProvider.GetService(handlerType);
-                    
+
                     if (handler == null)
                     {
                         throw new HandlerNotFoundException(
@@ -200,21 +185,21 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                     // Get result from task
                     var taskType = task.GetType();
                     var resultProperty = taskType.GetProperty("Result");
-                    
+
                     // Await the task
                     await (Task)task;
-                    
+
                     var taskResult = resultProperty?.GetValue(task);
-                    
+
                     // Publish command executed event
                     await PublishCommandExecutedEventAsync(command, stopwatch.ElapsedMilliseconds, ct);
-                    
+
                     return (TResult)taskResult!;
-                    
+
                 }, cancellationToken);
 
                 _metrics.RecordCommandSuccess(commandType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogInformation(
                     "Command {CommandType} with ID {CommandId} executed successfully in {ElapsedMs}ms",
                     commandType.Name, command.CommandId, stopwatch.ElapsedMilliseconds);
@@ -224,13 +209,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             catch (Exception ex)
             {
                 _metrics.RecordCommandFailure(commandType.Name, stopwatch.ElapsedMilliseconds);
-                
+
                 _logger.LogError(ex,
                     "Failed to execute command {CommandType} with ID {CommandId}",
                     commandType.Name, command.CommandId);
-                    
+
                 await PublishCommandFailedEventAsync(command, ex, stopwatch.ElapsedMilliseconds, cancellationToken);
-                
+
                 throw;
             }
         }
@@ -244,7 +229,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
             }
 
             _handlerRegistry[commandType] = handlerType;
-            
+
             _logger.LogDebug(
                 "Registered handler {HandlerType} for command {CommandType}",
                 handlerType.Name, commandType.Name);
@@ -263,13 +248,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS
         }
 
         private async Task ValidateCommandAsync(
-            ICommand command, 
+            ICommand command,
             IServiceProvider serviceProvider,
             CancellationToken cancellationToken)
         {
             var validatorType = typeof(ICommandValidator<>).MakeGenericType(command.GetType());
             var validator = serviceProvider.GetService(validatorType);
-            
+
             if (validator != null)
             {
                 var validateMethod = validatorType.GetMethod("ValidateAsync");
@@ -277,7 +262,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
                 {
                     var validationTask = (Task<ValidationResult>?)validateMethod.Invoke(
                         validator, new object[] { command, cancellationToken });
-                    
+
                     if (validationTask != null)
                     {
                         var validationResult = await validationTask;
@@ -340,7 +325,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS
     public class HandlerNotFoundException : Exception
     {
         public HandlerNotFoundException(string message) : base(message) { }
-        public HandlerNotFoundException(string message, Exception innerException) 
+        public HandlerNotFoundException(string message, Exception innerException)
             : base(message, innerException) { }
     }
 }

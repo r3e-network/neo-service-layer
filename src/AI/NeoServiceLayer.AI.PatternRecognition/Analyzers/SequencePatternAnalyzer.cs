@@ -1,8 +1,12 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.AI.PatternRecognition.Models;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 {
@@ -27,7 +31,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            _logger.LogDebug("Analyzing sequence pattern with {Count} data points", request.Data.Length);
+            Logger.LogDebug("Analyzing sequence pattern with {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
 
@@ -87,7 +91,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             ArgumentNullException.ThrowIfNull(data);
 
-            _logger.LogInformation("Training sequence analyzer with {Count} samples", data.Samples.Count);
+            Logger.LogInformation("Training sequence analyzer with {Count} samples", data.Samples.Count);
 
             foreach (var sample in data.Samples)
             {

@@ -1,6 +1,187 @@
-﻿using System.ComponentModel.DataAnnotations;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.ComponentModel.DataAnnotations;
+
 
 namespace NeoServiceLayer.Services.Storage.Models;
+
+/// <summary>
+/// Sort direction enumeration.
+/// </summary>
+public enum SortDirection
+{
+    /// <summary>
+    /// Ascending sort order.
+    /// </summary>
+    Ascending,
+
+    /// <summary>
+    /// Descending sort order.
+    /// </summary>
+    Descending
+}
+
+/// <summary>
+/// Date time range for filtering operations.
+/// </summary>
+public class DateTimeRange
+{
+    /// <summary>
+    /// Gets or sets the start date and time.
+    /// </summary>
+    public DateTime? Start { get; set; }
+
+    /// <summary>
+    /// Gets or sets the end date and time.
+    /// </summary>
+    public DateTime? End { get; set; }
+
+    /// <summary>
+    /// Gets a value indicating whether this range is valid.
+    /// </summary>
+    public bool IsValid => !Start.HasValue || !End.HasValue || Start.Value <= End.Value;
+}
+
+/// <summary>
+/// Transaction isolation level enumeration.
+/// </summary>
+public enum TransactionIsolationLevel
+{
+    /// <summary>
+    /// Read uncommitted isolation level.
+    /// </summary>
+    ReadUncommitted,
+
+    /// <summary>
+    /// Read committed isolation level.
+    /// </summary>
+    ReadCommitted,
+
+    /// <summary>
+    /// Repeatable read isolation level.
+    /// </summary>
+    RepeatableRead,
+
+    /// <summary>
+    /// Serializable isolation level.
+    /// </summary>
+    Serializable
+}
+
+/// <summary>
+/// Statistics grouping enumeration.
+/// </summary>
+public enum StatisticsGrouping
+{
+    /// <summary>
+    /// All statistics combined.
+    /// </summary>
+    All,
+
+    /// <summary>
+    /// Group by hour.
+    /// </summary>
+    Hour,
+
+    /// <summary>
+    /// Group by day.
+    /// </summary>
+    Day,
+
+    /// <summary>
+    /// Group by week.
+    /// </summary>
+    Week,
+
+    /// <summary>
+    /// Group by month.
+    /// </summary>
+    Month,
+
+    /// <summary>
+    /// Group by year.
+    /// </summary>
+    Year
+}
+
+/// <summary>
+/// Storage usage information.
+/// </summary>
+public class StorageUsage
+{
+    /// <summary>
+    /// Gets or sets the total storage used in bytes.
+    /// </summary>
+    public long TotalBytesUsed { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total storage available in bytes.
+    /// </summary>
+    public long TotalBytesAvailable { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of stored items.
+    /// </summary>
+    public int ItemCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the storage usage by content type.
+    /// </summary>
+    public Dictionary<string, long> UsageByContentType { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the total number of items stored.
+    /// </summary>
+    public long TotalItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total size in bytes.
+    /// </summary>
+    public long TotalSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the storage usage by encryption status.
+    /// </summary>
+    public Dictionary<string, long> UsageByEncryption { get; set; } = new();
+
+    /// <summary>
+    /// Gets or sets the number of compressed items.
+    /// </summary>
+    public int CompressedItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of encrypted items.
+    /// </summary>
+    public int EncryptedItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of chunked items.
+    /// </summary>
+    public int ChunkedItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the available space in bytes.
+    /// </summary>
+    public long AvailableSpaceBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the used space in bytes.
+    /// </summary>
+    public long UsedSpaceBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the last updated timestamp.
+    /// </summary>
+    public DateTime LastUpdated { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets the percentage of storage used.
+    /// </summary>
+    public double UsagePercentage => TotalBytesAvailable > 0 ? (double)TotalBytesUsed / TotalBytesAvailable * 100 : 0;
+}
 
 /// <summary>
 /// Request to store data in the storage system.
@@ -192,6 +373,22 @@ public class SearchDataRequest
     /// Gets or sets the size range filter in bytes.
     /// </summary>
     public SizeRange? SizeRange { get; set; }
+}
+
+/// <summary>
+/// Represents a size range filter.
+/// </summary>
+public class SizeRange
+{
+    /// <summary>
+    /// Gets or sets the minimum size in bytes.
+    /// </summary>
+    public long? MinSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the maximum size in bytes.
+    /// </summary>
+    public long? MaxSize { get; set; }
 
     /// <summary>
     /// Gets or sets the page size for results.
@@ -358,4 +555,65 @@ public class RollbackTransactionRequest
     /// Gets or sets the reason for rollback.
     /// </summary>
     public string? Reason { get; set; }
+}
+
+/// <summary>
+/// Storage system statistics.
+/// </summary>
+public class StorageStatistics
+{
+    /// <summary>
+    /// Gets or sets the total number of stored items.
+    /// </summary>
+    public long TotalItems { get; set; }
+
+    /// <summary>
+    /// Gets or sets the total storage size in bytes.
+    /// </summary>
+    public long TotalSizeBytes { get; set; }
+
+    /// <summary>
+    /// Gets or sets the average item size in bytes.
+    /// </summary>
+    public double AverageItemSize { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cache hit ratio.
+    /// </summary>
+    public double CacheHitRatio { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of operations performed.
+    /// </summary>
+    public long OperationCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp when statistics were collected.
+    /// </summary>
+    public DateTime Timestamp { get; set; } = DateTime.UtcNow;
+
+    /// <summary>
+    /// Gets or sets the total number of requests.
+    /// </summary>
+    public long RequestCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of successful operations.
+    /// </summary>
+    public long SuccessCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of failed operations.
+    /// </summary>
+    public long FailureCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the timestamp of the last request.
+    /// </summary>
+    public DateTime LastRequestTime { get; set; }
+
+    /// <summary>
+    /// Gets or sets the cache hit rate as a percentage (0-100).
+    /// </summary>
+    public double CacheHitRate { get; set; }
 }

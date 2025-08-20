@@ -2,6 +2,12 @@ using System.Collections.Concurrent;
 using System.Runtime.InteropServices;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Tee.Enclave;
 
@@ -49,7 +55,7 @@ public partial class EnclaveWrapper : IEnclaveWrapper
         {
             int result = NativeOcclumEnclave.occlum_enclave_init();
             _initialized = result == 0;
-            
+
             if (_initialized)
             {
                 _logger.LogInformation("Occlum enclave initialized successfully");
@@ -58,7 +64,7 @@ public partial class EnclaveWrapper : IEnclaveWrapper
             {
                 _logger.LogError("Failed to initialize Occlum enclave with error code: {ErrorCode}", result);
             }
-            
+
             return _initialized;
         }
         catch (Exception ex)
@@ -141,7 +147,7 @@ public partial class EnclaveWrapper : IEnclaveWrapper
     public virtual string GetAttestationReport()
     {
         EnsureInitialized();
-        
+
         var attestationData = new
         {
             type = "occlum",
@@ -151,7 +157,7 @@ public partial class EnclaveWrapper : IEnclaveWrapper
             simulation_mode = true,
             attestation = "production_ready_occlum_attestation"
         };
-        
+
         return System.Text.Json.JsonSerializer.Serialize(attestationData);
     }
 
@@ -164,26 +170,26 @@ public partial class EnclaveWrapper : IEnclaveWrapper
     public virtual byte[] SealData(byte[] data)
     {
         EnsureInitialized();
-        
+
         if (data is null)
         {
             throw new ArgumentNullException(nameof(data));
         }
-        
+
         // For Occlum LibOS, implement proper sealing with encryption
         var sealed = new byte[data.Length + 32]; // 16 bytes prefix + 16 bytes MAC
         var prefix = Encoding.UTF8.GetBytes("OCCLUM_SEALED_V1");
-        
+
         // Copy prefix (16 bytes)
         Array.Copy(prefix, 0, sealed, 0, Math.Min(prefix.Length, 16));
-        
+
         // Copy data
         Array.Copy(data, 0, sealed, 16, data.Length);
-        
+
         // Add MAC/checksum (simplified for production compatibility)
         var checksum = System.Security.Cryptography.SHA256.HashData(data);
         Array.Copy(checksum, 0, sealed, 16 + data.Length, 16);
-        
+
         return sealed;
     }
 
@@ -196,22 +202,22 @@ public partial class EnclaveWrapper : IEnclaveWrapper
     public virtual byte[] UnsealData(byte[] sealedData)
     {
         EnsureInitialized();
-        
+
         if (sealedData is null)
         {
             throw new ArgumentNullException(nameof(sealedData));
         }
-        
+
         if (sealedData.Length < 32)
         {
             throw new ArgumentException("Invalid sealed data format - too short", nameof(sealedData));
         }
-        
+
         // Verify prefix
         var expectedPrefix = Encoding.UTF8.GetBytes("OCCLUM_SEALED_V1");
         var actualPrefix = new byte[16];
         Array.Copy(sealedData, 0, actualPrefix, 0, 16);
-        
+
         bool prefixMatch = true;
         for (int i = 0; i < Math.Min(expectedPrefix.Length, 16); i++)
         {
@@ -221,22 +227,22 @@ public partial class EnclaveWrapper : IEnclaveWrapper
                 break;
             }
         }
-        
+
         if (!prefixMatch)
         {
             throw new ArgumentException("Invalid sealed data format - wrong prefix", nameof(sealedData));
         }
-        
+
         // Extract data
         var dataLength = sealedData.Length - 32;
         var data = new byte[dataLength];
         Array.Copy(sealedData, 16, data, 0, dataLength);
-        
+
         // Verify MAC/checksum
         var expectedChecksum = System.Security.Cryptography.SHA256.HashData(data);
         var actualChecksum = new byte[16];
         Array.Copy(sealedData, 16 + dataLength, actualChecksum, 0, 16);
-        
+
         bool checksumMatch = true;
         for (int i = 0; i < 16; i++)
         {
@@ -246,12 +252,12 @@ public partial class EnclaveWrapper : IEnclaveWrapper
                 break;
             }
         }
-        
+
         if (!checksumMatch)
         {
             throw new ArgumentException("Invalid sealed data format - checksum mismatch", nameof(sealedData));
         }
-        
+
         return data;
     }
 
@@ -263,7 +269,7 @@ public partial class EnclaveWrapper : IEnclaveWrapper
     public virtual long GetTrustedTime()
     {
         EnsureInitialized();
-        
+
         // In production Occlum environment, this would query the trusted time source
         // For now, return system time with nanosecond precision for better accuracy
         return DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
@@ -459,4 +465,4 @@ public class EnclaveException : Exception
     public EnclaveException(string message, Exception innerException) : base(message, innerException)
     {
     }
-} 
+}

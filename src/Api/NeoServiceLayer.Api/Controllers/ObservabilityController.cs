@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -7,6 +6,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Api.Middleware;
 using NeoServiceLayer.Infrastructure.Observability.Logging;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Controllers
 {
@@ -26,6 +28,7 @@ namespace NeoServiceLayer.Api.Controllers
             ILogger<ObservabilityController> logger,
             PerformanceMetricsCollector metricsCollector,
             IStructuredLoggerFactory loggerFactory)
+            : base(logger)
         {
             _logger = logger;
             _metricsCollector = metricsCollector;

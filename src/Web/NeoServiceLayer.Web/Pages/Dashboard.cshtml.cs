@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -11,6 +10,10 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Web.Hubs;
 using NeoServiceLayer.Web.Models;
 using NeoServiceLayer.Web.Services;
+using System.Net.WebSockets;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Web.Pages
 {
@@ -261,11 +264,23 @@ namespace NeoServiceLayer.Web.Pages
             csv.AppendLine("Service,Status,ResponseTime,ErrorRate,LastCheck");
 
             // Add service data
-            if (data is dynamic exportData && exportData.ServiceStatuses != null)
+            dynamic exportData = data;
+            if (exportData != null)
             {
-                foreach (var service in exportData.ServiceStatuses)
+                try
                 {
-                    csv.AppendLine($"{service.Name},{service.Status},{service.ResponseTime},{service.ErrorRate},{service.LastCheck}");
+                    var serviceStatuses = exportData.ServiceStatuses;
+                    if (serviceStatuses != null)
+                    {
+                        foreach (var service in serviceStatuses)
+                        {
+                            csv.AppendLine($"{service.Name},{service.Status},{service.ResponseTime},{service.ErrorRate},{service.LastCheck}");
+                        }
+                    }
+                }
+                catch
+                {
+                    // If dynamic access fails, just return headers
                 }
             }
 

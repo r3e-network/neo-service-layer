@@ -1,8 +1,12 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.ServiceFramework;
+using NeoServiceLayer.AI.PatternRecognition.Models;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
 {
@@ -32,7 +36,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             ArgumentNullException.ThrowIfNull(request);
 
-            _logger.LogDebug("Analyzing for anomalies in {Count} data points", request.Data.Length);
+            Logger.LogDebug("Analyzing for anomalies in {Count} data points", request.Data.Length);
 
             var patterns = new List<DetectedPattern>();
 
@@ -68,7 +72,7 @@ namespace NeoServiceLayer.AI.PatternRecognition.Analyzers
         {
             ArgumentNullException.ThrowIfNull(data);
 
-            _logger.LogInformation("Training anomaly detector with {Count} samples", data.Samples.Count);
+            Logger.LogInformation("Training anomaly detector with {Count} samples", data.Samples.Count);
 
             // Build baseline models for each labeled category
             foreach (var sample in data.Samples)

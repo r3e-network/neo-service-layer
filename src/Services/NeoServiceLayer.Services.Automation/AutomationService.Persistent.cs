@@ -1,6 +1,13 @@
-﻿using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.Services.Automation.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System.Text.Json;
+using System;
+
 
 namespace NeoServiceLayer.Services.Automation;
 
@@ -83,7 +90,7 @@ public partial class AutomationService
                 Encrypt = true,
                 Compress = true,
                 TimeToLive = job.ExpiresAt.HasValue ? job.ExpiresAt.Value - DateTime.UtcNow : null,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AutomationJob",
                     ["JobId"] = job.Id,
@@ -206,7 +213,7 @@ public partial class AutomationService
 
         try
         {
-            var key = $"{EXECUTION_PREFIX}{jobId}:{execution.Id}";
+            var key = $"{EXECUTION_PREFIX}{jobId}:{execution.ExecutionId}";
             var data = JsonSerializer.SerializeToUtf8Bytes(execution);
 
             await _persistentStorage.StoreAsync(key, data, new StorageOptions
@@ -214,19 +221,19 @@ public partial class AutomationService
                 Encrypt = false,
                 Compress = true,
                 TimeToLive = TimeSpan.FromDays(30), // Keep execution history for 30 days
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "AutomationExecution",
                     ["JobId"] = jobId,
-                    ["ExecutionId"] = execution.Id,
+                    ["ExecutionId"] = execution.ExecutionId,
                     ["Status"] = execution.Status.ToString(),
-                    ["ExecutedAt"] = execution.ExecutedAt.ToString("O")
+                    ["ExecutedAt"] = execution.StartedAt.ToString("O")
                 }
             });
         }
         catch (Exception ex)
         {
-            Logger.LogError(ex, "Error persisting execution {ExecutionId} for job {JobId}", execution.Id, jobId);
+            Logger.LogError(ex, "Error persisting execution {ExecutionId} for job {JobId}", execution.ExecutionId, jobId);
         }
     }
 
@@ -272,7 +279,7 @@ public partial class AutomationService
             {
                 foreach (var kvp in _executionHistory)
                 {
-                    kvp.Value.Sort((a, b) => b.ExecutedAt.CompareTo(a.ExecutedAt));
+                    kvp.Value.Sort((a, b) => b.StartedAt.CompareTo(a.StartedAt));
 
                     // Keep only last 100 entries per job
                     if (kvp.Value.Count > 100)
@@ -333,7 +340,7 @@ public partial class AutomationService
                 TotalExecutions = _executionHistory.Values.Sum(h => h.Count),
                 SuccessfulExecutions = _executionHistory.Values
                     .SelectMany(h => h)
-                    .Count(e => e.Status == AutomationExecutionStatus.Completed),
+                    .Count(e => e.Status == AutomationExecutionStatus.Success),
                 LastUpdated = DateTime.UtcNow
             };
 
@@ -343,7 +350,7 @@ public partial class AutomationService
             {
                 Encrypt = false,
                 Compress = true,
-                Metadata = new Dictionary<string, string>
+                Metadata = new Dictionary<string, object>
                 {
                     ["Type"] = "Statistics",
                     ["UpdatedAt"] = DateTime.UtcNow.ToString("O")
@@ -371,8 +378,9 @@ public partial class AutomationService
             foreach (var key in executionKeys)
             {
                 var metadata = await _persistentStorage.GetMetadataAsync(key);
-                if (metadata != null && metadata.CustomMetadata.TryGetValue("ExecutedAt", out var executedAtStr))
+                if (metadata != null && metadata.CustomMetadata.TryGetValue("ExecutedAt", out var executedAtObj))
                 {
+                    var executedAtStr = executedAtObj?.ToString() ?? string.Empty;
                     if (DateTime.TryParse(executedAtStr, out var executedAt) && executedAt < cutoffDate)
                     {
                         await _persistentStorage.DeleteAsync(key);

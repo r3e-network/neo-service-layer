@@ -7,6 +7,8 @@ using System.Xml.Linq;
 using Microsoft.Extensions.Logging;
 using System.Text.Json;
 using System.Text.RegularExpressions;
+using System.Threading;
+
 
 namespace NeoServiceLayer.TestUtilities.CoverageAnalysis
 {

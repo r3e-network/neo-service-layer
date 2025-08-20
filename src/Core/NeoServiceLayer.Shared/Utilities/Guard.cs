@@ -1,5 +1,11 @@
-﻿using System.Diagnostics.CodeAnalysis;
+using System;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Threading.Tasks;
+using System.Threading;
+
 
 namespace NeoServiceLayer.Shared.Utilities;
 
@@ -304,6 +310,137 @@ public static class Guard
             message ??= $"String does not match the required pattern: {pattern}";
             throw new ArgumentException(message, parameterName);
         }
+
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentOutOfRangeException if the argument is negative.
+    /// </summary>
+    /// <typeparam name="T">The type of the argument.</typeparam>
+    /// <param name="argument">The argument to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's not negative.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the argument is negative.</exception>
+    public static T AgainstNegative<T>(T argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+        where T : IComparable<T>
+    {
+        if (argument.CompareTo(default(T)) < 0)
+            throw new ArgumentOutOfRangeException(parameterName, "Argument cannot be negative.");
+
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentOutOfRangeException if the argument is zero or negative.
+    /// </summary>
+    /// <typeparam name="T">The type of the argument.</typeparam>
+    /// <param name="argument">The argument to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's greater than zero.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the argument is zero or negative.</exception>
+    public static T AgainstZeroOrNegative<T>(T argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+        where T : IComparable<T>
+    {
+        if (argument.CompareTo(default(T)) <= 0)
+            throw new ArgumentOutOfRangeException(parameterName, "Argument must be greater than zero.");
+
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentException if the condition is true.
+    /// </summary>
+    /// <param name="condition">The condition to check.</param>
+    /// <param name="message">The exception message.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <exception cref="ArgumentException">Thrown when the condition is true.</exception>
+    public static void Against(bool condition, string message, [CallerArgumentExpression(nameof(condition))] string? parameterName = null)
+    {
+        if (condition)
+            throw new ArgumentException(message, parameterName);
+    }
+
+    /// <summary>
+    /// Throws an ArgumentOutOfRangeException if the argument is outside the specified range.
+    /// </summary>
+    /// <typeparam name="T">The type of the argument.</typeparam>
+    /// <param name="argument">The argument to check.</param>
+    /// <param name="min">The minimum allowed value.</param>
+    /// <param name="max">The maximum allowed value.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's within the range.</returns>
+    /// <exception cref="ArgumentOutOfRangeException">Thrown when the argument is outside the range.</exception>
+    public static T AgainstOutOfRange<T>(T argument, T min, T max, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+        where T : IComparable<T>
+    {
+        if (argument.CompareTo(min) < 0 || argument.CompareTo(max) > 0)
+            throw new ArgumentOutOfRangeException(parameterName, $"Argument must be between {min} and {max}.");
+
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentException if the enum value is invalid.
+    /// </summary>
+    /// <typeparam name="T">The enum type.</typeparam>
+    /// <param name="argument">The enum argument to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's a valid enum value.</returns>
+    /// <exception cref="ArgumentException">Thrown when the enum value is invalid.</exception>
+    public static T AgainstInvalidEnumValue<T>(T argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+        where T : struct, Enum
+    {
+        if (!Enum.IsDefined(typeof(T), argument))
+            throw new ArgumentException($"Invalid enum value '{argument}' for type {typeof(T).Name}.", parameterName);
+
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentException if the collection is empty.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the collection.</typeparam>
+    /// <param name="argument">The collection argument to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's not empty.</returns>
+    /// <exception cref="ArgumentException">Thrown when the collection is empty.</exception>
+    public static ICollection<T> AgainstEmptyCollection<T>(ICollection<T> argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+    {
+        NotNull(argument, parameterName);
+        if (argument.Count == 0)
+            throw new ArgumentException("Collection cannot be empty.", parameterName);
+        return argument;
+    }
+
+    /// <summary>
+    /// Throws an ArgumentException if the collection is null or empty.
+    /// </summary>
+    /// <typeparam name="T">The type of elements in the collection.</typeparam>
+    /// <param name="argument">The collection argument to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The argument if it's not null or empty.</returns>
+    /// <exception cref="ArgumentException">Thrown when the collection is null or empty.</exception>
+    public static ICollection<T> NotNullOrEmptyCollection<T>(ICollection<T> argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+    {
+        return AgainstEmptyCollection(argument, parameterName);
+    }
+
+    /// <summary>
+    /// Throws an ArgumentException if the collection is null or empty.
+    /// </summary>
+    /// <typeparam name="T">The collection element type.</typeparam>
+    /// <param name="argument">The collection to check.</param>
+    /// <param name="parameterName">The name of the parameter.</param>
+    /// <returns>The collection if it's not null or empty.</returns>
+    /// <exception cref="ArgumentException">Thrown when the collection is null or empty.</exception>
+    public static IEnumerable<T> AgainstNullOrEmptyCollection<T>(IEnumerable<T>? argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
+    {
+        if (argument == null)
+            throw new ArgumentNullException(parameterName, "Collection cannot be null.");
+        
+        if (!argument.Any())
+            throw new ArgumentException("Collection cannot be empty.", parameterName);
 
         return argument;
     }

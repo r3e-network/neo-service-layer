@@ -1,11 +1,16 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Primitives;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure.Persistence;
 using NeoServiceLayer.ServiceFramework;
+using System.Net.Http;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Api.Extensions;
 
@@ -27,8 +32,8 @@ public static class ServiceRegistrationExtensions
 
         // Add blockchain client factory - register concrete then interface
         services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>();
-        services.AddSingleton<NeoServiceLayer.Core.IBlockchainClientFactory>(provider =>
-            (NeoServiceLayer.Core.IBlockchainClientFactory)provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
+        services.AddSingleton<NeoServiceLayer.Infrastructure.Blockchain.IBlockchainClientFactory>(provider =>
+            provider.GetRequiredService<NeoServiceLayer.Infrastructure.Blockchain.BlockchainClientFactory>());
 
         // Core Services (4)
         services.AddScoped<NeoServiceLayer.Services.KeyManagement.IKeyManagementService, NeoServiceLayer.Services.KeyManagement.KeyManagementService>();
@@ -157,15 +162,52 @@ public static class ServiceRegistrationExtensions
             return configKeys.Union(overrideKeys).Distinct();
         }
 
-        public IServiceConfiguration? GetSection(string sectionName)
+        public IConfigurationSection? GetSection(string sectionName)
         {
             var section = _configuration.GetSection(sectionName);
-            return section.Exists() ? new ServiceConfiguration(section) : null;
+            return section.Exists() ? new ConfigurationSectionAdapter(section) : null;
+        }
+
+        public bool Exists(string key)
+        {
+            return ContainsKey(key);
+        }
+
+        public bool Remove(string key)
+        {
+            return RemoveKey(key);
         }
 
         public string GetConnectionString(string name)
         {
             return _configuration.GetConnectionString(name) ?? string.Empty;
         }
+    }
+
+    /// <summary>
+    /// Adapter for IConfigurationSection.
+    /// </summary>
+    private class ConfigurationSectionAdapter : IConfigurationSection
+    {
+        private readonly IConfigurationSection _section;
+
+        public ConfigurationSectionAdapter(IConfigurationSection section)
+        {
+            _section = section;
+        }
+
+        public string this[string key]
+        {
+            get => _section[key];
+            set => _section[key] = value;
+        }
+
+        public string Key => _section.Key;
+        public string Path => _section.Path;
+        public string Value { get => _section.Value; set => _section.Value = value; }
+
+        public IEnumerable<IConfigurationSection> GetChildren() => _section.GetChildren();
+        public IChangeToken GetReloadToken() => _section.GetReloadToken();
+        public IConfigurationSection GetSection(string key) => _section.GetSection(key);
     }
 }

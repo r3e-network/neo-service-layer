@@ -1,4 +1,3 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
@@ -6,6 +5,10 @@ using System.Text.Json;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Services.Voting.Models;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Voting;
 
@@ -15,7 +18,7 @@ namespace NeoServiceLayer.Services.Voting;
 public partial class VotingService
 {
     /// <inheritdoc/>
-    public Task<IEnumerable<CandidateInfo>> GetCandidatesAsync(BlockchainType blockchainType)
+    public Task<IEnumerable<Candidate>> GetCandidatesAsync(BlockchainType blockchainType)
     {
         if (!SupportsBlockchain(blockchainType))
         {
@@ -24,7 +27,7 @@ public partial class VotingService
 
         lock (_candidatesLock)
         {
-            return Task.FromResult<IEnumerable<CandidateInfo>>(_candidates.Values.ToList());
+            return Task.FromResult<IEnumerable<Candidate>>(_candidates.Values.ToList());
         }
     }
 
@@ -84,7 +87,7 @@ public partial class VotingService
     /// Updates candidate information.
     /// </summary>
     /// <param name="state">Timer state (unused).</param>
-    private async void UpdateCandidateInfo(object? state)
+    private async void UpdateCandidate(object? state)
     {
         try
         {
@@ -141,18 +144,18 @@ public partial class VotingService
     /// Fetches current candidate information from the Neo N3 blockchain.
     /// </summary>
     /// <returns>List of current candidates.</returns>
-    private async Task<List<CandidateInfo>> FetchCandidatesFromBlockchainAsync()
+    private async Task<List<Candidate>> FetchCandidatesFromBlockchainAsync()
     {
         try
         {
-            var candidates = new List<CandidateInfo>();
+            var candidates = new List<Candidate>();
 
             // Get candidates from Neo N3 blockchain via RPC
             var candidatesData = await GetCandidatesFromRpcAsync();
 
             foreach (var candidateData in candidatesData)
             {
-                var candidate = new CandidateInfo
+                var candidate = new Candidate
                 {
                     Address = candidateData.Address,
                     PublicKey = candidateData.PublicKey,
@@ -167,10 +170,10 @@ public partial class VotingService
                     CommissionRate = candidateData.CommissionRate,
                     Metrics = new CandidateMetrics
                     {
-                        BlocksProduced = candidateData.BlocksProduced,
-                        BlocksMissed = candidateData.BlocksMissed,
+                        BlocksProduced = (int)candidateData.BlocksProduced,
+                        BlocksMissed = (int)candidateData.BlocksMissed,
                         PerformanceScore = candidateData.PerformanceScore,
-                        AverageResponseTime = candidateData.AverageResponseTime,
+                        AverageResponseTime = candidateData.AverageResponseTime.TotalMilliseconds,
                         TotalRewardsDistributed = candidateData.TotalRewardsDistributed,
                         VoterCount = candidateData.VoterCount
                     }
@@ -184,7 +187,7 @@ public partial class VotingService
         catch (Exception ex)
         {
             Logger.LogError(ex, "Failed to fetch candidates from blockchain");
-            return new List<CandidateInfo>();
+            return new List<Candidate>();
         }
     }
 
@@ -197,7 +200,6 @@ public partial class VotingService
         try
         {
             // Call Neo N3 RPC to get current candidates
-            using var httpClient = new HttpClient();
             var rpcRequest = new
             {
                 jsonrpc = "2.0",
@@ -209,6 +211,7 @@ public partial class VotingService
             var jsonContent = System.Text.Json.JsonSerializer.Serialize(rpcRequest);
             var content = new StringContent(jsonContent, System.Text.Encoding.UTF8, "application/json");
 
+            using var httpClient = new HttpClient();
             var response = await httpClient.PostAsync(_rpcEndpoint, content);
 
             if (response.IsSuccessStatusCode)
@@ -409,7 +412,7 @@ public partial class VotingService
     {
         var sampleCandidates = new[]
         {
-            new CandidateInfo
+            new Candidate
             {
                 Address = "NQzNos2WqTbu5UGBHjRoSenNDwvSaKwEHQ",
                 PublicKey = "02486fd15702c4490a26703112a5cc1d0923fd697a33406bd5a1c00e0013b09a70",
@@ -427,12 +430,12 @@ public partial class VotingService
                     BlocksProduced = 12500,
                     BlocksMissed = 25,
                     PerformanceScore = 98.5,
-                    AverageResponseTime = TimeSpan.FromMilliseconds(150),
+                    AverageResponseTime = 150,
                     TotalRewardsDistributed = 125000m,
                     VoterCount = 1250
                 }
             },
-            new CandidateInfo
+            new Candidate
             {
                 Address = "NfgHwwTi3wHAS8aFAN243C5vGbkYDpqLHP",
                 PublicKey = "03b209fd4f53a7170ea4444e0cb0a6bb6a53c2bd016926989cf85f9b0fba17a70c",
@@ -450,12 +453,12 @@ public partial class VotingService
                     BlocksProduced = 11800,
                     BlocksMissed = 35,
                     PerformanceScore = 97.2,
-                    AverageResponseTime = TimeSpan.FromMilliseconds(180),
+                    AverageResponseTime = 180,
                     TotalRewardsDistributed = 118000m,
                     VoterCount = 980
                 }
             },
-            new CandidateInfo
+            new Candidate
             {
                 Address = "NNLi44dJNXtDNSBkofB48aTVYtb1zZrNEs",
                 PublicKey = "02aa052fbea2d69bad1e7d7bc7b5e5fb7b7d8f9c4c8a8b8c8d8e8f9a9b9c9d9e9f",
@@ -473,7 +476,7 @@ public partial class VotingService
                     BlocksProduced = 11200,
                     BlocksMissed = 45,
                     PerformanceScore = 96.8,
-                    AverageResponseTime = TimeSpan.FromMilliseconds(200),
+                    AverageResponseTime = 200,
                     TotalRewardsDistributed = 112000m,
                     VoterCount = 850
                 }
@@ -496,7 +499,7 @@ public partial class VotingService
     /// </summary>
     /// <param name="candidates">Available candidates.</param>
     /// <returns>Decentralized candidates.</returns>
-    private IEnumerable<CandidateInfo> GetDecentralizedCandidates(IEnumerable<CandidateInfo> candidates)
+    private IEnumerable<Candidate> GetDecentralizedCandidates(IEnumerable<Candidate> candidates)
     {
         // Prefer candidates with lower vote concentration to promote decentralization
         return candidates.OrderBy(c => c.VotesReceived).ThenByDescending(c => c.UptimePercentage);
@@ -508,7 +511,7 @@ public partial class VotingService
     /// <param name="candidates">Available candidates.</param>
     /// <param name="preferences">Voting preferences.</param>
     /// <returns>Custom recommended candidates.</returns>
-    private IEnumerable<CandidateInfo> GetCustomRecommendedCandidates(IEnumerable<CandidateInfo> candidates, VotingPreferences preferences)
+    private IEnumerable<Candidate> GetCustomRecommendedCandidates(IEnumerable<Candidate> candidates, VotingPreferences preferences)
     {
         var filteredCandidates = candidates.AsEnumerable();
 
@@ -536,7 +539,7 @@ public partial class VotingService
     /// </summary>
     /// <param name="candidates">Selected candidates.</param>
     /// <returns>Risk assessment string.</returns>
-    private string CalculateRiskAssessment(CandidateInfo[] candidates)
+    private string CalculateRiskAssessment(Candidate[] candidates)
     {
         var avgUptime = candidates.Average(c => c.UptimePercentage);
         var consensusCount = candidates.Count(c => c.IsConsensusNode);
@@ -559,7 +562,7 @@ public partial class VotingService
     /// <param name="candidates">Selected candidates.</param>
     /// <param name="preferences">Voting preferences.</param>
     /// <returns>Confidence score between 0 and 1.</returns>
-    private double CalculateConfidenceScore(CandidateInfo[] candidates, VotingPreferences preferences)
+    private double CalculateConfidenceScore(Candidate[] candidates, VotingPreferences preferences)
     {
         if (candidates.Length == 0) return 0.0;
 

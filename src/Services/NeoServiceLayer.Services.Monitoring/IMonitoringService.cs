@@ -1,6 +1,12 @@
-﻿using NeoServiceLayer.Core;
+using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Monitoring.Models;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Monitoring;
 
@@ -120,37 +126,6 @@ public class SystemHealthResult
     /// Gets or sets additional metadata.
     /// </summary>
     public Dictionary<string, object> Metadata { get; set; } = new();
-}
-
-/// <summary>
-/// Health status enumeration.
-/// </summary>
-public enum HealthStatus
-{
-    /// <summary>
-    /// System is healthy.
-    /// </summary>
-    Healthy,
-
-    /// <summary>
-    /// System has warnings but is operational.
-    /// </summary>
-    Warning,
-
-    /// <summary>
-    /// System is degraded but partially operational.
-    /// </summary>
-    Degraded,
-
-    /// <summary>
-    /// System is unhealthy.
-    /// </summary>
-    Unhealthy,
-
-    /// <summary>
-    /// System status is unknown.
-    /// </summary>
-    Unknown
 }
 
 /// <summary>

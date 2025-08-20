@@ -1,4 +1,4 @@
-﻿namespace NeoServiceLayer.Advanced.FairOrdering.Models;
+namespace NeoServiceLayer.Advanced.FairOrdering.Models;
 
 /// <summary>
 /// Represents risk level.
@@ -9,22 +9,22 @@ public enum RiskLevel
     /// Minimal risk level.
     /// </summary>
     Minimal,
-
+    
     /// <summary>
     /// Low risk level.
     /// </summary>
     Low,
-
+    
     /// <summary>
     /// Medium risk level.
     /// </summary>
     Medium,
-
+    
     /// <summary>
     /// High risk level.
     /// </summary>
     High,
-
+    
     /// <summary>
     /// Critical risk level.
     /// </summary>
@@ -40,17 +40,17 @@ public enum PoolStatus
     /// Pool is active and accepting transactions.
     /// </summary>
     Active,
-
+    
     /// <summary>
     /// Pool is paused.
     /// </summary>
     Paused,
-
+    
     /// <summary>
     /// Pool is draining (not accepting new transactions).
     /// </summary>
     Draining,
-
+    
     /// <summary>
     /// Pool is inactive.
     /// </summary>
@@ -65,129 +65,67 @@ public enum OrderingAlgorithm
     /// <summary>
     /// First-in-first-out ordering.
     /// </summary>
-    FIFO,
-
+    Fifo,
+    
     /// <summary>
     /// First-come-first-served ordering.
     /// </summary>
-    FirstComeFirstServed,
-
+    Fcfs,
+    
+    /// <summary>
+    /// First-come-first-served ordering (alternative name).
+    /// </summary>
+    FirstComeFirstServed = Fcfs,
+    
     /// <summary>
     /// Fair queue ordering.
     /// </summary>
     FairQueue,
-
+    
     /// <summary>
     /// Priority-based ordering.
     /// </summary>
     Priority,
-
+    
+    /// <summary>
+    /// Priority-based ordering (alternative name).
+    /// </summary>
+    PriorityBasedOrdering = Priority,
+    
     /// <summary>
     /// Priority-based fair ordering.
     /// </summary>
     PriorityFair,
-
+    
+    /// <summary>
+    /// Fair sequencing.
+    /// </summary>
+    FairSequencing = PriorityFair,
+    
     /// <summary>
     /// Random fair ordering.
     /// </summary>
-    RandomFair,
-
+    Random,
+    
+    /// <summary>
+    /// Randomized ordering.
+    /// </summary>
+    RandomizedOrdering = Random,
+    
     /// <summary>
     /// Weighted fair queuing.
     /// </summary>
-    WeightedFairQueuing,
-
+    WeightedFairQueue,
+    
     /// <summary>
     /// Time-based fair ordering.
     /// </summary>
     TimeBased,
-
+    
     /// <summary>
     /// MEV-resistant ordering.
     /// </summary>
-    MevResistant,
-
-    /// <summary>
-    /// Priority-based ordering algorithm.
-    /// </summary>
-    PriorityBasedOrdering,
-
-    /// <summary>
-    /// Fair sequencing algorithm.
-    /// </summary>
-    FairSequencing,
-
-    /// <summary>
-    /// Randomized ordering algorithm.
-    /// </summary>
-    RandomizedOrdering
-}
-
-/// <summary>
-/// Represents fairness level.
-/// </summary>
-public enum FairnessLevel
-{
-    /// <summary>
-    /// Low fairness level.
-    /// </summary>
-    Low,
-
-    /// <summary>
-    /// Basic fairness level.
-    /// </summary>
-    Basic,
-
-    /// <summary>
-    /// Medium fairness level.
-    /// </summary>
-    Medium,
-
-    /// <summary>
-    /// Standard fairness level.
-    /// </summary>
-    Standard,
-
-    /// <summary>
-    /// High fairness level.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Maximum fairness level.
-    /// </summary>
-    Maximum
-}
-
-/// <summary>
-/// Represents MEV protection level.
-/// </summary>
-public enum MevProtectionLevel
-{
-    /// <summary>
-    /// No MEV protection.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Basic MEV protection.
-    /// </summary>
-    Basic,
-
-    /// <summary>
-    /// Standard MEV protection.
-    /// </summary>
-    Standard,
-
-    /// <summary>
-    /// High MEV protection.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Maximum MEV protection.
-    /// </summary>
-    Maximum
+    MevResistant
 }
 
 /// <summary>
@@ -199,41 +137,87 @@ public enum TransactionStatus
     /// Transaction is pending.
     /// </summary>
     Pending,
-
+    
     /// <summary>
     /// Transaction is being processed.
     /// </summary>
     Processing,
-
+    
     /// <summary>
     /// Transaction has been ordered.
     /// </summary>
     Ordered,
-
+    
     /// <summary>
     /// Transaction has been executed.
     /// </summary>
     Executed,
-
+    
     /// <summary>
     /// Transaction has been confirmed.
     /// </summary>
     Confirmed,
-
+    
     /// <summary>
     /// Transaction has failed.
     /// </summary>
     Failed,
-
+    
     /// <summary>
     /// Transaction has been rejected.
     /// </summary>
     Rejected,
-
+    
     /// <summary>
     /// Transaction has been cancelled.
     /// </summary>
     Cancelled
+}
+
+/// <summary>
+/// Represents the ordering status of a transaction.
+/// </summary>
+public enum OrderingStatus
+{
+    /// <summary>
+    /// Transaction is pending in the pool.
+    /// </summary>
+    Pending,
+
+    /// <summary>
+    /// Transaction is being ordered.
+    /// </summary>
+    Ordering,
+
+    /// <summary>
+    /// Transaction has been ordered and is ready for execution.
+    /// </summary>
+    Ordered,
+
+    /// <summary>
+    /// Transaction is being executed.
+    /// </summary>
+    Executing,
+
+    /// <summary>
+    /// Transaction has been executed successfully.
+    /// </summary>
+    Executed,
+
+    /// <summary>
+    /// Transaction failed during execution.
+    /// </summary>
+    Failed,
+
+    /// <summary>
+    /// Transaction was cancelled.
+    /// </summary>
+    Cancelled,
+
+    /// <summary>
+    /// Transaction expired before execution.
+    /// </summary>
+    Expired
 }
 
 /// <summary>
@@ -242,24 +226,55 @@ public enum TransactionStatus
 public enum MevAnalysisDepth
 {
     /// <summary>
-    /// Basic analysis.
+    /// Basic MEV analysis.
     /// </summary>
     Basic,
-
+    
     /// <summary>
-    /// Standard analysis.
+    /// Standard MEV analysis.
     /// </summary>
     Standard,
-
+    
     /// <summary>
-    /// Deep analysis.
+    /// Deep MEV analysis.
     /// </summary>
     Deep,
-
+    
     /// <summary>
-    /// Comprehensive analysis.
+    /// Comprehensive MEV analysis.
     /// </summary>
     Comprehensive
+}
+
+/// <summary>
+/// Represents MEV protection level.
+/// </summary>
+public enum MevProtectionLevel
+{
+    /// <summary>
+    /// No MEV protection.
+    /// </summary>
+    None,
+    
+    /// <summary>
+    /// Basic MEV protection.
+    /// </summary>
+    Basic,
+    
+    /// <summary>
+    /// Standard MEV protection.
+    /// </summary>
+    Standard,
+    
+    /// <summary>
+    /// Advanced MEV protection.
+    /// </summary>
+    Advanced,
+    
+    /// <summary>
+    /// Maximum MEV protection.
+    /// </summary>
+    Maximum
 }
 
 /// <summary>
@@ -271,41 +286,108 @@ public enum MevOpportunityType
     /// Arbitrage opportunity.
     /// </summary>
     Arbitrage,
-
+    
     /// <summary>
     /// Front-running opportunity.
     /// </summary>
     FrontRunning,
-
+    
     /// <summary>
     /// Back-running opportunity.
     /// </summary>
     BackRunning,
-
+    
     /// <summary>
     /// Sandwich attack opportunity.
     /// </summary>
-    SandwichAttack,
-
+    Sandwich,
+    
     /// <summary>
     /// Liquidation opportunity.
     /// </summary>
     Liquidation,
-
+    
     /// <summary>
     /// Flash loan opportunity.
     /// </summary>
     FlashLoan,
-
+    
     /// <summary>
     /// Price manipulation opportunity.
     /// </summary>
     PriceManipulation,
-
+    
     /// <summary>
     /// Other MEV opportunity.
     /// </summary>
     Other
+}
+
+/// <summary>
+/// Represents protection level.
+/// </summary>
+public enum ProtectionLevel
+{
+    /// <summary>
+    /// No protection.
+    /// </summary>
+    None,
+    
+    /// <summary>
+    /// Basic protection.
+    /// </summary>
+    Basic,
+    
+    /// <summary>
+    /// Standard protection.
+    /// </summary>
+    Standard,
+    
+    /// <summary>
+    /// Advanced protection.
+    /// </summary>
+    Advanced,
+    
+    /// <summary>
+    /// Maximum protection.
+    /// </summary>
+    Maximum
+}
+
+/// <summary>
+/// Represents fairness level.
+/// </summary>
+public enum FairnessLevel
+{
+    /// <summary>
+    /// Low fairness level.
+    /// </summary>
+    Low,
+    
+    /// <summary>
+    /// Basic fairness level.
+    /// </summary>
+    Basic,
+    
+    /// <summary>
+    /// Medium fairness level.
+    /// </summary>
+    Medium,
+    
+    /// <summary>
+    /// Standard fairness level.
+    /// </summary>
+    Standard,
+    
+    /// <summary>
+    /// High fairness level.
+    /// </summary>
+    High,
+    
+    /// <summary>
+    /// Maximum fairness level.
+    /// </summary>
+    Maximum
 }
 
 /// <summary>
@@ -317,27 +399,27 @@ public enum BatchStatus
     /// Batch is being formed.
     /// </summary>
     Forming,
-
+    
     /// <summary>
     /// Batch is ready for processing.
     /// </summary>
     Ready,
-
+    
     /// <summary>
     /// Batch is being processed.
     /// </summary>
     Processing,
-
+    
     /// <summary>
     /// Batch has been completed.
     /// </summary>
     Completed,
-
+    
     /// <summary>
     /// Batch processing failed.
     /// </summary>
     Failed,
-
+    
     /// <summary>
     /// Batch was cancelled.
     /// </summary>
@@ -352,32 +434,32 @@ public enum OrderingPriority
     /// <summary>
     /// Lowest priority.
     /// </summary>
-    Lowest = 1,
-
+    Lowest,
+    
     /// <summary>
     /// Low priority.
     /// </summary>
-    Low = 2,
-
+    Low,
+    
     /// <summary>
     /// Normal priority.
     /// </summary>
-    Normal = 3,
-
+    Normal,
+    
     /// <summary>
     /// High priority.
     /// </summary>
-    High = 4,
-
+    High,
+    
     /// <summary>
     /// Highest priority.
     /// </summary>
-    Highest = 5,
-
+    Highest,
+    
     /// <summary>
     /// Critical priority.
     /// </summary>
-    Critical = 6
+    Critical
 }
 
 /// <summary>
@@ -389,27 +471,27 @@ public enum OrderingStrategy
     /// Time-based ordering.
     /// </summary>
     TimeBased,
-
+    
     /// <summary>
     /// Fee-based ordering.
     /// </summary>
     FeeBased,
-
+    
     /// <summary>
     /// Fairness-based ordering.
     /// </summary>
     FairnessBased,
-
+    
     /// <summary>
     /// MEV-resistant ordering.
     /// </summary>
     MevResistant,
-
+    
     /// <summary>
     /// Hybrid ordering strategy.
     /// </summary>
     Hybrid,
-
+    
     /// <summary>
     /// Custom ordering strategy.
     /// </summary>
@@ -425,70 +507,34 @@ public enum ProtectionMechanism
     /// Time delay protection.
     /// </summary>
     TimeDelay,
-
+    
     /// <summary>
     /// Randomization protection.
     /// </summary>
     Randomization,
-
+    
     /// <summary>
     /// Commit-reveal protection.
     /// </summary>
     CommitReveal,
-
+    
     /// <summary>
     /// Threshold encryption protection.
     /// </summary>
     ThresholdEncryption,
-
+    
     /// <summary>
     /// Verifiable delay function protection.
     /// </summary>
     VerifiableDelayFunction,
-
+    
     /// <summary>
     /// Batch auction protection.
     /// </summary>
     BatchAuction,
-
+    
     /// <summary>
     /// Private mempool protection.
     /// </summary>
     PrivateMempool
-}
-
-/// <summary>
-/// Represents protection level for security measures.
-/// </summary>
-public enum ProtectionLevel
-{
-    /// <summary>
-    /// No protection applied.
-    /// </summary>
-    None,
-
-    /// <summary>
-    /// Basic protection level.
-    /// </summary>
-    Basic,
-
-    /// <summary>
-    /// Standard protection level.
-    /// </summary>
-    Standard,
-
-    /// <summary>
-    /// Enhanced protection level.
-    /// </summary>
-    Enhanced,
-
-    /// <summary>
-    /// High protection level.
-    /// </summary>
-    High,
-
-    /// <summary>
-    /// Maximum protection level.
-    /// </summary>
-    Maximum
 }

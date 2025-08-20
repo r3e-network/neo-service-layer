@@ -1,8 +1,11 @@
-﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Services.Statistics.Models;
+using System.Linq;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Statistics;
 
@@ -65,8 +68,9 @@ public interface IStatisticsService : IService
     /// <summary>
     /// Gets real-time statistics stream.
     /// </summary>
+    /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Observable stream of statistics updates.</returns>
-    IAsyncEnumerable<StatisticsUpdate> GetRealTimeStatisticsAsync();
+    IAsyncEnumerable<StatisticsUpdate> GetRealTimeStatisticsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
     /// Exports statistics for a given time range.

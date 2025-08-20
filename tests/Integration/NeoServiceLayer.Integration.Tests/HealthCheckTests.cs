@@ -1,13 +1,20 @@
-﻿using System.Net;
 using System.Text.Json;
 using Microsoft.AspNetCore.Mvc.Testing;
 using NeoServiceLayer.Integration.Tests.Helpers;
 using NeoServiceLayer.Web;
 using Xunit;
+using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Net;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Integration.Tests;
 
-public class HealthCheckTests : IntegrationTestBase
+public class HealthCheckTests : Helpers.IntegrationTestBase
 {
     public HealthCheckTests() : base()
     {

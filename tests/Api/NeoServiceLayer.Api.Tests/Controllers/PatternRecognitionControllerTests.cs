@@ -1,4 +1,3 @@
-﻿using System.Security.Claims;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -8,6 +7,13 @@ using NeoServiceLayer.AI.PatternRecognition.Models;
 using NeoServiceLayer.Api.Controllers;
 using NeoServiceLayer.Core;
 using Xunit;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+using System.Security.Claims;
+
 
 namespace NeoServiceLayer.Api.Tests.Controllers;
 
@@ -64,8 +70,8 @@ public class PatternRecognitionControllerTests
             TransactionId = "test-tx-123",
             FraudScore = 0.75,
             IsFraudulent = true,
-            RiskLevel = AI.PatternRecognition.Models.RiskLevel.Medium,
-            RiskFactors = new Dictionary<string, double> { { "confidence", 0.85 } },
+            RiskLevel = "Medium",
+            RiskFactors = new List<string> { "high_confidence" },
             DetectedAt = DateTime.UtcNow
         };
 
@@ -138,14 +144,14 @@ public class PatternRecognitionControllerTests
 
         var expectedResult = new PatternAnalysisResult
         {
-            AnalysisId = "analysis-123",
-            DetectedPatterns = new List<DetectedPattern>
+            Id = "analysis-123",
+            Patterns = new[]
             {
                 new DetectedPattern
                 {
                     Id = "pattern-1",
                     Name = "Frequency Pattern",
-                    Type = AI.PatternRecognition.Models.PatternRecognitionType.FraudDetection, // Use correct enum
+                    Type = AI.PatternRecognition.Models.PatternType.Behavioral,
                     Confidence = 0.85
                 }
             },
@@ -526,7 +532,7 @@ public class PatternRecognitionControllerTests
         {
             UserId = userId,
             CreatedAt = DateTime.UtcNow.AddDays(-30),
-            LastUpdated = DateTime.UtcNow,
+            UpdatedAt = DateTime.UtcNow,
             // Baselines = new Dictionary<BehaviorType, BehaviorBaseline>(), // Property doesn't exist
             // LearnedPatterns = new List<BehaviorPattern>(), // Property doesn't exist
             BehaviorMetrics = new Dictionary<string, double> { { "loginFrequency", 0.5 } }

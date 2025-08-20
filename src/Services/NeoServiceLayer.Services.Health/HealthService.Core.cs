@@ -1,10 +1,15 @@
-﻿using System;
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Storage;
 using NeoServiceLayer.Tee.Host.Services;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Threading;
+using System;
+
 
 namespace NeoServiceLayer.Services.Health;
 
@@ -20,7 +25,7 @@ public class HealthException : Exception
 /// <summary>
 /// Core implementation of the Health Service that provides Neo N3 consensus node health monitoring capabilities.
 /// </summary>
-public partial class HealthService : EnclaveBlockchainServiceBase, IHealthService, IDisposable
+public partial class HealthService : ServiceFramework.EnclaveBlockchainServiceBase, IHealthService, IDisposable
 {
     private readonly IStorageService _storageService;
     private readonly Dictionary<string, NodeHealthReport> _monitoredNodes = new();
@@ -92,7 +97,7 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
     protected override Task<ServiceHealth> OnGetHealthAsync()
     {
         var nodeCount = _monitoredNodes.Count;
-        var onlineCount = _monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online);
+        var onlineCount = _monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy);
 
         Logger.LogDebug("Health service health check: {OnlineCount}/{NodeCount} nodes online",
             onlineCount, nodeCount);
@@ -183,9 +188,9 @@ public partial class HealthService : EnclaveBlockchainServiceBase, IHealthServic
             if (_monitoredNodes.Count == 0)
                 return 0.0;
 
-            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == NodeStatus.Online);
+            var onlineNodes = _monitoredNodes.Values.Count(n => n.Status == HealthStatus.Healthy);
             var healthyNodes = _monitoredNodes.Values.Count(n =>
-                n.Status == NodeStatus.Online && n.UptimePercentage >= 95.0);
+                n.Status == HealthStatus.Healthy && n.UptimePercentage >= 95.0);
 
             var onlineRatio = (double)onlineNodes / _monitoredNodes.Count;
             var healthyRatio = (double)healthyNodes / _monitoredNodes.Count;
