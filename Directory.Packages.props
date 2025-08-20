@@ -113,7 +113,7 @@
     <PackageVersion Include="Microsoft.IdentityModel.Tokens" Version="8.3.1" />
     <PackageVersion Include="System.IdentityModel.Tokens.Jwt" Version="8.3.1" />
     <PackageVersion Include="Azure.Security.KeyVault.Secrets" Version="4.8.0" />
-    <PackageVersion Include="Azure.Identity" Version="1.13.1" />
+    <PackageVersion Include="Azure.Identity" Version="1.15.0" />
     <PackageVersion Include="AWSSDK.SecretsManager" Version="3.7.400.50" />
     <PackageVersion Include="System.Security.Cryptography.Algorithms" Version="4.3.1" />
   </ItemGroup>
