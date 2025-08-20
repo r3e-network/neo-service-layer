@@ -1,0 +1,118 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: crosschain-service
+  namespace: neo-service-layer
+  labels:
+    app: crosschain-service
+    component: backend
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: crosschain-service
+  template:
+    metadata:
+      labels:
+        app: crosschain-service
+        component: backend
+    spec:
+      containers:
+      - name: crosschain-service
+        image: neoservicelayer/crosschain-service:latest
+        imagePullPolicy: Always
+        ports:
+        - containerPort: 5020
+          name: http
+        envFrom:
+        - configMapRef:
+            name: neo-service-config
+        env:
+        - name: CrossChain__ApiKey
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: CrossChain__ApiKey
+        - name: Database__Password
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: Database__Password
+        - name: Redis__Password
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: Redis__Password
+        - name: RabbitMQ__Password
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: RabbitMQ__Password
+        - name: Encryption__Key
+          valueFrom:
+            secretKeyRef:
+              name: neo-service-secrets
+              key: Encryption__Key
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 5020
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 5020
+          initialDelaySeconds: 10
+          periodSeconds: 5
+          timeoutSeconds: 3
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: crosschain-service
+  namespace: neo-service-layer
+  labels:
+    app: crosschain-service
+spec:
+  selector:
+    app: crosschain-service
+  ports:
+    - protocol: TCP
+      port: 5020
+      targetPort: 5020
+      name: http
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: crosschain-service-hpa
+  namespace: neo-service-layer
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: crosschain-service
+  minReplicas: 2
+  maxReplicas: 6
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80

@@ -1,0 +1,37 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-service-config
+  namespace: neo-service-layer
+data:
+  ASPNETCORE_ENVIRONMENT: "Production"
+  DOTNET_SYSTEM_GLOBALIZATION_INVARIANT: "false"
+  # Database Configuration
+  Database__Provider: "PostgreSQL"
+  Database__ConnectionString: "Host=postgres-service;Port=5432;Database=neoservicelayer;Username=nsluser"
+  # Redis Configuration
+  Redis__Configuration: "redis-service:6379"
+  Redis__InstanceName: "NSL"
+  # RabbitMQ Configuration
+  RabbitMQ__HostName: "rabbitmq-service"
+  RabbitMQ__Port: "5672"
+  RabbitMQ__UserName: "nsluser"
+  # Consul Configuration
+  Consul__Host: "consul-service"
+  Consul__Port: "8500"
+  # Jaeger Configuration
+  Jaeger__AgentHost: "jaeger-service"
+  Jaeger__AgentPort: "6831"
+  # Service Discovery
+  ServiceDiscovery__Enabled: "true"
+  ServiceDiscovery__Provider: "Consul"
+  # Rate Limiting
+  RateLimiting__Enabled: "true"
+  RateLimiting__PermitLimit: "100"
+  RateLimiting__Window: "60"
+  # Circuit Breaker
+  CircuitBreaker__Enabled: "true"
+  CircuitBreaker__FailureThreshold: "0.5"
+  CircuitBreaker__SamplingDuration: "10"
+  CircuitBreaker__MinimumThroughput: "20"
+  CircuitBreaker__BreakDuration: "30"

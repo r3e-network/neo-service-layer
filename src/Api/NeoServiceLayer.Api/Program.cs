@@ -41,20 +41,68 @@ builder.Services.AddControllers();
 // Configure API Versioning
 
 // Configure Swagger/OpenAPI
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen(c =>
+{
+    c.SwaggerDoc("v1", new OpenApiInfo
+    {
+        Title = "Neo Service Layer API",
+        Version = "v1",
+        Description = "Comprehensive blockchain service layer with SGX/TEE support",
+        Contact = new OpenApiContact
+        {
+            Name = "Neo Service Layer Team",
+            Email = "support@neo-service.io"
+        },
+        License = new OpenApiLicense
+        {
+            Name = "MIT",
+            Url = new Uri("https://opensource.org/licenses/MIT")
+        }
+    });
 
     // Include XML comments
+    var xmlFile = $"{System.Reflection.Assembly.GetExecutingAssembly().GetName().Name}.xml";
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
+    if (File.Exists(xmlPath))
+    {
+        c.IncludeXmlComments(xmlPath);
+    }
 
     // Add JWT Authentication to Swagger
+    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
+    {
+        Description = "JWT Authorization header using the Bearer scheme. Example: \"Authorization: Bearer {token}\"",
+        Name = "Authorization",
+        In = ParameterLocation.Header,
+        Type = SecuritySchemeType.ApiKey,
+        Scheme = "Bearer"
+    });
 
+    c.AddSecurityRequirement(new OpenApiSecurityRequirement
+    {
+        {
+            new OpenApiSecurityScheme
+            {
+                Reference = new OpenApiReference
+                {
+                    Type = ReferenceType.SecurityScheme,
+                    Id = "Bearer"
+                }
+            },
+            Array.Empty<string>()
+        }
+    });
 
     // Group operations by tags
+    c.TagActionsBy(api => new[] { api.GroupName ?? "General" });
 
     // Order tags alphabetically
-
-    // Add operation filters for better documentation
-    // c.EnableAnnotations(); // Method not available in this Swagger version
+    c.OrderActionsBy(api => $"{api.GroupName}_{api.HttpMethod}_{api.RelativePath}");
 
     // Custom schema IDs to avoid conflicts
+    c.CustomSchemaIds(type => type.FullName?.Replace("+", "."));
+});
 
 // Configure JWT Authentication with secure key management
 
@@ -81,9 +129,11 @@ builder.Services.AddControllers();
 // Configure Rate Limiting
 
 // Add Comprehensive Health Checks
-    // .AddCheck<ConfigurationHealthCheck>("configuration", tags: new[] { "ready", "configuration" })
-    // .AddCheck<NeoServicesHealthCheck>("neo-services", tags: new[] { "ready", "services" })
-    // .AddCheck<ResourceHealthCheck>("resources", tags: new[] { "ready", "resources" })
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => Microsoft.Extensions.Diagnostics.HealthChecks.HealthCheckResult.Healthy())
+    .AddCheck<ConfigurationHealthCheck>("configuration", tags: new[] { "ready", "configuration" })
+    .AddCheck<NeoServicesHealthCheck>("neo-services", tags: new[] { "ready", "services" })
+    .AddCheck<ResourceHealthCheck>("resources", tags: new[] { "ready", "resources" });
         // Check SGX enclave status
 
 // Add secure configuration services
@@ -175,7 +225,17 @@ var app = builder.Build();
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
-    app.UseSwaggerUI();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer API v1");
+        c.RoutePrefix = string.Empty; // Set Swagger UI at app's root
+        c.DocumentTitle = "Neo Service Layer API Documentation";
+        c.DisplayRequestDuration();
+        c.EnableFilter();
+        c.EnableDeepLinking();
+        c.ShowExtensions();
+        c.ShowCommonExtensions();
+    });
 }
 
 // Add global error handling middleware (must be early in pipeline)
@@ -205,12 +265,47 @@ app.MapControllers();
 
 
 // Map Health Checks with detailed responses
+app.MapHealthChecks("/health", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    ResponseWriter = async (context, report) =>
+    {
+        context.Response.ContentType = "application/json";
+        var response = new
+        {
+            status = report.Status.ToString(),
+            checks = report.Entries.Select(x => new
+            {
+                component = x.Key,
+                status = x.Value.Status.ToString(),
+                description = x.Value.Description,
+                duration = x.Value.Duration.TotalMilliseconds
+            }),
+            totalDuration = report.TotalDuration.TotalMilliseconds
+        };
+        await context.Response.WriteAsync(System.Text.Json.JsonSerializer.Serialize(response));
+    }
+});
 
 // Map simple health check for load balancers
+app.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready")
+});
 
 // Map liveness probe
+app.MapHealthChecks("/health/live", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
+{
+    Predicate = _ => false
+});
 
 // Map info endpoint
+app.MapGet("/info", () => new
+{
+    service = "Neo Service Layer API",
+    version = "1.0.0",
+    environment = app.Environment.EnvironmentName,
+    timestamp = DateTime.UtcNow
+});
 
 
 
