@@ -108,6 +108,9 @@ namespace NeoServiceLayer.Api
 
             // Add metrics
             services.AddSingleton<IMetricsCollector, PrometheusMetricsCollector>();
+
+            // Configure GraphQL
+            services.AddGraphQLServices();
         }
 
         public void Configure(IApplicationBuilder app, IWebHostEnvironment env)
