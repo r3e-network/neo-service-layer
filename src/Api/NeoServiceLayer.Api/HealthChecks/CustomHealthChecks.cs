@@ -74,6 +74,7 @@ public class PostgreSQLHealthCheck : IHealthCheck
     {
         _configuration = configuration;
         _logger = logger;
+        _dbContext = dbContext;
     }
 
     public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
