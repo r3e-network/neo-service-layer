@@ -166,9 +166,9 @@ public class NeoServiceDatabaseHealthCheck : IHealthCheck
 }
 
 /// <summary>
-/// Redis health check.
+/// Neo Service Layer Redis health check.
 /// </summary>
-public class RedisHealthCheck : IHealthCheck
+public class NeoServiceRedisHealthCheck : IHealthCheck
 {
     private readonly Func<Task<bool>> _checkRedis;
     private readonly ILogger<RedisHealthCheck> _logger;
