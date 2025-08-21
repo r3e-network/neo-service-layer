@@ -23,8 +23,5 @@
     <ProjectReference Include="../src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Compile Include="CoreDomainTests.cs" />
-  </ItemGroup>
 
 </Project>
