@@ -10,6 +10,7 @@
     <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
     <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -17,6 +18,9 @@
     <PackageReference Include="Microsoft.Extensions.DependencyInjection.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
   </ItemGroup>
 
 </Project>
