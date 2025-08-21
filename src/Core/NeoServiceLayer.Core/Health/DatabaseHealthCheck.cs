@@ -13,14 +13,14 @@ namespace NeoServiceLayer.Core.Health
     public class ProfessionalDatabaseHealthCheck : IProfessionalHealthCheck
     {
         private readonly DbContext _context;
-        private readonly ILogger<DatabaseHealthCheck> _logger;
+        private readonly ILogger<ProfessionalDatabaseHealthCheck> _logger;
 
         /// <summary>
-        /// Initializes a new instance of DatabaseHealthCheck
+        /// Initializes a new instance of ProfessionalDatabaseHealthCheck
         /// </summary>
         /// <param name="context">The database context</param>
         /// <param name="logger">The logger</param>
-        public DatabaseHealthCheck(DbContext context, ILogger<DatabaseHealthCheck> logger)
+        public ProfessionalDatabaseHealthCheck(DbContext context, ILogger<ProfessionalDatabaseHealthCheck> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
