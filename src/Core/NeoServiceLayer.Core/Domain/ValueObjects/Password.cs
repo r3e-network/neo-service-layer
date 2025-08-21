@@ -61,8 +61,7 @@ namespace NeoServiceLayer.Core.Domain
             if (string.IsNullOrWhiteSpace(plainTextPassword))
                 return false;
 
-            // TODO: Replace with proper BCrypt implementation
-            return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(plainTextPassword)) == Value;
+            return BCrypt.Net.BCrypt.Verify(plainTextPassword, Value);
         }
 
         /// <summary>
