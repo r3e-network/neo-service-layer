@@ -4,6 +4,7 @@ using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Core.Security;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Blockchain;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.CrossChain.Models;
 using System.Collections.Generic;
