@@ -422,43 +422,31 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         ValidateBlockchainType(blockchainType);
 
-        await Task.CompletedTask;
+        // Use PostgreSQL repository for listing with proper pagination
+        var serviceName = !string.IsNullOrEmpty(request.Service) ? request.Service : "EnclaveStorage";
+        var (items, totalItems) = await _sealedDataRepository.ListByServiceAsync(
+            serviceName, 
+            request.Page, 
+            request.PageSize, 
+            request.Prefix);
 
-        var query = _sealedItems.Values.AsEnumerable();
-
-        if (!string.IsNullOrEmpty(request.Service))
-        {
-            query = query.Where(i => i.Service == request.Service);
-        }
-
-        if (!string.IsNullOrEmpty(request.Prefix))
-        {
-            query = query.Where(i => i.Key.StartsWith(request.Prefix));
-        }
-
-        var totalItems = query.Count();
         var totalPages = (int)Math.Ceiling(totalItems / (double)request.PageSize);
 
-        var items = query
-            .OrderByDescending(i => i.CreatedAt)
-            .Skip((request.Page - 1) * request.PageSize)
-            .Take(request.PageSize)
-            .Select(i => new SealedItem
-            {
-                Key = i.Key,
-                Size = i.SealedSize,
-                Created = i.CreatedAt,
-                LastAccessed = i.LastAccessed,
-                ExpiresAt = i.ExpiresAt,
-                Service = i.Service,
-                PolicyType = i.PolicyType
-            })
-            .ToList();
+        var sealedItems = items.Select(i => new SealedItem
+        {
+            Key = i.Key,
+            Size = i.SealedSize,
+            Created = i.CreatedAt,
+            LastAccessed = i.LastAccessed,
+            ExpiresAt = i.ExpiresAt,
+            Service = i.Service,
+            PolicyType = i.PolicyType
+        }).ToList();
 
         return new SealedItemsList
         {
-            Items = items,
-            TotalSize = query.Sum(i => i.SealedSize),
+            Items = sealedItems,
+            TotalSize = items.Sum(i => i.SealedSize),
             ItemCount = totalItems,
             Page = request.Page,
             TotalPages = totalPages
