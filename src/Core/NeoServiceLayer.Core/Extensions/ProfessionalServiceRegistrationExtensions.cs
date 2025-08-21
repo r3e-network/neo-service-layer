@@ -3,6 +3,7 @@ using System.Linq;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Core.Attributes;
+using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Core.Domain.Handlers;
 using NeoServiceLayer.Core.Health;
 
