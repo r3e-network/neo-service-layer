@@ -137,8 +137,8 @@ namespace NeoServiceLayer.Api
             // Use Serilog request logging
             app.UseSerilogRequestLogging();
 
-            // Use security headers middleware
-            app.UseSecurityHeaders();
+            // Use enhanced security headers middleware
+            app.UseEnhancedSecurity(env);
 
             // Use HTTPS redirection
             app.UseHttpsRedirection();
