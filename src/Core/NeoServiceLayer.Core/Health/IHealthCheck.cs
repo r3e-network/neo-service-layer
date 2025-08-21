@@ -5,9 +5,9 @@ using System.Threading.Tasks;
 namespace NeoServiceLayer.Core.Health
 {
     /// <summary>
-    /// Interface for health checks
+    /// Interface for professional health checks
     /// </summary>
-    public interface IHealthCheck
+    public interface IProfessionalHealthCheck
     {
         /// <summary>
         /// Gets the name of this health check
