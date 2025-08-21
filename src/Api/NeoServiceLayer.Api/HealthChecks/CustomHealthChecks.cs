@@ -5,6 +5,7 @@ using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Blockchain;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
