@@ -1,0 +1,263 @@
+# Neo Service Layer - Production PostgreSQL Configuration
+# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+
+version: '3.8'
+
+services:
+  # Production PostgreSQL with High Availability
+  neo-postgres:
+    environment:
+      # Production settings
+      - POSTGRES_SHARED_PRELOAD_LIBRARIES=pg_stat_statements,pg_buffercache
+      - POSTGRES_MAX_CONNECTIONS=300
+      - POSTGRES_SHARED_BUFFERS=512MB
+      - POSTGRES_EFFECTIVE_CACHE_SIZE=2GB
+      - POSTGRES_WORK_MEM=8MB
+      - POSTGRES_MAINTENANCE_WORK_MEM=128MB
+      - POSTGRES_WAL_BUFFERS=32MB
+      - POSTGRES_CHECKPOINT_COMPLETION_TARGET=0.9
+      - POSTGRES_WAL_COMPRESSION=on
+      - POSTGRES_LOG_STATEMENT=ddl
+      - POSTGRES_LOG_MIN_DURATION_STATEMENT=1000
+      - POSTGRES_LOG_CHECKPOINTS=on
+      - POSTGRES_LOG_CONNECTIONS=on
+      - POSTGRES_LOG_DISCONNECTIONS=on
+      - POSTGRES_LOG_LOCK_WAITS=on
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements,pg_buffercache
+      -c max_connections=300
+      -c shared_buffers=512MB
+      -c effective_cache_size=2GB
+      -c work_mem=8MB
+      -c maintenance_work_mem=128MB
+      -c wal_buffers=32MB
+      -c checkpoint_completion_target=0.9
+      -c wal_compression=on
+      -c wal_level=replica
+      -c max_wal_senders=3
+      -c max_replication_slots=3
+      -c hot_standby=on
+      -c log_statement=ddl
+      -c log_min_duration_statement=1000
+      -c log_checkpoints=on
+      -c log_connections=on
+      -c log_disconnections=on
+      -c log_lock_waits=on
+      -c log_temp_files=0
+      -c log_autovacuum_min_duration=0
+      -c autovacuum_max_workers=4
+      -c autovacuum_naptime=30s
+      -c autovacuum_vacuum_threshold=250
+      -c autovacuum_analyze_threshold=125
+    volumes:
+      - neo-postgres-data:/var/lib/postgresql/data
+      - ./config/postgresql/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./config/postgresql/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+      - ./backups/postgresql:/backups:rw
+      - ./logs/postgresql:/var/log/postgresql:rw
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+    deploy:
+      resources:
+        limits:
+          memory: 4G
+          cpus: '2.0'
+        reservations:
+          memory: 2G
+          cpus: '1.0'
+    restart: unless-stopped
+    
+  # Production Redis with Persistence
+  neo-redis:
+    command: >
+      redis-server
+      --appendonly yes
+      --maxmemory 1gb
+      --maxmemory-policy allkeys-lru
+      --save 900 1
+      --save 300 10
+      --save 60 10000
+      --tcp-keepalive 300
+      --timeout 300
+      --tcp-backlog 511
+      --databases 16
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'
+    volumes:
+      - neo-redis-data:/data
+      - ./config/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+      - ./logs/redis:/var/log/redis:rw
+    
+  # Production Neo Service Layer
+  neo-service-layer:
+    environment:
+      # Production environment
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ASPNETCORE_URLS=https://+:5001;http://+:5000
+      - ASPNETCORE_Kestrel__Certificates__Default__Path=/app/certs/aspnetapp.pfx
+      - ASPNETCORE_Kestrel__Certificates__Default__Password=${SSL_CERT_PASSWORD}
+      
+      # Database optimization
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD};Include Error Detail=false;Pooling=true;MinPoolSize=5;MaxPoolSize=100;ConnectionLifetime=300;CommandTimeout=30;
+      - ConnectionStrings__PostgreSQL=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD};Include Error Detail=false;Pooling=true;MinPoolSize=5;MaxPoolSize=100;ConnectionLifetime=300;CommandTimeout=30;
+      
+      # Redis optimization
+      - ConnectionStrings__Redis=neo-redis:6379,abortConnect=false,connectRetry=3,connectTimeout=5000,syncTimeout=1000
+      
+      # Performance tuning
+      - Database__CommandTimeout=30
+      - Database__EnableRetryOnFailure=true
+      - Database__MaxRetryCount=3
+      - Database__MaxRetryDelay=00:00:30
+      - Database__EnableSensitiveDataLogging=false
+      - Database__EnableDetailedErrors=false
+      
+      # Security settings
+      - Security__RequireHttps=true
+      - Security__EnableApiKeyAuthentication=true
+      - Security__MaxRequestBodySize=10485760
+      - Security__RequestTimeoutSeconds=30
+      
+      # Rate limiting
+      - RateLimit__ApiRateLimit__PermitLimit=1000
+      - RateLimit__ApiRateLimit__WindowMinutes=1
+      - RateLimit__KeyManagementRateLimit__PermitLimit=100
+      - RateLimit__KeyManagementRateLimit__WindowMinutes=1
+      
+      # Monitoring
+      - OpenTelemetry__Exporters__Console__Enabled=false
+      - OpenTelemetry__Exporters__Jaeger__Enabled=true
+      - OpenTelemetry__Exporters__Prometheus__Enabled=true
+      
+    volumes:
+      - ./certs:/app/certs:ro
+      - ./logs/app:/app/logs:rw
+      - neo-data:/app/data
+    
+    ports:
+      - "443:5001"  # HTTPS
+      - "80:5000"   # HTTP (redirect to HTTPS)
+    
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "100m"
+        max-file: "10"
+    
+    deploy:
+      resources:
+        limits:
+          memory: 2G
+          cpus: '1.0'
+        reservations:
+          memory: 1G
+          cpus: '0.5'
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "https://localhost:5001/health", "||", "curl", "-f", "http://localhost:5000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+      neo-redis:
+        condition: service_healthy
+
+  # PostgreSQL Backup Service (Production)
+  neo-postgres-backup:
+    image: postgres:16-alpine
+    environment:
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD}
+      - PGPASSWORD=${POSTGRES_PASSWORD}
+    volumes:
+      - ./backups/postgresql:/backups
+      - ./scripts:/scripts:ro
+    command: >
+      sh -c "
+      echo '0 2 * * * /scripts/postgresql-backup-restore.sh backup --compress >> /var/log/backup.log 2>&1' | crontab - &&
+      echo '0 3 * * 0 /scripts/postgresql-backup-restore.sh cleanup 30 >> /var/log/backup.log 2>&1' | crontab - &&
+      crond -f -l 2
+      "
+    depends_on:
+      - neo-postgres
+    restart: unless-stopped
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "50m"
+        max-file: "5"
+
+  # Prometheus Monitoring
+  prometheus:
+    image: prom/prometheus:latest
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./config/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - neo-prometheus-data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/usr/share/prometheus/console_libraries'
+      - '--web.console.templates=/usr/share/prometheus/consoles'
+      - '--web.enable-lifecycle'
+      - '--storage.tsdb.retention.time=30d'
+    restart: unless-stopped
+    
+  # Grafana Dashboard
+  grafana:
+    image: grafana/grafana:latest
+    ports:
+      - "3000:3000"
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=${GRAFANA_PASSWORD:-admin123}
+      - GF_USERS_ALLOW_SIGN_UP=false
+    volumes:
+      - neo-grafana-data:/var/lib/grafana
+      - ./config/grafana/dashboards:/etc/grafana/provisioning/dashboards:ro
+      - ./config/grafana/datasources:/etc/grafana/provisioning/datasources:ro
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+
+volumes:
+  neo-postgres-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/neo-service-layer/data/postgresql
+  neo-redis-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/neo-service-layer/data/redis
+  neo-data:
+    driver: local
+    driver_opts:
+      type: none
+      o: bind
+      device: /opt/neo-service-layer/data/app
+  neo-prometheus-data:
+    driver: local
+  neo-grafana-data:
+    driver: local
