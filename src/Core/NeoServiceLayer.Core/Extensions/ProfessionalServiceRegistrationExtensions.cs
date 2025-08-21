@@ -125,15 +125,16 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddDomainEvents(this IServiceCollection services)
         {
+            // TODO: Re-enable after event infrastructure is implemented
             // Event publisher should be scoped to ensure proper event handling within requests
-            services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+            // services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
             
             // Register domain event handlers
-            services.AddScoped<IDomainEventHandler<UserCreatedEvent>, UserCreatedEventHandler>();
-            services.AddScoped<IDomainEventHandler<AuthenticationSucceededEvent>, AuthenticationSucceededEventHandler>();
-            services.AddScoped<IDomainEventHandler<AuthenticationFailedEvent>, AuthenticationFailedEventHandler>();
-            services.AddScoped<IDomainEventHandler<AccountLockedEvent>, AccountLockedEventHandler>();
-            services.AddScoped<IDomainEventHandler<PasswordChangedEvent>, PasswordChangedEventHandler>();
+            // services.AddScoped<IDomainEventHandler<UserCreatedEvent>, UserCreatedEventHandler>();
+            // services.AddScoped<IDomainEventHandler<AuthenticationSucceededEvent>, AuthenticationSucceededEventHandler>();
+            // services.AddScoped<IDomainEventHandler<AuthenticationFailedEvent>, AuthenticationFailedEventHandler>();
+            // services.AddScoped<IDomainEventHandler<AccountLockedEvent>, AccountLockedEventHandler>();
+            // services.AddScoped<IDomainEventHandler<PasswordChangedEvent>, PasswordChangedEventHandler>();
             
             return services;
         }
@@ -145,10 +146,11 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
+            // TODO: Re-enable after repository infrastructure is implemented
             // Repositories should be scoped to maintain consistency within a request
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>();
-            services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
+            // services.AddScoped<IUserRepository, UserRepository>();
+            // services.AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>();
+            // services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
             
             return services;
         }
@@ -193,12 +195,13 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddProfessionalHealthChecks(this IServiceCollection services)
         {
+            // TODO: Re-enable after health check infrastructure is implemented
             // Register health check orchestrator
-            services.AddScoped<HealthCheckOrchestrator>();
+            // services.AddScoped<HealthCheckOrchestrator>();
             
             // Register individual health checks
-            services.AddScoped<IHealthCheck, DatabaseHealthCheck>();
-            services.AddScoped<IHealthCheck, ServiceHealthCheck>();
+            // services.AddScoped<IHealthCheck, DatabaseHealthCheck>();
+            // services.AddScoped<IHealthCheck, ServiceHealthCheck>();
             
             return services;
         }
