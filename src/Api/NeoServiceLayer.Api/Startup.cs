@@ -424,7 +424,7 @@ namespace NeoServiceLayer.Api
             try
             {
                 // Run database migrations
-                var dbContext = services.GetRequiredService<ApplicationDbContext>();
+                var dbContext = services.GetRequiredService<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.NeoServiceLayerDbContext>();
                 dbContext.Database.Migrate();
 
                 // Initialize enclave
