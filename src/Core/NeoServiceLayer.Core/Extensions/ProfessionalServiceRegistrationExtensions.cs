@@ -125,6 +125,13 @@ namespace NeoServiceLayer.Core.Extensions
             // Event publisher should be scoped to ensure proper event handling within requests
             services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
             
+            // Register domain event handlers
+            services.AddScoped<IDomainEventHandler<UserCreatedEvent>, UserCreatedEventHandler>();
+            services.AddScoped<IDomainEventHandler<AuthenticationSucceededEvent>, AuthenticationSucceededEventHandler>();
+            services.AddScoped<IDomainEventHandler<AuthenticationFailedEvent>, AuthenticationFailedEventHandler>();
+            services.AddScoped<IDomainEventHandler<AccountLockedEvent>, AccountLockedEventHandler>();
+            services.AddScoped<IDomainEventHandler<PasswordChangedEvent>, PasswordChangedEventHandler>();
+            
             return services;
         }
 
