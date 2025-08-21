@@ -171,9 +171,9 @@ public class NeoServiceDatabaseHealthCheck : IHealthCheck
 public class NeoServiceRedisHealthCheck : IHealthCheck
 {
     private readonly Func<Task<bool>> _checkRedis;
-    private readonly ILogger<RedisHealthCheck> _logger;
+    private readonly ILogger<NeoServiceRedisHealthCheck> _logger;
 
-    public RedisHealthCheck(Func<Task<bool>> checkRedis, ILogger<RedisHealthCheck> logger)
+    public NeoServiceRedisHealthCheck(Func<Task<bool>> checkRedis, ILogger<NeoServiceRedisHealthCheck> logger)
     {
         _checkRedis = checkRedis ?? throw new ArgumentNullException(nameof(checkRedis));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
