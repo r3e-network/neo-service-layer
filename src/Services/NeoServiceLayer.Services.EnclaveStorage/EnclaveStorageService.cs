@@ -169,6 +169,7 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
         IEnclaveManager enclaveManager,
         CoreConfig configuration,
         ILogger<EnclaveStorageService> logger,
+        ISealedDataRepository sealedDataRepository,
         IPersistentStorageProvider? persistentStorage = null,
         object? securityService = null,
         object? observabilityService = null,
