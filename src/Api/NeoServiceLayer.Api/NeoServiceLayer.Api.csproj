@@ -31,11 +31,11 @@
     <!-- Explicit references to resolve version conflicts -->
     <PackageReference Include="Newtonsoft.Json" />
     <!-- GraphQL Support -->
-    <PackageReference Include="HotChocolate.AspNetCore" />
-    <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
-    <PackageReference Include="HotChocolate.Data" />
-    <PackageReference Include="HotChocolate.Data.EntityFramework" />
-    <PackageReference Include="HotChocolate.AspNetCore.Voyager" />
+    <PackageReference Include="HotChocolate.AspNetCore" Version="14.1.0" />
+    <PackageReference Include="HotChocolate.AspNetCore.Authorization" Version="14.1.0" />
+    <PackageReference Include="HotChocolate.Data" Version="14.1.0" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" Version="14.1.0" />
+    <PackageReference Include="HotChocolate.AspNetCore.Voyager" Version="14.1.0" />
   </ItemGroup>
 
   <ItemGroup>
