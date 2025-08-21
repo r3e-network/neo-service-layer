@@ -203,6 +203,23 @@ namespace NeoServiceLayer.Core.Extensions
         }
 
         /// <summary>
+        /// Adds configuration validation infrastructure
+        /// </summary>
+        /// <param name="services">The service collection</param>
+        /// <returns>The service collection</returns>
+        public static IServiceCollection AddConfigurationValidation(this IServiceCollection services)
+        {
+            // Register configuration validation service
+            services.AddSingleton<ConfigurationValidationService>();
+            
+            // Register individual configuration validators
+            services.AddSingleton<IConfigurationValidator, DatabaseConfigurationValidator>();
+            services.AddSingleton<IConfigurationValidator, SecurityConfigurationValidator>();
+            
+            return services;
+        }
+
+        /// <summary>
         /// Determines if a service is stateless and can safely be a singleton
         /// </summary>
         /// <param name="serviceType">The service type</param>
