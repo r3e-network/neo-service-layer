@@ -2,6 +2,7 @@ using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Http;
 using NeoServiceLayer.Infrastructure;
 using NeoServiceLayer.Infrastructure.Blockchain;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.Oracle.Configuration;
 using NeoServiceLayer.Services.Oracle.Models;
