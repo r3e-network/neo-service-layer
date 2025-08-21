@@ -141,6 +141,72 @@ public class PostgreSQLHealthCheck : IHealthCheck
 }
 
 /// <summary>
+/// SGX confidential storage health check using PostgreSQL backend.
+/// </summary>
+public class SGXStorageHealthCheck : IHealthCheck
+{
+    private readonly ISealedDataRepository _sealedDataRepository;
+    private readonly ILogger<SGXStorageHealthCheck> _logger;
+
+    public SGXStorageHealthCheck(ISealedDataRepository sealedDataRepository, ILogger<SGXStorageHealthCheck> logger)
+    {
+        _sealedDataRepository = sealedDataRepository;
+        _logger = logger;
+    }
+
+    public async Task<HealthCheckResult> CheckHealthAsync(HealthCheckContext context, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            // Test basic SGX storage operations
+            var testKey = $"healthcheck_{Guid.NewGuid():N}";
+            var testData = System.Text.Encoding.UTF8.GetBytes("SGX health check test data");
+            var testMetadata = new Dictionary<string, object> { ["service"] = "HealthCheck", ["test"] = true };
+
+            // Test store operation
+            var storedItem = await _sealedDataRepository.StoreAsync(
+                testKey,
+                "HealthCheck",
+                testData,
+                SealingPolicyType.MRSIGNER,
+                DateTime.UtcNow.AddMinutes(5),
+                testMetadata,
+                cancellationToken);
+
+            // Test retrieve operation
+            var retrievedItem = await _sealedDataRepository.GetByKeyAsync(testKey, cancellationToken);
+
+            // Test statistics operation
+            var statistics = await _sealedDataRepository.GetStorageStatisticsAsync(cancellationToken);
+
+            // Cleanup test data
+            await _sealedDataRepository.DeleteByKeyAsync(testKey, cancellationToken);
+
+            var data = new Dictionary<string, object>
+            {
+                ["test_store"] = storedItem != null ? "success" : "failed",
+                ["test_retrieve"] = retrievedItem != null ? "success" : "failed",
+                ["total_services"] = statistics.Count,
+                ["total_items"] = statistics.Values.Sum(s => s.ItemCount),
+                ["total_size_mb"] = statistics.Values.Sum(s => s.TotalSize) / 1024.0 / 1024.0
+            };
+
+            if (storedItem == null || retrievedItem == null)
+            {
+                return HealthCheckResult.Degraded("SGX storage operations partially failed", null, data);
+            }
+
+            return HealthCheckResult.Healthy("SGX confidential storage is operational", data);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "SGX storage health check failed");
+            return HealthCheckResult.Unhealthy($"SGX storage health check failed: {ex.Message}", ex);
+        }
+    }
+}
+
+/// <summary>
 /// Redis cache health check.
 /// </summary>
 public class RedisHealthCheck : IHealthCheck
