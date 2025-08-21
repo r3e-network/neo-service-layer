@@ -399,12 +399,7 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             // Unseal the data using enclave capabilities
             var unsealedData = await UnsealDataInEnclaveAsync(sealedItem.SealedData, sealedItem.PolicyType);
 
-            // Update access tracking
-            sealedItem.LastAccessed = DateTime.UtcNow;
-            sealedItem.AccessCount++;
-
-            // Persist updated access info
-            await SaveToPersistentStorageAsync("sealed_items", _sealedItems.Values.ToList());
+            // Access tracking is handled by the repository automatically
 
             return new UnsealDataResult
             {
