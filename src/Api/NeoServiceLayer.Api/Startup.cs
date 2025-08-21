@@ -45,7 +45,7 @@ namespace NeoServiceLayer.Api
 
         public void ConfigureServices(IServiceCollection services)
         {
-            // Configure HTTPS and security
+            // Configure enhanced HTTPS and security
             services.AddHttpsSecurity(_configuration);
 
             // Add API versioning
