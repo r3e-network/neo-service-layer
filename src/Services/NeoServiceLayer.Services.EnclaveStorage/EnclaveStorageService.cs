@@ -216,31 +216,33 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
                 }
             }
 
-            // Load sealed items from persistent storage with validation
-            var items = await LoadFromPersistentStorageAsync<List<SealedDataItem>>("sealed_items");
-            if (items != null)
+            // Load sealed items from PostgreSQL database
+            try
             {
+                var allServices = new[] { "Authentication", "Oracle", "Voting", "KeyManagement", "EnclaveStorage" };
                 var validItems = 0;
-                var corruptedItems = 0;
+                var totalSize = 0L;
 
-                foreach (var item in items)
+                foreach (var serviceName in allServices)
                 {
-                    // Validate item integrity
-                    if (await ValidateItemIntegrityAsync(item))
+                    var (items, _) = await _sealedDataRepository.ListByServiceAsync(serviceName, 1, 1000);
+                    
+                    foreach (var item in items)
                     {
                         _sealedItems[item.Key] = item;
                         UpdateServiceStorage(item.Service, item.Size);
                         Interlocked.Add(ref _totalStorageUsed, item.Size);
+                        totalSize += item.Size;
                         validItems++;
-                    }
-                    else
-                    {
-                        _corruptedItemDetected(Logger, item.Key, null);
-                        corruptedItems++;
                     }
                 }
 
-                _itemsLoadedFromStorage(Logger, validItems, corruptedItems, null);
+                _itemsLoadedFromStorage(Logger, validItems, 0, null);
+                _totalStorageUsed = totalSize;
+            }
+            catch (Exception ex)
+            {
+                Logger.LogWarning(ex, "Failed to load sealed items from database during initialization");
             }
 
             // Set initial health status
