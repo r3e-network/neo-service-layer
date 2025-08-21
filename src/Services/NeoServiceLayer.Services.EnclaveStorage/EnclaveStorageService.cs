@@ -341,10 +341,10 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             return new SealDataResult
             {
                 Success = true,
-                StorageId = storageId,
-                SealedSize = sealedItem.SealedSize,
-                Fingerprint = $"sha256:{fingerprint}",
-                ExpiresAt = sealedItem.ExpiresAt
+                StorageId = storedItem.StorageId,
+                SealedSize = storedItem.SealedSize,
+                Fingerprint = $"sha256:{storedItem.Fingerprint}",
+                ExpiresAt = storedItem.ExpiresAt
             };
         }
         catch (Exception ex)
