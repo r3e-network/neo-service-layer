@@ -513,24 +513,31 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         ValidateBlockchainType(blockchainType);
 
-        await Task.CompletedTask;
+        // Get statistics from PostgreSQL repository
+        var storageStats = await _sealedDataRepository.GetStorageStatisticsAsync();
+        
+        // Calculate quotas
+        var serviceStorage = storageStats.ToDictionary(
+            kvp => kvp.Key,
+            kvp => new ServiceStorageInfo
+            {
+                ServiceName = kvp.Key,
+                ItemCount = kvp.Value.ItemCount,
+                TotalSize = kvp.Value.TotalSize,
+                QuotaUsedPercent = (kvp.Value.TotalSize * 100.0) / _maxStorageSize
+            }
+        );
+
+        var totalItems = storageStats.Values.Sum(s => s.ItemCount);
+        var totalSize = storageStats.Values.Sum(s => s.TotalSize);
 
         return new EnclaveStorageStatistics
         {
-            TotalItems = _sealedItems.Count,
-            TotalSize = _totalStorageUsed,
-            AvailableSpace = _maxStorageSize - _totalStorageUsed,
-            ServiceCount = _serviceStorage.Count,
-            ServiceStorage = _serviceStorage.ToDictionary(
-                kvp => kvp.Key,
-                kvp => new ServiceStorageInfo
-                {
-                    ServiceName = kvp.Key,
-                    ItemCount = kvp.Value.ItemCount,
-                    TotalSize = kvp.Value.TotalSize,
-                    QuotaUsedPercent = (kvp.Value.TotalSize * 100.0) / _maxStorageSize
-                }
-            ),
+            TotalItems = totalItems,
+            TotalSize = totalSize,
+            AvailableSpace = _maxStorageSize - totalSize,
+            ServiceCount = storageStats.Count,
+            ServiceStorage = serviceStorage,
             LastBackup = await GetLastBackupTimeAsync()
         };
     }
