@@ -34,7 +34,8 @@ public static class CustomHealthChecks
 
         // Basic health checks
         healthChecksBuilder
-            .AddCheck<DatabaseHealthCheck>("database", HealthStatus.Unhealthy, new[] { "database", "critical" })
+            .AddCheck<PostgreSQLHealthCheck>("postgresql", HealthStatus.Unhealthy, new[] { "database", "postgresql", "critical" })
+            .AddCheck<SGXStorageHealthCheck>("sgx-storage", HealthStatus.Unhealthy, new[] { "sgx", "storage", "critical" })
             .AddCheck<RedisHealthCheck>("redis", HealthStatus.Degraded, new[] { "cache", "performance" })
             .AddCheck<BlockchainHealthCheck>("blockchain", HealthStatus.Degraded, new[] { "blockchain", "external" })
             .AddCheck<KeyManagementHealthCheck>("keymanagement", HealthStatus.Unhealthy, new[] { "security", "critical" })
