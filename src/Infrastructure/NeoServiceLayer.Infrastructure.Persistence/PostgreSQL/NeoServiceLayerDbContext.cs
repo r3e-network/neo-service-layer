@@ -277,6 +277,56 @@ public class NeoServiceLayerDbContext : DbContext
             entity.HasIndex(e => new { e.AggregateId, e.Version }).IsUnique();
             entity.HasIndex(e => e.Timestamp);
         });
+
+        // Configure Compute Entities
+        modelBuilder.Entity<ComputationEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.ComputationType).IsRequired().HasMaxLength(50);
+            entity.Property(e => e.Code).IsRequired();
+            entity.Property(e => e.Version).IsRequired().HasMaxLength(20);
+            entity.Property(e => e.BlockchainType).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => new { e.Name, e.Version }).IsUnique();
+            entity.HasIndex(e => e.BlockchainType);
+            entity.HasIndex(e => e.IsActive);
+        });
+
+        modelBuilder.Entity<ComputationStatusEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComputationId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Status).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => new { e.ComputationId, e.StartTime });
+            entity.HasIndex(e => e.Status);
+        });
+
+        modelBuilder.Entity<ComputationResultEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComputationId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Result).IsRequired();
+            entity.Property(e => e.Hash).IsRequired().HasMaxLength(256);
+            entity.HasIndex(e => e.ComputationId);
+            entity.HasIndex(e => e.Timestamp);
+        });
+
+        modelBuilder.Entity<ComputationResourceUsageEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComputationId).IsRequired().HasMaxLength(100);
+            entity.HasIndex(e => new { e.ComputationId, e.RecordedAt });
+        });
+
+        modelBuilder.Entity<ComputationPermissionEntity>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.ComputationId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Principal).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.Permission).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => new { e.ComputationId, e.Principal, e.Permission }).IsUnique();
+            entity.HasIndex(e => e.IsActive);
+        });
     }
 
     private void ConfigureIndexes(ModelBuilder modelBuilder)
