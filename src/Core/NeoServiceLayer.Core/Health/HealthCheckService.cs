@@ -199,14 +199,14 @@ public class NeoServiceRedisHealthCheck : IHealthCheck
 }
 
 /// <summary>
-/// Message queue health check.
+/// Neo Service Layer message queue health check.
 /// </summary>
-public class MessageQueueHealthCheck : IHealthCheck
+public class NeoServiceMessageQueueHealthCheck : IHealthCheck
 {
     private readonly Func<Task<bool>> _checkQueue;
-    private readonly ILogger<MessageQueueHealthCheck> _logger;
+    private readonly ILogger<NeoServiceMessageQueueHealthCheck> _logger;
 
-    public MessageQueueHealthCheck(Func<Task<bool>> checkQueue, ILogger<MessageQueueHealthCheck> logger)
+    public NeoServiceMessageQueueHealthCheck(Func<Task<bool>> checkQueue, ILogger<NeoServiceMessageQueueHealthCheck> logger)
     {
         _checkQueue = checkQueue ?? throw new ArgumentNullException(nameof(checkQueue));
         _logger = logger ?? throw new ArgumentNullException(nameof(logger));
