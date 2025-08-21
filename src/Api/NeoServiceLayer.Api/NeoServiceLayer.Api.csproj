@@ -35,6 +35,7 @@
     <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
     <PackageReference Include="HotChocolate.Data" />
     <PackageReference Include="HotChocolate.Data.EntityFramework" />
+    <PackageReference Include="HotChocolate.AspNetCore.Voyager" />
   </ItemGroup>
 
   <ItemGroup>
