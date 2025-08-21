@@ -475,7 +475,10 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             };
         }
 
-        if (!_sealedItems.TryRemove(key, out var sealedItem))
+        // Delete from PostgreSQL database
+        var deleted = await _sealedDataRepository.DeleteByKeyAsync(key);
+
+        if (!deleted)
         {
             return new DeleteSealedDataResult
             {
@@ -486,17 +489,15 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             };
         }
 
-        lock (_storageLock)
+        // Remove from in-memory cache
+        if (_sealedItems.TryRemove(key, out var sealedItem))
         {
-            _totalStorageUsed -= sealedItem.SealedSize;
-            UpdateServiceStorage(sealedItem.Service, -sealedItem.SealedSize);
+            lock (_storageLock)
+            {
+                _totalStorageUsed -= sealedItem.SealedSize;
+                UpdateServiceStorage(sealedItem.Service, -sealedItem.SealedSize);
+            }
         }
-
-        // Securely overwrite the data
-        SecureDelete(sealedItem.SealedData);
-
-        // Persist updated list
-        await SaveToPersistentStorageAsync("sealed_items", _sealedItems.Values.ToList());
 
         return new DeleteSealedDataResult
         {
