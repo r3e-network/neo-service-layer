@@ -129,6 +129,10 @@ volumes:
     driver: local
   neo-config:
     driver: local
+  neo-postgres-data:
+    driver: local
+  neo-redis-data:
+    driver: local
 
 networks:
   neo-network:
