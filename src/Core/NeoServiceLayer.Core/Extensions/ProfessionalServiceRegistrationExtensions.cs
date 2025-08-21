@@ -191,19 +191,17 @@ namespace NeoServiceLayer.Core.Extensions
         }
 
         /// <summary>
-        /// Adds health check infrastructure
+        /// Adds professional health check infrastructure
         /// </summary>
         /// <param name="services">The service collection</param>
         /// <returns>The service collection</returns>
         public static IServiceCollection AddProfessionalHealthChecks(this IServiceCollection services)
         {
-            // TODO: Re-enable after health check infrastructure is implemented
-            // Register health check orchestrator
-            // services.AddScoped<HealthCheckOrchestrator>();
-            
-            // Register individual health checks
-            // services.AddScoped<IHealthCheck, DatabaseHealthCheck>();
-            // services.AddScoped<IHealthCheck, ServiceHealthCheck>();
+            // Register Microsoft health checks with our professional implementations
+            services.AddHealthChecks()
+                .AddCheck<NeoServiceDatabaseHealthCheck>("neo-database")
+                .AddCheck<NeoServiceRedisHealthCheck>("neo-redis")
+                .AddCheck<NeoServiceMessageQueueHealthCheck>("neo-messagequeue");
             
             return services;
         }
