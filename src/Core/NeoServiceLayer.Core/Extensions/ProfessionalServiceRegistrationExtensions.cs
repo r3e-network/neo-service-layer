@@ -6,6 +6,7 @@ using NeoServiceLayer.Core.Attributes;
 using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Core.Domain.Handlers;
 using NeoServiceLayer.Core.Health;
+using NeoServiceLayer.Core.Persistence;
 
 namespace NeoServiceLayer.Core.Extensions
 {
