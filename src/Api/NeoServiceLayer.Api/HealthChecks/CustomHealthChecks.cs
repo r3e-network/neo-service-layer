@@ -67,9 +67,10 @@ public static class CustomHealthChecks
 public class PostgreSQLHealthCheck : IHealthCheck
 {
     private readonly IConfiguration _configuration;
-    private readonly ILogger<DatabaseHealthCheck> _logger;
+    private readonly ILogger<PostgreSQLHealthCheck> _logger;
+    private readonly NeoServiceLayerDbContext? _dbContext;
 
-    public DatabaseHealthCheck(IConfiguration configuration, ILogger<DatabaseHealthCheck> logger)
+    public PostgreSQLHealthCheck(IConfiguration configuration, ILogger<PostgreSQLHealthCheck> logger, NeoServiceLayerDbContext? dbContext = null)
     {
         _configuration = configuration;
         _logger = logger;
