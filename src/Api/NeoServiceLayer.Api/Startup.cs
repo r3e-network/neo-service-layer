@@ -298,13 +298,8 @@ namespace NeoServiceLayer.Api
 
         private void RegisterCoreServices(IServiceCollection services)
         {
-            // Repositories
-            services.AddScoped<IUserRepository, UserRepository>();
-            services.AddScoped<IJobRepository, JobRepository>();
-            services.AddScoped<IFileRepository, FileRepository>();
-            services.AddScoped<IOracleDataRepository, OracleDataRepository>();
-            services.AddScoped<IRoleRepository, RoleRepository>();
-
+            // PostgreSQL repositories are already registered in ConfigureDatabases method
+            
             // Core services
             services.AddSingleton<IPasswordHasher, BCryptPasswordHasher>();
             services.AddSingleton<ITokenBlacklistService, RedisTokenBlacklistService>();
