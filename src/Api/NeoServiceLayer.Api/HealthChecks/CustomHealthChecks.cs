@@ -81,38 +81,61 @@ public class PostgreSQLHealthCheck : IHealthCheck
     {
         try
         {
-            // Get database connection string from environment (production security requirement)
             var connectionString = Environment.GetEnvironmentVariable("DATABASE_CONNECTION_STRING")
                 ?? _configuration.GetConnectionString("DefaultConnection");
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                return HealthCheckResult.Unhealthy("Database connection string not configured. Set DATABASE_CONNECTION_STRING environment variable.");
+                return HealthCheckResult.Unhealthy("PostgreSQL connection string not configured. Set DATABASE_CONNECTION_STRING environment variable.");
             }
 
-            // Test actual database connectivity
             using var connection = new Npgsql.NpgsqlConnection(connectionString);
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
             
-            // Execute a simple query to verify database is operational
-            using var command = new Npgsql.NpgsqlCommand("SELECT 1", connection);
-            var result = await command.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+            // Test basic connectivity
+            using var basicCommand = new Npgsql.NpgsqlCommand("SELECT 1", connection);
+            var basicResult = await basicCommand.ExecuteScalarAsync(cancellationToken).ConfigureAwait(false);
+
+            // Test schema existence
+            using var schemaCommand = new Npgsql.NpgsqlCommand(
+                @"SELECT schema_name FROM information_schema.schemata 
+                  WHERE schema_name IN ('core', 'auth', 'sgx', 'oracle', 'voting') 
+                  ORDER BY schema_name", connection);
             
+            var schemas = new List<string>();
+            using var reader = await schemaCommand.ExecuteReaderAsync(cancellationToken);
+            while (await reader.ReadAsync(cancellationToken))
+            {
+                schemas.Add(reader.GetString(0));
+            }
+            reader.Close();
+
+            // Test SGX table existence
+            using var sgxTableCommand = new Npgsql.NpgsqlCommand(
+                "SELECT COUNT(*) FROM sgx.sealed_data_items WHERE created_at > NOW() - INTERVAL '1 hour'", connection);
+            var recentSealedItems = await sgxTableCommand.ExecuteScalarAsync(cancellationToken);
+
             var data = new Dictionary<string, object>
             {
-                ["connection_string"] = "configured",
+                ["connection_status"] = "connected",
                 ["server_version"] = connection.ServerVersion,
                 ["database"] = connection.Database,
-                ["state"] = connection.State.ToString(),
-                ["test_query_result"] = result?.ToString() ?? "null"
+                ["schemas_found"] = schemas,
+                ["sgx_recent_items"] = recentSealedItems?.ToString() ?? "0",
+                ["test_query_result"] = basicResult?.ToString() ?? "null"
             };
 
-            return HealthCheckResult.Healthy("Database is accessible", data);
+            if (schemas.Count < 5)
+            {
+                return HealthCheckResult.Degraded($"Only {schemas.Count}/5 required schemas found: {string.Join(", ", schemas)}", null, data);
+            }
+
+            return HealthCheckResult.Healthy("PostgreSQL database is fully operational with all schemas", data);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Database health check failed");
-            return HealthCheckResult.Unhealthy($"Database health check failed: {ex.Message}", ex);
+            _logger.LogError(ex, "PostgreSQL health check failed");
+            return HealthCheckResult.Unhealthy($"PostgreSQL health check failed: {ex.Message}", ex);
         }
     }
 }
