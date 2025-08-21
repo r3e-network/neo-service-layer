@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250821-161542", "file": "/home/ubuntu/neo-service-layer/docker-compose.postgresql.yml", "timestamp": "2025-08-21T16:15:42Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755792901.json |   1 +  docker-compose.postgresql.yml       | 257 ++++++++++++++++++++++++++++++++++++  2 files changed, 258 insertions(+) "}
