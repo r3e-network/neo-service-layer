@@ -94,6 +94,16 @@ public class NeoServiceLayerDbContext : DbContext
     
     #endregion
 
+    #region Compute Services
+    
+    public DbSet<ComputationEntity> Computations { get; set; } = null!;
+    public DbSet<ComputationStatusEntity> ComputationStatuses { get; set; } = null!;
+    public DbSet<ComputationResultEntity> ComputationResults { get; set; } = null!;
+    public DbSet<ComputationResourceUsageEntity> ComputationResourceUsages { get; set; } = null!;
+    public DbSet<ComputationPermissionEntity> ComputationPermissions { get; set; } = null!;
+    
+    #endregion
+
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
         base.OnModelCreating(modelBuilder);
