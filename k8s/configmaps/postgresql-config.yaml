@@ -1,0 +1,78 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-postgres-config
+  namespace: neo-service-layer
+  labels:
+    app: neo-postgres
+    component: database
+data:
+  postgresql.conf: |
+    # PostgreSQL Configuration for Neo Service Layer Production
+    listen_addresses = '*'
+    port = 5432
+    
+    # Memory Settings
+    shared_buffers = 512MB
+    effective_cache_size = 2GB
+    work_mem = 8MB
+    maintenance_work_mem = 128MB
+    
+    # Checkpoint Settings
+    wal_buffers = 32MB
+    checkpoint_completion_target = 0.9
+    wal_compression = on
+    
+    # Connection Settings
+    max_connections = 300
+    
+    # Logging Settings
+    log_destination = 'stderr'
+    logging_collector = on
+    log_directory = '/var/log/postgresql'
+    log_filename = 'postgresql-%Y-%m-%d_%H%M%S.log'
+    log_statement = 'ddl'
+    log_min_duration_statement = 1000
+    log_checkpoints = on
+    log_connections = on
+    log_disconnections = on
+    log_lock_waits = on
+    log_temp_files = 0
+    log_autovacuum_min_duration = 0
+    
+    # Autovacuum Settings
+    autovacuum = on
+    autovacuum_max_workers = 4
+    autovacuum_naptime = 30s
+    autovacuum_vacuum_threshold = 250
+    autovacuum_analyze_threshold = 125
+    
+    # Replication Settings (for future use)
+    wal_level = replica
+    max_wal_senders = 3
+    max_replication_slots = 3
+    hot_standby = on
+    
+    # Performance Extensions
+    shared_preload_libraries = 'pg_stat_statements,pg_buffercache'
+    
+  pg_hba.conf: |
+    # PostgreSQL Client Authentication Configuration
+    # TYPE  DATABASE        USER            ADDRESS                 METHOD
+    
+    # "local" is for Unix domain socket connections only
+    local   all             all                                     trust
+    
+    # IPv4 local connections:
+    host    all             all             127.0.0.1/32            md5
+    host    all             all             0.0.0.0/0               md5
+    
+    # IPv6 local connections:
+    host    all             all             ::1/128                 md5
+    
+    # Allow replication connections from localhost, by a user with the
+    # replication privilege.
+    local   replication     all                                     trust
+    host    replication     all             127.0.0.1/32            md5
+    host    replication     all             ::1/128                 md5
+    host    replication     all             0.0.0.0/0               md5
