@@ -10,7 +10,7 @@ namespace NeoServiceLayer.Core.Health
     /// <summary>
     /// Health check for database connectivity
     /// </summary>
-    public class DatabaseHealthCheck : IHealthCheck
+    public class ProfessionalDatabaseHealthCheck : IProfessionalHealthCheck
     {
         private readonly DbContext _context;
         private readonly ILogger<DatabaseHealthCheck> _logger;
