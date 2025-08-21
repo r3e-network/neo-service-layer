@@ -98,8 +98,9 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddDomainServices(this IServiceCollection services)
         {
+            // TODO: Re-enable after domain services are implemented
             // Domain services should be scoped to maintain consistency within a request
-            services.AddScoped<IPasswordPolicy, EnterprisePasswordPolicy>();
+            // services.AddScoped<IPasswordPolicy, EnterprisePasswordPolicy>();
             
             return services;
         }
@@ -111,9 +112,10 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddCQRS(this IServiceCollection services)
         {
+            // TODO: Re-enable after CQRS infrastructure is implemented
             // Command and query dispatchers should be scoped
-            services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-            services.AddScoped<IQueryDispatcher, QueryDispatcher>();
+            // services.AddScoped<ICommandDispatcher, CommandDispatcher>();
+            // services.AddScoped<IQueryDispatcher, QueryDispatcher>();
             
             return services;
         }
