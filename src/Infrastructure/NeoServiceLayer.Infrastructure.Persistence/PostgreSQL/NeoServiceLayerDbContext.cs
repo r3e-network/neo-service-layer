@@ -172,6 +172,13 @@ public class NeoServiceLayerDbContext : DbContext
         modelBuilder.Entity<Event>().ToTable("events", "eventsourcing");
         modelBuilder.Entity<EventSnapshot>().ToTable("event_snapshots", "eventsourcing");
         modelBuilder.Entity<AggregateRoot>().ToTable("aggregate_roots", "eventsourcing");
+
+        // Compute services schema
+        modelBuilder.Entity<ComputationEntity>().ToTable("computations", "compute");
+        modelBuilder.Entity<ComputationStatusEntity>().ToTable("computation_statuses", "compute");
+        modelBuilder.Entity<ComputationResultEntity>().ToTable("computation_results", "compute");
+        modelBuilder.Entity<ComputationResourceUsageEntity>().ToTable("computation_resource_usages", "compute");
+        modelBuilder.Entity<ComputationPermissionEntity>().ToTable("computation_permissions", "compute");
     }
 
     private void ConfigureEntities(ModelBuilder modelBuilder)
