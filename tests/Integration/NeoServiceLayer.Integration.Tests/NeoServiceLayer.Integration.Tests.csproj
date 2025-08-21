@@ -37,6 +37,7 @@
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Blockchain/NeoServiceLayer.Infrastructure.Blockchain.csproj" />
+    <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj" />
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Tee/NeoServiceLayer.Tee.Host/NeoServiceLayer.Tee.Host.csproj" />
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.Randomness/NeoServiceLayer.Services.Randomness.csproj" />
     <ProjectReference Include="/home/ubuntu/neo-service-layer/src/Services/NeoServiceLayer.Services.KeyManagement/NeoServiceLayer.Services.KeyManagement.csproj" />
