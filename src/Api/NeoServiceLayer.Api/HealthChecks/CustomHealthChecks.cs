@@ -62,9 +62,9 @@ public static class CustomHealthChecks
 }
 
 /// <summary>
-/// Database connectivity health check.
+/// PostgreSQL database connectivity and schema health check.
 /// </summary>
-public class DatabaseHealthCheck : IHealthCheck
+public class PostgreSQLHealthCheck : IHealthCheck
 {
     private readonly IConfiguration _configuration;
     private readonly ILogger<DatabaseHealthCheck> _logger;
