@@ -1,6 +1,7 @@
 using System.Text.Json;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories;
 using NeoServiceLayer.ServiceFramework;
 using NeoServiceLayer.Services.EnclaveStorage;
 using NeoServiceLayer.Services.Storage;
