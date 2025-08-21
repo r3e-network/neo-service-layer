@@ -185,6 +185,23 @@ namespace NeoServiceLayer.Core.Extensions
         }
 
         /// <summary>
+        /// Adds health check infrastructure
+        /// </summary>
+        /// <param name="services">The service collection</param>
+        /// <returns>The service collection</returns>
+        public static IServiceCollection AddProfessionalHealthChecks(this IServiceCollection services)
+        {
+            // Register health check orchestrator
+            services.AddScoped<HealthCheckOrchestrator>();
+            
+            // Register individual health checks
+            services.AddScoped<IHealthCheck, DatabaseHealthCheck>();
+            services.AddScoped<IHealthCheck, ServiceHealthCheck>();
+            
+            return services;
+        }
+
+        /// <summary>
         /// Determines if a service is stateless and can safely be a singleton
         /// </summary>
         /// <param name="serviceType">The service type</param>
