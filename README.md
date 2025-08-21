@@ -130,6 +130,82 @@ curl http://localhost:5000/health/live
 dotnet test
 ```
 
+## 🗄️ PostgreSQL Database Setup
+
+Neo Service Layer now uses PostgreSQL as its unified persistence backend for all services, including SGX confidential storage. This provides better performance, reliability, and enterprise features.
+
+### Quick PostgreSQL Setup
+
+```bash
+# 1. Run the automated setup script
+./scripts/setup-postgresql.sh
+
+# 2. Verify the setup
+curl http://localhost:8080/health
+```
+
+### Manual Setup
+
+```bash
+# 1. Copy environment template
+cp .env.template .env
+
+# 2. Generate required secrets
+# JWT Secret (required)
+export JWT_SECRET_KEY=$(openssl rand -base64 32)
+
+# PostgreSQL Password (required)
+export POSTGRES_PASSWORD=$(openssl rand -base64 16 | tr -d "=+/")
+
+# 3. Update .env file with generated values
+echo "JWT_SECRET_KEY=${JWT_SECRET_KEY}" >> .env
+echo "POSTGRES_PASSWORD=${POSTGRES_PASSWORD}" >> .env
+
+# 4. Start PostgreSQL and Redis
+docker-compose up -d neo-postgres neo-redis
+
+# 5. Wait for PostgreSQL to be ready
+docker-compose exec neo-postgres pg_isready -U neo_user -d neo_service_layer
+
+# 6. Run database migrations
+docker-compose exec neo-postgres psql -U neo_user -d neo_service_layer \
+  -f /docker-entrypoint-initdb.d/001_InitialPostgreSQLSchema.sql
+
+# 7. Start the full application
+docker-compose up -d
+```
+
+### Database Features
+
+- **🏗️ Schema Separation**: Logical separation by domain (core, sgx, oracle, voting, etc.)
+- **🔐 SGX Integration**: Sealed data stored securely in PostgreSQL with hardware attestation
+- **📊 Performance Optimized**: Indexes, connection pooling, and query optimization
+- **🔄 High Availability**: Replication, backup, and disaster recovery ready
+- **🛡️ Security**: Row-level security, audit logging, and encrypted connections
+
+### Connection Details
+
+- **Host**: localhost (or `neo-postgres` in Docker)
+- **Port**: 5432
+- **Database**: neo_service_layer
+- **Username**: neo_user
+- **Password**: Set in .env file
+- **Schemas**: core, auth, sgx, oracle, voting, crosschain, monitoring, eventsourcing
+
+### Health Checks
+
+```bash
+# Database health
+curl http://localhost:8080/health
+
+# PostgreSQL direct connection
+docker-compose exec neo-postgres psql -U neo_user -d neo_service_layer -c "SELECT 1;"
+
+# Check database schemas
+docker-compose exec neo-postgres psql -U neo_user -d neo_service_layer \
+  -c "SELECT schemaname FROM pg_tables WHERE schemaname IN ('core', 'sgx', 'oracle') GROUP BY schemaname;"
+```
+
 ## 💼 Core Services
 
 ### 🔧 Compute Service
