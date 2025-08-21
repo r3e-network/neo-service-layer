@@ -46,11 +46,13 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
     /// <param name="configuration">The service configuration.</param>
     /// <param name="blockchainClientFactory">The blockchain client factory.</param>
     /// <param name="enclaveManager">The enclave manager (optional).</param>
+    /// <param name="serviceProvider">The service provider for dependency injection.</param>
     public CrossChainService(
         ILogger<CrossChainService> logger,
         CoreConfig? configuration = null,
         IBlockchainClientFactory? blockchainClientFactory = null,
-        NeoServiceLayer.Tee.Host.Services.IEnclaveManager? enclaveManager = null)
+        NeoServiceLayer.Tee.Host.Services.IEnclaveManager? enclaveManager = null,
+        IServiceProvider? serviceProvider = null)
         : base("CrossChainService", "Cross-chain interoperability and messaging service", "1.0.0", logger, configuration as NeoServiceLayer.ServiceFramework.IServiceConfiguration, enclaveManager)
     {
         Configuration = configuration;
@@ -69,6 +71,12 @@ public partial class CrossChainService : CryptographicServiceBase, ICrossChainSe
         AddCapability<ICrossChainService>();
         AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
         AddDependency(new ServiceDependency("EventSubscriptionService", true, "1.0.0"));
+
+        // Initialize PostgreSQL storage if service provider is available
+        if (serviceProvider != null)
+        {
+            InitializePostgreSQLStorage(serviceProvider);
+        }
     }
 
     /// <summary>
