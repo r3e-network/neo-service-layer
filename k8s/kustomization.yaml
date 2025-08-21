@@ -1,0 +1,100 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+metadata:
+  name: neo-service-layer
+  namespace: neo-service-layer
+
+# Namespace
+namespace: neo-service-layer
+
+resources:
+  # Namespace
+  - namespace.yaml
+  
+  # Storage
+  - storage/postgresql-pvc.yaml
+  
+  # ConfigMaps
+  - configmaps/postgresql-config.yaml
+  - configmaps/postgresql-initdb.yaml
+  
+  # Secrets (replace with sealed-secrets or external-secrets in production)
+  - secrets/postgresql-secret.yaml
+  
+  # Services
+  - services/postgresql-statefulset.yaml
+  - services/neo-service-deployment.yaml
+  
+  # Monitoring
+  - monitoring/postgresql-monitoring.yaml
+
+# Common Labels
+commonLabels:
+  app.kubernetes.io/name: neo-service-layer
+  app.kubernetes.io/version: "1.0.0"
+  app.kubernetes.io/managed-by: kustomize
+
+# Config replacements for different environments
+# Use with: kubectl kustomize . | kubectl apply -f -
+
+# Image transformations
+images:
+  - name: neo-service-layer
+    newTag: "1.0.0"
+    newName: your-registry.com/neo-service-layer
+
+# Resource limits
+patchesStrategicMerge:
+  # Add production resource limits
+  - |-
+    apiVersion: apps/v1
+    kind: StatefulSet
+    metadata:
+      name: neo-postgres
+      namespace: neo-service-layer
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres
+            resources:
+              requests:
+                memory: "4Gi"
+                cpu: "2"
+              limits:
+                memory: "8Gi"
+                cpu: "4"
+
+# Environment-specific configurations
+configMapGenerator:
+  - name: neo-app-config
+    literals:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - DATABASE_POOL_SIZE=100
+      - ENABLE_DETAILED_LOGGING=false
+      - METRICS_ENABLED=true
+
+secretGenerator:
+  - name: neo-production-secrets
+    type: Opaque
+    literals:
+      - DATABASE_PASSWORD=CHANGE_IN_PRODUCTION
+      - JWT_SECRET=CHANGE_IN_PRODUCTION
+
+# Validation
+openapi:
+  schema: {}
+
+# Transformers for different environments
+replacements:
+  - source:
+      kind: ConfigMap
+      name: neo-app-config
+      fieldPath: data.DATABASE_POOL_SIZE
+    targets:
+      - select:
+          kind: Deployment
+          name: neo-service-layer
+        fieldPaths:
+          - spec.template.spec.containers.[name=neo-service-layer].env.[name=DATABASE_POOL_SIZE].value
