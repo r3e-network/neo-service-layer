@@ -1,0 +1,245 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-postgres-initdb
+  namespace: neo-service-layer
+  labels:
+    app: neo-postgres
+    component: database
+data:
+  001_InitialPostgreSQLSchema.sql: |
+    -- Neo Service Layer PostgreSQL Schema
+    -- Initial database schema for production deployment
+    
+    -- Enable required extensions
+    CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+    CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+    CREATE EXTENSION IF NOT EXISTS "pg_buffercache";
+    CREATE EXTENSION IF NOT EXISTS "btree_gin";
+    CREATE EXTENSION IF NOT EXISTS "btree_gist";
+    
+    -- Create schemas
+    CREATE SCHEMA IF NOT EXISTS core;
+    CREATE SCHEMA IF NOT EXISTS auth;
+    CREATE SCHEMA IF NOT EXISTS sgx;
+    CREATE SCHEMA IF NOT EXISTS keymanagement;
+    CREATE SCHEMA IF NOT EXISTS oracle;
+    CREATE SCHEMA IF NOT EXISTS voting;
+    CREATE SCHEMA IF NOT EXISTS crosschain;
+    CREATE SCHEMA IF NOT EXISTS monitoring;
+    CREATE SCHEMA IF NOT EXISTS eventsourcing;
+    
+    -- Core schema tables
+    CREATE TABLE IF NOT EXISTS core.users (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        username VARCHAR(255) UNIQUE NOT NULL,
+        email VARCHAR(255) UNIQUE NOT NULL,
+        password_hash VARCHAR(255) NOT NULL,
+        role VARCHAR(50) NOT NULL DEFAULT 'User',
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+    
+    -- SGX Enclave Storage tables
+    CREATE TABLE IF NOT EXISTS sgx.sealed_data_items (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        key VARCHAR(255) NOT NULL,
+        service_name VARCHAR(100) NOT NULL,
+        sealed_data BYTEA NOT NULL,
+        sealing_policy INTEGER NOT NULL DEFAULT 1,
+        version INTEGER NOT NULL DEFAULT 1,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        expires_at TIMESTAMP WITH TIME ZONE,
+        access_count INTEGER NOT NULL DEFAULT 0,
+        last_accessed_at TIMESTAMP WITH TIME ZONE,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        metadata JSONB,
+        UNIQUE(service_name, key)
+    );
+    
+    -- Oracle Data Feed tables
+    CREATE TABLE IF NOT EXISTS oracle.oracle_data_feeds (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        feed_id VARCHAR(255) UNIQUE NOT NULL,
+        feed_type VARCHAR(100) NOT NULL,
+        name VARCHAR(255) NOT NULL,
+        description TEXT,
+        data_source_url VARCHAR(1000),
+        update_frequency INTEGER NOT NULL DEFAULT 3600,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+    
+    CREATE TABLE IF NOT EXISTS oracle.feed_history (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        feed_id UUID NOT NULL REFERENCES oracle.oracle_data_feeds(id),
+        value NUMERIC(18,8) NOT NULL,
+        confidence_score NUMERIC(5,4),
+        data_quality_score NUMERIC(5,4),
+        recorded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        source_timestamp TIMESTAMP WITH TIME ZONE,
+        metadata JSONB
+    );
+    
+    -- Voting system tables
+    CREATE TABLE IF NOT EXISTS voting.voting_proposals (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        title VARCHAR(500) NOT NULL,
+        description TEXT NOT NULL,
+        proposal_type VARCHAR(100) NOT NULL,
+        status VARCHAR(50) NOT NULL DEFAULT 'Draft',
+        starts_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        ends_at TIMESTAMP WITH TIME ZONE NOT NULL,
+        created_by UUID,
+        is_active BOOLEAN NOT NULL DEFAULT true,
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        updated_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+    
+    CREATE TABLE IF NOT EXISTS voting.votes (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        proposal_id UUID NOT NULL REFERENCES voting.voting_proposals(id),
+        voter_address VARCHAR(255) NOT NULL,
+        vote_value VARCHAR(50) NOT NULL,
+        voting_power NUMERIC(18,8) NOT NULL DEFAULT 1,
+        cast_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        is_valid BOOLEAN NOT NULL DEFAULT true,
+        metadata JSONB,
+        UNIQUE(proposal_id, voter_address)
+    );
+    
+    -- Cross-chain operations tables
+    CREATE TABLE IF NOT EXISTS crosschain.cross_chain_operations (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        operation_type VARCHAR(100) NOT NULL,
+        source_chain VARCHAR(100) NOT NULL,
+        target_chain VARCHAR(100) NOT NULL,
+        source_transaction_hash VARCHAR(255),
+        target_transaction_hash VARCHAR(255),
+        status VARCHAR(50) NOT NULL DEFAULT 'Pending',
+        amount NUMERIC(18,8),
+        fee NUMERIC(18,8),
+        created_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        completed_at TIMESTAMP WITH TIME ZONE,
+        metadata JSONB
+    );
+    
+    -- Monitoring tables
+    CREATE TABLE IF NOT EXISTS monitoring.performance_metrics (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        service_name VARCHAR(100) NOT NULL,
+        metric_name VARCHAR(100) NOT NULL,
+        metric_value NUMERIC(18,8) NOT NULL,
+        unit VARCHAR(50),
+        tags JSONB,
+        recorded_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW()
+    );
+    
+    -- Event sourcing tables
+    CREATE TABLE IF NOT EXISTS eventsourcing.events (
+        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+        aggregate_id UUID NOT NULL,
+        aggregate_type VARCHAR(100) NOT NULL,
+        event_type VARCHAR(100) NOT NULL,
+        event_data JSONB NOT NULL,
+        event_version INTEGER NOT NULL DEFAULT 1,
+        occurred_at TIMESTAMP WITH TIME ZONE NOT NULL DEFAULT NOW(),
+        metadata JSONB
+    );
+    
+    -- Create indexes for performance
+    
+    -- SGX indexes
+    CREATE INDEX IF NOT EXISTS idx_sealed_data_service_key ON sgx.sealed_data_items(service_name, key) WHERE is_active = true;
+    CREATE INDEX IF NOT EXISTS idx_sealed_data_expires_active ON sgx.sealed_data_items(expires_at) WHERE is_active = true AND expires_at IS NOT NULL;
+    CREATE INDEX IF NOT EXISTS idx_sealed_data_last_accessed ON sgx.sealed_data_items(last_accessed_at DESC);
+    
+    -- Oracle indexes
+    CREATE INDEX IF NOT EXISTS idx_oracle_feeds_type_active ON oracle.oracle_data_feeds(feed_type, is_active, updated_at);
+    CREATE INDEX IF NOT EXISTS idx_oracle_feed_history_recorded ON oracle.feed_history(feed_id, recorded_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_oracle_feed_history_value ON oracle.feed_history(recorded_at DESC, value);
+    
+    -- Voting indexes
+    CREATE INDEX IF NOT EXISTS idx_voting_proposals_status_dates ON voting.voting_proposals(status, starts_at, ends_at) WHERE is_active = true;
+    CREATE INDEX IF NOT EXISTS idx_votes_proposal_cast ON voting.votes(proposal_id, cast_at) WHERE is_valid = true;
+    CREATE INDEX IF NOT EXISTS idx_votes_voter ON voting.votes(voter_address, cast_at DESC) WHERE is_valid = true;
+    
+    -- Cross-chain indexes
+    CREATE INDEX IF NOT EXISTS idx_crosschain_status_created ON crosschain.cross_chain_operations(status, created_at);
+    CREATE INDEX IF NOT EXISTS idx_crosschain_chains_status ON crosschain.cross_chain_operations(source_chain, target_chain, status);
+    CREATE INDEX IF NOT EXISTS idx_crosschain_transactions ON crosschain.cross_chain_operations(source_transaction_hash, target_transaction_hash);
+    
+    -- Monitoring indexes
+    CREATE INDEX IF NOT EXISTS idx_performance_metrics_service_time ON monitoring.performance_metrics(service_name, recorded_at DESC);
+    CREATE INDEX IF NOT EXISTS idx_performance_metrics_name_time ON monitoring.performance_metrics(metric_name, recorded_at DESC);
+    
+    -- Event sourcing indexes
+    CREATE INDEX IF NOT EXISTS idx_events_aggregate ON eventsourcing.events(aggregate_id, aggregate_type, occurred_at);
+    CREATE INDEX IF NOT EXISTS idx_events_type_time ON eventsourcing.events(event_type, occurred_at DESC);
+    
+    -- Create performance monitoring views
+    CREATE OR REPLACE VIEW monitoring.service_health_summary AS
+    SELECT 
+        'PostgreSQL' as service_name,
+        'Database' as service_type,
+        CASE 
+            WHEN pg_is_in_recovery() THEN 'Replica'
+            ELSE 'Primary'
+        END as role,
+        pg_size_pretty(pg_database_size(current_database())) as database_size,
+        (SELECT count(*) FROM pg_stat_activity WHERE state = 'active') as active_connections,
+        NOW() as last_check
+    UNION ALL
+    SELECT 
+        'SGX_Storage' as service_name,
+        'Enclave' as service_type,
+        'Active' as role,
+        pg_size_pretty(pg_total_relation_size('sgx.sealed_data_items')) as database_size,
+        (SELECT count(*) FROM sgx.sealed_data_items WHERE is_active = true) as active_connections,
+        NOW() as last_check;
+    
+    -- Insert initial data
+    DO $$
+    BEGIN
+        -- Insert default admin user if not exists
+        IF NOT EXISTS (SELECT 1 FROM core.users WHERE username = 'admin') THEN
+            INSERT INTO core.users (username, email, password_hash, role)
+            VALUES ('admin', 'admin@neo-service-layer.com', '$2a$11$dummy_hash_for_initial_setup', 'Admin');
+        END IF;
+        
+        -- Insert monitoring metrics table entry
+        INSERT INTO monitoring.performance_metrics (service_name, metric_name, metric_value, unit)
+        VALUES ('PostgreSQL', 'database_initialized', 1, 'boolean')
+        ON CONFLICT DO NOTHING;
+        
+    END $$;
+    
+    -- Grant permissions
+    GRANT USAGE ON SCHEMA core TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA core TO neo_user;
+    GRANT USAGE ON SCHEMA auth TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA auth TO neo_user;
+    GRANT USAGE ON SCHEMA sgx TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA sgx TO neo_user;
+    GRANT USAGE ON SCHEMA oracle TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA oracle TO neo_user;
+    GRANT USAGE ON SCHEMA voting TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA voting TO neo_user;
+    GRANT USAGE ON SCHEMA crosschain TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA crosschain TO neo_user;
+    GRANT USAGE ON SCHEMA monitoring TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA monitoring TO neo_user;
+    GRANT USAGE ON SCHEMA eventsourcing TO neo_user;
+    GRANT ALL PRIVILEGES ON ALL TABLES IN SCHEMA eventsourcing TO neo_user;
+    
+    -- Grant sequence permissions
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA core TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA sgx TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA oracle TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA voting TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA crosschain TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA monitoring TO neo_user;
+    GRANT USAGE ON ALL SEQUENCES IN SCHEMA eventsourcing TO neo_user;
