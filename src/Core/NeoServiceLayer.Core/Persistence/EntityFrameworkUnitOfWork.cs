@@ -11,7 +11,7 @@ namespace NeoServiceLayer.Core.Persistence
     /// </summary>
     public class EntityFrameworkUnitOfWork : IUnitOfWork
     {
-        private readonly DbContext _context;
+        protected readonly DbContext _context;
         private IDbContextTransaction? _transaction;
 
         public EntityFrameworkUnitOfWork(DbContext context)
