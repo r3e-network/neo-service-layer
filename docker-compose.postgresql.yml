@@ -1,0 +1,257 @@
+version: '3.8'
+
+services:
+  # PostgreSQL database for unified persistence across all services
+  neo-postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: neo_service_layer
+      POSTGRES_USER: neo_user
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-neo_secure_password_2024}
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - neo_postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+      - ./docker/postgres/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+    ports:
+      - "5432:5432"
+    command: postgres -c config_file=/etc/postgresql/postgresql.conf
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U neo_user -d neo_service_layer"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+
+  # Redis for caching and session management
+  neo-redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - neo_redis_data:/data
+      - ./docker/redis/redis.conf:/usr/local/etc/redis/redis.conf:ro
+    command: redis-server /usr/local/etc/redis/redis.conf
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 3
+
+  # Neo Service Layer API with PostgreSQL integration
+  neo-api:
+    build:
+      context: .
+      dockerfile: docker/api/Dockerfile
+    container_name: neo-api
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - ConnectionStrings__Redis=neo-redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-MyUniqueSecretKeyForNeoServiceLayerThatIsLongEnoughAndSecureForProductionUse2024!}
+      - SGX__Database__EnableEncryption=true
+      - SGX__Database__EnableIntegrityChecking=true
+      - Logging__LogLevel__Default=Information
+      - Logging__LogLevel__Microsoft=Warning
+      - Logging__LogLevel__NeoServiceLayer=Debug
+    ports:
+      - "8080:80"
+      - "8443:443"
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+      neo-redis:
+        condition: service_healthy
+    volumes:
+      - ./logs:/app/logs
+      - ./certificates:/app/certificates:ro
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Oracle Service with PostgreSQL backend
+  neo-oracle:
+    build:
+      context: .
+      dockerfile: docker/oracle/Dockerfile
+    container_name: neo-oracle
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - Oracle__DataSources__CoinGecko__ApiKey=${COINGECKO_API_KEY:-}
+      - Oracle__DataSources__ChainLink__NodeUrl=${CHAINLINK_NODE_URL:-}
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/oracle"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Authentication Service with PostgreSQL backend
+  neo-auth:
+    build:
+      context: .
+      dockerfile: docker/auth/Dockerfile
+    container_name: neo-auth
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - ConnectionStrings__Redis=neo-redis:6379
+      - JWT_SECRET_KEY=${JWT_SECRET_KEY:-MyUniqueSecretKeyForNeoServiceLayerThatIsLongEnoughAndSecureForProductionUse2024!}
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+      neo-redis:
+        condition: service_healthy
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/auth"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Enclave Storage Service with PostgreSQL confidential storage
+  neo-enclave-storage:
+    build:
+      context: .
+      dockerfile: docker/enclave/Dockerfile
+    container_name: neo-enclave-storage
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - SGX__EnableHardwareMode=${SGX_HARDWARE_MODE:-false}
+      - SGX__Database__EnableEncryption=true
+      - SGX__Database__EncryptionKey=${SGX_ENCRYPTION_KEY:-}
+      - MaxStorageSize=1073741824  # 1GB
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+    volumes:
+      - /dev/sgx_enclave:/dev/sgx_enclave:ro
+      - /dev/sgx_provision:/dev/sgx_provision:ro
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/enclave"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Key Management Service with PostgreSQL key storage
+  neo-keymanagement:
+    build:
+      context: .
+      dockerfile: docker/keymanagement/Dockerfile
+    container_name: neo-keymanagement
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - KeyManagement__MasterKey=${KEY_MANAGEMENT_MASTER_KEY:-}
+      - KeyManagement__RotationIntervalDays=90
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/keymanagement"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Voting Service with PostgreSQL governance storage
+  neo-voting:
+    build:
+      context: .
+      dockerfile: docker/voting/Dockerfile
+    container_name: neo-voting
+    restart: unless-stopped
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Production
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD:-neo_secure_password_2024};SSL Mode=Require;Trust Server Certificate=true
+      - Voting__QuorumThreshold=0.6
+      - Voting__VotingPeriodHours=168  # 7 days
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+    networks:
+      - neo-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/health/voting"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Monitoring and observability
+  neo-monitoring:
+    image: prom/prometheus:latest
+    container_name: neo-monitoring
+    restart: unless-stopped
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./docker/prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - neo_prometheus_data:/prometheus
+    command:
+      - '--config.file=/etc/prometheus/prometheus.yml'
+      - '--storage.tsdb.path=/prometheus'
+      - '--web.console.libraries=/etc/prometheus/console_libraries'
+      - '--web.console.templates=/etc/prometheus/consoles'
+      - '--web.enable-lifecycle'
+    networks:
+      - neo-network
+
+  # Database backup service
+  neo-db-backup:
+    image: postgres:16-alpine
+    container_name: neo-db-backup
+    restart: "no"
+    environment:
+      PGPASSWORD: ${POSTGRES_PASSWORD:-neo_secure_password_2024}
+    volumes:
+      - ./backups:/backups
+      - ./docker/backup/backup.sh:/backup.sh:ro
+    command: /bin/sh -c "chmod +x /backup.sh && /backup.sh"
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+    networks:
+      - neo-network
+
+volumes:
+  neo_postgres_data:
+    driver: local
+  neo_redis_data:
+    driver: local
+  neo_prometheus_data:
+    driver: local
+
+networks:
+  neo-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
