@@ -122,8 +122,11 @@ namespace NeoServiceLayer.Api
                 app.UseSwaggerUI(c =>
                 {
                     c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Service Layer API V1");
-                    c.RoutePrefix = string.Empty;
+                    c.RoutePrefix = "swagger";
                 });
+                
+                // GraphQL IDE for development
+                app.UseGraphQLVoyager("/graphql-voyager", "/graphql");
             }
             else
             {
