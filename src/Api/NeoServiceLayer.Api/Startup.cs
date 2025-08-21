@@ -226,20 +226,42 @@ namespace NeoServiceLayer.Api
         private void ConfigureDatabases(IServiceCollection services)
         {
             // PostgreSQL
-            services.AddDbContext<ApplicationDbContext>(options =>
-                options.UseNpgsql(_configuration.GetConnectionString("PostgreSQL")));
+            var connectionString = _configuration.GetConnectionString("DefaultConnection") ?? 
+                                 _configuration.GetConnectionString("PostgreSQL");
+            
+            services.AddDbContext<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.NeoServiceLayerDbContext>(options =>
+                options.UseNpgsql(connectionString));
+
+            // Add PostgreSQL repositories
+            services.AddScoped<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.IOracleDataFeedRepository, 
+                              NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.OracleDataFeedRepository>();
+            services.AddScoped<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.IVotingRepository, 
+                              NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.VotingRepository>();
+            services.AddScoped<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.ICrossChainRepository, 
+                              NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.CrossChainRepository>();
+            services.AddScoped<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.ISealedDataRepository, 
+                              NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.SealedDataRepository>();
+            services.AddScoped<NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.IUserRepository, 
+                              NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories.UserRepository>();
 
             // Redis
             var redisConnection = _configuration.GetConnectionString("Redis");
-            services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnection));
-
-            // MongoDB
-            services.AddSingleton<IMongoClient>(new MongoClient(_configuration.GetConnectionString("MongoDB")));
-            services.AddScoped(provider =>
+            if (!string.IsNullOrEmpty(redisConnection))
             {
-                var client = provider.GetService<IMongoClient>();
-                return client.GetDatabase("neo_service_layer");
-            });
+                services.AddSingleton<IConnectionMultiplexer>(ConnectionMultiplexer.Connect(redisConnection));
+            }
+
+            // MongoDB (optional)
+            var mongoConnection = _configuration.GetConnectionString("MongoDB");
+            if (!string.IsNullOrEmpty(mongoConnection))
+            {
+                services.AddSingleton<IMongoClient>(new MongoClient(mongoConnection));
+                services.AddScoped(provider =>
+                {
+                    var client = provider.GetService<IMongoClient>();
+                    return client?.GetDatabase("neo_service_layer");
+                });
+            }
 
             // Event Store
             services.AddSingleton<IEventStore, PostgreSqlEventStore>();
