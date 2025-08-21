@@ -7,7 +7,7 @@ namespace NeoServiceLayer.Core.Domain
     /// Base class for aggregate roots in domain-driven design
     /// </summary>
     /// <typeparam name="TId">The type of the aggregate identifier</typeparam>
-    public abstract class AggregateRoot<TId> : Entity<TId>
+    public abstract class AggregateRoot<TId> : Entity<TId> where TId : class
     {
         private readonly List<IDomainEvent> _domainEvents = new();
 
