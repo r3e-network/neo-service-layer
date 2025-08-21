@@ -116,8 +116,8 @@ public partial class VotingService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         Logger.LogInformation("Stopping Voting Service...");
 
-        // Persist current state
-        await PersistAllDataAsync();
+        // Persist current state (PostgreSQL first, fallback to regular storage)
+        await PersistAllDataToPostgreSQLAsync();
 
         // Dispose timers
         _strategyExecutionTimer?.Dispose();
