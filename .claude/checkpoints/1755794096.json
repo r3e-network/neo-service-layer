@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250821-163456", "file": "/home/ubuntu/neo-service-layer/docker-compose.yml", "timestamp": "2025-08-21T16:34:56Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755794088.json | 1 +  .claude/checkpoints/1755794089.json | 1 +  docker-compose.yml                  | 4 ++++  3 files changed, 6 insertions(+) "}
