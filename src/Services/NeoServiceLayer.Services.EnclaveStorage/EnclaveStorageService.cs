@@ -318,35 +318,25 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             // Seal the data using enclave capabilities
             var sealedData = await SealDataInEnclaveAsync(request.Data, request.Policy);
 
-            // Calculate fingerprint
-            using var sha256 = SHA256.Create();
-            var fingerprint = Convert.ToBase64String(sha256.ComputeHash(request.Data));
+            var serviceName = request.Metadata?.GetValueOrDefault("service")?.ToString() ?? "EnclaveStorage";
+            var expiresAt = DateTime.UtcNow.AddHours(request.Policy.ExpirationHours);
 
-            var sealedItem = new SealedDataItem
-            {
-                Key = request.Key,
-                StorageId = storageId,
-                SealedData = sealedData,
-                OriginalSize = request.Data.Length,
-                SealedSize = sealedData.Length,
-                Fingerprint = fingerprint,
-                Service = request.Metadata?.GetValueOrDefault("service")?.ToString() ?? "default",
-                PolicyType = request.Policy.Type,
-                CreatedAt = DateTime.UtcNow,
-                ExpiresAt = DateTime.UtcNow.AddHours(request.Policy.ExpirationHours),
-                Metadata = request.Metadata,
-                AccessCount = 0
-            };
+            // Store in PostgreSQL database
+            var storedItem = await _sealedDataRepository.StoreAsync(
+                request.Key,
+                serviceName,
+                sealedData,
+                request.Policy.Type,
+                expiresAt,
+                request.Metadata);
 
+            // Update in-memory cache
             lock (_storageLock)
             {
-                _sealedItems[request.Key] = sealedItem;
-                _totalStorageUsed += sealedItem.SealedSize;
-                UpdateServiceStorage(sealedItem.Service, sealedItem.SealedSize);
+                _sealedItems[request.Key] = storedItem;
+                _totalStorageUsed += storedItem.SealedSize;
+                UpdateServiceStorage(storedItem.Service, storedItem.SealedSize);
             }
-
-            // Persist to storage
-            await SaveToPersistentStorageAsync("sealed_items", _sealedItems.Values.ToList());
 
             return new SealDataResult
             {
