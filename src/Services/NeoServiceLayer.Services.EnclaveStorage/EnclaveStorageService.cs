@@ -178,6 +178,7 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         _enclaveManager = enclaveManager ?? throw new ArgumentNullException(nameof(enclaveManager));
         _configuration = configuration ?? throw new ArgumentNullException(nameof(configuration));
+        _sealedDataRepository = sealedDataRepository ?? throw new ArgumentNullException(nameof(sealedDataRepository));
         _persistentStorage = persistentStorage;
         _maxStorageSize = configuration.GetValue("MaxStorageSize", 1073741824L); // 1GB default
 
