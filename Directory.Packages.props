@@ -186,11 +186,11 @@
     <PackageVersion Include="System.Text.RegularExpressions" Version="4.3.1" />
   </ItemGroup>
   <ItemGroup Label="GraphQL Support">
-    <PackageVersion Include="HotChocolate.AspNetCore" Version="14.1.0" />
-    <PackageVersion Include="HotChocolate.AspNetCore.Authorization" Version="14.1.0" />
-    <PackageVersion Include="HotChocolate.Data" Version="14.1.0" />
-    <PackageVersion Include="HotChocolate.Data.EntityFramework" Version="14.1.0" />
-    <PackageVersion Include="HotChocolate.AspNetCore.Voyager" Version="14.1.0" />
+    <PackageVersion Include="HotChocolate.AspNetCore" Version="13.9.14" />
+    <PackageVersion Include="HotChocolate.AspNetCore.Authorization" Version="13.9.14" />
+    <PackageVersion Include="HotChocolate.Data" Version="13.9.14" />
+    <PackageVersion Include="HotChocolate.Data.EntityFramework" Version="13.9.14" />
+    <PackageVersion Include="HotChocolate.AspNetCore.Voyager" Version="11.0.0-preview.138" />
   </ItemGroup>
   <ItemGroup Label="Additional Authentication and Security">
     <PackageVersion Include="Otp.NET" Version="1.4.0" />
