@@ -347,6 +347,19 @@ public class NeoServiceLayerDbContext : DbContext
         modelBuilder.Entity<AuditLog>()
             .HasIndex(e => new { e.ServiceName, e.Action, e.Timestamp })
             .HasDatabaseName("IX_AuditLogs_Service_Action_Time");
+
+        // Compute service indexes
+        modelBuilder.Entity<ComputationEntity>()
+            .HasIndex(e => new { e.BlockchainType, e.IsActive })
+            .HasDatabaseName("IX_Computations_Blockchain_Active");
+
+        modelBuilder.Entity<ComputationStatusEntity>()
+            .HasIndex(e => new { e.Status, e.StartTime })
+            .HasDatabaseName("IX_ComputationStatus_Status_Time");
+
+        modelBuilder.Entity<ComputationResultEntity>()
+            .HasIndex(e => new { e.ComputationId, e.Success, e.Timestamp })
+            .HasDatabaseName("IX_ComputationResults_Comp_Success_Time");
     }
 
     private void SeedInitialData(ModelBuilder modelBuilder)
