@@ -375,9 +375,18 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
             };
         }
 
+        // Try to get from cache first
         if (!_sealedItems.TryGetValue(key, out var sealedItem))
         {
-            throw new InvalidOperationException($"No sealed data found for key: {key}");
+            // Load from database if not in cache
+            sealedItem = await _sealedDataRepository.GetByKeyAsync(key);
+            if (sealedItem == null)
+            {
+                throw new InvalidOperationException($"No sealed data found for key: {key}");
+            }
+            
+            // Add to cache
+            _sealedItems[key] = sealedItem;
         }
 
         if (sealedItem.ExpiresAt < DateTime.UtcNow)
