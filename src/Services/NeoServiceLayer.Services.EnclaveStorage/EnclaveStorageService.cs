@@ -9,6 +9,7 @@ using Microsoft.Extensions.DependencyInjection;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Infrastructure.Persistence;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 using NeoServiceLayer.ServiceFramework;
 using CoreConfig = NeoServiceLayer.Core.Configuration.IServiceConfiguration;
 using NeoServiceLayer.Services.EnclaveStorage.Models;
