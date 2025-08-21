@@ -104,8 +104,8 @@ public partial class VotingService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         Logger.LogInformation("Starting Voting Service...");
 
-        // Load persisted data
-        await LoadPersistedDataAsync();
+        // Load persisted data (PostgreSQL first, fallback to regular storage)
+        await InitializePostgreSQLStorageAsync();
 
         Logger.LogInformation("Voting Service started successfully");
         return true;
