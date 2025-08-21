@@ -148,6 +148,7 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
     private readonly IEnclaveManager _enclaveManager;
     private readonly CoreConfig _configuration;
     private readonly IPersistentStorageProvider? _persistentStorage;
+    private readonly ISealedDataRepository _sealedDataRepository;
     private readonly object? _securityService;
     private readonly object? _observabilityService;
     private readonly object? _permissionService;
