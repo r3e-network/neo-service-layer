@@ -65,14 +65,13 @@ namespace NeoServiceLayer.Core.Domain
         }
 
         /// <summary>
-        /// Hashes a plain text password (temporary simple implementation)
+        /// Hashes a plain text password using BCrypt with salt rounds of 12
         /// </summary>
         /// <param name="plainTextPassword">The plain text password</param>
         /// <returns>The hashed password</returns>
         private static string HashPassword(string plainTextPassword)
         {
-            // TODO: Replace with proper BCrypt implementation
-            return System.Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(plainTextPassword));
+            return BCrypt.Net.BCrypt.HashPassword(plainTextPassword, BCrypt.Net.BCrypt.GenerateSalt(12));
         }
 
         protected override IEnumerable<object> GetEqualityComponents()
