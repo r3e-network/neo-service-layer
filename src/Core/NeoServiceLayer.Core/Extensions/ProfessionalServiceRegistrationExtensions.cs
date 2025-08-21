@@ -148,11 +148,13 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddRepositories(this IServiceCollection services)
         {
-            // TODO: Re-enable after repository infrastructure is implemented
+            // Register Unit of Work implementations
             // Repositories should be scoped to maintain consistency within a request
+            services.AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>();
+            services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
+            
+            // TODO: Add specific repository implementations when needed
             // services.AddScoped<IUserRepository, UserRepository>();
-            // services.AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>();
-            // services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
             
             return services;
         }
