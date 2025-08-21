@@ -30,6 +30,11 @@
     <PackageReference Include="Microsoft.CodeAnalysis.CSharp" />
     <!-- Explicit references to resolve version conflicts -->
     <PackageReference Include="Newtonsoft.Json" />
+    <!-- GraphQL Support -->
+    <PackageReference Include="HotChocolate.AspNetCore" />
+    <PackageReference Include="HotChocolate.AspNetCore.Authorization" />
+    <PackageReference Include="HotChocolate.Data" />
+    <PackageReference Include="HotChocolate.Data.EntityFramework" />
   </ItemGroup>
 
   <ItemGroup>
