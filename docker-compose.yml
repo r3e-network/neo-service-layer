@@ -1,6 +1,63 @@
 version: '3.8'
 
 services:
+  # PostgreSQL Database
+  neo-postgres:
+    image: postgres:16-alpine
+    container_name: neo-postgres
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=neo_service_layer
+      - POSTGRES_USER=neo_user
+      - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable is required}
+      - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
+    volumes:
+      - neo-postgres-data:/var/lib/postgresql/data
+      - ./src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/PostgreSQL/Migrations:/docker-entrypoint-initdb.d
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
+      interval: 30s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
+    networks:
+      - neo-network
+    command: >
+      postgres
+      -c shared_preload_libraries=pg_stat_statements
+      -c max_connections=200
+      -c shared_buffers=256MB
+      -c effective_cache_size=1GB
+      -c work_mem=4MB
+      -c maintenance_work_mem=64MB
+      -c wal_buffers=16MB
+      -c checkpoint_completion_target=0.9
+      -c wal_compression=on
+      -c log_statement=all
+      -c log_duration=on
+      -c log_min_duration_statement=1000
+
+  # Redis Cache
+  neo-redis:
+    image: redis:7-alpine
+    container_name: neo-redis
+    ports:
+      - "6379:6379"
+    volumes:
+      - neo-redis-data:/data
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 3s
+      retries: 3
+      start_period: 10s
+    networks:
+      - neo-network
+    command: redis-server --appendonly yes --maxmemory 256mb --maxmemory-policy allkeys-lru
+
   neo-service-layer:
     image: jinghuiliao/neo-service-layer:latest
     container_name: neo-service-layer
@@ -20,6 +77,14 @@ services:
       - ASPNETCORE_CORS__ALLOWANYORIGIN=true
       - ASPNETCORE_CORS__ALLOWANYMETHOD=true
       - ASPNETCORE_CORS__ALLOWANYHEADER=true
+      # PostgreSQL Configuration
+      - ConnectionStrings__DefaultConnection=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD};Include Error Detail=true;
+      - ConnectionStrings__PostgreSQL=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD};Include Error Detail=true;
+      # Redis Configuration
+      - ConnectionStrings__Redis=neo-redis:6379
+      # Database Configuration
+      - Database__Provider=PostgreSQL
+      - Database__ConnectionString=Host=neo-postgres;Port=5432;Database=neo_service_layer;Username=neo_user;Password=${POSTGRES_PASSWORD};Include Error Detail=true;
     volumes:
       - neo-data:/app/data
       - neo-logs:/var/log/neo-service-layer
@@ -33,6 +98,11 @@ services:
       start_period: 60s
     networks:
       - neo-network
+    depends_on:
+      neo-postgres:
+        condition: service_healthy
+      neo-redis:
+        condition: service_healthy
 
   # Optional: Add a reverse proxy for production deployments
   nginx:
