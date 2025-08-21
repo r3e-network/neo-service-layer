@@ -17,6 +17,9 @@
     <PackageReference Include="Microsoft.Extensions.Logging" />
     <PackageReference Include="Microsoft.Extensions.Configuration" />
     <PackageReference Include="System.Text.Json" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore" />
+    <PackageReference Include="Npgsql.EntityFrameworkCore.PostgreSQL" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" />
   </ItemGroup>
 
   <ItemGroup>
@@ -26,6 +29,7 @@
     <ProjectReference Include="../NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj" />
     <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.EventSourcing/NeoServiceLayer.Infrastructure.EventSourcing.csproj" />
     <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.CQRS/NeoServiceLayer.Infrastructure.CQRS.csproj" />
+    <ProjectReference Include="../../Infrastructure/NeoServiceLayer.Infrastructure.Persistence/NeoServiceLayer.Infrastructure.Persistence.csproj" />
   </ItemGroup>
 
   <ItemGroup>
