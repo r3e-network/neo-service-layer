@@ -26,6 +26,7 @@ using NeoServiceLayer.Services.Compute.Implementation;
 using NeoServiceLayer.Services.Storage.Implementation;
 using NeoServiceLayer.Services.Oracle.Implementation;
 using NeoServiceLayer.Services.UserManagement;
+using NeoServiceLayer.Api.GraphQL;
 using Prometheus;
 using Serilog;
 
