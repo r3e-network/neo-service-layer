@@ -163,6 +163,11 @@ namespace NeoServiceLayer.Api
             app.UseEndpoints(endpoints =>
             {
                 endpoints.MapControllers();
+                
+                // GraphQL endpoints
+                endpoints.MapGraphQL("/graphql");
+                
+                // Health check endpoints
                 endpoints.MapHealthChecks("/health");
                 endpoints.MapHealthChecks("/health/ready", new Microsoft.AspNetCore.Diagnostics.HealthChecks.HealthCheckOptions
                 {
@@ -172,6 +177,7 @@ namespace NeoServiceLayer.Api
                 {
                     Predicate = check => check.Tags.Contains("live")
                 });
+                
                 endpoints.MapMetrics(); // Prometheus metrics endpoint
             });
 
