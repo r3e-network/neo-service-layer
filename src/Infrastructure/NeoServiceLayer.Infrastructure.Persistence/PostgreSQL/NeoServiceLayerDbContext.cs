@@ -69,6 +69,7 @@ public class NeoServiceLayerDbContext : DbContext
     public DbSet<VotingProposal> VotingProposals { get; set; } = null!;
     public DbSet<Vote> Votes { get; set; } = null!;
     public DbSet<VotingPower> VotingPowers { get; set; } = null!;
+    public DbSet<VotingResult> VotingResults { get; set; } = null!;
     
     #endregion
 
