@@ -5,8 +5,8 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Services.EnclaveStorage;
-using NeoServiceLayer.Services.EnclaveStorage.Models;
+// using NeoServiceLayer.Services.EnclaveStorage;
+// using NeoServiceLayer.Services.EnclaveStorage.Models; // TODO: Add project reference when circular dependency resolved
 using NeoServiceLayer.Core.Domain;
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
