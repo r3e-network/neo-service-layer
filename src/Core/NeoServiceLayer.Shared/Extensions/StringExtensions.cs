@@ -613,4 +613,70 @@ public static class StringExtensions
 
         return value.Split(separators, StringSplitOptions.RemoveEmptyEntries);
     }
+
+    /// <summary>
+    /// Determines whether the string is a valid hexadecimal string.
+    /// </summary>
+    /// <param name="value">The string to check.</param>
+    /// <returns>True if the string is a valid hex string, false otherwise.</returns>
+    public static bool IsHexString(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        return System.Text.RegularExpressions.Regex.IsMatch(value, @"^[0-9A-Fa-f]+$");
+    }
+
+    /// <summary>
+    /// Sanitizes a string by removing control characters and potentially dangerous content.
+    /// </summary>
+    /// <param name="value">The string to sanitize.</param>
+    /// <returns>The sanitized string.</returns>
+    public static string Sanitize(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        // Remove control characters except normal whitespace
+        var sanitized = new StringBuilder();
+        foreach (char c in value)
+        {
+            if (!char.IsControl(c) || c == '\t' || c == '\n' || c == '\r')
+                sanitized.Append(c);
+        }
+
+        return sanitized.ToString();
+    }
+
+    /// <summary>
+    /// Escapes HTML special characters in the string.
+    /// </summary>
+    /// <param name="value">The string to escape.</param>
+    /// <returns>The HTML-escaped string.</returns>
+    public static string EscapeHtml(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return string.Empty;
+
+        return value
+            .Replace("&", "&amp;")
+            .Replace("<", "&lt;")
+            .Replace(">", "&gt;")
+            .Replace("\"", "&quot;")
+            .Replace("'", "&#39;");
+    }
+
+    /// <summary>
+    /// Determines whether the string is a valid IPv4 address.
+    /// </summary>
+    /// <param name="value">The string to check.</param>
+    /// <returns>True if the string is a valid IPv4 address, false otherwise.</returns>
+    public static bool IsValidIPv4(this string? value)
+    {
+        if (string.IsNullOrEmpty(value))
+            return false;
+
+        return System.Net.IPAddress.TryParse(value, out var address) && 
+               address.AddressFamily == System.Net.Sockets.AddressFamily.InterNetwork;
+    }
 }
