@@ -278,7 +278,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence
                 try
                 {
                     using var fileStream = File.OpenRead(backupPath);
-                    using var gzipStream = backupPath.EndsWith(".gz") 
+                    Stream gzipStream = backupPath.EndsWith(".gz") 
                         ? new GZipStream(fileStream, CompressionMode.Decompress) 
                         : fileStream;
                     
