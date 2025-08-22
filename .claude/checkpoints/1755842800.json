@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-060640", "file": "/home/ubuntu/neo-service-layer/docs/phase-2-coverage-report.md", "timestamp": "2025-08-22T06:06:40Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755842073.json |   1 +  docs/phase-2-coverage-report.md          | 204 +++++++++++++++++++++++++++++++  2 files changed, 205 insertions(+) "}
