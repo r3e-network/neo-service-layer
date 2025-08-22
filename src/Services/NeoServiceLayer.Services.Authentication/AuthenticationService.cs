@@ -1616,6 +1616,61 @@ namespace NeoServiceLayer.Services.Authentication
                 throw;
             }
         }
+
+        /// <summary>
+        /// Gets the email service for sending emails.
+        /// </summary>
+        private IEmailService GetEmailService()
+        {
+            // In production, this would get the email service from DI container
+            return _serviceProvider?.GetService(typeof(IEmailService)) as IEmailService
+                ?? throw new InvalidOperationException("Email service not configured");
+        }
+
+        /// <summary>
+        /// Gets the SMS service for sending text messages.
+        /// </summary>
+        private ISmsService GetSmsService()
+        {
+            // In production, this would get the SMS service from DI container
+            return _serviceProvider?.GetService(typeof(ISmsService)) as ISmsService
+                ?? throw new InvalidOperationException("SMS service not configured");
+        }
+
+        /// <summary>
+        /// Gets the base URL for email links.
+        /// </summary>
+        private string GetBaseUrl()
+        {
+            return Environment.GetEnvironmentVariable("AUTH_BASE_URL") ?? "https://localhost:7000";
+        }
+
+        /// <summary>
+        /// Masks phone number for logging (security).
+        /// </summary>
+        private string MaskPhoneNumber(string phoneNumber)
+        {
+            if (string.IsNullOrEmpty(phoneNumber) || phoneNumber.Length < 4)
+                return "***";
+            
+            return phoneNumber.Substring(0, 3) + "***" + phoneNumber.Substring(phoneNumber.Length - 2);
+        }
+    }
+
+    /// <summary>
+    /// Email service interface for sending emails.
+    /// </summary>
+    public interface IEmailService
+    {
+        Task SendEmailAsync(string to, string subject, string body);
+    }
+
+    /// <summary>
+    /// SMS service interface for sending text messages.
+    /// </summary>
+    public interface ISmsService
+    {
+        Task SendSmsAsync(string phoneNumber, string message);
     }
 
 }
