@@ -667,14 +667,26 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return Task.FromResult(true);
         }
 
-        public Task<ConfidentialChannelResult> CreateChannelAsync(string channelId, ConfidentialChannelOptions channelOptions, CancellationToken cancellationToken = default)
+        public Task<IConfidentialMessageChannel> CreateChannelAsync(string channelName, IEnumerable<string> participants, ConfidentialChannelOptions? channelOptions = null, CancellationToken cancellationToken = default)
         {
             _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(new ConfidentialChannelResult
+            return Task.FromResult<IConfidentialMessageChannel>(new TemporaryConfidentialMessageChannel(channelName));
+        }
+
+        public Task<ConfidentialMessageResponse<TResponse>> SendAsync<TRequest, TResponse>(string serviceName, TRequest request, ConfidentialMessageOptions? messageOptions = null, CancellationToken cancellationToken = default)
+        {
+            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
+            return Task.FromResult(new ConfidentialMessageResponse<TResponse>
             {
-                Success = true,
-                ChannelId = channelId
+                Success = false,
+                ErrorMessage = "Placeholder implementation"
             });
+        }
+
+        public Task<IConfidentialServiceRegistration> RegisterServiceAsync<TRequest, TResponse>(string serviceName, Func<ConfidentialMessage<TRequest>, CancellationToken, Task<ConfidentialMessageResponse<TResponse>>> handler, ConfidentialServiceOptions? handlerOptions = null, CancellationToken cancellationToken = default)
+        {
+            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
+            return Task.FromResult<IConfidentialServiceRegistration>(new TemporaryConfidentialServiceRegistration(serviceName));
         }
 
         public Task<bool> JoinChannelAsync(string channelId, string participantId, CancellationToken cancellationToken = default)
