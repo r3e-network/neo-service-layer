@@ -338,7 +338,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
                         RecoveryId = recoveryId,
                         AccountAddress = accountAddress,
                         NewOwner = newOwner,
-                        Initiator = newOwner, // In production, this would come from the authenticated user
+                        Initiator = await GetAuthenticatedUserAddressAsync(),
                         StrategyId = strategyId,
                         RequiredConfirmations = requiredConfirmations,
                         CurrentConfirmations = 0,
@@ -431,8 +431,7 @@ namespace NeoServiceLayer.Services.SocialRecovery
 
                 try
                 {
-                    // In production, guardian address would come from authenticated transaction context
-                    // For now, we need to get it from the blockchain context or authentication
+                    // Extract guardian address from authenticated transaction context
                     var guardianAddress = await GetAuthenticatedGuardianAddressAsync();
                     if (string.IsNullOrEmpty(guardianAddress))
                     {
@@ -915,24 +914,52 @@ namespace NeoServiceLayer.Services.SocialRecovery
         /// </summary>
         private async Task<string> GetAuthenticatedGuardianAddressAsync()
         {
-            // In production, this would extract the guardian address from:
-            // - Blockchain transaction context
-            // - JWT token claims
-            // - Smart contract msg.sender
-            // - TEE attestation
-
-            // For now, return a mock guardian for demonstration
-            // This is one of the critical security items that needs proper implementation
-            await Task.Delay(1);
-
-            // Create a deterministic mock guardian for testing
-            var mockGuardians = _guardians.Keys.ToList();
-            if (mockGuardians.Any())
+            try
             {
-                return mockGuardians.First();
-            }
+                // Extract guardian address from multiple authentication sources
+                
+                // 1. Check blockchain transaction context (msg.sender)
+                var blockchainAddress = await GetBlockchainSenderAddressAsync();
+                if (!string.IsNullOrEmpty(blockchainAddress))
+                {
+                    Logger.LogDebug("Guardian address extracted from blockchain context: {Address}", blockchainAddress);
+                    return blockchainAddress;
+                }
 
-            throw new UnauthorizedAccessException("No authenticated guardian found in current context");
+                // 2. Check JWT token claims for guardian address
+                var jwtAddress = GetJwtGuardianAddress();
+                if (!string.IsNullOrEmpty(jwtAddress))
+                {
+                    Logger.LogDebug("Guardian address extracted from JWT token: {Address}", jwtAddress);
+                    return jwtAddress;
+                }
+
+                // 3. Check TEE attestation for authenticated guardian
+                if (_enclaveManager != null)
+                {
+                    var attestedAddress = await GetAttestedGuardianAddressAsync();
+                    if (!string.IsNullOrEmpty(attestedAddress))
+                    {
+                        Logger.LogDebug("Guardian address extracted from TEE attestation: {Address}", attestedAddress);
+                        return attestedAddress;
+                    }
+                }
+
+                // 4. Fallback to session context if available
+                var sessionAddress = GetSessionGuardianAddress();
+                if (!string.IsNullOrEmpty(sessionAddress))
+                {
+                    Logger.LogDebug("Guardian address extracted from session context: {Address}", sessionAddress);
+                    return sessionAddress;
+                }
+
+                throw new UnauthorizedAccessException("No authenticated guardian found in current context");
+            }
+            catch (Exception ex)
+            {
+                Logger.LogError(ex, "Failed to get authenticated guardian address");
+                throw;
+            }
         }
 
         #endregion
