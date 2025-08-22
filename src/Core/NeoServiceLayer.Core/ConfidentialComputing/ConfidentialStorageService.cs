@@ -221,7 +221,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
             try
             {
-                var deleteResult = await _enclaveStorageService.DeleteSealedDataAsync(key, BlockchainType.NeoN3);
+                var deleteResult = await _enclaveStorageService.DeleteSealedDataAsync(key, Services.BlockchainType.NeoN3);
 
                 _logger.LogDebug("Confidential data deletion for key {Key}: Success={Success}, Found={Found}", 
                     key, deleteResult.Success, deleteResult.Deleted);
