@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities.SgxEntities;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities;
+using NeoServiceLayer.ServiceFramework.Models;
 using System;
 using System.Collections.Generic;
 using System.Linq;
