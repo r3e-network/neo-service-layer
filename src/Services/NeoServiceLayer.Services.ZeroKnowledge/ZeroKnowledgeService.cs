@@ -33,6 +33,10 @@ public partial class ZeroKnowledgeService : ServiceFramework.EnclaveBlockchainSe
     private readonly System.Security.Cryptography.ECDsa ecdsa = System.Security.Cryptography.ECDsa.Create();
     private readonly System.Security.Cryptography.SHA256 sha256 = System.Security.Cryptography.SHA256.Create();
     private readonly System.Security.Cryptography.RandomNumberGenerator rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+    
+    // Key cache and persistence for production implementations
+    private readonly ConcurrentDictionary<string, object> _keyCache = new();
+    private readonly ISgxPersistence _sgxPersistence;
 
     /// <summary>
     /// Initializes a new instance of the <see cref="ZeroKnowledgeService"/> class.
