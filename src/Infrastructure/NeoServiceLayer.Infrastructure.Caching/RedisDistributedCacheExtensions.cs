@@ -129,6 +129,67 @@ public class EnhancedRedisDistributedCache : IRedisDistributedCache
         }
     }
 
+    public byte[]? Get(string key)
+    {
+        var redisKey = GetRedisKey(key);
+        try
+        {
+            return _database.StringGet(redisKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Redis GET failed for key: {Key}", redisKey);
+            return null;
+        }
+    }
+
+    public void Set(string key, byte[] value, DistributedCacheEntryOptions options)
+    {
+        var redisKey = GetRedisKey(key);
+        try
+        {
+            var expiry = GetExpiry(options);
+            _database.StringSet(redisKey, value, expiry);
+            
+            _logger.LogDebug("Redis SET completed for key: {Key}, expiry: {Expiry}", redisKey, expiry);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Redis SET failed for key: {Key}", redisKey);
+            throw;
+        }
+    }
+
+    public void Refresh(string key)
+    {
+        var redisKey = GetRedisKey(key);
+        try
+        {
+            _database.KeyExpire(redisKey, TimeSpan.FromMinutes(20)); // Default refresh expiry
+            _logger.LogDebug("Redis REFRESH completed for key: {Key}", redisKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Redis REFRESH failed for key: {Key}", redisKey);
+            throw;
+        }
+    }
+
+    public void Remove(string key)
+    {
+        var redisKey = GetRedisKey(key);
+        try
+        {
+            _database.KeyDelete(redisKey);
+            _logger.LogDebug("Redis REMOVE completed for key: {Key}", redisKey);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Redis REMOVE failed for key: {Key}", redisKey);
+            throw;
+        }
+    }
+
     public async Task RefreshAsync(string key, CancellationToken token = default)
     {
         var redisKey = GetRedisKey(key);
