@@ -133,6 +133,9 @@ namespace NeoServiceLayer.Core.Framework
             services.AddSingleton<IMessageQueueService, MessageQueueService>();
 
             services.AddHealthChecks()
+                .AddCheck<MessageQueueServiceHealthCheck>("message-queue");
+
+            services.AddHealthChecks()
                 .AddCheck<MessageQueueHealthCheck>("message-queue");
 
             services.AddHostedService<MessageQueueMaintenanceService>();
