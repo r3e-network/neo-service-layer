@@ -420,7 +420,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence
                             if (File.Exists(dataFile))
                             {
                                 await Task.Run(() => File.Copy(metadataFile, Path.Combine(tempMetadataDir, fileName), overwrite: true));
-                                await File.CopyAsync(dataFile, Path.Combine(tempDataDir, dataFileName));
+                                await Task.Run(() => File.Copy(dataFile, Path.Combine(tempDataDir, dataFileName), overwrite: true));
                                 copiedCount++;
                             }
                         }
