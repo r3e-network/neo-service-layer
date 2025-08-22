@@ -305,7 +305,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         {
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                Guard.Against(condition, "param", message));
+                Guard.Against(condition, message, "param"));
             exception.Message.Should().Contain(message);
         }
 
