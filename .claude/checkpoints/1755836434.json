@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-042034", "file": "/home/ubuntu/neo-service-layer/scripts/run-tests.sh", "timestamp": "2025-08-22T04:20:34Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755836367.json |   1 +  scripts/run-tests.sh                | 234 ++++++++++++++++++++++++++++++++++++  2 files changed, 235 insertions(+) "}
