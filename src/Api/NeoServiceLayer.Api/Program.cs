@@ -111,14 +111,9 @@ builder.Services.AddSwaggerGen(c =>
 var jwtSecret = Environment.GetEnvironmentVariable("JWT_SECRET_KEY");
 if (string.IsNullOrEmpty(jwtSecret))
 {
-    if (builder.Environment.IsProduction())
-    {
-        throw new InvalidOperationException("JWT_SECRET_KEY environment variable is required in production");
-    }
-    
-    // Only for development/testing - never in production
-    jwtSecret = "development-jwt-secret-key-for-testing-only-must-be-at-least-32-characters-long";
-    Console.WriteLine("WARNING: Using development JWT secret. This is NOT secure for production!");
+    // JWT_SECRET_KEY is required in ALL environments for security
+    throw new InvalidOperationException("JWT_SECRET_KEY environment variable is required in all environments. " +
+        "Please set a secure JWT secret key (minimum 64 characters) in your environment variables.");
 }
 
 // Validate JWT secret key for production - STRICT enforcement
