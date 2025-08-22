@@ -27,14 +27,6 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories
         Task<long> GetStorageUsageAsync(string? serviceName = null, CancellationToken cancellationToken = default);
     }
 
-    /// <summary>
-    /// Sealing policy types for SGX data storage.
-    /// </summary>
-    public enum SealingPolicyType
-    {
-        MRENCLAVE = 0,  // Seal to specific enclave
-        MRSIGNER = 1    // Seal to signer identity
-    }
 
     /// <summary>
     /// PostgreSQL implementation of sealed data repository for SGX enclave storage.
