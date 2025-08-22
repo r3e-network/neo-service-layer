@@ -80,7 +80,7 @@ public static class RetryHelper
     {
         Guard.NotNull(func);
         Guard.GreaterThanOrEqual(maxRetries, 0);
-        Guard.GreaterThan(backoffMultiplier, 1.0);
+        Guard.GreaterThanOrEqual(backoffMultiplier, 1.0);
 
         var effectiveDelay = retryDelay ?? baseDelay ?? TimeSpan.FromSeconds(1);
         maxDelay ??= TimeSpan.FromMinutes(5);
@@ -143,7 +143,7 @@ public static class RetryHelper
     {
         Guard.NotNull(func);
         Guard.GreaterThanOrEqual(maxRetries, 0);
-        Guard.GreaterThan(backoffMultiplier, 1.0);
+        Guard.GreaterThanOrEqual(backoffMultiplier, 1.0);
 
         baseDelay ??= TimeSpan.FromSeconds(1);
         maxDelay ??= TimeSpan.FromMinutes(5);
