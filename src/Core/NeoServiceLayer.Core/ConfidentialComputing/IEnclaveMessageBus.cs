@@ -655,15 +655,10 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             });
         }
 
-        public Task<ConfidentialSubscriptionResult> SubscribeAsync<T>(string topic, Func<ConfidentialMessage<T>, Task> messageHandler, ConfidentialSubscriptionOptions? subscriptionOptions = null, CancellationToken cancellationToken = default)
+        public Task<IConfidentialSubscription> SubscribeAsync<T>(string topic, Func<ConfidentialMessage<T>, CancellationToken, Task<MessageHandleResult>> handler, ConfidentialSubscriptionOptions? subscriptionOptions = null, CancellationToken cancellationToken = default)
         {
             _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation - not secure for production");
-            return Task.FromResult(new ConfidentialSubscriptionResult
-            {
-                Success = true,
-                SubscriptionId = Guid.NewGuid().ToString(),
-                Topic = topic
-            });
+            return Task.FromResult<IConfidentialSubscription>(new TemporaryConfidentialSubscription(topic));
         }
 
         public Task<bool> UnsubscribeAsync(string subscriptionId, CancellationToken cancellationToken = default)
