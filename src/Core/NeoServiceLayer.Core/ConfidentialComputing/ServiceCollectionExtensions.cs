@@ -5,8 +5,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using NeoServiceLayer.Core.Domain;
-using NeoServiceLayer.Services.EnclaveStorage;
-using NeoServiceLayer.Tee.Enclave;
 using System;
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
