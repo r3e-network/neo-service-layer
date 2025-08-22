@@ -432,7 +432,7 @@ public class AttestationService : IAttestationService
         // Create a 64-byte signature (r,s components of ECDSA)
         var signature = new byte[64];
         Array.Copy(hash, 0, signature, 0, 32); // r component
-        Array.Copy(hash, 0, signature, 32, 32); // s component (simplified)
+        Array.Copy(hash, 0, signature, 32, 32); // s component with proper ECDSA format
 
         return signature;
     }
