@@ -581,6 +581,6 @@ public class AttributeNode : AstNode
     public override AstNodeType NodeType => AstNodeType.Attribute;
     public string Name { get; set; } = string.Empty;
     public List<ExpressionNode> Arguments { get; } = new();
-    public override T Accept<T>(IAstVisitor<T> visitor) => throw new NotImplementedException("AttributeNode visitor not implemented");
+    public override T Accept<T>(IAstVisitor<T> visitor) => visitor.VisitAttribute(this);
     public override IAstNode Clone() => new AttributeNode { Name = Name, Location = Location };
 }
