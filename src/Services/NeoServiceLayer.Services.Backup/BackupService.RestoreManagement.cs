@@ -497,6 +497,19 @@ public partial class BackupService
         }
     }
 
+    /// <summary>
+    /// Backup index entry structure for tracking backups.
+    /// </summary>
+    public class BackupIndexEntry
+    {
+        public string Id { get; set; } = string.Empty;
+        public DateTime CreatedAt { get; set; }
+        public string Path { get; set; } = string.Empty;
+        public long Size { get; set; }
+        public string Status { get; set; } = string.Empty;
+        public Dictionary<string, string> Metadata { get; set; } = new();
+    }
+
     private async Task<byte[]> DecompressDataAsync(byte[] compressedData, string algorithm)
     {
         // Production decompression with comprehensive algorithm support
