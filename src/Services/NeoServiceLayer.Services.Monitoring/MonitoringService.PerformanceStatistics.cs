@@ -524,6 +524,102 @@ public partial class MonitoringService
     }
 
     /// <summary>
+    /// Gets total physical memory from system.
+    /// </summary>
+    private long GetTotalPhysicalMemory()
+    {
+        try
+        {
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return GetWindowsPhysicalMemory();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetLinuxPhysicalMemory();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.OSX))
+            {
+                return GetMacOSPhysicalMemory();
+            }
+            
+            return 0; // Fallback
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private long GetWindowsPhysicalMemory()
+    {
+        using var process = new System.Diagnostics.Process();
+        process.StartInfo.FileName = "wmic";
+        process.StartInfo.Arguments = "computersystem get TotalPhysicalMemory /value";
+        process.StartInfo.UseShellExecute = false;
+        process.StartInfo.RedirectStandardOutput = true;
+        process.Start();
+        
+        var output = process.StandardOutput.ReadToEnd();
+        process.WaitForExit();
+        
+        var lines = output.Split('\n');
+        foreach (var line in lines)
+        {
+            if (line.StartsWith("TotalPhysicalMemory="))
+            {
+                var value = line.Substring("TotalPhysicalMemory=".Length).Trim();
+                if (long.TryParse(value, out var memory))
+                    return memory;
+            }
+        }
+        return 8L * 1024 * 1024 * 1024; // 8GB default
+    }
+
+    private long GetLinuxPhysicalMemory()
+    {
+        try
+        {
+            if (File.Exists("/proc/meminfo"))
+            {
+                var lines = File.ReadAllLines("/proc/meminfo");
+                foreach (var line in lines)
+                {
+                    if (line.StartsWith("MemTotal:"))
+                    {
+                        var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                        if (parts.Length >= 2 && long.TryParse(parts[1], out var kb))
+                            return kb * 1024; // Convert kB to bytes
+                    }
+                }
+            }
+        }
+        catch { }
+        return 8L * 1024 * 1024 * 1024; // 8GB default
+    }
+
+    private long GetMacOSPhysicalMemory()
+    {
+        try
+        {
+            using var process = new System.Diagnostics.Process();
+            process.StartInfo.FileName = "sysctl";
+            process.StartInfo.Arguments = "hw.memsize";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.Start();
+            
+            var output = process.StandardOutput.ReadToEnd().Trim();
+            process.WaitForExit();
+            
+            if (output.StartsWith("hw.memsize: ") && long.TryParse(output.Substring(12), out var memory))
+                return memory;
+        }
+        catch { }
+        return 8L * 1024 * 1024 * 1024; // 8GB default
+    }
+
+    /// <summary>
     /// Gets memory usage on Linux by reading /proc/meminfo.
     /// </summary>
     private async Task<double> GetLinuxMemoryUsageAsync()
