@@ -541,26 +541,15 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return transaction;
         }
 
-        // private NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType MapSealingPolicy(SealingPolicy policy) // TODO: Restore when circular dependency resolved
-        // {
-        //     return policy switch
-        //     {
-        //         SealingPolicy.MrEnclave => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave,
-        //         SealingPolicy.MrSigner => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner,
-        //         SealingPolicy.Custom => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner, // Default fallback
-        //         _ => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner
-        //     };
-        // }
+        private string MapSealingPolicy(SealingPolicy policy)
+        {
+            return policy.Type;
+        }
 
-        // private SealingPolicy MapSealingPolicyType(NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType policyType) // TODO: Restore when circular dependency resolved
-        // {
-        //     return policyType switch
-        //     {
-        //         NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave => SealingPolicy.MrEnclave,
-        //         NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner => SealingPolicy.MrSigner,
-        //         _ => SealingPolicy.MrSigner
-        //     };
-        // }
+        private SealingPolicy MapSealingPolicyType(string policyType)
+        {
+            return new SealingPolicy { Type = policyType };
+        }
 
         private string ComputeDataFingerprint(string data)
         {
