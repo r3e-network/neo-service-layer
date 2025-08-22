@@ -21,7 +21,6 @@
   <ItemGroup>
     <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../NeoServiceLayer.Infrastructure.EventSourcing/NeoServiceLayer.Infrastructure.EventSourcing.csproj" />
-    <ProjectReference Include="../../Services/NeoServiceLayer.Services.Authentication/NeoServiceLayer.Services.Authentication.csproj" />
   </ItemGroup>
 
 </Project>
