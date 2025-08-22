@@ -132,9 +132,10 @@ public class KeyAccessAudit
 #region Oracle Services
 
 /// <summary>
-/// Oracle data feeds configuration and metadata
+/// Service-oriented Oracle data feeds configuration and metadata
+/// Note: This is different from OracleEntities.OracleDataFeed which is domain-specific
 /// </summary>
-public class OracleDataFeed
+public class ServiceOracleDataFeed
 {
     public Guid Id { get; set; } = Guid.NewGuid();
     
