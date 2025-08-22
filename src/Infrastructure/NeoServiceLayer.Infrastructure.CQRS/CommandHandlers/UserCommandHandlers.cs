@@ -401,6 +401,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
 
     public class PasswordChangedEvent : DomainEventBase
     {
+        public PasswordChangedEvent(Guid userId, string initiatedBy)
+            : base(userId.ToString(), "User", 1, initiatedBy)
+        {
+            UserId = userId;
+            ChangedAt = DateTime.UtcNow;
+        }
+
         public Guid UserId { get; set; }
         public DateTime ChangedAt { get; set; }
     }
