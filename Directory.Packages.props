@@ -52,6 +52,7 @@
     <PackageVersion Include="Microsoft.EntityFrameworkCore.Abstractions" Version="9.0.0" />
     <PackageVersion Include="Microsoft.EntityFrameworkCore.InMemory" Version="9.0.0" />
     <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL" Version="9.0.0" />
+    <PackageVersion Include="Npgsql.EntityFrameworkCore.PostgreSQL.NodaTime" Version="9.0.0" />
     <PackageVersion Include="StackExchange.Redis" Version="2.8.16" />
   </ItemGroup>
   <ItemGroup Label="Testing Frameworks">
