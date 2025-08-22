@@ -808,19 +808,18 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             Name = channelName;
         }
 
-        public Task<ConfidentialMessageResult> SendMessageAsync<T>(T message, string? recipientId = null, CancellationToken cancellationToken = default)
+        public Task<ChannelMessageResult> SendMessageAsync<T>(T message, string? recipientId = null, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(new ConfidentialMessageResult
+            return Task.FromResult(new ChannelMessageResult
             {
                 Success = true,
-                MessageId = Guid.NewGuid().ToString(),
-                Topic = ChannelName
+                MessageId = Guid.NewGuid().ToString()
             });
         }
 
-        public Task<ConfidentialMessage<T>?> ReceiveMessageAsync<T>(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        public Task<ChannelMessageReceived<T>?> ReceiveMessageAsync<T>(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
         {
-            return Task.FromResult<ConfidentialMessage<T>?>(null);
+            return Task.FromResult<ChannelMessageReceived<T>?>(null);
         }
 
         public Task<ChannelStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
