@@ -99,9 +99,22 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddDomainServices(this IServiceCollection services)
         {
-            // TODO: Re-enable after domain services are implemented
-            // Domain services should be scoped to maintain consistency within a request
-            // services.AddScoped<IPasswordPolicy, EnterprisePasswordPolicy>();
+            // Domain services with production implementations
+            // Domain services are scoped to maintain consistency within a request
+            
+            // Password policy service for enterprise-grade password requirements
+            services.AddScoped(provider => 
+            {
+                var config = provider.GetService<IConfiguration>();
+                return new ProductionPasswordPolicy(config);
+            });
+            
+            // Account lockout service for security enforcement
+            services.AddScoped(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<ProductionAccountLockoutService>>();
+                return new ProductionAccountLockoutService(logger);
+            });
             
             return services;
         }
@@ -113,10 +126,22 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddCQRS(this IServiceCollection services)
         {
-            // TODO: Re-enable after CQRS infrastructure is implemented
-            // Command and query dispatchers should be scoped
-            // services.AddScoped<ICommandDispatcher, CommandDispatcher>();
-            // services.AddScoped<IQueryDispatcher, QueryDispatcher>();
+            // CQRS infrastructure with production implementations
+            // Command and query dispatchers are scoped for consistency
+            
+            services.AddScoped(provider =>
+            {
+                var serviceProvider = provider.GetRequiredService<IServiceProvider>();
+                var logger = provider.GetRequiredService<ILogger<ProductionCommandDispatcher>>();
+                return new ProductionCommandDispatcher(serviceProvider, logger);
+            });
+            
+            services.AddScoped(provider =>
+            {
+                var serviceProvider = provider.GetRequiredService<IServiceProvider>();
+                var logger = provider.GetRequiredService<ILogger<ProductionQueryDispatcher>>();
+                return new ProductionQueryDispatcher(serviceProvider, logger);
+            });
             
             return services;
         }
@@ -128,9 +153,15 @@ namespace NeoServiceLayer.Core.Extensions
         /// <returns>The service collection</returns>
         public static IServiceCollection AddDomainEvents(this IServiceCollection services)
         {
-            // TODO: Re-enable after event infrastructure is implemented
-            // Event publisher should be scoped to ensure proper event handling within requests
-            // services.AddScoped<IDomainEventPublisher, DomainEventPublisher>();
+            // Event infrastructure with production implementations
+            // Event publisher is scoped to ensure proper event handling within requests
+            
+            services.AddScoped(provider =>
+            {
+                var logger = provider.GetRequiredService<ILogger<ProductionDomainEventPublisher>>();
+                var serviceProvider = provider.GetRequiredService<IServiceProvider>();
+                return new ProductionDomainEventPublisher(serviceProvider, logger);
+            });
             
             // Register domain event handlers
             // services.AddScoped<IDomainEventHandler<UserCreatedEvent>, UserCreatedEventHandler>();
@@ -154,8 +185,13 @@ namespace NeoServiceLayer.Core.Extensions
             services.AddScoped<IUnitOfWork, EntityFrameworkUnitOfWork>();
             services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
             
-            // TODO: Add specific repository implementations when needed
-            // services.AddScoped<IUserRepository, UserRepository>();
+            // Production repository implementations
+            services.AddScoped(provider =>
+            {
+                var context = provider.GetRequiredService<ApplicationDbContext>();
+                var logger = provider.GetRequiredService<ILogger<ProductionUserRepository>>();
+                return new ProductionUserRepository(context, logger);
+            });
             
             return services;
         }
