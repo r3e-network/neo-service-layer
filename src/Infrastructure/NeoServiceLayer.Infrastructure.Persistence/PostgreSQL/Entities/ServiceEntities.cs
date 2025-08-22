@@ -348,9 +348,15 @@ public class Vote
     
     public Guid VoterId { get; set; }
     
+    [MaxLength(255)]
+    public string? VoterIdentifier { get; set; }
+    
     [Required]
     [MaxLength(20)]
     public string VoteChoice { get; set; } = string.Empty; // For, Against, Abstain
+    
+    [MaxLength(50)]
+    public string? Option { get; set; }
     
     [Column(TypeName = "decimal(18,8)")]
     public decimal VotingPower { get; set; }
