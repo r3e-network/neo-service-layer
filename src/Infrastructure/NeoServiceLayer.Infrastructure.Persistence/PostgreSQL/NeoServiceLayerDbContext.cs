@@ -57,8 +57,8 @@ public class NeoServiceLayerDbContext : DbContext
     #region Oracle Services
     
     public DbSet<Entities.OracleEntities.OracleDataFeed> OracleDataFeeds { get; set; } = null!;
-    public DbSet<Entities.OracleEntities.OracleRequest> OracleRequests { get; set; } = null!;
-    public DbSet<Entities.OracleEntities.OracleResponse> OracleResponses { get; set; } = null!;
+    public DbSet<OracleRequest> OracleRequests { get; set; } = null!;
+    public DbSet<OracleResponse> OracleResponses { get; set; } = null!;
     public DbSet<DataSourceAttestation> DataSourceAttestations { get; set; } = null!;
     public DbSet<FeedHistory> FeedHistory { get; set; } = null!;
     
