@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Domain;
-// using NeoServiceLayer.Tee.Enclave; // TODO: Add project reference when circular dependency resolved
+// Note: TEE/Enclave integration available via dependency injection to avoid circular references
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
 {
