@@ -632,39 +632,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public string? ErrorMessage { get; set; }
     }
 
-    // Additional result types for interface compatibility
-    public class SubscriptionControlResult
-    {
-        public bool Success { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public class ChannelMessageResult
-    {
-        public bool Success { get; set; }
-        public string MessageId { get; set; } = string.Empty;
-        public string? ErrorMessage { get; set; }
-    }
-
-    public class ChannelMessageReceived<T>
-    {
-        public T? Message { get; set; }
-        public string SenderId { get; set; } = string.Empty;
-        public DateTime Timestamp { get; set; } = DateTime.UtcNow;
-    }
-
-    public class ServiceUpdateResult
-    {
-        public bool Success { get; set; }
-        public string? ErrorMessage { get; set; }
-    }
-
-    public class ServiceMetrics
-    {
-        public string ServiceId { get; set; } = string.Empty;
-        public long RequestsHandled { get; set; }
-        public TimeSpan AverageResponseTime { get; set; }
-    }
+    // Additional result types for interface compatibility (duplicates removed)
 
     public class ServiceRegistrationMetrics
     {
