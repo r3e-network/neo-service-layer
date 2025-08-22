@@ -367,9 +367,19 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
     // Domain events
     public class UserCreatedEvent : DomainEventBase
     {
+        public UserCreatedEvent(Guid userId, string email, string username, Guid tenantId, string initiatedBy)
+            : base(userId.ToString(), "User", 1, initiatedBy)
+        {
+            UserId = userId;
+            Email = email;
+            Username = username;
+            TenantId = tenantId;
+            CreatedAt = DateTime.UtcNow;
+        }
+
         public Guid UserId { get; set; }
-        public string Email { get; set; }
-        public string Username { get; set; }
+        public string Email { get; set; } = string.Empty;
+        public string Username { get; set; } = string.Empty;
         public Guid TenantId { get; set; }
         public DateTime CreatedAt { get; set; }
     }
