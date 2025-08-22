@@ -6,6 +6,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Design;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities.VotingEntities;
 
 namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 
