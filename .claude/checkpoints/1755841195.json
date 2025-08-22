@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-053955", "file": "/home/ubuntu/neo-service-layer/docs/test-coverage-analysis.md", "timestamp": "2025-08-22T05:39:55Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755840902.json |   1 +  docs/test-coverage-analysis.md           | 275 +++++++++++++++++++++++++++++++  2 files changed, 276 insertions(+) "}
