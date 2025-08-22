@@ -9,6 +9,16 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     {
         Task<byte[]> ExecuteAsync(byte[] input);
         Task<bool> IsEnclaveAvailableAsync();
+        
+        // Additional methods required by ConfidentialComputingService
+        string ExecuteJavaScript(string script, string parameters);
+        byte[] GetAttestation();
+        byte[] GenerateRandomBytes(int length);
+        byte[] SealData(byte[] data);
+        byte[] UnsealData(byte[] sealedData);
+        byte[] Encrypt(byte[] data, string key);
+        byte[] Decrypt(byte[] encryptedData, string key);
+        string GetAttestationReport();
     }
 
     // Temporary placeholder implementation
