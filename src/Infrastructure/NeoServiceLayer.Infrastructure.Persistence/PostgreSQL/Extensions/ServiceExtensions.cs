@@ -59,6 +59,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Extensions
             services.AddScoped<INetworkSecurityRepository, NetworkSecurityRepository>();
 
             // Add SGX services
+            services.AddScoped<ISealedDataRepository, PostgreSQLSealedDataRepository>();
             services.AddScoped<ISgxConfidentialStore, SgxConfidentialStore>();
             services.AddHostedService<SgxCleanupService>();
 
