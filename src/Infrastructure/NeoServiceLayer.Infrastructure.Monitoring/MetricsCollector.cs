@@ -295,6 +295,79 @@ public class MetricsCollector : IMetricsCollector
         }
     }
 
+    private double GetWindowsCpuUsage()
+    {
+        try
+        {
+            using var process = new Process();
+            process.StartInfo.FileName = "wmic";
+            process.StartInfo.Arguments = "cpu get loadpercentage /value";
+            process.StartInfo.UseShellExecute = false;
+            process.StartInfo.RedirectStandardOutput = true;
+            process.Start();
+            
+            var output = process.StandardOutput.ReadToEnd();
+            process.WaitForExit();
+            
+            var lines = output.Split('\n');
+            foreach (var line in lines)
+            {
+                if (line.StartsWith("LoadPercentage="))
+                {
+                    var value = line.Substring("LoadPercentage=".Length).Trim();
+                    if (double.TryParse(value, out var cpu))
+                        return cpu;
+                }
+            }
+        }
+        catch { }
+        return 0.0;
+    }
+
+    private double GetLinuxCpuUsage()
+    {
+        try
+        {
+            var stat1 = ReadProcStat();
+            Thread.Sleep(100); // Small delay for calculation
+            var stat2 = ReadProcStat();
+            
+            if (stat1 != null && stat2 != null)
+            {
+                var totalDiff = stat2.Total - stat1.Total;
+                var idleDiff = stat2.Idle - stat1.Idle;
+                
+                if (totalDiff > 0)
+                    return (double)(totalDiff - idleDiff) / totalDiff * 100.0;
+            }
+        }
+        catch { }
+        return 0.0;
+    }
+
+    private (long Total, long Idle)? ReadProcStat()
+    {
+        try
+        {
+            if (!File.Exists("/proc/stat")) return null;
+            
+            var line = File.ReadLines("/proc/stat").FirstOrDefault();
+            if (line?.StartsWith("cpu ") == true)
+            {
+                var parts = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                if (parts.Length >= 5)
+                {
+                    var values = parts.Skip(1).Take(4).Select(long.Parse).ToArray();
+                    var total = values.Sum();
+                    var idle = values[3]; // idle time
+                    return (total, idle);
+                }
+            }
+        }
+        catch { }
+        return null;
+    }
+
     private long GetMemoryUsage()
     {
         using var process = Process.GetCurrentProcess();
