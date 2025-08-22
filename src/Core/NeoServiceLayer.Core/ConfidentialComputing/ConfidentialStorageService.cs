@@ -80,7 +80,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 };
 
                 // Store using enclave storage service
-                var sealResult = await _enclaveStorageService.SealDataAsync(sealingRequest, BlockchainType.NeoN3);
+                var sealResult = await _enclaveStorageService.SealDataAsync(sealingRequest, Services.BlockchainType.NeoN3);
 
                 if (!sealResult.Success)
                 {
