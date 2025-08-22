@@ -509,6 +509,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     {
         public bool Success { get; set; }
         public string MessageId { get; set; } = string.Empty;
+        public string Topic { get; set; } = string.Empty;
         public string? ErrorMessage { get; set; }
         public DateTime Timestamp { get; set; }
     }
