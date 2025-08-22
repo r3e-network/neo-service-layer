@@ -3,7 +3,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Contexts;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories;
 using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services;
 
@@ -19,14 +19,14 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Extensions
             IConfiguration configuration)
         {
             // Add DbContext
-            services.AddDbContext<NeoServiceDbContext>(options =>
+            services.AddDbContext<NeoServiceLayerDbContext>(options =>
             {
                 var connectionString = configuration.GetConnectionString("PostgreSQL") 
                     ?? throw new InvalidOperationException("PostgreSQL connection string not configured");
                     
                 options.UseNpgsql(connectionString, npgsqlOptions =>
                 {
-                    npgsqlOptions.MigrationsAssembly(typeof(NeoServiceDbContext).Assembly.FullName);
+                    npgsqlOptions.MigrationsAssembly(typeof(NeoServiceLayerDbContext).Assembly.FullName);
                     npgsqlOptions.EnableRetryOnFailure(
                         maxRetryCount: 3,
                         maxRetryDelay: TimeSpan.FromSeconds(30),
