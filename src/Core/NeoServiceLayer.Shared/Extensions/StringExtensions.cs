@@ -444,7 +444,7 @@ public static class StringExtensions
     /// <returns>True if the string contains the search value ignoring case; otherwise, false.</returns>
     public static bool ContainsIgnoreCase(this string value, string search)
     {
-        if (value.IsNullOrEmpty() || search.IsNullOrEmpty())
+        if (value == null || search == null)
             return false;
 
         return value.Contains(search, StringComparison.OrdinalIgnoreCase);
