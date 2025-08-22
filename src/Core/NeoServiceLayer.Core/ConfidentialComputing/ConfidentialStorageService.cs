@@ -311,7 +311,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                     ServiceFilter = null // Backup all services
                 };
 
-                var backupResult = await _enclaveStorageService.BackupSealedDataAsync(backupEnclaveRequest, BlockchainType.NeoN3);
+                var backupResult = await _enclaveStorageService.BackupSealedDataAsync(backupEnclaveRequest, Services.BlockchainType.NeoN3);
 
                 if (!backupResult.Success)
                 {
