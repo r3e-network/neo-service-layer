@@ -80,6 +80,8 @@ public class NeoServiceLayerDbContext : DbContext
     public DbSet<CrossChainTransaction> CrossChainTransactions { get; set; } = null!;
     public DbSet<BridgeOperation> BridgeOperations { get; set; } = null!;
     public DbSet<ChainState> ChainStates { get; set; } = null!;
+    public DbSet<CrossChainOperation> CrossChainOperations { get; set; } = null!;
+    public DbSet<TokenTransfer> TokenTransfers { get; set; } = null!;
     
     #endregion
 
