@@ -95,7 +95,7 @@ public static class RetryHelper
             {
                 return await func().ConfigureAwait(false);
             }
-            catch (Exception ex) when (attempt < maxRetries && effectiveCondition(ex))
+            catch (Exception ex) when (effectiveCondition(ex))
             {
                 lastException = ex;
                 attempt++;
