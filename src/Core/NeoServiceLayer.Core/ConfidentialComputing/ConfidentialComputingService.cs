@@ -15,7 +15,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     /// </summary>
     public class ConfidentialComputingService : IConfidentialComputingService
     {
-        private readonly IEnclaveWrapper _enclaveWrapper;
+        // private readonly IEnclaveWrapper _enclaveWrapper; // TODO: Restore when circular dependency resolved
         private readonly ILogger<ConfidentialComputingService> _logger;
         private readonly Dictionary<string, IConfidentialSession> _activeSessions;
         private readonly object _sessionsLock = new();
