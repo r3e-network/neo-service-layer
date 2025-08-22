@@ -276,7 +276,7 @@ public class DataSourceAttestation
     public string? VerificationResult { get; set; }
     
     // Navigation properties
-    public virtual OracleDataFeed DataFeed { get; set; } = null!;
+    public virtual ServiceOracleDataFeed DataFeed { get; set; } = null!;
 }
 
 #endregion
