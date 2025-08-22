@@ -1210,26 +1210,146 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
     }
 
     /// <inheritdoc/>
-    public Task<bool> BackupAsync(string backupPath)
+    public async Task<bool> BackupAsync(string backupPath)
     {
-        // TODO: Implement full backup functionality
-        _backupNotImplemented(_logger, null);
-        return Task.FromResult(false);
+        try
+        {
+            if (string.IsNullOrEmpty(backupPath))
+                throw new ArgumentException("Backup path cannot be null or empty", nameof(backupPath));
+            
+            var backupDir = Path.GetDirectoryName(backupPath);
+            if (!string.IsNullOrEmpty(backupDir) && !Directory.Exists(backupDir))
+                Directory.CreateDirectory(backupDir);
+            
+            // Create backup metadata
+            var backup = new
+            {
+                Timestamp = DateTime.UtcNow,
+                Version = "1.0",
+                Source = _basePath,
+                FileCount = 0
+            };
+            
+            // Copy all enclave storage files
+            if (Directory.Exists(_basePath))
+            {
+                await CopyDirectoryAsync(_basePath, backupPath + ".data");
+                backup = backup with { FileCount = Directory.GetFiles(backupPath + ".data", "*", SearchOption.AllDirectories).Length };
+            }
+            
+            // Save backup metadata
+            var metadataPath = backupPath + ".metadata";
+            await File.WriteAllTextAsync(metadataPath, System.Text.Json.JsonSerializer.Serialize(backup));
+            
+            _logger.LogInformation("Storage backup completed to {BackupPath} with {FileCount} files", backupPath, backup.FileCount);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Storage backup failed to {BackupPath}", backupPath);
+            return false;
+        }
     }
 
     /// <inheritdoc/>
-    public Task<bool> RestoreAsync(string backupPath)
+    public async Task<bool> RestoreAsync(string backupPath)
     {
-        // TODO: Implement full restore functionality
-        _restoreNotImplemented(_logger, null);
-        return Task.FromResult(false);
+        try
+        {
+            if (string.IsNullOrEmpty(backupPath))
+                throw new ArgumentException("Backup path cannot be null or empty", nameof(backupPath));
+            
+            var dataPath = backupPath + ".data";
+            var metadataPath = backupPath + ".metadata";
+            
+            if (!Directory.Exists(dataPath) || !File.Exists(metadataPath))
+                throw new FileNotFoundException($"Backup not found at {backupPath}");
+            
+            // Read backup metadata
+            var metadataJson = await File.ReadAllTextAsync(metadataPath);
+            var metadata = System.Text.Json.JsonSerializer.Deserialize<dynamic>(metadataJson);
+            
+            // Clear existing data
+            if (Directory.Exists(_basePath))
+                Directory.Delete(_basePath, true);
+            
+            Directory.CreateDirectory(_basePath);
+            
+            // Restore from backup
+            await CopyDirectoryAsync(dataPath, _basePath);
+            
+            var restoredFiles = Directory.GetFiles(_basePath, "*", SearchOption.AllDirectories).Length;
+            _logger.LogInformation("Storage restored from {BackupPath} with {FileCount} files", backupPath, restoredFiles);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Storage restore failed from {BackupPath}", backupPath);
+            return false;
+        }
     }
 
     /// <inheritdoc/>
-    public Task<bool> CompactAsync()
+    public async Task<bool> CompactAsync()
     {
-        // TODO: Implement storage compaction
-        _compactNotImplemented(_logger, null);
-        return Task.FromResult(true);
+        try
+        {
+            int compactedFiles = 0;
+            int deletedFiles = 0;
+            
+            if (!Directory.Exists(_basePath))
+                return true;
+            
+            // Find and remove empty directories
+            var directories = Directory.GetDirectories(_basePath, "*", SearchOption.AllDirectories)
+                .OrderByDescending(d => d.Length); // Process deepest first
+            
+            foreach (var dir in directories)
+            {
+                if (!Directory.EnumerateFileSystemEntries(dir).Any())
+                {
+                    Directory.Delete(dir);
+                    deletedFiles++;
+                }
+            }
+            
+            // Find and process duplicate files by content hash
+            var fileHashes = new Dictionary<string, List<string>>();
+            var allFiles = Directory.GetFiles(_basePath, "*", SearchOption.AllDirectories);
+            
+            foreach (var file in allFiles)
+            {
+                try
+                {
+                    var hash = await ComputeFileHashAsync(file);
+                    if (!fileHashes.ContainsKey(hash))
+                        fileHashes[hash] = new List<string>();
+                    fileHashes[hash].Add(file);
+                }
+                catch
+                {
+                    // Skip files we can't read
+                }
+            }
+            
+            // Remove duplicates (keep first occurrence)
+            foreach (var hashGroup in fileHashes.Where(kv => kv.Value.Count > 1))
+            {
+                for (int i = 1; i < hashGroup.Value.Count; i++)
+                {
+                    File.Delete(hashGroup.Value[i]);
+                    compactedFiles++;
+                }
+            }
+            
+            _logger.LogInformation("Storage compaction completed: {CompactedFiles} duplicates removed, {DeletedDirs} empty directories cleaned", 
+                compactedFiles, deletedFiles);
+            return true;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Storage compaction failed");
+            return false;
+        }
     }
 }
