@@ -100,6 +100,11 @@ public static class RetryHelper
                 lastException = ex;
                 attempt++;
 
+                if (attempt > maxRetries)
+                {
+                    throw;
+                }
+
                 var delay = retryDelay ?? CalculateDelay(attempt, effectiveDelay, maxDelay.Value, backoffMultiplier);
 
                 logger?.LogWarning(ex, "Attempt {Attempt} failed. Retrying in {Delay}ms. Error: {Error}",
