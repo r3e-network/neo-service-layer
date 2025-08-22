@@ -367,11 +367,20 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
 /// </summary>
 public interface ISealedDataRepository
 {
-    Task<SealedDataItem> StoreAsync(string key, string serviceName, byte[] sealedData, SealingPolicyType policyType, DateTime expiresAt, Dictionary<string, object>? metadata = null, CancellationToken cancellationToken = default);
+    Task<SealedDataItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default);
+    Task<SealedDataItem?> GetByKeyAsync(string key, string serviceName, CancellationToken cancellationToken = default);
     Task<SealedDataItem?> GetByKeyAsync(string key, CancellationToken cancellationToken = default);
+    Task<IEnumerable<SealedDataItem>> GetByServiceAsync(string serviceName, CancellationToken cancellationToken = default);
+    Task<IEnumerable<SealedDataItem>> GetActiveAsync(CancellationToken cancellationToken = default);
+    Task<SealedDataItem> StoreAsync(string key, string serviceName, byte[] sealedData, SealingPolicyType policyType, DateTime expiresAt, Dictionary<string, object>? metadata = null, CancellationToken cancellationToken = default);
+    Task<SealedDataItem> UpdateAsync(SealedDataItem item, CancellationToken cancellationToken = default);
     Task<(IEnumerable<SealedDataItem> Items, int TotalCount)> ListByServiceAsync(string serviceName, int page = 1, int pageSize = 50, string? keyPrefix = null, CancellationToken cancellationToken = default);
+    Task DeleteAsync(Guid id, CancellationToken cancellationToken = default);
     Task<bool> DeleteByKeyAsync(string key, CancellationToken cancellationToken = default);
+    Task DeleteByKeyAsync(string key, string serviceName, CancellationToken cancellationToken = default);
     Task<int> CleanupExpiredAsync(CancellationToken cancellationToken = default);
+    Task CleanupExpiredAsync(CancellationToken cancellationToken = default);
+    Task<long> GetStorageUsageAsync(string? serviceName = null, CancellationToken cancellationToken = default);
     Task<Dictionary<string, ServiceStorageInfo>> GetStorageStatisticsAsync(CancellationToken cancellationToken = default);
 }
 
