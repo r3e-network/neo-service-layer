@@ -762,7 +762,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public string SubscriptionId { get; } = Guid.NewGuid().ToString();
         public string Topic { get; }
         public bool IsActive { get; } = true;
-        public int ProcessedMessageCount { get; } = 0;
+        public long ProcessedMessageCount { get; } = 0;
 
         public TemporaryConfidentialSubscription(string topic)
         {
