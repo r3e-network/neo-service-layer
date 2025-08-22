@@ -337,12 +337,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 var user = await _userRepository.GetByIdAsync(command.UserId);
                 if (user == null)
                 {
-                    return CommandResult.Failure("User not found");
+                    throw new InvalidOperationException("User not found");
                 }
 
                 if (user.Status == UserStatus.Locked)
                 {
-                    return CommandResult.Failure("User is already locked");
+                    throw new InvalidOperationException("User is already locked");
                 }
 
                 user.Status = UserStatus.Locked;
