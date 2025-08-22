@@ -643,12 +643,14 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
             var rootCert = await response.Content.ReadAsByteArrayAsync();
 
             // Get intermediate and leaf certificates
-            // This is a simplified example - real implementation would handle full chain
+            // Production certificate chain validation and construction
+            var certificateChain = await BuildFullCertificateChainAsync(rootCert);
+            
             return new IntelCertificateChain
             {
-                RootCertificate = rootCert,
-                IntermediateCertificates = new List<byte[]>(),
-                LeafCertificate = rootCert // Simplified for example
+                RootCertificate = certificateChain.Root,
+                IntermediateCertificates = certificateChain.Intermediates,
+                LeafCertificate = certificateChain.Leaf
             };
         }
         catch (Exception ex)
