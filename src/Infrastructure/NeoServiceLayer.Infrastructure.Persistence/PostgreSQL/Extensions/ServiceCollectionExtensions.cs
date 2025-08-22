@@ -127,8 +127,8 @@ public static class ServiceCollectionExtensions
         services.AddPostgreSQLPersistence(configuration, environment);
         
         // Register SGX-specific repositories with encryption
-        services.AddScoped<ISGXSealedDataRepository, SGXPostgreSQLSealedDataRepository>();
-        services.AddScoped<IEnclaveAttestationRepository, PostgreSQLEnclaveAttestationRepository>();
+        services.AddScoped<ISealedDataRepository, PostgreSQLSealedDataRepository>();
+        services.AddScoped<ISgxConfidentialStore, SgxConfidentialStore>();
         
         // Add SGX-specific configuration
         services.Configure<SGXDatabaseOptions>(configuration.GetSection("SGX:Database"));
