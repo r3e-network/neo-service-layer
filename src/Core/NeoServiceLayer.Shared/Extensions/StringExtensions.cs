@@ -285,10 +285,23 @@ public static class StringExtensions
         if (value.IsNullOrEmpty())
             return string.Empty;
 
-        if (value.Length == 1)
-            return value.ToUpperInvariant();
+        // Split on common word separators and capitalize each word
+        var words = value.Split(new char[] { '-', '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+        if (words.Length == 0)
+            return string.Empty;
 
-        return char.ToUpperInvariant(value[0]) + value[1..];
+        var result = new StringBuilder();
+        foreach (var word in words)
+        {
+            if (word.Length > 0)
+            {
+                result.Append(char.ToUpperInvariant(word[0]));
+                if (word.Length > 1)
+                    result.Append(word[1..].ToLowerInvariant());
+            }
+        }
+
+        return result.ToString();
     }
 
     /// <summary>
