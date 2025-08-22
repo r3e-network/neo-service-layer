@@ -541,15 +541,15 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         }
 
         // private NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType MapSealingPolicy(SealingPolicy policy) // TODO: Restore when circular dependency resolved
-        {
-            return policy switch
-            {
-                SealingPolicy.MrEnclave => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave,
-                SealingPolicy.MrSigner => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner,
-                SealingPolicy.Custom => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner, // Default fallback
-                _ => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner
-            };
-        }
+        // {
+        //     return policy switch
+        //     {
+        //         SealingPolicy.MrEnclave => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave,
+        //         SealingPolicy.MrSigner => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner,
+        //         SealingPolicy.Custom => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner, // Default fallback
+        //         _ => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner
+        //     };
+        // }
 
         // private SealingPolicy MapSealingPolicyType(NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType policyType) // TODO: Restore when circular dependency resolved
         {
