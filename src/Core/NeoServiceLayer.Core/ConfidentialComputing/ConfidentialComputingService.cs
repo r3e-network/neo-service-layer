@@ -434,7 +434,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             SessionId = sessionId;
             CreatedAt = DateTime.UtcNow;
             _options = options;
-            _enclaveWrapper = enclaveWrapper;
+            // _enclaveWrapper = enclaveWrapper; // TODO: Restore when circular dependency resolved
             _logger = logger;
             _sessionStorage = new Dictionary<string, byte[]>();
             IsActive = false;
