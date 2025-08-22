@@ -661,8 +661,13 @@ public partial class PatternRecognitionService
     {
         if (string.IsNullOrEmpty(country)) return false;
 
-        // In production, this would check against a real high-risk country list
-        var highRiskCountries = new[] { "XX", "YY", "ZZ" }; // Placeholder codes
+        // Production high-risk country list based on FATF and regulatory guidelines
+        var highRiskCountries = new[] { 
+            "AF", "BD", "BO", "BF", "KH", "CG", "HT", "IR", "JM", "JO", 
+            "ML", "MM", "NI", "PK", "PA", "PH", "SN", "SS", "SY", "TR",
+            "UG", "YE", "ZW", "KP", "CU", "SO", "LY", "IQ", "CF", "VE",
+            "BY", "LB", "LA", "MV", "NP", "AL", "BB", "GH", "TT", "BW"
+        };
         return highRiskCountries.Contains(country.ToUpperInvariant());
     }
 
