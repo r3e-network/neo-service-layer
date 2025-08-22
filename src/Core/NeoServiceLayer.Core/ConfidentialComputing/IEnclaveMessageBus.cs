@@ -593,6 +593,45 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public DateTime LastActivityAt { get; set; }
     }
 
+    // Additional result types for EnclaveMessageBus
+    public class ConfidentialSubscriptionResult
+    {
+        public bool Success { get; set; }
+        public string SubscriptionId { get; set; } = string.Empty;
+        public string Topic { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+    }
+
+    public class ConfidentialChannelResult
+    {
+        public bool Success { get; set; }
+        public string ChannelId { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+    }
+
+    public class ConfidentialRpcOptions
+    {
+        public TimeSpan Timeout { get; set; } = TimeSpan.FromSeconds(30);
+        public int MaxRetries { get; set; } = 3;
+        public Dictionary<string, string> Headers { get; set; } = new();
+    }
+
+    public class ConfidentialRpcResult<T>
+    {
+        public bool Success { get; set; }
+        public T? Response { get; set; }
+        public string? ErrorMessage { get; set; }
+        public TimeSpan ExecutionTime { get; set; }
+    }
+
+    public class ConfidentialServiceRegistrationResult
+    {
+        public bool Success { get; set; }
+        public string ServiceId { get; set; } = string.Empty;
+        public string ServiceName { get; set; } = string.Empty;
+        public string? ErrorMessage { get; set; }
+    }
+
     /// <summary>
     /// Temporary placeholder implementation of EnclaveMessageBus
     /// </summary>
