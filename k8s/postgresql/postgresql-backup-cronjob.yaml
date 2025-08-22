@@ -1,0 +1,90 @@
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: postgres-backup
+  namespace: neo-service-layer
+spec:
+  schedule: "0 2 * * *" # Daily at 2 AM
+  successfulJobsHistoryLimit: 3
+  failedJobsHistoryLimit: 3
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          containers:
+          - name: postgres-backup
+            image: postgres:16-alpine
+            imagePullPolicy: IfNotPresent
+            env:
+            - name: PGPASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-db
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: postgres-secret
+                  key: postgres-user
+            command:
+            - /bin/sh
+            - -c
+            - |
+              set -e
+              echo "Starting PostgreSQL backup..."
+              
+              BACKUP_DATE=$(date +%Y%m%d_%H%M%S)
+              BACKUP_FILE="/backup/neoservice_backup_${BACKUP_DATE}.sql.gz"
+              
+              echo "Creating backup: ${BACKUP_FILE}"
+              pg_dump -h postgres-service -U ${POSTGRES_USER} -d ${POSTGRES_DB} \
+                --verbose --no-owner --no-acl --clean --if-exists \
+                | gzip > ${BACKUP_FILE}
+              
+              # Calculate checksum
+              sha256sum ${BACKUP_FILE} > ${BACKUP_FILE}.sha256
+              
+              # Cleanup old backups (keep last 7 days)
+              find /backup -name "neoservice_backup_*.sql.gz" -mtime +7 -delete
+              
+              echo "Backup completed successfully"
+              
+              # Verify backup
+              echo "Verifying backup..."
+              gunzip -t ${BACKUP_FILE}
+              
+              echo "Backup size: $(du -h ${BACKUP_FILE} | cut -f1)"
+              echo "Backup verification completed"
+            volumeMounts:
+            - name: backup-storage
+              mountPath: /backup
+            resources:
+              requests:
+                memory: "256Mi"
+                cpu: "100m"
+              limits:
+                memory: "512Mi"
+                cpu: "500m"
+          restartPolicy: OnFailure
+          volumes:
+          - name: backup-storage
+            persistentVolumeClaim:
+              claimName: postgres-backup-pvc
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: postgres-backup-pvc
+  namespace: neo-service-layer
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 50Gi
+  storageClassName: standard
