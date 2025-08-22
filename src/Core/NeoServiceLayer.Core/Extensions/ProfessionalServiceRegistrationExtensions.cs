@@ -188,11 +188,10 @@ namespace NeoServiceLayer.Core.Extensions
             services.AddScoped<IUnitOfWorkWithEvents, EntityFrameworkUnitOfWorkWithEvents>();
             
             // Production repository implementations
-            services.AddScoped(provider =>
+            services.AddScoped<IUserRepository>(provider =>
             {
-                var context = provider.GetRequiredService<ApplicationDbContext>();
-                var logger = provider.GetRequiredService<ILogger<ProductionUserRepository>>();
-                return new ProductionUserRepository(context, logger);
+                var logger = provider.GetRequiredService<ILogger<DefaultUserRepository>>();
+                return new DefaultUserRepository(logger);
             });
             
             return services;
