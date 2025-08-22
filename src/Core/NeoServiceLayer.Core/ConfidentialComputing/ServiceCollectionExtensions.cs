@@ -51,7 +51,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
             // Register existing TEE services
             services.AddSingleton<IEnclaveWrapper, OcclumEnclaveWrapper>();
-            services.AddSingleton<IEnclaveStorageService, EnclaveStorageService>();
+            services.AddSingleton<IEnclaveStorageService, TemporaryEnclaveStorageService>();
 
             // Register health checks
             services.AddHealthChecks()
@@ -95,7 +95,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 configuration.GetSection("EnclaveStorage"));
 
             services.AddSingleton<IConfidentialStorageService, ConfidentialStorageService>();
-            services.AddSingleton<IEnclaveStorageService, EnclaveStorageService>();
+            services.AddSingleton<IEnclaveStorageService, TemporaryEnclaveStorageService>();
 
             services.AddHealthChecks()
                 .AddCheck<EnclaveStorageHealthCheck>("enclave-storage");
