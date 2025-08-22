@@ -258,6 +258,21 @@ public class StorageStatistics
     public long AvailableSpace { get; set; }
 
     /// <summary>
+    /// Gets or sets the total number of files.
+    /// </summary>
+    public int FileCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the number of expired files.
+    /// </summary>
+    public int ExpiredCount { get; set; }
+
+    /// <summary>
+    /// Gets or sets the fragmentation ratio (0.0 to 1.0).
+    /// </summary>
+    public double FragmentationRatio { get; set; }
+
+    /// <summary>
     /// Gets or sets the number of compressed entries.
     /// </summary>
     public long CompressedEntries { get; set; }
