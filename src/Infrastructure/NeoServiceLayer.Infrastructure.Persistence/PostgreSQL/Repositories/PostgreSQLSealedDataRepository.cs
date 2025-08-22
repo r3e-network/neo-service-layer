@@ -14,7 +14,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 /// PostgreSQL repository for SGX sealed data storage
 /// Provides unified persistence for confidential data across all services
 /// </summary>
-public class PostgreSQLSealedDataRepository : ISealedDataRepository
+public class PostgreSQLSealedDataRepository
 {
     private readonly NeoServiceLayerDbContext _context;
     private readonly ILogger<PostgreSQLSealedDataRepository> _logger;
