@@ -226,7 +226,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             try
             {
                 using var aes = Aes.Create();
-                aes.Mode = CipherMode.GCM;
+                aes.Mode = CipherMode.CBC;
                 
                 // Derive key using PBKDF2
                 var salt = GenerateRandomBytes(16);
@@ -282,7 +282,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 Buffer.BlockCopy(encryptedData, 32, ciphertext, 0, ciphertext.Length);
                 
                 using var aes = Aes.Create();
-                aes.Mode = CipherMode.GCM;
+                aes.Mode = CipherMode.CBC;
                 aes.IV = iv;
                 
                 // Derive key using same parameters as encryption
