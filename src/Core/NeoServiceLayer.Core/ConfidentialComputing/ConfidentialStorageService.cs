@@ -17,16 +17,16 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     /// </summary>
     public class ConfidentialStorageService : IConfidentialStorageService
     {
-        private readonly IEnclaveStorageService _enclaveStorageService;
+        // private readonly IEnclaveStorageService _enclaveStorageService; // TODO: Restore when circular dependency resolved
         private readonly ILogger<ConfidentialStorageService> _logger;
         private readonly Dictionary<string, ConfidentialStorageTransaction> _activeTransactions;
         private readonly object _transactionsLock = new();
 
         public ConfidentialStorageService(
-            IEnclaveStorageService enclaveStorageService,
+            // IEnclaveStorageService enclaveStorageService, // TODO: Restore when circular dependency resolved
             ILogger<ConfidentialStorageService> logger)
         {
-            _enclaveStorageService = enclaveStorageService ?? throw new ArgumentNullException(nameof(enclaveStorageService));
+            // _enclaveStorageService = enclaveStorageService ?? throw new ArgumentNullException(nameof(enclaveStorageService)); // TODO: Restore
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activeTransactions = new Dictionary<string, ConfidentialStorageTransaction>();
         }
