@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-011444", "file": "/home/ubuntu/neo-service-layer/docs/DEPLOYMENT_GUIDE.md", "timestamp": "2025-08-22T01:14:44Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755825137.json |   1 +  docs/DEPLOYMENT_GUIDE.md            | 543 ++++++++++++++++++++++++++++++++++++  2 files changed, 544 insertions(+) "}
