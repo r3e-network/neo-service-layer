@@ -136,41 +136,80 @@ public partial class MonitoringService
     /// <returns>The health status.</returns>
     private ServiceHealthStatus PerformServiceHealthCheck(string serviceName)
     {
-        // In production, this would perform actual health checks
-        // For now, simulate health status with some variability
-        var random = Random.Shared;
-        var healthProbability = random.NextDouble();
-
-        var status = healthProbability switch
+        try
         {
-            > 0.95 => HealthStatus.Unhealthy,
-            > 0.90 => HealthStatus.Degraded,
-            > 0.85 => HealthStatus.Warning,
-            _ => HealthStatus.Healthy
-        };
+            var stopwatch = Stopwatch.StartNew();
+            var status = HealthStatus.Healthy;
+            var errorMessage = string.Empty;
 
-        var responseTime = status switch
-        {
-            HealthStatus.Healthy => random.NextDouble() * 50,
-            HealthStatus.Warning => random.NextDouble() * 100 + 50,
-            HealthStatus.Degraded => random.NextDouble() * 200 + 100,
-            HealthStatus.Unhealthy => random.NextDouble() * 500 + 200,
-            _ => random.NextDouble() * 100
-        };
-
-        return new ServiceHealthStatus
-        {
-            ServiceName = serviceName,
-            Status = status,
-            ResponseTimeMs = responseTime,
-            LastCheck = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>
+            // Perform actual health checks based on service type
+            switch (serviceName)
             {
-                ["check_type"] = "periodic",
-                ["version"] = "1.0.0",
-                ["endpoint"] = $"/{serviceName.ToLowerInvariant()}/health"
+                case "RandomnessService":
+                case "OracleService":
+                case "KeyManagementService":
+                case "ComputeService":
+                case "StorageService":
+                case "AIService":
+                    // Critical services - check process and resource availability
+                    status = CheckCriticalServiceHealth(serviceName);
+                    break;
+                    
+                case "VotingService":
+                case "EventSubscriptionService":
+                    // Blockchain-dependent services - check connectivity
+                    status = CheckBlockchainDependentServiceHealth(serviceName);
+                    break;
+                    
+                default:
+                    // Standard services - check basic availability
+                    status = CheckStandardServiceHealth(serviceName);
+                    break;
             }
-        };
+
+            stopwatch.Stop();
+            var responseTime = stopwatch.Elapsed.TotalMilliseconds;
+
+            // Apply response time thresholds
+            if (responseTime > 1000 && status == HealthStatus.Healthy)
+            {
+                status = HealthStatus.Warning;
+            }
+            else if (responseTime > 2000)
+            {
+                status = HealthStatus.Degraded;
+            }
+
+            return new ServiceHealthStatus
+            {
+                ServiceName = serviceName,
+                Status = status,
+                ResponseTimeMs = responseTime,
+                LastCheck = DateTime.UtcNow,
+                ErrorMessage = errorMessage,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["check_type"] = "periodic",
+                    ["version"] = "1.0.0",
+                    ["endpoint"] = $"/{serviceName.ToLowerInvariant()}/health",
+                    ["memory_usage_mb"] = GC.GetTotalMemory(false) / 1024 / 1024,
+                    ["thread_count"] = Process.GetCurrentProcess().Threads.Count
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Health check failed for service {ServiceName}", serviceName);
+            
+            return new ServiceHealthStatus
+            {
+                ServiceName = serviceName,
+                Status = HealthStatus.Unhealthy,
+                ResponseTimeMs = 0,
+                LastCheck = DateTime.UtcNow,
+                ErrorMessage = ex.Message
+            };
+        }
     }
 
     /// <summary>
@@ -220,25 +259,70 @@ public partial class MonitoringService
     /// <returns>The detailed health status.</returns>
     private async Task<ServiceHealthStatus> PerformDetailedHealthCheckAsync(string serviceName)
     {
-        await Task.Delay(Random.Shared.Next(10, 100)); // Simulate health check time
-
-        // In production, this would make actual HTTP calls or service checks
-        var isHealthy = Random.Shared.NextDouble() > 0.1; // 90% healthy
-        var responseTime = Random.Shared.NextDouble() * (isHealthy ? 100 : 500);
-
-        return new ServiceHealthStatus
+        var stopwatch = Stopwatch.StartNew();
+        var status = HealthStatus.Healthy;
+        var checks = new Dictionary<string, object>();
+        
+        try
         {
-            ServiceName = serviceName,
-            Status = isHealthy ? HealthStatus.Healthy : HealthStatus.Degraded,
-            ResponseTimeMs = responseTime,
-            LastCheck = DateTime.UtcNow,
-            Metadata = new Dictionary<string, object>
+            // Perform comprehensive health checks
+            checks["connectivity"] = await CheckServiceConnectivityAsync(serviceName);
+            checks["resources"] = CheckResourceAvailability(serviceName);
+            checks["dependencies"] = await CheckServiceDependenciesAsync(serviceName);
+            checks["configuration"] = CheckServiceConfiguration(serviceName);
+            
+            // Analyze check results
+            var failedChecks = checks.Where(c => c.Value is bool b && !b).ToList();
+            
+            if (failedChecks.Count >= 3)
             {
-                ["check_type"] = "detailed",
-                ["version"] = "1.0.0",
-                ["detailed_check"] = true
+                status = HealthStatus.Unhealthy;
             }
-        };
+            else if (failedChecks.Count >= 2)
+            {
+                status = HealthStatus.Degraded;
+            }
+            else if (failedChecks.Count >= 1)
+            {
+                status = HealthStatus.Warning;
+            }
+            
+            stopwatch.Stop();
+            
+            return new ServiceHealthStatus
+            {
+                ServiceName = serviceName,
+                Status = status,
+                ResponseTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                LastCheck = DateTime.UtcNow,
+                Metadata = new Dictionary<string, object>
+                {
+                    ["check_type"] = "detailed",
+                    ["version"] = "1.0.0",
+                    ["detailed_check"] = true,
+                    ["checks_performed"] = checks.Count,
+                    ["checks_passed"] = checks.Count - failedChecks.Count,
+                    ["failed_checks"] = failedChecks.Select(c => c.Key).ToArray(),
+                    ["memory_usage_mb"] = GC.GetTotalMemory(false) / 1024 / 1024,
+                    ["uptime_seconds"] = (DateTime.UtcNow - Process.GetCurrentProcess().StartTime).TotalSeconds
+                }
+            };
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Detailed health check failed for service {ServiceName}", serviceName);
+            
+            stopwatch.Stop();
+            
+            return new ServiceHealthStatus
+            {
+                ServiceName = serviceName,
+                Status = HealthStatus.Unhealthy,
+                ResponseTimeMs = stopwatch.Elapsed.TotalMilliseconds,
+                LastCheck = DateTime.UtcNow,
+                ErrorMessage = ex.Message
+            };
+        }
     }
 
     /// <summary>
