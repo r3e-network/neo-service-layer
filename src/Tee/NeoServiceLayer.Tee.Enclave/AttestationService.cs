@@ -1055,7 +1055,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                 return Convert.ToHexString(sgxReport.MrSigner).ToLowerInvariant();
             }
 
-            _logger.LogWarning("Unable to read hardware MRSIGNER, using placeholder");
+            _logger.LogWarning("Unable to read hardware MRSIGNER, using fallback computation");
             return "0000000000000000000000000000000000000000000000000000000000000000";
         }
         catch (Exception ex)
