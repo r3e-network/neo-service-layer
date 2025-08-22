@@ -412,7 +412,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     /// </summary>
     internal class ConfidentialSession : IConfidentialSession
     {
-        // private readonly IEnclaveWrapper _enclaveWrapper; // TODO: Restore when circular dependency resolved
+        private readonly IEnclaveWrapper _enclaveWrapper;
         private readonly ILogger _logger;
         private readonly ConfidentialSessionOptions _options;
         private readonly Dictionary<string, byte[]> _sessionStorage;
@@ -428,13 +428,13 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public ConfidentialSession(
             string sessionId,
             ConfidentialSessionOptions options,
-            // IEnclaveWrapper enclaveWrapper, // TODO: Restore when circular dependency resolved
+            IEnclaveWrapper enclaveWrapper,
             ILogger logger)
         {
             SessionId = sessionId;
             CreatedAt = DateTime.UtcNow;
             _options = options;
-            // _enclaveWrapper = enclaveWrapper; // TODO: Restore when circular dependency resolved
+            _enclaveWrapper = enclaveWrapper;
             _logger = logger;
             _sessionStorage = new Dictionary<string, byte[]>();
             IsActive = false;
