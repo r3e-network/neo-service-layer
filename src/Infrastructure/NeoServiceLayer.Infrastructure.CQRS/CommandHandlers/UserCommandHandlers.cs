@@ -291,13 +291,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 });
 
                 _logger.LogInformation("Role {RoleId} assigned to user {UserId}", command.RoleId, command.UserId);
-
-                return CommandResult.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error assigning role to user");
-                return CommandResult.Failure($"Failed to assign role: {ex.Message}");
+                throw;
             }
         }
     }
