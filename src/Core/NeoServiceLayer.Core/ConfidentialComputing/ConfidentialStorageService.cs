@@ -387,7 +387,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
             try
             {
-                var stats = await _enclaveStorageService.GetStorageStatisticsAsync(BlockchainType.NeoN3);
+                var stats = await _enclaveStorageService.GetStorageStatisticsAsync(Services.BlockchainType.NeoN3);
 
                 var overallCompressionRatio = stats.TotalSize > 0 
                     ? (double)stats.TotalSize / Math.Max(1, stats.TotalSize) 
