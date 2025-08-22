@@ -243,7 +243,7 @@ public abstract class PersistentServiceBase : ServiceBase
         {
             ServiceName = Name,
             IsRunning,
-            Health = "Healthy", // Simplified health status
+            Health = await GetDetailedHealthStatusAsync(),
             Timestamp = DateTime.UtcNow,
             Uptime = DateTime.UtcNow - StartedAt
         };
