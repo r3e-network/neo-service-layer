@@ -1352,4 +1352,35 @@ internal class OcclumFileStorageTransaction : IStorageTransaction
             return false;
         }
     }
+
+    /// <summary>
+    /// Copies directory recursively for backup operations.
+    /// </summary>
+    private async Task CopyDirectoryAsync(string sourceDir, string targetDir)
+    {
+        Directory.CreateDirectory(targetDir);
+        
+        foreach (var file in Directory.GetFiles(sourceDir))
+        {
+            var targetFile = Path.Combine(targetDir, Path.GetFileName(file));
+            await File.Copy(file, targetFile, true).ConfigureAwait(false);
+        }
+        
+        foreach (var dir in Directory.GetDirectories(sourceDir))
+        {
+            var targetSubDir = Path.Combine(targetDir, Path.GetFileName(dir));
+            await CopyDirectoryAsync(dir, targetSubDir);
+        }
+    }
+
+    /// <summary>
+    /// Computes SHA256 hash of file for compaction deduplication.
+    /// </summary>
+    private async Task<string> ComputeFileHashAsync(string filePath)
+    {
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        using var stream = File.OpenRead(filePath);
+        var hash = await sha256.ComputeHashAsync(stream);
+        return Convert.ToHexString(hash);
+    }
 }
