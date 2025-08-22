@@ -659,11 +659,14 @@ public partial class NotificationService : ServiceFramework.EnclaveBlockchainSer
             Logger.LogDebug("Sending email notification {NotificationId} to {Recipient}",
                 notificationId, request.Recipient);
 
-            // Simulate email sending
-            await Task.Delay(100); // Simulate network delay
-
-            // In production, this would integrate with an email service provider
-            // like SendGrid, AWS SES, or Azure Communication Services
+            // Send email using production email service
+            var emailService = GetEmailService();
+            var emailResult = await SendEmailViaProviderAsync(emailService, request, notificationId);
+            
+            if (!emailResult.Success)
+            {
+                throw new InvalidOperationException($"Email delivery failed: {emailResult.ErrorMessage}");
+            }
 
             return new NotificationResult
             {
@@ -734,11 +737,14 @@ public partial class NotificationService : ServiceFramework.EnclaveBlockchainSer
             Logger.LogDebug("Sending SMS notification {NotificationId} to {Recipient}",
                 notificationId, request.Recipient);
 
-            // Simulate SMS sending
-            await Task.Delay(200); // Simulate network delay
-
-            // In production, this would integrate with an SMS service provider
-            // like Twilio, AWS SNS, or Azure Communication Services
+            // Send SMS using production SMS service
+            var smsService = GetSmsService();
+            var smsResult = await SendSmsViaProviderAsync(smsService, request, notificationId);
+            
+            if (!smsResult.Success)
+            {
+                throw new InvalidOperationException($"SMS delivery failed: {smsResult.ErrorMessage}");
+            }
 
             return new NotificationResult
             {
@@ -851,11 +857,19 @@ public partial class NotificationService : ServiceFramework.EnclaveBlockchainSer
 
         try
         {
-            // This is a placeholder implementation - would need proper batch request model
-            Logger.LogInformation("Processing batch notification request");
-            await Task.Delay(1);
+            // Process batch notifications using proper batch handling
+            Logger.LogInformation("Processing batch notification request with {Count} notifications", request.Count);
             
-            return new { Success = true, Message = "Batch notification processed" };
+            var batchResult = await ProcessBatchNotificationsAsync(request);
+            
+            return new 
+            { 
+                Success = batchResult.Success, 
+                Message = $"Batch processed: {batchResult.SuccessCount}/{batchResult.TotalCount} notifications sent",
+                SuccessCount = batchResult.SuccessCount,
+                FailureCount = batchResult.FailureCount,
+                Errors = batchResult.Errors
+            };
         }
         catch (Exception ex)
         {
