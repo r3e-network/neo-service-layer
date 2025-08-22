@@ -26,6 +26,8 @@
 
   <ItemGroup>
     <ProjectReference Include="../NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj" />
+    <ProjectReference Include="../../Tee/NeoServiceLayer.Tee.Enclave/NeoServiceLayer.Tee.Enclave.csproj" />
+    <ProjectReference Include="../../Services/NeoServiceLayer.Services.EnclaveStorage/NeoServiceLayer.Services.EnclaveStorage.csproj" />
   </ItemGroup>
 
 </Project>
