@@ -656,8 +656,13 @@ public class EnclaveStorageService : ServiceFramework.EnclaveBlockchainServiceBa
         using (var aes = Aes.Create())
         {
             aes.IV = iv;
-            // In production, key would be derived from enclave sealing key
-            aes.GenerateKey();
+            // Derive key from enclave sealing key using KDF
+            var enclaveKey = await GetEnclaveSealiingKeyAsync();
+            var keyMaterial = System.Text.Encoding.UTF8.GetBytes($"enclave_storage_key_{dataId}_{DateTime.UtcNow:yyyyMMdd}");
+            using (var kdf = new Rfc2898DeriveBytes(enclaveKey, keyMaterial, 10000, HashAlgorithmName.SHA256))
+            {
+                aes.Key = kdf.GetBytes(32); // 256-bit key
+            }
 
             byte[] decrypted;
             using (var decryptor = aes.CreateDecryptor())
