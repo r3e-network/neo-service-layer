@@ -319,6 +319,36 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
     }
 
     /// <summary>
+    /// Gets storage usage for a service or all services
+    /// </summary>
+    public async Task<long> GetStorageUsageAsync(string? serviceName = null, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving storage usage for service {ServiceName}", serviceName ?? "all");
+
+            var query = _context.SealedDataItems
+                .Where(x => !x.IsExpired);
+
+            if (!string.IsNullOrEmpty(serviceName))
+            {
+                query = query.Where(x => x.ServiceName == serviceName);
+            }
+
+            var totalSize = await query.SumAsync(x => (long)x.SealedData.Length, cancellationToken);
+
+            _logger.LogDebug("Retrieved storage usage: {TotalSize} bytes for service {ServiceName}", totalSize, serviceName ?? "all");
+            
+            return totalSize;
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve storage usage for service {ServiceName}", serviceName ?? "all");
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Gets storage statistics for all services
     /// </summary>
     public async Task<Dictionary<string, ServiceStorageInfo>> GetStorageStatisticsAsync(CancellationToken cancellationToken = default)
