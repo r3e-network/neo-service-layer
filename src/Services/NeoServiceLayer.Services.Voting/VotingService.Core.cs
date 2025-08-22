@@ -71,7 +71,9 @@ public partial class VotingService : ServiceFramework.EnclaveBlockchainServiceBa
     {
         _storageService = storageService ?? throw new ArgumentNullException(nameof(storageService));
         Configuration = configuration;
-        _rpcEndpoint = configuration?.GetValue<string>("NeoN3RpcEndpoint") ?? "http://localhost:20332";
+        _rpcEndpoint = configuration?.GetValue<string>("NeoN3RpcEndpoint") 
+            ?? Environment.GetEnvironmentVariable("NEO_N3_RPC_URL") 
+            ?? throw new InvalidOperationException("NeoN3RpcEndpoint configuration is required. Set either NeoN3RpcEndpoint in configuration or NEO_N3_RPC_URL environment variable.");
         _sgxPersistence = new SGXPersistence(logger, enclaveManager);
 
         // Initialize timers
