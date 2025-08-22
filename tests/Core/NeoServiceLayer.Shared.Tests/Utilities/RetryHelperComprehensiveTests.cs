@@ -227,6 +227,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
                 maxRetries: 4,
                 baseDelay: TimeSpan.FromMilliseconds(50),
                 maxDelay: maxDelay,
+                retryCondition: ex => ex is InvalidOperationException,
                 onRetry: onRetry);
 
             // Assert
