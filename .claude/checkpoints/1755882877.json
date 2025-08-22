@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-171437", "file": "/home/ubuntu/neo-service-layer/docs/production-remediation-script.ps1", "timestamp": "2025-08-22T17:14:37Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755882496.json |   1 +  docs/production-remediation-script.ps1   | 283 +++++++++++++++++++++++++++++++  2 files changed, 284 insertions(+) "}
