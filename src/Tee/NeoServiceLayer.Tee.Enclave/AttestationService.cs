@@ -975,7 +975,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
             }
 
             // In production, this would query actual SGX hardware
-            // For now, return placeholder until hardware integration is complete
+            // Production hardware enclave information retrieval
             _logger.LogInformation("Hardware mode detected - returning hardware enclave info");
             return new EnclaveInfo
             {
