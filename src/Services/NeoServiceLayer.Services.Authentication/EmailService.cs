@@ -51,14 +51,14 @@ namespace NeoServiceLayer.Services.Authentication
             _securityLogger = securityLogger;
 
             // Load SMTP configuration
-            _smtpHost = configuration["Email:Smtp:Host"] ?? "localhost";
+            _smtpHost = configuration["Email:Smtp:Host"] ?? Environment.GetEnvironmentVariable("SMTP_HOST") ?? "localhost";
             _smtpPort = configuration.GetValue<int>("Email:Smtp:Port", 587);
             _smtpUsername = configuration["Email:Smtp:Username"];
             _smtpPassword = configuration["Email:Smtp:Password"];
             _enableSsl = configuration.GetValue<bool>("Email:Smtp:EnableSsl", true);
             _fromEmail = configuration["Email:From:Address"] ?? "noreply@neoservicelayer.com";
             _fromName = configuration["Email:From:Name"] ?? "Neo Service Layer";
-            _baseUrl = configuration["Application:BaseUrl"] ?? "https://localhost:5001";
+            _baseUrl = configuration["Application:BaseUrl"] ?? Environment.GetEnvironmentVariable("APPLICATION_BASE_URL") ?? "https://localhost:5001";
         }
 
         public async Task SendVerificationEmailAsync(string email, string verificationToken)
