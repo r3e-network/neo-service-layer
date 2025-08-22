@@ -294,10 +294,10 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
     /// </summary>
     private static SealedDataItem MapToModel(SealedDataItem dbItem)
     {
-        var metadata = !string.IsNullOrEmpty(dbItem.Metadata) 
-            ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(dbItem.Metadata)
-            : null;
-
+        // Ensure compatibility properties are synchronized
+        if (dbItem.LastAccessedAt == null)
+            dbItem.LastAccessedAt = dbItem.LastAccessed;
+        
         return dbItem;
     }
 
