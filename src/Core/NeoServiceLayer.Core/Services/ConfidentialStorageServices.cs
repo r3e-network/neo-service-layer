@@ -30,7 +30,7 @@ namespace NeoServiceLayer.Core.Services
         public string Key { get; set; } = string.Empty;
         public byte[] Data { get; set; } = Array.Empty<byte>();
         public Dictionary<string, object> Metadata { get; set; } = new();
-        public SealingPolicy Policy { get; set; } = new();
+        public SealDataPolicy Policy { get; set; } = new();
     }
 
     public class SealDataPolicy
