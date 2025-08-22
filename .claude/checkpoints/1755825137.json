@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-011217", "file": "/home/ubuntu/neo-service-layer/docs/POSTGRESQL_PERSISTENCE.md", "timestamp": "2025-08-22T01:12:17Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755825043.json |   1 +  docs/POSTGRESQL_PERSISTENCE.md           | 512 +++++++++++++++++++++++++++++++  2 files changed, 513 insertions(+) "}
