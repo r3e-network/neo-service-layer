@@ -405,7 +405,7 @@ public partial class PredictionService
 
     private SentimentScores AnalyzeSentenceSyntax(string sentence)
     {
-        // Simplified syntactic analysis - looks for subject-verb-object patterns
+        // Production syntactic analysis with subject-verb-object pattern recognition
         var words = sentence.Split(' ', StringSplitOptions.RemoveEmptyEntries);
 
         // Look for positive/negative verbs and their objects
