@@ -250,6 +250,59 @@ public abstract class PersistentServiceBase : ServiceBase
     }
 
     /// <summary>
+    /// Gets detailed health status including resource utilization and service metrics.
+    /// </summary>
+    protected virtual async Task<string> GetDetailedHealthStatusAsync()
+    {
+        try
+        {
+            var healthChecks = new List<string>();
+            
+            // Check service running state
+            if (!IsRunning) return "Unhealthy - Service not running";
+            
+            // Check memory usage
+            var process = System.Diagnostics.Process.GetCurrentProcess();
+            var memoryMB = process.WorkingSet64 / 1024 / 1024;
+            if (memoryMB > 1000) healthChecks.Add($"High memory usage: {memoryMB}MB");
+            
+            // Check persistent storage
+            if (PersistentStorage != null)
+            {
+                try 
+                {
+                    await PersistentStorage.StoreAsync($"health_check_{Name}", DateTime.UtcNow.ToString());
+                    healthChecks.Add("Storage: Healthy");
+                }
+                catch 
+                {
+                    healthChecks.Add("Storage: Unhealthy");
+                }
+            }
+            
+            // Check custom health conditions
+            await OnHealthCheckAsync(healthChecks);
+            
+            return healthChecks.Any(h => h.Contains("Unhealthy")) ? 
+                "Degraded: " + string.Join(", ", healthChecks.Where(h => h.Contains("Unhealthy"))) :
+                "Healthy: " + string.Join(", ", healthChecks);
+        }
+        catch (Exception ex)
+        {
+            return $"Unhealthy - Health check failed: {ex.Message}";
+        }
+    }
+
+    /// <summary>
+    /// Override to perform custom health checks.
+    /// </summary>
+    protected virtual async Task OnHealthCheckAsync(List<string> healthChecks)
+    {
+        await Task.CompletedTask;
+        // Override in derived classes for service-specific health checks
+    }
+
+    /// <summary>
     /// Loads persistent data on service initialization.
     /// </summary>
     protected virtual async Task LoadPersistentDataAsync()
