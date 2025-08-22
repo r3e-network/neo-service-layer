@@ -116,10 +116,10 @@ if (string.IsNullOrEmpty(jwtSecret))
         "Please set a secure JWT secret key (minimum 64 characters) in your environment variables.");
 }
 
-// Validate JWT secret key for production - STRICT enforcement
-if (jwtSecret.Length < 32)
+// Validate JWT secret key - STRICT enforcement for all environments
+if (jwtSecret.Length < 64)
 {
-    throw new InvalidOperationException("JWT secret key must be at least 32 characters long");
+    throw new InvalidOperationException("JWT secret key must be at least 64 characters long for production-grade security");
 }
 
 // Prevent use of default/example keys
