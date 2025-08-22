@@ -537,14 +537,41 @@ public class SGXPersistence : ISGXPersistence
         try
         {
             _logger.LogDebug("Checking proposal creation eligibility for user {UserId}", userId);
-            // Implementation would check in SGX enclave
-            await Task.CompletedTask;
-            return true; // Placeholder implementation
+            
+            // Check user registration in SGX enclave
+            var userKey = $"voter_registration_{userId}";
+            var registrationData = await _sgxPersistence.RetrieveDataAsync(userKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(registrationData))
+            {
+                _logger.LogWarning("User {UserId} is not registered for voting", userId);
+                return false;
+            }
+            
+            // Parse registration data
+            var registration = JsonSerializer.Deserialize<VoterRegistration>(registrationData);
+            if (registration == null)
+            {
+                _logger.LogWarning("Invalid registration data for user {UserId}", userId);
+                return false;
+            }
+            
+            // Check eligibility criteria
+            var isActive = registration.IsActive && registration.RegistrationDate <= DateTime.UtcNow;
+            var hasMinimumStake = registration.StakeAmount >= 1000m; // Minimum NEO stake for proposal creation
+            var notSuspended = !registration.IsSuspended;
+            
+            var isEligible = isActive && hasMinimumStake && notSuspended;
+            
+            _logger.LogInformation("User {UserId} proposal eligibility: {IsEligible} (Active: {IsActive}, Stake: {StakeAmount}, NotSuspended: {NotSuspended})", 
+                userId, isEligible, isActive, registration.StakeAmount, notSuspended);
+            
+            return isEligible;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check proposal creation eligibility");
-            throw;
+            _logger.LogError(ex, "Failed to check proposal creation eligibility for user {UserId}", userId);
+            throw new VotingException("Failed to verify proposal creation eligibility", ex);
         }
     }
 
@@ -553,14 +580,59 @@ public class SGXPersistence : ISGXPersistence
         try
         {
             _logger.LogDebug("Checking voting eligibility for voter {VoterId} on proposal {ProposalId}", voterId, proposalId);
-            // Implementation would check in SGX enclave
-            await Task.CompletedTask;
-            return true; // Placeholder implementation
+            
+            // Check voter registration
+            var voterKey = $"voter_registration_{voterId}";
+            var voterData = await _sgxPersistence.RetrieveDataAsync(voterKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(voterData))
+            {
+                _logger.LogWarning("Voter {VoterId} is not registered", voterId);
+                return false;
+            }
+            
+            var voterRegistration = JsonSerializer.Deserialize<VoterRegistration>(voterData);
+            if (voterRegistration == null || !voterRegistration.IsActive || voterRegistration.IsSuspended)
+            {
+                _logger.LogWarning("Voter {VoterId} registration is inactive or suspended", voterId);
+                return false;
+            }
+            
+            // Check if already voted on this proposal
+            var voteKey = $"vote_{proposalId}_{voterId}";
+            var existingVote = await _sgxPersistence.RetrieveDataAsync(voteKey, CancellationToken.None);
+            
+            if (!string.IsNullOrEmpty(existingVote))
+            {
+                _logger.LogWarning("Voter {VoterId} has already voted on proposal {ProposalId}", voterId, proposalId);
+                return false;
+            }
+            
+            // Check proposal status
+            var proposalKey = $"proposal_{proposalId}";
+            var proposalData = await _sgxPersistence.RetrieveDataAsync(proposalKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(proposalData))
+            {
+                _logger.LogWarning("Proposal {ProposalId} not found", proposalId);
+                return false;
+            }
+            
+            var proposal = JsonSerializer.Deserialize<VotingProposal>(proposalData);
+            if (proposal == null || proposal.Status != ProposalStatus.Active || 
+                DateTime.UtcNow < proposal.VotingStartTime || DateTime.UtcNow > proposal.VotingEndTime)
+            {
+                _logger.LogWarning("Proposal {ProposalId} is not in active voting period", proposalId);
+                return false;
+            }
+            
+            _logger.LogInformation("Voter {VoterId} is eligible to vote on proposal {ProposalId}", voterId, proposalId);
+            return true;
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to check voting eligibility");
-            throw;
+            _logger.LogError(ex, "Failed to check voting eligibility for voter {VoterId} on proposal {ProposalId}", voterId, proposalId);
+            throw new VotingException("Failed to verify voting eligibility", ex);
         }
     }
 
@@ -569,15 +641,81 @@ public class SGXPersistence : ISGXPersistence
         try
         {
             _logger.LogDebug("Getting voter weight for voter {VoterId} on proposal {ProposalId}", voterId, proposalId);
-            // Implementation would retrieve from SGX enclave
-            await Task.CompletedTask;
-            return 1.0m; // Placeholder implementation
+            
+            // Retrieve voter registration data from SGX enclave
+            var voterKey = $"voter_registration_{voterId}";
+            var voterData = await _sgxPersistence.RetrieveDataAsync(voterKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(voterData))
+            {
+                _logger.LogWarning("Voter {VoterId} registration not found", voterId);
+                return 0m;
+            }
+            
+            var voterRegistration = JsonSerializer.Deserialize<VoterRegistration>(voterData);
+            if (voterRegistration == null)
+            {
+                _logger.LogWarning("Invalid voter registration data for {VoterId}", voterId);
+                return 0m;
+            }
+            
+            // Calculate base weight from NEO stake
+            var baseWeight = Math.Min(voterRegistration.StakeAmount / 10000m, 10m); // Max 10x weight for large stakes
+            
+            // Check for delegation adjustments
+            var delegationKey = $"delegation_{proposalId}_{voterId}";
+            var delegationData = await _sgxPersistence.RetrieveDataAsync(delegationKey, CancellationToken.None);
+            
+            decimal delegatedWeight = 0m;
+            if (!string.IsNullOrEmpty(delegationData))
+            {
+                var delegations = JsonSerializer.Deserialize<List<VotingDelegation>>(delegationData);
+                if (delegations != null)
+                {
+                    delegatedWeight = delegations.Where(d => d.IsActive && d.ProposalId == proposalId)
+                                                 .Sum(d => d.Weight);
+                }
+            }
+            
+            // Apply reputation multiplier (1.0 to 1.5x based on voting history)
+            var reputationMultiplier = CalculateReputationMultiplier(voterRegistration.VotingHistory);
+            
+            var finalWeight = (baseWeight + delegatedWeight) * reputationMultiplier;
+            
+            _logger.LogDebug("Calculated voter weight for {VoterId}: Base={BaseWeight}, Delegated={DelegatedWeight}, Reputation={ReputationMultiplier}, Final={FinalWeight}", 
+                voterId, baseWeight, delegatedWeight, reputationMultiplier, finalWeight);
+            
+            return Math.Round(finalWeight, 4);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Failed to get voter weight");
-            throw;
+            _logger.LogError(ex, "Failed to get voter weight for voter {VoterId} on proposal {ProposalId}", voterId, proposalId);
+            throw new VotingException("Failed to calculate voter weight", ex);
         }
+    }
+    
+    /// <summary>
+    /// Calculates reputation multiplier based on voting history.
+    /// </summary>
+    /// <param name="votingHistory">The voting history record.</param>
+    /// <returns>Multiplier between 1.0 and 1.5.</returns>
+    private decimal CalculateReputationMultiplier(VotingHistory? votingHistory)
+    {
+        if (votingHistory == null || votingHistory.TotalVotes == 0)
+        {
+            return 1.0m; // Neutral for new voters
+        }
+        
+        // Base reputation on participation rate and consistency
+        var participationRate = (decimal)votingHistory.VotesParticipated / votingHistory.TotalVotes;
+        var consistencyRate = votingHistory.ConsistentVotes > 0 ? 
+            (decimal)votingHistory.ConsistentVotes / votingHistory.VotesParticipated : 0m;
+        
+        // Calculate reputation score (0.0 to 1.0)
+        var reputationScore = (participationRate * 0.7m) + (consistencyRate * 0.3m);
+        
+        // Convert to multiplier (1.0 to 1.5)
+        return 1.0m + (reputationScore * 0.5m);
     }
 
     public async Task RecordDelegationAsync(Guid delegatorId, Guid delegateId, Guid proposalId, decimal weight)
