@@ -215,13 +215,21 @@ public class SecurityMonitoringService : BackgroundService
         {
             foreach (var metric in metrics)
             {
-                // Use the APM system to record security metrics
-                // TODO: Implement APM integration
-                // // ApplicationPerformanceMonitoring // TODO: Fix this reference.RecordRequest(
-                //     "SECURITY_METRIC",
-                //     metric.Key,
-                //     0.001, // Minimal duration for metrics
-                //     200);
+                // Use APM system to record security metrics
+                try
+                {
+                    // Record security metric with telemetry
+                    using var activity = System.Diagnostics.Activity.StartActivity($"SecurityMetric.{metric.Key}");
+                    activity?.SetTag("metric.name", metric.Key);
+                    activity?.SetTag("metric.value", metric.Value?.ToString());
+                    activity?.SetTag("metric.category", "security");
+                    
+                    Logger.LogInformation("Security metric recorded: {MetricName} = {MetricValue}", metric.Key, metric.Value);
+                }
+                catch (Exception metricEx)
+                {
+                    Logger.LogWarning(metricEx, "Failed to record APM metric for {MetricName}", metric.Key);
+                }
 
                 Logger.LogDebug("Security metric {MetricName}: {MetricValue}", metric.Key, metric.Value);
             }
