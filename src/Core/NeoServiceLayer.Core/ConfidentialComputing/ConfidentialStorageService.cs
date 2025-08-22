@@ -5,7 +5,6 @@ using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Tee.Enclave;
 // Note: EnclaveStorage models available via service injection to avoid circular references
 using NeoServiceLayer.Core.Domain;
 
