@@ -290,11 +290,11 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         {
             // Arrange
             bool condition = false;
-            string paramName = "testParam";
             string message = "Test message";
+            string paramName = "testParam";
 
             // Act & Assert
-            var action = () => Guard.Against(condition, paramName, message);
+            var action = () => Guard.Against(condition, message, paramName);
             action.Should().NotThrow();
         }
 
