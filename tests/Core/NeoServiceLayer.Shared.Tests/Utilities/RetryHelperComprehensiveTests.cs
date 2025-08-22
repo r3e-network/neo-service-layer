@@ -188,7 +188,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
             };
 
             // Act
-            var result = await RetryHelper.ExecuteAsync(operation, maxRetries: 3, onRetry: onRetry);
+            var result = await RetryHelper.ExecuteAsync(operation, maxRetries: 3, retryCondition: ex => ex is InvalidOperationException, onRetry: onRetry);
 
             // Assert
             result.Should().Be("success");
