@@ -330,7 +330,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
             _eventBus = eventBus;
         }
 
-        public async Task<CommandResult> HandleAsync(LockUserCommand command, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(LockUserCommand command, CancellationToken cancellationToken = default)
         {
             try
             {
