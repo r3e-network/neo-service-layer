@@ -76,11 +76,11 @@ public static class ServiceMeshConfiguration
                 TimeSpan.FromSeconds(30),
                 onBreak: (result, duration) =>
                 {
-                    Console.WriteLine($"Circuit breaker opened for {duration}");
+                    logger?.LogWarning("Circuit breaker opened for {Duration}", duration);
                 },
                 onReset: () =>
                 {
-                    Console.WriteLine("Circuit breaker reset");
+                    logger?.LogInformation("Circuit breaker reset");
                 });
     }
 
