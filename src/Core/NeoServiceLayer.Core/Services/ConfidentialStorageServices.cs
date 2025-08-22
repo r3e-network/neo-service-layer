@@ -33,7 +33,7 @@ namespace NeoServiceLayer.Core.Services
         public SealingPolicy Policy { get; set; } = new();
     }
 
-    public class SealingPolicy
+    public class SealDataPolicy
     {
         public string Type { get; set; } = "MrSigner";
         public int ExpirationHours { get; set; } = 8760;
