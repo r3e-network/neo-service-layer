@@ -111,7 +111,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 }
 
                 metrics.PeakMemoryBytes = scriptResult.MemoryUsedBytes;
-                metrics.GasEstimate = EstimateGasUsage(computation, scriptResult);
+                metrics.GasEstimate = EstimateGasUsage((ConfidentialComputation<object, object>)(object)computation, scriptResult);
 
                 _logger.LogDebug("Confidential computation {ComputationId} completed successfully in {Duration}ms", 
                     computation.ComputationId, metrics.Duration.TotalMilliseconds);
@@ -267,7 +267,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             {
                 // Generate a key based on keyId (in production, this would use proper key management)
                 var key = await GenerateKeyFromId(keyId);
-                var encryptedData = _enclaveWrapper.Encrypt(data, key);
+                var encryptedData = _enclaveWrapper.Encrypt(data, Convert.ToBase64String(key));
 
                 return new ConfidentialEncryptionResult
                 {
@@ -301,7 +301,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             try
             {
                 var key = await GenerateKeyFromId(keyId);
-                return _enclaveWrapper.Decrypt(encryptedData, key);
+                return _enclaveWrapper.Decrypt(encryptedData, Convert.ToBase64String(key));
             }
             catch (Exception ex)
             {
@@ -461,7 +461,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             computation.Parameters["sessionCreatedAt"] = CreatedAt.ToString("O");
 
             // Use the main service logic (would be refactored to shared code in production)
-            var service = new ConfidentialComputingService(_enclaveWrapper, _logger);
+            var service = new ConfidentialComputingService(_enclaveWrapper, (ILogger<ConfidentialComputingService>)_logger);
             return await service.ExecuteAsync(computation, input, cancellationToken);
         }
 
