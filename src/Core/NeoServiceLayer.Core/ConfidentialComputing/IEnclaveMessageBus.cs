@@ -801,10 +801,26 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     {
         public string ServiceId { get; } = Guid.NewGuid().ToString();
         public string ServiceName { get; }
+        public bool IsActive { get; } = true;
+        public int HandledRequestCount { get; } = 0;
 
         public TemporaryConfidentialServiceRegistration(string serviceName)
         {
             ServiceName = serviceName;
+        }
+
+        public Task UpdateConfigurationAsync(ConfidentialServiceOptions configuration, CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<ServiceRegistrationMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ServiceRegistrationMetrics
+            {
+                ServiceId = ServiceId,
+                RequestsHandled = HandledRequestCount
+            });
         }
 
         public void Dispose()
