@@ -159,13 +159,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 });
 
                 _logger.LogInformation("User {UserId} updated successfully", user.Id);
-
-                return CommandResult.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating user {UserId}", command.UserId);
-                return CommandResult.Failure($"Failed to update user: {ex.Message}");
+                throw;
             }
         }
     }
