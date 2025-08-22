@@ -105,17 +105,17 @@ namespace NeoServiceLayer.Core.Extensions
             // Domain services are scoped to maintain consistency within a request
             
             // Password policy service for enterprise-grade password requirements
-            services.AddScoped(provider => 
+            services.AddScoped<IPasswordPolicy>(provider => 
             {
                 var config = provider.GetService<IConfiguration>();
-                return new ProductionPasswordPolicy(config);
+                return new DefaultPasswordPolicy(config);
             });
             
             // Account lockout service for security enforcement
-            services.AddScoped(provider =>
+            services.AddScoped<IAccountLockoutService>(provider =>
             {
-                var logger = provider.GetRequiredService<ILogger<ProductionAccountLockoutService>>();
-                return new ProductionAccountLockoutService(logger);
+                var logger = provider.GetRequiredService<ILogger<DefaultAccountLockoutService>>();
+                return new DefaultAccountLockoutService(logger);
             });
             
             return services;
@@ -131,18 +131,18 @@ namespace NeoServiceLayer.Core.Extensions
             // CQRS infrastructure with production implementations
             // Command and query dispatchers are scoped for consistency
             
-            services.AddScoped(provider =>
+            services.AddScoped<ICommandDispatcher>(provider =>
             {
                 var serviceProvider = provider.GetRequiredService<IServiceProvider>();
-                var logger = provider.GetRequiredService<ILogger<ProductionCommandDispatcher>>();
-                return new ProductionCommandDispatcher(serviceProvider, logger);
+                var logger = provider.GetRequiredService<ILogger<DefaultCommandDispatcher>>();
+                return new DefaultCommandDispatcher(serviceProvider, logger);
             });
             
-            services.AddScoped(provider =>
+            services.AddScoped<IQueryDispatcher>(provider =>
             {
                 var serviceProvider = provider.GetRequiredService<IServiceProvider>();
-                var logger = provider.GetRequiredService<ILogger<ProductionQueryDispatcher>>();
-                return new ProductionQueryDispatcher(serviceProvider, logger);
+                var logger = provider.GetRequiredService<ILogger<DefaultQueryDispatcher>>();
+                return new DefaultQueryDispatcher(serviceProvider, logger);
             });
             
             return services;
