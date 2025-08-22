@@ -483,7 +483,7 @@ public static class StringExtensions
     /// <returns>True if the string ends with the suffix ignoring case; otherwise, false.</returns>
     public static bool EndsWithIgnoreCase(this string value, string suffix)
     {
-        if (value.IsNullOrEmpty() || suffix.IsNullOrEmpty())
+        if (value == null || suffix == null)
             return false;
 
         return value.EndsWith(suffix, StringComparison.OrdinalIgnoreCase);
