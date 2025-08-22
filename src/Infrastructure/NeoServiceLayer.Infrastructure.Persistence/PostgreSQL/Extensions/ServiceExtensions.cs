@@ -98,8 +98,8 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Extensions
         public static void EnsurePostgreSQLDatabaseCreated(this IServiceProvider serviceProvider)
         {
             using var scope = serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<NeoServiceDbContext>();
-            var logger = scope.ServiceProvider.GetRequiredService<ILogger<NeoServiceDbContext>>();
+            var context = scope.ServiceProvider.GetRequiredService<NeoServiceLayerDbContext>();
+            var logger = scope.ServiceProvider.GetRequiredService<ILogger<NeoServiceLayerDbContext>>();
 
             try
             {
