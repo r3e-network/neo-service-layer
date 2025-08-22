@@ -9,10 +9,6 @@ using NeoServiceLayer.Core.Cryptography;
 using NeoServiceLayer.Core.Gateway;
 using NeoServiceLayer.Core.Messaging;
 using NeoServiceLayer.Core.Monitoring;
-using NeoServiceLayer.Core.Resilience;
-using NeoServiceLayer.Core.EventSourcing;
-using NeoServiceLayer.Core.ServiceMesh;
-using NeoServiceLayer.Core.MultiTenant;
 using System;
 
 namespace NeoServiceLayer.Core.Framework
