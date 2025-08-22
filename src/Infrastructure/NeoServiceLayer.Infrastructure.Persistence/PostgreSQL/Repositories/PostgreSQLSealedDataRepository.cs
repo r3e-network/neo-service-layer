@@ -325,6 +325,133 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
     }
 
     /// <summary>
+    /// Gets data by service name
+    /// </summary>
+    public async Task<IEnumerable<SealedDataItem>> GetByServiceAsync(string serviceName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving sealed data items for service {ServiceName}", serviceName);
+
+            var items = await _context.SealedDataItems
+                .Where(x => x.ServiceName == serviceName && !x.IsExpired)
+                .ToListAsync(cancellationToken);
+
+            _logger.LogDebug("Retrieved {Count} sealed data items for service {ServiceName}", items.Count, serviceName);
+            
+            return items.Select(MapToModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve sealed data items for service {ServiceName}", serviceName);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Gets all active data items
+    /// </summary>
+    public async Task<IEnumerable<SealedDataItem>> GetActiveAsync(CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving all active sealed data items");
+
+            var items = await _context.SealedDataItems
+                .Where(x => !x.IsExpired)
+                .ToListAsync(cancellationToken);
+
+            _logger.LogDebug("Retrieved {Count} active sealed data items", items.Count);
+            
+            return items.Select(MapToModel);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve active sealed data items");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Updates a sealed data item
+    /// </summary>
+    public async Task<SealedDataItem> UpdateAsync(SealedDataItem item, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Updating sealed data item {Id}", item.Id);
+
+            _context.SealedDataItems.Update(item);
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogDebug("Updated sealed data item {Id}", item.Id);
+            
+            return MapToModel(item);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to update sealed data item {Id}", item.Id);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Deletes a sealed data item by ID
+    /// </summary>
+    public async Task DeleteAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Deleting sealed data item with ID {Id}", id);
+
+            var item = await _context.SealedDataItems
+                .FirstOrDefaultAsync(x => x.Id == id, cancellationToken);
+
+            if (item != null)
+            {
+                SecurelyOverwriteData(item.SealedData);
+                _context.SealedDataItems.Remove(item);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogDebug("Deleted sealed data item with ID {Id}", id);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete sealed data item with ID {Id}", id);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Deletes by key and service (overload)
+    /// </summary>
+    public async Task DeleteByKeyAsync(string key, string serviceName, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Deleting sealed data item with key {Key} for service {ServiceName}", key, serviceName);
+
+            var item = await _context.SealedDataItems
+                .FirstOrDefaultAsync(x => x.Key == key && x.ServiceName == serviceName, cancellationToken);
+
+            if (item != null)
+            {
+                SecurelyOverwriteData(item.SealedData);
+                _context.SealedDataItems.Remove(item);
+                await _context.SaveChangesAsync(cancellationToken);
+
+                _logger.LogDebug("Deleted sealed data item with key {Key} for service {ServiceName}", key, serviceName);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to delete sealed data item with key {Key} for service {ServiceName}", key, serviceName);
+            throw;
+        }
+    }
+
+    /// <summary>
     /// Maps database entity to domain model
     /// </summary>
     private static SealedDataItem MapToModel(SealedDataItem dbItem)
