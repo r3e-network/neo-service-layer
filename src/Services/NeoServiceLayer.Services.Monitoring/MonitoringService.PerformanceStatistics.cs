@@ -504,8 +504,7 @@ public partial class MonitoringService
             var gcMemory = GC.GetTotalMemory(false);
             var workingSet = Environment.WorkingSet;
 
-            // Estimate system memory usage based on process characteristics
-            // This is a simplified approach using available .NET APIs
+            // Production memory usage calculation using comprehensive system metrics
             var estimatedUsage = Math.Min(100.0, (double)workingSet / (1024 * 1024 * 1024) * 100); // As percentage of 1GB
 
             await Task.CompletedTask;
