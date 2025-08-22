@@ -226,10 +226,10 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         [InlineData(-1)]
         [InlineData(-100)]
         [InlineData(int.MinValue)]
-        public void AgainstNegative_WithVariousNegativeValues_ShouldThrowArgumentException(int negativeValue)
+        public void AgainstNegative_WithVariousNegativeValues_ShouldThrowArgumentOutOfRangeException(int negativeValue)
         {
             // Act & Assert
-            Assert.Throws<ArgumentException>(() => 
+            Assert.Throws<ArgumentOutOfRangeException>(() => 
                 Guard.AgainstNegative(negativeValue, "param"));
         }
 
