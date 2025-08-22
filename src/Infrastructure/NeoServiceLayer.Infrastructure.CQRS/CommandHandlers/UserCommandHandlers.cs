@@ -33,7 +33,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
             _passwordHasher = passwordHasher;
         }
 
-        public async Task<CommandResult> HandleAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(CreateUserCommand command, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -111,7 +111,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
             _eventBus = eventBus;
         }
 
-        public async Task<CommandResult> HandleAsync(UpdateUserCommand command, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(UpdateUserCommand command, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -191,7 +191,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
             _eventBus = eventBus;
         }
 
-        public async Task<CommandResult> HandleAsync(ChangePasswordCommand command, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(ChangePasswordCommand command, CancellationToken cancellationToken = default)
         {
             try
             {
@@ -256,7 +256,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
             _eventBus = eventBus;
         }
 
-        public async Task<CommandResult> HandleAsync(AssignRoleCommand command, CancellationToken cancellationToken = default)
+        public async Task HandleAsync(AssignRoleCommand command, CancellationToken cancellationToken = default)
         {
             try
             {
