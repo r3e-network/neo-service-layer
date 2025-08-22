@@ -245,7 +245,7 @@ namespace NeoServiceLayer.Core.Services
             catch (Exception ex)
             {
                 _logger.LogError(ex, "ServiceMeshHealthCheck failed");
-                return HealthCheckResult.Unhealthy("Service mesh health check failed", ex));
+                return HealthCheckResult.Unhealthy("Service mesh health check failed", ex);
             }
         }
     }
