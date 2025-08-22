@@ -13,6 +13,9 @@ using ServiceProofResult = NeoServiceLayer.Services.ZeroKnowledge.Models.ProofRe
 using System.Threading.Tasks;
 using System.Threading;
 using System;
+using System.Collections.Concurrent;
+using System.Text.Json;
+using NeoServiceLayer.Infrastructure.Persistence;
 
 
 namespace NeoServiceLayer.Services.ZeroKnowledge;
