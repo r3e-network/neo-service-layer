@@ -104,7 +104,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services
             return Task.CompletedTask;
         }
 
-        private async Task SeedInitialDataAsync(NeoServiceDbContext context, CancellationToken cancellationToken)
+        private async Task SeedInitialDataAsync(NeoServiceLayerDbContext context, CancellationToken cancellationToken)
         {
             try
             {
