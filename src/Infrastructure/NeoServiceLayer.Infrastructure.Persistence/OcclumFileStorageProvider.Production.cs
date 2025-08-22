@@ -520,7 +520,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence
             foreach (var file in Directory.GetFiles(sourceDir))
             {
                 var destFile = Path.Combine(destDir, Path.GetFileName(file));
-                await File.CopyAsync(file, destFile);
+                await Task.Run(() => File.Copy(file, destFile, overwrite: true));
                 
                 // Calculate file checksum
                 using var stream = File.OpenRead(destFile);
