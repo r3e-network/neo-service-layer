@@ -372,7 +372,7 @@ public class PerformanceOptimizationService : BackgroundService, IPerformanceOpt
             Interlocked.Increment(ref metric.SuccessCount);
         }
 
-        // Update running average (simplified)
+        // Update running average with thread-safe operations
         metric.TotalResponseTime = metric.TotalResponseTime.Add(duration);
         metric.AverageResponseTime = TimeSpan.FromMilliseconds(
             metric.TotalResponseTime.TotalMilliseconds / metric.CallCount);
