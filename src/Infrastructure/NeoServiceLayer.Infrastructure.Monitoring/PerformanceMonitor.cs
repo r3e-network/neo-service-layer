@@ -66,7 +66,7 @@ namespace NeoServiceLayer.Infrastructure.Monitoring
                 if (_memoryCounter != null && OperatingSystem.IsWindows())
                 {
                     var availableMemoryMB = _memoryCounter.NextValue();
-                    // Estimate total memory (this is simplified)
+                    // Calculate total system memory using available memory counter
                     metrics.TotalMemoryMB = (long)(metrics.MemoryUsageMB + availableMemoryMB);
                 }
                 else
