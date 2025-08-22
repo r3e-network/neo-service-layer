@@ -87,6 +87,9 @@ namespace NeoServiceLayer.Core.Framework
             services.AddHealthChecks()
                 .AddCheck<CryptographicServiceHealthCheck>("cryptographic-service");
 
+            services.AddHealthChecks()
+                .AddCheck<CryptographicServiceHealthCheck>("cryptographic-service");
+
             return services;
         }
 
