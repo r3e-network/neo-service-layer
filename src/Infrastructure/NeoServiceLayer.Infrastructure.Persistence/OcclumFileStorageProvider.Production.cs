@@ -38,15 +38,6 @@ namespace NeoServiceLayer.Infrastructure.Persistence
         public string? CompressionAlgorithm { get; set; }
     }
 
-    public class StorageStatistics
-    {
-        public long TotalSize { get; set; }
-        public int FileCount { get; set; }
-        public int ExpiredCount { get; set; }
-        public long FragmentedSpace { get; set; }
-        public DateTime LastCompaction { get; set; }
-        public double FragmentationRatio { get; set; }
-    }
 
     public class ProductionOcclumStorageProvider : IStorageBackupRestore
     {
