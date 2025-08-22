@@ -163,12 +163,16 @@ builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
         {
             OnAuthenticationFailed = context =>
             {
-                Console.WriteLine($"JWT Authentication failed: {context.Exception.Message}");
+                // Use structured logging instead of console output
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogWarning("JWT Authentication failed: {ErrorMessage}", context.Exception.Message);
                 return Task.CompletedTask;
             },
             OnTokenValidated = context =>
             {
-                Console.WriteLine($"JWT Token validated for user: {context.Principal?.Identity?.Name}");
+                // Use structured logging for successful token validation
+                var logger = context.HttpContext.RequestServices.GetRequiredService<ILogger<Program>>();
+                logger.LogDebug("JWT Token validated for user: {UserName}", context.Principal?.Identity?.Name);
                 return Task.CompletedTask;
             }
         };
