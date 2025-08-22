@@ -222,9 +222,9 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL
             while (await reader.ReadAsync())
             {
                 migrations.Add((
-                    reader.GetString("migration_name"),
-                    reader.GetDateTime("applied_at"),
-                    reader.GetString("checksum")
+                    reader.GetString(reader.GetOrdinal("migration_name")),
+                    reader.GetDateTime(reader.GetOrdinal("applied_at")),
+                    reader.GetString(reader.GetOrdinal("checksum"))
                 ));
             }
             
