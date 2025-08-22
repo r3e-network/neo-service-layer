@@ -1107,6 +1107,46 @@ public class NeoN3SmartContractManager : ServiceFramework.EnclaveBlockchainServi
         return transaction;
     }
 
+    /// <summary>
+    /// Retrieves transactions from a block with proper error handling.
+    /// </summary>
+    private async Task<global::Neo.Network.RPC.Models.RpcTransaction[]> GetBlockTransactionsAsync(global::Neo.Network.RPC.Models.RpcBlock block)
+    {
+        try
+        {
+            if (block == null) return Array.Empty<global::Neo.Network.RPC.Models.RpcTransaction>();
+            
+            var transactions = new List<global::Neo.Network.RPC.Models.RpcTransaction>();
+            
+            // Get transaction hashes from block
+            if (block.Tx != null && block.Tx.Length > 0)
+            {
+                foreach (var txHash in block.Tx)
+                {
+                    try
+                    {
+                        var transaction = await _rpcClient.GetTransactionAsync(txHash).ConfigureAwait(false);
+                        if (transaction != null)
+                        {
+                            transactions.Add(transaction);
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        _logger.LogWarning(ex, "Failed to retrieve transaction {TxHash}", txHash);
+                    }
+                }
+            }
+            
+            return transactions.ToArray();
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to get transactions from block");
+            return Array.Empty<global::Neo.Network.RPC.Models.RpcTransaction>();
+        }
+    }
+
     private async Task<RpcApplicationLog> WaitForTransactionAsync(UInt256 txHash)
     {
         const int maxAttempts = 30;
