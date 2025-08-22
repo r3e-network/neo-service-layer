@@ -362,6 +362,57 @@ namespace NeoServiceLayer.Services.Authentication.Implementation
             }
         }
 
+        /// <summary>
+        /// Decodes a base32 encoded string to bytes.
+        /// </summary>
+        private byte[] Base32Decode(string base32)
+        {
+            const string base32Chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567";
+            base32 = base32.ToUpperInvariant().Replace("=", "");
+            
+            var output = new List<byte>();
+            var bits = 0;
+            var value = 0;
+            
+            foreach (char c in base32)
+            {
+                var index = base32Chars.IndexOf(c);
+                if (index < 0) continue;
+                
+                value = (value << 5) | index;
+                bits += 5;
+                
+                if (bits >= 8)
+                {
+                    output.Add((byte)((value >> (bits - 8)) & 0xFF));
+                    bits -= 8;
+                }
+            }
+            
+            return output.ToArray();
+        }
+
+        /// <summary>
+        /// Generates a TOTP code for the given time window.
+        /// </summary>
+        private string GenerateTotpCode(byte[] secret, long timeWindow)
+        {
+            var timeBytes = BitConverter.GetBytes(timeWindow);
+            if (BitConverter.IsLittleEndian)
+                Array.Reverse(timeBytes);
+            
+            using var hmac = new System.Security.Cryptography.HMACSHA1(secret);
+            var hash = hmac.ComputeHash(timeBytes);
+            
+            var offset = hash[hash.Length - 1] & 0x0F;
+            var code = ((hash[offset] & 0x7F) << 24) |
+                      ((hash[offset + 1] & 0xFF) << 16) |
+                      ((hash[offset + 2] & 0xFF) << 8) |
+                      (hash[offset + 3] & 0xFF);
+            
+            return (code % 1000000).ToString("D6");
+        }
+
         protected override async Task<ServiceHealth> OnGetHealthAsync()
         {
             try
