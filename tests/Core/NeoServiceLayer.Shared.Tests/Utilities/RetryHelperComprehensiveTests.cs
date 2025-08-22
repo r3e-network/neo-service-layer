@@ -376,6 +376,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
                 maxRetries: 3,
                 baseDelay: baseDelay,
                 backoffMultiplier: 1.0, // No exponential backoff to test jitter more clearly
+                retryCondition: ex => ex is InvalidOperationException,
                 onRetry: onRetry);
 
             // Assert
