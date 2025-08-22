@@ -156,7 +156,8 @@ public class NeoServiceLayerDbContext : DbContext
         modelBuilder.Entity<KeyAccessAudit>().ToTable("key_access_audits", "keymanagement");
 
         // Oracle services schema
-        modelBuilder.Entity<OracleDataFeed>().ToTable("oracle_data_feeds", "oracle");
+        modelBuilder.Entity<Entities.OracleEntities.OracleDataFeed>().ToTable("oracle_data_feeds", "oracle");
+        modelBuilder.Entity<ServiceOracleDataFeed>().ToTable("service_oracle_data_feeds", "oracle");
         modelBuilder.Entity<OracleRequest>().ToTable("oracle_requests", "oracle");
         modelBuilder.Entity<OracleResponse>().ToTable("oracle_responses", "oracle");
         modelBuilder.Entity<DataSourceAttestation>().ToTable("data_source_attestations", "oracle");
