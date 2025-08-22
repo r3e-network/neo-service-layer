@@ -41,11 +41,19 @@ public class SealedDataItem
     [MaxLength(50)]
     public string PolicyType { get; set; } = string.Empty; // MRSIGNER, MRENCLAVE, etc.
     
+    public int SealingPolicy { get; set; } = 0; // Integer version for repository compatibility
+    
+    public int Version { get; set; } = 1;
+    
     public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+    
+    public DateTime? UpdatedAt { get; set; }
     
     public DateTime ExpiresAt { get; set; }
     
     public DateTime? LastAccessed { get; set; }
+    
+    public DateTime? LastAccessedAt { get; set; } // Alias for repository compatibility
     
     public int AccessCount { get; set; } = 0;
     
