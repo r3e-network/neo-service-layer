@@ -44,10 +44,12 @@ public partial class ZeroKnowledgeService : ServiceFramework.EnclaveBlockchainSe
     /// <param name="logger">The logger.</param>
     /// <param name="enclaveManager">The enclave manager.</param>
     /// <param name="configuration">The service configuration.</param>
-    public ZeroKnowledgeService(ILogger<ZeroKnowledgeService> logger, IEnclaveManager? enclaveManager = null, CoreConfig? configuration = null)
+    /// <param name="sgxPersistence">The SGX persistence provider.</param>
+    public ZeroKnowledgeService(ILogger<ZeroKnowledgeService> logger, IEnclaveManager? enclaveManager = null, CoreConfig? configuration = null, ISgxPersistence? sgxPersistence = null)
         : base("ZeroKnowledgeService", "Privacy-preserving computation and zero-knowledge proof service", "1.0.0", logger, new[] { BlockchainType.NeoN3, BlockchainType.NeoX }, enclaveManager)
     {
         Configuration = configuration;
+        _sgxPersistence = sgxPersistence ?? throw new ArgumentNullException(nameof(sgxPersistence));
 
         AddCapability<IZeroKnowledgeService>();
         AddDependency(new ServiceDependency("KeyManagementService", true, "1.0.0"));
