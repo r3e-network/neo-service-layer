@@ -329,9 +329,37 @@ namespace NeoServiceLayer.Services.Authentication.Implementation
 
         private async Task<bool> VerifyMfaCodeAsync(User user, string code)
         {
-            // Implement TOTP verification
-            // This is a simplified version - use a proper TOTP library in production
-            return await Task.FromResult(code == "123456"); // Placeholder
+            try
+            {
+                // Production TOTP verification implementation
+                if (string.IsNullOrEmpty(user.MfaSecret) || string.IsNullOrEmpty(code))
+                    return false;
+
+                // Decode the base32 secret
+                var secretBytes = Base32Decode(user.MfaSecret);
+                
+                // Get current 30-second time window
+                var unixTime = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+                var timeWindow = unixTime / 30;
+                
+                // Check current window and adjacent windows for clock drift tolerance
+                for (long i = timeWindow - 1; i <= timeWindow + 1; i++)
+                {
+                    var expectedCode = GenerateTotpCode(secretBytes, i);
+                    if (expectedCode == code)
+                    {
+                        await Task.CompletedTask;
+                        return true;
+                    }
+                }
+                
+                return false;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "TOTP verification failed for user {UserId}", user.Id);
+                return false;
+            }
         }
 
         protected override async Task<ServiceHealth> OnGetHealthAsync()
