@@ -43,8 +43,9 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             services.AddSingleton<IConfidentialStorageService, ConfidentialStorageService>();
             
             // Register session management
-            services.AddSingleton<IEnclaveSessionManager, EnclaveSessionManager>();
-            services.AddTransient<IEnclaveSession, EnclaveSession>();
+            // EnclaveSessionManager and EnclaveSession to be implemented
+            // services.AddSingleton<IEnclaveSessionManager, EnclaveSessionManager>();
+            // services.AddTransient<IEnclaveSession, EnclaveSession>();
 
             // Register message bus
             services.AddSingleton<IEnclaveMessageBus, EnclaveMessageBus>();
@@ -116,8 +117,9 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             services.Configure<EnclaveSessionConfiguration>(
                 configuration.GetSection("EnclaveSessions"));
 
-            services.AddSingleton<IEnclaveSessionManager, EnclaveSessionManager>();
-            services.AddTransient<IEnclaveSession, EnclaveSession>();
+            // EnclaveSessionManager and EnclaveSession to be implemented
+            // services.AddSingleton<IEnclaveSessionManager, EnclaveSessionManager>();
+            // services.AddTransient<IEnclaveSession, EnclaveSession>();
 
             services.AddHealthChecks()
                 .AddCheck<EnclaveSessionHealthCheck>("enclave-sessions");
