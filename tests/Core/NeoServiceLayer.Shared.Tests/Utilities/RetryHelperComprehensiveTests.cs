@@ -157,7 +157,9 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
             await RetryHelper.ExecuteAsync(
                 operation,
                 maxRetries: 3,
-                baseDelay: TimeSpan.FromMilliseconds(100));
+                baseDelay: TimeSpan.FromMilliseconds(100),
+                retryCondition: ex => ex is InvalidOperationException,
+                onRetry: onRetry);
 
             // Assert
             attemptCount.Should().Be(4);
