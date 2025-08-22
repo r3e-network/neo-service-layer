@@ -5,7 +5,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Contexts;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 
 namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services
 {
@@ -30,7 +30,7 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services
             _logger.LogInformation("Database Migration Service starting...");
 
             using var scope = _serviceProvider.CreateScope();
-            var context = scope.ServiceProvider.GetRequiredService<NeoServiceDbContext>();
+            var context = scope.ServiceProvider.GetRequiredService<NeoServiceLayerDbContext>();
 
             try
             {
