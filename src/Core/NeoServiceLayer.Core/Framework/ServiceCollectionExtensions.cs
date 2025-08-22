@@ -3,11 +3,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Infrastructure.Resilience;
-using NeoServiceLayer.Infrastructure.EventSourcing;
-using NeoServiceLayer.Infrastructure.ServiceMesh;
 using NeoServiceLayer.Core.ConfidentialComputing;
 using NeoServiceLayer.Core.Services;
+// Note: Infrastructure project references handled via DI container
 using System;
 
 namespace NeoServiceLayer.Core.Framework
