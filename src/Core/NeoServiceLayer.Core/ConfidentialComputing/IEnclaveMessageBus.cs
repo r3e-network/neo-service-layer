@@ -756,11 +756,39 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     public class TemporaryConfidentialMessageChannel : IConfidentialMessageChannel
     {
         public string ChannelId { get; } = Guid.NewGuid().ToString();
+        public string Name { get; }
         public string ChannelName { get; }
+        public IEnumerable<string> Participants { get; } = new List<string>();
+        public bool IsActive { get; } = true;
 
         public TemporaryConfidentialMessageChannel(string channelName)
         {
             ChannelName = channelName;
+            Name = channelName;
+        }
+
+        public Task<ConfidentialMessageResult> SendMessageAsync<T>(T message, string? recipientId = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ConfidentialMessageResult
+            {
+                Success = true,
+                MessageId = Guid.NewGuid().ToString(),
+                Topic = ChannelName
+            });
+        }
+
+        public Task<ConfidentialMessage<T>?> ReceiveMessageAsync<T>(TimeSpan? timeout = null, CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult<ConfidentialMessage<T>?>(null);
+        }
+
+        public Task<ChannelStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new ChannelStatistics
+            {
+                ChannelId = ChannelId,
+                ActiveParticipants = Participants.Count()
+            });
         }
 
         public void Dispose()
