@@ -260,7 +260,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
             };
 
             // Act
-            var result = RetryHelper.ExecuteWithRetry(operation, maxRetries: 3);
+            var result = RetryHelper.ExecuteWithRetry(operation, maxRetries: 3, retryCondition: ex => ex is InvalidOperationException);
 
             // Assert
             result.Should().Be(expectedResult);
