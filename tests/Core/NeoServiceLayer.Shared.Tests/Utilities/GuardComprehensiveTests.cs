@@ -275,12 +275,12 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         {
             // Arrange
             bool condition = true;
-            string paramName = "testParam";
             string message = "Test message";
+            string paramName = "testParam";
 
             // Act & Assert
             var exception = Assert.Throws<ArgumentException>(() => 
-                Guard.Against(condition, paramName, message));
+                Guard.Against(condition, message, paramName));
             exception.ParamName.Should().Be(paramName);
             exception.Message.Should().Contain(message);
         }
