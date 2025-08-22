@@ -54,6 +54,10 @@ public class SealedDataItem
     
     public bool IsExpired => ExpiresAt < DateTime.UtcNow;
     
+    public bool IsActive => !IsExpired;
+    
+    public string Service => ServiceName;
+    
     // Navigation properties
     public virtual SealingPolicy? Policy { get; set; }
     public virtual ICollection<EnclaveAttestation> Attestations { get; set; } = new List<EnclaveAttestation>();
