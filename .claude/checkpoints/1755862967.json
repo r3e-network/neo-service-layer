@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-114247", "file": "/home/ubuntu/neo-service-layer/scripts/start-systematic-testing.sh", "timestamp": "2025-08-22T11:42:47Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755862917.json |   1 +  scripts/start-systematic-testing.sh      | 247 +++++++++++++++++++++++++++++++  2 files changed, 248 insertions(+) "}
