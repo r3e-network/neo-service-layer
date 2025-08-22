@@ -48,7 +48,7 @@ public static class RetryHelper
         {
             await action().ConfigureAwait(false);
             return true;
-        }, maxRetries, retryDelay ?? baseDelay, maxDelay, backoffMultiplier, exceptionFilter ?? retryCondition, logger, onRetry, retryDelay, exceptionFilter).ConfigureAwait(false);
+        }, maxRetries, baseDelay, maxDelay, backoffMultiplier, retryCondition, logger, onRetry, retryDelay, exceptionFilter).ConfigureAwait(false);
     }
 
     /// <summary>
