@@ -466,9 +466,34 @@ public partial class BackupService
 
     private async Task RemoveFromBackupIndexAsync(string backupId)
     {
-        // Implementation would remove the backup entry from the backup index
-        // This is a simplified version - in production this would be more robust
-        await Task.CompletedTask;
+        try
+        {
+            // Production backup index removal with transactional safety
+            var indexPath = Path.Combine(_backupBasePath, "backup-index.json");
+            if (!File.Exists(indexPath)) return;
+
+            var indexContent = await File.ReadAllTextAsync(indexPath);
+            var backupIndex = JsonSerializer.Deserialize<Dictionary<string, BackupIndexEntry>>(indexContent) 
+                ?? new Dictionary<string, BackupIndexEntry>();
+
+            if (backupIndex.ContainsKey(backupId))
+            {
+                backupIndex.Remove(backupId);
+                
+                // Write updated index with backup
+                var tempIndexPath = indexPath + ".tmp";
+                await File.WriteAllTextAsync(tempIndexPath, JsonSerializer.Serialize(backupIndex, new JsonSerializerOptions { WriteIndented = true }));
+                
+                // Atomic replace
+                File.Move(tempIndexPath, indexPath, overwrite: true);
+                
+                _logger.LogInformation("Removed backup {BackupId} from index", backupId);
+            }
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to remove backup {BackupId} from index", backupId);
+        }
     }
 
     private async Task<byte[]> DecompressDataAsync(byte[] compressedData, string algorithm)
