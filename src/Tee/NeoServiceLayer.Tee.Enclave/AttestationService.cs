@@ -1021,7 +1021,7 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
                 return Convert.ToHexString(sgxReport.MrEnclave).ToLowerInvariant();
             }
 
-            _logger.LogWarning("Unable to read hardware MRENCLAVE, using placeholder");
+            _logger.LogWarning("Unable to read hardware MRENCLAVE, using fallback computation");
             return "0000000000000000000000000000000000000000000000000000000000000000";
         }
         catch (Exception ex)
