@@ -8,6 +8,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities.VotingEntities;
 using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities.OracleEntities;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Entities.CrossChainEntities;
 
 namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 
