@@ -234,14 +234,14 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         }
 
         [Fact]
-        public void AgainstZeroOrNegative_WithZeroValue_ShouldThrowArgumentException()
+        public void AgainstZeroOrNegative_WithZeroValue_ShouldThrowArgumentOutOfRangeException()
         {
             // Arrange
             int zeroValue = 0;
             string paramName = "testParam";
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => 
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() => 
                 Guard.AgainstZeroOrNegative(zeroValue, paramName));
             exception.ParamName.Should().Be(paramName);
         }
