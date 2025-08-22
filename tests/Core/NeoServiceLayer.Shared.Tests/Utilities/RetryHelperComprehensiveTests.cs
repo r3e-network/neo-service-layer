@@ -280,7 +280,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
 
             // Act & Assert
             var exception = Assert.Throws<InvalidOperationException>(
-                () => RetryHelper.ExecuteWithRetry(operation, maxRetries: 3));
+                () => RetryHelper.ExecuteWithRetry(operation, maxRetries: 3, retryCondition: ex => ex is InvalidOperationException));
             exception.Message.Should().Be("Always fails");
             attemptCount.Should().Be(4); // Original attempt + 3 retries
         }
