@@ -1,4 +1,6 @@
 using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -6,6 +8,8 @@ using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Infrastructure.CQRS.Commands;
 using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Services.Authentication;
+using NeoServiceLayer.Services.Authentication.Repositories;
+using NeoServiceLayer.Services.Authentication.Models;
 using NeoServiceLayer.Services.UserManagement;
 
 namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
