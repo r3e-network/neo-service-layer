@@ -554,9 +554,8 @@ public class NeoN3SmartContractManager : ServiceFramework.EnclaveBlockchainServi
                 {
                     var block = await _rpcClient.GetBlockAsync(blockIndex.ToString()).ConfigureAwait(false);
 
-                    // Note: RpcBlock may not have a Transactions property in newer versions
-                    // You may need to get transactions separately or use block.Tx property
-                    var transactions = new global::Neo.Network.RPC.Models.RpcTransaction[0]; // Empty array as placeholder
+                    // Production transaction retrieval from block data
+                    var transactions = await GetBlockTransactionsAsync(block);
                     foreach (var tx in transactions)
                     {
                         try
