@@ -70,7 +70,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                         ["createdAt"] = DateTime.UtcNow.ToString("O"),
                         ["expiresAt"] = storageOptions.ExpiresAt?.ToString("O") ?? ""
                     },
-                    Policy = new SealingPolicy
+                    Policy = new SealDataPolicy
                     {
                         Type = MapSealingPolicy(storageOptions.SealingPolicy),
                         ExpirationHours = storageOptions.ExpiresAt.HasValue
