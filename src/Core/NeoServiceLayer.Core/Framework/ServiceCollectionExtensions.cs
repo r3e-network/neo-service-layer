@@ -9,6 +9,7 @@ using NeoServiceLayer.Core.Cryptography;
 using NeoServiceLayer.Core.Gateway;
 using NeoServiceLayer.Core.Messaging;
 using NeoServiceLayer.Core.Monitoring;
+using NeoServiceLayer.Core.Services;
 using System;
 
 namespace NeoServiceLayer.Core.Framework
