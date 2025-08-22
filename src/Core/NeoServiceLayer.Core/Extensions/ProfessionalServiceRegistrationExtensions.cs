@@ -197,6 +197,45 @@ namespace NeoServiceLayer.Core.Extensions
             return services;
         }
 
+        // Placeholder implementations for interfaces referenced above
+        // These should be replaced with actual implementations when available
+        public interface IPasswordPolicy { }
+        public interface IAccountLockoutService { }
+        public interface ICommandDispatcher { }
+        public interface IQueryDispatcher { }
+        public interface IDomainEventPublisher { }
+        public interface IUserRepository { }
+
+        public class DefaultPasswordPolicy : IPasswordPolicy
+        {
+            public DefaultPasswordPolicy(IConfiguration config) { }
+        }
+
+        public class DefaultAccountLockoutService : IAccountLockoutService
+        {
+            public DefaultAccountLockoutService(ILogger<DefaultAccountLockoutService> logger) { }
+        }
+
+        public class DefaultCommandDispatcher : ICommandDispatcher
+        {
+            public DefaultCommandDispatcher(IServiceProvider serviceProvider, ILogger<DefaultCommandDispatcher> logger) { }
+        }
+
+        public class DefaultQueryDispatcher : IQueryDispatcher
+        {
+            public DefaultQueryDispatcher(IServiceProvider serviceProvider, ILogger<DefaultQueryDispatcher> logger) { }
+        }
+
+        public class DefaultDomainEventPublisher : IDomainEventPublisher
+        {
+            public DefaultDomainEventPublisher(IServiceProvider serviceProvider, ILogger<DefaultDomainEventPublisher> logger) { }
+        }
+
+        public class DefaultUserRepository : IUserRepository
+        {
+            public DefaultUserRepository(ILogger<DefaultUserRepository> logger) { }
+        }
+
         /// <summary>
         /// Fixes common service lifetime issues in existing registrations
         /// </summary>
