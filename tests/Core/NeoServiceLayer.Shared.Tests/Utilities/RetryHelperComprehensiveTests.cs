@@ -438,7 +438,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
                 () => RetryHelper.ExecuteAsync(
                     operation, 
                     maxRetries: 10, 
-                    exceptionFilter: circuitBreakerFilter));
+                    retryCondition: circuitBreakerFilter));
             attemptCount.Should().Be(4); // Original + 3 retries before circuit breaker opens
         }
     }
