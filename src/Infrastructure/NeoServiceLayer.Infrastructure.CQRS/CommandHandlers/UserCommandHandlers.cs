@@ -43,7 +43,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 var existingUser = await _userRepository.GetByEmailAsync(command.Email);
                 if (existingUser != null)
                 {
-                    return CommandResult.Failure("User with this email already exists");
+                    throw new InvalidOperationException("User with this email already exists");
                 }
 
                 // Hash password
@@ -84,13 +84,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 });
 
                 _logger.LogInformation("User {UserId} created successfully", user.Id);
-
-                return CommandResult.Success(user.Id);
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error creating user");
-                return CommandResult.Failure($"Failed to create user: {ex.Message}");
+                throw;
             }
         }
     }
