@@ -82,7 +82,7 @@ namespace NeoServiceLayer.Core.Framework
             services.Configure<CryptographicServiceConfiguration>(
                 configuration.GetSection("CryptographicService"));
 
-            services.AddSingleton<ICryptographicService, CryptographicService>();
+            services.AddSingleton<NeoServiceLayer.Core.Services.ICryptographicService, NeoServiceLayer.Core.Services.CryptographicService>();
 
             services.AddHealthChecks()
                 .AddCheck<CryptographicServiceHealthCheck>("cryptographic-service");
