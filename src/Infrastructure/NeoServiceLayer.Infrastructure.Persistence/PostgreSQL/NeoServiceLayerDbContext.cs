@@ -65,6 +65,7 @@ public class NeoServiceLayerDbContext : DbContext
     #region Voting & Governance
     
     public DbSet<Proposal> Proposals { get; set; } = null!;
+    public DbSet<VotingProposal> VotingProposals { get; set; } = null!;
     public DbSet<Vote> Votes { get; set; } = null!;
     public DbSet<VotingPower> VotingPowers { get; set; } = null!;
     
