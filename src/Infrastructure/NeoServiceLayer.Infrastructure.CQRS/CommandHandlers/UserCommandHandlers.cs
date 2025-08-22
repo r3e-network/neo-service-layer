@@ -19,20 +19,17 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
     public class CreateUserCommandHandler : ICommandHandler<CreateUserCommand>
     {
         private readonly ILogger<CreateUserCommandHandler> _logger;
-        private readonly IUserManagementService _userService;
         private readonly IEventBus _eventBus;
         private readonly IUserRepository _userRepository;
         private readonly IPasswordHasher _passwordHasher;
 
         public CreateUserCommandHandler(
             ILogger<CreateUserCommandHandler> logger,
-            IUserManagementService userService,
             IEventBus eventBus,
             IUserRepository userRepository,
             IPasswordHasher passwordHasher)
         {
             _logger = logger;
-            _userService = userService;
             _eventBus = eventBus;
             _userRepository = userRepository;
             _passwordHasher = passwordHasher;
