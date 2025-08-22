@@ -298,22 +298,7 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
             ? System.Text.Json.JsonSerializer.Deserialize<Dictionary<string, object>>(dbItem.Metadata)
             : null;
 
-        return new SealedDataItem
-        {
-            Key = dbItem.Key,
-            StorageId = dbItem.StorageId,
-            SealedData = dbItem.SealedData,
-            OriginalSize = dbItem.OriginalSize,
-            SealedSize = dbItem.SealedSize,
-            Fingerprint = dbItem.Fingerprint,
-            Service = dbItem.ServiceName,
-            PolicyType = Enum.Parse<SealingPolicyType>(dbItem.PolicyType),
-            CreatedAt = dbItem.CreatedAt,
-            ExpiresAt = dbItem.ExpiresAt,
-            LastAccessed = dbItem.LastAccessed,
-            Metadata = metadata,
-            AccessCount = dbItem.AccessCount
-        };
+        return dbItem;
     }
 
     /// <summary>
