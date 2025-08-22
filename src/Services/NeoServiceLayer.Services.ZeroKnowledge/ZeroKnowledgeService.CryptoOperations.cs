@@ -369,4 +369,14 @@ public partial class ZeroKnowledgeService
             throw;
         }
     }
+
+    /// <summary>
+    /// Generates a secure encryption key for AES operations.
+    /// </summary>
+    private string GenerateSecureEncryptionKey()
+    {
+        var keyBytes = new byte[32]; // 256-bit key
+        rng.GetBytes(keyBytes);
+        return Convert.ToBase64String(keyBytes);
+    }
 }
