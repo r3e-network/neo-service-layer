@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
 {
@@ -704,10 +705,10 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
             return Task.FromResult(new MessageBusStatistics
             {
-                TotalMessages = 0,
+                MessagesPublished = 0,
                 ActiveSubscriptions = 0,
                 ActiveChannels = 0,
-                RegisteredServices = 0
+                ActiveServices = 0
             });
         }
 
