@@ -849,14 +849,14 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             ServiceName = serviceName;
         }
 
-        public Task UpdateConfigurationAsync(ConfidentialServiceOptions configuration, CancellationToken cancellationToken = default)
+        public Task<ServiceUpdateResult> UpdateConfigurationAsync(ConfidentialServiceOptions configuration, CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(new ServiceUpdateResult { Success = true });
         }
 
-        public Task<ServiceRegistrationMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+        public Task<ServiceMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
         {
-            return Task.FromResult(new ServiceRegistrationMetrics
+            return Task.FromResult(new ServiceMetrics
             {
                 ServiceId = ServiceId,
                 RequestsHandled = HandledRequestCount
