@@ -158,11 +158,11 @@ namespace NeoServiceLayer.Core.Extensions
             // Event infrastructure with production implementations
             // Event publisher is scoped to ensure proper event handling within requests
             
-            services.AddScoped(provider =>
+            services.AddScoped<IDomainEventPublisher>(provider =>
             {
-                var logger = provider.GetRequiredService<ILogger<ProductionDomainEventPublisher>>();
+                var logger = provider.GetRequiredService<ILogger<DefaultDomainEventPublisher>>();
                 var serviceProvider = provider.GetRequiredService<IServiceProvider>();
-                return new ProductionDomainEventPublisher(serviceProvider, logger);
+                return new DefaultDomainEventPublisher(serviceProvider, logger);
             });
             
             // Register domain event handlers
