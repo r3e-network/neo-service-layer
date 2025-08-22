@@ -505,10 +505,17 @@ public partial class MonitoringService
             var workingSet = Environment.WorkingSet;
 
             // Production memory usage calculation using comprehensive system metrics
-            var estimatedUsage = Math.Min(100.0, (double)workingSet / (1024 * 1024 * 1024) * 100); // As percentage of 1GB
+            using var process = System.Diagnostics.Process.GetCurrentProcess();
+            var totalPhysicalMemory = GetTotalPhysicalMemory();
+            var actualMemoryUsage = process.WorkingSet64;
+            
+            // Calculate true system memory percentage
+            var memoryPercentage = totalPhysicalMemory > 0 ? 
+                (double)actualMemoryUsage / totalPhysicalMemory * 100.0 : 
+                Math.Min(100.0, (double)workingSet / (512 * 1024 * 1024) * 100); // Fallback to 512MB baseline
 
             await Task.CompletedTask;
-            return Math.Max(10.0, estimatedUsage); // Minimum 10% to show some usage
+            return Math.Max(0.1, Math.Min(100.0, memoryPercentage));
         }
         catch
         {
