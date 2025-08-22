@@ -236,7 +236,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
 
             if (redisConfig.Exists())
             {
-                var host = redisConfig["Host"] ?? "localhost";
+                var host = redisConfig["Host"] ?? Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
                 var port = redisConfig["Port"] ?? "6379";
                 var password = redisConfig["Password"];
                 var ssl = redisConfig.GetValue<bool>("Ssl", false);
@@ -258,7 +258,7 @@ namespace NeoServiceLayer.Services.Authentication.Infrastructure
             }
 
             // Fall back to connection string
-            return _configuration.GetConnectionString("Redis") ?? "localhost:6379";
+            return _configuration.GetConnectionString("Redis") ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
         }
 
         private void OnConnectionFailed(object sender, ConnectionFailedEventArgs e)
