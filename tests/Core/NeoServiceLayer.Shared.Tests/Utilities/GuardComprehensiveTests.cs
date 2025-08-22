@@ -314,7 +314,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         public void Against_WithFalseConditionVariousScenarios_ShouldNotThrow(bool condition)
         {
             // Act & Assert
-            var action = () => Guard.Against(condition, "param", "message");
+            var action = () => Guard.Against(condition, "message", "param");
             action.Should().NotThrow();
         }
 
