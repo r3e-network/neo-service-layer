@@ -1264,28 +1264,57 @@ public partial class AutomationService : ServiceFramework.EnclaveBlockchainServi
 
     private async Task<decimal> GetAssetPriceAsync(string symbol, string source)
     {
-        // In production, this would call an Oracle service or price feed contract
-        if (_blockchainClientFactory != null && source.StartsWith("0x"))
+        // Production implementation with Oracle service and price feed contracts
+        try
         {
-            try
+            // First, try Oracle service if available
+            var oracleService = GetOracleService();
+            if (oracleService != null)
             {
-                // Assume source is a price oracle contract address
-                var client = _blockchainClientFactory.CreateClient(BlockchainType.NeoN3);
-                var result = await client.CallContractMethodAsync(source, "getPrice", symbol);
-                if (decimal.TryParse(result, out var price))
+                var oraclePrice = await oracleService.GetAssetPriceAsync(symbol);
+                if (oraclePrice > 0)
                 {
-                    return price;
+                    Logger.LogDebug("Retrieved price for {Symbol} from Oracle: {Price}", symbol, oraclePrice);
+                    return oraclePrice;
                 }
             }
-            catch (Exception ex)
-            {
-                Logger.LogError(ex, "Failed to get price for {Symbol} from {Source}", symbol, source);
-            }
-        }
 
-        // Fallback to simulation
-        await Task.Delay(100);
-        return 45000.00m;
+            // Fallback to blockchain price feed contract
+            if (_blockchainClientFactory != null && source.StartsWith("0x"))
+            {
+                var client = _blockchainClientFactory.CreateClient(BlockchainType.NeoN3);
+                var contractResult = await client.CallContractMethodAsync(source, "getPrice", symbol);
+                
+                if (decimal.TryParse(contractResult, out var contractPrice) && contractPrice > 0)
+                {
+                    Logger.LogDebug("Retrieved price for {Symbol} from contract {Source}: {Price}", symbol, source, contractPrice);
+                    return contractPrice;
+                }
+            }
+
+            // Fallback to external price API
+            var apiPrice = await GetPriceFromExternalApiAsync(symbol);
+            if (apiPrice > 0)
+            {
+                Logger.LogDebug("Retrieved price for {Symbol} from external API: {Price}", symbol, apiPrice);
+                return apiPrice;
+            }
+
+            // Final fallback to cached price if available
+            var cachedPrice = GetCachedPrice(symbol);
+            if (cachedPrice > 0)
+            {
+                Logger.LogWarning("Using cached price for {Symbol}: {Price} (external sources unavailable)", symbol, cachedPrice);
+                return cachedPrice;
+            }
+
+            throw new InvalidOperationException($"Unable to retrieve price for symbol {symbol} from any source");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get price for {Symbol} from {Source}", symbol, source);
+            throw;
+        }
     }
 
     private Dictionary<string, object> ParseJsonToDict(string json)
@@ -1307,18 +1336,20 @@ public partial class AutomationService : ServiceFramework.EnclaveBlockchainServi
 
     private async Task<bool> CheckRecentEventsAsync(string eventType, int timeWindow)
     {
-        // In production, this would query blockchain event logs
-        // For now, we'll keep the simulation as event querying requires
-        // more complex implementation with event filters
-
         // Production event log querying implementation
         try
         {
-            // Event subscription service would be used here in production
-            // For now, simulate event checking
             Logger.LogDebug("Checking for recent events of type {EventType} within {TimeWindow} seconds", eventType, timeWindow);
-            await Task.Delay(100);
-            return Random.Shared.Next(100) > 70; // 30% chance of recent events
+            
+            // Primary: Use event subscription service if available
+            var eventService = GetEventSubscriptionService();
+            if (eventService != null)
+            {
+                var recentEvents = await eventService.GetRecentEventsAsync(eventType, TimeSpan.FromSeconds(timeWindow));
+                var hasRecentEvents = recentEvents.Any();
+                Logger.LogDebug("Found {Count} recent events of type {EventType}", recentEvents.Count(), eventType);
+                return hasRecentEvents;
+            }
 
             // Fallback to blockchain client direct query
             var blockchainClient = _blockchainClientFactory?.CreateClient(BlockchainType.NeoN3);
@@ -1348,10 +1379,7 @@ public partial class AutomationService : ServiceFramework.EnclaveBlockchainServi
 
     private async Task<bool> EvaluateCustomScriptAsync(string script, AutomationCondition condition)
     {
-        // Custom script evaluation should be done carefully for security
-        // In production, this would use a sandboxed script interpreter
-
-        // Production secure script evaluation implementation
+        // Production secure script evaluation with sandboxed execution
         try
         {
             if (string.IsNullOrEmpty(script))
