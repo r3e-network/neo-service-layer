@@ -544,12 +544,24 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
         private string MapSealingPolicy(SealingPolicy policy)
         {
-            return policy.Type;
+            return policy switch
+            {
+                SealingPolicy.MrEnclave => "MrEnclave",
+                SealingPolicy.MrSigner => "MrSigner", 
+                SealingPolicy.Custom => "Custom",
+                _ => "MrSigner"
+            };
         }
 
         private SealingPolicy MapSealingPolicyType(string policyType)
         {
-            return new SealingPolicy { Type = policyType };
+            return policyType switch
+            {
+                "MrEnclave" => SealingPolicy.MrEnclave,
+                "MrSigner" => SealingPolicy.MrSigner,
+                "Custom" => SealingPolicy.Custom,
+                _ => SealingPolicy.MrSigner
+            };
         }
 
         private string ComputeDataFingerprint(string data)
