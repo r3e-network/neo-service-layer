@@ -540,7 +540,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return transaction;
         }
 
-        private SealingPolicyType MapSealingPolicy(SealingPolicy policy)
+        private NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType MapSealingPolicy(SealingPolicy policy)
         {
             return policy switch
             {
@@ -551,7 +551,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             };
         }
 
-        private SealingPolicy MapSealingPolicyType(SealingPolicyType policyType)
+        private SealingPolicy MapSealingPolicyType(NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType policyType)
         {
             return policyType switch
             {
