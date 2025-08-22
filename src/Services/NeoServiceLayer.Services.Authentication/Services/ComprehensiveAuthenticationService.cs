@@ -484,7 +484,7 @@ namespace NeoServiceLayer.Services.Authentication.Services
                     UserId = user.Id,
                     Username = user.Username,
                     Email = user.Email,
-                    FirstName = user.Username, // Using username as placeholder
+                    FirstName = ExtractFirstNameFromProfile(user),
                     LastName = "",
                     CreatedAt = user.CreatedAt,
                     LastLoginAt = user.LastLoginAt,
