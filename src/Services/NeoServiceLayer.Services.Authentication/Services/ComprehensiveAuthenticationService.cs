@@ -503,6 +503,49 @@ namespace NeoServiceLayer.Services.Authentication.Services
                 return null;
             }
         }
+
+        /// <summary>
+        /// Extracts first name from user profile with intelligent parsing.
+        /// </summary>
+        private string ExtractFirstNameFromProfile(User user)
+        {
+            try
+            {
+                // Check if user has a display name or full name field
+                if (!string.IsNullOrEmpty(user.DisplayName))
+                {
+                    var parts = user.DisplayName.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+                    return parts.Length > 0 ? parts[0] : user.Username;
+                }
+
+                // Check if username contains first/last name pattern
+                if (user.Username.Contains('.'))
+                {
+                    var parts = user.Username.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                    return parts.Length > 0 ? char.ToUpper(parts[0][0]) + parts[0][1..].ToLower() : user.Username;
+                }
+
+                // Check if email has name pattern
+                if (!string.IsNullOrEmpty(user.Email) && user.Email.Contains('@'))
+                {
+                    var emailLocal = user.Email.Split('@')[0];
+                    if (emailLocal.Contains('.'))
+                    {
+                        var parts = emailLocal.Split('.', StringSplitOptions.RemoveEmptyEntries);
+                        return parts.Length > 0 ? char.ToUpper(parts[0][0]) + parts[0][1..].ToLower() : user.Username;
+                    }
+                }
+
+                // Fallback to username with proper casing
+                return !string.IsNullOrEmpty(user.Username) && user.Username.Length > 0 ? 
+                    char.ToUpper(user.Username[0]) + user.Username[1..].ToLower() : 
+                    "User";
+            }
+            catch
+            {
+                return user.Username ?? "User";
+            }
+        }
     }
 
     public interface IComprehensiveAuthenticationService
