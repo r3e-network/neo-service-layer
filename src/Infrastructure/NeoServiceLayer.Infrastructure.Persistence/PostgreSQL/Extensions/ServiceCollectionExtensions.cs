@@ -6,6 +6,8 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using Npgsql;
 using NeoServiceLayer.Core.Persistence;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Repositories;
+using NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services;
 
 namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Extensions;
 
