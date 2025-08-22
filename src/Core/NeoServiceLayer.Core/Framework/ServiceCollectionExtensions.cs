@@ -109,6 +109,9 @@ namespace NeoServiceLayer.Core.Framework
             services.AddSingleton<IDistributedCachingService, DistributedCachingService>();
 
             services.AddHealthChecks()
+                .AddCheck<DistributedCachingServiceHealthCheck>("distributed-caching");
+
+            services.AddHealthChecks()
                 .AddCheck<DistributedCachingHealthCheck>("distributed-caching");
 
             return services;
