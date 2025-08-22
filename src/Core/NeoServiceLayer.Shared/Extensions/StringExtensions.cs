@@ -623,8 +623,10 @@ public static class StringExtensions
     /// <returns>True if the string is a valid hex string, false otherwise.</returns>
     public static bool IsHexString(this string? value)
     {
-        if (string.IsNullOrEmpty(value))
+        if (value == null)
             return false;
+        if (value == "")
+            return true; // Empty string is considered valid hex
 
         return System.Text.RegularExpressions.Regex.IsMatch(value, @"^[0-9A-Fa-f]+$");
     }
