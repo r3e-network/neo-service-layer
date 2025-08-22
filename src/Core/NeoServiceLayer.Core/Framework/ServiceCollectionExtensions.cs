@@ -106,7 +106,7 @@ namespace NeoServiceLayer.Core.Framework
             services.Configure<DistributedCachingConfiguration>(
                 configuration.GetSection("DistributedCaching"));
 
-            services.AddSingleton<IDistributedCachingService, DistributedCachingService>();
+            services.AddSingleton<NeoServiceLayer.Core.Services.IDistributedCachingService, NeoServiceLayer.Core.Services.DistributedCachingService>();
 
             services.AddHealthChecks()
                 .AddCheck<DistributedCachingServiceHealthCheck>("distributed-caching");
@@ -130,7 +130,7 @@ namespace NeoServiceLayer.Core.Framework
             services.Configure<MessageQueueConfiguration>(
                 configuration.GetSection("MessageQueue"));
 
-            services.AddSingleton<IMessageQueueService, MessageQueueService>();
+            services.AddSingleton<NeoServiceLayer.Core.Services.IMessageQueueService, NeoServiceLayer.Core.Services.MessageQueueService>();
 
             services.AddHealthChecks()
                 .AddCheck<MessageQueueServiceHealthCheck>("message-queue");
@@ -156,7 +156,7 @@ namespace NeoServiceLayer.Core.Framework
             services.Configure<MonitoringConfiguration>(
                 configuration.GetSection("Monitoring"));
 
-            services.AddSingleton<IMonitoringService, MonitoringService>();
+            services.AddSingleton<NeoServiceLayer.Core.Services.IMonitoringService, NeoServiceLayer.Core.Services.MonitoringService>();
 
             services.AddHealthChecks()
                 .AddCheck<MonitoringServiceHealthCheck>("monitoring-service");
@@ -179,7 +179,7 @@ namespace NeoServiceLayer.Core.Framework
             services.Configure<ApiGatewayConfiguration>(
                 configuration.GetSection("ApiGateway"));
 
-            services.AddSingleton<IApiGatewayService, ApiGatewayService>();
+            services.AddSingleton<NeoServiceLayer.Core.Services.IApiGatewayService, NeoServiceLayer.Core.Services.ApiGatewayService>();
 
             services.AddHealthChecks()
                 .AddCheck<ApiGatewayHealthCheck>("api-gateway");
