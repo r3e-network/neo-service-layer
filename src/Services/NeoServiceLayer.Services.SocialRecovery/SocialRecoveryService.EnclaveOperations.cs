@@ -235,9 +235,31 @@ namespace NeoServiceLayer.Services.SocialRecovery
         /// </summary>
         private string GenerateGuardianSignature(string guardianAddress, string recoveryId)
         {
-            // This is a placeholder - in production, this would use proper crypto
-            var data = $"{guardianAddress}-{recoveryId}-{DateTimeOffset.UtcNow.ToUnixTimeMilliseconds()}";
-            return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(data).Take(32).ToArray());
+            try
+            {
+                // Production cryptographic signature for guardian approval
+                var timestamp = DateTimeOffset.UtcNow.ToUnixTimeMilliseconds();
+                var messageData = $"{guardianAddress}|{recoveryId}|{timestamp}";
+                
+                // Use enclave sealing key for guardian signature
+                var enclaveKey = await GetEnclaveSealiingKeyAsync();
+                var messageBytes = System.Text.Encoding.UTF8.GetBytes(messageData);
+                
+                using var hmac = new System.Security.Cryptography.HMACSHA256(enclaveKey);
+                var signature = hmac.ComputeHash(messageBytes);
+                
+                // Include timestamp in signature for verification
+                var fullSignature = new byte[signature.Length + 8];
+                Array.Copy(signature, 0, fullSignature, 0, signature.Length);
+                Array.Copy(BitConverter.GetBytes(timestamp), 0, fullSignature, signature.Length, 8);
+                
+                return Convert.ToBase64String(fullSignature);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to generate guardian signature for {GuardianAddress}", guardianAddress);
+                throw new InvalidOperationException("Guardian signature generation failed", ex);
+            }
         }
 
         /// <summary>
