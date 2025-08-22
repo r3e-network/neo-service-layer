@@ -194,13 +194,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 var user = await _userRepository.GetByIdAsync(command.UserId);
                 if (user == null)
                 {
-                    return CommandResult.Failure("User not found");
+                    throw new InvalidOperationException("User not found");
                 }
 
                 // Verify current password
                 if (!_passwordHasher.VerifyPassword(command.CurrentPassword, user.PasswordHash))
                 {
-                    return CommandResult.Failure("Current password is incorrect");
+                    throw new InvalidOperationException("Current password is incorrect");
                 }
 
                 // Hash new password
