@@ -769,14 +769,14 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             Topic = topic;
         }
 
-        public Task PauseAsync(CancellationToken cancellationToken = default)
+        public Task<SubscriptionControlResult> PauseAsync(CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(new SubscriptionControlResult { Success = true });
         }
 
-        public Task ResumeAsync(CancellationToken cancellationToken = default)
+        public Task<SubscriptionControlResult> ResumeAsync(CancellationToken cancellationToken = default)
         {
-            return Task.CompletedTask;
+            return Task.FromResult(new SubscriptionControlResult { Success = true });
         }
 
         public Task<SubscriptionMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
