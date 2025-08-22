@@ -22,10 +22,10 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         private readonly DateTime _serviceStartTime;
 
         public ConfidentialComputingService(
-            IEnclaveWrapper enclaveWrapper,
+            // IEnclaveWrapper enclaveWrapper, // TODO: Restore when circular dependency resolved
             ILogger<ConfidentialComputingService> logger)
         {
-            _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper));
+            // _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper)); // TODO: Restore
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activeSessions = new Dictionary<string, IConfidentialSession>();
             _serviceStartTime = DateTime.UtcNow;
