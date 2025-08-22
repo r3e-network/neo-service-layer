@@ -1495,40 +1495,126 @@ namespace NeoServiceLayer.Services.Authentication
             return Math.Min(score, 100);
         }
 
-        // Email sending methods (placeholders - would integrate with email service)
+        // Email sending methods - production implementation
         private async Task SendVerificationEmailAsync(string email, string username, string token)
         {
-            // In production, this would send an actual email
-            _logger.LogInformation("Sending verification email to {Email} with token {Token}", email, token);
-            await Task.CompletedTask;
+            try
+            {
+                var emailService = GetEmailService();
+                var verificationLink = $"{GetBaseUrl()}/verify-email?token={token}";
+                
+                var subject = "Verify Your Email Address";
+                var body = $@"
+                    <h2>Email Verification Required</h2>
+                    <p>Hello {username},</p>
+                    <p>Please click the link below to verify your email address:</p>
+                    <p><a href=""{verificationLink}"">Verify Email Address</a></p>
+                    <p>This link will expire in 24 hours.</p>
+                    <p>If you didn't request this verification, please ignore this email.</p>
+                ";
+                
+                await emailService.SendEmailAsync(email, subject, body);
+                _logger.LogInformation("Verification email sent successfully to {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send verification email to {Email}", email);
+                throw;
+            }
         }
 
         private async Task SendPasswordResetEmailAsync(string email, string username, string token)
         {
-            // In production, this would send an actual email
-            _logger.LogInformation("Sending password reset email to {Email} with token {Token}", email, token);
-            await Task.CompletedTask;
+            try
+            {
+                var emailService = GetEmailService();
+                var resetLink = $"{GetBaseUrl()}/reset-password?token={token}";
+                
+                var subject = "Password Reset Request";
+                var body = $@"
+                    <h2>Password Reset Requested</h2>
+                    <p>Hello {username},</p>
+                    <p>A password reset was requested for your account. Click the link below to reset your password:</p>
+                    <p><a href=""{resetLink}"">Reset Password</a></p>
+                    <p>This link will expire in 1 hour for security reasons.</p>
+                    <p>If you didn't request this reset, please ignore this email and your password will remain unchanged.</p>
+                ";
+                
+                await emailService.SendEmailAsync(email, subject, body);
+                _logger.LogInformation("Password reset email sent successfully to {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send password reset email to {Email}", email);
+                throw;
+            }
         }
 
         private async Task SendPasswordChangedEmailAsync(string email, string username)
         {
-            // In production, this would send an actual email
-            _logger.LogInformation("Sending password changed notification to {Email}", email);
-            await Task.CompletedTask;
+            try
+            {
+                var emailService = GetEmailService();
+                
+                var subject = "Password Changed Successfully";
+                var body = $@"
+                    <h2>Password Changed</h2>
+                    <p>Hello {username},</p>
+                    <p>Your password has been successfully changed.</p>
+                    <p>Changed at: {DateTime.UtcNow:yyyy-MM-dd HH:mm:ss} UTC</p>
+                    <p>If you didn't make this change, please contact support immediately.</p>
+                    <p>For security reasons, all active sessions have been invalidated. Please log in again.</p>
+                ";
+                
+                await emailService.SendEmailAsync(email, subject, body);
+                _logger.LogInformation("Password changed notification sent successfully to {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send password changed notification to {Email}", email);
+                throw;
+            }
         }
 
         private async Task SendSmsCodeAsync(string phoneNumber, string code)
         {
-            // In production, this would send an actual SMS
-            _logger.LogInformation("Sending SMS code {Code} to {PhoneNumber}", code, phoneNumber);
-            await Task.CompletedTask;
+            try
+            {
+                var smsService = GetSmsService();
+                var message = $"Your verification code is: {code}. This code expires in 10 minutes. Do not share this code with anyone.";
+                
+                await smsService.SendSmsAsync(phoneNumber, message);
+                _logger.LogInformation("SMS verification code sent successfully to {PhoneNumber}", MaskPhoneNumber(phoneNumber));
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send SMS code to {PhoneNumber}", MaskPhoneNumber(phoneNumber));
+                throw;
+            }
         }
 
         private async Task SendEmailCodeAsync(string email, string code)
         {
-            // In production, this would send an actual email
-            _logger.LogInformation("Sending email code {Code} to {Email}", code, email);
-            await Task.CompletedTask;
+            try
+            {
+                var emailService = GetEmailService();
+                
+                var subject = "Your Verification Code";
+                var body = $@"
+                    <h2>Verification Code</h2>
+                    <p>Your verification code is: <strong>{code}</strong></p>
+                    <p>This code expires in 10 minutes for security reasons.</p>
+                    <p>If you didn't request this code, please ignore this email.</p>
+                ";
+                
+                await emailService.SendEmailAsync(email, subject, body);
+                _logger.LogInformation("Email verification code sent successfully to {Email}", email);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Failed to send email verification code to {Email}", email);
+                throw;
+            }
         }
     }
 
