@@ -61,7 +61,7 @@ public class NeoServiceLayerDbContext : DbContext
     public DbSet<OracleRequest> OracleRequests { get; set; } = null!;
     public DbSet<OracleResponse> OracleResponses { get; set; } = null!;
     public DbSet<DataSourceAttestation> DataSourceAttestations { get; set; } = null!;
-    public DbSet<FeedHistory> FeedHistory { get; set; } = null!;
+    public DbSet<Entities.OracleEntities.FeedHistory> FeedHistory { get; set; } = null!;
     
     #endregion
 
