@@ -15,17 +15,17 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     /// </summary>
     public class ConfidentialComputingService : IConfidentialComputingService
     {
-        // private readonly IEnclaveWrapper _enclaveWrapper; // TODO: Restore when circular dependency resolved
+        private readonly IEnclaveWrapper _enclaveWrapper;
         private readonly ILogger<ConfidentialComputingService> _logger;
         private readonly Dictionary<string, IConfidentialSession> _activeSessions;
         private readonly object _sessionsLock = new();
         private readonly DateTime _serviceStartTime;
 
         public ConfidentialComputingService(
-            // IEnclaveWrapper enclaveWrapper, // TODO: Restore when circular dependency resolved
+            IEnclaveWrapper enclaveWrapper,
             ILogger<ConfidentialComputingService> logger)
         {
-            // _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper)); // TODO: Restore
+            _enclaveWrapper = enclaveWrapper ?? throw new ArgumentNullException(nameof(enclaveWrapper));
             _logger = logger ?? throw new ArgumentNullException(nameof(logger));
             _activeSessions = new Dictionary<string, IConfidentialSession>();
             _serviceStartTime = DateTime.UtcNow;
