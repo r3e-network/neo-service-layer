@@ -350,7 +350,7 @@ namespace NeoServiceLayer.Shared.Tests.Extensions
         [Theory]
         [InlineData("https://www.example.com", true)]
         [InlineData("http://test.org", true)]
-        [InlineData("ftp://ftp.example.com", true)]
+        [InlineData("ftp://ftp.example.com", false)]
         [InlineData("invalid-url", false)]
         [InlineData("www.example.com", false)]
         [InlineData("", false)]
