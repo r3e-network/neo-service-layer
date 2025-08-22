@@ -207,7 +207,7 @@ public class OracleRequest
     public int Priority { get; set; } = 1; // 1 = Highest, 5 = Lowest
     
     // Navigation properties
-    public virtual OracleDataFeed DataFeed { get; set; } = null!;
+    public virtual ServiceOracleDataFeed DataFeed { get; set; } = null!;
     public virtual OracleResponse? Response { get; set; }
 }
 
