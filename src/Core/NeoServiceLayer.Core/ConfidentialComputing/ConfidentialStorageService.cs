@@ -137,7 +137,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             try
             {
                 // Retrieve and unseal data from enclave storage
-                var unsealResult = await _enclaveStorageService.UnsealDataAsync(key, BlockchainType.NeoN3);
+                var unsealResult = await _enclaveStorageService.UnsealDataAsync(key, Services.BlockchainType.NeoN3);
 
                 if (!unsealResult.Success)
                 {
