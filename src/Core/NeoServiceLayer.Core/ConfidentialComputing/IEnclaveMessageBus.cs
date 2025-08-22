@@ -769,4 +769,53 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return Task.FromResult(true);
         }
     }
+
+    // Temporary placeholder implementations for interfaces
+    public class TemporaryConfidentialSubscription : IConfidentialSubscription
+    {
+        public string SubscriptionId { get; } = Guid.NewGuid().ToString();
+        public string Topic { get; }
+
+        public TemporaryConfidentialSubscription(string topic)
+        {
+            Topic = topic;
+        }
+
+        public void Dispose()
+        {
+            // Placeholder disposal
+        }
+    }
+
+    public class TemporaryConfidentialMessageChannel : IConfidentialMessageChannel
+    {
+        public string ChannelId { get; } = Guid.NewGuid().ToString();
+        public string ChannelName { get; }
+
+        public TemporaryConfidentialMessageChannel(string channelName)
+        {
+            ChannelName = channelName;
+        }
+
+        public void Dispose()
+        {
+            // Placeholder disposal
+        }
+    }
+
+    public class TemporaryConfidentialServiceRegistration : IConfidentialServiceRegistration
+    {
+        public string ServiceId { get; } = Guid.NewGuid().ToString();
+        public string ServiceName { get; }
+
+        public TemporaryConfidentialServiceRegistration(string serviceName)
+        {
+            ServiceName = serviceName;
+        }
+
+        public void Dispose()
+        {
+            // Placeholder disposal
+        }
+    }
 }
