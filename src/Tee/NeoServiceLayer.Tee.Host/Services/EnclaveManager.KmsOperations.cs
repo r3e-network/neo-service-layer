@@ -129,7 +129,7 @@ public partial class EnclaveManager
     }
 
     /// <inheritdoc/>
-    public Task<bool> KmsVerifySignatureAsync(string keyIdOrPublicKeyHex, string dataHex, string signatureHex, string signingAlgorithm, CancellationToken cancellationToken = default)
+    public async Task<bool> KmsVerifySignatureAsync(string keyIdOrPublicKeyHex, string dataHex, string signatureHex, string signingAlgorithm, CancellationToken cancellationToken = default)
     {
         try
         {
