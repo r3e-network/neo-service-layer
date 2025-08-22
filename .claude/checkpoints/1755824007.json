@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250822-005327", "file": "/home/ubuntu/neo-service-layer/scripts/run-database-migrations.sh", "timestamp": "2025-08-22T00:53:27Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755823940.json |   1 +  scripts/run-database-migrations.sh  | 347 ++++++++++++++++++++++++++++++++++++  2 files changed, 348 insertions(+) "}
