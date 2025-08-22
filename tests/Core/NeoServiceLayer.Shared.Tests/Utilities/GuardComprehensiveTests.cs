@@ -434,14 +434,14 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
         }
 
         [Fact]
-        public void AgainstNullOrEmptyCollection_WithNullCollection_ShouldThrowArgumentException()
+        public void AgainstNullOrEmptyCollection_WithNullCollection_ShouldThrowArgumentNullException()
         {
             // Arrange
             List<string>? nullCollection = null;
             string paramName = "testParam";
 
             // Act & Assert
-            var exception = Assert.Throws<ArgumentException>(() => 
+            var exception = Assert.Throws<ArgumentNullException>(() => 
                 Guard.NotNullOrEmptyCollection(nullCollection, paramName));
             exception.ParamName.Should().Be(paramName);
         }
