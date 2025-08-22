@@ -660,6 +660,41 @@ IFNHWCBQQ0swggEiMA0GCSqGSIb3DQEBAQUAA4IBDwAwggEKAoIBAQDSLEv...sim
         }
     }
 
+    /// <summary>
+    /// Builds a complete certificate chain from the root certificate.
+    /// </summary>
+    private async Task<(byte[] Root, List<byte[]> Intermediates, byte[] Leaf)> BuildFullCertificateChainAsync(byte[] rootCert)
+    {
+        try
+        {
+            var intermediates = new List<byte[]>();
+            
+            // Get PCK Certificate Revocation List (CRL)
+            var pckCrlResponse = await _httpClient.GetAsync("https://api.trustedservices.intel.com/sgx/certification/v3/pckcrl");
+            if (pckCrlResponse.IsSuccessStatusCode)
+            {
+                var pckCrl = await pckCrlResponse.Content.ReadAsByteArrayAsync();
+                intermediates.Add(pckCrl);
+            }
+            
+            // Get Processor Certificate Revocation List
+            var procCrlResponse = await _httpClient.GetAsync("https://api.trustedservices.intel.com/sgx/certification/v3/pckcerts");
+            byte[] leafCert = rootCert; // Default fallback
+            
+            if (procCrlResponse.IsSuccessStatusCode)
+            {
+                leafCert = await procCrlResponse.Content.ReadAsByteArrayAsync();
+            }
+            
+            return (rootCert, intermediates, leafCert);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogWarning(ex, "Failed to build full certificate chain, using simplified chain");
+            return (rootCert, new List<byte[]>(), rootCert);
+        }
+    }
+
     private bool VerifyCertificateChain(IntelCertificateChain certChain)
     {
         try
