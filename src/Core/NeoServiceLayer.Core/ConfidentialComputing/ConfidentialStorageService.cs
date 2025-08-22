@@ -8,7 +8,7 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Services;
 using NeoServiceLayer.Core.ConfidentialComputing;
 // using NeoServiceLayer.Services.EnclaveStorage;
-// using NeoServiceLayer.Services.EnclaveStorage.Models; // TODO: Add project reference when circular dependency resolved
+// Note: EnclaveStorage models available via service injection to avoid circular references
 using NeoServiceLayer.Core.Domain;
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
