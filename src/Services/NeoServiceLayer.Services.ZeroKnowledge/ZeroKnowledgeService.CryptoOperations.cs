@@ -196,9 +196,31 @@ public partial class ZeroKnowledgeService
     /// <returns>The private key hex string.</returns>
     private async Task<string> RetrievePrivateKeyAsync(string keyId)
     {
-        // In production, this would retrieve from secure enclave storage
-        await Task.Delay(10);
-        return $"private_key_for_{keyId}_{Guid.NewGuid():N}";
+        try
+        {
+            var keyStorageKey = $"crypto_private_key_{keyId}";
+            var encryptedKeyData = await _sgxPersistence.RetrieveDataAsync(keyStorageKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(encryptedKeyData))
+            {
+                Logger.LogWarning("Private key not found for keyId {KeyId}", keyId);
+                throw new InvalidOperationException($"Private key not found for keyId: {keyId}");
+            }
+
+            var keyInfo = JsonSerializer.Deserialize<CryptoKeyInfo>(encryptedKeyData);
+            if (keyInfo?.Metadata?.ContainsKey("private_key") != true)
+            {
+                throw new InvalidOperationException($"Invalid key data structure for keyId: {keyId}");
+            }
+
+            Logger.LogDebug("Successfully retrieved private key for keyId {KeyId}", keyId);
+            return keyInfo.Metadata["private_key"].ToString() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to retrieve private key for keyId {KeyId}", keyId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -208,9 +230,31 @@ public partial class ZeroKnowledgeService
     /// <returns>The public key hex string.</returns>
     private async Task<string> RetrievePublicKeyAsync(string keyId)
     {
-        // In production, this would retrieve from storage
-        await Task.Delay(10);
-        return $"public_key_for_{keyId}_{Guid.NewGuid():N}";
+        try
+        {
+            var keyStorageKey = $"crypto_private_key_{keyId}";
+            var encryptedKeyData = await _sgxPersistence.RetrieveDataAsync(keyStorageKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(encryptedKeyData))
+            {
+                Logger.LogWarning("Key data not found for keyId {KeyId}", keyId);
+                throw new InvalidOperationException($"Key data not found for keyId: {keyId}");
+            }
+
+            var keyInfo = JsonSerializer.Deserialize<CryptoKeyInfo>(encryptedKeyData);
+            if (keyInfo?.Metadata?.ContainsKey("public_key") != true)
+            {
+                throw new InvalidOperationException($"Invalid key data structure for keyId: {keyId}");
+            }
+
+            Logger.LogDebug("Successfully retrieved public key for keyId {KeyId}", keyId);
+            return keyInfo.Metadata["public_key"].ToString() ?? string.Empty;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to retrieve public key for keyId {KeyId}", keyId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -220,9 +264,41 @@ public partial class ZeroKnowledgeService
     /// <returns>The encryption key.</returns>
     private async Task<string> RetrieveEncryptionKeyAsync(string keyId)
     {
-        // In production, this would retrieve from secure enclave storage
-        await Task.Delay(10);
-        return $"encryption_key_for_{keyId}_{Guid.NewGuid():N}";
+        try
+        {
+            var keyStorageKey = $"crypto_encryption_key_{keyId}";
+            var encryptedKeyData = await _sgxPersistence.RetrieveDataAsync(keyStorageKey, CancellationToken.None);
+            
+            if (string.IsNullOrEmpty(encryptedKeyData))
+            {
+                // Generate new encryption key if not found
+                var newKey = GenerateSecureEncryptionKey();
+                var keyData = new { encryption_key = newKey, created_at = DateTimeOffset.UtcNow };
+                await _sgxPersistence.StoreDataAsync(keyStorageKey, JsonSerializer.Serialize(keyData), TimeSpan.FromDays(365), CancellationToken.None);
+                Logger.LogInfo("Generated new encryption key for keyId {KeyId}", keyId);
+                return newKey;
+            }
+
+            var keyInfo = JsonSerializer.Deserialize<JsonElement>(encryptedKeyData);
+            if (!keyInfo.TryGetProperty("encryption_key", out var encKeyElement))
+            {
+                throw new InvalidOperationException($"Invalid encryption key data structure for keyId: {keyId}");
+            }
+
+            var encryptionKey = encKeyElement.GetString();
+            if (string.IsNullOrEmpty(encryptionKey))
+            {
+                throw new InvalidOperationException($"Empty encryption key for keyId: {keyId}");
+            }
+
+            Logger.LogDebug("Successfully retrieved encryption key for keyId {KeyId}", keyId);
+            return encryptionKey;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to retrieve encryption key for keyId {KeyId}", keyId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -231,9 +307,37 @@ public partial class ZeroKnowledgeService
     /// <param name="keyId">The key ID.</param>
     private async Task SecurelyDeleteKeyFromMemoryAsync(string keyId)
     {
-        // In production, this would securely overwrite memory
-        await Task.Delay(50);
-        Logger.LogDebug("Securely deleted key {KeyId} from memory", keyId);
+        try
+        {
+            // Securely overwrite any cached key material in memory
+            if (_keyCache.TryRemove(keyId, out var cachedKeyData))
+            {
+                // Overwrite sensitive data with random bytes before GC
+                if (cachedKeyData is byte[] keyBytes)
+                {
+                    rng.GetBytes(keyBytes);
+                    Array.Clear(keyBytes, 0, keyBytes.Length);
+                }
+                else if (cachedKeyData is string keyString)
+                {
+                    // For strings, we can't directly overwrite but we can clear references
+                    cachedKeyData = null;
+                }
+            }
+
+            // Force garbage collection to remove any remaining references
+            GC.Collect();
+            GC.WaitForPendingFinalizers();
+            GC.Collect();
+
+            await Task.Delay(10); // Brief delay for cleanup completion
+            Logger.LogDebug("Securely deleted key {KeyId} from memory", keyId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error during secure memory deletion for keyId {KeyId}", keyId);
+            throw;
+        }
     }
 
     /// <summary>
@@ -242,8 +346,27 @@ public partial class ZeroKnowledgeService
     /// <param name="keyId">The key ID.</param>
     private async Task RemoveKeyFromStorageAsync(string keyId)
     {
-        // In production, this would remove from persistent storage
-        await Task.Delay(20);
-        Logger.LogDebug("Removed key {KeyId} from storage", keyId);
+        try
+        {
+            var keyStorageKey = $"crypto_private_key_{keyId}";
+            var encryptionKeyStorageKey = $"crypto_encryption_key_{keyId}";
+            
+            // Remove private key data
+            await _sgxPersistence.DeleteDataAsync(keyStorageKey, CancellationToken.None);
+            
+            // Remove encryption key data
+            await _sgxPersistence.DeleteDataAsync(encryptionKeyStorageKey, CancellationToken.None);
+            
+            // Remove any metadata or audit trail entries
+            var metadataKey = $"crypto_key_metadata_{keyId}";
+            await _sgxPersistence.DeleteDataAsync(metadataKey, CancellationToken.None);
+            
+            Logger.LogInfo("Successfully removed key {KeyId} from persistent storage", keyId);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to remove key {KeyId} from storage", keyId);
+            throw;
+        }
     }
 }
