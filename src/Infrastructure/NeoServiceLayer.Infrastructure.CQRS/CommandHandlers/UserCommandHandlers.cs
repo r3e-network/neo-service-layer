@@ -116,7 +116,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 var user = await _userRepository.GetByIdAsync(command.UserId);
                 if (user == null)
                 {
-                    return CommandResult.Failure("User not found");
+                    throw new InvalidOperationException("User not found");
                 }
 
                 // Track changes for event
