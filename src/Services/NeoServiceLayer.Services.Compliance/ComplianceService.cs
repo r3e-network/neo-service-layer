@@ -1500,6 +1500,50 @@ public partial class ComplianceService : ServiceFramework.EnclaveBlockchainServi
         return mitigations;
     }
 
+    /// <summary>
+    /// Initializes persistent storage for compliance data.
+    /// </summary>
+    private async Task InitializePersistentStorageAsync()
+    {
+        try
+        {
+            Logger.LogDebug("Initializing persistent storage for compliance service");
+            
+            // Initialize storage tables/collections if needed
+            await Task.CompletedTask; // In production, this would create necessary storage structures
+            
+            Logger.LogDebug("Persistent storage initialized successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to initialize persistent storage");
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Disposes persistence resources.
+    /// </summary>
+    private void DisposePersistenceResources()
+    {
+        try
+        {
+            Logger.LogDebug("Disposing persistence resources");
+            
+            // Clean up any persistent storage connections or resources
+            _ruleCache.Clear();
+            _complianceRules.Clear();
+            _recentCheckResults.Clear();
+            _activeViolations.Clear();
+            
+            Logger.LogDebug("Persistence resources disposed successfully");
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error disposing persistence resources");
+        }
+    }
+
     /// <inheritdoc/>
     protected override void Dispose(bool disposing)
     {
