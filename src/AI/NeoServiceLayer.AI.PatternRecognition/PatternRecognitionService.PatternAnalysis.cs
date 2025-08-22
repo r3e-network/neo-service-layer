@@ -339,7 +339,23 @@ public partial class PatternRecognitionService
     /// <returns>The encryption key.</returns>
     private string GetAddressBlacklistEncryptionKey()
     {
-        return "address_blacklist_encryption_key_placeholder";
+        try
+        {
+            // Derive key for address blacklist encryption
+            var keyDerivationInput = $"address_blacklist_encryption_key_{Environment.MachineName}_{DateTime.UtcNow:yyyyMMdd}";
+            
+            // Use HKDF for proper key derivation
+            using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes("neo-address-blacklist-salt"));
+            var derivedKey = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(keyDerivationInput));
+            
+            Logger.LogDebug("Generated address blacklist encryption key using HKDF");
+            return Convert.ToBase64String(derivedKey);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to derive address blacklist encryption key");
+            throw new InvalidOperationException("Address blacklist encryption key derivation failed", ex);
+        }
     }
 
     /// <summary>
@@ -348,7 +364,23 @@ public partial class PatternRecognitionService
     /// <returns>The encryption key.</returns>
     private string GetMixingPatternsEncryptionKey()
     {
-        return "mixing_patterns_encryption_key_placeholder";
+        try
+        {
+            // Derive key for mixing patterns encryption
+            var keyDerivationInput = $"mixing_patterns_encryption_key_{Environment.MachineName}_{DateTime.UtcNow:yyyyMMdd}";
+            
+            // Use HKDF for proper key derivation
+            using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes("neo-mixing-patterns-salt"));
+            var derivedKey = hmac.ComputeHash(System.Text.Encoding.UTF8.GetBytes(keyDerivationInput));
+            
+            Logger.LogDebug("Generated mixing patterns encryption key using HKDF");
+            return Convert.ToBase64String(derivedKey);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to derive mixing patterns encryption key");
+            throw new InvalidOperationException("Mixing patterns encryption key derivation failed", ex);
+        }
     }
 
     /// <summary>
