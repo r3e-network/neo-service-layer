@@ -14,6 +14,7 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Abstractions
         Task<User> CreateAsync(User user);
         Task<User> UpdateAsync(User user);
         Task AssignRoleAsync(Guid userId, Guid roleId);
+        Task AssignRoleAsync(Guid userId, Guid roleId, string assignedBy, DateTime? expiresAt);
         Task InvalidateAllSessionsAsync(Guid userId);
         Task<List<Role>> GetUserRolesAsync(Guid userId);
     }
