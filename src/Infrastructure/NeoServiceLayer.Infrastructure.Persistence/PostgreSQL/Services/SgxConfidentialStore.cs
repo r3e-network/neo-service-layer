@@ -41,11 +41,11 @@ namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL.Services
 
     public class SgxConfidentialStore : ISgxConfidentialStore
     {
-        private readonly NeoServiceDbContext _context;
+        private readonly NeoServiceLayerDbContext _context;
         private readonly ILogger<SgxConfidentialStore> _logger;
 
         public SgxConfidentialStore(
-            NeoServiceDbContext context,
+            NeoServiceLayerDbContext context,
             ILogger<SgxConfidentialStore> logger)
         {
             _context = context ?? throw new ArgumentNullException(nameof(context));
