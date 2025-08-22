@@ -488,8 +488,7 @@ public partial class PredictionService : AIServiceBase, IPredictionService
             }
             catch (Exception ex)
             {
-                Logger.LogError(ex, "Failed to generate market forecast {ForecastId}", forecastId);
-                Console.WriteLine($"EXCEPTION in ForecastMarketAsync: {ex.Message}");
+                Logger.LogError(ex, "Failed to generate market forecast {ForecastId}: {ErrorMessage}", forecastId, ex.Message);
 
                 // Return a more complete fallback forecast for tests
                 var currentPrice = request.CurrentPrice > 0 ? request.CurrentPrice : 100m;
