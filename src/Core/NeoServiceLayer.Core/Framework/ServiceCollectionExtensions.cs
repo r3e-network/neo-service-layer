@@ -3,12 +3,10 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Core.Caching;
+using NeoServiceLayer.Infrastructure.Resilience;
+using NeoServiceLayer.Infrastructure.EventSourcing;
+using NeoServiceLayer.Infrastructure.ServiceMesh;
 using NeoServiceLayer.Core.ConfidentialComputing;
-using NeoServiceLayer.Core.Cryptography;
-using NeoServiceLayer.Core.Gateway;
-using NeoServiceLayer.Core.Messaging;
-using NeoServiceLayer.Core.Monitoring;
 using NeoServiceLayer.Core.Services;
 using System;
 
