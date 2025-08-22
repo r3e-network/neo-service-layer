@@ -49,7 +49,7 @@ namespace NeoServiceLayer.Services.Authentication.Configuration
 
                 if (redisConfig.Exists())
                 {
-                    var host = redisConfig["Host"] ?? "localhost";
+                    var host = redisConfig["Host"] ?? Environment.GetEnvironmentVariable("REDIS_HOST") ?? "localhost";
                     var port = redisConfig["Port"] ?? "6379";
                     var password = redisConfig["Password"];
                     var ssl = redisConfig.GetValue<bool>("Ssl", false);
@@ -71,7 +71,7 @@ namespace NeoServiceLayer.Services.Authentication.Configuration
                 }
                 else
                 {
-                    options.Configuration = configuration.GetConnectionString("Redis") ?? "localhost:6379";
+                    options.Configuration = configuration.GetConnectionString("Redis") ?? Environment.GetEnvironmentVariable("REDIS_CONNECTION_STRING") ?? "localhost:6379";
                     options.InstanceName = "NeoServiceLayer";
                 }
             });
