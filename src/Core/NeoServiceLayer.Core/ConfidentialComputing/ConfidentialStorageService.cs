@@ -544,10 +544,10 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         {
             return policy switch
             {
-                SealingPolicy.MrEnclave => SealingPolicyType.MrEnclave,
-                SealingPolicy.MrSigner => SealingPolicyType.MrSigner,
-                SealingPolicy.Custom => SealingPolicyType.MrSigner, // Default fallback
-                _ => SealingPolicyType.MrSigner
+                SealingPolicy.MrEnclave => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave,
+                SealingPolicy.MrSigner => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner,
+                SealingPolicy.Custom => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner, // Default fallback
+                _ => NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner
             };
         }
 
@@ -555,8 +555,8 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         {
             return policyType switch
             {
-                SealingPolicyType.MrEnclave => SealingPolicy.MrEnclave,
-                SealingPolicyType.MrSigner => SealingPolicy.MrSigner,
+                NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrEnclave => SealingPolicy.MrEnclave,
+                NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType.MrSigner => SealingPolicy.MrSigner,
                 _ => SealingPolicy.MrSigner
             };
         }
