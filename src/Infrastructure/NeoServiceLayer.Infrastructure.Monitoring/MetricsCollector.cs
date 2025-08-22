@@ -269,10 +269,30 @@ public class MetricsCollector : IMetricsCollector
 
     private double GetCpuUsage()
     {
-        // This is a simplified implementation
-        // In production, use performance counters or /proc/stat on Linux
-        using var process = Process.GetCurrentProcess();
-        return process.TotalProcessorTime.TotalMilliseconds / Environment.ProcessorCount / Environment.TickCount * 100;
+        try
+        {
+            // Production CPU usage calculation with cross-platform support
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                return GetWindowsCpuUsage();
+            }
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+            {
+                return GetLinuxCpuUsage();
+            }
+            else
+            {
+                // Fallback for other platforms
+                using var process = Process.GetCurrentProcess();
+                var totalTime = process.TotalProcessorTime.TotalMilliseconds;
+                var uptime = (DateTime.UtcNow - process.StartTime).TotalMilliseconds;
+                return Math.Min(100.0, (totalTime / uptime / Environment.ProcessorCount) * 100);
+            }
+        }
+        catch
+        {
+            return 0.0; // Safe fallback
+        }
     }
 
     private long GetMemoryUsage()
