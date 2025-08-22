@@ -222,13 +222,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 });
 
                 _logger.LogInformation("Password changed for user {UserId}", user.Id);
-
-                return CommandResult.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error changing password for user {UserId}", command.UserId);
-                return CommandResult.Failure($"Failed to change password: {ex.Message}");
+                throw;
             }
         }
     }
