@@ -6,15 +6,16 @@ services:
     image: postgres:16-alpine
     container_name: neo-postgres
     ports:
-      - "5432:5432"
+      - "${POSTGRES_PORT:-5432}:5432"
     environment:
-      - POSTGRES_DB=neo_service_layer
-      - POSTGRES_USER=neo_user
+      - POSTGRES_DB=${POSTGRES_DB:-neoservice}
+      - POSTGRES_USER=${POSTGRES_USER:-neoservice_app}
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:?POSTGRES_PASSWORD environment variable is required}
       - POSTGRES_INITDB_ARGS=--encoding=UTF-8 --lc-collate=C --lc-ctype=C
     volumes:
       - neo-postgres-data:/var/lib/postgresql/data
-      - ./src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/PostgreSQL/Migrations:/docker-entrypoint-initdb.d
+      - ./src/Infrastructure/NeoServiceLayer.Infrastructure.Persistence/Migrations:/docker-entrypoint-initdb.d
+      - ./scripts/postgresql-init.sh:/docker-entrypoint-initdb.d/00-init.sh:ro
     restart: unless-stopped
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -d $${POSTGRES_DB} -U $${POSTGRES_USER}"]
