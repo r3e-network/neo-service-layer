@@ -10,7 +10,6 @@ using NeoServiceLayer.Core.Events;
 using NeoServiceLayer.Services.Authentication;
 using NeoServiceLayer.Services.Authentication.Repositories;
 using NeoServiceLayer.Services.Authentication.Models;
-using NeoServiceLayer.Services.UserManagement;
 
 namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
 {
