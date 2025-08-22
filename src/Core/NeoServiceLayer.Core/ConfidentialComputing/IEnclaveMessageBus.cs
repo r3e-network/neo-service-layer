@@ -754,7 +754,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return Task.FromResult(new SubscriptionMetrics
             {
                 SubscriptionId = SubscriptionId,
-                ProcessedMessages = ProcessedMessageCount
+                MessagesProcessed = ProcessedMessageCount
             });
         }
 
@@ -828,7 +828,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         {
             return Task.FromResult(new ServiceMetrics
             {
-                ServiceId = ServiceId,
+                ServiceName = ServiceName,
                 RequestsHandled = HandledRequestCount
             });
         }
