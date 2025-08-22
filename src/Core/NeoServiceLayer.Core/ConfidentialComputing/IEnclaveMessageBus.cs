@@ -842,7 +842,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public string ServiceId { get; } = Guid.NewGuid().ToString();
         public string ServiceName { get; }
         public bool IsActive { get; } = true;
-        public int HandledRequestCount { get; } = 0;
+        public long HandledRequestCount { get; } = 0;
 
         public TemporaryConfidentialServiceRegistration(string serviceName)
         {
