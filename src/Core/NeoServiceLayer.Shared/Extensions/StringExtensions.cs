@@ -299,23 +299,34 @@ public static class StringExtensions
         if (value.IsNullOrEmpty())
             return string.Empty;
 
-        // Split on common word separators and capitalize each word
-        var words = value.Split(new char[] { '-', '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
-        if (words.Length == 0)
-            return string.Empty;
-
-        var result = new StringBuilder();
-        foreach (var word in words)
+        // First check if it contains separators (hyphen, underscore, space)
+        if (value.Contains('-') || value.Contains('_') || value.Contains(' '))
         {
-            if (word.Length > 0)
-            {
-                result.Append(char.ToUpperInvariant(word[0]));
-                if (word.Length > 1)
-                    result.Append(word[1..].ToLowerInvariant());
-            }
-        }
+            // Split on common word separators and capitalize each word
+            var words = value.Split(new char[] { '-', '_', ' ' }, StringSplitOptions.RemoveEmptyEntries);
+            if (words.Length == 0)
+                return string.Empty;
 
-        return result.ToString();
+            var result = new StringBuilder();
+            foreach (var word in words)
+            {
+                if (word.Length > 0)
+                {
+                    result.Append(char.ToUpperInvariant(word[0]));
+                    if (word.Length > 1)
+                        result.Append(word[1..].ToLowerInvariant());
+                }
+            }
+            return result.ToString();
+        }
+        else
+        {
+            // Handle camelCase -> PascalCase conversion by just capitalizing first letter
+            if (value.Length == 1)
+                return value.ToUpperInvariant();
+            
+            return char.ToUpperInvariant(value[0]) + value[1..];
+        }
     }
 
     /// <summary>
