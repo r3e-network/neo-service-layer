@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.Domain;
-using NeoServiceLayer.Services.Core.SGX;
 using NeoServiceLayer.Tee.Enclave;
 
 namespace NeoServiceLayer.Core.ConfidentialComputing
