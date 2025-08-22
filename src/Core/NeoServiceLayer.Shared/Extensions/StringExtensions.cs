@@ -163,9 +163,23 @@ public static class StringExtensions
     /// </summary>
     /// <param name="value">The string to truncate.</param>
     /// <param name="maxLength">The maximum length.</param>
-    /// <param name="suffix">The suffix to append if truncated. Defaults to "...".</param>
     /// <returns>The truncated string.</returns>
-    public static string Truncate(this string value, int maxLength, string suffix = "...")
+    public static string Truncate(this string value, int maxLength)
+    {
+        if (value.IsNullOrEmpty() || value.Length <= maxLength)
+            return value ?? string.Empty;
+
+        return value[..maxLength];
+    }
+
+    /// <summary>
+    /// Truncates the string to the specified length with a suffix.
+    /// </summary>
+    /// <param name="value">The string to truncate.</param>
+    /// <param name="maxLength">The maximum length.</param>
+    /// <param name="suffix">The suffix to append if truncated.</param>
+    /// <returns>The truncated string with suffix.</returns>
+    public static string Truncate(this string value, int maxLength, string suffix)
     {
         if (value.IsNullOrEmpty() || value.Length <= maxLength)
             return value ?? string.Empty;
