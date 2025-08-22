@@ -469,7 +469,7 @@ public static class StringExtensions
     /// <returns>True if the string starts with the prefix ignoring case; otherwise, false.</returns>
     public static bool StartsWithIgnoreCase(this string value, string prefix)
     {
-        if (value.IsNullOrEmpty() || prefix.IsNullOrEmpty())
+        if (value == null || prefix == null)
             return false;
 
         return value.StartsWith(prefix, StringComparison.OrdinalIgnoreCase);
