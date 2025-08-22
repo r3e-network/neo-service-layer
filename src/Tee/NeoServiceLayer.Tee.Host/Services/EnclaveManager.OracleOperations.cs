@@ -212,7 +212,7 @@ public partial class EnclaveManager
     }
 
     /// <inheritdoc/>
-    public Task<bool> EventUnsubscribeAsync(string subscriptionId, CancellationToken cancellationToken = default)
+    public async Task<bool> EventUnsubscribeAsync(string subscriptionId, CancellationToken cancellationToken = default)
     {
         try
         {
