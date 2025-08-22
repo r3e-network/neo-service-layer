@@ -64,8 +64,8 @@ public class BlockchainClientFactory : IBlockchainClientFactory
 
             return blockchainType switch
             {
-                BlockchainType.NeoN3 => throw new NotImplementedException("Neo N3 client temporarily disabled"),
-                BlockchainType.NeoX => throw new NotImplementedException("Neo X client temporarily disabled"),
+                BlockchainType.NeoN3 => CreateNeoN3Client(),
+                BlockchainType.NeoX => CreateNeoXClient(),
                 _ => throw new NotSupportedException($"Blockchain type {blockchainType} is not supported")
             };
         }
@@ -82,29 +82,53 @@ public class BlockchainClientFactory : IBlockchainClientFactory
         return new[] { BlockchainType.NeoN3, BlockchainType.NeoX };
     }
 
-    /*
     /// <summary>
     /// Creates a Neo N3 blockchain client.
     /// </summary>
     /// <returns>The Neo N3 blockchain client.</returns>
     private IBlockchainClient CreateNeoN3Client()
     {
-        // Temporarily disabled - complex blockchain dependencies
-        throw new NotImplementedException("Neo N3 client temporarily disabled");
+        try
+        {
+            var config = _configuration.GetSection("Blockchain:NeoN3");
+            var rpcEndpoint = config["RpcEndpoint"] ?? "http://localhost:20332";
+            var networkMagic = config.GetValue<uint>("NetworkMagic", 860833102);
+            
+            _logger.LogInformation("Initializing Neo N3 client with endpoint {RpcEndpoint}", rpcEndpoint);
+            
+            // Create Neo N3 client with production configuration
+            return new NeoN3BlockchainClient(rpcEndpoint, networkMagic, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create Neo N3 client");
+            throw new InvalidOperationException("Neo N3 blockchain client creation failed", ex);
+        }
     }
-    */
 
-    /*
     /// <summary>
     /// Creates a Neo X blockchain client.
     /// </summary>
     /// <returns>The Neo X blockchain client.</returns>
     private IBlockchainClient CreateNeoXClient()
     {
-        // Temporarily disabled - complex blockchain dependencies
-        throw new NotImplementedException("Neo X client temporarily disabled");
+        try
+        {
+            var config = _configuration.GetSection("Blockchain:NeoX");
+            var rpcEndpoint = config["RpcEndpoint"] ?? "https://neox-rpc.t4.neo.org";
+            var chainId = config.GetValue<long>("ChainId", 12227332);
+            
+            _logger.LogInformation("Initializing Neo X client with endpoint {RpcEndpoint}", rpcEndpoint);
+            
+            // Create Neo X client with production configuration
+            return new NeoXBlockchainClient(rpcEndpoint, chainId, _logger);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to create Neo X client");
+            throw new InvalidOperationException("Neo X blockchain client creation failed", ex);
+        }
     }
-    */
 }
 
 /// <summary>
