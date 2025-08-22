@@ -107,7 +107,7 @@ namespace NeoServiceLayer.Shared.Tests.Utilities
 
             // Act & Assert
             await Assert.ThrowsAsync<InvalidOperationException>(
-                () => RetryHelper.ExecuteAsync(operation, maxRetries: 0));
+                () => RetryHelper.ExecuteAsync(operation, maxRetries: 0, retryCondition: ex => ex is InvalidOperationException));
             attemptCount.Should().Be(1);
         }
 
