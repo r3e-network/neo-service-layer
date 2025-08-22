@@ -689,61 +689,6 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return Task.FromResult<IConfidentialServiceRegistration>(new TemporaryConfidentialServiceRegistration(serviceName));
         }
 
-        public Task<bool> JoinChannelAsync(string channelId, string participantId, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(true);
-        }
-
-        public Task<bool> LeaveChannelAsync(string channelId, string participantId, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(true);
-        }
-
-        public Task<ConfidentialMessageResult> SendChannelMessageAsync<T>(string channelId, T message, ConfidentialMessageOptions? messageOptions = null, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(new ConfidentialMessageResult
-            {
-                Success = true,
-                MessageId = Guid.NewGuid().ToString(),
-                Topic = channelId
-            });
-        }
-
-        public Task<List<ConfidentialMessage<T>>> GetChannelHistoryAsync<T>(string channelId, int maxMessages = 100, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(new List<ConfidentialMessage<T>>());
-        }
-
-        public Task<ConfidentialRpcResult<TResponse>> CallServiceAsync<TRequest, TResponse>(string serviceName, string method, TRequest request, ConfidentialRpcOptions? options = null, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(new ConfidentialRpcResult<TResponse>
-            {
-                Success = false,
-                ErrorMessage = "Placeholder implementation"
-            });
-        }
-
-        public Task<ConfidentialServiceRegistrationResult> RegisterServiceAsync(string serviceName, ConfidentialServiceOptions serviceOptions, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(new ConfidentialServiceRegistrationResult
-            {
-                Success = true,
-                ServiceId = Guid.NewGuid().ToString(),
-                ServiceName = serviceName
-            });
-        }
-
-        public Task<bool> UnregisterServiceAsync(string serviceId, CancellationToken cancellationToken = default)
-        {
-            _logger.LogWarning("EnclaveMessageBus: Using placeholder implementation");
-            return Task.FromResult(true);
-        }
 
         public Task<MessageBusStatistics> GetStatisticsAsync(CancellationToken cancellationToken = default)
         {
