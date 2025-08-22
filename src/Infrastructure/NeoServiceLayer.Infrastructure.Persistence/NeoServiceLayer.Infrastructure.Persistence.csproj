@@ -22,7 +22,6 @@
   <ItemGroup>
     <ProjectReference Include="../../Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj" />
     <ProjectReference Include="../../Core/NeoServiceLayer.Shared/NeoServiceLayer.Shared.csproj" />
-    <ProjectReference Include="../../Core/NeoServiceLayer.ServiceFramework/NeoServiceLayer.ServiceFramework.csproj" />
   </ItemGroup>
 
 </Project>
