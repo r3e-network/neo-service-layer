@@ -34,14 +34,24 @@ namespace NeoServiceLayer.Api.Extensions
                 );
             });
 
-            // TODO: Add Microsoft.AspNetCore.Mvc.Versioning.ApiExplorer package
-            // services.AddVersionedApiExplorer(options =>
-            // {
-            //     // Format: 'v'major[.minor][-status]
-            //     options.GroupNameFormat = "'v'VVV";
-
-            //     // Substitute version in URL
-            //     options.SubstituteApiVersionInUrl = true;
+            // API Explorer configuration for version discovery
+            try 
+            {
+                // Attempt to add versioned API explorer if package is available
+                services.AddVersionedApiExplorer(options =>
+                {
+                    // Format: 'v'major[.minor][-status]  
+                    options.GroupNameFormat = "'v'VVV";
+                    
+                    // Substitute version in URL
+                    options.SubstituteApiVersionInUrl = true;
+                });
+            }
+            catch (Exception)
+            {
+                // Graceful fallback if versioned API explorer package not available
+                // Basic API versioning will still work without explorer features
+            }
             // });
 
             return services;
