@@ -244,14 +244,28 @@ public class NeoServiceLayerDbContext : DbContext
             entity.HasIndex(e => new { e.ServiceName, e.KeyType });
         });
 
-        // Configure Oracle Data Feeds
-        modelBuilder.Entity<OracleDataFeed>(entity =>
+        // Configure Oracle Data Feeds (Domain-specific entities)
+        modelBuilder.Entity<Entities.OracleEntities.OracleDataFeed>(entity =>
+        {
+            entity.HasKey(e => e.Id);
+            entity.Property(e => e.FeedId).IsRequired().HasMaxLength(100);
+            entity.Property(e => e.Name).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.FeedType).IsRequired().HasMaxLength(50);
+            entity.HasIndex(e => e.FeedId).IsUnique();
+            entity.HasIndex(e => e.UpdatedAt);
+            entity.HasIndex(e => new { e.IsActive, e.FeedType });
+        });
+
+        // Configure Service Oracle Data Feeds (Service-oriented entities)
+        modelBuilder.Entity<ServiceOracleDataFeed>(entity =>
         {
             entity.HasKey(e => e.Id);
             entity.Property(e => e.FeedId).IsRequired().HasMaxLength(100);
             entity.Property(e => e.DataSource).IsRequired().HasMaxLength(255);
+            entity.Property(e => e.DataType).IsRequired().HasMaxLength(50);
             entity.HasIndex(e => e.FeedId).IsUnique();
             entity.HasIndex(e => e.LastUpdated);
+            entity.HasIndex(e => new { e.Status, e.DataType });
         });
 
         // Configure Voting Proposals
