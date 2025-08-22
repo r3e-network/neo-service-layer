@@ -258,21 +258,21 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 var user = await _userRepository.GetByIdAsync(command.UserId);
                 if (user == null)
                 {
-                    return CommandResult.Failure("User not found");
+                    throw new InvalidOperationException("User not found");
                 }
 
                 // Validate role exists
                 var role = await _roleRepository.GetByIdAsync(command.RoleId);
                 if (role == null)
                 {
-                    return CommandResult.Failure("Role not found");
+                    throw new InvalidOperationException("Role not found");
                 }
 
                 // Check if already assigned
                 var existingRoles = await _userRepository.GetUserRolesAsync(command.UserId);
                 if (existingRoles.Any(r => r.Id == command.RoleId))
                 {
-                    return CommandResult.Failure("Role already assigned to user");
+                    throw new InvalidOperationException("Role already assigned to user");
                 }
 
                 // Assign role
