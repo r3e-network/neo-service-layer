@@ -540,7 +540,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             return transaction;
         }
 
-        private NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType MapSealingPolicy(SealingPolicy policy)
+        // private NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType MapSealingPolicy(SealingPolicy policy) // TODO: Restore when circular dependency resolved
         {
             return policy switch
             {
@@ -551,7 +551,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             };
         }
 
-        private SealingPolicy MapSealingPolicyType(NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType policyType)
+        // private SealingPolicy MapSealingPolicyType(NeoServiceLayer.Services.EnclaveStorage.Models.SealingPolicyType policyType) // TODO: Restore when circular dependency resolved
         {
             return policyType switch
             {
