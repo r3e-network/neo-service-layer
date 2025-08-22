@@ -369,13 +369,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
                 });
 
                 _logger.LogInformation("User {UserId} locked by {LockedBy}", command.UserId, command.LockedBy);
-
-                return CommandResult.Success();
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error locking user {UserId}", command.UserId);
-                return CommandResult.Failure($"Failed to lock user: {ex.Message}");
+                throw;
             }
         }
     }
