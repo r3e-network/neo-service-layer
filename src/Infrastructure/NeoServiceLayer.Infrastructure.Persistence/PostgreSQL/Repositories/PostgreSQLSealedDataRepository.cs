@@ -379,7 +379,6 @@ public interface ISealedDataRepository
     Task<bool> DeleteByKeyAsync(string key, CancellationToken cancellationToken = default);
     Task DeleteByKeyAsync(string key, string serviceName, CancellationToken cancellationToken = default);
     Task<int> CleanupExpiredAsync(CancellationToken cancellationToken = default);
-    Task CleanupExpiredAsync(CancellationToken cancellationToken = default);
     Task<long> GetStorageUsageAsync(string? serviceName = null, CancellationToken cancellationToken = default);
     Task<Dictionary<string, ServiceStorageInfo>> GetStorageStatisticsAsync(CancellationToken cancellationToken = default);
 }
