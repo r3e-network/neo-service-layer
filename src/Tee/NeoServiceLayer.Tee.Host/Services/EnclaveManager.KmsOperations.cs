@@ -221,7 +221,7 @@ public partial class EnclaveManager
     }
 
     /// <inheritdoc/>
-    public Task<bool> KmsDeleteKeyAsync(string keyId, CancellationToken cancellationToken = default)
+    public async Task<bool> KmsDeleteKeyAsync(string keyId, CancellationToken cancellationToken = default)
     {
         try
         {
