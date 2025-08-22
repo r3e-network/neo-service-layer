@@ -386,8 +386,16 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
 
     public class UserUpdatedEvent : DomainEventBase
     {
+        public UserUpdatedEvent(Guid userId, Dictionary<string, object> changes, string initiatedBy)
+            : base(userId.ToString(), "User", 1, initiatedBy)
+        {
+            UserId = userId;
+            Changes = changes;
+            UpdatedAt = DateTime.UtcNow;
+        }
+
         public Guid UserId { get; set; }
-        public Dictionary<string, object> Changes { get; set; }
+        public Dictionary<string, object> Changes { get; set; } = new Dictionary<string, object>();
         public DateTime UpdatedAt { get; set; }
     }
 
