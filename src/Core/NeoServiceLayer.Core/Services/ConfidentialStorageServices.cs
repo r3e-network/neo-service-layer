@@ -167,6 +167,98 @@ namespace NeoServiceLayer.Core.Services
             _logger.LogWarning("TemporaryEnclaveStorageService: Using in-memory placeholder - NOT SECURE for production");
             return Task.FromResult<IEnumerable<string>>(_secureStorage.Keys);
         }
+
+        public Task<SealResult> SealDataAsync(SealDataRequest request, BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder seal operation - NOT SECURE for production");
+            _secureStorage[request.Key] = request.Data;
+            return Task.FromResult(new SealResult
+            {
+                Success = true,
+                StorageId = Guid.NewGuid().ToString(),
+                SealedSize = request.Data.Length,
+                Fingerprint = Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(request.Data)),
+                ExpiresAt = DateTime.UtcNow.AddHours(request.Policy.ExpirationHours)
+            });
+        }
+
+        public Task<UnsealResult> UnsealDataAsync(string key, BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder unseal operation - NOT SECURE for production");
+            if (_secureStorage.TryGetValue(key, out var data))
+            {
+                return Task.FromResult(new UnsealResult
+                {
+                    Success = true,
+                    Data = data,
+                    Metadata = new Dictionary<string, object>(),
+                    LastAccessed = DateTime.UtcNow
+                });
+            }
+            return Task.FromResult(new UnsealResult
+            {
+                Success = false,
+                ErrorMessage = "Key not found"
+            });
+        }
+
+        public Task<ListSealedItemsResult> ListSealedItemsAsync(ListSealedItemsRequest request, BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder list operation - NOT SECURE for production");
+            var items = _secureStorage.Keys
+                .Where(k => request.Prefix == null || k.StartsWith(request.Prefix))
+                .Take(request.MaxItems)
+                .Select(k => new SealedItem
+                {
+                    Key = k,
+                    Size = _secureStorage[k].Length,
+                    Created = DateTime.UtcNow.AddDays(-1),
+                    LastAccessed = DateTime.UtcNow,
+                    PolicyType = "MrSigner"
+                })
+                .ToList();
+            
+            return Task.FromResult(new ListSealedItemsResult { Items = items });
+        }
+
+        public Task<DeleteResult> DeleteSealedDataAsync(string key, BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder delete operation - NOT SECURE for production");
+            var removed = _secureStorage.Remove(key);
+            return Task.FromResult(new DeleteResult
+            {
+                Success = true,
+                Deleted = removed,
+                Shredded = removed
+            });
+        }
+
+        public Task<BackupResult> BackupSealedDataAsync(BackupRequest request, BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder backup operation - NOT SECURE for production");
+            return Task.FromResult(new BackupResult
+            {
+                Success = true,
+                BackupId = Guid.NewGuid().ToString(),
+                ItemsBackedUp = _secureStorage.Count,
+                TotalSize = _secureStorage.Values.Sum(v => v.Length)
+            });
+        }
+
+        public Task<StorageStatistics> GetStorageStatisticsAsync(BlockchainType blockchainType)
+        {
+            _logger.LogWarning("TemporaryEnclaveStorageService: Using placeholder statistics operation - NOT SECURE for production");
+            var totalSize = _secureStorage.Values.Sum(v => (long)v.Length);
+            return Task.FromResult(new StorageStatistics
+            {
+                TotalItems = _secureStorage.Count,
+                TotalSize = totalSize,
+                AvailableSpace = 1000000000, // 1GB placeholder
+                LastBackup = DateTime.UtcNow.AddDays(-1),
+                ServiceCount = 1,
+                ServiceStorage = new Dictionary<string, object> { ["test"] = totalSize }
+            });
+        }
     }
 
     // Configuration classes for missing services
