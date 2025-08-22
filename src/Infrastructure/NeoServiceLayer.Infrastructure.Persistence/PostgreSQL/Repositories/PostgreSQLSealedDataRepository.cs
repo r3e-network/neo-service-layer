@@ -5,7 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
-using NeoServiceLayer.Services.EnclaveStorage.Models;
+using NeoServiceLayer.ServiceFramework.Models;
 
 namespace NeoServiceLayer.Infrastructure.Persistence.PostgreSQL;
 
