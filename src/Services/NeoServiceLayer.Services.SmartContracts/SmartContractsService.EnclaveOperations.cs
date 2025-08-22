@@ -231,8 +231,14 @@ public partial class SmartContractsService
     /// </summary>
     private string GenerateContractId(byte[] contractCode)
     {
-        // In production, this would use proper hashing
-        return Convert.ToBase64String(System.Security.Cryptography.SHA256.HashData(contractCode)).Substring(0, 16);
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var hashBytes = sha256.ComputeHash(contractCode);
+        
+        // Use the first 16 bytes of the hash for the contract ID
+        var contractIdBytes = new byte[16];
+        Array.Copy(hashBytes, 0, contractIdBytes, 0, 16);
+        
+        return Convert.ToHexString(contractIdBytes).ToLowerInvariant();
     }
 
     /// <summary>
@@ -248,8 +254,24 @@ public partial class SmartContractsService
     /// </summary>
     private string GenerateStateHash(string contractHash)
     {
-        // In production, this would fetch actual contract state
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes($"state-{contractHash}").Take(16).ToArray());
+        try
+        {
+            // In production, this would fetch and hash the actual contract state from storage
+            var stateKey = $"contract_state_{contractHash}";
+            
+            // For now, generate a deterministic hash based on contract hash and current state
+            var stateData = $"{contractHash}-{DateTimeOffset.UtcNow:yyyyMMdd}-state";
+            
+            using var sha256 = System.Security.Cryptography.SHA256.Create();
+            var hashBytes = sha256.ComputeHash(System.Text.Encoding.UTF8.GetBytes(stateData));
+            
+            return Convert.ToHexString(hashBytes).Substring(0, 32).ToLowerInvariant();
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to generate state hash for contract {ContractHash}", contractHash);
+            throw;
+        }
     }
 
     /// <summary>
@@ -313,9 +335,24 @@ public partial class SmartContractsService
     /// </summary>
     private async Task<int> GetCurrentBlockNumberAsync()
     {
-        // In production, this would query the blockchain
-        await Task.CompletedTask;
-        return new Random().Next(1000000, 2000000);
+        try
+        {
+            // In production, this would query the actual blockchain node
+            // For now, simulate with a realistic incrementing block number
+            var baseBlock = 1000000;
+            var daysSinceEpoch = (DateTimeOffset.UtcNow - DateTimeOffset.UnixEpoch).Days;
+            var blocksPerDay = 5760; // Approximate blocks per day for Neo (15s block time)
+            
+            var currentBlock = baseBlock + (daysSinceEpoch * blocksPerDay) + (DateTimeOffset.UtcNow.Hour * 240);
+            
+            await Task.Delay(10); // Simulate network call
+            return currentBlock;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to get current block number");
+            throw;
+        }
     }
 
     /// <summary>
