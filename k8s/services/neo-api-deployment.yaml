@@ -1,0 +1,284 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: neo-api-config
+  namespace: neo-service-layer
+data:
+  appsettings.Production.json: |
+    {
+      "Logging": {
+        "LogLevel": {
+          "Default": "Information",
+          "Microsoft.AspNetCore": "Warning",
+          "Microsoft.EntityFrameworkCore": "Warning"
+        }
+      },
+      "AllowedHosts": "*",
+      "Kestrel": {
+        "Endpoints": {
+          "Http": {
+            "Url": "http://+:80"
+          },
+          "Https": {
+            "Url": "https://+:443"
+          }
+        }
+      },
+      "SGX": {
+        "Mode": "Simulation",
+        "EnclaveLibraryPath": "/app/enclave.signed.so"
+      },
+      "OpenTelemetry": {
+        "ServiceName": "NeoServiceLayer.Api",
+        "ServiceVersion": "1.0.0",
+        "OtlpEndpoint": "http://otel-collector:4317"
+      },
+      "Monitoring": {
+        "Enabled": true,
+        "MetricsInterval": 60,
+        "HealthCheckInterval": 30
+      }
+    }
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: neo-api
+  namespace: neo-service-layer
+  labels:
+    app: neo-api
+    component: api
+    tier: backend
+spec:
+  replicas: 3
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxSurge: 1
+      maxUnavailable: 0
+  selector:
+    matchLabels:
+      app: neo-api
+  template:
+    metadata:
+      labels:
+        app: neo-api
+        component: api
+        tier: backend
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "80"
+        prometheus.io/path: "/metrics"
+    spec:
+      serviceAccountName: neo-api-sa
+      initContainers:
+      - name: wait-for-postgres
+        image: busybox:latest
+        command: ['sh', '-c', 'until nc -z postgres-service 5432; do echo waiting for postgres; sleep 2; done;']
+      - name: run-migrations
+        image: neoservicelayer/api:latest
+        imagePullPolicy: IfNotPresent
+        env:
+        - name: ConnectionStrings__PostgreSQL
+          value: "Host=postgres-service;Port=5432;Database=$(POSTGRES_DB);Username=$(POSTGRES_USER);Password=$(POSTGRES_PASSWORD);Include Error Detail=true"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-db
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        command: ["/bin/sh", "-c", "dotnet ef database update"]
+      containers:
+      - name: neo-api
+        image: neoservicelayer/api:latest
+        imagePullPolicy: IfNotPresent
+        ports:
+        - containerPort: 80
+          name: http
+        - containerPort: 443
+          name: https
+        env:
+        - name: ASPNETCORE_ENVIRONMENT
+          value: "Production"
+        - name: ASPNETCORE_URLS
+          value: "http://+:80;https://+:443"
+        - name: ConnectionStrings__PostgreSQL
+          value: "Host=postgres-service;Port=5432;Database=$(POSTGRES_DB);Username=$(POSTGRES_USER);Password=$(POSTGRES_PASSWORD);Include Error Detail=true;Log Parameters=true"
+        - name: ConnectionStrings__Redis
+          value: "redis-service:6379,password=$(REDIS_PASSWORD)"
+        - name: POSTGRES_DB
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-db
+        - name: POSTGRES_USER
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-user
+        - name: POSTGRES_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: postgres-secret
+              key: postgres-password
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: redis-password
+        - name: JWT_SECRET_KEY
+          valueFrom:
+            secretKeyRef:
+              name: jwt-secret
+              key: jwt-secret-key
+        volumeMounts:
+        - name: config
+          mountPath: /app/appsettings.Production.json
+          subPath: appsettings.Production.json
+        - name: certificates
+          mountPath: /https
+          readOnly: true
+        - name: sgx-data
+          mountPath: /app/sgx
+        resources:
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+          limits:
+            memory: "1Gi"
+            cpu: "1"
+        livenessProbe:
+          httpGet:
+            path: /health/live
+            port: 80
+          initialDelaySeconds: 30
+          periodSeconds: 30
+          timeoutSeconds: 10
+          failureThreshold: 3
+        readinessProbe:
+          httpGet:
+            path: /health/ready
+            port: 80
+          initialDelaySeconds: 10
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        lifecycle:
+          preStop:
+            exec:
+              command: ["/bin/sh", "-c", "sleep 15"]
+      volumes:
+      - name: config
+        configMap:
+          name: neo-api-config
+      - name: certificates
+        secret:
+          secretName: neo-api-tls
+      - name: sgx-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo-api-service
+  namespace: neo-service-layer
+  labels:
+    app: neo-api
+spec:
+  type: LoadBalancer
+  ports:
+  - port: 80
+    targetPort: 80
+    protocol: TCP
+    name: http
+  - port: 443
+    targetPort: 443
+    protocol: TCP
+    name: https
+  selector:
+    app: neo-api
+  sessionAffinity: ClientIP
+  sessionAffinityConfig:
+    clientIP:
+      timeoutSeconds: 10800
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: neo-api-sa
+  namespace: neo-service-layer
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: neo-api-role
+  namespace: neo-service-layer
+rules:
+- apiGroups: [""]
+  resources: ["secrets", "configmaps"]
+  verbs: ["get", "list", "watch"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: neo-api-rolebinding
+  namespace: neo-service-layer
+subjects:
+- kind: ServiceAccount
+  name: neo-api-sa
+  namespace: neo-service-layer
+roleRef:
+  kind: Role
+  name: neo-api-role
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: neo-api-hpa
+  namespace: neo-service-layer
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: neo-api
+  minReplicas: 3
+  maxReplicas: 10
+  metrics:
+  - type: Resource
+    resource:
+      name: cpu
+      target:
+        type: Utilization
+        averageUtilization: 70
+  - type: Resource
+    resource:
+      name: memory
+      target:
+        type: Utilization
+        averageUtilization: 80
+  behavior:
+    scaleDown:
+      stabilizationWindowSeconds: 300
+      policies:
+      - type: Percent
+        value: 10
+        periodSeconds: 60
+    scaleUp:
+      stabilizationWindowSeconds: 60
+      policies:
+      - type: Percent
+        value: 100
+        periodSeconds: 30
+      - type: Pods
+        value: 2
+        periodSeconds: 60
