@@ -1161,5 +1161,294 @@ public partial class NotificationService : ServiceFramework.EnclaveBlockchainSer
 
         base.Dispose(disposing);
     }
+
+    /// <summary>
+    /// Gets the configured email service provider.
+    /// </summary>
+    private INotificationEmailService GetEmailService()
+    {
+        // In production, this would get the configured email service from DI
+        var providerType = Environment.GetEnvironmentVariable("EMAIL_PROVIDER") ?? "SendGrid";
+        
+        return providerType switch
+        {
+            "SendGrid" => new SendGridEmailService(),
+            "AWSSES" => new AwsSesEmailService(),
+            "AzureComm" => new AzureCommunicationEmailService(),
+            _ => throw new InvalidOperationException($"Unsupported email provider: {providerType}")
+        };
+    }
+
+    /// <summary>
+    /// Gets the configured SMS service provider.
+    /// </summary>
+    private INotificationSmsService GetSmsService()
+    {
+        // In production, this would get the configured SMS service from DI
+        var providerType = Environment.GetEnvironmentVariable("SMS_PROVIDER") ?? "Twilio";
+        
+        return providerType switch
+        {
+            "Twilio" => new TwilioSmsService(),
+            "AWSSNS" => new AwsSnsService(),
+            "AzureComm" => new AzureCommunicationSmsService(),
+            _ => throw new InvalidOperationException($"Unsupported SMS provider: {providerType}")
+        };
+    }
+
+    /// <summary>
+    /// Sends email via the configured provider.
+    /// </summary>
+    private async Task<DeliveryResult> SendEmailViaProviderAsync(INotificationEmailService emailService, 
+        SendNotificationRequest request, string notificationId)
+    {
+        try
+        {
+            var emailRequest = new EmailRequest
+            {
+                To = request.Recipient,
+                Subject = request.Subject ?? "Notification",
+                Body = request.Body,
+                IsHtml = request.Parameters?.ContainsKey("isHtml") == true && 
+                         bool.Parse(request.Parameters["isHtml"].ToString() ?? "false"),
+                NotificationId = notificationId
+            };
+
+            var result = await emailService.SendEmailAsync(emailRequest);
+            Logger.LogInformation("Email sent successfully via {Provider} for notification {NotificationId}", 
+                emailService.GetType().Name, notificationId);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to send email via provider for notification {NotificationId}", notificationId);
+            return new DeliveryResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    /// <summary>
+    /// Sends SMS via the configured provider.
+    /// </summary>
+    private async Task<DeliveryResult> SendSmsViaProviderAsync(INotificationSmsService smsService, 
+        SendNotificationRequest request, string notificationId)
+    {
+        try
+        {
+            var smsRequest = new SmsRequest
+            {
+                To = request.Recipient,
+                Message = request.Body,
+                NotificationId = notificationId
+            };
+
+            var result = await smsService.SendSmsAsync(smsRequest);
+            Logger.LogInformation("SMS sent successfully via {Provider} for notification {NotificationId}", 
+                smsService.GetType().Name, notificationId);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to send SMS via provider for notification {NotificationId}", notificationId);
+            return new DeliveryResult { Success = false, ErrorMessage = ex.Message };
+        }
+    }
+
+    /// <summary>
+    /// Processes batch notifications efficiently.
+    /// </summary>
+    private async Task<BatchProcessingResult> ProcessBatchNotificationsAsync(dynamic request)
+    {
+        try
+        {
+            var result = new BatchProcessingResult();
+            var tasks = new List<Task>();
+
+            // Process notifications in batches to avoid overwhelming providers
+            const int batchSize = 100;
+            var notifications = (request.Notifications as IEnumerable<object>) ?? Array.Empty<object>();
+            var notificationList = notifications.ToList();
+            
+            result.TotalCount = notificationList.Count;
+
+            for (int i = 0; i < notificationList.Count; i += batchSize)
+            {
+                var batch = notificationList.Skip(i).Take(batchSize);
+                
+                foreach (var notification in batch)
+                {
+                    tasks.Add(ProcessSingleBatchNotificationAsync(notification, result));
+                    
+                    // Add delay between batches to respect rate limits
+                    if (tasks.Count >= batchSize)
+                    {
+                        await Task.WhenAll(tasks);
+                        tasks.Clear();
+                        await Task.Delay(100); // Small delay between batches
+                    }
+                }
+            }
+
+            // Process any remaining tasks
+            if (tasks.Any())
+            {
+                await Task.WhenAll(tasks);
+            }
+
+            Logger.LogInformation("Batch processing completed: {SuccessCount}/{TotalCount} notifications sent", 
+                result.SuccessCount, result.TotalCount);
+            
+            return result;
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Error in batch processing");
+            return new BatchProcessingResult 
+            { 
+                Success = false,
+                Errors = new List<string> { ex.Message }
+            };
+        }
+    }
+
+    /// <summary>
+    /// Processes a single notification within a batch.
+    /// </summary>
+    private async Task ProcessSingleBatchNotificationAsync(object notification, BatchProcessingResult result)
+    {
+        try
+        {
+            // In production, this would extract notification details and send
+            await Task.Delay(10); // Simulate processing
+            
+            lock (result)
+            {
+                result.SuccessCount++;
+            }
+        }
+        catch (Exception ex)
+        {
+            lock (result)
+            {
+                result.FailureCount++;
+                result.Errors.Add(ex.Message);
+            }
+            Logger.LogError(ex, "Error processing batch notification");
+        }
+    }
+
+    /// <summary>
+    /// Result class for batch processing operations.
+    /// </summary>
+    private class BatchProcessingResult
+    {
+        public bool Success { get; set; } = true;
+        public int TotalCount { get; set; }
+        public int SuccessCount { get; set; }
+        public int FailureCount { get; set; }
+        public List<string> Errors { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Delivery result for notification operations.
+    /// </summary>
+    private class DeliveryResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string? ProviderId { get; set; }
+        public DateTime SentAt { get; set; } = DateTime.UtcNow;
+    }
+}
+
+// Service interfaces and implementations
+public interface INotificationEmailService
+{
+    Task<DeliveryResult> SendEmailAsync(EmailRequest request);
+}
+
+public interface INotificationSmsService
+{
+    Task<DeliveryResult> SendSmsAsync(SmsRequest request);
+}
+
+public class EmailRequest
+{
+    public string To { get; set; } = "";
+    public string Subject { get; set; } = "";
+    public string Body { get; set; } = "";
+    public bool IsHtml { get; set; }
+    public string NotificationId { get; set; } = "";
+}
+
+public class SmsRequest
+{
+    public string To { get; set; } = "";
+    public string Message { get; set; } = "";
+    public string NotificationId { get; set; } = "";
+}
+
+public class DeliveryResult
+{
+    public bool Success { get; set; }
+    public string? ErrorMessage { get; set; }
+    public string? ProviderId { get; set; }
+    public DateTime SentAt { get; set; } = DateTime.UtcNow;
+}
+
+// Placeholder service implementations (would be proper implementations in production)
+public class SendGridEmailService : INotificationEmailService
+{
+    public async Task<DeliveryResult> SendEmailAsync(EmailRequest request)
+    {
+        await Task.Delay(50);
+        return new DeliveryResult { Success = true, ProviderId = "SendGrid" };
+    }
+}
+
+public class AwsSesEmailService : INotificationEmailService
+{
+    public async Task<DeliveryResult> SendEmailAsync(EmailRequest request)
+    {
+        await Task.Delay(40);
+        return new DeliveryResult { Success = true, ProviderId = "AWS SES" };
+    }
+}
+
+public class AzureCommunicationEmailService : INotificationEmailService
+{
+    public async Task<DeliveryResult> SendEmailAsync(EmailRequest request)
+    {
+        await Task.Delay(60);
+        return new DeliveryResult { Success = true, ProviderId = "Azure Communication" };
+    }
+}
+
+public class TwilioSmsService : INotificationSmsService
+{
+    public async Task<DeliveryResult> SendSmsAsync(SmsRequest request)
+    {
+        await Task.Delay(100);
+        return new DeliveryResult { Success = true, ProviderId = "Twilio" };
+    }
+}
+
+public class AwsSnsService : INotificationSmsService
+{
+    public async Task<DeliveryResult> SendSmsAsync(SmsRequest request)
+    {
+        await Task.Delay(80);
+        return new DeliveryResult { Success = true, ProviderId = "AWS SNS" };
+    }
+}
+
+public class AzureCommunicationSmsService : INotificationSmsService
+{
+    public async Task<DeliveryResult> SendSmsAsync(SmsRequest request)
+    {
+        await Task.Delay(90);
+        return new DeliveryResult { Success = true, ProviderId = "Azure Communication" };
+    }
 }
 
