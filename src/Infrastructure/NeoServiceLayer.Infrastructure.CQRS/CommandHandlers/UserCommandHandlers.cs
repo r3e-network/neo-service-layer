@@ -7,9 +7,8 @@ using Microsoft.Extensions.Logging;
 using NeoServiceLayer.Core.CQRS;
 using NeoServiceLayer.Infrastructure.CQRS.Commands;
 using NeoServiceLayer.Core.Events;
-using NeoServiceLayer.Services.Authentication;
-using NeoServiceLayer.Services.Authentication.Repositories;
-using NeoServiceLayer.Services.Authentication.Models;
+// Note: Authentication-specific interfaces should be registered through DI container
+// to avoid circular dependencies between CQRS and Authentication services
 
 namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
 {
