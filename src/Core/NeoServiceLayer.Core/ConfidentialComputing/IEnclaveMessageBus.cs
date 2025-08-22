@@ -720,10 +720,31 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     {
         public string SubscriptionId { get; } = Guid.NewGuid().ToString();
         public string Topic { get; }
+        public bool IsActive { get; } = true;
+        public int ProcessedMessageCount { get; } = 0;
 
         public TemporaryConfidentialSubscription(string topic)
         {
             Topic = topic;
+        }
+
+        public Task PauseAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task ResumeAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.CompletedTask;
+        }
+
+        public Task<SubscriptionMetrics> GetMetricsAsync(CancellationToken cancellationToken = default)
+        {
+            return Task.FromResult(new SubscriptionMetrics
+            {
+                SubscriptionId = SubscriptionId,
+                ProcessedMessages = ProcessedMessageCount
+            });
         }
 
         public void Dispose()
