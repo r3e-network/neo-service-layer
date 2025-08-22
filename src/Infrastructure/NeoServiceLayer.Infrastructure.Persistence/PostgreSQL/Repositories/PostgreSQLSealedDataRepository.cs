@@ -97,7 +97,42 @@ public class PostgreSQLSealedDataRepository : ISealedDataRepository
     }
 
     /// <summary>
-    /// Retrieves sealed data item by key
+    /// Retrieves sealed data item by ID
+    /// </summary>
+    public async Task<SealedDataItem?> GetByIdAsync(Guid id, CancellationToken cancellationToken = default)
+    {
+        try
+        {
+            _logger.LogDebug("Retrieving sealed data item with ID {Id}", id);
+
+            var dbItem = await _context.SealedDataItems
+                .FirstOrDefaultAsync(x => x.Id == id && !x.IsExpired, cancellationToken);
+
+            if (dbItem == null)
+            {
+                _logger.LogDebug("Sealed data item with ID {Id} not found or expired", id);
+                return null;
+            }
+
+            // Update access tracking
+            dbItem.LastAccessed = DateTime.UtcNow;
+            dbItem.AccessCount++;
+            
+            await _context.SaveChangesAsync(cancellationToken);
+
+            _logger.LogDebug("Retrieved sealed data item with ID {Id}, access count: {AccessCount}", id, dbItem.AccessCount);
+            
+            return MapToModel(dbItem);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Failed to retrieve sealed data item with ID {Id}", id);
+            throw;
+        }
+    }
+
+    /// <summary>
+    /// Retrieves sealed data item by key (legacy method signature)
     /// </summary>
     public async Task<SealedDataItem?> GetByKeyAsync(string key, CancellationToken cancellationToken = default)
     {
