@@ -260,8 +260,18 @@ public partial class KeyManagementService
     /// </summary>
     private string DeriveKeyPath(string keyId, string purpose)
     {
-        // Standard BIP32 path format
-        return $"m/44'/0'/0'/0/{keyId.GetHashCode() % 1000}";
+        // Generate deterministic path based on key ID and purpose
+        using var sha256 = System.Security.Cryptography.SHA256.Create();
+        var input = System.Text.Encoding.UTF8.GetBytes($"{keyId}-{purpose}");
+        var hash = sha256.ComputeHash(input);
+        
+        // Extract path components from hash
+        var account = BitConverter.ToUInt32(hash, 0) % 1000;
+        var change = BitConverter.ToUInt32(hash, 4) % 2;
+        var addressIndex = BitConverter.ToUInt32(hash, 8) % 1000;
+        
+        // Standard BIP32 path format with deterministic values
+        return $"m/44'/0'/{account}'/{change}/{addressIndex}";
     }
 
     /// <summary>
@@ -269,8 +279,29 @@ public partial class KeyManagementService
     /// </summary>
     private string GenerateAuthToken()
     {
-        // In production, this would be a proper JWT or similar token
-        return Guid.NewGuid().ToString();
+        try
+        {
+            // Generate a secure random token for authentication
+            var tokenBytes = new byte[32];
+            using var rng = System.Security.Cryptography.RandomNumberGenerator.Create();
+            rng.GetBytes(tokenBytes);
+            
+            // Create a time-based token with expiration
+            var timestamp = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
+            var tokenData = new
+            {
+                token = Convert.ToBase64String(tokenBytes),
+                issued_at = timestamp,
+                expires_at = timestamp + 3600 // 1 hour expiration
+            };
+            
+            return System.Text.Json.JsonSerializer.Serialize(tokenData);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to generate auth token");
+            throw;
+        }
     }
 
     /// <summary>
@@ -278,8 +309,22 @@ public partial class KeyManagementService
     /// </summary>
     private string GenerateAuthHash(string token)
     {
-        // Simple hash for demonstration
-        return Convert.ToBase64String(System.Text.Encoding.UTF8.GetBytes(token).Take(16).ToArray());
+        try
+        {
+            // Generate secure HMAC hash of the token
+            var secret = Environment.GetEnvironmentVariable("KEY_MANAGEMENT_SECRET") ?? "default-secret-key";
+            using var hmac = new System.Security.Cryptography.HMACSHA256(System.Text.Encoding.UTF8.GetBytes(secret));
+            
+            var tokenBytes = System.Text.Encoding.UTF8.GetBytes(token);
+            var hashBytes = hmac.ComputeHash(tokenBytes);
+            
+            return Convert.ToBase64String(hashBytes);
+        }
+        catch (Exception ex)
+        {
+            Logger.LogError(ex, "Failed to generate auth hash");
+            throw;
+        }
     }
 
     /// <summary>
