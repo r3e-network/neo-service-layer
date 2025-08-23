@@ -42,6 +42,8 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     public class BackupRequest
     {
         public string? Destination { get; set; }
+        public string? BackupLocation { get; set; }
+        public string? ServiceFilter { get; set; }
         public bool IncludeMetadata { get; set; } = true;
     }
 
