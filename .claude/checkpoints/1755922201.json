@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250823-041001", "file": "/home/ubuntu/neo-service-layer/tests/xunit.runner.json", "timestamp": "2025-08-23T04:10:01Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755922119.json | 1 +  .claude/checkpoints/1755922164.json | 1 +  tests/xunit.runner.json             | 7 +++++++  3 files changed, 9 insertions(+) "}
