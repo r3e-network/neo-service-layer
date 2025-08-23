@@ -142,10 +142,29 @@ public class NeoN3BlockchainClient : IBlockchainClient
         _logger = logger;
     }
 
-    public Task<object> GetBlockAsync(string blockHash) => throw new NotImplementedException("Neo N3 client not fully implemented");
-    public Task<object> GetTransactionAsync(string txId) => throw new NotImplementedException("Neo N3 client not fully implemented");
-    public Task<object> SendTransactionAsync(object transaction) => throw new NotImplementedException("Neo N3 client not fully implemented");
-    public Task<decimal> GetBalanceAsync(string address) => throw new NotImplementedException("Neo N3 client not fully implemented");
+    public Task<object> GetBlockAsync(string blockHash)
+    {
+        _logger.LogWarning("Neo N3 client integration pending - GetBlockAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo N3 blockchain integration is pending"));
+    }
+
+    public Task<object> GetTransactionAsync(string txId)
+    {
+        _logger.LogWarning("Neo N3 client integration pending - GetTransactionAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo N3 blockchain integration is pending"));
+    }
+
+    public Task<object> SendTransactionAsync(object transaction)
+    {
+        _logger.LogWarning("Neo N3 client integration pending - SendTransactionAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo N3 blockchain integration is pending"));
+    }
+
+    public Task<decimal> GetBalanceAsync(string address)
+    {
+        _logger.LogWarning("Neo N3 client integration pending - GetBalanceAsync not implemented");
+        return Task.FromException<decimal>(new NotSupportedException("Neo N3 blockchain integration is pending"));
+    }
 }
 
 /// <summary>
@@ -164,10 +183,29 @@ public class NeoXBlockchainClient : IBlockchainClient
         _logger = logger;
     }
 
-    public Task<object> GetBlockAsync(string blockHash) => throw new NotImplementedException("Neo X client not fully implemented");
-    public Task<object> GetTransactionAsync(string txId) => throw new NotImplementedException("Neo X client not fully implemented");
-    public Task<object> SendTransactionAsync(object transaction) => throw new NotImplementedException("Neo X client not fully implemented");
-    public Task<decimal> GetBalanceAsync(string address) => throw new NotImplementedException("Neo X client not fully implemented");
+    public Task<object> GetBlockAsync(string blockHash)
+    {
+        _logger.LogWarning("Neo X client integration pending - GetBlockAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo X blockchain integration is pending"));
+    }
+
+    public Task<object> GetTransactionAsync(string txId)
+    {
+        _logger.LogWarning("Neo X client integration pending - GetTransactionAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo X blockchain integration is pending"));
+    }
+
+    public Task<object> SendTransactionAsync(object transaction)
+    {
+        _logger.LogWarning("Neo X client integration pending - SendTransactionAsync not implemented");
+        return Task.FromException<object>(new NotSupportedException("Neo X blockchain integration is pending"));
+    }
+
+    public Task<decimal> GetBalanceAsync(string address)
+    {
+        _logger.LogWarning("Neo X client integration pending - GetBalanceAsync not implemented");
+        return Task.FromException<decimal>(new NotSupportedException("Neo X blockchain integration is pending"));
+    }
 }
 
 /// <summary>
