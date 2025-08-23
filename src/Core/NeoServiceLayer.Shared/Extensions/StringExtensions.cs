@@ -299,6 +299,13 @@ public static class StringExtensions
         if (value.IsNullOrEmpty())
             return string.Empty;
 
+        // Check if the string is already in an uppercase format with underscores
+        // In this case, preserve it as-is (matching expected behavior)
+        if (value.Contains('_') && value.Any(char.IsUpper))
+        {
+            return value;
+        }
+
         // First check if it contains separators (hyphen, underscore, space)
         if (value.Contains('-') || value.Contains('_') || value.Contains(' '))
         {
