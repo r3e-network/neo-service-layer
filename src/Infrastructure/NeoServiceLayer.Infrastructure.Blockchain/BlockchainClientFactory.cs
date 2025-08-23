@@ -26,6 +26,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     private readonly IServiceProvider _serviceProvider;
     private readonly ILogger<BlockchainClientFactory> _logger;
     private readonly BlockchainConfiguration _configuration;
+    private readonly IConfiguration _configRoot;
     private readonly ServiceEndpoints? _endpoints;
 
     /// <summary>
