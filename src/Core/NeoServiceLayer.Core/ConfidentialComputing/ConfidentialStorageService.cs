@@ -30,8 +30,10 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     public class ListSealedItemsRequest
     {
         public string? Filter { get; set; }
+        public string? Prefix { get; set; }
         public int Skip { get; set; }
         public int Take { get; set; } = 100;
+        public int MaxItems { get; set; } = 1000;
     }
 
     /// <summary>
