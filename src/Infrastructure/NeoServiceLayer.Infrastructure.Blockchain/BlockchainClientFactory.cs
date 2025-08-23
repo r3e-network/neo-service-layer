@@ -135,6 +135,51 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     }
 }
 
+// Placeholder blockchain client implementations
+/// <summary>
+/// Placeholder Neo N3 blockchain client implementation.
+/// </summary>
+public class NeoN3BlockchainClient : IBlockchainClient
+{
+    private readonly string _rpcEndpoint;
+    private readonly uint _networkMagic;
+    private readonly ILogger _logger;
+
+    public NeoN3BlockchainClient(string rpcEndpoint, uint networkMagic, ILogger logger)
+    {
+        _rpcEndpoint = rpcEndpoint;
+        _networkMagic = networkMagic;
+        _logger = logger;
+    }
+
+    public Task<object> GetBlockAsync(string blockHash) => throw new NotImplementedException("Neo N3 client not fully implemented");
+    public Task<object> GetTransactionAsync(string txId) => throw new NotImplementedException("Neo N3 client not fully implemented");
+    public Task<object> SendTransactionAsync(object transaction) => throw new NotImplementedException("Neo N3 client not fully implemented");
+    public Task<decimal> GetBalanceAsync(string address) => throw new NotImplementedException("Neo N3 client not fully implemented");
+}
+
+/// <summary>
+/// Placeholder Neo X blockchain client implementation.
+/// </summary>
+public class NeoXBlockchainClient : IBlockchainClient
+{
+    private readonly string _rpcEndpoint;
+    private readonly long _chainId;
+    private readonly ILogger _logger;
+
+    public NeoXBlockchainClient(string rpcEndpoint, long chainId, ILogger logger)
+    {
+        _rpcEndpoint = rpcEndpoint;
+        _chainId = chainId;
+        _logger = logger;
+    }
+
+    public Task<object> GetBlockAsync(string blockHash) => throw new NotImplementedException("Neo X client not fully implemented");
+    public Task<object> GetTransactionAsync(string txId) => throw new NotImplementedException("Neo X client not fully implemented");
+    public Task<object> SendTransactionAsync(object transaction) => throw new NotImplementedException("Neo X client not fully implemented");
+    public Task<decimal> GetBalanceAsync(string address) => throw new NotImplementedException("Neo X client not fully implemented");
+}
+
 /// <summary>
 /// Configuration for blockchain clients.
 /// </summary>
