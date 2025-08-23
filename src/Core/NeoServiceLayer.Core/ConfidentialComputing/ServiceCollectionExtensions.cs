@@ -96,7 +96,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 configuration.GetSection("EnclaveStorage"));
 
             services.AddSingleton<IConfidentialStorageService, ConfidentialStorageService>();
-            services.AddSingleton<IEnclaveStorageService, TemporaryEnclaveStorageService>();
+            // Note: IEnclaveStorageService implementation to be provided by infrastructure layer
 
             services.AddHealthChecks()
                 .AddCheck<EnclaveStorageHealthCheck>("enclave-storage");
