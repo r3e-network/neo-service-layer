@@ -60,6 +60,30 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     }
 
     /// <summary>
+    /// Result from sealing data operation
+    /// </summary>
+    public class SealDataResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string StorageId { get; set; } = string.Empty;
+        public long SealedSize { get; set; }
+        public string Fingerprint { get; set; } = string.Empty;
+        public DateTime? ExpiresAt { get; set; }
+    }
+
+    /// <summary>
+    /// Result from unsealing data operation
+    /// </summary>
+    public class UnsealDataResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public byte[] Data { get; set; } = Array.Empty<byte>();
+        public Dictionary<string, object> Metadata { get; set; } = new();
+    }
+
+    /// <summary>
     /// Request for backup operations
     /// </summary>
     public class BackupRequest
