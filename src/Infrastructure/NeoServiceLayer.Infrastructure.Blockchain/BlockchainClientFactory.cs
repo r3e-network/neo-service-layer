@@ -100,7 +100,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
             
             _logger.LogInformation("Initializing Neo N3 client with endpoint {RpcEndpoint}", rpcEndpoint);
             
-            // Create Neo N3 client with production configuration
+            // Create Neo N3 client with production configuration - placeholder implementation
             return new NeoN3BlockchainClient(rpcEndpoint, networkMagic, _logger);
         }
         catch (Exception ex)
