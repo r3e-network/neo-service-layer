@@ -315,7 +315,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                     MaxItems = 1000 // Configurable limit
                 };
 
-                var listResult = await _enclaveStorageService.ListSealedItemsAsync(listRequest, Services.BlockchainType.NeoN3);
+                var listResult = await _enclaveStorageService.ListSealedItemsAsync(listRequest);
 
                 var keys = listResult.Items.Select(item => new ConfidentialKeyInfo
                 {
