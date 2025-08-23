@@ -94,7 +94,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     {
         try
         {
-            var config = _configuration.GetSection("Blockchain:NeoN3");
+            var config = _configRoot.GetSection("Blockchain:NeoN3");
             var rpcEndpoint = config["RpcEndpoint"] ?? "http://localhost:20332";
             var networkMagic = config.GetValue<uint>("NetworkMagic", 860833102);
             
