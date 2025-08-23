@@ -21,7 +21,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         Task<object> SealDataAsync(object request);
         Task<object> UnsealDataAsync(string key);
         Task<object> ListSealedItemsAsync(object request);
-        Task<bool> DeleteSealedDataAsync(string key);
+        Task<object> DeleteSealedDataAsync(string key);
         Task<object> BackupSealedDataAsync(object request);
         Task<object> GetStorageStatisticsAsync();
     }
