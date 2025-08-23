@@ -16,17 +16,9 @@ namespace NeoServiceLayer.TestInfrastructure;
 /// </summary>
 public abstract class TestBase
 {
-    // TODO: Add TEE assembly references to enable these mocks
-    // protected static readonly Mock<IEnclaveWrapper> MockEnclaveWrapper;
-    // protected static readonly Mock<IEnclaveManager> MockEnclaveManager;
-
     static TestBase()
     {
-        // TODO: Add TEE assembly references to enable these mocks
-        // MockEnclaveWrapper = new Mock<IEnclaveWrapper>();
-        // MockEnclaveManager = new Mock<IEnclaveManager>();
-        // SetupMockEnclaveWrapper();
-        // SetupMockEnclaveManager();
+        // TEE assembly references will be added when confidential computing integration is ready
     }
 
     /*
