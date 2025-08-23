@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250823-040923", "file": "/home/ubuntu/neo-service-layer/Directory.Packages.props", "timestamp": "2025-08-23T04:09:24Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755922031.json | 1 +  .claude/checkpoints/1755922050.json | 1 +  Directory.Packages.props            | 2 +-  3 files changed, 3 insertions(+), 1 deletion(-) "}
