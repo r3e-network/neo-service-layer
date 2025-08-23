@@ -11,6 +11,16 @@ using NeoServiceLayer.Core.Domain;
 namespace NeoServiceLayer.Core.ConfidentialComputing
 {
     /// <summary>
+    /// Interface for enclave storage operations
+    /// </summary>
+    public interface IEnclaveStorageService
+    {
+        Task<byte[]> StoreAsync(string key, byte[] data);
+        Task<byte[]> RetrieveAsync(string key);
+        Task<bool> DeleteAsync(string key);
+    }
+
+    /// <summary>
     /// Production implementation of confidential storage service
     /// Integrates with existing SGX EnclaveStorageService for secure data persistence
     /// </summary>
