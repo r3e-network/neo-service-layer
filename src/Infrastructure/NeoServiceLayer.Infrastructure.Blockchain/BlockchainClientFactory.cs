@@ -35,14 +35,17 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     /// <param name="serviceProvider">The service provider.</param>
     /// <param name="logger">The logger.</param>
     /// <param name="configuration">The blockchain configuration.</param>
+    /// <param name="configRoot">The root configuration.</param>
     public BlockchainClientFactory(
         IServiceProvider serviceProvider,
         ILogger<BlockchainClientFactory> logger,
-        IOptions<BlockchainConfiguration> configuration)
+        IOptions<BlockchainConfiguration> configuration,
+        IConfiguration configRoot)
     {
         _serviceProvider = serviceProvider;
         _logger = logger;
         _configuration = configuration.Value;
+        _configRoot = configRoot;
 
         // Try to get ServiceEndpoints if available
         try
