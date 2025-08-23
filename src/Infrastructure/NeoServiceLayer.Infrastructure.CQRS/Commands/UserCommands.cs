@@ -194,6 +194,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public bool RequiresEnclave { get; set; }
         public int Priority { get; set; }
         public Guid CreatedBy { get; set; }
+        
+        public CreateComputeJobCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Parameters = new Dictionary<string, object>();
+        }
     }
 
     public class CancelComputeJobCommand : CommandBase
@@ -201,6 +207,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid JobId { get; set; }
         public string Reason { get; set; }
         public Guid CancelledBy { get; set; }
+        
+        public CancelComputeJobCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     // Storage-related commands
@@ -213,6 +224,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string StorageTier { get; set; }
         public Dictionary<string, string> Metadata { get; set; }
         public Guid UploadedBy { get; set; }
+        
+        public UploadFileCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            FileData = Array.Empty<byte>();
+            Metadata = new Dictionary<string, string>();
+        }
     }
 
     public class DeleteFileCommand : CommandBase
@@ -220,6 +238,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid FileId { get; set; }
         public bool PermanentDelete { get; set; }
         public Guid DeletedBy { get; set; }
+        
+        public DeleteFileCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     // Oracle-related commands
@@ -232,6 +255,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public List<string> Providers { get; set; }
         public Dictionary<string, object> Parameters { get; set; }
         public Guid CreatedBy { get; set; }
+        
+        public CreateDataFeedCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Providers = new List<string>();
+            Parameters = new Dictionary<string, object>();
+        }
     }
 
     public class UpdateDataFeedCommand : CommandBase
@@ -240,6 +270,13 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public int? UpdateInterval { get; set; }
         public List<string> Providers { get; set; }
         public Dictionary<string, object> Parameters { get; set; }
+        
+        public UpdateDataFeedCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Providers = new List<string>();
+            Parameters = new Dictionary<string, object>();
+        }
     }
 
     public class PublishOnChainCommand : CommandBase
@@ -248,6 +285,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string ContractAddress { get; set; }
         public Guid NetworkId { get; set; }
         public string PublisherAddress { get; set; }
+        
+        public PublishOnChainCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     // Notification commands
@@ -259,6 +301,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string Message { get; set; }
         public Dictionary<string, object> Data { get; set; }
         public int Priority { get; set; }
+        
+        public SendNotificationCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Data = new Dictionary<string, object>();
+        }
     }
 
     public class CreateNotificationTemplateCommand : CommandBase
@@ -269,5 +317,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string BodyTemplate { get; set; }
         public Dictionary<string, string> DefaultValues { get; set; }
         public Guid CreatedBy { get; set; }
+        
+        public CreateNotificationTemplateCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            DefaultValues = new Dictionary<string, string>();
+        }
     }
 }
