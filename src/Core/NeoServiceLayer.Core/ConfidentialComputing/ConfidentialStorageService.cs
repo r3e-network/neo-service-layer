@@ -18,6 +18,8 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         Task<byte[]> StoreAsync(string key, byte[] data);
         Task<byte[]> RetrieveAsync(string key);
         Task<bool> DeleteAsync(string key);
+        Task<object> SealDataAsync(object request);
+        Task<object> UnsealDataAsync(string key);
         Task<object> ListSealedItemsAsync(object request);
         Task<bool> DeleteSealedDataAsync(string key);
         Task<object> BackupSealedDataAsync(object request);
@@ -34,6 +36,26 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public int Skip { get; set; }
         public int Take { get; set; } = 100;
         public int MaxItems { get; set; } = 1000;
+    }
+
+    /// <summary>
+    /// Request for sealing data operations
+    /// </summary>
+    public class SealDataRequest
+    {
+        public byte[] Data { get; set; } = Array.Empty<byte>();
+        public SealDataPolicy Policy { get; set; } = SealDataPolicy.Default;
+    }
+
+    /// <summary>
+    /// Sealing policy enumeration
+    /// </summary>
+    public enum SealDataPolicy
+    {
+        Default,
+        MachineSpecific,
+        UserSpecific,
+        Custom
     }
 
     /// <summary>
