@@ -81,6 +81,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public string? ErrorMessage { get; set; }
         public byte[] Data { get; set; } = Array.Empty<byte>();
         public Dictionary<string, object> Metadata { get; set; } = new();
+        public DateTime? LastAccessed { get; set; }
     }
 
     /// <summary>
@@ -138,6 +139,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         public bool Success { get; set; }
         public bool Deleted { get; set; }
         public bool Shredded { get; set; }
+        public string? ErrorMessage { get; set; }
     }
 
     /// <summary>
