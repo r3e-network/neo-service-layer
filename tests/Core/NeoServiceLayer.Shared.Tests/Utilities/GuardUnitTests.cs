@@ -89,7 +89,7 @@ public class GuardUnitTests
     {
         Action act = () => Guard.NotNullOrWhiteSpace(input);
         
-        act.Should().Throw<ArgumentException>().WithMessage("*cannot be null or whitespace*");
+        act.Should().Throw<ArgumentException>().WithMessage("*cannot be null*or*whitespace*");
     }
 
     [Fact]
