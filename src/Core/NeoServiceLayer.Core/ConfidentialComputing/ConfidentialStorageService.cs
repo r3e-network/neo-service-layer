@@ -84,6 +84,63 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     }
 
     /// <summary>
+    /// Result from listing sealed items operation
+    /// </summary>
+    public class ListSealedItemsResult
+    {
+        public bool Success { get; set; }
+        public List<SealedItemInfo> Items { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Information about a sealed item
+    /// </summary>
+    public class SealedItemInfo
+    {
+        public string Key { get; set; } = string.Empty;
+        public long Size { get; set; }
+        public DateTime Created { get; set; }
+        public DateTime LastAccessed { get; set; }
+        public DateTime? ExpiresAt { get; set; }
+        public string PolicyType { get; set; } = string.Empty;
+    }
+
+    /// <summary>
+    /// Result from storage statistics operation
+    /// </summary>
+    public class StorageStatisticsResult
+    {
+        public int TotalItems { get; set; }
+        public long TotalSize { get; set; }
+        public long AvailableSpace { get; set; }
+        public DateTime? LastBackup { get; set; }
+        public int ServiceCount { get; set; }
+        public Dictionary<string, object> ServiceStorage { get; set; } = new();
+    }
+
+    /// <summary>
+    /// Result from backup operation
+    /// </summary>
+    public class BackupResult
+    {
+        public bool Success { get; set; }
+        public string? ErrorMessage { get; set; }
+        public string BackupId { get; set; } = string.Empty;
+        public int ItemsBackedUp { get; set; }
+        public long TotalSize { get; set; }
+    }
+
+    /// <summary>
+    /// Result from delete operation
+    /// </summary>
+    public class DeleteResult
+    {
+        public bool Success { get; set; }
+        public bool Deleted { get; set; }
+        public bool Shredded { get; set; }
+    }
+
+    /// <summary>
     /// Request for backup operations
     /// </summary>
     public class BackupRequest
