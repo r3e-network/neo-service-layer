@@ -43,19 +43,20 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     /// </summary>
     public class SealDataRequest
     {
+        public string Key { get; set; } = string.Empty;
         public byte[] Data { get; set; } = Array.Empty<byte>();
+        public Dictionary<string, string> Metadata { get; set; } = new();
         public SealDataPolicy Policy { get; set; } = SealDataPolicy.Default;
     }
 
     /// <summary>
-    /// Sealing policy enumeration
+    /// Sealing policy class
     /// </summary>
-    public enum SealDataPolicy
+    public class SealDataPolicy
     {
-        Default,
-        MachineSpecific,
-        UserSpecific,
-        Custom
+        public static SealDataPolicy Default => new();
+        public string Type { get; set; } = "default";
+        public int ExpirationHours { get; set; } = 0; // 0 means no expiration
     }
 
     /// <summary>
@@ -136,7 +137,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                 };
 
                 // Store using enclave storage service
-                var sealResult = await _enclaveStorageService.SealDataAsync(sealingRequest, Services.BlockchainType.NeoN3);
+                var sealResult = await _enclaveStorageService.SealDataAsync(sealingRequest);
 
                 if (!sealResult.Success)
                 {
@@ -193,7 +194,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
             try
             {
                 // Retrieve and unseal data from enclave storage
-                var unsealResult = await _enclaveStorageService.UnsealDataAsync(key, Services.BlockchainType.NeoN3);
+                var unsealResult = await _enclaveStorageService.UnsealDataAsync(key);
 
                 if (!unsealResult.Success)
                 {
