@@ -146,6 +146,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public decimal? GasPrice { get; set; }
         public long? GasLimit { get; set; }
         public long? Nonce { get; set; }
+        
+        public CreateTransactionCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class DeployContractCommand : CommandBase
@@ -156,6 +161,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string Abi { get; set; }
         public object[] ConstructorParams { get; set; }
         public string DeployerAddress { get; set; }
+        
+        public DeployContractCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            ConstructorParams = Array.Empty<object>();
+        }
     }
 
     public class CallContractCommand : CommandBase
@@ -166,6 +177,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public object[] Parameters { get; set; }
         public string CallerAddress { get; set; }
         public decimal? Value { get; set; }
+        
+        public CallContractCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Parameters = Array.Empty<object>();
+        }
     }
 
     // Compute-related commands
