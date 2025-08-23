@@ -1,21 +1,19 @@
-using System.Text;
-using Microsoft.Extensions.DependencyInjection;
-using Microsoft.Extensions.Http;
-using Moq.Protected;
-using NeoServiceLayer.Core.Http;
-using Xunit;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading.Tasks;
+using System.Text;
 using System.Threading;
-using System;
-using FluentAssertions;
-using Moq;
+using System.Threading.Tasks;
 using AutoFixture;
-
-
+using FluentAssertions;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Http;
+using Moq;
+using Moq.Protected;
+using NeoServiceLayer.Core.Http;
+using Xunit;
 namespace NeoServiceLayer.Core.Tests.Http;
 
 /// <summary>
