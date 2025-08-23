@@ -80,6 +80,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid RoleId { get; set; }
         public Guid AssignedBy { get; set; }
         public DateTime? ExpiresAt { get; set; }
+        
+        public AssignRoleCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class RemoveRoleCommand : CommandBase
@@ -87,6 +92,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid UserId { get; set; }
         public Guid RoleId { get; set; }
         public string Reason { get; set; }
+        
+        public RemoveRoleCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class LockUserCommand : CommandBase
@@ -95,12 +105,22 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string Reason { get; set; }
         public DateTime? LockedUntil { get; set; }
         public Guid LockedBy { get; set; }
+        
+        public LockUserCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class UnlockUserCommand : CommandBase
     {
         public Guid UserId { get; set; }
         public Guid UnlockedBy { get; set; }
+        
+        public UnlockUserCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class DeleteUserCommand : CommandBase
@@ -108,6 +128,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid UserId { get; set; }
         public bool HardDelete { get; set; }
         public Guid DeletedBy { get; set; }
+        
+        public DeleteUserCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     // Blockchain-related commands
