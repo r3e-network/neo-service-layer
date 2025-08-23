@@ -427,6 +427,11 @@ namespace NeoServiceLayer.Infrastructure.CQRS.CommandHandlers
         public Guid UserId { get; set; }
         public string Reason { get; set; }
         public Guid LockedBy { get; set; }
+        
+        public UserLockedEvent(string aggregateId, string aggregateType, long aggregateVersion, string initiatedBy, Guid? causationId = null, Guid? correlationId = null)
+            : base(aggregateId, aggregateType, aggregateVersion, initiatedBy, causationId, correlationId)
+        {
+        }
         public DateTime LockedAt { get; set; }
         public DateTime? LockedUntil { get; set; }
     }
