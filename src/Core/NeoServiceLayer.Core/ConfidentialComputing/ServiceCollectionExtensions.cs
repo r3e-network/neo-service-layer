@@ -52,7 +52,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
             // Register existing TEE services
             services.AddSingleton<IEnclaveWrapper, ProductionEnclaveWrapper>();
-            services.AddSingleton<IEnclaveStorageService, TemporaryEnclaveStorageService>();
+            // Note: IEnclaveStorageService implementation provided by TEE infrastructure
 
             // Register health checks
             services.AddHealthChecks()
