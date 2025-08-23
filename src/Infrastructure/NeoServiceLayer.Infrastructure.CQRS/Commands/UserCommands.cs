@@ -18,7 +18,8 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid TenantId { get; set; }
         public List<Guid> RoleIds { get; set; }
         
-        public CreateUserCommand()
+        public CreateUserCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
         {
             RoleIds = new List<Guid>();
         }
@@ -31,6 +32,12 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public string LastName { get; set; }
         public string PhoneNumber { get; set; }
         public Dictionary<string, string> Metadata { get; set; }
+        
+        public UpdateUserCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+            Metadata = new Dictionary<string, string>();
+        }
     }
 
     public class ChangePasswordCommand : CommandBase
@@ -38,18 +45,33 @@ namespace NeoServiceLayer.Infrastructure.CQRS.Commands
         public Guid UserId { get; set; }
         public string CurrentPassword { get; set; }
         public string NewPassword { get; set; }
+        
+        public ChangePasswordCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class EnableMfaCommand : CommandBase
     {
         public Guid UserId { get; set; }
         public string MfaType { get; set; } // TOTP, SMS, Email
+        
+        public EnableMfaCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class DisableMfaCommand : CommandBase
     {
         public Guid UserId { get; set; }
         public string MfaCode { get; set; }
+        
+        public DisableMfaCommand(string initiatedBy, Guid? correlationId = null, long? expectedVersion = null)
+            : base(initiatedBy, correlationId, expectedVersion)
+        {
+        }
     }
 
     public class AssignRoleCommand : CommandBase
