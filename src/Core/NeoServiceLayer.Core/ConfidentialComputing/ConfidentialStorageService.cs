@@ -257,8 +257,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                     {
                         Prefix = key,
                         MaxItems = 1
-                    }, 
-                    Services.BlockchainType.NeoN3);
+                    });
 
                 return listResult.Items.Any(item => item.Key == key);
             }
