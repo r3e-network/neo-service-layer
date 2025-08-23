@@ -118,7 +118,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
     {
         try
         {
-            var config = _configuration.GetSection("Blockchain:NeoX");
+            var config = _configRoot.GetSection("Blockchain:NeoX");
             var rpcEndpoint = config["RpcEndpoint"] ?? "https://neox-rpc.t4.neo.org";
             var chainId = config.GetValue<long>("ChainId", 12227332);
             
