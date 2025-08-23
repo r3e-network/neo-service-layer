@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250823-015507", "file": "/home/ubuntu/neo-service-layer/docs/SYSTEM-DESIGN.md", "timestamp": "2025-08-23T01:55:07Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1755913837.json |   1 +  docs/SYSTEM-DESIGN.md                    | 493 +++++++++++++++++++++++++++++++  2 files changed, 494 insertions(+) "}
