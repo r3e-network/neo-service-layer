@@ -124,7 +124,7 @@ public class BlockchainClientFactory : IBlockchainClientFactory
             
             _logger.LogInformation("Initializing Neo X client with endpoint {RpcEndpoint}", rpcEndpoint);
             
-            // Create Neo X client with production configuration
+            // Create Neo X client with production configuration - placeholder implementation
             return new NeoXBlockchainClient(rpcEndpoint, chainId, _logger);
         }
         catch (Exception ex)
