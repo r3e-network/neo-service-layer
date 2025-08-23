@@ -58,7 +58,7 @@ public static class Guard
     public static string NotNullOrEmpty([NotNull] string? argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
     {
         if (string.IsNullOrEmpty(argument))
-            throw new ArgumentException("Value cannot be null or empty.", parameterName);
+            throw new ArgumentException("String cannot be null or empty.", parameterName);
 
         return argument;
     }
