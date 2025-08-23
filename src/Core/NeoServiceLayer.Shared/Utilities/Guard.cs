@@ -73,7 +73,7 @@ public static class Guard
     public static string NotNullOrWhiteSpace([NotNull] string? argument, [CallerArgumentExpression(nameof(argument))] string? parameterName = null)
     {
         if (string.IsNullOrWhiteSpace(argument))
-            throw new ArgumentException("String cannot be null, empty, or whitespace.", parameterName);
+            throw new ArgumentException("Value cannot be null or whitespace.", parameterName);
 
         return argument;
     }
