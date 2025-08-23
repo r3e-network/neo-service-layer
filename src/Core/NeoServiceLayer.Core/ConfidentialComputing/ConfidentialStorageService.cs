@@ -277,7 +277,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
 
             try
             {
-                var deleteResult = await _enclaveStorageService.DeleteSealedDataAsync(key, Services.BlockchainType.NeoN3);
+                var deleteResult = await _enclaveStorageService.DeleteSealedDataAsync(key);
 
                 _logger.LogDebug("Confidential data deletion for key {Key}: Success={Success}, Found={Found}", 
                     key, deleteResult.Success, deleteResult.Deleted);
@@ -367,7 +367,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
                     ServiceFilter = null // Backup all services
                 };
 
-                var backupResult = await _enclaveStorageService.BackupSealedDataAsync(backupEnclaveRequest, Services.BlockchainType.NeoN3);
+                var backupResult = await _enclaveStorageService.BackupSealedDataAsync(backupEnclaveRequest);
 
                 if (!backupResult.Success)
                 {
