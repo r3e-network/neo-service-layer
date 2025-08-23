@@ -4,18 +4,8 @@ using Microsoft.Extensions.Configuration;
 using NeoServiceLayer.Core;
 using NeoServiceLayer.Core.Configuration;
 using NeoServiceLayer.Core.Models;
-// Temporarily disabled - complex blockchain dependencies
-// using NeoServiceLayer.Neo.N3;
-// using NeoServiceLayer.Neo.X;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net.Http;
-using System.Net.WebSockets;
-using System.Threading.Tasks;
-using System.Threading;
 using System;
-
-
+using System.Collections.Generic;
 namespace NeoServiceLayer.Infrastructure.Blockchain;
 
 /// <summary>
