@@ -18,6 +18,29 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
         Task<byte[]> StoreAsync(string key, byte[] data);
         Task<byte[]> RetrieveAsync(string key);
         Task<bool> DeleteAsync(string key);
+        Task<object> ListSealedItemsAsync(object request);
+        Task<bool> DeleteSealedDataAsync(string key);
+        Task<object> BackupSealedDataAsync(object request);
+        Task<object> GetStorageStatisticsAsync();
+    }
+
+    /// <summary>
+    /// Request for listing sealed items
+    /// </summary>
+    public class ListSealedItemsRequest
+    {
+        public string? Filter { get; set; }
+        public int Skip { get; set; }
+        public int Take { get; set; } = 100;
+    }
+
+    /// <summary>
+    /// Request for backup operations
+    /// </summary>
+    public class BackupRequest
+    {
+        public string? Destination { get; set; }
+        public bool IncludeMetadata { get; set; } = true;
     }
 
     /// <summary>
