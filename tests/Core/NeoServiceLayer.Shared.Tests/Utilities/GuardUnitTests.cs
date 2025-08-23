@@ -51,14 +51,22 @@ public class GuardUnitTests
 
     [Theory]
     [InlineData("")]
-    [InlineData(" ")]
-    [InlineData("\t")]
-    [InlineData("\n")]
     public void NotNullOrEmpty_WithEmptyString_ThrowsArgumentException(string input)
     {
         Action act = () => Guard.NotNullOrEmpty(input);
         
         act.Should().Throw<ArgumentException>().WithMessage("*cannot be null or empty*");
+    }
+
+    [Theory]
+    [InlineData(" ")]
+    [InlineData("\t")]
+    [InlineData("\n")]
+    public void NotNullOrEmpty_WithWhitespaceString_ReturnsString(string input)
+    {
+        var result = Guard.NotNullOrEmpty(input);
+        
+        result.Should().Be(input);
     }
 
     [Fact]
