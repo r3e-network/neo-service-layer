@@ -45,7 +45,7 @@ namespace NeoServiceLayer.Core.ConfidentialComputing
     {
         public string Key { get; set; } = string.Empty;
         public byte[] Data { get; set; } = Array.Empty<byte>();
-        public Dictionary<string, string> Metadata { get; set; } = new();
+        public Dictionary<string, object> Metadata { get; set; } = new();
         public SealDataPolicy Policy { get; set; } = SealDataPolicy.Default;
     }
 
