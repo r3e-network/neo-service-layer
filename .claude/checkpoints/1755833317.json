@@ -1,1 +1,5 @@
+<<<<<<< Updated upstream
 {"branch": "checkpoint/pre-edit-20250822-032837", "file": "/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/ConfidentialComputing/ConfidentialComputingService.cs", "timestamp": "2025-08-22T03:28:37Z", "type": "pre-edit", "original_branch": "master"}
+=======
+{"tag": "checkpoint-20250822-032837", "file": "/home/ubuntu/neo-service-layer/src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj", "timestamp": "2025-08-22T03:28:37Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/1755833278.json                       | 1 +  .claude/checkpoints/1755833279.json                       | 1 +  src/Core/NeoServiceLayer.Core/NeoServiceLayer.Core.csproj | 2 --  3 files changed, 2 insertions(+), 2 deletions(-) "}
+>>>>>>> Stashed changes
