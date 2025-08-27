@@ -1,40 +1,19 @@
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using Neo.Oracle.Service.Data;
 using Neo.Oracle.Service.Services;
 using Neo.Oracle.Service.BackgroundServices;
-using Neo.Shared.Infrastructure.Extensions;
-using OpenTelemetry.Resources;
-using OpenTelemetry.Trace;
-using Serilog;
-using System.Reflection;
+using NeoServiceLayer.Common.Extensions;
 using Hangfire;
 using Hangfire.PostgreSql;
+using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Serilog configuration
-builder.Host.UseSerilog((context, configuration) =>
-{
-    configuration
-        .ReadFrom.Configuration(context.Configuration)
-        .WriteTo.Console()
-        .WriteTo.Seq(context.Configuration.GetConnectionString("Seq") ?? "http://seq:5341")
-        .Enrich.FromLogContext()
-        .Enrich.WithProperty("ServiceName", "neo-oracle-service")
-        .Enrich.WithProperty("Environment", context.HostingEnvironment.EnvironmentName);
-});
-
-// Database configuration
-builder.Services.AddDbContext<OracleDbContext>(options =>
-{
-    options.UseNpgsql(builder.Configuration.GetConnectionString("DefaultConnection"));
-    if (builder.Environment.IsDevelopment())
-    {
-        options.EnableSensitiveDataLogging();
-        options.EnableDetailedErrors();
-    }
-});
+// Add common Neo Service Layer components
+builder.Services.AddNeoServiceCommon(builder.Configuration, Assembly.GetExecutingAssembly());
+builder.Services.AddNeoServiceDatabase<OracleDbContext>(builder.Configuration);
+builder.Services.AddNeoServiceAuthentication(builder.Configuration);
+builder.Services.AddNeoServiceTelemetry(builder.Configuration, "neo-oracle-service");
+builder.Services.AddNeoServiceCors(builder.Configuration);
 
 // Hangfire for background jobs
 builder.Services.AddHangfire(configuration => configuration
