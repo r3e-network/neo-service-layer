@@ -2,6 +2,18 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using System.Reflection;
+using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.IdentityModel.Tokens;
+using System.Text;
+using OpenTelemetry;
+using OpenTelemetry.Trace;
+using OpenTelemetry.Metrics;
+using Microsoft.AspNetCore.Http;
+using NeoServiceLayer.Common.Models;
+using NeoServiceLayer.Common.HealthChecks;
+using NeoServiceLayer.Common.Services;
+using NeoServiceLayer.Common.Middleware;
 
 namespace NeoServiceLayer.Common.Extensions;
 
