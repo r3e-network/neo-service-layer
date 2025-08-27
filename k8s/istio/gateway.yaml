@@ -1,0 +1,269 @@
+apiVersion: networking.istio.io/v1beta1
+kind: Gateway
+metadata:
+  name: neo-service-gateway
+  namespace: neo-infrastructure
+spec:
+  selector:
+    istio: ingressgateway
+  servers:
+  - port:
+      number: 443
+      name: https
+      protocol: HTTPS
+    tls:
+      mode: SIMPLE
+      credentialName: neo-service-layer-tls
+    hosts:
+    - "api.neo-service-layer.com"
+    - "auth.neo-service-layer.com"
+    - "oracle.neo-service-layer.com"
+  - port:
+      number: 80
+      name: http
+      protocol: HTTP
+    hosts:
+    - "api.neo-service-layer.com"
+    - "auth.neo-service-layer.com"
+    - "oracle.neo-service-layer.com"
+    redirect:
+      httpsRedirect: true
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: neo-services-routing
+  namespace: neo-services
+spec:
+  hosts:
+  - "api.neo-service-layer.com"
+  - "auth.neo-service-layer.com"
+  - "oracle.neo-service-layer.com"
+  gateways:
+  - neo-infrastructure/neo-service-gateway
+  http:
+  # Authentication Service Routes
+  - match:
+    - headers:
+        host:
+          exact: "auth.neo-service-layer.com"
+      uri:
+        prefix: "/"
+    - headers:
+        host:
+          exact: "api.neo-service-layer.com"
+      uri:
+        prefix: "/api/auth"
+    route:
+    - destination:
+        host: neo-auth-service
+        port:
+          number: 80
+    timeout: 30s
+    retries:
+      attempts: 3
+      perTryTimeout: 10s
+      retryOn: gateway-error,connect-failure,refused-stream
+    corsPolicy:
+      allowOrigins:
+      - exact: "https://app.neo-service-layer.com"
+      - exact: "https://admin.neo-service-layer.com"
+      allowMethods:
+      - GET
+      - POST
+      - PUT
+      - DELETE
+      - OPTIONS
+      allowHeaders:
+      - "Authorization"
+      - "Content-Type"
+      - "X-Correlation-ID"
+      - "X-Request-ID"
+      maxAge: 24h
+      allowCredentials: true
+
+  # Oracle Service Routes
+  - match:
+    - headers:
+        host:
+          exact: "oracle.neo-service-layer.com"
+      uri:
+        prefix: "/"
+    - headers:
+        host:
+          exact: "api.neo-service-layer.com"
+      uri:
+        prefix: "/api/oracle"
+    route:
+    - destination:
+        host: neo-oracle-service
+        port:
+          number: 80
+    timeout: 60s
+    retries:
+      attempts: 2
+      perTryTimeout: 30s
+      retryOn: gateway-error,connect-failure,refused-stream
+
+  # Compute Service Routes (SGX-specific)
+  - match:
+    - headers:
+        host:
+          exact: "api.neo-service-layer.com"
+      uri:
+        prefix: "/api/compute"
+    route:
+    - destination:
+        host: neo-compute-service
+        port:
+          number: 80
+    timeout: 300s  # Longer timeout for compute operations
+    retries:
+      attempts: 1
+      perTryTimeout: 180s
+
+  # Storage Service Routes
+  - match:
+    - headers:
+        host:
+          exact: "api.neo-service-layer.com"
+      uri:
+        prefix: "/api/storage"
+    route:
+    - destination:
+        host: neo-storage-service
+        port:
+          number: 80
+    timeout: 120s
+    retries:
+      attempts: 2
+      perTryTimeout: 60s
+
+  # Health Check Routes
+  - match:
+    - uri:
+        prefix: "/health"
+    route:
+    - destination:
+        host: neo-health-aggregator
+        port:
+          number: 80
+    timeout: 10s
+
+  # Default route for other services
+  - match:
+    - uri:
+        prefix: "/api/"
+    route:
+    - destination:
+        host: neo-api-gateway
+        port:
+          number: 80
+    timeout: 30s
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neo-services-circuit-breaker
+  namespace: neo-services
+spec:
+  host: "*.neo-services.svc.cluster.local"
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+        maxRetries: 3
+        consecutiveGatewayErrors: 5
+        interval: 30s
+        baseEjectionTime: 30s
+        maxEjectionPercent: 50
+    outlierDetection:
+      consecutive5xxErrors: 5
+      consecutiveGatewayErrors: 5
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 50
+      minHealthPercent: 50
+    loadBalancer:
+      simple: LEAST_CONN
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neo-auth-service-dr
+  namespace: neo-services
+spec:
+  host: neo-auth-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 50
+      http:
+        http1MaxPendingRequests: 25
+        http2MaxRequests: 50
+        maxRequestsPerConnection: 5
+        maxRetries: 3
+    outlierDetection:
+      consecutive5xxErrors: 3
+      interval: 30s
+      baseEjectionTime: 30s
+      maxEjectionPercent: 30
+    loadBalancer:
+      simple: ROUND_ROBIN
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neo-oracle-service-dr
+  namespace: neo-services
+spec:
+  host: neo-oracle-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 100
+      http:
+        http1MaxPendingRequests: 50
+        http2MaxRequests: 100
+        maxRequestsPerConnection: 10
+    outlierDetection:
+      consecutive5xxErrors: 5
+      interval: 60s
+      baseEjectionTime: 60s
+      maxEjectionPercent: 50
+    loadBalancer:
+      simple: LEAST_CONN
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: DestinationRule
+metadata:
+  name: neo-compute-service-dr
+  namespace: neo-services
+spec:
+  host: neo-compute-service
+  trafficPolicy:
+    connectionPool:
+      tcp:
+        maxConnections: 20  # Limited for SGX operations
+      http:
+        http1MaxPendingRequests: 10
+        http2MaxRequests: 20
+        maxRequestsPerConnection: 2
+        idleTimeout: 300s
+        h2UpgradePolicy: UPGRADE
+    outlierDetection:
+      consecutive5xxErrors: 2
+      interval: 120s
+      baseEjectionTime: 120s
+      maxEjectionPercent: 25
+    loadBalancer:
+      simple: LEAST_CONN
