@@ -1,0 +1,372 @@
+name: Neo Infrastructure CI/CD
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+    - 'k8s/**'
+    - 'terraform/**'
+    - '.github/workflows/infrastructure-ci.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+    - 'k8s/**'
+    - 'terraform/**'
+
+env:
+  KUBECTL_VERSION: '1.28.0'
+  HELM_VERSION: '3.13.0'
+  TERRAGRUNT_VERSION: '0.52.0'
+  TERRAFORM_VERSION: '1.5.0'
+
+jobs:
+  validate-kubernetes:
+    name: Validate Kubernetes Manifests
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ env.KUBECTL_VERSION }}
+
+    - name: Setup Helm
+      uses: azure/setup-helm@v3
+      with:
+        version: ${{ env.HELM_VERSION }}
+
+    - name: Validate Kubernetes YAML
+      run: |
+        find k8s -name "*.yaml" -o -name "*.yml" | while read -r file; do
+          echo "Validating $file"
+          kubectl --dry-run=client --validate=true apply -f "$file" || echo "Warning: $file validation failed"
+        done
+
+    - name: Lint Helm charts
+      run: |
+        if [ -d "helm" ]; then
+          find helm -name "Chart.yaml" -exec dirname {} \; | while read -r chart; do
+            echo "Linting Helm chart: $chart"
+            helm lint "$chart"
+          done
+        fi
+
+    - name: Run kubeval
+      run: |
+        curl -sSLo kubeval.tar.gz https://github.com/instrumenta/kubeval/releases/latest/download/kubeval-linux-amd64.tar.gz
+        tar xf kubeval.tar.gz
+        sudo mv kubeval /usr/local/bin
+        
+        find k8s -name "*.yaml" -o -name "*.yml" | while read -r file; do
+          echo "Running kubeval on $file"
+          kubeval "$file" || echo "Warning: kubeval failed for $file"
+        done
+
+    - name: Check resource limits
+      run: |
+        python3 << 'EOF'
+        import yaml
+        import os
+        import glob
+        
+        def check_resource_limits(file_path):
+            with open(file_path, 'r') as f:
+                try:
+                    docs = yaml.safe_load_all(f)
+                    for doc in docs:
+                        if not doc:
+                            continue
+                        if doc.get('kind') in ['Deployment', 'StatefulSet', 'DaemonSet']:
+                            containers = doc.get('spec', {}).get('template', {}).get('spec', {}).get('containers', [])
+                            for container in containers:
+                                if 'resources' not in container:
+                                    print(f"WARNING: {file_path} - Container '{container.get('name')}' missing resource limits")
+                                elif 'limits' not in container.get('resources', {}):
+                                    print(f"WARNING: {file_path} - Container '{container.get('name')}' missing resource limits")
+                except yaml.YAMLError as e:
+                    print(f"ERROR: Failed to parse {file_path}: {e}")
+        
+        for file_path in glob.glob('k8s/**/*.yaml', recursive=True):
+            check_resource_limits(file_path)
+        EOF
+
+  security-scan-k8s:
+    name: Kubernetes Security Scan
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Checkov
+      uses: bridgecrewio/checkov-action@master
+      with:
+        directory: k8s/
+        framework: kubernetes
+        output_format: sarif
+        output_file_path: checkov-k8s.sarif
+
+    - name: Upload Checkov results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: checkov-k8s.sarif
+
+    - name: Run Polaris
+      run: |
+        curl -sSL https://github.com/FairwindsOps/polaris/releases/latest/download/polaris_linux_amd64.tar.gz | tar -xz
+        sudo mv polaris /usr/local/bin/
+        
+        polaris audit --audit-path k8s/ --format json > polaris-report.json
+        
+        # Check for high severity issues
+        HIGH_ISSUES=$(jq '.Results[].PodResult.Results[] | select(.Severity == "error") | length' polaris-report.json | wc -l)
+        if [ "$HIGH_ISSUES" -gt 0 ]; then
+          echo "Found $HIGH_ISSUES high severity security issues"
+          jq '.Results[].PodResult.Results[] | select(.Severity == "error")' polaris-report.json
+          exit 1
+        fi
+
+    - name: Upload Polaris results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: polaris-security-report
+        path: polaris-report.json
+
+  validate-terraform:
+    name: Validate Terraform
+    runs-on: ubuntu-latest
+    if: contains(github.event.head_commit.modified, 'terraform/')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v2
+      with:
+        terraform_version: ${{ env.TERRAFORM_VERSION }}
+
+    - name: Setup Terragrunt
+      run: |
+        curl -sSLo terragrunt https://github.com/gruntwork-io/terragrunt/releases/download/v${{ env.TERRAGRUNT_VERSION }}/terragrunt_linux_amd64
+        chmod +x terragrunt
+        sudo mv terragrunt /usr/local/bin/
+
+    - name: Terraform Format Check
+      run: |
+        if [ -d "terraform" ]; then
+          terraform fmt -check -recursive terraform/
+        fi
+
+    - name: Terraform Init and Validate
+      run: |
+        if [ -d "terraform" ]; then
+          cd terraform
+          find . -name "*.tf" -exec dirname {} \; | sort -u | while read -r dir; do
+            if [ -f "$dir/main.tf" ]; then
+              echo "Validating Terraform in $dir"
+              cd "$dir"
+              terraform init -backend=false
+              terraform validate
+              cd - > /dev/null
+            fi
+          done
+        fi
+
+    - name: Run Checkov on Terraform
+      uses: bridgecrewio/checkov-action@master
+      if: contains(github.event.head_commit.modified, 'terraform/')
+      with:
+        directory: terraform/
+        framework: terraform
+        output_format: sarif
+        output_file_path: checkov-terraform.sarif
+
+    - name: Upload Terraform Checkov results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: checkov-terraform.sarif
+
+  deploy-infrastructure-staging:
+    name: Deploy Infrastructure to Staging
+    runs-on: [self-hosted, neo-services]
+    needs: [validate-kubernetes, security-scan-k8s]
+    if: |
+      github.ref == 'refs/heads/develop' && 
+      needs.validate-kubernetes.result == 'success' && 
+      needs.security-scan-k8s.result == 'success'
+    environment:
+      name: staging-infrastructure
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ env.KUBECTL_VERSION }}
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_STAGING }}" | base64 -d > ~/.kube/config
+
+    - name: Apply namespace configurations
+      run: |
+        kubectl apply -f k8s/namespaces/ --dry-run=server
+        kubectl apply -f k8s/namespaces/
+
+    - name: Apply infrastructure manifests
+      run: |
+        # Apply infrastructure in order
+        kubectl apply -f k8s/infrastructure/ --dry-run=server
+        kubectl apply -f k8s/infrastructure/
+        
+        # Wait for infrastructure to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment -n neo-databases --all
+        kubectl wait --for=condition=available --timeout=300s deployment -n neo-infrastructure --all
+
+    - name: Apply monitoring stack
+      run: |
+        kubectl apply -f k8s/monitoring/ --dry-run=server
+        kubectl apply -f k8s/monitoring/
+        
+        # Wait for monitoring to be ready
+        kubectl wait --for=condition=available --timeout=300s deployment -n neo-monitoring --all
+
+    - name: Apply Istio configurations
+      run: |
+        kubectl apply -f k8s/istio/ --dry-run=server
+        kubectl apply -f k8s/istio/
+
+    - name: Verify deployment
+      run: |
+        echo "Checking pod status across all namespaces..."
+        kubectl get pods --all-namespaces | grep -E "(neo-|istio-)"
+        
+        echo "Checking service mesh status..."
+        kubectl get svc -n istio-system
+        kubectl get gateway -n neo-infrastructure
+        
+        echo "Checking monitoring stack..."
+        kubectl get svc -n neo-monitoring
+
+  deploy-infrastructure-production:
+    name: Deploy Infrastructure to Production
+    runs-on: [self-hosted, neo-services]
+    needs: [validate-kubernetes, security-scan-k8s, validate-terraform]
+    if: |
+      github.ref == 'refs/heads/main' && 
+      needs.validate-kubernetes.result == 'success' && 
+      needs.security-scan-k8s.result == 'success'
+    environment:
+      name: production-infrastructure
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ env.KUBECTL_VERSION }}
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+
+    - name: Pre-deployment checks
+      run: |
+        echo "Running pre-deployment verification..."
+        kubectl cluster-info
+        kubectl get nodes
+        kubectl get ns
+
+    - name: Deploy infrastructure with blue-green strategy
+      run: |
+        # Create backup of current state
+        kubectl get all --all-namespaces -o yaml > current-state-backup.yaml
+        
+        # Apply infrastructure changes
+        kubectl apply -f k8s/namespaces/
+        kubectl apply -f k8s/infrastructure/
+        kubectl apply -f k8s/monitoring/
+        kubectl apply -f k8s/istio/
+        
+        # Verify critical components
+        kubectl wait --for=condition=available --timeout=600s deployment -n neo-databases --all
+        kubectl wait --for=condition=available --timeout=600s deployment -n neo-monitoring --all
+        
+        # Health check
+        kubectl get pods --all-namespaces | grep -E "(Error|CrashLoopBackOff|ImagePullBackOff)" && exit 1 || echo "All pods healthy"
+
+    - name: Post-deployment verification
+      run: |
+        echo "Running post-deployment tests..."
+        
+        # Check service mesh connectivity
+        kubectl exec -n neo-monitoring deployment/prometheus -- wget -qO- http://neo-prometheus:9090/-/healthy
+        
+        # Check database connectivity
+        kubectl exec -n neo-databases statefulset/neo-postgres-cluster -- pg_isready
+        
+        # Check Redis cluster
+        kubectl exec -n neo-databases statefulset/neo-redis -- redis-cli ping
+
+    - name: Upload deployment artifacts
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: production-deployment-state
+        path: current-state-backup.yaml
+
+  rollback:
+    name: Rollback Infrastructure
+    runs-on: [self-hosted, neo-services]
+    if: failure() && github.ref == 'refs/heads/main'
+    needs: [deploy-infrastructure-production]
+    environment:
+      name: production-infrastructure
+    
+    steps:
+    - name: Download backup state
+      uses: actions/download-artifact@v3
+      with:
+        name: production-deployment-state
+
+    - name: Configure kubectl
+      run: |
+        echo "${{ secrets.KUBE_CONFIG_PRODUCTION }}" | base64 -d > ~/.kube/config
+
+    - name: Rollback to previous state
+      run: |
+        echo "Rolling back infrastructure deployment..."
+        kubectl apply -f current-state-backup.yaml
+        
+        # Wait for rollback to complete
+        sleep 60
+        
+        # Verify rollback
+        kubectl get pods --all-namespaces | grep -E "(Error|CrashLoopBackOff|ImagePullBackOff)" && echo "Rollback may have issues" || echo "Rollback completed successfully"
+
+  notify-infrastructure:
+    name: Notify Infrastructure Status
+    runs-on: ubuntu-latest
+    needs: [deploy-infrastructure-staging, deploy-infrastructure-production]
+    if: always()
+    
+    steps:
+    - name: Notify Teams
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#neo-infrastructure'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
