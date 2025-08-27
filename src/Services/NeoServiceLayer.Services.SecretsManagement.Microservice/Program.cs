@@ -88,25 +88,22 @@ builder.Services.AddResponseCompression(options =>
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline
+// Configure pipeline with common middleware
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.CorrelationIdMiddleware>();
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.RequestResponseLoggingMiddleware>();
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.GlobalExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
-    app.UseDeveloperExceptionPage();
-}
-else
-{
-    app.UseExceptionHandler("/error");
-    app.UseHsts();
+    app.UseSwagger();
+    app.UseSwaggerUI(c =>
+    {
+        c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Secrets Management API v1");
+        c.RoutePrefix = string.Empty;
+    });
 }
 
-app.UseSwagger();
-app.UseSwaggerUI(c =>
-{
-    c.SwaggerEndpoint("/swagger/v1/swagger.json", "Neo Secrets Management API v1");
-    c.RoutePrefix = string.Empty;
-});
-
-// Security headers
+// Security headers for Secrets Management
 app.Use(async (context, next) =>
 {
     context.Response.Headers.Add("X-Content-Type-Options", "nosniff");
@@ -114,6 +111,7 @@ app.Use(async (context, next) =>
     context.Response.Headers.Add("X-XSS-Protection", "1; mode=block");
     context.Response.Headers.Add("Referrer-Policy", "strict-origin-when-cross-origin");
     context.Response.Headers.Add("Content-Security-Policy", "default-src 'self'");
+    context.Response.Headers.Add("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
     await next();
 });
 
@@ -124,17 +122,22 @@ app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
-// Routing
+// Routing - require authorization by default for Secrets Management
 app.MapControllers()
    .RequireAuthorization();
 
-// Health checks endpoint
-app.MapHealthChecks("/health")
+// Health checks endpoints
+app.MapHealthChecks("/api/v1/monitoring/health")
    .AllowAnonymous();
 
-// Metrics endpoint for Prometheus
-app.MapPrometheusScrapingEndpoint("/metrics")
+app.MapHealthChecks("/api/v1/monitoring/ready")
    .AllowAnonymous();
+
+app.MapHealthChecks("/api/v1/monitoring/live")
+   .AllowAnonymous();
+
+// Metrics endpoint
+app.UseOpenTelemetryPrometheusScrapingEndpoint("/api/v1/monitoring/metrics");
 
 // Startup tasks
 using (var scope = app.Services.CreateScope())
