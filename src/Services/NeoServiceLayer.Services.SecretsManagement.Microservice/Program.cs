@@ -61,159 +61,30 @@ builder.Services.AddHttpClient("VaultBackend", client =>
 });
 
 // Secrets Management specific authorization policies
-
-// Authorization policies
 builder.Services.AddAuthorization(options =>
 {
     options.AddPolicy("SecretReader", policy => 
-        policy.RequireClaim("role", "secret-reader", "secret-admin", "admin"));
+        policy.RequireRole("SecretReader", "SecretWriter", "SecretAdmin", "SystemAdmin"));
     
     options.AddPolicy("SecretWriter", policy => 
-        policy.RequireClaim("role", "secret-writer", "secret-admin", "admin"));
+        policy.RequireRole("SecretWriter", "SecretAdmin", "SystemAdmin"));
     
     options.AddPolicy("SecretAdmin", policy => 
-        policy.RequireClaim("role", "secret-admin", "admin"));
-    
-    options.AddPolicy("SystemAdmin", policy => 
-        policy.RequireClaim("role", "admin"));
+        policy.RequireRole("SecretAdmin", "SystemAdmin"));
 });
 
-// Health checks
+// Additional health checks specific to Secrets Management service
 builder.Services.AddHealthChecks()
-    .AddDbContext<SecretsDbContext>(name: "database")
     .AddCheck<SecretsVaultHealthCheck>("secrets-vault")
     .AddCheck<EncryptionHealthCheck>("encryption")
     .AddCheck<HsmHealthCheck>("hsm")
     .AddCheck<RotationHealthCheck>("rotation");
 
-// OpenTelemetry
-var serviceName = "neo-secrets-management";
-var serviceVersion = Assembly.GetExecutingAssembly().GetName().Version?.ToString() ?? "1.0.0";
-
-builder.Services.AddOpenTelemetry()
-    .WithTracing(tracing =>
-    {
-        tracing
-            .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                .AddService(serviceName, serviceVersion)
-                .AddAttributes(new Dictionary<string, object>
-                {
-                    ["service.namespace"] = "neo-service-layer",
-                    ["service.instance.id"] = Environment.MachineName,
-                    ["deployment.environment"] = builder.Environment.EnvironmentName
-                }))
-            .AddAspNetCoreInstrumentation(options =>
-            {
-                options.RecordException = true;
-                options.EnrichWithHttpRequest = (activity, request) =>
-                {
-                    activity.SetTag("secrets.operation", request.Path.Value?.Split('/', StringSplitOptions.RemoveEmptyEntries).LastOrDefault());
-                };
-                options.EnrichWithHttpResponse = (activity, response) =>
-                {
-                    activity.SetTag("secrets.status_code", response.StatusCode);
-                };
-            })
-            .AddEntityFrameworkCoreInstrumentation(options =>
-            {
-                options.SetDbStatementForText = true;
-                options.EnrichWithIDbCommand = (activity, command) =>
-                {
-                    activity.SetTag("secrets.db.operation", command.CommandText?.Split(' ').FirstOrDefault()?.ToUpper());
-                };
-            })
-            .AddHttpClientInstrumentation()
-            .AddJaegerExporter();
-    })
-    .WithMetrics(metrics =>
-    {
-        metrics
-            .SetResourceBuilder(ResourceBuilder.CreateDefault()
-                .AddService(serviceName, serviceVersion))
-            .AddAspNetCoreInstrumentation()
-            .AddHttpClientInstrumentation()
-            .AddRuntimeInstrumentation()
-            .AddPrometheusExporter();
-    });
-
-// Swagger/OpenAPI
-builder.Services.AddEndpointsApiExplorer();
-builder.Services.AddSwaggerGen(c =>
-{
-    c.SwaggerDoc("v1", new OpenApiInfo 
-    { 
-        Title = "Neo Secrets Management API", 
-        Version = "v1",
-        Description = "Enterprise-grade secrets management service with HSM integration",
-        Contact = new OpenApiContact
-        {
-            Name = "Neo Service Layer",
-            Url = new Uri("https://github.com/neo-service-layer")
-        }
-    });
-    
-    c.AddSecurityDefinition("Bearer", new OpenApiSecurityScheme
-    {
-        Description = "JWT Authorization header using the Bearer scheme",
-        Name = "Authorization",
-        In = ParameterLocation.Header,
-        Type = SecuritySchemeType.ApiKey,
-        Scheme = "Bearer"
-    });
-    
-    c.AddSecurityRequirement(new OpenApiSecurityRequirement
-    {
-        {
-            new OpenApiSecurityScheme
-            {
-                Reference = new OpenApiReference
-                {
-                    Type = ReferenceType.SecurityScheme,
-                    Id = "Bearer"
-                }
-            },
-            Array.Empty<string>()
-        }
-    });
-
-    var xmlFile = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFile);
-    if (File.Exists(xmlPath))
-    {
-        c.IncludeXmlComments(xmlPath);
-    }
-});
-
-// CORS
-builder.Services.AddCors(options =>
-{
-    options.AddDefaultPolicy(policy =>
-    {
-        policy.WithOrigins(builder.Configuration.GetSection("AllowedOrigins").Get<string[]>() ?? Array.Empty<string>())
-              .AllowAnyMethod()
-              .AllowAnyHeader()
-              .AllowCredentials();
-    });
-});
-
-// Compression
+// Response compression for better performance
 builder.Services.AddResponseCompression(options =>
 {
     options.EnableForHttps = true;
 });
-
-// Memory cache
-builder.Services.AddMemoryCache();
-
-// Logging configuration
-builder.Logging.ClearProviders();
-builder.Logging.AddConsole();
-builder.Logging.AddJsonConsole();
-
-if (builder.Environment.IsDevelopment())
-{
-    builder.Logging.AddDebug();
-}
 
 var app = builder.Build();
 
