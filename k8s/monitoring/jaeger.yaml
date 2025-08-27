@@ -1,0 +1,308 @@
+apiVersion: jaegertracing.io/v1
+kind: Jaeger
+metadata:
+  name: neo-jaeger
+  namespace: neo-monitoring
+spec:
+  strategy: production
+  storage:
+    type: elasticsearch
+    elasticsearch:
+      nodeCount: 3
+      redundancyPolicy: SingleRedundancy
+      resources:
+        requests:
+          memory: 2Gi
+          cpu: 1
+        limits:
+          memory: 4Gi
+          cpu: 2
+      storage:
+        storageClassName: fast-ssd
+        size: 50Gi
+  collector:
+    replicas: 2
+    resources:
+      requests:
+        memory: 512Mi
+        cpu: 250m
+      limits:
+        memory: 1Gi
+        cpu: 500m
+    config:
+      receivers:
+        otlp:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:4317
+            http:
+              endpoint: 0.0.0.0:4318
+        jaeger:
+          protocols:
+            grpc:
+              endpoint: 0.0.0.0:14250
+            thrift_http:
+              endpoint: 0.0.0.0:14268
+            thrift_compact:
+              endpoint: 0.0.0.0:6831
+            thrift_binary:
+              endpoint: 0.0.0.0:6832
+      processors:
+        batch:
+          timeout: 1s
+          send_batch_size: 1024
+        memory_limiter:
+          check_interval: 1s
+          limit_mib: 512
+      exporters:
+        jaeger:
+          endpoint: jaeger-collector:14250
+          tls:
+            insecure: true
+  query:
+    replicas: 2
+    resources:
+      requests:
+        memory: 256Mi
+        cpu: 100m
+      limits:
+        memory: 512Mi
+        cpu: 200m
+  agent:
+    strategy: DaemonSet
+    resources:
+      requests:
+        memory: 128Mi
+        cpu: 50m
+      limits:
+        memory: 256Mi
+        cpu: 100m
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: otel-collector-config
+  namespace: neo-monitoring
+  labels:
+    app: otel-collector
+data:
+  config.yaml: |
+    receivers:
+      otlp:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:4317
+          http:
+            endpoint: 0.0.0.0:4318
+      jaeger:
+        protocols:
+          grpc:
+            endpoint: 0.0.0.0:14250
+          thrift_http:
+            endpoint: 0.0.0.0:14268
+          thrift_compact:
+            endpoint: 0.0.0.0:6831
+          thrift_binary:
+            endpoint: 0.0.0.0:6832
+
+    processors:
+      batch:
+        timeout: 1s
+        send_batch_size: 1024
+      memory_limiter:
+        check_interval: 1s
+        limit_mib: 512
+      resource:
+        attributes:
+          - key: service.namespace
+            value: neo-services
+            action: insert
+          - key: k8s.cluster.name
+            value: neo-cluster
+            action: insert
+
+    exporters:
+      jaeger:
+        endpoint: jaeger-collector.neo-monitoring.svc.cluster.local:14250
+        tls:
+          insecure: true
+      prometheus:
+        endpoint: "0.0.0.0:8889"
+        namespace: neo_tracing
+        const_labels:
+          cluster: neo-cluster
+
+    service:
+      pipelines:
+        traces:
+          receivers: [otlp, jaeger]
+          processors: [memory_limiter, resource, batch]
+          exporters: [jaeger]
+        metrics:
+          receivers: [otlp]
+          processors: [memory_limiter, resource, batch]
+          exporters: [prometheus]
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: otel-collector
+  namespace: neo-monitoring
+  labels:
+    app: otel-collector
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: otel-collector
+  template:
+    metadata:
+      labels:
+        app: otel-collector
+        monitoring: "true"
+    spec:
+      containers:
+      - name: otel-collector
+        image: otel/opentelemetry-collector-contrib:0.89.0
+        args:
+        - --config=/etc/otel/config.yaml
+        ports:
+        - containerPort: 4317
+          name: otlp-grpc
+        - containerPort: 4318
+          name: otlp-http
+        - containerPort: 14250
+          name: jaeger-grpc
+        - containerPort: 14268
+          name: jaeger-http
+        - containerPort: 6831
+          name: jaeger-compact
+        - containerPort: 6832
+          name: jaeger-binary
+        - containerPort: 8889
+          name: metrics
+        volumeMounts:
+        - name: config
+          mountPath: /etc/otel
+        resources:
+          requests:
+            memory: 256Mi
+            cpu: 100m
+          limits:
+            memory: 512Mi
+            cpu: 200m
+        livenessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 30
+        readinessProbe:
+          httpGet:
+            path: /
+            port: 13133
+          initialDelaySeconds: 5
+      volumes:
+      - name: config
+        configMap:
+          name: otel-collector-config
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: otel-collector
+  namespace: neo-monitoring
+  labels:
+    app: otel-collector
+    monitoring: "true"
+spec:
+  selector:
+    app: otel-collector
+  ports:
+  - name: otlp-grpc
+    port: 4317
+    targetPort: 4317
+    protocol: TCP
+  - name: otlp-http
+    port: 4318
+    targetPort: 4318
+    protocol: TCP
+  - name: jaeger-grpc
+    port: 14250
+    targetPort: 14250
+    protocol: TCP
+  - name: jaeger-http
+    port: 14268
+    targetPort: 14268
+    protocol: TCP
+  - name: jaeger-compact
+    port: 6831
+    targetPort: 6831
+    protocol: UDP
+  - name: jaeger-binary
+    port: 6832
+    targetPort: 6832
+    protocol: UDP
+  - name: metrics
+    port: 8889
+    targetPort: 8889
+    protocol: TCP
+  type: ClusterIP
+
+---
+apiVersion: networking.istio.io/v1beta1
+kind: VirtualService
+metadata:
+  name: jaeger-vs
+  namespace: neo-monitoring
+spec:
+  hosts:
+  - "tracing.neo-service-layer.com"
+  gateways:
+  - neo-infrastructure/neo-service-gateway
+  http:
+  - match:
+    - uri:
+        prefix: "/jaeger"
+    route:
+    - destination:
+        host: jaeger-query.neo-monitoring.svc.cluster.local
+        port:
+          number: 16686
+    timeout: 30s
+
+---
+apiVersion: install.istio.io/v1alpha1
+kind: IstioOperator
+metadata:
+  name: istio-tracing
+  namespace: istio-system
+spec:
+  values:
+    pilot:
+      traceSampling: 1.0
+    global:
+      tracer:
+        zipkin:
+          address: otel-collector.neo-monitoring.svc.cluster.local:9411
+  meshConfig:
+    defaultConfig:
+      tracing:
+        sampling: 100.0
+        custom_tags:
+          neo_service:
+            header:
+              name: "x-neo-service"
+          neo_version:
+            header:
+              name: "x-neo-version"
+          request_id:
+            header:
+              name: "x-request-id"
+    extensionProviders:
+    - name: otel-tracing
+      zipkin:
+        service: otel-collector.neo-monitoring.svc.cluster.local
+        port: 9411
