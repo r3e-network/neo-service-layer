@@ -1,0 +1,377 @@
+name: Neo Microservices CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+    - 'src/Services/**'
+    - 'k8s/**'
+    - '.github/workflows/**'
+  pull_request:
+    branches: [ main ]
+    paths:
+    - 'src/Services/**'
+    - 'k8s/**'
+
+env:
+  DOTNET_VERSION: '8.0.x'
+  NODE_VERSION: '18'
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: neo-service-layer
+
+jobs:
+  detect-changes:
+    name: Detect Service Changes
+    runs-on: ubuntu-latest
+    outputs:
+      services: ${{ steps.changes.outputs.services }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Detect changed services
+      id: changes
+      run: |
+        if [ "${{ github.event_name }}" == "pull_request" ]; then
+          BASE_SHA="${{ github.event.pull_request.base.sha }}"
+        else
+          BASE_SHA="${{ github.event.before }}"
+        fi
+        
+        # Get list of changed service directories
+        CHANGED_SERVICES=$(git diff --name-only $BASE_SHA HEAD | grep '^src/Services/' | cut -d'/' -f3 | sort | uniq)
+        
+        # Convert to JSON array for matrix
+        if [ -n "$CHANGED_SERVICES" ]; then
+          SERVICES_JSON=$(echo "$CHANGED_SERVICES" | jq -R -s -c 'split("\n")[:-1]')
+        else
+          SERVICES_JSON="[]"
+        fi
+        
+        echo "services=$SERVICES_JSON" >> $GITHUB_OUTPUT
+        echo "Changed services: $SERVICES_JSON"
+
+    - name: Set matrix output
+      id: set-matrix
+      run: |
+        echo "matrix={\"service\":${{ steps.changes.outputs.services }}}" >> $GITHUB_OUTPUT
+
+  build-and-test:
+    name: Build and Test Services
+    runs-on: [self-hosted, neo-services]
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Cache NuGet packages
+      uses: actions/cache@v3
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/*.csproj') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+
+    - name: Restore dependencies
+      run: |
+        dotnet restore src/Services/${{ matrix.service }}/${{ matrix.service }}.csproj
+
+    - name: Build service
+      run: |
+        dotnet build src/Services/${{ matrix.service }}/${{ matrix.service }}.csproj \
+          --configuration Release \
+          --no-restore \
+          --verbosity minimal
+
+    - name: Run unit tests
+      run: |
+        if [ -d "tests/Services/${{ matrix.service }}.Tests" ]; then
+          dotnet test tests/Services/${{ matrix.service }}.Tests/${{ matrix.service }}.Tests.csproj \
+            --configuration Release \
+            --no-build \
+            --verbosity minimal \
+            --collect:"XPlat Code Coverage" \
+            --results-directory ./coverage
+        fi
+
+    - name: Generate coverage report
+      if: always()
+      run: |
+        if [ -d "./coverage" ]; then
+          dotnet tool install --global dotnet-reportgenerator-globaltool
+          reportgenerator \
+            -reports:"./coverage/**/coverage.cobertura.xml" \
+            -targetdir:"./coverage/report" \
+            -reporttypes:"Html;JsonSummary"
+        fi
+
+    - name: Upload coverage reports
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: coverage-${{ matrix.service }}
+        path: ./coverage/report
+        retention-days: 5
+
+    - name: Code quality analysis
+      run: |
+        dotnet format src/Services/${{ matrix.service }}/${{ matrix.service }}.csproj \
+          --verify-no-changes \
+          --verbosity diagnostic
+
+  security-scan:
+    name: Security Scanning
+    runs-on: [self-hosted, security]
+    needs: detect-changes
+    if: needs.detect-changes.outputs.services != '[]'
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        scan-type: 'fs'
+        scan-ref: 'src/Services/${{ matrix.service }}'
+        format: 'sarif'
+        output: 'trivy-results-${{ matrix.service }}.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-results-${{ matrix.service }}.sarif'
+
+    - name: Run CodeQL Analysis
+      uses: github/codeql-action/analyze@v2
+      with:
+        languages: 'csharp'
+        queries: 'security-extended,security-and-quality'
+
+  build-images:
+    name: Build Container Images
+    runs-on: [self-hosted, neo-services]
+    needs: [detect-changes, build-and-test, security-scan]
+    if: |
+      needs.detect-changes.outputs.services != '[]' && 
+      (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/develop')
+    strategy:
+      matrix: ${{ fromJson(needs.detect-changes.outputs.matrix) }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+
+    - name: Log in to Container Registry
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ github.actor }}
+        password: ${{ secrets.GITHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=sha,prefix={{branch}}-
+          type=raw,value=latest,enable={{is_default_branch}}
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: .
+        file: src/Services/${{ matrix.service }}/Dockerfile
+        push: true
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        cache-from: type=gha
+        cache-to: type=gha,mode=max
+        build-args: |
+          SERVICE_NAME=${{ matrix.service }}
+          BUILD_CONFIGURATION=Release
+
+    - name: Run container security scan
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
+        format: 'sarif'
+        output: 'trivy-image-results-${{ matrix.service }}.sarif'
+
+    - name: Upload image scan results
+      uses: github/codeql-action/upload-sarif@v2
+      if: always()
+      with:
+        sarif_file: 'trivy-image-results-${{ matrix.service }}.sarif'
+
+  integration-tests:
+    name: Integration Tests
+    runs-on: [self-hosted, neo-services]
+    needs: [build-images]
+    if: needs.build-images.result == 'success'
+    
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: test-password
+          POSTGRES_DB: neo_test
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+        - 5432:5432
+
+      redis:
+        image: redis:7-alpine
+        options: >-
+          --health-cmd "redis-cli ping"
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+        ports:
+        - 6379:6379
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: ${{ env.DOTNET_VERSION }}
+
+    - name: Run integration tests
+      env:
+        ConnectionStrings__DefaultConnection: "Host=localhost;Port=5432;Database=neo_test;Username=postgres;Password=test-password"
+        ConnectionStrings__Redis: "localhost:6379"
+        JWT_SECRET_KEY: "test-jwt-secret-key-for-integration-tests-only"
+      run: |
+        if [ -d "tests/Integration" ]; then
+          dotnet test tests/Integration/ \
+            --configuration Release \
+            --logger trx \
+            --results-directory ./integration-results
+        fi
+
+    - name: Upload integration test results
+      uses: actions/upload-artifact@v3
+      if: always()
+      with:
+        name: integration-test-results
+        path: ./integration-results
+        retention-days: 5
+
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: [self-hosted, neo-services]
+    needs: [integration-tests]
+    if: |
+      github.ref == 'refs/heads/develop' && 
+      needs.integration-tests.result == 'success'
+    environment:
+      name: staging
+      url: https://staging.neo-service-layer.com
+    
+    steps:
+    - name: Checkout GitOps repo
+      uses: actions/checkout@v4
+      with:
+        repository: neo-service-layer/gitops-config
+        token: ${{ secrets.GITOPS_TOKEN }}
+        path: gitops
+
+    - name: Update staging manifests
+      run: |
+        cd gitops
+        # Update image tags in staging environment
+        for service in $(echo '${{ needs.detect-changes.outputs.services }}' | jq -r '.[]'); do
+          yq eval ".spec.template.spec.containers[0].image = \"${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:${{ github.sha }}\"" \
+            -i environments/staging/services/${service}/deployment.yaml
+        done
+
+    - name: Commit and push changes
+      run: |
+        cd gitops
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update staging images for commit ${{ github.sha }}" || exit 0
+        git push
+
+  deploy-production:
+    name: Deploy to Production
+    runs-on: [self-hosted, neo-services]
+    needs: [integration-tests]
+    if: |
+      github.ref == 'refs/heads/main' && 
+      needs.integration-tests.result == 'success'
+    environment:
+      name: production
+      url: https://api.neo-service-layer.com
+    
+    steps:
+    - name: Checkout GitOps repo
+      uses: actions/checkout@v4
+      with:
+        repository: neo-service-layer/gitops-config
+        token: ${{ secrets.GITOPS_TOKEN }}
+        path: gitops
+
+    - name: Update production manifests
+      run: |
+        cd gitops
+        # Update image tags in production environment
+        for service in $(echo '${{ needs.detect-changes.outputs.services }}' | jq -r '.[]'); do
+          yq eval ".spec.template.spec.containers[0].image = \"${{ env.REGISTRY }}/${{ env.IMAGE_PREFIX }}/${service}:${{ github.sha }}\"" \
+            -i environments/production/services/${service}/deployment.yaml
+        done
+
+    - name: Commit and push changes
+      run: |
+        cd gitops
+        git config --local user.email "action@github.com"
+        git config --local user.name "GitHub Action"
+        git add .
+        git commit -m "Update production images for commit ${{ github.sha }}" || exit 0
+        git push
+
+  notify:
+    name: Notify Deployment Status
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+    
+    steps:
+    - name: Notify Slack
+      if: always()
+      uses: 8398a7/action-slack@v3
+      with:
+        status: ${{ job.status }}
+        channel: '#neo-deployments'
+        webhook_url: ${{ secrets.SLACK_WEBHOOK_URL }}
+        fields: repo,message,commit,author,action,eventName,ref,workflow
