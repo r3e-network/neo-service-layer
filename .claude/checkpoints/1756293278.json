@@ -1,0 +1,1 @@
+{"tag": "checkpoint-20250827-111438", "file": "/home/ubuntu/neo-service-layer/k8s/namespaces/neo-namespaces.yaml", "timestamp": "2025-08-27T11:14:38Z", "type": "post-edit", "branch": "master", "diff_summary": " .claude/checkpoints/task-1756293258.json |  1 +  k8s/namespaces/neo-namespaces.yaml       | 41 ++++++++++++++++++++++++++++++++  2 files changed, 42 insertions(+) "}

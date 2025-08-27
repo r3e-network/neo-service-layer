@@ -1,0 +1,219 @@
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: neo-auth-postgres
+  namespace: neo-databases
+  labels:
+    app: neo-auth-postgres
+    service-domain: authentication
+spec:
+  instances: 3
+  
+  imageName: postgres:16-alpine
+  
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      work_mem: "4MB"
+      maintenance_work_mem: "64MB"
+      wal_buffers: "16MB"
+      checkpoint_completion_target: "0.9"
+      wal_compression: "on"
+      log_statement: "all"
+      log_duration: "on"
+      log_min_duration_statement: "1000"
+      # Security settings
+      ssl: "on"
+      ssl_cert_file: "/etc/ssl/certs/server.crt"
+      ssl_key_file: "/etc/ssl/private/server.key"
+      password_encryption: "scram-sha-256"
+      
+  bootstrap:
+    initdb:
+      database: neo_auth
+      owner: auth_user
+      secret:
+        name: neo-auth-postgres-credentials
+      encoding: UTF8
+      localeCType: C
+      localeCollate: C
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        - CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+        - CREATE EXTENSION IF NOT EXISTS "pg_stat_statements";
+        - CREATE SCHEMA IF NOT EXISTS auth;
+        - CREATE SCHEMA IF NOT EXISTS audit;
+        - GRANT USAGE ON SCHEMA auth TO auth_user;
+        - GRANT USAGE ON SCHEMA audit TO auth_user;
+        - GRANT CREATE ON SCHEMA auth TO auth_user;
+        - GRANT CREATE ON SCHEMA audit TO auth_user;
+        
+  storage:
+    size: 100Gi
+    storageClass: fast-ssd
+    
+  monitoring:
+    enabled: true
+    
+  backup:
+    retentionPolicy: "30d"
+    barmanObjectStore:
+      destinationPath: "s3://neo-backups/postgres/auth"
+      s3Credentials:
+        accessKeyId:
+          name: backup-s3-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: backup-s3-credentials
+          key: SECRET_ACCESS_KEY
+        region:
+          name: backup-s3-credentials
+          key: REGION
+      wal:
+        retention: "7d"
+      data:
+        retention: "30d"
+        
+  resources:
+    requests:
+      memory: "1Gi"
+      cpu: "500m"
+    limits:
+      memory: "2Gi"
+      cpu: "1"
+
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - neo-auth-postgres
+          topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: neo-oracle-postgres
+  namespace: neo-databases
+  labels:
+    app: neo-oracle-postgres
+    service-domain: data-analytics
+spec:
+  instances: 3
+  
+  imageName: postgres:16-alpine
+  
+  postgresql:
+    parameters:
+      max_connections: "300"
+      shared_buffers: "512MB"
+      effective_cache_size: "2GB"
+      work_mem: "8MB"
+      maintenance_work_mem: "128MB"
+      wal_buffers: "32MB"
+      checkpoint_completion_target: "0.9"
+      wal_compression: "on"
+      # Optimized for time-series data
+      random_page_cost: "1.1"
+      effective_io_concurrency: "200"
+      
+  bootstrap:
+    initdb:
+      database: neo_oracle
+      owner: oracle_user
+      secret:
+        name: neo-oracle-postgres-credentials
+      encoding: UTF8
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        - CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+        - CREATE EXTENSION IF NOT EXISTS "timescaledb";
+        - CREATE SCHEMA IF NOT EXISTS oracle_data;
+        - CREATE SCHEMA IF NOT EXISTS subscriptions;
+        - GRANT USAGE ON SCHEMA oracle_data TO oracle_user;
+        - GRANT USAGE ON SCHEMA subscriptions TO oracle_user;
+        - GRANT CREATE ON SCHEMA oracle_data TO oracle_user;
+        - GRANT CREATE ON SCHEMA subscriptions TO oracle_user;
+        
+  storage:
+    size: 200Gi
+    storageClass: fast-ssd
+    
+  monitoring:
+    enabled: true
+    
+  backup:
+    retentionPolicy: "30d"
+    barmanObjectStore:
+      destinationPath: "s3://neo-backups/postgres/oracle"
+      s3Credentials:
+        accessKeyId:
+          name: backup-s3-credentials
+          key: ACCESS_KEY_ID
+        secretAccessKey:
+          name: backup-s3-credentials
+          key: SECRET_ACCESS_KEY
+        region:
+          name: backup-s3-credentials
+          key: REGION
+
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Cluster
+metadata:
+  name: neo-compute-postgres
+  namespace: neo-databases
+  labels:
+    app: neo-compute-postgres
+    service-domain: compute-storage
+spec:
+  instances: 3
+  
+  imageName: postgres:16-alpine
+  
+  postgresql:
+    parameters:
+      max_connections: "200"
+      shared_buffers: "256MB"
+      effective_cache_size: "1GB"
+      work_mem: "4MB"
+      maintenance_work_mem: "64MB"
+      # Enhanced security for SGX data
+      row_security: "on"
+      log_statement: "all"
+      log_connections: "on"
+      log_disconnections: "on"
+      
+  bootstrap:
+    initdb:
+      database: neo_compute
+      owner: compute_user
+      secret:
+        name: neo-compute-postgres-credentials
+      encoding: UTF8
+      postInitSQL:
+        - CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
+        - CREATE EXTENSION IF NOT EXISTS "pgcrypto";
+        - CREATE SCHEMA IF NOT EXISTS sgx_data;
+        - CREATE SCHEMA IF NOT EXISTS compute_jobs;
+        - GRANT USAGE ON SCHEMA sgx_data TO compute_user;
+        - GRANT USAGE ON SCHEMA compute_jobs TO compute_user;
+        - GRANT CREATE ON SCHEMA sgx_data TO compute_user;
+        - GRANT CREATE ON SCHEMA compute_jobs TO compute_user;
+        # Enable Row Level Security for sensitive data
+        - ALTER DATABASE neo_compute SET row_security = on;
+        
+  storage:
+    size: 150Gi
+    storageClass: fast-ssd-encrypted
+    
+  monitoring:
+    enabled: true
