@@ -37,15 +37,15 @@ public class ComputeController : ControllerBase
     }
 
     /// <summary>
-    /// Submit a new compute job
+    /// Create a new compute job
     /// </summary>
-    /// <param name="request">Job creation parameters</param>
-    /// <returns>Created job information</returns>
+    /// <param name="request">Compute job creation parameters</param>
+    /// <returns>Created compute job information</returns>
     [HttpPost("jobs")]
     [Authorize(Policy = "ComputeWrite")]
     [ProducesResponseType(typeof(ComputeJobResponse), 201)]
     [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-    public async Task<IActionResult> CreateJob([FromBody] CreateComputeJobRequest request)
+    public async Task<IActionResult> CreateComputeJob([FromBody] CreateComputeJobRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -57,22 +57,22 @@ public class ComputeController : ControllerBase
             var userId = GetCurrentUserId();
             var job = await _computeJobService.CreateJobAsync(request, userId);
 
-            _logger.LogInformation("Compute job created: {JobId} by user: {UserId}", job.JobId, userId);
+            _logger.LogInformation("Compute job created: {JobId} for user: {UserId}", job.JobId, userId);
 
-            return CreatedAtAction(nameof(GetJob), new { id = job.JobId }, job);
+            return CreatedAtAction(nameof(GetComputeJob), new { id = job.JobId }, job);
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("resource"))
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Invalid Job Request",
+                Title = "Resource Unavailable",
                 Detail = ex.Message,
                 Status = 400
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating compute job for user: {UserId}", GetCurrentUserId());
+            _logger.LogError(ex, "Error creating compute job");
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
@@ -86,12 +86,12 @@ public class ComputeController : ControllerBase
     /// Get compute job by ID
     /// </summary>
     /// <param name="id">Job ID</param>
-    /// <returns>Job details and status</returns>
+    /// <returns>Compute job details</returns>
     [HttpGet("jobs/{id:guid}")]
     [Authorize(Policy = "ComputeRead")]
     [ProducesResponseType(typeof(ComputeJobResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<IActionResult> GetJob([FromRoute] Guid id)
+    public async Task<IActionResult> GetComputeJob([FromRoute] Guid id)
     {
         try
         {
@@ -107,16 +107,6 @@ public class ComputeController : ControllerBase
                 });
             }
 
-            // Check if user owns the job or has admin rights
-            var userId = GetCurrentUserId();
-            var userRoles = GetUserRoles();
-            
-            if (job.Status != "Completed" && !userRoles.Contains("compute-admin") && 
-                !_computeJobService.IsJobOwnedByUser(id, userId))
-            {
-                return Forbid();
-            }
-
             return Ok(job);
         }
         catch (Exception ex)
@@ -125,41 +115,40 @@ public class ComputeController : ControllerBase
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving the job",
+                Detail = "An error occurred while retrieving the compute job",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Get user's compute jobs
+    /// Get all compute jobs for the current user
     /// </summary>
     /// <param name="status">Filter by job status</param>
-    /// <param name="limit">Maximum number of jobs to return</param>
-    /// <param name="offset">Number of jobs to skip</param>
-    /// <returns>List of user's compute jobs</returns>
+    /// <param name="skip">Number of jobs to skip</param>
+    /// <param name="take">Number of jobs to take</param>
+    /// <returns>List of compute jobs</returns>
     [HttpGet("jobs")]
     [Authorize(Policy = "ComputeRead")]
     [ProducesResponseType(typeof(List<ComputeJobResponse>), 200)]
-    public async Task<IActionResult> GetJobs(
-        [FromQuery] string? status = null,
-        [FromQuery] int limit = 50,
-        [FromQuery] int offset = 0)
+    public async Task<IActionResult> GetComputeJobs(
+        [FromQuery] ComputeJobStatus? status = null,
+        [FromQuery] int skip = 0,
+        [FromQuery] int take = 20)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var jobs = await _computeJobService.GetUserJobsAsync(userId, status, limit, offset);
-            
+            var jobs = await _computeJobService.GetJobsForUserAsync(userId, status, skip, take);
             return Ok(jobs);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving compute jobs for user: {UserId}", GetCurrentUserId());
+            _logger.LogError(ex, "Error retrieving compute jobs");
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving jobs",
+                Detail = "An error occurred while retrieving compute jobs",
                 Status = 500
             });
         }
@@ -168,46 +157,26 @@ public class ComputeController : ControllerBase
     /// <summary>
     /// Cancel a compute job
     /// </summary>
-    /// <param name="id">Job ID to cancel</param>
+    /// <param name="id">Job ID</param>
     /// <returns>Cancellation confirmation</returns>
     [HttpPost("jobs/{id:guid}/cancel")]
     [Authorize(Policy = "ComputeWrite")]
     [ProducesResponseType(200)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
-    [ProducesResponseType(typeof(ProblemDetails), 409)]
-    public async Task<IActionResult> CancelJob([FromRoute] Guid id)
+    public async Task<IActionResult> CancelComputeJob([FromRoute] Guid id)
     {
         try
         {
             var userId = GetCurrentUserId();
-            var userRoles = GetUserRoles();
+            var result = await _computeJobService.CancelJobAsync(id, userId);
             
-            // Check if user owns the job or has admin rights
-            if (!userRoles.Contains("compute-admin") && 
-                !_computeJobService.IsJobOwnedByUser(id, userId))
+            if (!result)
             {
-                return Forbid();
-            }
-
-            var result = await _computeJobService.CancelJobAsync(id);
-            
-            if (!result.Success)
-            {
-                if (result.ErrorMessage?.Contains("not found") == true)
+                return NotFound(new ProblemDetails
                 {
-                    return NotFound(new ProblemDetails
-                    {
-                        Title = "Job Not Found",
-                        Detail = $"Compute job not found: {id}",
-                        Status = 404
-                    });
-                }
-
-                return Conflict(new ProblemDetails
-                {
-                    Title = "Cannot Cancel Job",
-                    Detail = result.ErrorMessage ?? "Job cannot be cancelled in its current state",
-                    Status = 409
+                    Title = "Job Not Found",
+                    Detail = $"Compute job not found or cannot be cancelled: {id}",
+                    Status = 404
                 });
             }
 
@@ -221,75 +190,48 @@ public class ComputeController : ControllerBase
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while cancelling the job",
+                Detail = "An error occurred while cancelling the compute job",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Get compute job logs
+    /// Get queue status and statistics
     /// </summary>
-    /// <param name="id">Job ID</param>
-    /// <param name="limit">Maximum number of log entries</param>
-    /// <returns>Job execution logs</returns>
-    [HttpGet("jobs/{id:guid}/logs")]
+    /// <returns>Queue status information</returns>
+    [HttpGet("queue/status")]
     [Authorize(Policy = "ComputeRead")]
-    [ProducesResponseType(typeof(List<object>), 200)]
-    [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<IActionResult> GetJobLogs(
-        [FromRoute] Guid id,
-        [FromQuery] int limit = 100)
+    [ProducesResponseType(typeof(JobQueueStatus), 200)]
+    public async Task<IActionResult> GetQueueStatus()
     {
         try
         {
-            var userId = GetCurrentUserId();
-            var userRoles = GetUserRoles();
-            
-            // Check if user owns the job or has admin rights
-            if (!userRoles.Contains("compute-admin") && 
-                !_computeJobService.IsJobOwnedByUser(id, userId))
-            {
-                return Forbid();
-            }
-
-            var logs = await _computeJobService.GetJobLogsAsync(id, limit);
-            
-            if (logs == null)
-            {
-                return NotFound(new ProblemDetails
-                {
-                    Title = "Job Not Found",
-                    Detail = $"Compute job not found: {id}",
-                    Status = 404
-                });
-            }
-
-            return Ok(logs);
+            var status = await _computeJobService.GetQueueStatusAsync();
+            return Ok(status);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving job logs: {JobId}", id);
+            _logger.LogError(ex, "Error retrieving queue status");
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving job logs",
+                Detail = "An error occurred while retrieving queue status",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Execute secure computation
+    /// Create a new SGX enclave
     /// </summary>
-    /// <param name="request">Secure computation parameters</param>
-    /// <returns>Computation result with attestation proof</returns>
-    [HttpPost("secure-compute")]
-    [Authorize(Policy = "ComputeWrite")]
-    [ProducesResponseType(typeof(SecureComputationResponse), 200)]
+    /// <param name="request">Enclave creation parameters</param>
+    /// <returns>Created enclave information</returns>
+    [HttpPost("enclaves")]
+    [Authorize(Policy = "SgxOperator")]
+    [ProducesResponseType(typeof(EnclaveResponse), 201)]
     [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-    [ProducesResponseType(typeof(ProblemDetails), 503)]
-    public async Task<IActionResult> ExecuteSecureComputation([FromBody] SecureComputationRequest request)
+    public async Task<IActionResult> CreateEnclave([FromBody] CreateEnclaveRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -298,78 +240,40 @@ public class ComputeController : ControllerBase
 
         try
         {
-            var userId = GetCurrentUserId();
-            var result = await _secureComputationService.ExecuteAsync(request, userId);
+            var enclave = await _sgxEnclaveService.CreateEnclaveAsync(request);
 
-            _logger.LogInformation("Secure computation executed: {SessionId} by user: {UserId}", 
-                result.SessionId, userId);
+            _logger.LogInformation("SGX enclave created: {EnclaveId}", enclave.Id);
 
-            return Ok(result);
+            return CreatedAtAction(nameof(GetEnclave), new { id = enclave.Id }, enclave);
         }
-        catch (InvalidOperationException ex) when (ex.Message.Contains("no available"))
-        {
-            return StatusCode(503, new ProblemDetails
-            {
-                Title = "Service Unavailable",
-                Detail = "No SGX enclaves available for secure computation",
-                Status = 503
-            });
-        }
-        catch (ArgumentException ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("SGX"))
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Invalid Request",
+                Title = "SGX Not Available",
                 Detail = ex.Message,
                 Status = 400
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error executing secure computation for user: {UserId}", GetCurrentUserId());
+            _logger.LogError(ex, "Error creating SGX enclave");
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred during secure computation",
+                Detail = "An error occurred while creating the SGX enclave",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Get available SGX enclaves
-    /// </summary>
-    /// <param name="includeStats">Include enclave statistics</param>
-    /// <returns>List of available enclaves</returns>
-    [HttpGet("enclaves")]
-    [Authorize(Policy = "ComputeRead")]
-    [ProducesResponseType(typeof(List<EnclaveResponse>), 200)]
-    public async Task<IActionResult> GetEnclaves([FromQuery] bool includeStats = false)
-    {
-        try
-        {
-            var enclaves = await _sgxEnclaveService.GetAvailableEnclavesAsync(includeStats);
-            return Ok(enclaves);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving SGX enclaves");
-            return StatusCode(500, new ProblemDetails
-            {
-                Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving enclaves",
-                Status = 500
-            });
-        }
-    }
-
-    /// <summary>
-    /// Get SGX enclave details
+    /// Get SGX enclave by ID
     /// </summary>
     /// <param name="id">Enclave ID</param>
-    /// <returns>Detailed enclave information</returns>
+    /// <returns>Enclave details</returns>
     [HttpGet("enclaves/{id:guid}")]
-    [Authorize(Policy = "SgxOperator")]
+    [Authorize(Policy = "ComputeRead")]
     [ProducesResponseType(typeof(EnclaveResponse), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
     public async Task<IActionResult> GetEnclave([FromRoute] Guid id)
@@ -396,65 +300,47 @@ public class ComputeController : ControllerBase
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving the enclave",
+                Detail = "An error occurred while retrieving the SGX enclave",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Create new SGX enclave
+    /// Get all available SGX enclaves
     /// </summary>
-    /// <param name="request">Enclave creation parameters</param>
-    /// <returns>Created enclave information</returns>
-    [HttpPost("enclaves")]
-    [Authorize(Policy = "SgxOperator")]
-    [ProducesResponseType(typeof(EnclaveResponse), 201)]
-    [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
-    public async Task<IActionResult> CreateEnclave([FromBody] CreateEnclaveRequest request)
+    /// <param name="status">Filter by enclave status</param>
+    /// <returns>List of SGX enclaves</returns>
+    [HttpGet("enclaves")]
+    [Authorize(Policy = "ComputeRead")]
+    [ProducesResponseType(typeof(List<EnclaveResponse>), 200)]
+    public async Task<IActionResult> GetEnclaves([FromQuery] SgxEnclaveStatus? status = null)
     {
-        if (!ModelState.IsValid)
-        {
-            return BadRequest(ModelState);
-        }
-
         try
         {
-            var enclave = await _sgxEnclaveService.CreateEnclaveAsync(request);
-
-            _logger.LogInformation("SGX enclave created: {EnclaveId} ({Name})", enclave.Id, request.Name);
-
-            return CreatedAtAction(nameof(GetEnclave), new { id = enclave.Id }, enclave);
-        }
-        catch (InvalidOperationException ex)
-        {
-            return BadRequest(new ProblemDetails
-            {
-                Title = "Invalid Enclave Request",
-                Detail = ex.Message,
-                Status = 400
-            });
+            var enclaves = await _sgxEnclaveService.GetEnclavesAsync(status);
+            return Ok(enclaves);
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error creating SGX enclave: {Name}", request.Name);
+            _logger.LogError(ex, "Error retrieving SGX enclaves");
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while creating the enclave",
+                Detail = "An error occurred while retrieving SGX enclaves",
                 Status = 500
             });
         }
     }
 
     /// <summary>
-    /// Perform SGX attestation
+    /// Perform attestation for an SGX enclave
     /// </summary>
     /// <param name="request">Attestation parameters</param>
-    /// <returns>Attestation verification result</returns>
-    [HttpPost("attest")]
+    /// <returns>Attestation result</returns>
+    [HttpPost("attestation")]
     [Authorize(Policy = "SgxOperator")]
-    [ProducesResponseType(typeof(AttestationResponse), 200)]
+    [ProducesResponseType(typeof(AttestationResponse), 201)]
     [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
     public async Task<IActionResult> PerformAttestation([FromBody] AttestationRequest request)
     {
@@ -465,29 +351,113 @@ public class ComputeController : ControllerBase
 
         try
         {
-            var result = await _attestationService.VerifyAttestationAsync(request);
+            var attestation = await _attestationService.PerformAttestationAsync(request);
 
-            _logger.LogInformation("SGX attestation performed: {AttestationId} for enclave: {EnclaveId}", 
-                result.AttestationId, request.EnclaveId);
+            _logger.LogInformation("Attestation performed: {AttestationId} for enclave: {EnclaveId}", 
+                attestation.AttestationId, request.EnclaveId);
 
-            return Ok(result);
+            return CreatedAtAction(nameof(GetAttestation), new { id = attestation.AttestationId }, attestation);
         }
-        catch (ArgumentException ex)
+        catch (InvalidOperationException ex) when (ex.Message.Contains("enclave"))
         {
             return BadRequest(new ProblemDetails
             {
-                Title = "Invalid Attestation Request",
+                Title = "Invalid Enclave",
                 Detail = ex.Message,
                 Status = 400
             });
         }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error performing SGX attestation for enclave: {EnclaveId}", request.EnclaveId);
+            _logger.LogError(ex, "Error performing attestation for enclave: {EnclaveId}", request.EnclaveId);
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred during attestation",
+                Detail = "An error occurred while performing attestation",
+                Status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Get attestation result by ID
+    /// </summary>
+    /// <param name="id">Attestation ID</param>
+    /// <returns>Attestation details</returns>
+    [HttpGet("attestation/{id:guid}")]
+    [Authorize(Policy = "ComputeRead")]
+    [ProducesResponseType(typeof(AttestationResponse), 200)]
+    [ProducesResponseType(typeof(ProblemDetails), 404)]
+    public async Task<IActionResult> GetAttestation([FromRoute] Guid id)
+    {
+        try
+        {
+            var attestation = await _attestationService.GetAttestationAsync(id);
+            
+            if (attestation == null)
+            {
+                return NotFound(new ProblemDetails
+                {
+                    Title = "Attestation Not Found",
+                    Detail = $"Attestation result not found: {id}",
+                    Status = 404
+                });
+            }
+
+            return Ok(attestation);
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error retrieving attestation: {AttestationId}", id);
+            return StatusCode(500, new ProblemDetails
+            {
+                Title = "Internal Server Error",
+                Detail = "An error occurred while retrieving the attestation",
+                Status = 500
+            });
+        }
+    }
+
+    /// <summary>
+    /// Perform secure computation
+    /// </summary>
+    /// <param name="request">Secure computation parameters</param>
+    /// <returns>Computation result</returns>
+    [HttpPost("secure-compute")]
+    [Authorize(Policy = "ComputeWrite")]
+    [ProducesResponseType(typeof(SecureComputationResponse), 200)]
+    [ProducesResponseType(typeof(ValidationProblemDetails), 400)]
+    public async Task<IActionResult> PerformSecureComputation([FromBody] SecureComputationRequest request)
+    {
+        if (!ModelState.IsValid)
+        {
+            return BadRequest(ModelState);
+        }
+
+        try
+        {
+            var result = await _secureComputationService.PerformComputationAsync(request);
+
+            _logger.LogInformation("Secure computation completed: {SessionId}", result.SessionId);
+
+            return Ok(result);
+        }
+        catch (InvalidOperationException ex) when (ex.Message.Contains("enclave"))
+        {
+            return BadRequest(new ProblemDetails
+            {
+                Title = "Enclave Unavailable",
+                Detail = ex.Message,
+                Status = 400
+            });
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error performing secure computation");
+            return StatusCode(500, new ProblemDetails
+            {
+                Title = "Internal Server Error",
+                Detail = "An error occurred while performing secure computation",
                 Status = 500
             });
         }
@@ -496,7 +466,7 @@ public class ComputeController : ControllerBase
     /// <summary>
     /// Get compute service statistics
     /// </summary>
-    /// <returns>Service performance and usage statistics</returns>
+    /// <returns>Service performance and resource usage statistics</returns>
     [HttpGet("stats")]
     [Authorize(Policy = "ComputeRead")]
     [ProducesResponseType(typeof(ComputeStatistics), 200)]
@@ -520,94 +490,49 @@ public class ComputeController : ControllerBase
     }
 
     /// <summary>
-    /// Get job queue status
+    /// Get resource allocation for a job
     /// </summary>
-    /// <returns>Current job queue status and metrics</returns>
-    [HttpGet("queue")]
+    /// <param name="jobId">Job ID</param>
+    /// <returns>Resource allocation details</returns>
+    [HttpGet("jobs/{jobId:guid}/resources")]
     [Authorize(Policy = "ComputeRead")]
-    [ProducesResponseType(typeof(JobQueueStatus), 200)]
-    public async Task<IActionResult> GetQueueStatus()
-    {
-        try
-        {
-            var queueStatus = await _computeJobService.GetQueueStatusAsync();
-            return Ok(queueStatus);
-        }
-        catch (Exception ex)
-        {
-            _logger.LogError(ex, "Error retrieving job queue status");
-            return StatusCode(500, new ProblemDetails
-            {
-                Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving queue status",
-                Status = 500
-            });
-        }
-    }
-
-    /// <summary>
-    /// Get resource allocation details for a job
-    /// </summary>
-    /// <param name="id">Job ID</param>
-    /// <returns>Resource allocation and usage information</returns>
-    [HttpGet("jobs/{id:guid}/resources")]
-    [Authorize(Policy = "ComputeRead")]
-    [ProducesResponseType(typeof(ComputeResourceUsage), 200)]
+    [ProducesResponseType(typeof(List<ResourceAllocation>), 200)]
     [ProducesResponseType(typeof(ProblemDetails), 404)]
-    public async Task<IActionResult> GetJobResources([FromRoute] Guid id)
+    public async Task<IActionResult> GetResourceAllocation([FromRoute] Guid jobId)
     {
         try
         {
-            var userId = GetCurrentUserId();
-            var userRoles = GetUserRoles();
-            
-            // Check if user owns the job or has admin rights
-            if (!userRoles.Contains("compute-admin") && 
-                !_computeJobService.IsJobOwnedByUser(id, userId))
-            {
-                return Forbid();
-            }
-
-            var resources = await _resourceAllocationService.GetJobResourcesAsync(id);
-            
-            if (resources == null)
-            {
-                return NotFound(new ProblemDetails
-                {
-                    Title = "Job Not Found",
-                    Detail = $"Compute job not found: {id}",
-                    Status = 404
-                });
-            }
-
+            var resources = await _resourceAllocationService.GetAllocationForJobAsync(jobId);
             return Ok(resources);
         }
+        catch (ArgumentException ex)
+        {
+            return NotFound(new ProblemDetails
+            {
+                Title = "Job Not Found",
+                Detail = ex.Message,
+                Status = 404
+            });
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error retrieving job resources: {JobId}", id);
+            _logger.LogError(ex, "Error retrieving resource allocation for job: {JobId}", jobId);
             return StatusCode(500, new ProblemDetails
             {
                 Title = "Internal Server Error",
-                Detail = "An error occurred while retrieving job resources",
+                Detail = "An error occurred while retrieving resource allocation",
                 Status = 500
             });
         }
     }
 
-    private string GetCurrentUserId()
+    private Guid GetCurrentUserId()
     {
         var userIdClaim = HttpContext.User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-        if (string.IsNullOrEmpty(userIdClaim))
+        if (string.IsNullOrEmpty(userIdClaim) || !Guid.TryParse(userIdClaim, out var userId))
         {
             throw new UnauthorizedAccessException("Invalid user ID in token");
         }
-        return userIdClaim;
-    }
-
-    private string[] GetUserRoles()
-    {
-        return HttpContext.User.FindAll(ClaimTypes.Role)
-            .Select(c => c.Value)
-            .ToArray();
+        return userId;
     }
 }
