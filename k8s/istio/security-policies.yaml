@@ -2,206 +2,55 @@ apiVersion: security.istio.io/v1beta1
 kind: PeerAuthentication
 metadata:
   name: default
-  namespace: neo-service-layer
+  namespace: neo-services
 spec:
   mtls:
     mode: STRICT
----
-apiVersion: security.istio.io/v1beta1
-kind: PeerAuthentication
-metadata:
-  name: api-gateway-peer-auth
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: api-gateway
-  mtls:
-    mode: STRICT
-  portLevelMtls:
-    8080:
-      mode: STRICT
-    8443:
-      mode: STRICT
+
 ---
 apiVersion: security.istio.io/v1beta1
 kind: AuthorizationPolicy
 metadata:
-  name: api-gateway-authz
-  namespace: neo-service-layer
+  name: neo-auth-service-authz
+  namespace: neo-services
 spec:
   selector:
     matchLabels:
-      app: api-gateway
-  action: ALLOW
+      app: neo-auth-service
   rules:
+  # Allow public authentication endpoints
   - from:
     - source:
-        principals: ["cluster.local/ns/istio-system/sa/istio-ingressgateway-service-account"]
-  - to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/health", "/health/*", "/info"]
-  - from:
-    - source:
-        namespaces: ["neo-service-layer"]
+        namespaces: ["istio-system", "neo-infrastructure"]
     to:
     - operation:
-        methods: ["GET", "POST", "PUT", "DELETE"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: oracle-service-authz
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: oracle-service
-  action: ALLOW
-  rules:
+        methods: ["GET", "POST", "OPTIONS"]
+        paths: ["/api/auth/login", "/api/auth/register", "/health/*"]
+  
+  # Allow inter-service communication
   - from:
     - source:
-        principals: 
-        - "cluster.local/ns/neo-service-layer/sa/api-gateway-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/crosschain-service-account"
+        namespaces: ["neo-services"]
     to:
     - operation:
-        methods: ["GET", "POST"]
-        paths: ["/api/*"]
-  - to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/health", "/health/*"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: crosschain-service-authz
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: crosschain-service
-  action: ALLOW
-  rules:
-  - from:
-    - source:
-        principals: 
-        - "cluster.local/ns/neo-service-layer/sa/api-gateway-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/oracle-service-account"
-    to:
-    - operation:
-        methods: ["GET", "POST", "PUT"]
-        paths: ["/api/*"]
-  - to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/health", "/health/*"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: database-access-authz
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: postgres
-  action: ALLOW
-  rules:
-  - from:
-    - source:
-        principals:
-        - "cluster.local/ns/neo-service-layer/sa/api-gateway-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/oracle-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/crosschain-service-account"
-    to:
-    - operation:
-        ports: ["5432"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: redis-access-authz
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: redis
-  action: ALLOW
-  rules:
-  - from:
-    - source:
-        principals:
-        - "cluster.local/ns/neo-service-layer/sa/api-gateway-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/oracle-service-account"
-        - "cluster.local/ns/neo-service-layer/sa/crosschain-service-account"
-    to:
-    - operation:
-        ports: ["6379"]
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: deny-all-external
-  namespace: neo-service-layer
-spec:
-  action: DENY
-  rules:
-  - from:
-    - source:
-        notNamespaces: ["neo-service-layer", "istio-system", "kube-system"]
-    to:
-    - operation:
-        ports: ["8080", "5432", "6379", "5672"]
+        methods: ["POST"]
+        paths: ["/api/auth/validate"]
+
 ---
 apiVersion: security.istio.io/v1beta1
 kind: RequestAuthentication
 metadata:
-  name: jwt-auth
-  namespace: neo-service-layer
+  name: neo-jwt-auth
+  namespace: neo-services
 spec:
   selector:
     matchLabels:
-      app: api-gateway
+      auth-required: "true"
   jwtRules:
-  - issuer: "NeoServiceLayer"
+  - issuer: "neo-auth-service"
     audiences:
-    - "NeoServiceLayerClients"
-    jwksUri: "https://api.neo-service.io/.well-known/jwks.json"
-    forwardOriginalToken: true
-  - issuer: "https://accounts.google.com"
-    audiences:
-    - "neo-service-layer-client-id"
-    jwksUri: "https://www.googleapis.com/oauth2/v3/certs"
----
-apiVersion: security.istio.io/v1beta1
-kind: AuthorizationPolicy
-metadata:
-  name: require-jwt
-  namespace: neo-service-layer
-spec:
-  selector:
-    matchLabels:
-      app: api-gateway
-  action: ALLOW
-  rules:
-  - to:
-    - operation:
-        methods: ["GET"]
-        paths: ["/health", "/health/*", "/info", "/swagger/*"]
-  - from:
-    - source:
-        requestPrincipals: ["NeoServiceLayer/*"]
-    to:
-    - operation:
-        methods: ["GET", "POST", "PUT", "DELETE"]
-        notPaths: ["/health", "/health/*", "/info"]
-  - from:
-    - source:
-        requestPrincipals: ["https://accounts.google.com/*"]
-    to:
-    - operation:
-        methods: ["GET", "POST"]
-        paths: ["/api/public/*"]
+    - "neo-service-layer"
+    jwksUri: "http://neo-auth-service.neo-services.svc.cluster.local/api/auth/.well-known/jwks.json"
+    fromHeaders:
+    - name: "Authorization"
+      prefix: "Bearer "
