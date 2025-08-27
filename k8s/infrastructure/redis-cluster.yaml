@@ -1,0 +1,140 @@
+apiVersion: redis.redis.opstreelabs.in/v1beta1
+kind: RedisCluster
+metadata:
+  name: neo-redis-cluster
+  namespace: neo-databases
+  labels:
+    app: neo-redis-cluster
+    tier: cache
+spec:
+  clusterSize: 6
+  clusterVersion: v7
+  
+  redisLeader:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 200m
+        memory: 1Gi
+      limits:
+        cpu: 500m
+        memory: 2Gi
+        
+  redisFollower:
+    replicas: 3
+    resources:
+      requests:
+        cpu: 100m
+        memory: 512Mi
+      limits:
+        cpu: 200m
+        memory: 1Gi
+        
+  persistenceEnabled: true
+  
+  redisExporter:
+    enabled: true
+    image: oliver006/redis_exporter:latest
+    resources:
+      requests:
+        cpu: 50m
+        memory: 64Mi
+      limits:
+        cpu: 100m
+        memory: 128Mi
+        
+  storage:
+    volumeClaimTemplate:
+      spec:
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 20Gi
+        storageClassName: fast-ssd
+        
+  redisConfig:
+    # Memory management
+    maxmemory: "1gb"
+    maxmemory-policy: "allkeys-lru"
+    
+    # Persistence
+    save: "900 1 300 10 60 10000"
+    stop-writes-on-bgsave-error: "yes"
+    rdbcompression: "yes"
+    rdbchecksum: "yes"
+    
+    # AOF settings
+    appendonly: "yes"
+    appendfsync: "everysec"
+    no-appendfsync-on-rewrite: "no"
+    auto-aof-rewrite-percentage: "100"
+    auto-aof-rewrite-min-size: "64mb"
+    
+    # Security
+    protected-mode: "yes"
+    
+    # Performance
+    tcp-keepalive: "300"
+    timeout: "0"
+    tcp-backlog: "511"
+    
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 100
+        podAffinityTerm:
+          labelSelector:
+            matchExpressions:
+            - key: app
+              operator: In
+              values:
+              - neo-redis-cluster
+          topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo-redis-cluster-headless
+  namespace: neo-databases
+  labels:
+    app: neo-redis-cluster
+    service-type: headless
+spec:
+  clusterIP: None
+  selector:
+    app: neo-redis-cluster
+  ports:
+  - name: client
+    port: 6379
+    targetPort: 6379
+  - name: gossip
+    port: 16379
+    targetPort: 16379
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: neo-redis-cluster-service
+  namespace: neo-databases
+  labels:
+    app: neo-redis-cluster
+    service-type: cluster-ip
+spec:
+  type: ClusterIP
+  selector:
+    app: neo-redis-cluster
+  ports:
+  - name: client
+    port: 6379
+    targetPort: 6379
+  - name: metrics
+    port: 9121
+    targetPort: 9121
