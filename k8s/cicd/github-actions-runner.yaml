@@ -1,0 +1,237 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-cicd
+  labels:
+    name: neo-cicd
+    istio-injection: enabled
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: github-token
+  namespace: neo-cicd
+type: Opaque
+data:
+  token: Z2hwX3lvdXJfZ2l0aHViX3Rva2VuX2hlcmU=  # Replace with actual GitHub token
+
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: neo-service-layer-runners
+  namespace: neo-cicd
+spec:
+  replicas: 3
+  template:
+    spec:
+      repository: neo-service-layer/neo-service-layer
+      labels:
+      - neo-services
+      - kubernetes
+      - dotnet
+      - microservices
+      env:
+      - name: DOCKER_HOST
+        value: tcp://localhost:2376
+      - name: DOCKER_TLS_VERIFY
+        value: "1"
+      - name: DOCKER_CERT_PATH
+        value: /certs/client
+      resources:
+        requests:
+          memory: "2Gi"
+          cpu: "1"
+        limits:
+          memory: "4Gi"
+          cpu: "2"
+      volumes:
+      - name: docker-certs
+        emptyDir: {}
+      volumeMounts:
+      - name: docker-certs
+        mountPath: /certs
+      sidecarContainers:
+      - name: docker
+        image: docker:24-dind
+        securityContext:
+          privileged: true
+        env:
+        - name: DOCKER_TLS_CERTDIR
+          value: /certs
+        volumeMounts:
+        - name: docker-certs
+          mountPath: /certs
+        resources:
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: HorizontalRunnerAutoscaler
+metadata:
+  name: neo-service-layer-hra
+  namespace: neo-cicd
+spec:
+  scaleTargetRef:
+    name: neo-service-layer-runners
+  minReplicas: 1
+  maxReplicas: 10
+  metrics:
+  - type: TotalNumberOfQueuedAndInProgressWorkflowRuns
+    repositoryNames:
+    - neo-service-layer/neo-service-layer
+  scaleUpTriggers:
+  - githubEvent:
+      workflowJob: {}
+    amount: 1
+    duration: "5m"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: dotnet-tools-config
+  namespace: neo-cicd
+data:
+  setup-dotnet.sh: |
+    #!/bin/bash
+    # Install .NET SDK 8.0
+    wget https://packages.microsoft.com/config/ubuntu/22.04/packages-microsoft-prod.deb -O packages-microsoft-prod.deb
+    sudo dpkg -i packages-microsoft-prod.deb
+    rm packages-microsoft-prod.deb
+    sudo apt-get update
+    sudo apt-get install -y dotnet-sdk-8.0
+    
+    # Install global tools
+    dotnet tool install --global dotnet-format
+    dotnet tool install --global dotnet-reportgenerator-globaltool
+    dotnet tool install --global coverlet.console
+    dotnet tool install --global Microsoft.EntityFrameworkCore.Tools
+    
+    # Add tools to PATH
+    echo 'export PATH="$PATH:$HOME/.dotnet/tools"' >> ~/.bashrc
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: docker-config
+  namespace: neo-cicd
+data:
+  daemon.json: |
+    {
+      "features": {
+        "buildkit": true
+      },
+      "builder": {
+        "gc": {
+          "enabled": true,
+          "defaultKeepStorage": "20GB"
+        }
+      }
+    }
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  namespace: neo-cicd
+  name: runner-role
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "services", "secrets", "configmaps"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "replicasets"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+- apiGroups: ["batch"]
+  resources: ["jobs"]
+  verbs: ["get", "list", "create", "update", "patch", "delete"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: RoleBinding
+metadata:
+  name: runner-rolebinding
+  namespace: neo-cicd
+subjects:
+- kind: ServiceAccount
+  name: default
+  namespace: neo-cicd
+roleRef:
+  kind: Role
+  name: runner-role
+  apiGroup: rbac.authorization.k8s.io
+
+---
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: neo-cicd-netpol
+  namespace: neo-cicd
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  - Egress
+  ingress:
+  - from:
+    - namespaceSelector:
+        matchLabels:
+          name: neo-monitoring
+    ports:
+    - protocol: TCP
+      port: 8080
+  egress:
+  - {}  # Allow all egress for GitHub API, Docker registry, etc.
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: runner-webhook
+  namespace: neo-cicd
+  labels:
+    app: runner-webhook
+spec:
+  selector:
+    app: runner-webhook
+  ports:
+  - name: webhook
+    port: 8443
+    targetPort: 8443
+  type: ClusterIP
+
+---
+apiVersion: actions.summerwind.dev/v1alpha1
+kind: RunnerDeployment
+metadata:
+  name: neo-security-runners
+  namespace: neo-cicd
+spec:
+  replicas: 1
+  template:
+    spec:
+      repository: neo-service-layer/neo-service-layer
+      labels:
+      - security
+      - vulnerability-scan
+      - compliance
+      env:
+      - name: TRIVY_DB_REPOSITORY
+        value: "public.ecr.aws/aquasecurity/trivy-db"
+      - name: GRYPE_DB_AUTO_UPDATE
+        value: "true"
+      resources:
+        requests:
+          memory: "1Gi"
+          cpu: "500m"
+        limits:
+          memory: "2Gi"
+          cpu: "1"
