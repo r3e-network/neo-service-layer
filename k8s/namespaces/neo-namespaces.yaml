@@ -1,0 +1,41 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-services
+  labels:
+    name: neo-services
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+    istio-injection: enabled
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-databases
+  labels:
+    name: neo-databases
+    pod-security.kubernetes.io/enforce: restricted
+    pod-security.kubernetes.io/audit: restricted
+    pod-security.kubernetes.io/warn: restricted
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-monitoring
+  labels:
+    name: neo-monitoring
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: neo-infrastructure
+  labels:
+    name: neo-infrastructure
+    pod-security.kubernetes.io/enforce: baseline
+    pod-security.kubernetes.io/audit: baseline
+    pod-security.kubernetes.io/warn: baseline
+    istio-injection: enabled
