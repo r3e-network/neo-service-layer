@@ -1,0 +1,234 @@
+apiVersion: monitoring.coreos.com/v1
+kind: Prometheus
+metadata:
+  name: neo-prometheus
+  namespace: neo-monitoring
+  labels:
+    app: prometheus
+    prometheus: neo-prometheus
+spec:
+  replicas: 2
+  retention: 30d
+  retentionSize: 50GB
+  
+  serviceAccountName: prometheus
+  
+  serviceMonitorSelector:
+    matchLabels:
+      monitoring: neo-services
+      
+  ruleSelector:
+    matchLabels:
+      monitoring: neo-services
+      
+  storage:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: fast-ssd
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+            
+  resources:
+    requests:
+      memory: 4Gi
+      cpu: 2
+    limits:
+      memory: 8Gi
+      cpu: 4
+      
+  securityContext:
+    runAsUser: 1000
+    runAsGroup: 1000
+    fsGroup: 1000
+    runAsNonRoot: true
+    
+  affinity:
+    podAntiAffinity:
+      requiredDuringSchedulingIgnoredDuringExecution:
+      - labelSelector:
+          matchLabels:
+            app: prometheus
+        topologyKey: kubernetes.io/hostname
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neo-services-monitor
+  namespace: neo-monitoring
+  labels:
+    monitoring: neo-services
+    app: neo-services
+spec:
+  selector:
+    matchLabels:
+      monitoring: "true"
+  endpoints:
+  - port: metrics
+    interval: 30s
+    path: /metrics
+    honorLabels: true
+    scrapeTimeout: 10s
+  namespaceSelector:
+    matchNames:
+    - neo-services
+    - neo-databases
+    - neo-infrastructure
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: neo-istio-monitor
+  namespace: neo-monitoring
+  labels:
+    monitoring: neo-services
+spec:
+  selector:
+    matchLabels:
+      app: istiod
+  endpoints:
+  - port: http-monitoring
+    interval: 15s
+    path: /stats/prometheus
+  namespaceSelector:
+    matchNames:
+    - istio-system
+
+---
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: neo-services-alerts
+  namespace: neo-monitoring
+  labels:
+    monitoring: neo-services
+    prometheus: neo-prometheus
+spec:
+  groups:
+  - name: neo-services.rules
+    rules:
+    - alert: NeoServiceDown
+      expr: up{job=~"neo-.*-service"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Neo service {{ $labels.job }} is down"
+        description: "Service {{ $labels.job }} has been down for more than 1 minute"
+
+    - alert: NeoServiceHighErrorRate
+      expr: |
+        (
+          rate(http_requests_total{job=~"neo-.*-service",code=~"5.."}[5m]) /
+          rate(http_requests_total{job=~"neo-.*-service"}[5m])
+        ) * 100 > 5
+      for: 2m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High error rate on {{ $labels.job }}"
+        description: "Service {{ $labels.job }} has error rate above 5% for 2 minutes"
+
+    - alert: NeoServiceHighLatency
+      expr: |
+        histogram_quantile(0.95, rate(http_request_duration_seconds_bucket{job=~"neo-.*-service"}[5m])) > 0.5
+      for: 5m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High latency on {{ $labels.job }}"
+        description: "Service {{ $labels.job }} 95th percentile latency is above 500ms"
+
+    - alert: NeoDatabaseDown
+      expr: up{job=~".*postgres.*"} == 0
+      for: 30s
+      labels:
+        severity: critical
+      annotations:
+        summary: "Database {{ $labels.job }} is down"
+        description: "Database {{ $labels.job }} has been unreachable for 30 seconds"
+
+    - alert: NeoRedisDown
+      expr: up{job="redis-exporter"} == 0
+      for: 1m
+      labels:
+        severity: critical
+      annotations:
+        summary: "Redis cluster is down"
+        description: "Redis cluster has been unreachable for 1 minute"
+
+    - alert: NeoAuthServiceHighFailureRate
+      expr: |
+        rate(neo_auth_login_attempts_total{status="failed"}[5m]) > 10
+      for: 1m
+      labels:
+        severity: warning
+      annotations:
+        summary: "High authentication failure rate"
+        description: "Authentication service has more than 10 failed login attempts per second"
+
+    - alert: NeoSGXEnclaveFailure
+      expr: |
+        neo_sgx_enclave_status{status="failed"} > 0
+      for: 0m
+      labels:
+        severity: critical
+      annotations:
+        summary: "SGX Enclave failure detected"
+        description: "SGX enclave {{ $labels.enclave_id }} has failed"
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: prometheus
+  namespace: neo-monitoring
+  labels:
+    app: prometheus
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+rules:
+- apiGroups: [""]
+  resources:
+  - nodes
+  - nodes/metrics
+  - services
+  - endpoints
+  - pods
+  verbs: ["get", "list", "watch"]
+- apiGroups: [""]
+  resources:
+  - configmaps
+  verbs: ["get"]
+- apiGroups:
+  - networking.k8s.io
+  resources:
+  - ingresses
+  verbs: ["get", "list", "watch"]
+- nonResourceURLs: ["/metrics"]
+  verbs: ["get"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: prometheus
+  labels:
+    app: prometheus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: prometheus
+subjects:
+- kind: ServiceAccount
+  name: prometheus
+  namespace: neo-monitoring
