@@ -1,45 +1,27 @@
-using Microsoft.AspNetCore.Authentication.JwtBearer;
-using Microsoft.EntityFrameworkCore;
-using Microsoft.OpenApi.Models;
 using Neo.SecretsManagement.Service.Data;
 using Neo.SecretsManagement.Service.Services;
 using Neo.SecretsManagement.Service.BackgroundServices;
 using Neo.SecretsManagement.Service.HealthChecks;
+using NeoServiceLayer.Common.Extensions;
 using System.Reflection;
 using System.Text.Json;
-using OpenTelemetry.Metrics;
-using OpenTelemetry.Trace;
-using OpenTelemetry.Resources;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container
+// Add common Neo Service Layer components
+builder.Services.AddNeoServiceCommon(builder.Configuration, Assembly.GetExecutingAssembly());
+builder.Services.AddNeoServiceDatabase<SecretsDbContext>(builder.Configuration);
+builder.Services.AddNeoServiceAuthentication(builder.Configuration);
+builder.Services.AddNeoServiceTelemetry(builder.Configuration, "neo-secrets-management");
+builder.Services.AddNeoServiceCors(builder.Configuration);
+
+// JSON serialization options
 builder.Services.AddControllers()
     .AddJsonOptions(options =>
     {
         options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
         options.JsonSerializerOptions.WriteIndented = true;
     });
-
-// Database configuration
-var connectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-builder.Services.AddDbContext<SecretsDbContext>(options =>
-{
-    options.UseNpgsql(connectionString, npgsqlOptions =>
-    {
-        npgsqlOptions.MigrationsHistoryTable("__secrets_migrations_history");
-        npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(30),
-            errorCodesToAdd: null);
-    });
-    
-    if (builder.Environment.IsDevelopment())
-    {
-        options.EnableSensitiveDataLogging();
-        options.EnableDetailedErrors();
-    }
-});
 
 // Redis for distributed coordination and caching
 builder.Services.AddStackExchangeRedisCache(options =>
