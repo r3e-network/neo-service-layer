@@ -76,7 +76,11 @@ builder.Services.AddControllers();
 
 var app = builder.Build();
 
-// Configure pipeline
+// Configure pipeline with common middleware
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.CorrelationIdMiddleware>();
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.RequestResponseLoggingMiddleware>();
+app.UseMiddleware<NeoServiceLayer.Common.Middleware.GlobalExceptionHandlingMiddleware>();
+
 if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
@@ -88,14 +92,14 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
-app.UseRateLimiter();
+app.UseCors();
 app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
-app.MapHealthChecks("/health");
-app.MapHealthChecks("/health/ready");
-app.MapHealthChecks("/health/live");
+app.MapHealthChecks("/api/v1/monitoring/health");
+app.MapHealthChecks("/api/v1/monitoring/ready");
+app.MapHealthChecks("/api/v1/monitoring/live");
 
 // Hangfire dashboard (only in development)
 if (app.Environment.IsDevelopment())
